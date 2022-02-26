@@ -151,7 +151,7 @@ public:
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
-                         const WaveFunctionFactory& wf_factory,
+                         const TrialWaveFunction& psi,
                          ParticleSet& pset_target);
 
   /** Constructor used when spawing crowd clones

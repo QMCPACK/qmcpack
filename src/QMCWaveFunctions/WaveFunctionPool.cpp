@@ -29,16 +29,7 @@ WaveFunctionPool::WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, c
   myName    = aname;
 }
 
-WaveFunctionPool::~WaveFunctionPool()
-{
-  DEBUG_MEMORY("WaveFunctionPool::~WaveFunctionPool");
-  PoolType::iterator it(myPool.begin());
-  while (it != myPool.end())
-  {
-    delete (*it).second;
-    ++it;
-  }
-}
+WaveFunctionPool::~WaveFunctionPool() = default;
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
@@ -57,37 +48,31 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
-  WaveFunctionFactory* psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
-  addFactory(psiFactory, myPool.empty() || role == "primary");
-
-  bool success = psiFactory->put(cur);
-  return success;
+  WaveFunctionFactory psiFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
+  auto psi = psiFactory.buildTWF(cur);
+  addFactory(std::move(psi), myPool.empty() || role == "primary");
+  return true;
 }
 
-void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac, bool primary)
+void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
 {
-  if (myPool.find(psifac->getName()) != myPool.end())
-    throw std::runtime_error("  " + psifac->getName() + " exists. Cannot be added.");
+  if (myPool.find(psi->getName()) != myPool.end())
+    throw std::runtime_error("  " + psi->getName() + " exists. Cannot be added.");
 
-  app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
+  app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
 
-  myPool[psifac->getName()] = psifac;
   if (primary)
-    primary_psi_ = psifac->getTWF();
+    primary_psi_ = psi.get();
+  myPool[psi->getName()] = std::move(psi);
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
   if (myPool.empty())
     return NULL;
-  std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
-  if (it == myPool.end())
-  {
+  if (auto it(myPool.find(id)); it == myPool.end())
     return (*myPool.begin()).second->getNode();
-  }
   else
-  {
     return (*it).second->getNode();
-  }
 }
 } // namespace qmcplusplus

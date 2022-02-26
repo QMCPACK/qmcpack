@@ -173,7 +173,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   std::queue<QMCHamiltonian*> targetH;      //FIFO
   xmlNodePtr tcur = cur->children;
   std::unique_ptr<QMCDriverInterface> new_driver;
-  auto wf_factory = wavefunction_pool.getWaveFunctionFactory("wavefunction");
   while (tcur != NULL)
   {
     if (xmlStrEqual(tcur->name, (const xmlChar*)"qmcsystem"))
@@ -241,7 +240,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, wf_factory, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 qmc_system.getSampleStack(), comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
@@ -253,7 +252,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, wf_factory, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
@@ -282,7 +281,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     QMCFixedSampleLinearOptimizeBatched* opt =
         QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
                                  MCPopulation(comm->size(), comm->rank(), qmc_system, 
-                                              &qmc_system, primaryPsi, wf_factory, primaryH),
+                                              &qmc_system, primaryPsi, primaryH),
                                  qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);

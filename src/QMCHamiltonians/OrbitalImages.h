@@ -216,7 +216,7 @@ public:
   std::vector<ValueType> orbital;
 
   //constructors
-  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const TrialWaveFunction& psi);
   OrbitalImages(const OrbitalImages& other);
 
   //standard interface
@@ -271,7 +271,7 @@ public:
 
 private:
   /// reference to the sposet_builder_factory
-  const WaveFunctionFactory& wf_factory_;
+  const TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

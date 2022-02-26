@@ -79,7 +79,6 @@ public:
   bool put(QMCHamiltonian& H,
            const ParticleSet& pset,
            const TrialWaveFunction& twf,
-           const WaveFunctionFactory& wf_factory,
            xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().

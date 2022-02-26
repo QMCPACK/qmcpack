@@ -37,7 +37,7 @@ class ParticleSet;
 class WaveFunctionPool : public MPIObjectBase
 {
 public:
-  using PoolType = std::map<std::string, WaveFunctionFactory*>;
+  using PoolType = std::map<std::string, std::unique_ptr<TrialWaveFunction>>;
 
   WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
   WaveFunctionPool(const WaveFunctionPool&)            = delete;
@@ -60,12 +60,13 @@ public:
       if (myPool.empty())
         return nullptr;
       else
-        return (*(myPool.begin())).second->getTWF();
+        return myPool.begin()->second.get();
     }
     else
-      return (*pit).second->getTWF();
+      return pit->second.get();
   }
 
+/*
   WaveFunctionFactory* getWaveFunctionFactory(const std::string& pname)
   {
     if (auto pit(myPool.find(pname)); pit == myPool.end())
@@ -78,6 +79,7 @@ public:
     else
       return (*pit).second;
   }
+*/
 
   /** return a xmlNode containing Jastrow
    * @param id name of the wave function
@@ -90,9 +92,9 @@ public:
    */
   inline const PoolType& getPool() const { return myPool; }
 
-  /** add a WaveFunctionFactory* to myPool
+  /** add a TrialWaveFunction* to myPool
    */
-  void addFactory(WaveFunctionFactory* psifac, bool primary);
+  void addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary);
 
 private:
   /// pointer to the primary TrialWaveFunction

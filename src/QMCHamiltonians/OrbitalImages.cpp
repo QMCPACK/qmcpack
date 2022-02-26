@@ -22,8 +22,8 @@ namespace qmcplusplus
 OrbitalImages::OrbitalImages(ParticleSet& P,
                              const PSPool& PSP,
                              Communicate* mpicomm,
-                             const WaveFunctionFactory& factory)
-    : psetpool(PSP), wf_factory_(factory)
+                             const TrialWaveFunction& psi)
+    : psetpool(PSP), psi_(psi)
 {
   //keep the electron particle to get the cell later, if necessary
   Peln = &P;
@@ -57,7 +57,7 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
       batch_gradients(other.batch_gradients),
       batch_laplacians(other.batch_laplacians),
       orbital(other.orbital),
-      wf_factory_(other.wf_factory_)
+      psi_(other.psi_)
 {
   for (auto& element : other.sposets)
     sposets.push_back(element->makeClone());
@@ -214,10 +214,8 @@ bool OrbitalImages::put(xmlNodePtr cur)
     APP_ABORT("OrbitalImages::put  must have at least one sposet");
   for (int i = 0; i < sposet_names.size(); ++i)
   {
-    SPOSet* sposet = wf_factory_.getSPOSet(sposet_names[i]);
-    if (sposet == 0)
-      APP_ABORT("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist");
-    sposets.push_back(sposet->makeClone());
+    sposets.push_back(psi_.getSPOSet(sposet_names[i]).makeClone());
+    auto& sposet = sposets.back();
     std::vector<int>& sposet_inds = (*sposet_indices)[i];
     if (sposet_inds.size() == 0)
       for (int n = 0; n < sposet->size(); ++n)

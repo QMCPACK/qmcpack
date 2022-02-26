@@ -74,6 +74,8 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
+  using SPOMap = std::map<std::string, std::unique_ptr<SPOSet>>;
+
 #ifdef QMC_CUDA
   using CTS          = CUDAGlobalTypes;
   using RealMatrix_t = WaveFunctionComponent::RealMatrix_t;
@@ -95,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
+  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -537,8 +539,22 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
+  void storeXMLNode(xmlNodePtr node) { myNode_ = xmlCopyNode(node, 1); }
+
+  xmlNodePtr getNode() const { return myNode_; }
+
+  void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
+
+  SPOSet& getSPOSet(const std::string& name) const;
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  ///input node for a many-body wavefunction
+  xmlNodePtr myNode_;
+
+  ///Owned SPOSets
+  const std::shared_ptr<SPOMap> spomap_;
 
   ///getName is in the way
   const std::string myName;

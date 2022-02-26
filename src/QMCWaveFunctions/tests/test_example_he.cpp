@@ -85,12 +85,12 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff.put(root);
+  auto twf_ptr = wff.buildTWF(root);
 
-  REQUIRE(wff.getTWF() != nullptr);
-  REQUIRE(wff.getTWF()->size() == 1);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 1);
 
-  auto& base_example_he = wff.getTWF()->getOrbitals()[0];
+  auto& base_example_he = twf_ptr->getOrbitals()[0];
   REQUIRE(base_example_he != nullptr);
 
   ExampleHeComponent* example_he = dynamic_cast<ExampleHeComponent*>(base_example_he.get());
@@ -106,7 +106,6 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   // Set the base expectations for wavefunction value and derivatives
   LogValueType logpsi = example_he->evaluateLog(elec, all_grad, all_lap);
-
 
   // Comparisons are performed at a single set of electron coordinates.  This should be expanded.
 

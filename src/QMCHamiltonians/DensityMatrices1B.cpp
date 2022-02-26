@@ -29,9 +29,8 @@ using MatrixOperators::product_AtB;
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
                                      TrialWaveFunction& psi,
-                                     ParticleSet* Pcl,
-                                     const WaveFunctionFactory& factory)
-    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
+                                     ParticleSet* Pcl)
+    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
@@ -43,8 +42,7 @@ DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, 
       lattice_(P.getLattice()),
       Psi(psi),
       Pq(P),
-      Pc(master.Pc),
-      wf_factory_(master.wf_factory_)
+      Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -258,12 +256,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     APP_ABORT("DensityMatrices1B::put  basis must have at least one sposet");
 
   for (int i = 0; i < sposets.size(); ++i)
-  {
-    SPOSet* sposet = wf_factory_.getSPOSet(sposets[i]);
-    if (sposet == 0)
-      APP_ABORT("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist");
-    basis_functions.add(sposet->makeClone());
-  }
+    basis_functions.add(Psi.getSPOSet(sposets[i]).makeClone());
   basis_size = basis_functions.size();
 
   if (basis_size < 1)

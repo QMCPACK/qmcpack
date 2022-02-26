@@ -49,19 +49,14 @@ public:
   ~WaveFunctionFactory();
 
   ///read from xmlNode
-  bool put(xmlNodePtr cur);
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur);
+
+  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting() { return std::make_unique<TrialWaveFunction>("psi0"); }
+
   ///get xmlNode
   xmlNodePtr getNode() const { return myNode; }
-  ///get targetPsi
-  TrialWaveFunction* getTWF() const { return targetPsi.get(); }
-  ///get SPOSet
-  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
 
 private:
-  /** process xmlNode to populate targetPsi
-   */
-  bool build(xmlNodePtr cur, bool buildtree = true);
-
   /** add Fermion wavefunction term */
   bool addFermionTerm(xmlNodePtr cur);
 
