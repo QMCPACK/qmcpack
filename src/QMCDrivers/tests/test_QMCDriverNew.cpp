@@ -194,7 +194,7 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 
     auto deltas = mc_coords;
     QMCDriverNew::scaleBySqrtTau(taus, deltas);
-    mc_coords = mc_coords + deltas;
+    mc_coords += deltas;
     CHECK(Approx(mc_coords.positions[0][0]) == 0.14472135955);
     CHECK(Approx(mc_coords.positions[0][1]) == 0.28944271910);
     CHECK(Approx(mc_coords.positions[0][2]) == 0.43416407865);
@@ -230,7 +230,7 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 
     auto deltas = mc_coords;
     QMCDriverNew::scaleBySqrtTau(taus, deltas);
-    mc_coords = mc_coords + deltas;
+    mc_coords += deltas;
     CHECK(Approx(mc_coords.positions[0][0]) == -0.14472135955);
     CHECK(Approx(mc_coords.positions[0][1]) == -0.28944271910);
     CHECK(Approx(mc_coords.positions[0][2]) == -0.43416407865);

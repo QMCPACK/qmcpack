@@ -114,7 +114,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         {
           twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-          drifts = drifts + deltas;
+          drifts += deltas;
         }
         else
           drifts = deltas;
@@ -130,7 +130,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
           sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
-          drifts_reverse = drifts + drifts_reverse;
+          drifts_reverse += drifts;
 
           computeLogGreensFunction(drifts_reverse, taus, log_gb);
         }

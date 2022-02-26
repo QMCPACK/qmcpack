@@ -33,7 +33,7 @@ TEST_CASE("MCCoords", "[Particle]")
     mc_coords.positions = {p1, p2, p3};
     auto shift_coords   = MCCoords<mct>(3);
     shift_coords.positions = {p4, p4, p4};
-    mc_coords              = mc_coords + shift_coords;
+    mc_coords += shift_coords;
     CHECK(Approx(mc_coords.positions[0][0]) == -0.9);
     CHECK(Approx(mc_coords.positions[0][1]) == -0.8);
     CHECK(Approx(mc_coords.positions[0][2]) == -0.7);
@@ -44,7 +44,9 @@ TEST_CASE("MCCoords", "[Particle]")
     CHECK(Approx(mc_coords.positions[2][1]) == -0.2);
     CHECK(Approx(mc_coords.positions[2][2]) == -0.1);
 
-    mc_coords = mc_coords - shift_coords;
+    auto shift_coords2   = MCCoords<mct>(3);
+    shift_coords2.positions = {-p4, -p4, -p4};
+    mc_coords += shift_coords2;
     CHECK(Approx(mc_coords.positions[0][0]) == 0.1);
     CHECK(Approx(mc_coords.positions[0][1]) == 0.2);
     CHECK(Approx(mc_coords.positions[0][2]) == 0.3);
@@ -71,12 +73,14 @@ TEST_CASE("MCCoords", "[Particle]")
     mc_coords.spins   = {0.1, 0.2, 0.3};
     auto shift_coords = MCCoords<mct>(3);
     shift_coords.spins = {1.0, 1.0, 1.0};
-    mc_coords          = mc_coords + shift_coords;
+    mc_coords += shift_coords;
     CHECK(Approx(mc_coords.spins[0]) == 1.1);
     CHECK(Approx(mc_coords.spins[1]) == 1.2);
     CHECK(Approx(mc_coords.spins[2]) == 1.3);
 
-    mc_coords          = mc_coords - shift_coords;
+    auto shift_coords2   = MCCoords<mct>(3);
+    shift_coords2.spins = {-1.0, -1.0, -1.0};
+    mc_coords += shift_coords2;
     CHECK(Approx(mc_coords.spins[0]) == 0.1);
     CHECK(Approx(mc_coords.spins[1]) == 0.2);
     CHECK(Approx(mc_coords.spins[2]) == 0.3);

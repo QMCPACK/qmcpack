@@ -34,6 +34,9 @@ template<>
 struct MCCoords<CoordsType::POS>
 {
   MCCoords(const std::size_t size) : positions(size) {}
+
+  MCCoords& operator+=(const MCCoords& rhs);
+
   /** get subset of MCCoords
    * [param,out] out
    */
@@ -46,6 +49,9 @@ template<>
 struct MCCoords<CoordsType::POS_SPIN>
 {
   MCCoords(const std::size_t size) : positions(size), spins(size) {}
+
+  MCCoords& operator+=(const MCCoords& rhs);
+
   /** get subset of MCCoords
    * [param,out] out
    */
@@ -57,33 +63,6 @@ struct MCCoords<CoordsType::POS_SPIN>
 
 extern template struct MCCoords<CoordsType::POS>;
 extern template struct MCCoords<CoordsType::POS_SPIN>;
-
-template<CoordsType CT>
-MCCoords<CT> operator+(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
-{
-  assert(lhs.positions.size() == rhs.positions.size());
-  MCCoords<CT> out(lhs.positions.size());
-  std::transform(lhs.positions.begin(), lhs.positions.end(), rhs.positions.begin(), out.positions.begin(),
-                 [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x + y; });
-  if constexpr (CT == CoordsType::POS_SPIN)
-    std::transform(lhs.spins.begin(), lhs.spins.end(), rhs.spins.begin(), out.spins.begin(),
-                   [](const QMCTraits::FullPrecRealType& x, const QMCTraits::FullPrecRealType& y) { return x + y; });
-  return out;
-}
-
-template<CoordsType CT>
-MCCoords<CT> operator-(const MCCoords<CT>& lhs, const MCCoords<CT>& rhs)
-{
-  assert(lhs.positions.size() == rhs.positions.size());
-  MCCoords<CT> out(lhs.positions.size());
-  std::transform(lhs.positions.begin(), lhs.positions.end(), rhs.positions.begin(), out.positions.begin(),
-                 [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x - y; });
-  if constexpr (CT == CoordsType::POS_SPIN)
-    std::transform(lhs.spins.begin(), lhs.spins.end(), rhs.spins.begin(), out.spins.begin(),
-                   [](const QMCTraits::FullPrecRealType& x, const QMCTraits::FullPrecRealType& y) { return x - y; });
-  return out;
-}
-
 } // namespace qmcplusplus
 
 #endif

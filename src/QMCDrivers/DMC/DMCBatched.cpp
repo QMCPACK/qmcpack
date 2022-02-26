@@ -168,7 +168,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
         sft.drift_modifier.getDrifts(taus, grads_now, drifts);
 
         scaleBySqrtTau(taus, deltas);
-        drifts = drifts + deltas;
+        drifts += deltas;
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -189,7 +189,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
-        drifts_reverse = drifts + drifts_reverse;
+        drifts_reverse += drifts;
 
         computeLogGreensFunction(drifts_reverse, taus, log_gb);
 
