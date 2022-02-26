@@ -275,7 +275,7 @@ void test_lcao_spinor()
   //first, lets displace all the elec in each walker
   for (int iat = 0; iat < 1; iat++)
   {
-    MCCoords<CoordsType::POS_SPIN> displs;
+    MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {dR[iat], dR[iat]};
     displs.spins     = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
@@ -306,7 +306,7 @@ void test_lcao_spinor()
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    MCCoords<CoordsType::POS_SPIN> displs;
+    MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
@@ -589,7 +589,7 @@ void test_lcao_spinor_excited()
   //first, lets displace all the elec in each walker
   for (int iat = 0; iat < 1; iat++)
   {
-    MCCoords<CoordsType::POS_SPIN> displs;
+    MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {dR[iat], dR[iat]};
     displs.spins     = {dS[iat], dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
@@ -620,7 +620,7 @@ void test_lcao_spinor_excited()
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    MCCoords<CoordsType::POS_SPIN> displs;
+    MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);

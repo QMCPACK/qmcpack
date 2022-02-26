@@ -13,13 +13,39 @@
 
 namespace qmcplusplus
 {
-void MCCoords<CoordsType::POS>::resize(const std::size_t size) { positions.resize(size); }
-
-void MCCoords<CoordsType::POS_SPIN>::resize(const std::size_t size)
+void MCCoords<CoordsType::POS>::getSubset(const std::size_t offset,
+                                          const std::size_t size,
+                                          MCCoords<CoordsType::POS>& out) const
 {
-  positions.resize(size);
-  spins.resize(size);
+  std::copy_n(positions.begin() + offset, size, out.positions.begin());
 }
+
+MCCoords<CoordsType::POS>& MCCoords<CoordsType::POS>::operator+=(const MCCoords<CoordsType::POS>& rhs)
+{
+  assert(positions.size() == rhs.positions.size());
+  std::transform(positions.begin(), positions.end(), rhs.positions.begin(), positions.begin(),
+                 [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x + y; });
+  return *this;
+}
+
+void MCCoords<CoordsType::POS_SPIN>::getSubset(const std::size_t offset,
+                                               const std::size_t size,
+                                               MCCoords<CoordsType::POS_SPIN>& out) const
+{
+  std::copy_n(positions.begin() + offset, size, out.positions.begin());
+  std::copy_n(spins.begin() + offset, size, out.spins.begin());
+}
+
+MCCoords<CoordsType::POS_SPIN>& MCCoords<CoordsType::POS_SPIN>::operator+=(const MCCoords<CoordsType::POS_SPIN>& rhs)
+{
+  assert(positions.size() == rhs.positions.size());
+  std::transform(positions.begin(), positions.end(), rhs.positions.begin(), positions.begin(),
+                 [](const QMCTraits::PosType& x, const QMCTraits::PosType& y) { return x + y; });
+  std::transform(spins.begin(), spins.end(), rhs.spins.begin(), spins.begin(),
+                 [](const QMCTraits::FullPrecRealType& x, const QMCTraits::FullPrecRealType& y) { return x + y; });
+  return *this;
+}
+
 template struct MCCoords<CoordsType::POS>;
 template struct MCCoords<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
