@@ -243,42 +243,22 @@ public:
 
   // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
   template<typename RT, CoordsType CT>
-  static MCCoords<CT> scaleBySqrtTau(const TauParams<RT, CT>& taus, const MCCoords<CT>& coords)
+  static void scaleBySqrtTau(const TauParams<RT, CT>& taus, MCCoords<CT>& coords)
   {
-    MCCoords<CT> out(coords.positions.size());
-    std::transform(coords.positions.begin(), coords.positions.end(), out.positions.begin(),
-                   [st = taus.sqrttau](const QMCTraits::PosType& pos) { return st * pos; });
+    for (auto& pos : coords.positions)
+      pos *= taus.sqrttau;
     if constexpr (CT == CoordsType::POS_SPIN)
-      std::transform(coords.spins.begin(), coords.spins.end(), out.spins.begin(),
-                     [st = taus.spin_sqrttau](const QMCTraits::FullPrecRealType& spin) { return st * spin; });
-    return out;
+      for (auto& spin : coords.spins)
+        spin *= taus.spin_sqrttau;
   }
 
-  /** calulates forward GreenFunction from displacements stored in MCCoords
-   * [param,out] log_gf
-   */
-  template<CoordsType CT>
-  static void updateForwardLogGreensFunction(const MCCoords<CT>& coords, std::vector<QMCTraits::RealType>& log_gf)
-  {
-    assert(coords.positions.size() == log_gf.size());
-    std::transform(coords.positions.begin(), coords.positions.end(), log_gf.begin(), [](const QMCTraits::PosType& pos) {
-      constexpr QMCTraits::RealType mhalf(-0.5);
-      return mhalf * dot(pos, pos);
-    });
-    if constexpr (CT == CoordsType::POS_SPIN)
-      std::transform(coords.spins.begin(), coords.spins.end(), log_gf.begin(), log_gf.begin(),
-                     [](const QMCTraits::FullPrecRealType& spin, const QMCTraits::RealType& loggf) {
-                       constexpr QMCTraits::RealType mhalf(-0.5);
-                       return loggf + mhalf * spin * spin;
-                     });
-  }
-  /** calculates reverse Green Function from displacements stored in MCCoords
-     * [param, out] log_gb
+  /** calculates Green Function from displacements stored in MCCoords
+     * [param, out] log_g
      */
   template<typename RT, CoordsType CT>
-  static void updateReverseLogGreensFunction(const MCCoords<CT>& coords,
-                                      const TauParams<RT, CT>& taus,
-                                      std::vector<QMCTraits::RealType>& log_gb)
+  static void computeLogGreensFunction(const MCCoords<CT>& coords,
+                                       const TauParams<RT, CT>& taus,
+                                       std::vector<QMCTraits::RealType>& log_gb)
   {
     assert(coords.positions.size() == log_gb.size());
     std::transform(coords.positions.begin(), coords.positions.end(), log_gb.begin(),

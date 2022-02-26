@@ -106,7 +106,8 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   const int num_walkers   = crowd.size();
   const int num_particles = sft.population.get_num_particles();
 
-  MCCoords<CT> drifts(num_walkers), walker_deltas(num_walkers * num_particles), deltas(num_walkers);
+  MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
+  MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now, grads_new;
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
@@ -153,21 +154,21 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                    : walkers_who_have_been_on_wire[iw] = 0;
         }
 #endif
-        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-
         //get deltas for this particle for all walkers
         walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);
-        drifts = drifts + scaleBySqrtTau(taus, deltas);
 
         // only DMC does this
         // TODO: rr needs a real name
-        auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
         std::vector<RealType> rr(num_walkers, 0.0);
-        assert(rr.size() == delta_r_end - delta_r_start);
-        std::transform(delta_r_start, delta_r_end, rr.begin(),
+        assert(rr.size() == deltas.positions.size());
+        std::transform(deltas.positions.begin(), deltas.positions.end(), rr.begin(),
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
+
+        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+
+        scaleBySqrtTau(taus, deltas);
+        drifts = drifts + deltas;
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -184,13 +185,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        updateForwardLogGreensFunction(deltas, log_gf);
+        computeLogGreensFunction(deltas, taus, log_gf);
 
-        sft.drift_modifier.getDrifts(taus, grads_new, drifts);
+        sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
-        drifts = walker_leader.mw_getDisplacements<CT>(walker_elecs, iat) - drifts;
+        drifts_reverse = drifts + drifts_reverse;
 
-        updateReverseLogGreensFunction(drifts, taus, log_gb);
+        computeLogGreensFunction(drifts_reverse, taus, log_gb);
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
@@ -453,9 +454,9 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
-        ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-        : false;
+    dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+                 ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+                 : false;
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());

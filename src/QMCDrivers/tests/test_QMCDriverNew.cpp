@@ -192,7 +192,9 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
     QMCTraits::PosType p3({0.7, 0.8, 0.9});
     mc_coords.positions = {p1, p2, p3};
 
-    mc_coords = mc_coords + qmcdriver.scaleBySqrtTau(taus, mc_coords);
+    auto deltas = mc_coords;
+    QMCDriverNew::scaleBySqrtTau(taus, deltas);
+    mc_coords = mc_coords + deltas;
     CHECK(Approx(mc_coords.positions[0][0]) == 0.14472135955);
     CHECK(Approx(mc_coords.positions[0][1]) == 0.28944271910);
     CHECK(Approx(mc_coords.positions[0][2]) == 0.43416407865);
@@ -205,12 +207,12 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 
     std::vector<QMCTraits::RealType> loggf(3), loggb(3);
 
-    qmcdriver.updateForwardLogGreensFunction(mc_coords, loggf);
-    CHECK(Approx(loggf[0]) == -0.146609903370);
-    CHECK(Approx(loggf[1]) == -0.806354468535);
-    CHECK(Approx(loggf[2]) == -2.031594375270);
+    qmcdriver.computeLogGreensFunction(deltas, taus, loggf);
+    CHECK(Approx(loggf[0]) == -0.07);
+    CHECK(Approx(loggf[1]) == -0.385);
+    CHECK(Approx(loggf[2]) == -0.97);
 
-    qmcdriver.updateReverseLogGreensFunction(mc_coords, taus, loggb);
+    qmcdriver.computeLogGreensFunction(mc_coords, taus, loggb);
     CHECK(Approx(loggb[0]) == -0.733049516850);
     CHECK(Approx(loggb[1]) == -4.031772342675);
     CHECK(Approx(loggb[2]) == -10.15797187635);
@@ -226,7 +228,9 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
     mc_coords.positions = {p1, p2, p3};
     mc_coords.spins     = {0.1, 0.2, 0.3};
 
-    mc_coords = mc_coords + qmcdriver.scaleBySqrtTau(taus, mc_coords);
+    auto deltas = mc_coords;
+    QMCDriverNew::scaleBySqrtTau(taus, deltas);
+    mc_coords = mc_coords + deltas;
     CHECK(Approx(mc_coords.positions[0][0]) == -0.14472135955);
     CHECK(Approx(mc_coords.positions[0][1]) == -0.28944271910);
     CHECK(Approx(mc_coords.positions[0][2]) == -0.43416407865);
@@ -243,12 +247,12 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
 
     std::vector<QMCTraits::RealType> loggf(3), loggb(3);
 
-    qmcdriver.updateForwardLogGreensFunction(mc_coords, loggf);
-    CHECK(Approx(loggf[0]) == -0.159934458690);
-    CHECK(Approx(loggf[1]) == -0.859652589816);
-    CHECK(Approx(loggf[2]) == -2.151515373153);
+    qmcdriver.computeLogGreensFunction(deltas, taus, loggf);
+    CHECK(Approx(loggf[0]) == -0.075);
+    CHECK(Approx(loggf[1]) == -0.405);
+    CHECK(Approx(loggf[2]) == -1.015);
 
-    qmcdriver.updateReverseLogGreensFunction(mc_coords, taus, loggb);
+    qmcdriver.computeLogGreensFunction(mc_coords, taus, loggb);
     CHECK(Approx(loggb[0]) == -0.766360905151);
     CHECK(Approx(loggb[1]) == -4.165017895878);
     CHECK(Approx(loggb[2]) == -10.457774371057);

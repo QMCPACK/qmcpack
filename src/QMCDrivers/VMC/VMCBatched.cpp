@@ -83,7 +83,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   std::vector<std::reference_wrapper<TrialWaveFunction>> twf_accept_list, twf_reject_list;
   isAccepted.reserve(num_walkers);
 
-  MCCoords<CT> drifts(num_walkers), walker_deltas(num_walkers * num_particles), deltas(num_walkers);
+  MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
+  MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now, grads_new;
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
@@ -107,15 +108,16 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
       {
         //get deltas for this particle (iat) for all walkers
         walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);
+        scaleBySqrtTau(taus, deltas);
 
         if (use_drift)
         {
           twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
           sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-          drifts = drifts + scaleBySqrtTau(taus, deltas);
+          drifts = drifts + deltas;
         }
         else
-          drifts = scaleBySqrtTau(taus, deltas);
+          drifts = deltas;
 
         ps_dispatcher.flex_makeMove(walker_elecs, iat, drifts);
 
@@ -124,13 +126,13 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
         {
           twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-          updateForwardLogGreensFunction(deltas, log_gf);
+          computeLogGreensFunction(deltas, taus, log_gf);
 
-          sft.drift_modifier.getDrifts(taus, grads_new, drifts);
+          sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
-          drifts = walker_leader.mw_getDisplacements<CT>(walker_elecs, iat) - drifts;
+          drifts_reverse = drifts + drifts_reverse;
 
-          updateReverseLogGreensFunction(drifts, taus, log_gb);
+          computeLogGreensFunction(drifts_reverse, taus, log_gb);
         }
         else
           twf_dispatcher.flex_calcRatio(walker_twfs, walker_elecs, iat, ratios);
