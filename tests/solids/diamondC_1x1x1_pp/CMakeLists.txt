@@ -95,6 +95,12 @@ qmc_run_and_check(
   DIAMOND_OPT_SCALARS # VMC
 )
 
+if(SUCCESS_STATUS_MP AND SUCCESS_STATUS_CUDA)
+  set(SUCCESS_STATUS_MP_CUDA TRUE)
+else()
+  set(SUCCESS_STATUS_MP_CUDA FALSE)
+endif()
+
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-optbatch_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -102,7 +108,7 @@ qmc_run_and_check(
   qmc_short_optbatch.in.xml
   1
   3
-  ${SUCCESS_STATUS_MP}
+  ${SUCCESS_STATUS_MP_CUDA}
   3
   DIAMOND_OPT_SCALARS # VMC
 )
