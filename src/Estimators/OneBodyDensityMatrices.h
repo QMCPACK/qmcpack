@@ -19,7 +19,6 @@
 #include "type_traits/complex_help.hpp"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <SpeciesSet.h>
@@ -56,7 +55,7 @@ public:
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
   using Integrator = OneBodyDensityMatricesInput::Integrator;
 
-  using SPOMap = TrialWaveFunction::SPOMap;
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
 
   enum class Sampling
   {

@@ -13,7 +13,6 @@
 
 #include "OrbitalImages.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/unit_conversion.h"
 
 

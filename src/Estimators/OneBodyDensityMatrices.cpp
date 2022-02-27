@@ -18,7 +18,6 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus

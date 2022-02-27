@@ -29,7 +29,6 @@
 namespace qmcplusplus
 {
 class QMCHamiltonian;
-class WaveFunctionFactory;
 class CollectablesEstimator;
 class hdf_archive;
 

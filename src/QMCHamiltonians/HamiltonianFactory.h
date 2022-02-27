@@ -75,7 +75,7 @@ private:
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///reference to the WaveFunctionFactory Pool
+  ///reference to the TrialWaveFunction Pool
   const PsiPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
