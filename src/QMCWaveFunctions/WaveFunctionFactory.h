@@ -30,7 +30,7 @@ namespace qmcplusplus
 class WaveFunctionFactory : public MPIObjectBase
 {
 public:
-  using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * @param psiName name for both the factory and psi
