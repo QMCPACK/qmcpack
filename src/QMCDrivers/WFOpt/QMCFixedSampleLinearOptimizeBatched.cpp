@@ -738,7 +738,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &population_.get_golden_twf(),
-                                                &population_.get_wf_factory(), &population_.get_golden_hamiltonian()),
+                                                &population_.get_golden_hamiltonian()),
                                    samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');

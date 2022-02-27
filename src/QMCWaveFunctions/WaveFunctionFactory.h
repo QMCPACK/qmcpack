@@ -39,52 +39,29 @@ public:
    * @param c  communicator
    * @param c  using tasking inside TWF
    */
-  WaveFunctionFactory(const std::string& psiName,
-                      ParticleSet& qp,
-                      const PSetMap& pset,
-                      Communicate* c,
-                      bool tasking = false);
+  WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c);
 
   ///destructor
   ~WaveFunctionFactory();
 
   ///read from xmlNode
-  bool put(xmlNodePtr cur);
-  ///get xmlNode
-  xmlNodePtr getNode() const { return myNode; }
-  ///get targetPsi
-  TrialWaveFunction* getTWF() const { return targetPsi.get(); }
-  ///get SPOSet
-  SPOSet* getSPOSet(const std::string& name) const { return sposet_builder_factory_.getSPOSet(name); }
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur);
+
+  /// create an empty TrialWaveFunction for testing use.
+  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const std::string_view name)
+  {
+    return std::make_unique<TrialWaveFunction>(name);
+  }
 
 private:
-  /** process xmlNode to populate targetPsi
-   */
-  bool build(xmlNodePtr cur, bool buildtree = true);
-
   /** add Fermion wavefunction term */
-  bool addFermionTerm(xmlNodePtr cur);
-
-  /** add an OrbitalBuilder and the matching xml node
-   * @param b WaveFunctionComponentBuilder*
-   * @oaram cur xmlNode for b
-   * @return true if successful
-   */
-  bool addNode(std::unique_ptr<WaveFunctionComponentBuilder> b, xmlNodePtr cur);
+  bool addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur);
 
   ///many-body wavefunction object
-  std::unique_ptr<TrialWaveFunction> targetPsi;
   ///target ParticleSet
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
-  ///builder tree
-  UPtrVector<WaveFunctionComponentBuilder> psiBuilder;
-
-  /// factory for all the sposet builders in this WF
-  SPOSetBuilderFactory sposet_builder_factory_;
 };
 
 } // namespace qmcplusplus

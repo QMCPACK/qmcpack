@@ -25,6 +25,7 @@ namespace qmcplusplus
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
   /** constructor
@@ -42,7 +43,7 @@ public:
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSet* getSPOSet(const std::string& name) const;
+  const SPOSet* getSPOSet(const std::string& name) const;
 
   void buildSPOSetCollection(xmlNodePtr cur);
 
@@ -53,6 +54,8 @@ public:
    */
   void addSPOSet(std::unique_ptr<SPOSet>);
 
+  SPOMap&& exportSPOSets() { return std::move(sposets); }
+
 private:
   ///reference to the target particle
   ParticleSet& targetPtcl;
@@ -61,7 +64,7 @@ private:
   const PSetMap& ptclPool;
 
   /// list of all sposets created by the builders of this factory
-  std::map<std::string, std::unique_ptr<SPOSet>> sposets;
+  SPOMap sposets;
 
   static std::string basisset_tag;
 };

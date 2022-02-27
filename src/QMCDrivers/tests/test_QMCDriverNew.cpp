@@ -48,7 +48,6 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
                                     MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getPrimary(),
-                                                 wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                  hamiltonian_pool.getPrimary()),
                                     samples, comm);
 
@@ -103,7 +102,6 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(),
-                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
@@ -144,7 +142,6 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(),
-                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
 
@@ -175,7 +172,6 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
                                     MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getPrimary(),
-                                                 wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                  hamiltonian_pool.getPrimary()),
                                     samples, comm);
 

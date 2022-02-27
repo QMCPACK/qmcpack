@@ -21,7 +21,6 @@
 #define QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
@@ -30,7 +29,7 @@ class HamiltonianFactory : public MPIObjectBase
 {
 public:
   using PSetMap     = std::map<std::string, std::unique_ptr<ParticleSet>>;
-  using PsiPoolType = std::map<std::string, WaveFunctionFactory*>;
+  using PsiPoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   ///constructor
   HamiltonianFactory(const std::string& hName,
@@ -76,7 +75,7 @@ private:
   ParticleSet& targetPtcl;
   ///reference to the PSetMap
   const PSetMap& ptclPool;
-  ///reference to the WaveFunctionFactory Pool
+  ///reference to the TrialWaveFunction Pool
   const PsiPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;

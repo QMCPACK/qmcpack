@@ -16,7 +16,6 @@
 
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 namespace qmcplusplus
 {
@@ -117,7 +116,6 @@ public:
   using Lattice_t   = ParticleSet::ParticleLayout;
   using PSPool      = std::map<std::string, std::unique_ptr<ParticleSet>>;
 
-
   ///derivative types
   enum derivative_types_enum
   {
@@ -170,7 +168,7 @@ public:
   ///indices of orbitals within each sposet to evaluate
   const std::shared_ptr<std::vector<std::vector<int>>> sposet_indices;
 
-  ///sposets obtained by name from WaveFunctionFactory
+  ///sposets obtained by name from SPOMap
   std::vector<std::unique_ptr<SPOSet>> sposets;
 
   ///evaluate points at grid cell centers instead of edges
@@ -216,7 +214,7 @@ public:
   std::vector<ValueType> orbital;
 
   //constructors
-  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory);
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap);
   OrbitalImages(const OrbitalImages& other);
 
   //standard interface
@@ -271,7 +269,7 @@ public:
 
 private:
   /// reference to the sposet_builder_factory
-  const WaveFunctionFactory& wf_factory_;
+  const SPOMap& spomap_;
 };
 
 } // namespace qmcplusplus
