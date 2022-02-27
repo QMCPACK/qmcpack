@@ -512,10 +512,10 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (!success)
     return false;
 
-  std::vector<ValueType>::iterator maxloc =
-      std::max_element(C.begin(), C.end(),
-                       [](ValueType const& lhs, ValueType const& rhs) { return std::abs(lhs) < std::abs(rhs); });
-  int refdet_id = std::distance(C.begin(), maxloc);
+  const auto maxloc = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
+    return std::norm(lhs) < std::norm(rhs);
+  });
+  const int refdet_id = std::distance(C.begin(), maxloc);
   app_log() << "max CI coeff at det number " << refdet_id << " with value " << std::abs(C[refdet_id]) << std::endl;
   for (int grp = 0; grp < nGroups; grp++)
   {

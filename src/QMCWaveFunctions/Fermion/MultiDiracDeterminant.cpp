@@ -49,8 +49,8 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
 {
   const auto& confgList = *ciConfigList;
 
-  size_t nci     = confgList.size(), nex;
-  size_t nex_max = 0;
+  const size_t nci = confgList.size();
+  size_t nex_max   = 0;
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
   std::vector<size_t> uno(NumPtcls);
@@ -63,6 +63,7 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   pairs.clear();
   for (size_t i = 0; i < nci; i++)
   {
+    size_t nex;
     tmp_sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
     nex_max     = std::max(nex, nex_max);
     dataMap[nex].push_back(nex);
@@ -94,10 +95,8 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
 
   // populate data, ordered by exc. lvl.
   // make mapping from new to old det idx
-  for (std::map<int, std::vector<int>>::const_iterator iter = sortMap.begin(); iter != sortMap.end(); ++iter)
+  for (const auto& [nex, det_idx_old] : sortMap)
   {
-    nex                          = iter->first;
-    std::vector<int> det_idx_old = iter->second;
     data.insert(data.end(), dataMap[nex].begin(), dataMap[nex].end());
     det_idx_order.insert(det_idx_order.end(), det_idx_old.begin(), det_idx_old.end());
     (*ndet_per_exc_lvl)[nex] = det_idx_old.size();
@@ -105,7 +104,7 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   assert(det_idx_order.size() == nci);
 
   // make reverse mapping (old to new) and reorder confgList by exc. lvl.
-  std::shared_ptr<std::vector<ci_configuration2>> tmp_confgList = std::make_shared<std::vector<ci_configuration2>>(nci);
+  auto tmp_confgList = std::make_shared<std::vector<ci_configuration2>>(nci);
   for (size_t i = 0; i < nci; i++)
   {
     det_idx_reverse[det_idx_order[i]] = i;
@@ -129,11 +128,6 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
          std::cout <<pairs[i].first <<"   " <<pairs[i].second << std::endl;
   */
 }
-
-//erase
-void out1(int n, std::string str = "NULL") {}
-//{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
-
 
 void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fromScratch)
 {
