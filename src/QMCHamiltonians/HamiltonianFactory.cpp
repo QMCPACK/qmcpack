@@ -278,7 +278,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
         std::unique_ptr<OrbitalImages> apot =
-            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, *targetPsi);
+            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, targetPsi->getSPOMap());
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }

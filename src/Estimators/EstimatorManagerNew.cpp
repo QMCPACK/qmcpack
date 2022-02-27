@@ -401,7 +401,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
         operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
-                                                                             pset.getSpeciesSet(), twf,
+                                                                             pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
       }
       else

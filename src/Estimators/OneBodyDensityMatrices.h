@@ -56,6 +56,8 @@ public:
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
   using Integrator = OneBodyDensityMatricesInput::Integrator;
 
+  using SPOMap = TrialWaveFunction::SPOMap;
+
   enum class Sampling
   {
     VOLUME_BASED,
@@ -151,7 +153,7 @@ public:
   OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
-                         const TrialWaveFunction& psi,
+                         const SPOMap& spomap,
                          ParticleSet& pset_target);
 
   /** Constructor used when spawing crowd clones

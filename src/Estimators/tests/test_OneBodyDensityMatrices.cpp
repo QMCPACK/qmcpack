@@ -226,7 +226,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto& twf       = *(wavefunction_pool.getWaveFunction("wavefunction"));
 
   // Good constructor
-  OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, twf, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, twf.getSPOMap(), pset_target);
   // make sure there is something in obdm's data
   OEBAccessor oeba(obdm);
   oeba[0] = 1.0;
@@ -234,7 +234,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   obdmt.testCopyConstructor(obdm);
 
   species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
-  CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, twf, pset_target),
+  CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, twf.getSPOMap(), pset_target),
                   UniformCommunicateError);
 
   outputManager.resume();
@@ -266,7 +266,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, twf, pset_target);
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, twf.getSPOMap(), pset_target);
 
     OneBodyDensityMatricesTests<double> obdmt;
     //Get control over which rng is used.
@@ -306,7 +306,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
-  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, twf, pset_target);
+  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, twf.getSPOMap(), pset_target);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
@@ -335,7 +335,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& pset_source      = *(particle_pool.getParticleSet("ion"));
   auto& species_set      = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, twf, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, twf.getSPOMap(), pset_target);
 
   std::vector<MCPWalker> walkers;
   int nwalkers = 3;
@@ -434,7 +434,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     auto& twf       = *(wavefunction_pool.getWaveFunction("wavefunction"));
     auto& pset_target      = *(particle_pool.getParticleSet("e"));
     auto& species_set      = pset_target.getSpeciesSet();
-    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, twf, pset_target);
+    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, twf.getSPOMap(), pset_target);
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.

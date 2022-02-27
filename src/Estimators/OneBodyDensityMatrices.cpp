@@ -30,7 +30,7 @@ using MatrixOperators::product_AtB;
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
-                                               const TrialWaveFunction& psi,
+                                               const SPOMap& spomap,
                                                ParticleSet& pset_target)
     : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
@@ -86,7 +86,13 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   auto& sposets = input_.get_basis_sets();
 
   for (int i = 0; i < sposets.size(); ++i)
-    basis_functions_.add(psi.getSPOSet(sposets[i]).makeClone());
+  {
+    auto spo_it = spomap.find(sposets[i]);
+    if (spo_it == spomap.end())
+      throw UniformCommunicateError("OneBodyDensityMatrices::OneBodyDensityMatrices sposet " + sposets[i] +
+                                    " does not exist.");
+    basis_functions_.add(spo_it->second->makeClone());
+  }
   basis_size_ = basis_functions_.size();
 
   if (basis_size_ < 1)

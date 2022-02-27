@@ -543,9 +543,14 @@ public:
 
   xmlNodePtr getNode() const { return myNode_; }
 
+  /// store an SPOSet map
   void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
 
+  /// look up SPOSet named 'name', if not found, throw exception.
   const SPOSet& getSPOSet(const std::string& name) const;
+
+  /// spomap_ reference accessor
+  const SPOMap& getSPOMap() const { return *spomap_; }
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);

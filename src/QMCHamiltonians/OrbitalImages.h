@@ -116,7 +116,7 @@ public:
   using GradVector  = SPOSet::GradVector;
   using Lattice_t   = ParticleSet::ParticleLayout;
   using PSPool      = std::map<std::string, std::unique_ptr<ParticleSet>>;
-
+  using SPOMap      = TrialWaveFunction::SPOMap;
 
   ///derivative types
   enum derivative_types_enum
@@ -216,7 +216,7 @@ public:
   std::vector<ValueType> orbital;
 
   //constructors
-  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const TrialWaveFunction& psi);
+  OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap);
   OrbitalImages(const OrbitalImages& other);
 
   //standard interface
@@ -271,7 +271,7 @@ public:
 
 private:
   /// reference to the sposet_builder_factory
-  const TrialWaveFunction& psi_;
+  const SPOMap& spomap_;
 };
 
 } // namespace qmcplusplus
