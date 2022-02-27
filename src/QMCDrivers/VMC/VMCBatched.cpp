@@ -54,7 +54,6 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
   const RefVectorWithLeader<ParticleSet> walker_elecs(crowd.get_walker_elecs()[0], crowd.get_walker_elecs());
   const RefVectorWithLeader<TrialWaveFunction> walker_twfs(crowd.get_walker_twfs()[0], crowd.get_walker_twfs());
 
-  auto& walker_leader = walker_elecs.getLeader();
   // This is really a waste the resources can be acquired outside of the run steps loop in VMCD!
   // I don't see an  easy way to measure the release without putting the weight of tons of timer_manager calls in
   // ResourceCollectionTeamLock's constructor.
@@ -67,7 +66,8 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.movepbyp_timer.start();
   const int num_walkers   = crowd.size();
-  const int num_particles = sft.population.get_num_particles();
+  auto& walker_leader = walker_elecs.getLeader();
+  const int num_particles = walker_leader.getTotalNum();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
   constexpr RealType mhalf(-0.5);
@@ -95,16 +95,14 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
     makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
 
     // up and down electrons are "species" within qmpack
-    for (int ig = 0; ig < step_context.get_num_groups(); ++ig) //loop over species
+    for (int ig = 0; ig < walker_leader.groups(); ++ig) //loop over species
     {
       TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
                                    sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
-      int start_index = step_context.getPtclGroupStart(ig);
-      int end_index   = step_context.getPtclGroupEnd(ig);
-      for (int iat = start_index; iat < end_index; ++iat)
+      for (int iat = walker_leader.first(ig); iat < walker_leader.last(ig); ++iat)
       {
         //get deltas for this particle (iat) for all walkers
         walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);

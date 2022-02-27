@@ -141,8 +141,7 @@ public:
   *
   */
   void makeLocalWalkers(int nwalkers,
-                        RealType reserve,
-                        const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+                        RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
 
