@@ -103,12 +103,12 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   const int num_walkers   = crowd.size();
-  const int num_particles = sft.population.get_num_particles();
+  auto& pset_leader = walker_elecs.getLeader();
+  const int num_particles = pset_leader.getTotalNum();
 
-  MCCoords<CT> drifts, walker_deltas;
+  MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
+  MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
   TWFGrads<CT> grads_now, grads_new;
-  drifts.resize(num_walkers);
-  walker_deltas.resize(num_walkers * num_particles);
   grads_now.resize(num_walkers);
   grads_new.resize(num_walkers);
 
@@ -134,16 +134,14 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   {
     ScopedTimer pbyp_local_timer(timers.movepbyp_timer);
-    for (int ig = 0; ig < step_context.get_num_groups(); ++ig)
+    for (int ig = 0; ig < pset_leader.groups(); ++ig)
     {
       TauParams<RealType, CT> taus(sft.qmcdrv_input.get_tau(), sft.population.get_ptclgrp_inv_mass()[ig],
                                    sft.qmcdrv_input.get_spin_mass());
 
       twf_dispatcher.flex_prepareGroup(walker_twfs, walker_elecs, ig);
 
-      int start_index = step_context.getPtclGroupStart(ig);
-      int end_index   = step_context.getPtclGroupEnd(ig);
-      for (int iat = start_index; iat < end_index; ++iat)
+      for (int iat = pset_leader.first(ig); iat < pset_leader.last(ig); ++iat)
       {
         //This is very useful thing to be able to look at in the debugger
 #ifndef NDEBUG
@@ -154,33 +152,21 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
                                                    : walkers_who_have_been_on_wire[iw] = 0;
         }
 #endif
-        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
-        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
-        //need to abstract this next bit of code
-        auto delta_r_start = walker_deltas.positions.begin() + iat * num_walkers;
-        auto delta_r_end   = delta_r_start + num_walkers;
-        std::transform(drifts.positions.begin(), drifts.positions.end(), delta_r_start, drifts.positions.begin(),
-                       [st = taus.sqrttau](const PosType& drift, const PosType& delta_r) {
-                         return drift + (st * delta_r);
-                       });
-        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-        if constexpr (CT == CoordsType::POS_SPIN)
-        {
-          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-          auto delta_spin_end   = delta_spin_start + num_walkers;
-          std::transform(drifts.spins.begin(), drifts.spins.end(), delta_spin_start, drifts.spins.begin(),
-                         [st = taus.spin_sqrttau](const ParticleSet::Scalar_t& spindrift,
-                                                  const ParticleSet::Scalar_t& delta_spin) {
-                           return spindrift + (st * delta_spin);
-                         });
-        }
+        //get deltas for this particle for all walkers
+        walker_deltas.getSubset(iat * num_walkers, num_walkers, deltas);
 
         // only DMC does this
         // TODO: rr needs a real name
         std::vector<RealType> rr(num_walkers, 0.0);
-        assert(rr.size() == delta_r_end - delta_r_start);
-        std::transform(delta_r_start, delta_r_end, rr.begin(),
+        assert(rr.size() == deltas.positions.size());
+        std::transform(deltas.positions.begin(), deltas.positions.end(), rr.begin(),
                        [t = taus.tauovermass](auto& delta_r) { return t * dot(delta_r, delta_r); });
+
+        twf_dispatcher.flex_evalGrad(walker_twfs, walker_elecs, iat, grads_now);
+        sft.drift_modifier.getDrifts(taus, grads_now, drifts);
+
+        scaleBySqrtTau(taus, deltas);
+        drifts += deltas;
 
 // in DMC this was done here, changed to match VMCBatched pending factoring to common source
 // if (rr > m_r2max)
@@ -197,42 +183,13 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
         twf_dispatcher.flex_calcRatioGrad(walker_twfs, walker_elecs, iat, ratios, grads_new);
 
-        std::transform(delta_r_start, delta_r_end, log_gf.begin(), [](const PosType& delta_r) {
-          constexpr RealType mhalf(-0.5);
-          return mhalf * dot(delta_r, delta_r);
-        });
+        computeLogGreensFunction(deltas, taus, log_gf);
 
-        sft.drift_modifier.getDrifts(taus, grads_new, drifts);
-        std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.positions.begin(), drifts.positions.begin(),
-                       [iat](const ParticleSet& ps, const PosType& drift) {
-                         return ps.R[iat] - ps.getActivePos() - drift;
-                       });
+        sft.drift_modifier.getDrifts(taus, grads_new, drifts_reverse);
 
-        std::transform(drifts.positions.begin(), drifts.positions.end(), log_gb.begin(),
-                       [halfovertau = taus.oneover2tau](const PosType& drift) {
-                         return -halfovertau * dot(drift, drift);
-                       });
+        drifts_reverse += drifts;
 
-        //want to remove CT==CoordsType::POS_SPIN from advanceWalkers. Need to abstract
-        if constexpr (CT == CoordsType::POS_SPIN)
-        {
-          auto delta_spin_start = walker_deltas.spins.begin() + iat * num_walkers;
-          auto delta_spin_end   = delta_spin_start + num_walkers;
-          std::transform(delta_spin_start, delta_spin_end, log_gf.begin(), log_gf.begin(),
-                         [](const ParticleSet::Scalar_t& delta_spin, const RealType& loggf) {
-                           constexpr RealType mhalf(-0.5);
-                           return loggf + mhalf * delta_spin * delta_spin;
-                         });
-          std::transform(walker_elecs.begin(), walker_elecs.end(), drifts.spins.begin(), drifts.spins.begin(),
-                         [iat](const ParticleSet& ps, const ParticleSet::Scalar_t& spindrift) {
-                           return ps.spins[iat] - ps.getActiveSpinVal() - spindrift;
-                         });
-          std::transform(drifts.spins.begin(), drifts.spins.end(), log_gb.begin(), log_gb.begin(),
-                         [halfovertau = taus.spin_oneover2tau](const ParticleSet::Scalar_t& spindrift,
-                                                               const RealType& loggb) {
-                           return loggb - halfovertau * spindrift * spindrift;
-                         });
-        }
+        computeLogGreensFunction(drifts_reverse, taus, log_gb);
 
         auto checkPhaseChanged = [&sft](const TrialWaveFunction& twf, int& is_reject) {
           if (sft.branch_engine.phaseChanged(twf.getPhaseDiff()))
@@ -495,9 +452,9 @@ bool DMCBatched::run()
     dmc_state.recalculate_properties_period = (qmc_driver_mode_[QMC_UPDATE_MODE])
         ? qmcdriver_input_.get_recalculate_properties_period()
         : (qmcdriver_input_.get_max_blocks() + 1) * qmcdriver_input_.get_max_steps();
-    dmc_state.is_recomputing_block = qmcdriver_input_.get_blocks_between_recompute()
-        ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
-        : false;
+    dmc_state.is_recomputing_block          = qmcdriver_input_.get_blocks_between_recompute()
+                 ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
+                 : false;
 
     for (UPtr<Crowd>& crowd : crowds_)
       crowd->startBlock(qmcdriver_input_.get_max_steps());
@@ -513,7 +470,7 @@ bool DMCBatched::run()
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now = walker_controller_->branch(iter, population_, iter == 0);
         branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
-                                                   population_.get_num_particles());
+                                                   population_.get_golden_electrons()->getTotalNum());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 

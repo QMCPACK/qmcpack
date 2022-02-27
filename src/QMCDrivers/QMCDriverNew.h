@@ -40,6 +40,9 @@
 #include "ProjectData.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
+#include "TauParams.hpp"
+#include "Particle/MCCoords.hpp"
+#include <algorithm>
 
 class Communicate;
 
@@ -138,8 +141,7 @@ public:
   *
   */
   void makeLocalWalkers(int nwalkers,
-                        RealType reserve,
-                        const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions);
+                        RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
 
@@ -237,6 +239,39 @@ public:
 
   void putTraces(xmlNodePtr txml) override {}
   void requestTraces(bool allow_traces) override {}
+
+  // scales a MCCoords by sqrtTau. Chooses appropriate taus by CT
+  template<typename RT, CoordsType CT>
+  static void scaleBySqrtTau(const TauParams<RT, CT>& taus, MCCoords<CT>& coords)
+  {
+    for (auto& pos : coords.positions)
+      pos *= taus.sqrttau;
+    if constexpr (CT == CoordsType::POS_SPIN)
+      for (auto& spin : coords.spins)
+        spin *= taus.spin_sqrttau;
+  }
+
+  /** calculates Green Function from displacements stored in MCCoords
+     * [param, out] log_g
+     */
+  template<typename RT, CoordsType CT>
+  static void computeLogGreensFunction(const MCCoords<CT>& coords,
+                                       const TauParams<RT, CT>& taus,
+                                       std::vector<QMCTraits::RealType>& log_gb)
+  {
+    assert(coords.positions.size() == log_gb.size());
+    std::transform(coords.positions.begin(), coords.positions.end(), log_gb.begin(),
+                   [halfovertau = taus.oneover2tau](const QMCTraits::PosType& pos) {
+                     return -halfovertau * dot(pos, pos);
+                   });
+    if constexpr (CT == CoordsType::POS_SPIN)
+      std::transform(coords.spins.begin(), coords.spins.end(), log_gb.begin(), log_gb.begin(),
+                     [halfovertau = taus.spin_oneover2tau](const QMCTraits::FullPrecRealType& spin,
+                                                           const QMCTraits::RealType& loggb) {
+                       return loggb - halfovertau * spin * spin;
+                     });
+  }
+
   /** }@ */
 
 protected:

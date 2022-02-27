@@ -108,7 +108,7 @@ TEST_CASE("gaussian random input zero", "[particle_base]")
 TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
 {
   int size_test = 7;
-  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test );
+  std::vector<double> gauss_random_vals(size_test * 3 + (size_test * 3) % 2 + size_test);
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(gauss_random_vals, rng);
@@ -123,21 +123,19 @@ TEST_CASE("makeGaussRandomWithEngine(MCCoords...)", "[particle_base]")
     }
   };
 
-  MCCoords<CoordsType::POS> mc_coords_rs;
-  mc_coords_rs.resize(size_test);
+  MCCoords<CoordsType::POS> mc_coords_rs(size_test);
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(mc_coords_rs, rng);
     checkRs(mc_coords_rs.positions);
   }
-  MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins;
-  mc_coords_rsspins.resize(size_test);
+  MCCoords<CoordsType::POS_SPIN> mc_coords_rsspins(size_test);
   {
     StdRandom<double> rng;
     makeGaussRandomWithEngine(mc_coords_rsspins, rng);
     checkRs(mc_coords_rsspins.positions);
     // Mod 2 is result of how gaussianDistribution is generated.
-    int offset_for_rs = ( 3 * size_test ) + (3* size_test) % 2;
+    int offset_for_rs = (3 * size_test) + (3 * size_test) % 2;
     for (int i = 0; i < size_test; ++i)
       CHECK(Approx(gauss_random_vals[offset_for_rs + i]) == mc_coords_rsspins.spins[i]);
   }

@@ -69,7 +69,7 @@ if(IS_GIT_PROJECT)
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d "\\n" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}

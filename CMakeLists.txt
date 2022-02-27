@@ -424,7 +424,7 @@ if(QMC_MPI)
   if(NOT MPI_FOUND)
     message(
       FATAL_ERROR
-        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
+        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=OFF' to cmake.")
   endif(NOT MPI_FOUND)
 
   if(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2")
@@ -462,7 +462,7 @@ if(QMC_MPI)
         "Building MPI version without using MPI compiler wrappers.\n"
         "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
         "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
-        "To build without MPI, pass '-DQMC_MPI=0' to cmake")
+        "To build without MPI, pass '-DQMC_MPI=OFF' to cmake")
     message(WARNING ${MPI_WARNING_LIST})
   endif()
 
