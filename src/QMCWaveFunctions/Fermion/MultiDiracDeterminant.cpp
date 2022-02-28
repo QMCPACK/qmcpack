@@ -87,8 +87,8 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
       }
   }
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
-  (*ndet_per_exc_lvl).clear();
-  (*ndet_per_exc_lvl).resize(nex_max + 1, 0);
+  (*ndets_per_excitation_level).clear();
+  (*ndets_per_excitation_level).resize(nex_max + 1, 0);
   //reorder configs and det data
   std::vector<size_t> det_idx_order;           // old indices in new order
   std::vector<size_t> det_idx_reverse(nci, 0); // new indices in old order
@@ -99,7 +99,7 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
   {
     data.insert(data.end(), dataMap[nex].begin(), dataMap[nex].end());
     det_idx_order.insert(det_idx_order.end(), det_idx_old.begin(), det_idx_old.end());
-    (*ndet_per_exc_lvl)[nex] = det_idx_old.size();
+    (*ndets_per_excitation_level)[nex] = det_idx_old.size();
   }
   assert(det_idx_order.size() == nci);
 
@@ -444,7 +444,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       detData(s.detData),
       uniquePairs(s.uniquePairs),
       DetSigns(s.DetSigns),
-      ndet_per_exc_lvl(s.ndet_per_exc_lvl)
+      ndets_per_excitation_level(s.ndets_per_excitation_level)
 {
   Optimizable = s.Optimizable;
 
@@ -487,11 +487,11 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  ciConfigList     = std::make_shared<std::vector<ci_configuration2>>();
-  detData          = std::make_shared<std::vector<int>>();
-  uniquePairs      = std::make_shared<std::vector<std::pair<int, int>>>();
-  DetSigns         = std::make_shared<std::vector<RealType>>();
-  ndet_per_exc_lvl = std::make_shared<std::vector<int>>();
+  ciConfigList               = std::make_shared<std::vector<ci_configuration2>>();
+  detData                    = std::make_shared<std::vector<int>>();
+  uniquePairs                = std::make_shared<std::vector<std::pair<int, int>>>();
+  DetSigns                   = std::make_shared<std::vector<RealType>>();
+  ndets_per_excitation_level = std::make_shared<std::vector<int>>();
 
   registerTimers();
 }

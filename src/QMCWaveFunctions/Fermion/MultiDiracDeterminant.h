@@ -595,7 +595,7 @@ private:
   /** number of unique determinants at each excitation level (relative to reference)
    *  {1, n_singles, n_doubles, n_triples, ...}
    */
-  std::shared_ptr<std::vector<int>> ndet_per_exc_lvl;
+  std::shared_ptr<std::vector<int>> ndets_per_excitation_level;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 
