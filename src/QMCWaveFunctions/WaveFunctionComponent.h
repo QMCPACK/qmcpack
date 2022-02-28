@@ -333,6 +333,13 @@ public:
     return ratioGrad(P, iat, grad_iat);
   }
 
+  template<CoordsType CT>
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValueType>& ratios,
+                            TWFGrads<CT>& grad_new) const;
+
   /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
    * @param p_list the list of ParticleSet pointers in a walker batch

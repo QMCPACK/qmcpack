@@ -119,6 +119,19 @@ PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType&
   return ValueType();
 }
 
+template<CoordsType CT>
+void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         TWFGrads<CT>& grad_new) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_ratioGradWithSpin(wfc_list, p_list, iat, ratios, grad_new.grads_positions, grad_new.grads_spins);
+  else
+    mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new.grads_positions);
+}
+
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
@@ -241,5 +254,17 @@ template void WaveFunctionComponent::mw_evalGrad<CoordsType::POS_SPIN>(
     const RefVectorWithLeader<ParticleSet>& p_list,
     int iat,
     TWFGrads<CoordsType::POS_SPIN>& grad_now) const;
+template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS>& grad_new) const;
+template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS_SPIN>& grad_new) const;
 
 } // namespace qmcplusplus

@@ -241,7 +241,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(grad_old.grads_positions[1][1] == ValueApprox(-1.7953759996));
     CHECK(grad_old.grads_positions[1][2] == ValueApprox(-5.8209379274));
 
-    std::vector<GradType> grad_new(2);
+    TWFGrads<CoordsType::POS> grad_new(2);
     std::vector<PsiValueType> ratios(2);
 
     ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displ);
@@ -255,12 +255,12 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(ratios[0] == ValueApprox(PsiValueType(-0.6181619459)));
     CHECK(ratios[1] == ValueApprox(PsiValueType(1.6186330488)));
 
-    CHECK(grad_new[0][0] == ValueApprox(1.2418467899));
-    CHECK(grad_new[0][1] == ValueApprox(1.2425653495));
-    CHECK(grad_new[0][2] == ValueApprox(4.4273237873));
-    CHECK(grad_new[1][0] == ValueApprox(-0.8633778143));
-    CHECK(grad_new[1][1] == ValueApprox(0.8245347691));
-    CHECK(grad_new[1][2] == ValueApprox(-5.1513380151));
+    CHECK(grad_new.grads_positions[0][0] == ValueApprox(1.2418467899));
+    CHECK(grad_new.grads_positions[0][1] == ValueApprox(1.2425653495));
+    CHECK(grad_new.grads_positions[0][2] == ValueApprox(4.4273237873));
+    CHECK(grad_new.grads_positions[1][0] == ValueApprox(-0.8633778143));
+    CHECK(grad_new.grads_positions[1][1] == ValueApprox(0.8245347691));
+    CHECK(grad_new.grads_positions[1][2] == ValueApprox(-5.1513380151));
   }
 }
 

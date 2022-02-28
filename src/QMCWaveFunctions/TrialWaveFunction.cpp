@@ -649,28 +649,15 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
 
 template<CoordsType CT>
 void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                         int iat,
-                                         std::vector<PsiValueType>& ratios,
-                                         TWFGrads<CT>& grads)
-{
-  if constexpr (CT == CoordsType::POS_SPIN)
-    mw_calcRatioGradWithSpin(wf_list, p_list, iat, ratios, grads.grads_positions, grads.grads_spins);
-  else
-    mw_calcRatioGrad(wf_list, p_list, iat, ratios, grads.grads_positions);
-}
-
-void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                         const RefVectorWithLeader<ParticleSet>& p_list,
-                                         int iat,
-                                         std::vector<PsiValueType>& ratios,
-                                         std::vector<GradType>& grad_new)
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 int iat,
+                                                 std::vector<PsiValueType>& ratios,
+                                                 TWFGrads<CT>& grad_new)
 {
   const int num_wf = wf_list.size();
-  grad_new.resize(num_wf);
-  std::fill(grad_new.begin(), grad_new.end(), GradType(0));
   ratios.resize(num_wf);
   std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
+  grad_new = TWFGrads<CT>(num_wf);
 
   auto& wf_leader = wf_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
@@ -680,7 +667,7 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
   if (wf_leader.use_tasking_)
   {
     std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
-    std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
+    std::vector<TWFGrads<CT>> grads_components(num_wfc, TWFGrads<CT>(num_wf));
     PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
     for (int i = 0; i < num_wfc; ++i)
     {
@@ -690,11 +677,11 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
     }
 
     for (int i = 0; i < num_wfc; ++i)
+    {
+      grad_new += grads_components[i];
       for (int iw = 0; iw < wf_list.size(); iw++)
-      {
         ratios[iw] *= ratios_components[i][iw];
-        grad_new[iw] += grads_components[i][iw];
-      }
+    }
   }
   else
   {
@@ -704,64 +691,6 @@ void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunc
       ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
       wavefunction_components[i]->mw_ratioGrad(wfc_list, p_list, iat, ratios_z, grad_new);
-      for (int iw = 0; iw < wf_list.size(); iw++)
-        ratios[iw] *= ratios_z[iw];
-    }
-  }
-  for (int iw = 0; iw < wf_list.size(); iw++)
-    wf_list[iw].PhaseDiff = std::imag(std::arg(ratios[iw]));
-}
-
-void TrialWaveFunction::mw_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                                 int iat,
-                                                 std::vector<PsiValueType>& ratios,
-                                                 std::vector<GradType>& grad_new,
-                                                 std::vector<ComplexType>& spingrad_new)
-{
-  const int num_wf = wf_list.size();
-  grad_new.resize(num_wf);
-  std::fill(grad_new.begin(), grad_new.end(), GradType(0));
-  ratios.resize(num_wf);
-  std::fill(ratios.begin(), ratios.end(), PsiValueType(1));
-  spingrad_new.resize(num_wf);
-  std::fill(spingrad_new.begin(), spingrad_new.end(), ComplexType(0));
-
-  auto& wf_leader = wf_list.getLeader();
-  ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
-  const int num_wfc             = wf_leader.Z.size();
-  auto& wavefunction_components = wf_leader.Z;
-
-  if (wf_leader.use_tasking_)
-  {
-    std::vector<std::vector<PsiValueType>> ratios_components(num_wfc, std::vector<PsiValueType>(wf_list.size()));
-    std::vector<std::vector<GradType>> grads_components(num_wfc, std::vector<GradType>(wf_list.size()));
-    std::vector<std::vector<ComplexType>> spingrads_components(num_wfc, std::vector<ComplexType>(wf_list.size()));
-    PRAGMA_OMP_TASKLOOP("omp taskloop default(shared)")
-    for (int i = 0; i < num_wfc; ++i)
-    {
-      ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
-      const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_ratioGradWithSpin(wfc_list, p_list, iat, ratios_components[i], grads_components[i],
-                                                       spingrads_components[i]);
-    }
-
-    for (int i = 0; i < num_wfc; ++i)
-      for (int iw = 0; iw < wf_list.size(); iw++)
-      {
-        ratios[iw] *= ratios_components[i][iw];
-        grad_new[iw] += grads_components[i][iw];
-        spingrad_new[iw] += spingrads_components[i][iw];
-      }
-  }
-  else
-  {
-    std::vector<PsiValueType> ratios_z(wf_list.size());
-    for (int i = 0; i < num_wfc; ++i)
-    {
-      ScopedTimer z_timer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
-      const auto wfc_list(extractWFCRefList(wf_list, i));
-      wavefunction_components[i]->mw_ratioGradWithSpin(wfc_list, p_list, iat, ratios_z, grad_new, spingrad_new);
       for (int iw = 0; iw < wf_list.size(); iw++)
         ratios[iw] *= ratios_z[iw];
     }
