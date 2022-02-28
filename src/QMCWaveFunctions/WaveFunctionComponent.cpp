@@ -78,6 +78,18 @@ void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFuncti
     wfc_list[iw].prepareGroup(p_list[iw], ig);
 }
 
+template<CoordsType CT>
+void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                        const int iat,
+                                        TWFGrads<CT>& grad_now) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_evalGradWithSpin(wfc_list, p_list, iat, grad_now.grads_positions, grad_now.grads_spins);
+  else
+    mw_evalGrad(wfc_list, p_list, iat, grad_now.grads_positions);
+}
+
 void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                         int iat,
@@ -218,5 +230,16 @@ void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TW
   o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
   APP_ABORT(o.str());
 }
+
+template void WaveFunctionComponent::mw_evalGrad<CoordsType::POS>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    TWFGrads<CoordsType::POS>& grad_now) const;
+template void WaveFunctionComponent::mw_evalGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    TWFGrads<CoordsType::POS_SPIN>& grad_now) const;
 
 } // namespace qmcplusplus

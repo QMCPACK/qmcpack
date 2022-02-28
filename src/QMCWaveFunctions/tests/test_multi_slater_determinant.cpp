@@ -17,6 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "TWFGrads.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -228,17 +229,17 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
 
-    std::vector<GradType> grad_old(2);
+    TWFGrads<CoordsType::POS> grad_old(2);
 
     const int moved_elec_id = 1;
     TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
-    CHECK(grad_old[0][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[0][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[0][2] == ValueApprox(-5.8209379274));
-    CHECK(grad_old[1][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[1][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[1][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[0][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[0][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[0][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[1][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[1][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[1][2] == ValueApprox(-5.8209379274));
 
     std::vector<GradType> grad_new(2);
     std::vector<PsiValueType> ratios(2);

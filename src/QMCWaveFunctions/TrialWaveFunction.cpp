@@ -546,70 +546,24 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
                                     int iat,
                                     TWFGrads<CT>& grads)
 {
-  if constexpr (CT == CoordsType::POS_SPIN)
-    mw_evalGradWithSpin(wf_list, p_list, iat, grads.grads_positions, grads.grads_spins);
-  else
-    mw_evalGrad(wf_list, p_list, iat, grads.grads_positions);
-}
-
-void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                    int iat,
-                                    std::vector<GradType>& grad_now)
-{
   const int num_wf = wf_list.size();
-  grad_now.resize(num_wf);
-  std::fill(grad_now.begin(), grad_now.end(), GradType(0));
+  grads = TWFGrads<CT>(num_wf); //ensure elements are set to zero
 
   auto& wf_leader = wf_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
   // Right now mw_evalGrad can only be called through an concrete instance of a wavefunctioncomponent
-  const int num_wfc             = wf_leader.Z.size();
+  const int num_wfc = wf_leader.Z.size();
   auto& wavefunction_components = wf_leader.Z;
 
-  std::vector<GradType> grad_now_z(num_wf);
-  for (int i = 0; i < num_wfc; ++i)
+  TWFGrads<CT> grads_z(num_wf);
+  for (int i = 0; i < num_wfc; i++)
   {
     ScopedTimer localtimer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->mw_evalGrad(wfc_list, p_list, iat, grad_now_z);
-    for (int iw = 0; iw < wf_list.size(); iw++)
-      grad_now[iw] += grad_now_z[iw];
+    wavefunction_components[i]->mw_evalGrad(wfc_list, p_list, iat, grads_z);
+    grads += grads_z;
   }
 }
-
-void TrialWaveFunction::mw_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                            int iat,
-                                            std::vector<GradType>& grad_now,
-                                            std::vector<ComplexType>& spingrad_now)
-{
-  const int num_wf = wf_list.size();
-  grad_now.resize(num_wf);
-  spingrad_now.resize(num_wf);
-  std::fill(grad_now.begin(), grad_now.end(), GradType(0));
-  std::fill(spingrad_now.begin(), spingrad_now.end(), ComplexType(0));
-
-  auto& wf_leader = wf_list.getLeader();
-  ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
-  const int num_wfc             = wf_leader.Z.size();
-  auto& wavefunction_components = wf_leader.Z;
-
-  std::vector<GradType> grad_now_z(num_wf);
-  std::vector<ComplexType> spingrad_now_z(num_wf);
-  for (int i = 0; i < num_wfc; ++i)
-  {
-    ScopedTimer localtimer(wf_leader.WFC_timers_[VGL_TIMER + TIMER_SKIP * i]);
-    const auto wfc_list(extractWFCRefList(wf_list, i));
-    wavefunction_components[i]->mw_evalGradWithSpin(wfc_list, p_list, iat, grad_now_z, spingrad_now_z);
-    for (int iw = 0; iw < wf_list.size(); iw++)
-    {
-      grad_now[iw] += grad_now_z[iw];
-      spingrad_now[iw] += spingrad_now_z[iw];
-    }
-  }
-}
-
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
 // w.r.t. to the electrons of the wave function.

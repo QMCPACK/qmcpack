@@ -423,27 +423,6 @@ public:
                           int iat,
                           TWFGrads<CT>& grads);
 
-  /** batched version of evalGrad
-    *
-    * This is static because it should have no direct access
-    * to any TWF.
-    */
-  static void mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list,
-                          int iat,
-                          std::vector<GradType>& grad_now);
-
-  /** batched version of evalGradWithSpin
-    *
-    * This is static because it should have no direct access
-    * to any TWF.
-    */
-  static void mw_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  std::vector<GradType>& grad_now,
-                                  std::vector<ComplexType>& spingrad_now);
-
   void rejectMove(int iat);
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false);

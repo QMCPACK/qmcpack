@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "type_traits/template_types.hpp"
+#include "TWFGrads.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
@@ -234,6 +235,7 @@ public:
     return GradType();
   }
 
+
   /** return the current spin gradient for the iat-th particle
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
    * @param P quantum particle set
@@ -241,6 +243,15 @@ public:
    * @return the spin gradient of the iat-th particle
    */
   virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) { return evalGrad(P, iat); }
+
+  /** compute the current gradients for the iat-th particle of multiple walkers
+   * @param[out] grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  template<CoordsType CT>
+  void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list,
+                   const int iat,
+                   TWFGrads<CT>& grads_now) const;
 
   /** compute the current gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
