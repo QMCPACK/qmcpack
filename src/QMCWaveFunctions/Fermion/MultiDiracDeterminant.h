@@ -592,8 +592,8 @@ private:
   std::shared_ptr<std::vector<int>> detData;
   std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
   std::shared_ptr<std::vector<RealType>> DetSigns;
-  /* number of unique determinants at each excitation level (relative to reference)
-   * {1, n_singles, n_doubles, n_triples, ...}
+  /** number of unique determinants at each excitation level (relative to reference)
+   *  {1, n_singles, n_doubles, n_triples, ...}
    */
   std::shared_ptr<std::vector<int>> ndet_per_exc_lvl;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
