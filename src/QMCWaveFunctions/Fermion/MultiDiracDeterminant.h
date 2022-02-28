@@ -80,10 +80,11 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    *@param ref_det_id id of the reference determinant
+   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
    *
    * Note: ciConfigList should have been populated when calling this function
    */
-  void set(int first, int nel, int ref_det_id);
+  void set(int first, int nel, int ref_det_id, std::vector<size_t>& C2nodes_ptcl);
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
@@ -222,12 +223,22 @@ public:
    * END END END
    ***************************************************************************/
 
-  // create necessary structures used in the evaluation of the determinants
-  // this works with confgList, which shouldn't change during a simulation
+  /** create necessary structures used in the evaluation of the determinants
+   * sort confgList by excitation level
+   * confgList shouldn't change during a simulation after it is sorted here
+   *
+   *@param ref reference configuration
+   *@param data data structure holding information about excitation holes/particles (*this->detData)
+   *@param pairs all hole/particle pairs needed to construct excitation matrices for table method (*this->uniquePairs)
+   *@param sign sign of each excitation (parity of permutation of orbital indices) (*this->DetSigns)
+   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
+   *
+   */
   void createDetData(const ci_configuration2& ref,
                      std::vector<int>& data,
                      std::vector<std::pair<int, int>>& pairs,
-                     std::vector<RealType>& sign);
+                     std::vector<RealType>& sign,
+                     std::vector<size_t>& C2nodes_ptcl);
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
@@ -581,6 +592,10 @@ private:
   std::shared_ptr<std::vector<int>> detData;
   std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
   std::shared_ptr<std::vector<RealType>> DetSigns;
+  /** number of unique determinants at each excitation level (relative to reference)
+   *  {1, n_singles, n_doubles, n_triples, ...}
+   */
+  std::shared_ptr<std::vector<int>> ndets_per_excitation_level;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 
