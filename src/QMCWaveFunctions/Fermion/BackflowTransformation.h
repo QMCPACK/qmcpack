@@ -50,7 +50,7 @@ public:
 
   using HessArray = Array<HessType, 3>;
 
-  using PSetMap = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
   //using GradArray_t = Array<GradType,3>      ;
   //using PosArray_t = Array<PosType,3>       ;
 

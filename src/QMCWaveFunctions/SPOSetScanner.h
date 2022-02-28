@@ -25,7 +25,7 @@ namespace qmcplusplus
 class SPOSetScanner
 {
 public:
-  using PtclPool    = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PtclPool    = std::map<std::string, const std::unique_ptr<ParticleSet>>;
   using SPOSetMap   = std::map<std::string, const std::unique_ptr<const SPOSet>>;
   using RealType    = QMCTraits::RealType;
   using ValueType   = QMCTraits::ValueType;

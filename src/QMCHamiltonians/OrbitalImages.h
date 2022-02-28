@@ -114,7 +114,7 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
   using Lattice_t   = ParticleSet::ParticleLayout;
-  using PSPool      = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSPool      = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   ///derivative types
   enum derivative_types_enum

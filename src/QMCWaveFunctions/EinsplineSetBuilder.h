@@ -116,7 +116,7 @@ struct H5OrbSet
 class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
-  using PSetMap      = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSetMap      = std::map<std::string, const std::unique_ptr<ParticleSet>>;
   using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, DIM>;
 
   ///reference to the particleset pool
