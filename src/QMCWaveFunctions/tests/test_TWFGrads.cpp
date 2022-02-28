@@ -19,17 +19,12 @@ TEST_CASE("TWFGrads", "[QMCWaveFunctions]")
 {
   {
     constexpr auto CT = CoordsType::POS;
-    auto grads        = TWFGrads<CT>();
-    REQUIRE(grads.grads_positions.size() == 0);
-    grads.resize(7);
+    auto grads        = TWFGrads<CT>(7);
     REQUIRE(grads.grads_positions.size() == 7);
   }
   {
     constexpr auto CT = CoordsType::POS_SPIN;
-    auto grads    = TWFGrads<CT>();
-    REQUIRE(grads.grads_positions.size() == 0);
-    REQUIRE(grads.grads_spins.size() == 0);
-    grads.resize(5);
+    auto grads    = TWFGrads<CT>(5);
     REQUIRE(grads.grads_positions.size() == 5);
     REQUIRE(grads.grads_spins.size() == 5);
   }

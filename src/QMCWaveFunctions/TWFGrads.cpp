@@ -14,14 +14,6 @@
 namespace qmcplusplus
 {
 
-void TWFGrads<CoordsType::POS>::resize(const std::size_t size) { grads_positions.resize(size); }
-
-void TWFGrads<CoordsType::POS_SPIN>::resize(const std::size_t size)
-{
-  grads_positions.resize(size);
-  grads_spins.resize(size);
-}
-
 template struct TWFGrads<CoordsType::POS>;
 template struct TWFGrads<CoordsType::POS_SPIN>;
 } // namespace qmcplusplus
