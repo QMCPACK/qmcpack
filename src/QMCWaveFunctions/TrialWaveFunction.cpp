@@ -42,8 +42,10 @@ typedef enum
 static const std::vector<std::string> suffixes{"V",         "VGL",    "accept", "NLratio",
                                                "recompute", "buffer", "derivs", "preparegroup"};
 
-TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, bool create_local_resource)
-    : myName(aname),
+TrialWaveFunction::TrialWaveFunction(const std::string_view aname, bool tasking)
+    : myNode_(NULL),
+      spomap_(std::make_shared<SPOMap>()),
+      myName(aname),
       BufferCursor(0),
       BufferCursor_scalar(0),
       PhaseValue(0.0),
@@ -67,7 +69,11 @@ TrialWaveFunction::TrialWaveFunction(const std::string& aname, bool tasking, boo
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction
 *  or not. It will depend on I/O implementation.
 */
-TrialWaveFunction::~TrialWaveFunction() {}
+TrialWaveFunction::~TrialWaveFunction()
+{
+  if (myNode_ != NULL)
+    xmlFreeNode(myNode_);
+}
 
 void TrialWaveFunction::startOptimization()
 {
@@ -101,6 +107,13 @@ void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& at
   Z.emplace_back(std::move(aterm));
 }
 
+const SPOSet& TrialWaveFunction::getSPOSet(const std::string& name) const
+{
+  auto spoit = spomap_->find(name);
+  if (spoit == spomap_->end())
+    throw std::runtime_error("SPOSet " + name + " cannot be found!");
+  return *spoit->second;
+}
 
 /** return log(|psi|)
 *
@@ -1166,7 +1179,7 @@ void TrialWaveFunction::reset() {}
 
 std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
-  auto myclone                 = std::make_unique<TrialWaveFunction>(myName, use_tasking_, false);
+  auto myclone                 = std::make_unique<TrialWaveFunction>(myName, use_tasking_);
   myclone->BufferCursor        = BufferCursor;
   myclone->BufferCursor_scalar = BufferCursor_scalar;
   for (int i = 0; i < Z.size(); ++i)

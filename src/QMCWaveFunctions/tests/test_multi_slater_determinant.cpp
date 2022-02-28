@@ -80,18 +80,17 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  CHECK(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  CHECK(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  CHECK(spo.getOrbitalSetSize() == check_spo_size);
+  CHECK(spo.getBasisSetSize() == check_basisset_size);
 
   ions_.update();
   elec_.update();
 
-  auto& twf(*wf_factory.getTWF());
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
@@ -372,18 +371,17 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  CHECK(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  CHECK(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  CHECK(spo.getOrbitalSetSize() == check_spo_size);
+  CHECK(spo.getBasisSetSize() == check_basisset_size);
 
   ions_.update();
   elec_.update();
 
-  auto& twf(*wf_factory.getTWF());
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 

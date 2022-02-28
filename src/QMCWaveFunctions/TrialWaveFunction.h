@@ -74,6 +74,8 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
 #ifdef QMC_CUDA
   using CTS          = CUDAGlobalTypes;
   using RealMatrix_t = WaveFunctionComponent::RealMatrix_t;
@@ -95,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
+  TrialWaveFunction(const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -537,8 +539,30 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
+  void storeXMLNode(xmlNodePtr node) { myNode_ = xmlCopyNode(node, 1); }
+
+  xmlNodePtr getNode() const { return myNode_; }
+
+  /// store an SPOSet map
+  void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
+
+  /// look up SPOSet named 'name', if not found, throw exception.
+  const SPOSet& getSPOSet(const std::string& name) const;
+
+  /// spomap_ reference accessor
+  const SPOMap& getSPOMap() const { return *spomap_; }
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  /** XML input node for a many-body wavefunction. Copied from the original one.
+   * WFOpt driver needs to look it up and make its own copies.
+   * YL: updating parameters in an XML file is extremely messy. Better to make WFOpt using h5 only.
+   */
+  xmlNodePtr myNode_;
+
+  /// Owned SPOSets. Once a TWF is fully built, SPOSet lookup should be done via TWF.
+  const std::shared_ptr<SPOMap> spomap_;
 
   ///getName is in the way
   const std::string myName;

@@ -85,7 +85,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   elec.R[1][1] = 1.9679;
   elec.R[1][2] = -0.0128914;
 
-  std::map<string, std::unique_ptr<ParticleSet>> pp;
+  std::map<string, const std::unique_ptr<ParticleSet>> pp;
   pp.emplace(ions_ptr->getName(), std::move(ions_ptr));
   pp.emplace(elec_ptr->getName(), std::move(elec_ptr));
 

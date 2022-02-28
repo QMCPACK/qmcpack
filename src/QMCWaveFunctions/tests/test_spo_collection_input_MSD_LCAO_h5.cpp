@@ -69,13 +69,12 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
+  REQUIRE(spo.getBasisSetSize() == check_basisset_size);
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd", "[wavefunction]")
@@ -248,13 +247,12 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  REQUIRE(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  REQUIRE(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
+  REQUIRE(spo.getBasisSetSize() == check_basisset_size);
 }
 
 TEST_CASE("SPO input spline from xml LiH_msd arbitrary species", "[wavefunction]")

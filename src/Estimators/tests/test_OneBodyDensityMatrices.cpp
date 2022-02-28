@@ -223,10 +223,10 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   // Good constructor
-  OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, wf_factory, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, spomap, pset_target);
   // make sure there is something in obdm's data
   OEBAccessor oeba(obdm);
   oeba[0] = 1.0;
@@ -234,7 +234,7 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   obdmt.testCopyConstructor(obdm);
 
   species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
-  CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, wf_factory, pset_target),
+  CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, spomap, pset_target),
                   UniformCommunicateError);
 
   outputManager.resume();
@@ -255,9 +255,9 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& species_set      = pset_target.getSpeciesSet();
-  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
-  auto samplingCaseRunner = [&pset_target, &species_set, &wf_factory](Inputs test_case) {
+  auto samplingCaseRunner = [&pset_target, &species_set, &spomap](Inputs test_case) {
     Libxml2Document doc;
 
     bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[test_case]);
@@ -266,7 +266,7 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     OneBodyDensityMatricesInput obdmi(node);
 
-    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
+    OneBodyDensityMatrices obDenMat(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
 
     OneBodyDensityMatricesTests<double> obdmt;
     //Get control over which rng is used.
@@ -297,7 +297,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& species_set      = pset_target.getSpeciesSet();
-  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[Inputs::valid_obdm_input]);
@@ -306,7 +306,7 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
 
-  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
+  OneBodyDensityMatrices original(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
@@ -331,11 +331,11 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   OneBodyDensityMatricesInput obdmi(node);
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& pset_source      = *(particle_pool.getParticleSet("ion"));
   auto& species_set      = pset_target.getSpeciesSet();
-  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
+  OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
 
   std::vector<MCPWalker> walkers;
   int nwalkers = 3;
@@ -431,10 +431,10 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
 
     auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
     auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-    auto& wf_factory       = *(wavefunction_pool.getWaveFunctionFactory("wavefunction"));
+    auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
     auto& pset_target      = *(particle_pool.getParticleSet("e"));
     auto& species_set      = pset_target.getSpeciesSet();
-    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, wf_factory, pset_target);
+    OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 
     // Because we can't control or consistent know the global random state we must initialize particle positions to known values.

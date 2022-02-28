@@ -80,9 +80,9 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
   xmlNodePtr jas1 = doc.getRoot();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(jas1);
-  auto& twf(*wf_factory.getTWF());
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();
   auto cloned_j1spin       = twf_component_list[0]->makeClone(elec_);
