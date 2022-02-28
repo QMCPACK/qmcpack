@@ -512,7 +512,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (!success)
     return false;
 
-  const auto maxloc = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
+  const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
     return std::norm(lhs) < std::norm(rhs);
   });
   const int refdet_id = std::distance(C.begin(), maxloc);
