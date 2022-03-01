@@ -153,14 +153,7 @@ public:
   void resize(int, int);
   void initialize();
 
-  /// if true, the CI coefficients are optimized
-  bool CI_Optimizable;
-  size_t ActiveSpin;
-  bool usingCSF;
-  PsiValueType curRatio;
-
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
-  std::map<std::string, size_t> SPOSetID;
 
   /** map determinant in linear combination to unique det list
    * map global det id to unique det id. [spin, global det id] = unique det id
@@ -168,29 +161,19 @@ public:
   std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
-  /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
-  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
-  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
-
-  ParticleSet::ParticleGradient myG, myG_temp;
-  ParticleSet::ParticleLaplacian myL, myL_temp;
-  std::vector<ValueVector> laplSum;
-
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
+
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
+
+  bool usingCSF;
   // coefficients of csfs, these are only used during optm
   std::shared_ptr<std::vector<ValueType>> CSFcoeff;
   // number of dets per csf
   std::shared_ptr<std::vector<size_t>> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
   std::shared_ptr<std::vector<RealType>> CSFexpansion;
-
-  // temporary storage for evaluateDerivatives
-  ParticleSet::ParticleGradient gmPG;
-  std::vector<Matrix<RealType>> dpsia, dLa;
-  std::vector<Array<GradType, OHMMS_DIM>> dGa;
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
@@ -257,6 +240,24 @@ private:
   void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
                                                   std::vector<ValueType>& dlogpsi);
+
+  size_t ActiveSpin;
+  PsiValueType curRatio;
+
+  /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
+  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
+
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
+  std::vector<ValueVector> laplSum;
+
+  // temporary storage for evaluateDerivatives
+  ParticleSet::ParticleGradient gmPG;
+  std::vector<Matrix<RealType>> dpsia, dLa;
+  std::vector<Array<GradType, OHMMS_DIM>> dGa;
 };
 
 } // namespace qmcplusplus
