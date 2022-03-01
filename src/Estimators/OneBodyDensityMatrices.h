@@ -14,11 +14,13 @@
 
 #include <vector>
 #include <functional>
+#include <memory>
 
 #include "Estimators/OperatorEstBase.h"
 #include "type_traits/complex_help.hpp"
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include <SpeciesSet.h>
@@ -55,8 +57,6 @@ public:
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
   using Integrator = OneBodyDensityMatricesInput::Integrator;
 
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
-
   enum class Sampling
   {
     VOLUME_BASED,
@@ -65,7 +65,7 @@ public:
   };
 
 private:
-  OneBodyDensityMatricesInput input_;
+  const OneBodyDensityMatricesInput& input_;
   Lattice lattice_;
   SpeciesSet species_;
 
@@ -149,10 +149,10 @@ public:
   /** Standard Constructor
    *  Call this to make a new OBDM this is what you should be calling
    */
-  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+  OneBodyDensityMatrices(const OneBodyDensityMatricesInput& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
-                         const SPOMap& spomap,
+                         const SPOSetBuilderFactory::SPOMap& spomap,
                          ParticleSet& pset_target);
 
   /** Constructor used when spawing crowd clones

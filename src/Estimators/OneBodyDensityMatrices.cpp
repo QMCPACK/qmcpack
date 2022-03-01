@@ -18,6 +18,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "type_traits/complex_help.hpp"
 
 namespace qmcplusplus
@@ -26,10 +27,10 @@ using MatrixOperators::diag_product;
 using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
-OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
+OneBodyDensityMatrices::OneBodyDensityMatrices(const OneBodyDensityMatricesInput& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
-                                               const SPOMap& spomap,
+                                               const SPOSetBuilderFactory::SPOMap& spomap,
                                                ParticleSet& pset_target)
     : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
