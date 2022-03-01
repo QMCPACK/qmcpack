@@ -43,7 +43,7 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   WaveFunctionFactory::PSetMap particle_set_map;
   particle_set_map.emplace("e", std::move(qp));
 
-  WaveFunctionFactory wff("psi0", *particle_set_map["e"], particle_set_map, c);
+  WaveFunctionFactory wff(*particle_set_map["e"], particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction> \
          <jastrow type=\"Two-Body\" name=\"J2\" function=\"bspline\" print=\"yes\" gpu=\"no\"> \
@@ -60,12 +60,12 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff.put(root);
+  auto twf_ptr = wff.buildTWF(root);
 
-  REQUIRE(wff.getTWF() != nullptr);
-  REQUIRE(wff.getTWF()->size() == 1);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 1);
 
-  auto& j2_base = wff.getTWF()->getOrbitals()[0];
+  auto& j2_base = twf_ptr->getOrbitals()[0];
   REQUIRE(j2_base != nullptr);
 }
 } // namespace qmcplusplus

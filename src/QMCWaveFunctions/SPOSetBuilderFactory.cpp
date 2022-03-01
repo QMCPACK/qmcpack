@@ -42,7 +42,7 @@
 
 namespace qmcplusplus
 {
-SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
+const SPOSet* SPOSetBuilderFactory::getSPOSet(const std::string& name) const
 {
   if (auto spoit = sposets.find(name); spoit == sposets.end())
   {

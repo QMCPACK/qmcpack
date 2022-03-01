@@ -28,6 +28,7 @@
 #include "CPU/math.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -232,6 +233,26 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
   return simd::dot(Minv.cols(), Minv.data() + colchanged, Minv.cols(), newv.data(), 1);
 }
 
+/** determinant ratio with a column substitution
+ * @param Minv inverse matrix
+ * @param newv column vector
+ * @param colchanged column index to be replaced
+ * @return \f$ M^{new}/M\f$
+ */
+template<typename T>
+inline void mw_DetRatioByColumn(const int nw,
+                                int colchanged,
+                                const RefVector<Matrix<T>>& Minv_list,
+                                const RefVector<Vector<T>>& newv_list,
+                                std::vector<T>& curRatio_list)
+
+{
+  //use BLAS dot since the stride is not uniform
+  for (size_t iw = 0; iw < nw; iw++)
+    curRatio_list[iw] = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
+                                        Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
+}
+
 /** update a inverse matrix by a row substitution
  * @param Minv in/out inverse matrix
  * @param newrow row vector
@@ -283,5 +304,18 @@ inline void InverseUpdateByColumn(MatA& Minv,
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
 
+template<typename T>
+inline void mw_InverseUpdateByColumn(const int nw,
+                                     const RefVector<Matrix<T>>& Minv_list,
+                                     const RefVector<Vector<T>>& newcol_list,
+                                     const RefVector<Vector<T>>& rvec_list,
+                                     const RefVector<Vector<T>>& rvecinv_list,
+                                     int colchanged,
+                                     std::vector<T> ratiolist)
+{
+  for (size_t iw = 0; iw < nw; iw++)
+    det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
+                   ratiolist[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
+}
 } // namespace qmcplusplus
 #endif

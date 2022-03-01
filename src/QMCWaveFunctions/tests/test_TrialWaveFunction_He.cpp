@@ -26,10 +26,9 @@
 
 namespace qmcplusplus
 {
-void setup_He_wavefunction(Communicate* c,
+std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
-                           std::unique_ptr<WaveFunctionFactory>& wff,
                            const WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
@@ -70,7 +69,7 @@ void setup_He_wavefunction(Communicate* c,
 
   elec.addTable(ions);
 
-  wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -107,10 +106,12 @@ void setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff->put(root);
+  auto twf_ptr = wff.buildTWF(root);
 
-  REQUIRE(wff->getTWF() != nullptr);
-  REQUIRE(wff->getTWF()->size() == 2);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 2);
+
+  return twf_ptr;
 }
 
 #ifndef QMC_CUDA
@@ -131,10 +132,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
 
-  std::unique_ptr<WaveFunctionFactory> wff;
-
-  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+  auto psi_ptr = setup_He_wavefunction(c, elec, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
 
   ions.update();
   elec.update();
@@ -237,12 +236,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
   particle_set_map.emplace(elec1_ptr->getName(), std::move(elec1_ptr));
 
-  std::unique_ptr<WaveFunctionFactory> wff;
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+  auto psi_ptr = setup_He_wavefunction(c, elec1, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
   ions.update();
   elec1.update();
 

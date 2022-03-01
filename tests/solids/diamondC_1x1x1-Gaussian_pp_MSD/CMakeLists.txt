@@ -61,7 +61,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "potential" "-22.94373204 0.000003")
       list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "eeenergy" "-2.97216487 0.000002")
       list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "localecp" "-6.84338204 0.000002")
-      list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "-0.35251498 0.000001")
+      list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "-0.35251498 0.000002")
       list(APPEND det_diamondC_1x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-12.77567016 0.000001")
     else()
       #DMC

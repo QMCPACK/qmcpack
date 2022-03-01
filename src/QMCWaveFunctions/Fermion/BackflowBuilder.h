@@ -36,7 +36,7 @@ class BackflowBuilder
   using RealType    = BackflowFunctionBase::RealType;
   using HandlerType = LRHandlerBase;
   using GridType    = LinearGrid<RealType>;
-  using PSetMap     = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
 public:
   BackflowBuilder(ParticleSet& p, const PSetMap& pool);

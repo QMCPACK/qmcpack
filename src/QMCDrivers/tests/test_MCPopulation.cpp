@@ -28,12 +28,11 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto wf_factory        = wavefunction_pool.getWaveFunctionFactory("wavefunction");
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction twf;
   WalkerConfigurations walker_confs;
 
-  MCPopulation population(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"), &twf, wf_factory,
+  MCPopulation population(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"), &twf,
                           hamiltonian_pool.getPrimary());
 
   population.createWalkers(8, 2.0);
@@ -64,10 +63,9 @@ TEST_CASE("MCPopulation::redistributeWalkers", "[particle][population]")
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto wf_factory        = wavefunction_pool.getWaveFunctionFactory("wavefunction");
   WalkerConfigurations walker_confs;
   MCPopulation population(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                          wavefunction_pool.getPrimary(), wf_factory, hamiltonian_pool.getPrimary());
+                          wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary());
 
   population.createWalkers(8);
   REQUIRE(population.get_walkers().size() == 8);
