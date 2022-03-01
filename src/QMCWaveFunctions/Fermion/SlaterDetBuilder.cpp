@@ -454,8 +454,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 {
   const size_t nGroups = targetPtcl.groups();
 
-  auto C2nodes_ptr = std::make_unique<std::vector<std::vector<size_t>>>(nGroups);
-  auto& C2nodes(*C2nodes_ptr);
+  std::vector<std::vector<size_t>> C2nodes(nGroups);
+  auto C2nodes_sorted_ptr = std::make_unique<std::vector<std::vector<size_t>>>(nGroups);
+  auto& C2nodes_sorted(*C2nodes_sorted_ptr);
 
   auto C_ptr = std::make_unique<std::vector<ValueType>>();
   auto& C(*C_ptr);
@@ -508,9 +509,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
-    std::vector<ci_configuration2>& list = dets[grp]->getCIConfigList();
-    list.resize(uniqueConfgs[grp].size());
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),
+                                                              nptcls[grp]));
+    std::vector<ci_configuration2> list(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
       list[i].occup.resize(nptcls[grp]);
@@ -524,7 +525,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    dets[grp]->set(targetPtcl.first(grp), nptcls[grp], refdet_id, C2nodes[grp]);
+    dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
   if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
@@ -598,7 +599,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
   msd_fast->initialize();
 
-  msd_fast->C2node = std::move(C2nodes_ptr);
+  msd_fast->C2node = std::move(C2nodes_sorted_ptr);
   msd_fast->C      = std::move(C_ptr);
   msd_fast->myVars = std::move(myVars_ptr);
 
