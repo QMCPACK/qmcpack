@@ -76,16 +76,6 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   *@param ref_det_id id of the reference determinant
-   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
-   *
-   * Note: ciConfigList should have been populated when calling this function
-   */
-  //  void set(int first, int nel, int ref_det_id, std::vector<size_t>& C2nodes_ptcl);
-
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
 
@@ -223,16 +213,14 @@ public:
    * END END END
    ***************************************************************************/
 
-  /** create necessary structures used in the evaluation of the determinants
-   * sort confgList by excitation level
-   * confgList shouldn't change during a simulation after it is sorted here
+  /** create necessary structures related to unique determinants
+   * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
+   * ciConfigList shouldn't change during a simulation after it is sorted here
    *
-   *@param ref reference configuration
-   *@param data data structure holding information about excitation holes/particles (*this->detData)
-   *@param pairs all hole/particle pairs needed to construct excitation matrices for table method (*this->uniquePairs)
-   *@param sign sign of each excitation (parity of permutation of orbital indices) (*this->DetSigns)
-   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
-   *
+   * @param ref_det_id id of the reference determinant
+   * @param configlist_unsorted config list to be loaded.
+   * @param C2nodes_unsorted mapping from overall det index to unique det (configlist_unsorted) index
+   * @param C2nodes_sorted mapping from overall det index to unique det (ciConfigList) index
    */
   void createDetData(const int ref_det_id,
                      const std::vector<ci_configuration2>& configlist_unsorted,

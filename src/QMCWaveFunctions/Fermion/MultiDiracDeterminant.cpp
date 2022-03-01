@@ -46,7 +46,6 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
 
   const size_t nci = configlist_unsorted.size();
 
-  std::cout << "nci = " << nci << std::endl;
   size_t nex_max = 0;
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
