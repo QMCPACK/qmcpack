@@ -228,7 +228,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     cur = cur->next;
   }
 
-
   if (built_singledet_or_multidets)
     return built_singledet_or_multidets;
   else
@@ -453,28 +452,22 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     const bool spinor,
     const bool use_precompute) const
 {
-  std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-  for (int grp = 0; grp < spo_clones.size(); grp++)
-  {
-    app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
-  }
+  const size_t nGroups = targetPtcl.groups();
 
-  auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
+  auto C2nodes_ptr = std::make_unique<std::vector<std::vector<size_t>>>(nGroups);
+  auto& C2nodes(*C2nodes_ptr);
 
-  msd_fast->initialize();
+  auto C_ptr = std::make_unique<std::vector<ValueType>>();
+  auto& C(*C_ptr);
 
-  std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets = msd_fast->Dets;
-  std::vector<std::vector<size_t>>& C2nodes                 = *msd_fast->C2node;
-  std::vector<ValueType>& C                                 = *msd_fast->C;
-  opt_variables_type& myVars                                = *msd_fast->myVars;
-  bool& Optimizable                                         = msd_fast->Optimizable;
-  bool& CI_Optimizable                                      = msd_fast->CI_Optimizable;
+  auto myVars_ptr = std::make_unique<opt_variables_type>();
+  auto& myVars(*myVars_ptr);
+
+  bool Optimizable    = false;
+  bool CI_Optimizable = false;
 
   bool optimizeCI;
 
-  const int nGroups = targetPtcl.groups();
-  assert(nGroups == Dets.size());
   std::vector<int> nptcls(nGroups);
   for (int grp = 0; grp < nGroups; grp++)
     nptcls[grp] = targetPtcl.groupsize(grp);
@@ -505,17 +498,18 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   else
     readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
 
-  const bool usingCSF(csf_data_ptr);
-  msd_fast->csf_data_ = std::move(csf_data_ptr);
-
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
     return std::norm(lhs) < std::norm(rhs);
   });
   const int refdet_id = std::distance(C.begin(), maxloc);
   app_log() << "max CI coeff at det number " << refdet_id << " with value " << std::abs(C[refdet_id]) << std::endl;
+
+  assert(nGroups == spo_clones.size());
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
+    std::vector<ci_configuration2>& list = dets[grp]->getCIConfigList();
     list.resize(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
@@ -530,11 +524,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    // you should choose the det with highest weight for reference. for now choosing 0
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], refdet_id, C2nodes[grp]);
+    dets[grp]->set(targetPtcl.first(grp), nptcls[grp], refdet_id, C2nodes[grp]);
   }
 
-  if (usingCSF && msd_fast->csf_data_->coeffs.size() == 1)
+  if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
     optimizeCI = false;
 
   if (optimizeCI)
@@ -546,18 +539,18 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     spoAttrib.put(cur);
     if (resetCI == "yes")
     {
-      if (usingCSF)
-        for (int i = 1; i < msd_fast->csf_data_->coeffs.size(); i++)
-          msd_fast->csf_data_->coeffs[i] = 0;
+      if (csf_data_ptr)
+        for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
+          csf_data_ptr->coeffs[i] = 0;
       else
         for (int i = 1; i < C.size(); i++)
           C[i] = 0;
       app_log() << "CI coefficients are reset. \n";
     }
     Optimizable = CI_Optimizable = true;
-    if (usingCSF)
-      for (int i = 1; i < msd_fast->csf_data_->coeffs.size(); i++)
-        myVars.insert(CItags[i], msd_fast->csf_data_->coeffs[i], true, optimize::LINEAR_P);
+    if (csf_data_ptr)
+      for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
+        myVars.insert(CItags[i], csf_data_ptr->coeffs[i], true, optimize::LINEAR_P);
     else
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
@@ -571,7 +564,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   bool any_optimizable = false;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    if (Dets[grp]->Optimizable == true)
+    if (dets[grp]->Optimizable == true)
     {
       any_optimizable = true;
       break;
@@ -581,10 +574,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   {
     for (int grp = 0; grp < nGroups; grp++)
     {
-      if (Dets[grp]->Optimizable != true)
+      if (dets[grp]->Optimizable != true)
         APP_ABORT("Optimizing the SPOSet of only only species is not supported!\n");
     }
-    if (usingCSF)
+    if (csf_data_ptr)
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     for (int grp = 0; grp < nGroups; grp++)
@@ -601,6 +594,18 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
 
     Optimizable = true;
   }
+
+  auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
+  msd_fast->initialize();
+
+  msd_fast->C2node = std::move(C2nodes_ptr);
+  msd_fast->C      = std::move(C_ptr);
+  msd_fast->myVars = std::move(myVars_ptr);
+
+  msd_fast->csf_data_ = std::move(csf_data_ptr);
+
+  msd_fast->Optimizable    = Optimizable;
+  msd_fast->CI_Optimizable = CI_Optimizable;
 
   return msd_fast;
 }
