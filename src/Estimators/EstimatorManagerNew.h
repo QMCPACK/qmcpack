@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -24,8 +24,6 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
-#include "EstimatorManagerInput.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -50,19 +48,14 @@ public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  using SPOMap           = SPOSetBuilderFactory::SPOMap;
-  using QMCT             = QMCTraits;
-  using EstimatorType    = ScalarEstimatorBase;
-  using FPRBuffer        = std::vector<FullPrecRealType>;
-  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  ///testing constructor
-  EstimatorManagerNew(Communicate* c);
+  using QMCT          = QMCTraits;
+  using EstimatorType = ScalarEstimatorBase;
+  using FPRBuffer     = std::vector<FullPrecRealType>;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+
   ///default constructor
-  EstimatorManagerNew(Communicate* c,
-                      EstimatorManagerInput&& emi,
-                      const ParticleSet& pset,
-                      const TrialWaveFunction& twf);
+  EstimatorManagerNew(Communicate* c);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
@@ -82,7 +75,10 @@ public:
   int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H,
+           const ParticleSet& pset,
+           const TrialWaveFunction& twf,
+           xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
@@ -139,16 +135,6 @@ public:
   auto& get_AverageCache() { return AverageCache; }
 
 private:
-  EstimatorManagerInput input_;
-
-  /** Construct estimator from input object
-   *  function F is given an Input class cast back to its actual type and
-   *  args.
-   *  Function F contains any logic specific to instantiating a particular estimator
-   */
-  template<typename T, typename F, typename... Args>
-  bool tryConstructEstimator(EstimatorInput& input, F&& f, Args&&... args);
-
   /** reset the estimator
    */
   void reset();

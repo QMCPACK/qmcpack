@@ -14,7 +14,6 @@
 
 #include <vector>
 #include <functional>
-#include <memory>
 
 #include "Estimators/OperatorEstBase.h"
 #include "type_traits/complex_help.hpp"
@@ -65,7 +64,7 @@ public:
   };
 
 private:
-  const OneBodyDensityMatricesInput& input_;
+  OneBodyDensityMatricesInput input_;
   Lattice lattice_;
   SpeciesSet species_;
 
@@ -149,7 +148,7 @@ public:
   /** Standard Constructor
    *  Call this to make a new OBDM this is what you should be calling
    */
-  OneBodyDensityMatrices(const OneBodyDensityMatricesInput& obdmi,
+  OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                          const Lattice& lattice,
                          const SpeciesSet& species,
                          const SPOSetBuilderFactory::SPOMap& spomap,

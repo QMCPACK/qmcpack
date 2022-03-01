@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2020 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -12,7 +12,6 @@
 #include <functional>
 #include <numeric>
 #include <algorithm>
-#include <variant>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -43,82 +42,6 @@ namespace qmcplusplus
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
     : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
 {}
-
-template<class T, class R>
-constexpr bool has(const R& this_one)
-{
-  return std::holds_alternative<T>(this_one);
-}
-
-// template<class T, class R>
-// auto& getInput(const R& this_one)
-// {
-//   return std::holds_alternative<std::reference_wrapper<T>>(this_one);
-// }
-
-template<class T, typename F, typename... Args>
-bool EstimatorManagerNew::tryConstructEstimator(EstimatorInput& input, F&& f, Args&&... args)
-{
-  using EstInputType = T;
-  if (has<EstInputType>(input))
-  {
-    operator_ests_.emplace_back(f(std::get<EstInputType>(input), std::forward<Args>(args)...));
-    return true;
-  }
-  else
-    return false;
-}
-
-//initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
-                                         EstimatorManagerInput&& emi,
-                                         const ParticleSet& pset,
-                                         const TrialWaveFunction& twf)
-    : input_(std::move(emi)),
-      MainEstimatorName("LocalEnergy"),
-      RecordCount(0),
-      my_comm_(c),
-      Collectables(0),
-      max4ascii(8),
-      FieldWidth(20)
-{
-  // These lambdas are the code needed to construct estimators from the there input class and other objects
-  // the EstimatorManager has knowledge of at construction. They return the unique pointers owned by
-  // EstimatorManagerNew::operator_ests_
-  // If an esimator constructor signature matches a previous estimator it could use the same body.
-  auto makeSpinDensity = [&](auto& est_in, auto& lattice, auto& species_set) -> UPtr<OperatorEstBase> {
-    DataLocality dl = DataLocality::crowd;
-    if (est_in.get_save_memory())
-      dl = DataLocality::rank;
-    if (est_in.get_cell().explicitly_defined)
-      return std::make_unique<typename std::remove_reference_t<decltype(est_in)>::Consumer>(est_in, species_set, dl);
-    else
-      return std::make_unique<typename std::remove_reference_t<decltype(est_in)>::Consumer>(est_in, lattice,
-                                                                                            species_set, dl);
-  };
-
-  auto makeOBDM = [&](auto& est_in, auto& lattice, auto& species_set, const auto& spo_map) -> UPtr<OperatorEstBase> {
-    ParticleSet pset_target(pset);
-    return std::make_unique<OneBodyDensityMatrices>(est_in, lattice, species_set, spo_map, pset_target);
-  };
-
-  auto makeMomentumDistribution = [&](auto& est_in, auto total_number, auto twist,
-                                      auto& lattice) -> UPtr<OperatorEstBase> {
-    return std::make_unique<MomentumDistribution>(est_in, total_number, twist, lattice, DataLocality::crowd);
-  };
-
-  for (auto& est_input : input_.get_estimator_inputs())
-  {
-    if (tryConstructEstimator<SpinDensityInput>(est_input, makeSpinDensity, pset.getLattice(), pset.getSpeciesSet()))
-      continue;
-    else if (tryConstructEstimator<OneBodyDensityMatricesInput>(est_input, makeOBDM, pset.getLattice(),
-                                                                pset.getSpeciesSet(), twf.getSPOMap()))
-      continue;
-    else if (tryConstructEstimator<MomentumDistributionInput>(est_input, makeMomentumDistribution, pset.getTotalNum(),
-                                                              pset.getTwist(), pset.getLattice()))
-      continue;
-  }
-}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
@@ -459,16 +382,16 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         if (spdi.get_save_memory())
           dl = DataLocality::rank;
         if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(spdi, pset.getSpeciesSet(), dl));
+          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
         else
           operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(spdi, pset.getLattice(), pset.getSpeciesSet(), dl));
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.getLattice(), pset.getSpeciesSet(), dl));
       }
       else if (est_type == "MomentumDistribution")
       {
         MomentumDistributionInput mdi(cur);
         DataLocality dl = DataLocality::crowd;
-        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(mdi, pset.getTotalNum(),
+        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
                                                                            pset.getTwist(), pset.getLattice(), dl));
       }
       else if (est_type == "OneBodyDensityMatrices")
@@ -476,7 +399,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         OneBodyDensityMatricesInput obdmi(cur);
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(obdmi, pset.getLattice(),
+        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
                                                                              pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
       }
