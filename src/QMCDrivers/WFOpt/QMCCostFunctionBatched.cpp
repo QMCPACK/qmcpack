@@ -302,15 +302,15 @@ void QMCCostFunctionBatched::checkConfigurations()
 
     for (int inb = 0; inb < num_batches; inb++)
     {
-      int curr_crowd_size = walkers_per_crowd[crowd_id];
+      int current_batch_size = walkers_per_crowd[crowd_id];
       if (inb == num_batches - 1)
-        curr_crowd_size = final_batch_size;
+        current_batch_size = final_batch_size;
 
       int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
-      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
-      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
-      auto h_list_no_leader  = opt_data.get_h_list(curr_crowd_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
+      auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
+      auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
@@ -319,11 +319,11 @@ void QMCCostFunctionBatched::checkConfigurations()
       ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
       ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h_list);
 
-      auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, curr_crowd_size);
-      auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, curr_crowd_size);
+      auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, current_batch_size);
+      auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, current_batch_size);
 
       // Load samples into the crowd data
-      for (int ib = 0; ib < curr_crowd_size; ib++)
+      for (int ib = 0; ib < current_batch_size; ib++)
       {
         samples.loadSample(p_list[ib], base_sample_index + ib);
 
@@ -354,8 +354,8 @@ void QMCCostFunctionBatched::checkConfigurations()
       {
         // Compute parameter derivatives of the wavefunction
         int nparam = optVars.size();
-        RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
-        RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
+        RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
         TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
 
@@ -363,7 +363,7 @@ void QMCCostFunctionBatched::checkConfigurations()
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                            dhpsioverpsi_array, compute_nlpp);
 
-        for (int ib = 0; ib < curr_crowd_size; ib++)
+        for (int ib = 0; ib < current_batch_size; ib++)
         {
           int is = base_sample_index + ib;
           for (int j = 0; j < nparam; j++)
@@ -375,7 +375,7 @@ void QMCCostFunctionBatched::checkConfigurations()
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
         }
 
-        for (int ib = 0; ib < curr_crowd_size; ib++)
+        for (int ib = 0; ib < current_batch_size; ib++)
         {
           int is    = base_sample_index + ib;
           auto etmp = energy_list[ib];
@@ -400,7 +400,7 @@ void QMCCostFunctionBatched::checkConfigurations()
         // Energy
         auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
 
-        for (int ib = 0; ib < curr_crowd_size; ib++)
+        for (int ib = 0; ib < current_batch_size; ib++)
         {
           int is    = base_sample_index + ib;
           auto etmp = energy_list[ib];
@@ -538,17 +538,17 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
     for (int inb = 0; inb < num_batches; inb++)
     {
-      int curr_crowd_size = walkers_per_crowd[crowd_id];
+      int current_batch_size = walkers_per_crowd[crowd_id];
       if (inb == num_batches - 1)
       {
-        curr_crowd_size = final_batch_size;
+        current_batch_size = final_batch_size;
       }
 
       int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
-      auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
-      auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
-      auto h0_list_no_leader = opt_data.get_h0_list(curr_crowd_size);
+      auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
+      auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
+      auto h0_list_no_leader = opt_data.get_h0_list(current_batch_size);
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
@@ -558,7 +558,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h0_list);
 
       // Load this batch of samples into the crowd data
-      for (int ib = 0; ib < curr_crowd_size; ib++)
+      for (int ib = 0; ib < current_batch_size; ib++)
       {
         samples.loadSample(p_list[ib], base_sample_index + ib);
         // Copy the saved RNG state
@@ -578,9 +578,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       if (compute_all_from_scratch)
       {
         int nptcl = gradPsi[0]->size();
-        dummyG_ptr_list.reserve(curr_crowd_size);
-        dummyL_ptr_list.reserve(curr_crowd_size);
-        for (int i = 0; i < curr_crowd_size; i++)
+        dummyG_ptr_list.reserve(current_batch_size);
+        dummyL_ptr_list.reserve(current_batch_size);
+        for (int i = 0; i < current_batch_size; i++)
         {
           dummyG_ptr_list.emplace_back(std::make_unique<ParticleGradient>(nptcl));
           dummyL_ptr_list.emplace_back(std::make_unique<ParticleLaplacian>(nptcl));
@@ -595,7 +595,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
       Return_rt inv_n_samples = 1.0 / samples.getGlobalNumSamples();
 
-      for (int ib = 0; ib < curr_crowd_size; ib++)
+      for (int ib = 0; ib < current_batch_size; ib++)
       {
         int is = base_sample_index + ib;
         wf_list[ib].G += *gradPsi[is];
@@ -614,8 +614,8 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       {
         // Parameter derivatives
         int nparam = optVars.size();
-        RecordArray<Return_t> dlogpsi_array(nparam, curr_crowd_size);
-        RecordArray<Return_t> dhpsioverpsi_array(nparam, curr_crowd_size);
+        RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
 
         TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
@@ -625,7 +625,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, wf_list, p_list, optVars, dlogpsi_array,
                                                            dhpsioverpsi_array, compute_nlpp);
 
-        for (int ib = 0; ib < curr_crowd_size; ib++)
+        for (int ib = 0; ib < current_batch_size; ib++)
         {
           int is                        = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
@@ -644,7 +644,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
       {
         // Just energy needed if no gradients
         auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, wf_list, p_list);
-        for (int ib = 0; ib < curr_crowd_size; ib++)
+        for (int ib = 0; ib < current_batch_size; ib++)
         {
           int is                        = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
