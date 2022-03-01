@@ -26,7 +26,8 @@ namespace qmcplusplus
 class TrialWaveFunction;
 class BackflowTransformation;
 class DiracDeterminantBase;
-class MultiDiracDeterminant;
+class MultiSlaterDetTableMethod;
+class SPOSet;
 class SPOSetBuilder;
 class SPOSetBuilderFactory;
 struct ci_configuration;
@@ -75,17 +76,11 @@ private:
       const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
       const std::unique_ptr<BackflowTransformation>& BFTrans);
 
-  bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
-                     std::vector<std::vector<size_t>>& C2node,
-                     std::vector<ValueType>& C,
-                     std::vector<ValueType>& CSFcoeff,
-                     std::vector<size_t>& DetsPerCSF,
-                     std::vector<RealType>& CSFexpansion,
-                     bool& usingCSF,
-                     opt_variables_type& myVars,
-                     bool& Optimizable,
-                     bool& CI_Optimizable,
-                     xmlNodePtr cur) const;
+  std::unique_ptr<MultiSlaterDetTableMethod> createMSDFast(xmlNodePtr cur,
+                                                           ParticleSet& target_ptcl,
+                                                           std::vector<std::unique_ptr<SPOSet>>&& spo_clones,
+                                                           const bool spinor,
+                                                           const bool use_precompute) const;
 
 
   bool readDetList(xmlNodePtr cur,

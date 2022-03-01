@@ -211,30 +211,13 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       if (BFTrans)
         myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
-      const bool spinor = targetPtcl.isSpinor();
-      std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-      for (int grp = 0; grp < nGroups; grp++)
-      {
-        app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
-      }
-
-      std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
       if (msd_algorithm == "precomputed_table_method")
-      {
         app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
-      }
       else
-      {
         app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
-      }
 
-      msd_fast->initialize();
-      createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, msd_fast->csf_data_->coeffs, msd_fast->csf_data_->dets_per_csf,
-                    msd_fast->csf_data_->expansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
-                    msd_fast->CI_Optimizable, cur);
+      auto msd_fast = createMSDFast(cur, targetPtcl, std::move(spo_clones), targetPtcl.isSpinor(),
+                                    msd_algorithm == "precomputed_table_method");
 
       // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
       // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -463,18 +446,35 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   return adet;
 }
 
-bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
-                                     std::vector<std::vector<size_t>>& C2nodes,
-                                     std::vector<ValueType>& C,
-                                     std::vector<ValueType>& CSFcoeff,
-                                     std::vector<size_t>& DetsPerCSF,
-                                     std::vector<RealType>& CSFexpansion,
-                                     bool& usingCSF,
-                                     opt_variables_type& myVars,
-                                     bool& Optimizable,
-                                     bool& CI_Optimizable,
-                                     xmlNodePtr cur) const
+std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
+    xmlNodePtr cur,
+    ParticleSet& target_ptcl,
+    std::vector<std::unique_ptr<SPOSet>>&& spo_clones,
+    const bool spinor,
+    const bool use_precompute) const
 {
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
+  for (int grp = 0; grp < spo_clones.size(); grp++)
+  {
+    app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
+  }
+
+  auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
+
+  msd_fast->initialize();
+
+  std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets = msd_fast->Dets;
+  std::vector<std::vector<size_t>>& C2nodes                 = *msd_fast->C2node;
+  std::vector<ValueType>& C                                 = *msd_fast->C;
+  std::vector<ValueType>& CSFcoeff                          = msd_fast->csf_data_->coeffs;
+  std::vector<size_t>& DetsPerCSF                           = msd_fast->csf_data_->dets_per_csf;
+  std::vector<RealType>& CSFexpansion                       = msd_fast->csf_data_->expansion;
+  bool& usingCSF                                            = msd_fast->usingCSF;
+  opt_variables_type& myVars                                = *msd_fast->myVars;
+  bool& Optimizable                                         = msd_fast->Optimizable;
+  bool& CI_Optimizable                                      = msd_fast->CI_Optimizable;
+
   bool optimizeCI;
 
   const int nGroups = targetPtcl.groups();
@@ -498,19 +498,15 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     curTemp = curTemp->next;
   }
 
-  bool success = true;
   std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
   if (!HDF5Path.empty())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
-    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
-                          usingCSF);
-
-  if (!success)
-    return false;
+    readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
+                usingCSF);
 
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
     return std::norm(lhs) < std::norm(rhs);
@@ -605,7 +601,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     Optimizable = true;
   }
 
-  return success;
+  return msd_fast;
 }
 
 bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
