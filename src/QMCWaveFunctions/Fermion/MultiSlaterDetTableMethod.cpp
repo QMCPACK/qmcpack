@@ -42,7 +42,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
   //Optimizable=true;
   Optimizable  = false;
   is_fermionic = true;
-  usingCSF     = false;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
@@ -80,7 +79,6 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
   clone->myVars = myVars;
 
   clone->Optimizable = Optimizable;
-  clone->usingCSF    = usingCSF;
   clone->csf_data_ = csf_data_;
 
   return clone;
@@ -770,7 +768,7 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
 {
   if (CI_Optimizable)
   {
-    if (usingCSF)
+    if (csf_data_)
     {
       ValueType* restrict CSFcoeff_p = csf_data_->coeffs.data();
       for (int i = 0; i < csf_data_->coeffs.size() - 1; i++)
@@ -871,7 +869,7 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
       for (size_t i = 0; i < P.getTotalNum(); i++)
         gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
 
-      if (usingCSF)
+      if (csf_data_)
       {
         const int num = csf_data_->coeffs.size() - 1;
         int cnt       = 0;
@@ -1004,7 +1002,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
     // need to modify for CSF later on, right now assume Slater Det basis
     if (recalculate)
     {
-      if (usingCSF)
+      if (csf_data_)
       {
         ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
 

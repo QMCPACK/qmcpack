@@ -180,7 +180,7 @@ public:
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
 
-  bool usingCSF;
+  /// CSF data set. If nullptr, not using CSF
   std::shared_ptr<CSFData> csf_data_;
 
 private:
