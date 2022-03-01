@@ -164,9 +164,12 @@ bool hdf_archive::is_group(const std::string& aname)
 
   if (H5Lexists(p, aname.c_str(), H5P_DEFAULT) > 0)
   {
+#if H5_VERSION_GE(1, 12, 0)
+    H5O_info2_t oinfo;
+#else
     H5O_info_t oinfo;
+#endif
     oinfo.type = H5O_TYPE_UNKNOWN;
-
 #if H5_VERSION_GE(1, 12, 0)
     H5Oget_info_by_name3(p, aname.c_str(), &oinfo, H5O_INFO_BASIC, H5P_DEFAULT);
 #else
@@ -190,7 +193,11 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
     return is_closed;
   hid_t p = group_id.empty() ? file_id : group_id.top();
 
+#if H5_VERSION_GE(1, 12, 0)
+  H5O_info2_t oinfo;
+#else
   H5O_info_t oinfo;
+#endif
   oinfo.type = H5O_TYPE_UNKNOWN;
   if (H5Lexists(p, gname.c_str(), H5P_DEFAULT) > 0)
   {

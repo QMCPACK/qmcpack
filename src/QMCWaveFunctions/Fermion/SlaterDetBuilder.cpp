@@ -512,6 +512,11 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   if (!success)
     return false;
 
+  const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
+    return std::norm(lhs) < std::norm(rhs);
+  });
+  const int refdet_id = std::distance(C.begin(), maxloc);
+  app_log() << "max CI coeff at det number " << refdet_id << " with value " << std::abs(C[refdet_id]) << std::endl;
   for (int grp = 0; grp < nGroups; grp++)
   {
     std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
@@ -530,7 +535,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
       }
     }
     // you should choose the det with highest weight for reference. for now choosing 0
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], 0);
+    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], refdet_id, C2nodes[grp]);
   }
 
   if (CSFcoeff.size() == 1)
