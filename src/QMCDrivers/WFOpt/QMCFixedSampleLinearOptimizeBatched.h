@@ -235,10 +235,6 @@ private:
   bool block_third;
 
 
-  /// Number of walkers in each crowd to use to process samples during optimization
-  int crowd_size_;
-  /// Number of crowds to use to process samples during optimization
-  int opt_num_crowds_;
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run

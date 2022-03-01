@@ -55,8 +55,8 @@ public:
   TrialWaveFunction psi;
   QMCCostFunctionBatched costFn;
 
-  LinearMethodTestSupport(int num_opt_crowds, int crowd_size, Communicate* comm)
-      : w(simulation_cell), costFn(w, psi, h, samples, num_opt_crowds, crowd_size, comm)
+  LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)
+      : w(simulation_cell), costFn(w, psi, h, samples, walkers_per_crowd, comm)
   {}
 
   std::vector<QMCCostFunctionBase::Return_rt>& getSumValue() { return costFn.SumValue; }
@@ -89,14 +89,13 @@ public:
 
 TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 {
-  int num_opt_crowds = 1;
-  int crowd_size     = 1;
+  std::vector<int> walkers_per_crowd{1};
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
   Communicate* comm = OHMMS::Controller;
 
-  testing::LinearMethodTestSupport lin(num_opt_crowds, crowd_size, comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
   int numSamples = 1;
   int numParam   = 1;
@@ -140,14 +139,13 @@ TEST_CASE("fillOverlapAndHamiltonianMatrices", "[drivers]")
 // the input/gold data (from a file created by convert_hdf_to_cpp.py)
 void fill_from_text(int num_opt_crowds, FillData& fd)
 {
-  // Not used in the function under test
-  int crowd_size = 1;
+  std::vector<int> walkers_per_crowd(num_opt_crowds, 1);
 
   using Return_rt = qmcplusplus::QMCTraits::RealType;
 
   Communicate* comm = OHMMS::Controller;
 
-  testing::LinearMethodTestSupport lin(num_opt_crowds, crowd_size, comm);
+  testing::LinearMethodTestSupport lin(walkers_per_crowd, comm);
 
   int numSamples = fd.numSamples;
   int numParam   = fd.numParam;
