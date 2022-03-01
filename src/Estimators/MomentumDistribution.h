@@ -41,7 +41,7 @@ public:
 
   //data members set only during construction
   ///input values
-  const MomentumDistributionInput& input_;
+  const MomentumDistributionInput input_;
   ///twist angle
   const PosType twist;
   ///lattice vector
@@ -73,7 +73,7 @@ public:
 public:
   /** Constructor for MomentumDistributionInput 
    */
-  MomentumDistribution(const MomentumDistributionInput& mdi,
+  MomentumDistribution(MomentumDistributionInput&& mdi,
                        size_t np,
                        const PosType& twist,
                        const LatticeType& lattice,

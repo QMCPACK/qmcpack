@@ -41,7 +41,7 @@ public:
 
   /** Constructor for SpinDensityInput that contains an explicitly defined cell
    */
-  SpinDensityNew(const SpinDensityInput& sdi, const SpeciesSet& species, DataLocality dl = DataLocality::crowd);
+  SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species, DataLocality dl = DataLocality::crowd);
   /** Constructor for SpinDensityInput without explicitly defined cell
    *
    *  the crystal lattice should come from the same particle set as the species set.
@@ -56,7 +56,7 @@ public:
    *                 SpeciesSet species,
    *                 DataLocality dl);
    */
-  SpinDensityNew(const SpinDensityInput& sdi,
+  SpinDensityNew(SpinDensityInput&& sdi,
                  const Lattice&,
                  const SpeciesSet& species,
                  const DataLocality dl = DataLocality::crowd);
@@ -117,7 +117,7 @@ private:
   void report(const std::string& pad);
 
   //data members
-  const SpinDensityInput& input_;
+  const SpinDensityInput input_;
   const SpeciesSet& species_;
   // this is a bit of a mess to get from SpeciesSet
   const std::vector<int> species_size_;

@@ -19,13 +19,13 @@
 
 namespace qmcplusplus
 {
-MomentumDistribution::MomentumDistribution(const MomentumDistributionInput& mdi,
+MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
                                            size_t np,
                                            const PosType& twist_in,
                                            const LatticeType& lattice,
                                            DataLocality dl)
     : OperatorEstBase(dl),
-      input_(mdi),
+      input_(std::move(mdi)),
       twist(twist_in),
       Lattice(lattice),
       norm_nofK(1.0 / RealType(mdi.get_samples()))

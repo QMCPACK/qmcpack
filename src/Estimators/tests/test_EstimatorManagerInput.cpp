@@ -116,4 +116,45 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
   CHECK_THROWS_AS(EstimatorManagerInput(estimators_doc.getRoot()), UniformCommunicateError);
 }
 
+template<class INPUT>
+class TakesAMovedInput
+{
+public:
+  TakesAMovedInput(INPUT&& obdmi) : input_(obdmi) {}
+
+private:
+  const INPUT input_;
+};
+
+TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
+{
+  using namespace testing;
+  EstimatorManagerInputTests emit;
+  EstimatorManagerInput emi;
+  emit.testAppendMinimal(emi);
+
+  {
+    using namespace testing::onebodydensitymatrices;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    emit.testAppendFromXML<OneBodyDensityMatricesInput>(emi, node);
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    emit.testAppendFromXML<SpinDensityInput>(emi, node);
+  }
+  TakesAMovedInput<SpinDensityInput> takes_sdi(
+      std::move(std::get<SpinDensityInput>(emi.get_estimator_inputs().back())));
+  emi.get_estimator_inputs().pop_back();
+  TakesAMovedInput<OneBodyDensityMatricesInput> takes_obdmi(
+      std::move(std::get<OneBodyDensityMatricesInput>(emi.get_estimator_inputs().back())));
+  emi.get_estimator_inputs().pop_back();
+}
+
+
 } // namespace qmcplusplus
