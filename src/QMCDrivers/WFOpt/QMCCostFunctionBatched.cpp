@@ -282,19 +282,19 @@ void QMCCostFunctionBatched::checkConfigurations()
   //        might need to be divided differently for better load balancing.
 
   // Divide samples among the crowds
-  std::vector<int> samples_per_crowd(opt_num_crowds + 1);
-  FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd);
+  std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
+  FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                          const std::vector<int>& samples_per_crowd, const std::vector<int>& walkers_per_crowd,
+                          const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
                           bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
-    int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
+    int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
     int num_batches;
     int final_batch_size;
 
@@ -306,7 +306,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       if (inb == num_batches - 1)
         curr_crowd_size = final_batch_size;
 
-      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd[crowd_id];
+      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
       auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
       auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
@@ -417,9 +417,9 @@ void QMCCostFunctionBatched::checkConfigurations()
   };
 
   ParallelExecutor<> crowd_tasks;
-  crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads, compute_nlpp,
-              includeNonlocalH);
+  crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
+              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
+              compute_nlpp, includeNonlocalH);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -516,21 +516,21 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
   const size_t opt_num_crowds = walkers_per_crowd_.size();
   // Divide samples among crowds
-  std::vector<int> samples_per_crowd(opt_num_crowds + 1);
-  FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd);
+  std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
+  FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
   // lambda to execute on each crowd
   auto evalOptCorrelated = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
-                              const std::vector<int>& samples_per_crowd, const std::vector<int>& walkers_per_crowd,
-                              std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
-                              Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
-                              Matrix<Return_rt>& HDerivRecords, const SampleStack& samples,
-                              const opt_variables_type& optVars, bool compute_all_from_scratch, Return_rt vmc_or_dmc,
-                              bool needGrad, bool compute_nlpp) {
+                              const std::vector<int>& samples_per_crowd_offsets,
+                              const std::vector<int>& walkers_per_crowd, std::vector<ParticleGradient*>& gradPsi,
+                              std::vector<ParticleLaplacian*>& lapPsi, Matrix<Return_rt>& RecordsOnNode,
+                              Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
+                              const SampleStack& samples, const opt_variables_type& optVars,
+                              bool compute_all_from_scratch, Return_rt vmc_or_dmc, bool needGrad, bool compute_nlpp) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
-    int local_samples = samples_per_crowd[crowd_id + 1] - samples_per_crowd[crowd_id];
+    int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
 
     int num_batches;
     int final_batch_size;
@@ -544,7 +544,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         curr_crowd_size = final_batch_size;
       }
 
-      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd[crowd_id];
+      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
       auto p_list_no_leader  = opt_data.get_p_list(curr_crowd_size);
       auto wf_list_no_leader = opt_data.get_wf_list(curr_crowd_size);
@@ -655,9 +655,9 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   };
 
   ParallelExecutor<> crowd_tasks;
-  crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval_, samples_per_crowd, walkers_per_crowd_, dLogPsi, d2LogPsi,
-              RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, compute_all_from_scratch,
-              vmc_or_dmc, needGrad, compute_nlpp);
+  crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
+              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi,
+              compute_all_from_scratch, vmc_or_dmc, needGrad, compute_nlpp);
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
