@@ -276,10 +276,7 @@ public:
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    int iat,
                                    std::vector<GradType>& grad_now,
-                                   std::vector<ComplexType>& spingrad_now) const
-  {
-    mw_evalGrad(wfc_list, p_list, iat, grad_now);
-  };
+                                   std::vector<ComplexType>& spingrad_now) const;
 
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
@@ -365,10 +362,7 @@ public:
                                     int iat,
                                     std::vector<PsiValueType>& ratios,
                                     std::vector<GradType>& grad_new,
-                                    std::vector<ComplexType>& spingrad_new) const
-  {
-    mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
-  }
+                                    std::vector<ComplexType>& spingrad_new) const;
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
