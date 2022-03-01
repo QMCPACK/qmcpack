@@ -24,6 +24,20 @@
 
 namespace qmcplusplus
 {
+/// CSF related dataset
+struct CSFData
+{
+  using RealType  = WaveFunctionComponent::RealType;
+  using ValueType = WaveFunctionComponent::ValueType;
+
+  // coefficients of csfs, these are only used during optm
+  std::vector<ValueType> coeffs;
+  // number of dets per csf
+  std::vector<size_t> dets_per_csf;
+  // coefficient of csf expansion (smaller dimension)
+  std::vector<RealType> expansion;
+};
+
 /** @ingroup WaveFunctionComponent
  *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
@@ -167,17 +181,6 @@ public:
   std::shared_ptr<opt_variables_type> myVars;
 
   bool usingCSF;
-  /// CSF related dataset
-  struct CSFData
-  {
-    // coefficients of csfs, these are only used during optm
-    std::vector<ValueType> coeffs;
-    // number of dets per csf
-    std::vector<size_t> dets_per_csf;
-    // coefficient of csf expansion (smaller dimension)
-    std::vector<RealType> expansion;
-  };
-
   std::shared_ptr<CSFData> csf_data_;
 
 private:

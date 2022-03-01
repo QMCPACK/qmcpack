@@ -27,6 +27,7 @@ class TrialWaveFunction;
 class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiSlaterDetTableMethod;
+class CSFData;
 class SPOSet;
 class SPOSetBuilder;
 class SPOSetBuilderFactory;
@@ -90,10 +91,7 @@ private:
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
                    std::vector<int>& nptcls,
-                   std::vector<ValueType>& CSFcoeff,
-                   std::vector<size_t>& DetsPerCSF,
-                   std::vector<RealType>& CSFexpansion,
-                   bool& usingCSF) const;
+                   std::unique_ptr<CSFData>& csf_data_ptr) const;
 
   bool readDetListH5(xmlNodePtr cur,
                      std::vector<std::vector<ci_configuration>>& uniqueConfgs,

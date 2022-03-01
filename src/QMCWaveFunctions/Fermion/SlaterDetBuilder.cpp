@@ -467,10 +467,6 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets = msd_fast->Dets;
   std::vector<std::vector<size_t>>& C2nodes                 = *msd_fast->C2node;
   std::vector<ValueType>& C                                 = *msd_fast->C;
-  std::vector<ValueType>& CSFcoeff                          = msd_fast->csf_data_->coeffs;
-  std::vector<size_t>& DetsPerCSF                           = msd_fast->csf_data_->dets_per_csf;
-  std::vector<RealType>& CSFexpansion                       = msd_fast->csf_data_->expansion;
-  bool& usingCSF                                            = msd_fast->usingCSF;
   opt_variables_type& myVars                                = *msd_fast->myVars;
   bool& Optimizable                                         = msd_fast->Optimizable;
   bool& CI_Optimizable                                      = msd_fast->CI_Optimizable;
@@ -498,6 +494,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     curTemp = curTemp->next;
   }
 
+  std::unique_ptr<CSFData> csf_data_ptr;
+
   std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
   if (!HDF5Path.empty())
   {
@@ -505,8 +503,10 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
-    readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
-                usingCSF);
+    readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
+
+  const bool usingCSF(csf_data_ptr);
+  msd_fast->csf_data_ = std::move(csf_data_ptr);
 
   const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
     return std::norm(lhs) < std::norm(rhs);
@@ -534,8 +534,9 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], refdet_id, C2nodes[grp]);
   }
 
-  if (CSFcoeff.size() == 1)
+  if (usingCSF && msd_fast->csf_data_->coeffs.size() == 1)
     optimizeCI = false;
+
   if (optimizeCI)
   {
     app_log() << "CI coefficients are optimizable. \n";
@@ -546,8 +547,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     if (resetCI == "yes")
     {
       if (usingCSF)
-        for (int i = 1; i < CSFcoeff.size(); i++)
-          CSFcoeff[i] = 0;
+        for (int i = 1; i < msd_fast->csf_data_->coeffs.size(); i++)
+          msd_fast->csf_data_->coeffs[i] = 0;
       else
         for (int i = 1; i < C.size(); i++)
           C[i] = 0;
@@ -555,8 +556,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
     }
     Optimizable = CI_Optimizable = true;
     if (usingCSF)
-      for (int i = 1; i < CSFcoeff.size(); i++)
-        myVars.insert(CItags[i], CSFcoeff[i], true, optimize::LINEAR_P);
+      for (int i = 1; i < msd_fast->csf_data_->coeffs.size(); i++)
+        myVars.insert(CItags[i], msd_fast->csf_data_->coeffs[i], true, optimize::LINEAR_P);
     else
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
@@ -611,10 +612,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<ValueType>& coeff,
                                    bool& optimizeCI,
                                    std::vector<int>& nptcls,
-                                   std::vector<ValueType>& CSFcoeff,
-                                   std::vector<size_t>& DetsPerCSF,
-                                   std::vector<RealType>& CSFexpansion,
-                                   bool& usingCSF) const
+                                   std::unique_ptr<CSFData>& csf_data_ptr) const
 {
   bool success = true;
 
@@ -626,9 +624,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   }
   CItags.clear();
   coeff.clear();
-  CSFcoeff.clear();
-  DetsPerCSF.clear();
-  CSFexpansion.clear();
   std::vector<std::vector<ci_configuration>> confgLists(nGroups);
   std::string optCI    = "no";
   RealType cutoff      = 0.0;
@@ -686,11 +681,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
   }
 
-  if (Dettype == "DETS" || Dettype == "Determinants")
-    usingCSF = false;
-  else if (Dettype == "CSF")
-    usingCSF = true;
-  else
+  if (Dettype == "CSF")
+    csf_data_ptr = std::make_unique<CSFData>();
+  else if (Dettype != "DETS" && Dettype != "Determinants")
   {
     APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
   }
@@ -716,8 +709,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   }
   RealType sumsq_qc = 0.0;
   RealType sumsq    = 0.0;
-  if (usingCSF)
+  if (csf_data_ptr)
   {
+    auto& CSFcoeff     = csf_data_ptr->coeffs;
+    auto& DetsPerCSF   = csf_data_ptr->dets_per_csf;
+    auto& CSFexpansion = csf_data_ptr->expansion;
+
     app_log() << "Reading CSFs." << std::endl;
     while (cur != NULL) //check the basis set
     {
