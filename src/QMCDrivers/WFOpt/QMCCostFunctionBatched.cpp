@@ -294,7 +294,7 @@ void QMCCostFunctionBatched::checkConfigurations()
                           bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
-    int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
+    const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
     int num_batches;
     int final_batch_size;
 
@@ -306,7 +306,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       if (inb == num_batches - 1)
         current_batch_size = final_batch_size;
 
-      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
+      const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
@@ -365,7 +365,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-          int is = base_sample_index + ib;
+          const int is = base_sample_index + ib;
           for (int j = 0; j < nparam; j++)
           {
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
@@ -377,8 +377,8 @@ void QMCCostFunctionBatched::checkConfigurations()
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-          int is    = base_sample_index + ib;
-          auto etmp = energy_list[ib];
+          const int is = base_sample_index + ib;
+          auto etmp    = energy_list[ib];
           opt_data.get_e0() += etmp;
           opt_data.get_e2() += etmp * etmp;
 
@@ -402,8 +402,8 @@ void QMCCostFunctionBatched::checkConfigurations()
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-          int is    = base_sample_index + ib;
-          auto etmp = energy_list[ib];
+          const int is = base_sample_index + ib;
+          auto etmp    = energy_list[ib];
           opt_data.get_e0() += etmp;
           opt_data.get_e2() += etmp * etmp;
 
@@ -530,7 +530,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
-    int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
+    const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
 
     int num_batches;
     int final_batch_size;
@@ -544,7 +544,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         current_batch_size = final_batch_size;
       }
 
-      int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
+      const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
@@ -597,7 +597,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
       for (int ib = 0; ib < current_batch_size; ib++)
       {
-        int is = base_sample_index + ib;
+        const int is = base_sample_index + ib;
         wf_list[ib].G += *gradPsi[is];
         wf_list[ib].L += *lapPsi[is];
         // This is needed to get the KE correct in QMCHamiltonian::mw_evaluate below
@@ -627,7 +627,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-          int is                        = base_sample_index + ib;
+          const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
           RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
           for (int j = 0; j < nparam; j++)
@@ -646,7 +646,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
         auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, wf_list, p_list);
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-          int is                        = base_sample_index + ib;
+          const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
           RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
         }
