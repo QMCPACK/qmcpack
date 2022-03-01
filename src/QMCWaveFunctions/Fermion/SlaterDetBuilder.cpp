@@ -597,16 +597,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   }
 
   auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
-  msd_fast->initialize();
-
-  msd_fast->C2node = std::move(C2nodes_sorted_ptr);
-  msd_fast->C      = std::move(C_ptr);
-  msd_fast->myVars = std::move(myVars_ptr);
-
-  msd_fast->csf_data_ = std::move(csf_data_ptr);
-
-  msd_fast->Optimizable    = Optimizable;
-  msd_fast->CI_Optimizable = CI_Optimizable;
+  msd_fast->initialize(std::move(C2nodes_sorted_ptr), std::move(C_ptr), std::move(myVars_ptr), std::move(csf_data_ptr),
+                       Optimizable, CI_Optimizable);
 
   return msd_fast;
 }

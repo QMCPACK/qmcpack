@@ -55,12 +55,19 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
     Last[i] = targetPtcl.last(i) - 1;
 }
 
-void MultiSlaterDetTableMethod::initialize()
+void MultiSlaterDetTableMethod::initialize(std::unique_ptr<std::vector<std::vector<size_t>>> C2node_in,
+                                           std::unique_ptr<std::vector<ValueType>> C_in,
+                                           std::unique_ptr<opt_variables_type> myVars_in,
+                                           std::unique_ptr<CSFData> csf_data_in,
+                                           bool optimizable,
+                                           bool CI_optimizable)
 {
-  C2node       = std::make_shared<std::vector<std::vector<size_t>>>(Dets.size());
-  C            = std::make_shared<std::vector<ValueType>>();
-  csf_data_    = std::make_shared<CSFData>();
-  myVars       = std::make_shared<opt_variables_type>();
+  C2node         = std::move(C2node_in);
+  C              = std::move(C_in);
+  myVars         = std::move(myVars_in);
+  csf_data_      = std::move(csf_data_in);
+  Optimizable    = optimizable;
+  CI_Optimizable = CI_optimizable;
 }
 
 MultiSlaterDetTableMethod::~MultiSlaterDetTableMethod() = default;
@@ -74,12 +81,12 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
   auto clone = std::make_unique<MultiSlaterDetTableMethod>(tqp, std::move(dets_clone), use_pre_computing_);
 
   clone->CI_Optimizable = CI_Optimizable;
-  clone->C2node = C2node;
-  clone->C      = C;
-  clone->myVars = myVars;
+  clone->C2node         = C2node;
+  clone->C              = C;
+  clone->myVars         = myVars;
 
   clone->Optimizable = Optimizable;
-  clone->csf_data_ = csf_data_;
+  clone->csf_data_   = csf_data_;
 
   return clone;
 }

@@ -164,24 +164,18 @@ public:
                              const opt_variables_type& optvars,
                              std::vector<ValueType>& dlogpsi) override;
 
-  void resize(int, int);
-  void initialize();
-
-  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
-
-  /** map determinant in linear combination to unique det list
-   * map global det id to unique det id. [spin, global det id] = unique det id
+  /** initialize a few objects and states by the builder
+   * YL: it should be part of the constructor. It cannot be added to the constructor
+   * because the constructor is used by makeClone. The right way of fix needs:
+   *  1. implement a copy constructor and reroute makeClone to it.
+   *  2. merge initialize() into the constructor.
    */
-  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
-  /// CI coefficients
-  std::shared_ptr<std::vector<ValueType>> C;
-  /// if true, the CI coefficients are optimized
-  bool CI_Optimizable;
-  //optimizable variable is shared with the clones
-  std::shared_ptr<opt_variables_type> myVars;
-
-  /// CSF data set. If nullptr, not using CSF
-  std::shared_ptr<CSFData> csf_data_;
+  void initialize(std::unique_ptr<std::vector<std::vector<size_t>>> C2node_in,
+                  std::unique_ptr<std::vector<ValueType>> C_in,
+                  std::unique_ptr<opt_variables_type> myVars_in,
+                  std::unique_ptr<CSFData> csf_data_in,
+                  bool optimizable,
+                  bool CI_optimizable);
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
@@ -230,6 +224,32 @@ private:
    */
   void precomputeC_otherDs(const ParticleSet& P, int ig);
 
+  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& dlogpsi);
+
+  /// determinant collection
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
+
+  /** map determinant in linear combination to unique det list
+   * map global det id to unique det id. [spin, global det id] = unique det id
+   */
+  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
+  /// CI coefficients
+  std::shared_ptr<std::vector<ValueType>> C;
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
+  //optimizable variable is shared with the clones
+  std::shared_ptr<opt_variables_type> myVars;
+
+  /// CSF data set. If nullptr, not using CSF
+  std::shared_ptr<CSFData> csf_data_;
+
   ///the last particle of each group
   std::vector<int> Last;
   ///use pre-compute (fast) algorithm
@@ -239,15 +259,6 @@ private:
   PsiValueType psi_ratio_to_ref_det_;
   /// new psi over new ref single det when one particle is moved
   PsiValueType new_psi_ratio_to_new_ref_det_;
-
-  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi);
-
-  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& optvars,
-                                                  std::vector<ValueType>& dlogpsi);
 
   size_t ActiveSpin;
   PsiValueType curRatio;
