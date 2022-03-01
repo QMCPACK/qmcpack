@@ -161,19 +161,24 @@ public:
   std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
   /// CI coefficients
   std::shared_ptr<std::vector<ValueType>> C;
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
   //optimizable variable is shared with the clones
   std::shared_ptr<opt_variables_type> myVars;
 
-  /// if true, the CI coefficients are optimized
-  bool CI_Optimizable;
-
   bool usingCSF;
-  // coefficients of csfs, these are only used during optm
-  std::shared_ptr<std::vector<ValueType>> CSFcoeff;
-  // number of dets per csf
-  std::shared_ptr<std::vector<size_t>> DetsPerCSF;
-  // coefficient of csf expansion (smaller dimension)
-  std::shared_ptr<std::vector<RealType>> CSFexpansion;
+  /// CSF related dataset
+  struct CSFData
+  {
+    // coefficients of csfs, these are only used during optm
+    std::vector<ValueType> coeffs;
+    // number of dets per csf
+    std::vector<size_t> dets_per_csf;
+    // coefficient of csf expansion (smaller dimension)
+    std::vector<RealType> expansion;
+  };
+
+  std::shared_ptr<CSFData> csf_data_;
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.

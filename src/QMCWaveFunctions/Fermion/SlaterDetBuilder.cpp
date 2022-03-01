@@ -232,8 +232,8 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       }
 
       msd_fast->initialize();
-      createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, *msd_fast->CSFcoeff, *msd_fast->DetsPerCSF,
-                    *msd_fast->CSFexpansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
+      createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, msd_fast->csf_data_->coeffs, msd_fast->csf_data_->dets_per_csf,
+                    msd_fast->csf_data_->expansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
                     msd_fast->CI_Optimizable, cur);
 
       // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
