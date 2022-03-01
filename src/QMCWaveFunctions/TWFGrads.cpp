@@ -14,6 +14,8 @@
 
 namespace qmcplusplus
 {
+TWFGrads<CoordsType::POS>::TWFGrads(const std::size_t size) : grads_positions(size) {}
+
 TWFGrads<CoordsType::POS>& TWFGrads<CoordsType::POS>::operator+=(const TWFGrads<CoordsType::POS>& rhs)
 {
   assert(grads_positions.size() == rhs.grads_positions.size());
@@ -21,6 +23,8 @@ TWFGrads<CoordsType::POS>& TWFGrads<CoordsType::POS>::operator+=(const TWFGrads<
                  [](const QMCTraits::GradType& x, const QMCTraits::GradType& y) { return x + y; });
   return *this;
 }
+
+TWFGrads<CoordsType::POS_SPIN>::TWFGrads(const std::size_t size) : grads_positions(size), grads_spins(size) {}
 
 TWFGrads<CoordsType::POS_SPIN>& TWFGrads<CoordsType::POS_SPIN>::operator+=(const TWFGrads<CoordsType::POS_SPIN>& rhs)
 {
