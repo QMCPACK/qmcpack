@@ -110,7 +110,8 @@ void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFuncti
     assert(wf_list.size() == grads.grads_positions.size());
     for (size_t iw = 0; iw < num_wf; iw++)
       if constexpr (CT == CoordsType::POS_SPIN)
-        ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grads.grads_positions[iw], grads.grads_spins[iw]);
+        ratios[iw] =
+            wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grads.grads_positions[iw], grads.grads_spins[iw]);
       else
         ratios[iw] = wf_list[iw].calcRatioGrad(p_list[iw], iat, grads.grads_positions[iw]);
   }

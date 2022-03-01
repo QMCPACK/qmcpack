@@ -44,8 +44,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -331,8 +331,8 @@ void test_Bi_msd(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

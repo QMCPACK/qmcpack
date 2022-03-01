@@ -547,12 +547,12 @@ void TrialWaveFunction::mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>
                                     TWFGrads<CT>& grads)
 {
   const int num_wf = wf_list.size();
-  grads = TWFGrads<CT>(num_wf); //ensure elements are set to zero
+  grads            = TWFGrads<CT>(num_wf); //ensure elements are set to zero
 
   auto& wf_leader = wf_list.getLeader();
   ScopedTimer local_timer(wf_leader.TWF_timers_[VGL_TIMER]);
   // Right now mw_evalGrad can only be called through an concrete instance of a wavefunctioncomponent
-  const int num_wfc = wf_leader.Z.size();
+  const int num_wfc             = wf_leader.Z.size();
   auto& wavefunction_components = wf_leader.Z;
 
   TWFGrads<CT> grads_z(num_wf);
@@ -649,10 +649,10 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatioGradWithSpin(ParticleSe
 
 template<CoordsType CT>
 void TrialWaveFunction::mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                                 int iat,
-                                                 std::vector<PsiValueType>& ratios,
-                                                 TWFGrads<CT>& grad_new)
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         TWFGrads<CT>& grad_new)
 {
   const int num_wf = wf_list.size();
   ratios.resize(num_wf);
