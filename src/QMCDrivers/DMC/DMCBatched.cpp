@@ -108,9 +108,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
   MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
-  TWFGrads<CT> grads_now, grads_new;
-  grads_now.resize(num_walkers);
-  grads_new.resize(num_walkers);
+  TWFGrads<CT> grads_now(num_walkers), grads_new(num_walkers);
 
   //This generates an entire steps worth of deltas.
   makeGaussRandomWithEngine(walker_deltas, step_context.get_random_gen());
