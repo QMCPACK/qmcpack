@@ -167,9 +167,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl(Par
   else
     Dets[det_id]->evaluateGrads(P, iat);
 
-  const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const OffloadVector<ValueType>& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const size_t noffset          = Dets[det_id]->getFirstIndex();
+  const auto& grads = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const OffloadVector<ValueType>& detValues0 =
+      (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const size_t noffset = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   // enforce full precision reduction due to numerical sensitivity
@@ -197,10 +198,11 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGradWithSpin_
   else
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
-  const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const OffloadVector<ValueType>& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
-  const size_t noffset          = Dets[det_id]->getFirstIndex();
+  const auto& grads = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
+  const OffloadVector<ValueType>& detValues0 =
+      (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const ValueMatrix& spingrads = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
+  const size_t noffset         = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
@@ -263,7 +265,8 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
       Grads_copy[3 * iw + 2][i] = grads(i, iat - noffset)[2];
     }
 
-    det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data() : det.Dets[det_id]->getRatiosToRefDet().device_data(); 
+    det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data()
+                                      : det.Dets[det_id]->getRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
 
@@ -525,10 +528,10 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl_no_pre
   const int det_id = getDetID(iat);
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const OffloadVector<ValueType>& detValues0  = Dets[det_id]->getNewRatiosToRefDet(); //always new
-  const size_t* restrict det0    = (*C2node)[det_id].data();
-  const ValueType* restrict cptr = C->data();
-  const size_t nc                = C->size();
+  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
+  const size_t* restrict det0                = (*C2node)[det_id].data();
+  const ValueType* restrict cptr             = C->data();
+  const size_t nc                            = C->size();
 
   PsiValueType psi = 0;
   for (size_t i = 0; i < nc; ++i)
@@ -892,7 +895,7 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
                 if (id == other_id)
                   continue;
                 const OffloadVector<ValueType>& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
-                size_t otherspinC                      = (*C2node)[other_id][cnt];
+                size_t otherspinC                                   = (*C2node)[other_id][cnt];
                 tmp *= detValues_otherspin[otherspinC];
               }
               q0 += tmp * laplSum[id][spinC];
