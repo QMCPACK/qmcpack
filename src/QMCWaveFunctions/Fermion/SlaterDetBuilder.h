@@ -27,7 +27,7 @@ class TrialWaveFunction;
 class BackflowTransformation;
 class DiracDeterminantBase;
 class MultiSlaterDetTableMethod;
-class CSFData;
+struct CSFData;
 class SPOSet;
 class SPOSetBuilder;
 class SPOSetBuilderFactory;
