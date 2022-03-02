@@ -92,8 +92,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       block_first(true),
       block_second(false),
       block_third(false),
-      crowd_size_(1),
-      opt_num_crowds_(0),
       MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
@@ -137,8 +135,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
   m_param.add(num_shifts, "num_shifts");
   m_param.add(cost_increase_tol, "cost_increase_tol");
   m_param.add(target_shift_i, "target_shift_i");
-  m_param.add(crowd_size_, "opt_crowd_size");
-  m_param.add(opt_num_crowds_, "opt_num_crowds");
   m_param.add(param_tol, "alloweddifference");
 
 
@@ -750,18 +746,17 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   vmcEngine->enable_sample_collection();
 
-  // Code to check and set crowds take from QMCDriverNew::adjustGlobalWalkerCount
-  checkNumCrowdsLTNumThreads(opt_num_crowds_);
-  if (opt_num_crowds_ == 0)
-    opt_num_crowds_ = Concurrency::maxCapacity<>();
 
-  app_log() << " Number of crowds for optimizer: " << opt_num_crowds_ << std::endl;
+  QMCDriverNew::AdjustedWalkerCounts awc =
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+
 
   bool success = true;
   //allways reset optTarget
   optTarget =
       std::make_unique<QMCCostFunctionBatched>(W, population_.get_golden_twf(), population_.get_golden_hamiltonian(),
-                                               samples_, opt_num_crowds_, crowd_size_, myComm);
+                                               samples_, awc.walkers_per_crowd, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
