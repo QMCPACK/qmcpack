@@ -159,6 +159,9 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      dotProducts, ratios_to_ref_);
+  ///Pinning ratios_to_ref_ to the device.
+  ratios_to_ref_.updateTo();
+
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -234,6 +237,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      dotProducts, ratios_to_ref_);
+  ///Pinning ratios_to_ref_ to the device.
+  ratios_to_ref_.updateTo();
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();

@@ -70,7 +70,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                                        const std::vector<std::pair<int, int>>& pairs,
                                                                        const std::vector<RealType>& sign,
                                                                        const RefVector<ValueMatrix>& dotProducts_list,
-                                                                       const RefVector<ValueVector>& ratios_list)
+                                                                       const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
   const size_t npairs = pairs.size();
   //This is not sure but I think it is the case dur to the use of a const...
@@ -117,7 +117,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
                                                                const std::vector<std::pair<int, int>>& pairs,
                                                                const std::vector<RealType>& sign,
                                                                ValueMatrix& dotProducts,
-                                                               ValueVector& ratios)
+                                                               OffloadVector<ValueType>& ratios)
 {
   BuildDotProductsAndCalculateRatios_impl(ref, ValueType(1), ratios.data(), psiinv, psi, dotProducts, data, pairs,
                                           sign);
@@ -132,7 +132,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(int nw,
                                                                   const std::vector<std::pair<int, int>>& pairs,
                                                                   const std::vector<RealType>& sign,
                                                                   const RefVector<ValueMatrix>& dotProducts_list,
-                                                                  const RefVector<ValueVector>& ratios_list)
+                                                                  const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
                                              dotProducts_list, ratios_list);
@@ -167,7 +167,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
                                                                        const std::vector<int>& data,
                                                                        const std::vector<std::pair<int, int>>& pairs,
                                                                        const std::vector<RealType>& sign,
-                                                                       const RefVector<ValueVector>& WorkSpace_list,
+                                                                       const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
                                                                        const RefVector<ValueMatrix>& dotProducts_list,
                                                                        const RefVector<GradMatrix>& grads_list)
 
@@ -235,9 +235,11 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   std::vector<ValueType> det0_list(nw, 1.0);
 
 
-  RefVector<ValueVector> psiV_list, psiV_temp_list, new_ratios_to_ref_list, workV1_list, workV2_list;
+  RefVector<ValueVector> psiV_list, psiV_temp_list, workV1_list, workV2_list;
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, TpsiM_list, dotProducts_list, psiM_list;
 
+   
+  RefVector<OffloadVector<ValueType>> new_ratios_to_ref_list;
 
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
@@ -310,6 +312,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list[iw];
+    det.new_ratios_to_ref_.updateTo(); //OFFLOAD TO DEVICE 
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
   }
@@ -477,11 +480,12 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  RefVector<ValueVector> psiV_list, psiV_temp_list, d2psiV_list, workV1_list, workV2_list, new_ratios_to_ref_list;
+  RefVector<ValueVector> psiV_list, psiV_temp_list, d2psiV_list, workV1_list, workV2_list;
   RefVector<GradVector> dpsiV_list;
   RefVector<GradMatrix> new_grads_list;
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, dpsiMinv_list, TpsiM_list, dotProducts_list, psiM_list;
-  RefVector<ValueVector> WorkSpace_list;
+
+  RefVector<OffloadVector<ValueType>> new_ratios_to_ref_list,WorkSpace_list;
 
   std::vector<ValueType> curRatio_list, det0_grad_list;
   std::vector<ValueType> det0_list(nw, 1.0);
@@ -612,7 +616,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list[iw];
+    det.new_ratios_to_ref_.updateTo();///OFFLOAD TO DEVICE 
   }
+
 }
 
 void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
@@ -706,7 +712,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   RefVector<ValueMatrix> dpsiMinv_list, psiMinv_list, psiM_list, TpsiM_list, dotProducts_list;
   RefVector<GradMatrix> dpsiM_list;
   RefVector<GradMatrix> grads_list;
-  RefVector<ValueVector> WorkSpace_list;
+  RefVector<OffloadVector<ValueType>> WorkSpace_list;
   std::vector<ValueType> ratioG_list;
 
 

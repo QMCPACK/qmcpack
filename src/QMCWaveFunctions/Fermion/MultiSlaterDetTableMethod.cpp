@@ -168,7 +168,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl(Par
     Dets[det_id]->evaluateGrads(P, iat);
 
   const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const OffloadVector<ValueType>& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const size_t noffset          = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
@@ -198,7 +198,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGradWithSpin_
     Dets[det_id]->evaluateGradsWithSpin(P, iat);
 
   const auto& grads             = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
-  const ValueVector& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+  const OffloadVector<ValueType>& detValues0 = (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
   const ValueMatrix& spingrads  = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
   const size_t noffset          = Dets[det_id]->getFirstIndex();
 
@@ -263,12 +263,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
       Grads_copy[3 * iw + 2][i] = grads(i, iat - noffset)[2];
     }
 
-    const ValueType* restrict detValues0 =
-        (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().data() : det.Dets[det_id]->getRatiosToRefDet().data();
-    // allocate device memory and transfer content to device
-    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])")
-    det_value_ptr_list[iw] = getOffloadDevicePtr(detValues0);
-    //Put C_otherDs in host
+    det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data() : det.Dets[det_id]->getRatiosToRefDet().device_data(); 
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
 
@@ -312,12 +307,6 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     grad_now[iw][0] = grad_now_list[iw * 3 + 0] * psi_inv;
     grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
     grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
-
-    //Free Memory
-    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
-    const ValueType* restrict detValues0 =
-        (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().data() : det.Dets[det_id]->getRatiosToRefDet().data();
-    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])") //free memory on device
   }
 }
 
@@ -517,7 +506,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl(Partic
 
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
   PsiValueType psi = 0;
   // This function computes
@@ -536,7 +525,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl_no_pre
   const int det_id = getDetID(iat);
   Dets[det_id]->evaluateDetsForPtclMove(P, iat);
 
-  const ValueVector& detValues0  = Dets[det_id]->getNewRatiosToRefDet(); //always new
+  const OffloadVector<ValueType>& detValues0  = Dets[det_id]->getNewRatiosToRefDet(); //always new
   const size_t* restrict det0    = (*C2node)[det_id].data();
   const ValueType* restrict cptr = C->data();
   const size_t nc                = C->size();
@@ -609,10 +598,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     auto& det      = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.UpdateMode = ORB_PBYP_RATIO;
 
-    const ValueType* restrict detValues0 = det.Dets[det_id]->getNewRatiosToRefDet().data(); //always new
-    // allocate device memory and transfer content to device
-    PRAGMA_OFFLOAD("omp target enter data map(to : detValues0[:ndets])")
-    det_value_ptr_list[iw] = getOffloadDevicePtr(detValues0);
+    det_value_ptr_list[iw] = det.Dets[det_id]->getNewRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
 
@@ -637,9 +623,6 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
-
-    const ValueType* restrict detValues0 = det.Dets[det_id]->getNewRatiosToRefDet().data(); //always new
-    PRAGMA_OFFLOAD("omp target exit data map(delete : detValues0[:ndets])")                 //free memory on device.
   }
 }
 
@@ -652,7 +635,7 @@ void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
     Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
-    const ValueVector& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+    const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
     PsiValueType psiNew(0);
     if (use_pre_computing_)
@@ -908,7 +891,7 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
               {
                 if (id == other_id)
                   continue;
-                const ValueVector& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
+                const OffloadVector<ValueType>& detValues_otherspin = Dets[other_id]->getRatiosToRefDet();
                 size_t otherspinC                      = (*C2node)[other_id][cnt];
                 tmp *= detValues_otherspin[otherspinC];
               }

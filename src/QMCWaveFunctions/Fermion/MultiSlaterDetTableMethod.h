@@ -59,6 +59,9 @@ public:
   template<typename DT>
   using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   using SPOSetPtr   = SPOSet*;
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
