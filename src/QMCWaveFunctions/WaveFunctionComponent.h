@@ -264,20 +264,6 @@ public:
                            int iat,
                            std::vector<GradType>& grad_now) const;
 
-  /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
-   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param p_list the list of ParticleSet pointers in a walker batch
-   * @param iat particle index
-   * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
-   * @param spingrad_now the list of spin gradients in a walker batch, \f$\nabla_s\ln\Psi\f$
-   *
-   */
-  virtual void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                   const RefVectorWithLeader<ParticleSet>& p_list,
-                                   int iat,
-                                   std::vector<GradType>& grad_now,
-                                   std::vector<ComplexType>& spingrad_now) const;
-
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
    * @param Pquantum particle set
@@ -349,20 +335,6 @@ public:
                             int iat,
                             std::vector<PsiValueType>& ratios,
                             std::vector<GradType>& grad_new) const;
-
-  /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient/spingradient of multiple walkers
-   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
-   * @param p_list the list of ParticleSet pointers in a walker batch
-   * @param iat particle index
-   * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
-   * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
-   */
-  virtual void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                    int iat,
-                                    std::vector<PsiValueType>& ratios,
-                                    std::vector<GradType>& grad_new,
-                                    std::vector<ComplexType>& spingrad_new) const;
 
   /** a move for iat-th particle is accepted. Update the current content.
    * @param P target ParticleSet
@@ -746,6 +718,35 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 #endif
+
+private:
+  /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
+   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param p_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   * @param spingrad_now the list of spin gradients in a walker batch, \f$\nabla_s\ln\Psi\f$
+   *
+   */
+  virtual void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   std::vector<GradType>& grad_now,
+                                   std::vector<ComplexType>& spingrad_now) const;
+
+  /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient/spingradient of multiple walkers
+   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param p_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
+   * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  virtual void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iat,
+                                    std::vector<PsiValueType>& ratios,
+                                    std::vector<GradType>& grad_new,
+                                    std::vector<ComplexType>& spingrad_new) const;
 };
 } // namespace qmcplusplus
 #endif
