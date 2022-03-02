@@ -24,7 +24,7 @@ struct TWFGrads;
 template<>
 struct TWFGrads<CoordsType::POS>
 {
-  TWFGrads(const std::size_t size); 
+  TWFGrads(const std::size_t size);
 
   TWFGrads& operator+=(const TWFGrads& rhs);
 
