@@ -10,16 +10,30 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "TWFGrads.hpp"
+#include <algorithm>
 
 namespace qmcplusplus
 {
+TWFGrads<CoordsType::POS>::TWFGrads(const std::size_t size) : grads_positions(size) {}
 
-void TWFGrads<CoordsType::POS>::resize(const std::size_t size) { grads_positions.resize(size); }
-
-void TWFGrads<CoordsType::POS_SPIN>::resize(const std::size_t size)
+TWFGrads<CoordsType::POS>& TWFGrads<CoordsType::POS>::operator+=(const TWFGrads<CoordsType::POS>& rhs)
 {
-  grads_positions.resize(size);
-  grads_spins.resize(size);
+  assert(grads_positions.size() == rhs.grads_positions.size());
+  std::transform(grads_positions.begin(), grads_positions.end(), rhs.grads_positions.begin(), grads_positions.begin(),
+                 [](const QMCTraits::GradType& x, const QMCTraits::GradType& y) { return x + y; });
+  return *this;
+}
+
+TWFGrads<CoordsType::POS_SPIN>::TWFGrads(const std::size_t size) : grads_positions(size), grads_spins(size) {}
+
+TWFGrads<CoordsType::POS_SPIN>& TWFGrads<CoordsType::POS_SPIN>::operator+=(const TWFGrads<CoordsType::POS_SPIN>& rhs)
+{
+  assert(grads_positions.size() == rhs.grads_positions.size());
+  std::transform(grads_positions.begin(), grads_positions.end(), rhs.grads_positions.begin(), grads_positions.begin(),
+                 [](const QMCTraits::GradType& x, const QMCTraits::GradType& y) { return x + y; });
+  std::transform(grads_spins.begin(), grads_spins.end(), rhs.grads_spins.begin(), grads_spins.begin(),
+                 [](const QMCTraits::ComplexType& x, const QMCTraits::ComplexType& y) { return x + y; });
+  return *this;
 }
 
 template struct TWFGrads<CoordsType::POS>;

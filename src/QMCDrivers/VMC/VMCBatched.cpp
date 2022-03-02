@@ -85,9 +85,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
   MCCoords<CT> walker_deltas(num_walkers * num_particles), deltas(num_walkers);
-  TWFGrads<CT> grads_now, grads_new;
-  grads_now.resize(num_walkers);
-  grads_new.resize(num_walkers);
+  TWFGrads<CT> grads_now(num_walkers), grads_new(num_walkers);
 
   for (int sub_step = 0; sub_step < sft.qmcdrv_input.get_sub_steps(); sub_step++)
   {
