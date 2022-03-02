@@ -24,6 +24,20 @@
 
 namespace qmcplusplus
 {
+/// CSF related dataset
+struct CSFData
+{
+  using RealType  = WaveFunctionComponent::RealType;
+  using ValueType = WaveFunctionComponent::ValueType;
+
+  // coefficients of csfs, these are only used during optm
+  std::vector<ValueType> coeffs;
+  // number of dets per csf
+  std::vector<size_t> dets_per_csf;
+  // coefficient of csf expansion (smaller dimension)
+  std::vector<RealType> expansion;
+};
+
 /** @ingroup WaveFunctionComponent
  *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
@@ -150,47 +164,18 @@ public:
                              const opt_variables_type& optvars,
                              std::vector<ValueType>& dlogpsi) override;
 
-  void resize(int, int);
-  void initialize();
-
-  /// if true, the CI coefficients are optimized
-  bool CI_Optimizable;
-  size_t ActiveSpin;
-  bool usingCSF;
-  PsiValueType curRatio;
-
-  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
-  std::map<std::string, size_t> SPOSetID;
-
-  /** map determinant in linear combination to unique det list
-   * map global det id to unique det id. [spin, global det id] = unique det id
+  /** initialize a few objects and states by the builder
+   * YL: it should be part of the constructor. It cannot be added to the constructor
+   * because the constructor is used by makeClone. The right way of fix needs:
+   *  1. implement a copy constructor and reroute makeClone to it.
+   *  2. merge initialize() into the constructor.
    */
-  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
-  /// CI coefficients
-  std::shared_ptr<std::vector<ValueType>> C;
-  /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
-  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
-  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
-
-  ParticleSet::ParticleGradient myG, myG_temp;
-  ParticleSet::ParticleLaplacian myL, myL_temp;
-  std::vector<ValueVector> laplSum;
-
-  //optimizable variable is shared with the clones
-  std::shared_ptr<opt_variables_type> myVars;
-  // coefficients of csfs, these are only used during optm
-  std::shared_ptr<std::vector<ValueType>> CSFcoeff;
-  // number of dets per csf
-  std::shared_ptr<std::vector<size_t>> DetsPerCSF;
-  // coefficient of csf expansion (smaller dimension)
-  std::shared_ptr<std::vector<RealType>> CSFexpansion;
-
-  // temporary storage for evaluateDerivatives
-  ParticleSet::ParticleGradient gmPG;
-  std::vector<Matrix<RealType>> dpsia, dLa;
-  std::vector<Array<GradType, OHMMS_DIM>> dGa;
+  void initialize(std::unique_ptr<std::vector<std::vector<size_t>>> C2node_in,
+                  std::unique_ptr<std::vector<ValueType>> C_in,
+                  std::unique_ptr<opt_variables_type> myVars_in,
+                  std::unique_ptr<CSFData> csf_data_in,
+                  bool optimizable,
+                  bool CI_optimizable);
 
 private:
   //get Det ID. It should be consistent with particle group id within the particle set.
@@ -239,6 +224,32 @@ private:
    */
   void precomputeC_otherDs(const ParticleSet& P, int ig);
 
+  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi);
+
+  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& dlogpsi);
+
+  /// determinant collection
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
+
+  /** map determinant in linear combination to unique det list
+   * map global det id to unique det id. [spin, global det id] = unique det id
+   */
+  std::shared_ptr<std::vector<std::vector<size_t>>> C2node;
+  /// CI coefficients
+  std::shared_ptr<std::vector<ValueType>> C;
+  /// if true, the CI coefficients are optimized
+  bool CI_Optimizable;
+  //optimizable variable is shared with the clones
+  std::shared_ptr<opt_variables_type> myVars;
+
+  /// CSF data set. If nullptr, not using CSF
+  std::shared_ptr<CSFData> csf_data_;
+
   ///the last particle of each group
   std::vector<int> Last;
   ///use pre-compute (fast) algorithm
@@ -249,14 +260,23 @@ private:
   /// new psi over new ref single det when one particle is moved
   PsiValueType new_psi_ratio_to_new_ref_det_;
 
-  void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
-                                                const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi);
+  size_t ActiveSpin;
+  PsiValueType curRatio;
 
-  void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
-                                                  const opt_variables_type& optvars,
-                                                  std::vector<ValueType>& dlogpsi);
+  /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
+  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
+  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
+
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
+  std::vector<ValueVector> laplSum;
+
+  // temporary storage for evaluateDerivatives
+  ParticleSet::ParticleGradient gmPG;
+  std::vector<Matrix<RealType>> dpsia, dLa;
+  std::vector<Array<GradType, OHMMS_DIM>> dGa;
 };
 
 } // namespace qmcplusplus

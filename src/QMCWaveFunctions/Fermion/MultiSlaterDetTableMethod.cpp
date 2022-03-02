@@ -42,7 +42,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
   //Optimizable=true;
   Optimizable  = false;
   is_fermionic = true;
-  usingCSF     = false;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
@@ -56,14 +55,19 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
     Last[i] = targetPtcl.last(i) - 1;
 }
 
-void MultiSlaterDetTableMethod::initialize()
+void MultiSlaterDetTableMethod::initialize(std::unique_ptr<std::vector<std::vector<size_t>>> C2node_in,
+                                           std::unique_ptr<std::vector<ValueType>> C_in,
+                                           std::unique_ptr<opt_variables_type> myVars_in,
+                                           std::unique_ptr<CSFData> csf_data_in,
+                                           bool optimizable,
+                                           bool CI_optimizable)
 {
-  C2node       = std::make_shared<std::vector<std::vector<size_t>>>(Dets.size());
-  C            = std::make_shared<std::vector<ValueType>>();
-  CSFcoeff     = std::make_shared<std::vector<ValueType>>();
-  DetsPerCSF   = std::make_shared<std::vector<size_t>>();
-  CSFexpansion = std::make_shared<std::vector<RealType>>();
-  myVars       = std::make_shared<opt_variables_type>();
+  C2node         = std::move(C2node_in);
+  C              = std::move(C_in);
+  myVars         = std::move(myVars_in);
+  csf_data_      = std::move(csf_data_in);
+  Optimizable    = optimizable;
+  CI_Optimizable = CI_optimizable;
 }
 
 MultiSlaterDetTableMethod::~MultiSlaterDetTableMethod() = default;
@@ -76,21 +80,14 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
 
   auto clone = std::make_unique<MultiSlaterDetTableMethod>(tqp, std::move(dets_clone), use_pre_computing_);
 
-  clone->C2node = C2node;
-  clone->C      = C;
-  clone->myVars = myVars;
+  clone->CI_Optimizable = CI_Optimizable;
+  clone->C2node         = C2node;
+  clone->C              = C;
+  clone->myVars         = myVars;
 
   clone->Optimizable = Optimizable;
-  clone->usingCSF    = usingCSF;
+  clone->csf_data_   = csf_data_;
 
-  clone->CI_Optimizable = CI_Optimizable;
-
-  if (usingCSF)
-  {
-    clone->CSFcoeff     = CSFcoeff;
-    clone->CSFexpansion = CSFexpansion;
-    clone->DetsPerCSF   = DetsPerCSF;
-  }
   return clone;
 }
 
@@ -778,10 +775,10 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
 {
   if (CI_Optimizable)
   {
-    if (usingCSF)
+    if (csf_data_)
     {
-      ValueType* restrict CSFcoeff_p = CSFcoeff->data();
-      for (int i = 0; i < CSFcoeff->size() - 1; i++)
+      ValueType* restrict CSFcoeff_p = csf_data_->coeffs.data();
+      for (int i = 0; i < csf_data_->coeffs.size() - 1; i++)
       {
         int loc = myVars->where(i);
         if (loc >= 0)
@@ -791,10 +788,10 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
       }
       int cnt                                 = 0;
       ValueType* restrict C_p                 = C->data();
-      const RealType* restrict CSFexpansion_p = CSFexpansion->data();
-      for (int i = 0; i < DetsPerCSF->size(); i++)
+      const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
+      for (int i = 0; i < csf_data_->dets_per_csf.size(); i++)
       {
-        for (int k = 0; k < (*DetsPerCSF)[i]; k++)
+        for (int k = 0; k < csf_data_->dets_per_csf[i]; k++)
         {
           C_p[cnt] = CSFcoeff_p[i] * CSFexpansion_p[cnt];
           cnt++;
@@ -879,25 +876,25 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
       for (size_t i = 0; i < P.getTotalNum(); i++)
         gg += dot(myG_temp[i], myG_temp[i]) - dot(P.G[i], myG_temp[i]);
 
-      if (usingCSF)
+      if (csf_data_)
       {
-        const int num = CSFcoeff->size() - 1;
+        const int num = csf_data_->coeffs.size() - 1;
         int cnt       = 0;
         //        this one is not optable
-        cnt += (*DetsPerCSF)[0];
+        cnt += csf_data_->dets_per_csf[0];
         int ip(1);
         for (int i = 0; i < num; i++, ip++)
         {
           int kk = myVars->where(i);
           if (kk < 0)
           {
-            cnt += (*DetsPerCSF)[ip];
+            cnt += csf_data_->dets_per_csf[ip];
             continue;
           }
           ValueType q0 = 0.0;
           std::vector<ValueType> v(Dets.size());
-          const RealType* restrict CSFexpansion_p = CSFexpansion->data();
-          for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
+          const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
+          for (int k = 0; k < csf_data_->dets_per_csf[ip]; k++)
           {
             for (size_t id = 0; id < Dets.size(); id++)
             {
@@ -1012,26 +1009,26 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
     // need to modify for CSF later on, right now assume Slater Det basis
     if (recalculate)
     {
-      if (usingCSF)
+      if (csf_data_)
       {
         ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
 
-        const int num = CSFcoeff->size() - 1;
+        const int num = csf_data_->coeffs.size() - 1;
         int cnt       = 0;
         //        this one is not optable
-        cnt += (*DetsPerCSF)[0];
+        cnt += csf_data_->dets_per_csf[0];
         int ip(1);
         for (int i = 0; i < num; i++, ip++)
         {
           int kk = myVars->where(i);
           if (kk < 0)
           {
-            cnt += (*DetsPerCSF)[ip];
+            cnt += csf_data_->dets_per_csf[ip];
             continue;
           }
           ValueType cdet                          = 0.0;
-          const RealType* restrict CSFexpansion_p = CSFexpansion->data();
-          for (int k = 0; k < (*DetsPerCSF)[ip]; k++)
+          const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
+          for (int k = 0; k < csf_data_->dets_per_csf[ip]; k++)
           {
             ValueType t = CSFexpansion_p[cnt] * psiinv;
             // assume that evaluateLog has been called in opt routine before

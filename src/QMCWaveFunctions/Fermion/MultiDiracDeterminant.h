@@ -55,7 +55,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel);
 
   ///default destructor
   ~MultiDiracDeterminant() override;
@@ -75,16 +75,6 @@ public:
   std::unique_ptr<SPOSet> clonePhi() const;
 
   SPOSetPtr getPhi() { return Phi.get(); };
-
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   *@param ref_det_id id of the reference determinant
-   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
-   *
-   * Note: ciConfigList should have been populated when calling this function
-   */
-  void set(int first, int nel, int ref_det_id, std::vector<size_t>& C2nodes_ptcl);
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
@@ -223,22 +213,19 @@ public:
    * END END END
    ***************************************************************************/
 
-  /** create necessary structures used in the evaluation of the determinants
-   * sort confgList by excitation level
-   * confgList shouldn't change during a simulation after it is sorted here
+  /** create necessary structures related to unique determinants
+   * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
+   * ciConfigList shouldn't change during a simulation after it is sorted here
    *
-   *@param ref reference configuration
-   *@param data data structure holding information about excitation holes/particles (*this->detData)
-   *@param pairs all hole/particle pairs needed to construct excitation matrices for table method (*this->uniquePairs)
-   *@param sign sign of each excitation (parity of permutation of orbital indices) (*this->DetSigns)
-   *@param C2nodes_ptcl mapping from overall det index to unique det index for this particle group
-   *
+   * @param ref_det_id id of the reference determinant
+   * @param configlist_unsorted config list to be loaded.
+   * @param C2nodes_unsorted mapping from overall det index to unique det (configlist_unsorted) index
+   * @param C2nodes_sorted mapping from overall det index to unique det (ciConfigList) index
    */
-  void createDetData(const ci_configuration2& ref,
-                     std::vector<int>& data,
-                     std::vector<std::pair<int, int>>& pairs,
-                     std::vector<RealType>& sign,
-                     std::vector<size_t>& C2nodes_ptcl);
+  void createDetData(const int ref_det_id,
+                     const std::vector<ci_configuration2>& configlist_unsorted,
+                     const std::vector<size_t>& C2nodes_unsorted,
+                     std::vector<size_t>& C2nodes_sorted);
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
@@ -494,7 +481,6 @@ public:
   inline int getNumDets() const { return ciConfigList->size(); }
   inline int getNumPtcls() const { return NumPtcls; }
   inline int getFirstIndex() const { return FirstIndex; }
-  inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
 
   const ValueVector& getRatiosToRefDet() const { return ratios_to_ref_; }
   const ValueVector& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
@@ -510,18 +496,18 @@ public:
 
 private:
   ///reset the size: with the number of particles
-  void resize(int nel);
+  void resize();
 
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   const std::unique_ptr<SPOSet> Phi;
   ///number of single-particle orbitals which belong to this Dirac determinant
   const int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
   ///index of the first particle with respect to the particle set
-  int FirstIndex;
+  const int FirstIndex;
+  ///number of particles which belong to this Dirac determinant
+  const int NumPtcls;
   ///index of the last particle with respect to the particle set
-  int LastIndex;
+  const int LastIndex;
   ///use shared_ptr
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
@@ -595,7 +581,7 @@ private:
   /** number of unique determinants at each excitation level (relative to reference)
    *  {1, n_singles, n_doubles, n_triples, ...}
    */
-  std::shared_ptr<std::vector<int>> ndets_per_excitation_level;
+  std::shared_ptr<std::vector<int>> ndets_per_excitation_level_;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 
