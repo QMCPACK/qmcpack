@@ -104,7 +104,7 @@ restart_batch
   qmc_short_batch
   8
   2
-  check_batch.sh
+  check.sh
   false)
 run_restart_and_check(
 restart_batch
@@ -112,7 +112,7 @@ restart_batch
   qmc_short_batch
   1
   16
-  check_batch.sh
+  check.sh
   true)
 
 run_restart_and_check(
