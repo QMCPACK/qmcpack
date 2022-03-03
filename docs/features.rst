@@ -129,9 +129,7 @@ There are two GPU implementations in the code base.
     However, only a very limited subset of features is available.
 
 
-The existing implementation supports multiple GPUs per node, with MPI tasks assigned in a round-robin order to the GPUs.
-Currently, for medium to large runs, 1 MPI task should be used per GPU per node.
-For smaller calculations, use of multiple MPI tasks per GPU might yield improved performance.
+QMCPACK supports running on multi-GPU node architectures via MPI.
 
 Supported GPU features:
 
