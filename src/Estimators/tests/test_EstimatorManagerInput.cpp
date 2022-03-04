@@ -65,7 +65,7 @@ Libxml2Document createEstimatorManagerNewInputXML()
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
+  }  
   return estimators_doc;
 }
 

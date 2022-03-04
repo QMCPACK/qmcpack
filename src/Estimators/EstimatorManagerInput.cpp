@@ -27,9 +27,12 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
     if (cname == "estimator")
     {
-      std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
-      if (atype == "onebodydensitymatrices")
+      if (atype == "localenergy")
+        appendScalarEstimatorInput<LocalEnergy>(child);
+      else if (atype == "cslocalenergy")
+        appendScalarEstimatorInput<CSLocalEnergy>(child);
+      else if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
       else if (atype == "spindensity")
         appendEstimatorInput<SpinDensityInput>(child);
