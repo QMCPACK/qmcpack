@@ -44,7 +44,7 @@ struct float_tag
  *  used and a constexpr based on DeterminantTypes that actually depend on legacy cuda.
  */
 template<class DiracDet, class SPO_precision>
-void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const bool offload_jas)
+void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const bool offload_spo, const bool offload_jas)
 {
 #if defined(MIXED_PRECISION)
   const double grad_precision  = 1.3e-4;
@@ -121,16 +121,20 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const bool offload_j
 
   //diamondC_1x1x1
   std::string spo_xml = R"XML(<tmp> \
-               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2"/> \
+               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="no"/> \
+               </tmp>)XML";
+  std::string spo_omp_xml = R"XML(<tmp> \
+               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="omptarget"/> \
                </tmp>)XML";
 #ifndef MIXED_PRECISION
   if (std::is_same<SPO_precision, double_tag>::value)
   {
     spo_xml = std::regex_replace(spo_xml, std::regex("float"), "double");
+    spo_omp_xml = std::regex_replace(spo_omp_xml, std::regex("float"), "double");
   }
 #endif
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
+  bool okay = doc.parseFromString(offload_spo ? spo_omp_xml : spo_xml);
   REQUIRE(okay);
 
   xmlNodePtr spo_root = doc.getRoot();
@@ -578,25 +582,92 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
   SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1, true);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2, true);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1, true);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2, false, false);
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_spo")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2, true, false);
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2, false, true);
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_spo_jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2, true, true);
   }
 #endif
+
+  // DiracDeterminantBatched<MatrixUpdateOMPTarget>
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1, true);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2, false);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1, false);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2, false, false);
   }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2, true, false);
+  }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2, false, true);
+  }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo_jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2, true, true);
+  }
+
+  // DiracDeterminant<DelayedUpdate>
   SECTION("DiracDeterminant<DelayedUpdate>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1, false);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2, false);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1, false);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1, false, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2, false, false);
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_spo")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1, true, false);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2, true, false);
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_Jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1, false, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2, false, true);
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_spo_jas")
+  {
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1, true, true);
+    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2, true, true);
   }
 }
 

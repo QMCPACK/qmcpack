@@ -17,9 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include <PlatformSelector.hpp>
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
@@ -122,11 +123,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string skip_checks("no");
   std::string use_einspline_set_extended(
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-#if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
-  std::string useGPU = "yes";
-#else
-  std::string useGPU = "no";
-#endif
+  std::string useGPU;
   std::string GPUsharing = "no";
   ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -141,7 +138,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
     a.add(hybrid_rep, "hybridrep");
-    a.add(useGPU, "gpu");
+#if defined(QMC_CUDA)
+    useGPU = "yes";
+#else
+    a.add(useGPU, "gpu", OMPTargetSelector::candidate_values);
+#endif
     a.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add(spo_prec, "precision");
     a.add(truncate, "truncate");
