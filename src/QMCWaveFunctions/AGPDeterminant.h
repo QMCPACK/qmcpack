@@ -35,6 +35,9 @@ public:
   using GradVector   = BasisSetType::GradVector;
   using GradMatrix   = BasisSetType::GradMatrix;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
   BasisSetType* GeminalBasis;
 
   /** constructor
@@ -151,7 +154,8 @@ public:
    * phiTv = Lambda Y(iat)
    */
   ValueVector phiTv;
-  ValueVector psiU, psiD;
+  ValueVector psiU;
+  OffloadVector<ValueType> psiD;
   GradVector dpsiUv, dpsiDv;
   ValueVector d2psiUv, d2psiDv;
   ValueVector workV1, workV2;
