@@ -39,8 +39,7 @@ class ProjectData
 {
 public:
   /// constructor
-  ProjectData();
-
+  ProjectData(const std::string& driver_epoch = "legacy");
   
   bool get(std::ostream& os) const ;
   bool put(std::istream& is) ;

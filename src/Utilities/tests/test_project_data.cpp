@@ -38,13 +38,10 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj1.getTitle().size() > 0);
   REQUIRE(proj1.getTitle() == proj1.getName());
 
-
   ProjectData proj2;
   REQUIRE(proj2.getSeriesIndex() == 0);
   proj2.advance();
   REQUIRE(proj2.getSeriesIndex() == 1);
-
-  REQUIRE(proj2.getTitle() == std::string("asample"));
 
   proj2.setCommunicator(c);
   std::stringstream o2;
