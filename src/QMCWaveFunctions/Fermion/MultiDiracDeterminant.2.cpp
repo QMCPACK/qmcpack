@@ -58,7 +58,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
       ratios[count] = sign[count] * det0 * CalculateRatioFromMatrixElements(n, dotProducts, it2 + 1);
     it2 += 3 * n + 1;
   }
-  
+
   ratios[ref] = det0;
   readMatTimer.stop();
 }
@@ -96,34 +96,32 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     dotProducts_list[iw].get().updateTo();
   }
 
-  const int Max_ext_level=(ndets_per_excitation_level->size()-1);
-  size_t count_0 = 1;
-  size_t it_shift=1;
+  const int Max_ext_level = (ndets_per_excitation_level->size() - 1);
+  size_t count_0          = 1;
+  size_t it_shift         = 1;
 
 
-  for (size_t ext_level=1; ext_level <= Max_ext_level; ext_level++)
+  for (size_t ext_level = 1; ext_level <= Max_ext_level; ext_level++)
   {
     const size_t n = ext_level;
 
-   // PRAGMA_OFFLOAD("omp target teams distribute map")
+    // PRAGMA_OFFLOAD("omp target teams distribute map")
     for (size_t iw = 0; iw < nw; iw++)
     {
-      std::vector<int>::const_iterator it2 = data.begin()+it_shift;
+      std::vector<int>::const_iterator it2 = data.begin() + it_shift;
       //PRAGMA_OFFLOAD("omp parallel for")
       for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level)[ext_level]; ++count_1)
       {
-        size_t count = count_0 + count_1;
-          ratios_list[iw].get()[count] =
-              sign[count] * det0_list[iw] * CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1 + count_1*(3 * n + 1));
+        size_t count                 = count_0 + count_1;
+        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
+            CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1 + count_1 * (3 * n + 1));
       }
       ratios_list[iw].get().updateTo();
     }
-      count_0 += (*ndets_per_excitation_level)[ext_level];
-      it_shift += (*ndets_per_excitation_level)[ext_level]*(3 * ext_level + 1) ;
+    count_0 += (*ndets_per_excitation_level)[ext_level];
+    it_shift += (*ndets_per_excitation_level)[ext_level] * (3 * ext_level + 1);
   }
-    readMatTimer.stop();
-
-
+  readMatTimer.stop();
 }
 
 
@@ -254,12 +252,12 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   std::vector<ValueType> det0_list(nw, 1.0);
 
 
-  RefVector<ValueVector>  workV1_list, workV2_list;
+  RefVector<ValueVector> workV1_list, workV2_list;
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list;
 
 
   RefVector<OffloadVector<ValueType>> psiV_list, psiV_temp_list, new_ratios_to_ref_list;
-  RefVector<OffloadMatrix<ValueType>>  TpsiM_list, psiM_list, dotProducts_list;
+  RefVector<OffloadMatrix<ValueType>> TpsiM_list, psiM_list, dotProducts_list;
 
   phi_list.reserve(nw);
   psiV_list.reserve(nw);
@@ -307,7 +305,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   det_leader.evalOrbTimer.stop();
 
   det_leader.ExtraStuffTimer.start();
-  ///PRAGMA OFFLOAD to assign values in the GPU 
+  ///PRAGMA OFFLOAD to assign values in the GPU
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
@@ -517,11 +515,11 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<ValueVector> d2psiV_list, workV1_list, workV2_list;
   RefVector<GradVector> dpsiV_list;
   RefVector<GradMatrix> new_grads_list;
-  RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, dpsiMinv_list; 
+  RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, dpsiMinv_list;
 
   RefVector<OffloadVector<ValueType>> psiV_list, psiV_temp_list, new_ratios_to_ref_list, WorkSpace_list;
-  RefVector<OffloadMatrix<ValueType>> dotProducts_list,psiM_list,TpsiM_list;  
-  
+  RefVector<OffloadMatrix<ValueType>> dotProducts_list, psiM_list, TpsiM_list;
+
 
   std::vector<ValueType> curRatio_list, det0_grad_list;
   std::vector<ValueType> det0_list(nw, 1.0);
@@ -584,8 +582,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
-    det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view,  dpsiV_list[iw].get(), d2psiV_list[iw].get());
-  ///Pinn PsiV_list, dpsiV_list and d2psiV_list to GPU
+    det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list[iw].get(), d2psiV_list[iw].get());
+    ///Pinn PsiV_list, dpsiV_list and d2psiV_list to GPU
     psiV_list[iw].get().updateTo();
     //dpsiV_list[iw].get().updateTo();
     //d2psiV_list[iw].get().updateTo();
@@ -599,7 +597,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
     const auto& confgList       = *det.ciConfigList;
     auto it(confgList[det_leader.ReferenceDeterminant].occup.begin());
-    
+
     for (size_t i = 0; i < det_leader.NumPtcls; i++)
     {
       psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[*it];
@@ -756,7 +754,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   RefVector<GradMatrix> dpsiM_list;
   RefVector<GradMatrix> grads_list;
   RefVector<OffloadVector<ValueType>> psiV_temp_list, WorkSpace_list;
-  RefVector<OffloadMatrix<ValueType>> dotProducts_list,TpsiM_list,psiM_list;
+  RefVector<OffloadMatrix<ValueType>> dotProducts_list, TpsiM_list, psiM_list;
   std::vector<ValueType> ratioG_list;
 
 

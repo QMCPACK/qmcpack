@@ -141,11 +141,12 @@ public:
 
     Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
     Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
-    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(),M_up.cols());
-    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(),M_dn.cols());
+    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
+    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(), M_dn.cols());
     Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
                              detValues_up_host_view, detValues_dn_host_view, grads_up, grads_dn, lapls_up, lapls_dn,
-                             M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, B_grad, B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
+                             M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, B_grad, B_lapl, *detData, N1, N2, NP1,
+                             NP2, lookup_tbl);
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
@@ -169,10 +170,11 @@ public:
 
     Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
     Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
-    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(),M_up.cols());
-    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(),M_dn.cols());
+    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
+    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(), M_dn.cols());
     Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up_host_view,
-                               detValues_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, *detData, lookup_tbl);
+                               detValues_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, *detData,
+                               lookup_tbl);
   }
 
 
@@ -312,10 +314,10 @@ public:
                                     dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
                                     dotProducts(i5, a5));
     }
-    default:{
+    default: {
       APP_ABORT("Excitation higher than 5 are not implemented. Please contact developers");
-      return 0.0;//DetCalculator.evaluate(dotProducts, it, n);
-	    }
+      return 0.0; //DetCalculator.evaluate(dotProducts, it, n);
+    }
     }
     return 0.0;
   }
@@ -373,7 +375,7 @@ public:
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
                                           const std::vector<RealType>& sign,
-                                          OffloadMatrix<ValueType> & dotProducts,
+                                          OffloadMatrix<ValueType>& dotProducts,
                                           OffloadVector<ValueType>& ratios);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
