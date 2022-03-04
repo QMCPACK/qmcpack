@@ -132,11 +132,10 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   // set num_global_walkers explicitly and then make local walkers.
   population_.set_num_global_walkers(awc.global_walkers);
 
-  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers,
-                   ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>(population_.get_num_particles()));
+  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
   estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
-                          population_.get_golden_twf(), population_.get_wf_factory(), cur);
+                          population_.get_golden_twf(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {
@@ -236,8 +235,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 }
 
 void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
-                                    RealType reserve,
-                                    const ParticleAttrib<TinyVector<QMCTraits::RealType, 3>>& positions)
+                                    RealType reserve)
 {
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
@@ -294,8 +292,7 @@ void QMCDriverNew::createRngsStepContexts(int num_crowds)
   for (int i = 0; i < num_crowds; ++i)
   {
     Rng[i].reset(RandomNumberControl::Children[i].release());
-    step_contexts_[i] = std::make_unique<ContextForSteps>(crowds_[i]->size(), population_.get_num_particles(),
-                                                          population_.get_particle_group_indexes(), *(Rng[i]));
+    step_contexts_[i] = std::make_unique<ContextForSteps>(*(Rng[i]));
   }
 }
 

@@ -55,7 +55,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor);
+  MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel);
 
   ///default destructor
   ~MultiDiracDeterminant() override;
@@ -75,15 +75,6 @@ public:
   std::unique_ptr<SPOSet> clonePhi() const;
 
   SPOSetPtr getPhi() { return Phi.get(); };
-
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   *@param ref_det_id id of the reference determinant
-   *
-   * Note: ciConfigList should have been populated when calling this function
-   */
-  void set(int first, int nel, int ref_det_id);
 
   ///optimizations  are disabled
   inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
@@ -222,12 +213,19 @@ public:
    * END END END
    ***************************************************************************/
 
-  // create necessary structures used in the evaluation of the determinants
-  // this works with confgList, which shouldn't change during a simulation
-  void createDetData(const ci_configuration2& ref,
-                     std::vector<int>& data,
-                     std::vector<std::pair<int, int>>& pairs,
-                     std::vector<RealType>& sign);
+  /** create necessary structures related to unique determinants
+   * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
+   * ciConfigList shouldn't change during a simulation after it is sorted here
+   *
+   * @param ref_det_id id of the reference determinant
+   * @param configlist_unsorted config list to be loaded.
+   * @param C2nodes_unsorted mapping from overall det index to unique det (configlist_unsorted) index
+   * @param C2nodes_sorted mapping from overall det index to unique det (ciConfigList) index
+   */
+  void createDetData(const int ref_det_id,
+                     const std::vector<ci_configuration2>& configlist_unsorted,
+                     const std::vector<size_t>& C2nodes_unsorted,
+                     std::vector<size_t>& C2nodes_sorted);
 
   template<typename ITER>
   inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
@@ -295,6 +293,40 @@ public:
     return 0.0;
   }
 
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param nw Number of walkers in the batch
+   *@param ref ID of the reference determinant
+   *@param det0_list takes lists of ValueType(1) for the value or RatioGrad/curRatio for the gradients
+   *@param psiinv_list
+   *@param psi_list
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratio_list returned computed ratios
+   */
+  void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
+                                                  int ref,
+                                                  const std::vector<ValueType>& det0_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<ValueVector>& ratios_list);
+
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param det0 take ValueType(1) for the value or RatioGrad/curRatio for the gradients
+   *@param ratios returned computed ratios
+   *@param psiinv
+   *@param psi
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   */
   void BuildDotProductsAndCalculateRatios_impl(int ref,
                                                ValueType det0,
                                                ValueType* restrict ratios,
@@ -305,35 +337,93 @@ public:
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign);
 
+  /** compute the ratio of the excited determinants to the reference determinant
+   * @param ratios the output.
+   */
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          ValueVector& ratios,
                                           const ValueMatrix& psiinv,
                                           const ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
-                                          const std::vector<RealType>& sign);
-
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          GradMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
+                                          const std::vector<RealType>& sign,
                                           ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign,
-                                          int dx);
+                                          ValueVector& ratios);
 
-  void BuildDotProductsAndCalculateRatios(int ref,
-                                          int iat,
-                                          ValueMatrix& ratios,
-                                          ValueMatrix& psiinv,
-                                          ValueMatrix& psi,
-                                          ValueMatrix& dotProducts,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign);
+  void mw_BuildDotProductsAndCalculateRatios(int nw,
+                                             int ref,
+                                             const std::vector<ValueType>& det0_list,
+                                             const RefVector<ValueMatrix>& psiinv_list,
+                                             const RefVector<ValueMatrix>& psi_list,
+                                             const std::vector<int>& data,
+                                             const std::vector<std::pair<int, int>>& pairs,
+                                             const std::vector<RealType>& sign,
+                                             const RefVector<ValueMatrix>& dotProducts_list,
+                                             const RefVector<ValueVector>& ratios_list);
+
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param ref ID of the reference determinant
+   *@param psiinv
+   *@param psi
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param det0_grad gradient value taking RatioGrad/curRatio 
+   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param dx dimension (OHMMS_DIM)
+   *@param iat atom ID 
+   *@param grads returned computed gradients
+   */
+  void BuildDotProductsAndCalculateRatiosGrads(int ref,
+                                               const ValueMatrix& psiinv,
+                                               const ValueMatrix& psi,
+                                               const std::vector<int>& data,
+                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const std::vector<RealType>& sign,
+                                               const ValueType& det0_grad,
+                                               ValueMatrix& dotProducts,
+                                               int dx,
+                                               int iat,
+                                               GradMatrix& grads);
+
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+   *@param nw Number of walkers in the batch
+   *@param ref ID of the reference determinant
+   *@param iat atom ID 
+   *@param dx dimension (OHMMS_DIM)
+   *@param getNumDets Number of determinants
+   *@param psiinv_list
+   *@param psi_list
+   *@param data  (Shared by all determinants)
+   *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
+   *@param sign (Shared by all determinants)
+   *@param WorkSpace_list list refering to det.WorkSpace  
+   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param ratios_list returned computed list of gradients
+   */
+  void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
+                                                  int ref,
+                                                  int iat,
+                                                  int dx,
+                                                  int getNumDets,
+                                                  const std::vector<ValueType>& det0_grad_list,
+                                                  const RefVector<ValueMatrix>& psiinv_list,
+                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const std::vector<int>& data,
+                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const std::vector<RealType>& sign,
+                                                  const RefVector<ValueVector>& WorkSpace_list,
+                                                  const RefVector<ValueMatrix>& dotProducts_list,
+                                                  const RefVector<GradMatrix>& ratios_list);
+
+  void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
+                                                                const ValueMatrix& psiinv,
+                                                                const ValueMatrix& psi,
+                                                                const std::vector<int>& data,
+                                                                const std::vector<std::pair<int, int>>& pairs,
+                                                                const std::vector<RealType>& sign,
+                                                                ValueMatrix& dotProducts,
+                                                                int iat,
+                                                                ValueMatrix& ratios);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
@@ -351,19 +441,6 @@ public:
     BLAS::copy(m, Minv.data() + colchanged, m, rvecinv.data(), 1);
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
-  /*
-      inline void InverseUpdateByColumn(ValueMatrix& Minv
-            , GradVector& dM, ValueVector& rvec
-            , ValueVector& rvecinv, int colchanged
-            , ValueType c_ratio, std::vector<int>::iterator& it)
-      {
-            ValueType c_ratio=1.0/ratioLapl;
-            BLAS::gemv('N', NumPtcls, NumPtcls, c_ratio, dpsiMinv.data(), NumPtcls, tv, 1, T(), workV1, 1);
-            workV1[colchanged]=1.0-c_ratio;
-            BLAS::copy(m,pinv+colchanged,m,workV2,1);
-            BLAS::ger(m,m,-1.0,workV1,1,workV2,1,dpsiMinv.data(),m);
-      }
-  */
 
   /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
    *@param P particle set which provides the positions
@@ -404,7 +481,6 @@ public:
   inline int getNumDets() const { return ciConfigList->size(); }
   inline int getNumPtcls() const { return NumPtcls; }
   inline int getFirstIndex() const { return FirstIndex; }
-  inline std::vector<ci_configuration2>& getCIConfigList() { return *ciConfigList; }
 
   const ValueVector& getRatiosToRefDet() const { return ratios_to_ref_; }
   const ValueVector& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
@@ -420,18 +496,18 @@ public:
 
 private:
   ///reset the size: with the number of particles
-  void resize(int nel);
+  void resize();
 
   ///a set of single-particle orbitals used to fill in the  values of the matrix
   const std::unique_ptr<SPOSet> Phi;
   ///number of single-particle orbitals which belong to this Dirac determinant
   const int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
   ///index of the first particle with respect to the particle set
-  int FirstIndex;
+  const int FirstIndex;
+  ///number of particles which belong to this Dirac determinant
+  const int NumPtcls;
   ///index of the last particle with respect to the particle set
-  int LastIndex;
+  const int LastIndex;
   ///use shared_ptr
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   // the reference determinant never changes, so there is no need to store it.
@@ -502,6 +578,10 @@ private:
   std::shared_ptr<std::vector<int>> detData;
   std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
   std::shared_ptr<std::vector<RealType>> DetSigns;
+  /** number of unique determinants at each excitation level (relative to reference)
+   *  {1, n_singles, n_doubles, n_triples, ...}
+   */
+  std::shared_ptr<std::vector<int>> ndets_per_excitation_level_;
   MultiDiracDeterminantCalculator<ValueType> DetCalculator;
 };
 

@@ -30,41 +30,44 @@
 
 namespace qmcplusplus
 {
-void MultiDiracDeterminant::set(int first, int nel, int ref_det_id)
+void MultiDiracDeterminant::createDetData(const int ref_det_id,
+                                          const std::vector<ci_configuration2>& configlist_unsorted,
+                                          const std::vector<size_t>& C2nodes_unsorted,
+                                          std::vector<size_t>& C2nodes_sorted)
 {
-  assert(ciConfigList);
-  assert(ciConfigList->size() > 0);
-
-  FirstIndex           = first;
   ReferenceDeterminant = ref_det_id;
-  resize(nel);
-  createDetData((*ciConfigList)[ReferenceDeterminant], *detData, *uniquePairs, *DetSigns);
-}
 
-void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
-                                          std::vector<int>& data,
-                                          std::vector<std::pair<int, int>>& pairs,
-                                          std::vector<RealType>& sign)
-{
-  const auto& confgList = *ciConfigList;
+  auto& ref                        = configlist_unsorted[ref_det_id];
+  auto& configlist_sorted          = *ciConfigList;
+  auto& data                       = *detData;
+  auto& pairs                      = *uniquePairs;
+  auto& sign                       = *DetSigns;
+  auto& ndets_per_excitation_level = *ndets_per_excitation_level_;
 
-  size_t nci = confgList.size(), nex;
+  const size_t nci = configlist_unsorted.size();
+
+  size_t nex_max = 0;
   std::vector<size_t> pos(NumPtcls);
   std::vector<size_t> ocp(NumPtcls);
   std::vector<size_t> uno(NumPtcls);
-  data.clear();
-  sign.resize(nci);
+  // map key is exc. lvl
+  std::map<int, std::vector<int>> dataMap;
+  std::map<int, std::vector<int>> sortMap;
+  std::vector<RealType> tmp_sign(nci, 0);
   pairs.clear();
   for (size_t i = 0; i < nci; i++)
   {
-    sign[i] = ref.calculateExcitations(confgList[i], nex, pos, ocp, uno);
-    data.push_back(nex);
+    size_t nex;
+    tmp_sign[i] = ref.calculateExcitations(configlist_unsorted[i], nex, pos, ocp, uno);
+    nex_max     = std::max(nex, nex_max);
+    dataMap[nex].push_back(nex);
+    sortMap[nex].push_back(i);
     for (int k = 0; k < nex; k++)
-      data.push_back(pos[k]);
+      dataMap[nex].push_back(pos[k]);
     for (int k = 0; k < nex; k++)
-      data.push_back(uno[k]);
+      dataMap[nex].push_back(uno[k]);
     for (int k = 0; k < nex; k++)
-      data.push_back(ocp[k]);
+      dataMap[nex].push_back(ocp[k]);
     // determine unique pairs, to avoid redundant calculation of matrix elements
     // if storing the entire MOxMO matrix is too much, then make an array and a mapping to it.
     // is there an easier way??
@@ -78,6 +81,37 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
       }
   }
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
+  ndets_per_excitation_level.resize(nex_max + 1, 0);
+  //reorder configs and det data
+  std::vector<size_t> det_idx_order;           // old indices in new order
+  std::vector<size_t> det_idx_reverse(nci, 0); // new indices in old order
+
+  // populate data, ordered by exc. lvl.
+  // make mapping from new to old det idx
+  data.clear();
+  for (const auto& [nex, det_idx_old] : sortMap)
+  {
+    data.insert(data.end(), dataMap[nex].begin(), dataMap[nex].end());
+    det_idx_order.insert(det_idx_order.end(), det_idx_old.begin(), det_idx_old.end());
+    ndets_per_excitation_level[nex] = det_idx_old.size();
+  }
+  assert(det_idx_order.size() == nci);
+
+  // make reverse mapping (old to new) and reorder confgList by exc. lvl.
+  configlist_sorted.resize(nci);
+  sign.resize(nci);
+  for (size_t i = 0; i < nci; i++)
+  {
+    det_idx_reverse[det_idx_order[i]] = i;
+    configlist_sorted[i]              = configlist_unsorted[det_idx_order[i]];
+    sign[i]                           = tmp_sign[det_idx_order[i]];
+  }
+
+  // update C2nodes for new det ordering
+  C2nodes_sorted.resize(C2nodes_unsorted.size());
+  for (int i = 0; i < C2nodes_unsorted.size(); i++)
+    C2nodes_sorted[i] = det_idx_reverse[C2nodes_unsorted[i]];
+
   /*
        std::cout <<"ref: " <<ref << std::endl;
        std::cout <<"list: " << std::endl;
@@ -88,12 +122,10 @@ void MultiDiracDeterminant::createDetData(const ci_configuration2& ref,
        for(int i=0; i<pairs.size(); i++)
          std::cout <<pairs[i].first <<"   " <<pairs[i].second << std::endl;
   */
+
+  // make sure internal objects depending on the number of unique determinants are resized
+  resize();
 }
-
-//erase
-void out1(int n, std::string str = "NULL") {}
-//{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
-
 
 void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fromScratch)
 {
@@ -122,10 +154,9 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
   log_value_ref_det_ = logValueRef;
   InverseTimer.stop();
-  const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
-  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
-                                     *uniquePairs, *DetSigns);
+  const RealType detsign = (*DetSigns)[ReferenceDeterminant];
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+                                     dotProducts, ratios_to_ref_);
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -137,7 +168,6 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       ratioLapl += psiMinv(i, iat) * d2psiM(iat, *it);
       it++;
     }
-    grads(ReferenceDeterminant, iat) = gradRatio;
     lapls(ReferenceDeterminant, iat) = ratioLapl;
     for (size_t idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -149,8 +179,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
-                                         *uniquePairs, *DetSigns, idim);
+      BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+                                              gradRatio[idim], dotProducts, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
     it       = confgList[ReferenceDeterminant].occup.begin();
@@ -160,8 +190,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
-                                       *uniquePairs, *DetSigns);
+    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+                                                             *uniquePairs, *DetSigns, dotProducts, iat, lapls);
     // restore matrix
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = psiM(iat, i);
@@ -199,10 +229,9 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
   log_value_ref_det_ = logValueRef;
   InverseTimer.stop();
-  const RealType detsign               = (*DetSigns)[ReferenceDeterminant];
-  ratios_to_ref_[ReferenceDeterminant] = ValueType(1);
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, ratios_to_ref_, psiMinv, TpsiM, dotProducts, *detData,
-                                     *uniquePairs, *DetSigns);
+  const RealType detsign = (*DetSigns)[ReferenceDeterminant];
+  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+                                     dotProducts, ratios_to_ref_);
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -216,7 +245,6 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       spingradRatio += psiMinv(i, iat) * dspin_psiM(iat, *it);
       it++;
     }
-    grads(ReferenceDeterminant, iat)     = gradRatio;
     lapls(ReferenceDeterminant, iat)     = ratioLapl;
     spingrads(ReferenceDeterminant, iat) = spingradRatio;
     for (size_t idim = 0; idim < OHMMS_DIM; idim++)
@@ -229,8 +257,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, grads, dpsiMinv, TpsiM, dotProducts, *detData,
-                                         *uniquePairs, *DetSigns, idim);
+      BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+                                              gradRatio[idim], dotProducts, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
     it       = confgList[ReferenceDeterminant].occup.begin();
@@ -240,8 +268,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, lapls, dpsiMinv, TpsiM, dotProducts, *detData,
-                                       *uniquePairs, *DetSigns);
+    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+                                                             *uniquePairs, *DetSigns, dotProducts, iat, lapls);
 
     //Adding the spin gradient
     dpsiMinv = psiMinv;
@@ -251,8 +279,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, spingradRatio);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = dspin_psiM(iat, i);
-    BuildDotProductsAndCalculateRatios(ReferenceDeterminant, iat, spingrads, dpsiMinv, TpsiM, dotProducts, *detData,
-                                       *uniquePairs, *DetSigns);
+    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+                                                             *uniquePairs, *DetSigns, dotProducts, iat, spingrads);
 
     // restore matrix
     for (size_t i = 0; i < NumOrbitals; i++)
@@ -408,17 +436,20 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(s.FirstIndex),
+      NumPtcls(s.NumPtcls),
+      LastIndex(s.LastIndex),
       ciConfigList(s.ciConfigList),
       ReferenceDeterminant(s.ReferenceDeterminant),
       is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
-      DetSigns(s.DetSigns)
+      DetSigns(s.DetSigns),
+      ndets_per_excitation_level_(s.ndets_per_excitation_level_)
 {
   Optimizable = s.Optimizable;
 
+  resize();
   registerTimers();
-  resize(s.NumPtcls);
 }
 
 std::unique_ptr<SPOSet> MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -434,7 +465,7 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param first index of the first particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
-MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor)
+MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
@@ -450,16 +481,19 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
-      FirstIndex(-1),
+      FirstIndex(first),
+      NumPtcls(nel),
+      LastIndex(first + nel),
       ReferenceDeterminant(0),
       is_spinor_(spinor)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
-  ciConfigList = std::make_shared<std::vector<ci_configuration2>>();
-  detData      = std::make_shared<std::vector<int>>();
-  uniquePairs  = std::make_shared<std::vector<std::pair<int, int>>>();
-  DetSigns     = std::make_shared<std::vector<RealType>>();
+  ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
+  detData                     = std::make_shared<std::vector<int>>();
+  uniquePairs                 = std::make_shared<std::vector<std::pair<int, int>>>();
+  DetSigns                    = std::make_shared<std::vector<RealType>>();
+  ndets_per_excitation_level_ = std::make_shared<std::vector<int>>();
 
   registerTimers();
 }
@@ -495,18 +529,13 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 
 
 ///reset the size: with the number of particles and number of orbtials
-/// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminant::resize(int nel)
+void MultiDiracDeterminant::resize()
 {
-  if (nel <= 0)
-  {
-    APP_ABORT(" ERROR: MultiDiracDeterminant::resize arguments equal to zero. \n");
-  }
-
+  const int nel = NumPtcls;
+  assert(NumPtcls > 0);
   const int NumDets = getNumDets();
+  assert(NumDets > 0);
 
-  NumPtcls  = nel;
-  LastIndex = FirstIndex + nel;
   psiV_temp.resize(nel);
   psiV.resize(NumOrbitals);
   dpsiV.resize(NumOrbitals);

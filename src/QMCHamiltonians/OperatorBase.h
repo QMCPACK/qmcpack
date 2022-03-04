@@ -78,6 +78,9 @@ public:
   ///typedef for the ParticleScalar
   using ParticleScalar = ParticleSet::Scalar_t;
 
+  ///typedef for SPOMap
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
   ///enum to denote energy domain of operators
   enum EnergyDomains
   {

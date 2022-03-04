@@ -34,7 +34,7 @@ namespace qmcplusplus
 class ParticleSetPool : public MPIObjectBase
 {
 public:
-  using PoolType = std::map<std::string, ParticleSet*>;
+  using PoolType = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * @param aname xml tag
@@ -89,7 +89,7 @@ public:
 
   /** get the Pool object
    */
-  inline PoolType& getPool() { return myPool; }
+  inline const PoolType& getPool() const { return myPool; }
 
   /// get simulation cell
   const auto& getSimulationCell() const { return *simulation_cell_; }

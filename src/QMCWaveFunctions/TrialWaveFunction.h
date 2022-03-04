@@ -74,6 +74,8 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
 #ifdef QMC_CUDA
   using CTS          = CUDAGlobalTypes;
   using RealMatrix_t = WaveFunctionComponent::RealMatrix_t;
@@ -95,7 +97,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string& aname = "psi0", bool tasking = false, bool create_local_resource = true);
+  TrialWaveFunction(const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -361,27 +363,6 @@ public:
                                std::vector<PsiValueType>& ratios,
                                TWFGrads<CT>& grads);
 
-  /** batched version of ratioGrad
-   *
-   *  all vector sizes must match
-   */
-  static void mw_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                               const RefVectorWithLeader<ParticleSet>& p_list,
-                               int iat,
-                               std::vector<PsiValueType>& ratios,
-                               std::vector<GradType>& grad_new);
-
-  /** batched version of ratioGradWithSpin
-   *
-   *  all vector sizes must match
-   */
-  static void mw_calcRatioGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                       const RefVectorWithLeader<ParticleSet>& p_list,
-                                       int iat,
-                                       std::vector<PsiValueType>& ratios,
-                                       std::vector<GradType>& grad_new,
-                                       std::vector<ComplexType>& spingrad_new);
-
   /** Prepare internal data for updating WFC correspond to a particle group
    *  Particle groups usually correspond to determinants of different spins.
    *  This call can be used to handle precomputation for PbyP moves.
@@ -420,27 +401,6 @@ public:
                           const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           TWFGrads<CT>& grads);
-
-  /** batched version of evalGrad
-    *
-    * This is static because it should have no direct access
-    * to any TWF.
-    */
-  static void mw_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list,
-                          int iat,
-                          std::vector<GradType>& grad_now);
-
-  /** batched version of evalGradWithSpin
-    *
-    * This is static because it should have no direct access
-    * to any TWF.
-    */
-  static void mw_evalGradWithSpin(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  std::vector<GradType>& grad_now,
-                                  std::vector<ComplexType>& spingrad_now);
 
   void rejectMove(int iat);
 
@@ -537,8 +497,30 @@ public:
 
   bool use_tasking() const { return use_tasking_; }
 
+  void storeXMLNode(xmlNodePtr node) { myNode_ = xmlCopyNode(node, 1); }
+
+  xmlNodePtr getNode() const { return myNode_; }
+
+  /// store an SPOSet map
+  void storeSPOMap(SPOMap&& spomap) { *spomap_ = std::move(spomap); }
+
+  /// look up SPOSet named 'name', if not found, throw exception.
+  const SPOSet& getSPOSet(const std::string& name) const;
+
+  /// spomap_ reference accessor
+  const SPOMap& getSPOMap() const { return *spomap_; }
+
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  /** XML input node for a many-body wavefunction. Copied from the original one.
+   * WFOpt driver needs to look it up and make its own copies.
+   * YL: updating parameters in an XML file is extremely messy. Better to make WFOpt using h5 only.
+   */
+  xmlNodePtr myNode_;
+
+  /// Owned SPOSets. Once a TWF is fully built, SPOSet lookup should be done via TWF.
+  const std::shared_ptr<SPOMap> spomap_;
 
   ///getName is in the way
   const std::string myName;

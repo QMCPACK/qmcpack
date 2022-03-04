@@ -45,7 +45,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputI
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
   std::string optimize("no");
@@ -133,9 +133,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
                   << "   object name: " << sposet->getName() << std::endl;
 
   sposet->checkObject();
-  // builder owns created sposets
-  sposets.push_back(std::move(sposet));
-  return sposets.back().get();
+  return sposet;
 }
 
 } // namespace qmcplusplus

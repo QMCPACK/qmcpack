@@ -1380,13 +1380,11 @@ public:
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
     int nocca_tot = std::accumulate(nelpk[nd].begin(), nelpk[nd].begin() + nkpts, 0);
     int nocca_max = *std::max_element(nelpk[nd].begin(), nelpk[nd].begin() + nkpts);
-    int noccb_max = nocca_max;
     int nchol_max = *std::max_element(ncholpQ.begin(), ncholpQ.end());
     int noccb_tot = 0;
     if (walker_type == COLLINEAR)
     {
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
-      noccb_max = *std::max_element(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts);
     }
     RealType scl = (walker_type == CLOSED ? 2.0 : 1.0);
     SPComplexType one(1.0, 0.0);

@@ -142,7 +142,7 @@ endif(QMC_BUILD_STATIC)
 
 # Coverage
 if(ENABLE_GCOV)
-  set(GCOV_COVERAGE TRUE)
+  set(GCOV_SUPPORTED TRUE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --coverage")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")

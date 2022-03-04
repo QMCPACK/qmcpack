@@ -601,7 +601,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
               << "\" particleset" << std::endl;
           myComm->barrier_and_abort(msg.str());
         }
-        app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
+        app_summary() << "    Running OpenMP offload code path." << std::endl;
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);
       }
       else
