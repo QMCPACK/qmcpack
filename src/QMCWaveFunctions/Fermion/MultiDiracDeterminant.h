@@ -127,8 +127,8 @@ public:
     const GradMatrix& grads_dn                   = pseudo_dn.grads;
     const ValueMatrix& lapls_up                  = lapls;
     const ValueMatrix& lapls_dn                  = pseudo_dn.lapls;
-    const ValueMatrix& M_up                      = psiM;
-    const ValueMatrix& M_dn                      = pseudo_dn.psiM;
+    const OffloadMatrix<ValueType>& M_up         = psiM;
+    const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
     const ValueMatrix& Minv_up                   = psiMinv;
     const ValueMatrix& Minv_dn                   = pseudo_dn.psiMinv;
     const GradMatrix& B_grad                     = dpsiM;
@@ -141,9 +141,11 @@ public:
 
     Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
     Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
+    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(),M_up.cols());
+    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(),M_dn.cols());
     Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
                              detValues_up_host_view, detValues_dn_host_view, grads_up, grads_dn, lapls_up, lapls_dn,
-                             M_up, M_dn, Minv_up, Minv_dn, B_grad, B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
+                             M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, B_grad, B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
   }
 
   void evaluateDerivativesWF(ParticleSet& P,
@@ -160,15 +162,17 @@ public:
 
     const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
     const OffloadVector<ValueType>& detValues_dn = pseudo_dn.getRatiosToRefDet();
-    const ValueMatrix& M_up                      = psiM;
-    const ValueMatrix& M_dn                      = pseudo_dn.psiM;
+    const OffloadMatrix<ValueType>& M_up         = psiM;
+    const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
     const ValueMatrix& Minv_up                   = psiMinv;
     const ValueMatrix& Minv_dn                   = pseudo_dn.psiMinv;
 
     Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
     Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
+    Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(),M_up.cols());
+    Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(),M_dn.cols());
     Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up_host_view,
-                               detValues_dn_host_view, M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
+                               detValues_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up, Minv_dn, *detData, lookup_tbl);
   }
 
 
@@ -332,7 +336,7 @@ public:
                                                   int ref,
                                                   const std::vector<ValueType>& det0_list,
                                                   const RefVector<ValueMatrix>& psiinv_list,
-                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
                                                   const std::vector<std::pair<int, int>>& pairs,
                                                   const std::vector<RealType>& sign,
@@ -354,7 +358,7 @@ public:
                                                ValueType det0,
                                                ValueType* restrict ratios,
                                                const ValueMatrix& psiinv,
-                                               const ValueMatrix& psi,
+                                               const OffloadMatrix<ValueType>& psi,
                                                OffloadMatrix<ValueType>& dotProducts,
                                                const std::vector<int>& data,
                                                const std::vector<std::pair<int, int>>& pairs,
@@ -365,7 +369,7 @@ public:
    */
   void BuildDotProductsAndCalculateRatios(int ref,
                                           const ValueMatrix& psiinv,
-                                          const ValueMatrix& psi,
+                                          const OffloadMatrix<ValueType>& psi,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
                                           const std::vector<RealType>& sign,
@@ -376,7 +380,7 @@ public:
                                              int ref,
                                              const std::vector<ValueType>& det0_list,
                                              const RefVector<ValueMatrix>& psiinv_list,
-                                             const RefVector<ValueMatrix>& psi_list,
+                                             const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                              const std::vector<int>& data,
                                              const std::vector<std::pair<int, int>>& pairs,
                                              const std::vector<RealType>& sign,
@@ -398,7 +402,7 @@ public:
    */
   void BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                const ValueMatrix& psiinv,
-                                               const ValueMatrix& psi,
+                                               const OffloadMatrix<ValueType>& psi,
                                                const std::vector<int>& data,
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign,
@@ -430,7 +434,7 @@ public:
                                                   int getNumDets,
                                                   const std::vector<ValueType>& det0_grad_list,
                                                   const RefVector<ValueMatrix>& psiinv_list,
-                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
                                                   const std::vector<std::pair<int, int>>& pairs,
                                                   const std::vector<RealType>& sign,
@@ -440,7 +444,7 @@ public:
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
                                                                 const ValueMatrix& psiinv,
-                                                                const ValueMatrix& psi,
+                                                                const OffloadMatrix<ValueType>& psi,
                                                                 const std::vector<int>& data,
                                                                 const std::vector<std::pair<int, int>>& pairs,
                                                                 const std::vector<RealType>& sign,
@@ -543,7 +547,7 @@ private:
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix psiM, TpsiM;
+  OffloadMatrix<ValueType> psiM, TpsiM;
   /// inverse Dirac determinant matrix of the reference det
   ValueMatrix psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$

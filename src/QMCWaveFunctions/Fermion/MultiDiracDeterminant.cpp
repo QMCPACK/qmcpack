@@ -133,7 +133,12 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
 {
   evalWTimer.start();
   if (fromScratch)
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+  {
+  ///Force host view as no implementation of evaluate_notranspose
+    Matrix<ValueType> psiM_host_view(psiM.data(), psiM.rows(),psiM.cols());
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM, d2psiM);
+    ///psiM.updateTo();
+  }
 
   InverseTimer.start();
 
@@ -210,7 +215,11 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
 {
   evalWTimer.start();
   if (fromScratch)
-    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM, dspin_psiM);
+  {
+  ///Force host view as no implementation of evaluate_notranspose
+    Matrix<ValueType> psiM_host_view(psiM.data(), psiM.rows(),psiM.cols());
+    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM, d2psiM, dspin_psiM);
+  }
 
   InverseTimer.start();
 
