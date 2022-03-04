@@ -121,7 +121,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  ProjectData test_project;
+  ProjectData test_project("batched");
 
   QMCDriverFactory driver_factory(test_project);
 
