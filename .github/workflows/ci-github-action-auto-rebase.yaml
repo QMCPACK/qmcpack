@@ -1,9 +1,4 @@
 on:
-  pull_request_target:
-    types: [synchronize]
-    branches:
-      - develop
-      - main
   pull_request:
     branches:
       - develop
@@ -11,7 +6,11 @@ on:
 
 jobs:
   rebase:
-    if: contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
+    if: |
+      contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!') &&
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.auto_merge
+       
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Action
