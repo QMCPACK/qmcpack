@@ -19,28 +19,30 @@
 namespace qmcplusplus
 {
 
-enum class PlatformKind {
+enum class PlatformKind
+{
   CPU,
   OMPTARGET,
   CUDA
 };
 
-enum class SelectorKind {
-  OMPTARGET,
-  OMPTARGET_AND_CUDA
+enum class SelectorKind
+{
+  CPU_OMPTARGET,
+  CPU_OMPTARGET_CUDA
 };
 
 template<SelectorKind KIND>
 class PlatformSelector;
 
 template<>
-class PlatformSelector<SelectorKind::OMPTARGET>
+class PlatformSelector<SelectorKind::CPU_OMPTARGET>
 {
 public:
   static const std::vector<std::string> candidate_values;
-  static PlatformKind convertToPlatform(std::string_view value);
+  static PlatformKind selectPlatform(std::string_view value);
 };
 
-using OMPTargetSelector = PlatformSelector<SelectorKind::OMPTARGET>;
-}
+using CPUOMPTargetSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
+} // namespace qmcplusplus
 #endif

@@ -16,18 +16,19 @@
 namespace qmcplusplus
 {
 
-const std::vector<std::string> PlatformSelector<SelectorKind::OMPTARGET>::candidate_values{"", "yes", "no", "omptarget", "cpu"};
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values{"", "yes", "no",
+                                                                                               "omptarget", "cpu"};
 
-PlatformKind PlatformSelector<SelectorKind::OMPTARGET>::convertToPlatform(std::string_view value)
-  {
+PlatformKind PlatformSelector<SelectorKind::CPU_OMPTARGET>::selectPlatform(std::string_view value)
+{
 #if defined(ENABLE_OFFLOAD)
-    if (value.empty() || value == "yes" || value == "omptarget" )
+  if (value.empty() || value == "yes" || value == "omptarget")
 #else
-    if (value == "omptarget")
+  if (value == "omptarget")
 #endif
-      return PlatformKind::OMPTARGET;
-    else
-      return PlatformKind::CPU;
-  }
-
+    return PlatformKind::OMPTARGET;
+  else
+    return PlatformKind::CPU;
 }
+
+} // namespace qmcplusplus

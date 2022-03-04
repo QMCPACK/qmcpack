@@ -30,7 +30,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineRealDouble(EinsplineSetBuilder* 
                                                            const std::string& useGPU)
 {
   app_summary() << "    Using real valued spline SPOs with real double precision storage (R2R)." << std::endl;
-  if (OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET)
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
     app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
                   << std::endl;
   app_summary() << "    Running on CPU." << std::endl;

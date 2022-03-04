@@ -39,7 +39,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
 
 #if defined(QMC_COMPLEX)
   app_summary() << "    Using complex valued spline SPOs with complex double precision storage (C2C)." << std::endl;
-  if (OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET)
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
   {
     if (hybrid_rep)
     {
@@ -67,7 +67,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
   }
 #else //QMC_COMPLEX
   app_summary() << "    Using real valued spline SPOs with complex double precision storage (C2R)." << std::endl;
-  if (OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET)
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
   {
     if (hybrid_rep)
     {

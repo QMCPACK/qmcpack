@@ -19,14 +19,14 @@ namespace qmcplusplus
 TEST_CASE("PlatformSelector", "[platform]")
 {
 #if defined(ENABLE_OFFLOAD)
-  CHECK(OMPTargetSelector::convertToPlatform("yes") == PlatformKind::OMPTARGET);
-  CHECK(OMPTargetSelector::convertToPlatform("") == PlatformKind::OMPTARGET);
+  CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::OMPTARGET);
+  CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::OMPTARGET);
 #else
-  CHECK(OMPTargetSelector::convertToPlatform("yes") == PlatformKind::CPU);
-  CHECK(OMPTargetSelector::convertToPlatform("") == PlatformKind::CPU);
+  CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::CPU);
+  CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::CPU);
 #endif
-  CHECK(OMPTargetSelector::convertToPlatform("omptarget") == PlatformKind::OMPTARGET);
-  CHECK(OMPTargetSelector::convertToPlatform("cpu") == PlatformKind::CPU);
-  CHECK(OMPTargetSelector::convertToPlatform("no") == PlatformKind::CPU);
+  CHECK(CPUOMPTargetSelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
+  CHECK(CPUOMPTargetSelector::selectPlatform("cpu") == PlatformKind::CPU);
+  CHECK(CPUOMPTargetSelector::selectPlatform("no") == PlatformKind::CPU);
 }
-}
+} // namespace qmcplusplus

@@ -125,7 +125,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
   pAttrib.add(spinor, "spinor", {"no", "yes"});
-  pAttrib.add(useGPU, "gpu", OMPTargetSelector::candidate_values);
+  pAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   pAttrib.put(cur);
   //backward compatibility
   if (id == "e" && role == "none")
@@ -133,7 +133,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if (pTemp == 0)
   {
-    const bool use_offload = OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET;
+    const bool use_offload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;

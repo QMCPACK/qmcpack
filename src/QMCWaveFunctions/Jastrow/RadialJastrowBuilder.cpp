@@ -151,13 +151,13 @@ template<class RadFuncType, unsigned Implementation>
 std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createJ2(xmlNodePtr)");
-  using Real       = typename RadFuncType::real_type;
-  using J2Type     = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
+  using Real   = typename RadFuncType::real_type;
+  using J2Type = typename JastrowTypeHelper<RadFuncType, Implementation>::J2Type;
 
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  auto J2  = std::make_unique<J2Type>(j2name, targetPtcl);
+  auto J2 = std::make_unique<J2Type>(j2name, targetPtcl);
 
   std::string init_mode("0");
   {
@@ -501,12 +501,12 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
   aAttrib.add(TypeOpt, "type");
   aAttrib.add(Jastfunction, "function");
   aAttrib.add(SpinOpt, "spin", {"no", "yes"});
-  aAttrib.add(useGPU, "gpu", OMPTargetSelector::candidate_values);
+  aAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   aAttrib.put(cur);
-  NameOpt = lowerCase(NameOpt);
-  TypeOpt = lowerCase(TypeOpt);
+  NameOpt      = lowerCase(NameOpt);
+  TypeOpt      = lowerCase(TypeOpt);
   Jastfunction = lowerCase(Jastfunction);
-  SpinOpt = lowerCase(SpinOpt);
+  SpinOpt      = lowerCase(SpinOpt);
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   int chargeInd = species.addAttribute("charge");
@@ -519,7 +519,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       if (SpinOpt == "yes")
       {
 #if defined(QMC_CUDA)
-        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported in legacy CUDA build.");
+        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported "
+                                  "in legacy CUDA build.");
 #else
         return createJ1<BsplineFunctor<RealType>, true>(cur);
 #endif
@@ -581,7 +582,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
 #if defined(QMC_CUDA)
       return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
 #else
-      if (OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET)
+      if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
                                    J2OMPTarget<BsplineFunctor<RealType>>>::value,
