@@ -27,20 +27,25 @@ namespace qmcplusplus
 /**class ProjectData
  *\brief Encapsulate data for a project
  *
- * Default: myName = "Project"
+ * Default: myName = getDateAndTime("%Y%m%dT%H%M")
  * Should not modify the name, since composite types, such as MDRunData, use the name.
+ *  There is no MDRunData and the use of a "name" memeber of an object is at odd with the rest of the codebase.
  *
+ * \todo This shouldn't contain MPI information it is only used to calculate the 
+ *       path information and the communication parameters should just beinput params to that call.  
+ *       this will massively reduce the internal state.
  */
-class ProjectData : public OhmmsElementBase
+class ProjectData
 {
 public:
   /// constructor
-  ProjectData(const char* aname = 0);
+  ProjectData();
 
-  bool get(std::ostream& os) const override;
-  bool put(std::istream& is) override;
-  bool put(xmlNodePtr cur) override;
-  void reset() override;
+  
+  bool get(std::ostream& os) const ;
+  bool put(std::istream& is) ;
+  bool put(xmlNodePtr cur) ;
+  void reset() ;
 
   ///increment a series number and reset m_projectroot
   void advance();
@@ -82,8 +87,13 @@ public:
 
   int getSeriesIndex() const { return m_series; }
   int getMaxCPUSeconds() const { return max_cpu_secs_; }
+  const std::string& get_driver_epoch() const { return driver_epoch_; }
+
+  const std::string& getName() const { return name_; }
+  void setName(const std::string& aname) { name_ = aname; }
 
 private:
+  std::string name_;
   ///title of the project
   std::string m_title;
 
@@ -113,6 +123,8 @@ private:
 
   ///max cpu seconds
   int max_cpu_secs_;
+
+  std::string driver_epoch_;
 };
 } // namespace qmcplusplus
 

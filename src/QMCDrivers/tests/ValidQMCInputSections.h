@@ -39,7 +39,7 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
   </qmc>
 )",
      R"(
-  <qmc method="vmc_batch" move="pbyp">
+  <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          32 </parameter>
@@ -52,7 +52,7 @@ constexpr std::array<const char*, 3> valid_vmc_input_sections{
   </qmc>
 )",
      R"(
-  <qmc method="vmc_batch" move="pbyp">
+  <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 1 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          1 </parameter>
@@ -85,7 +85,7 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
   </qmc>
 )",
      R"(
-  <qmc method="dmc_batch" move="pbyp">
+  <qmc method="dmc" move="pbyp">
     <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
     <parameter name="total_walkers">          8 </parameter>
@@ -103,13 +103,14 @@ constexpr std::array<const char*, 2> valid_dmc_input_sections{
 constexpr int valid_dmc_input_dmc_index       = 0;
 constexpr int valid_dmc_input_dmc_batch_index = 1;
 
+/** As far as I can tell these are no longer valid */
 constexpr std::array<const char*, 2> valid_opt_input_sections{
     R"(
-  <qmc method="opt_batch" move="pbyp" gpu="yes">
+  <qmc method="opt" move="pbyp" gpu="yes">
   </qmc>
 )",
     R"(
-  <qmc method="opt_batch" move="pbyp">
+  <qmc method="opt" move="pbyp">
     <optimize method="test" output_param_file="yes"/>
     <parameter name="opt_num_crowds">                 4 </parameter>
     <parameter name="opt_crowd_size">                 8 </parameter>

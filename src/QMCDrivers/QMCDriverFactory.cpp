@@ -40,6 +40,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -71,7 +72,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
 #endif
   OhmmsAttributeSet aAttrib;
   aAttrib.add(qmc_mode, "method",
-              {"", "vmc", "vmc_batch", "dmc", "dmc_batch", "csvmc", "rmc", "linear", "linear_batch", "wftest"});
+              {"", "vmc", "dmc", "csvmc", "rmc", "linear", "wftest"});
   aAttrib.add(update_mode, "move");
   aAttrib.add(multi_tag, "multiple");
   aAttrib.add(warp_tag, "warp");
@@ -91,19 +92,33 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   infoSummary.flush();
   infoLog.flush();
 
+  // Really by position if you don't write <qmc name="xxx",,,>
+  // you can write <vmc ...> so hacky
   if (curName != "qmc")
     qmc_mode = curName;
 
   const int nchars = qmc_mode.size();
+
+  // Begin to separate batch input reading from the legacy input parsing
+  if (project_data_.get_driver_epoch() == "batched")
+  {
 #if defined(QMC_CUDA)
-  if (qmc_mode.find("batch") < nchars)
     throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
                              "Please use OpenMP offload build.");
 #endif
+    if (qmc_mode.find("vmc") < nchars) // order matters here
+      das.new_run_type = QMCRunType::VMC_BATCH;
+    else if (qmc_mode.find("dmc") < nchars) // order matters here
+      das.new_run_type = QMCRunType::DMC_BATCH;
+    else if (qmc_mode.find("linear") < nchars)
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
+    else
+      throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
+    return das;
+  }
 
-  if (qmc_mode.find("linear_batch") < nchars)
-    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
-  else if (qmc_mode.find("linear") < nchars)
+
+  if (qmc_mode.find("linear") < nchars)
     das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
   else
   {
@@ -113,11 +128,8 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.what_to_do[MULTIPLE_MODE] = 1;
     if (qmc_mode.find("warp") < nchars)
       das.what_to_do[SPACEWARP_MODE] = 1;
-
     if (qmc_mode.find("rmc") < nchars)
       das.new_run_type = QMCRunType::RMC;
-    else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
-      das.new_run_type = QMCRunType::VMC_BATCH;
     else if (qmc_mode.find("vmc") < nchars)
       das.new_run_type = QMCRunType::VMC;
     else if (qmc_mode.find("dmc_batch") < nchars) // order matters here

@@ -39,13 +39,12 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj1.getTitle() == proj1.getName());
 
 
-  ProjectData proj2("test");
+  ProjectData proj2;
   REQUIRE(proj2.getSeriesIndex() == 0);
   proj2.advance();
   REQUIRE(proj2.getSeriesIndex() == 1);
 
   REQUIRE(proj2.getTitle() == std::string("asample"));
-  REQUIRE(proj2.getName() == std::string("test"));
 
   proj2.setCommunicator(c);
   std::stringstream o2;
@@ -54,7 +53,7 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
-  ProjectData proj("test");
+  ProjectData proj;
 
   const char* xml_input = "<project id='test1'></project>";
   Libxml2Document doc;
@@ -69,7 +68,7 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
-  ProjectData proj("test");
+  ProjectData proj;
 
   const char* xml_input = "<project id='test1' series='1'></project>";
   Libxml2Document doc;

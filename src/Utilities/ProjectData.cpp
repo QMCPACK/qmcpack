@@ -14,10 +14,12 @@
 
 
 #include "ProjectData.h"
+#include <string_view>
 #include "Message/Communicate.h"
 #include "Host/sysutil.h"
 #include "Utilities/qmc_common.h"
 #include "OhmmsData/ParameterSet.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -25,17 +27,12 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const char* aname)
+ProjectData::ProjectData()
     : m_title("asample"), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000)
 {
   myComm = OHMMS::Controller;
-  if (aname == 0)
-  {
-    m_title = getDateAndTime("%Y%m%dT%H%M");
-    setName(m_title);
-  }
-  else
-    setName(aname);
+  m_title = getDateAndTime("%Y%m%dT%H%M");
+  setName(m_title);
 }
 
 void ProjectData::setCommunicator(Communicate* c) { myComm = c; }
@@ -184,8 +181,12 @@ bool ProjectData::put(xmlNodePtr cur)
 
   ParameterSet m_param;
   m_param.add(max_cpu_secs_, "max_seconds");
+  m_param.add(driver_epoch_, "driver_epoch");
   m_param.put(cur);
 
+  if (! (driver_epoch_ == "legacy" || driver_epoch_ == "batched" || driver_epoch_.empty()))
+    throw UniformCommunicateError("driver_epoch has valid values of only \"legacy\" or \"batched\"");
+  
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
   while (cur != NULL)

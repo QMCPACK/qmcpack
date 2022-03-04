@@ -55,7 +55,7 @@ public:
 
   /** read the current QMC Section */
   DriverAssemblyState readSection(xmlNodePtr cur) const;
-
+  
   /** create a new QMCDriver
    *
    *  Broken out for unit tests
