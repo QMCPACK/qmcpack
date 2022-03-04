@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_He_opt_batch" series="0"/>
+  <project id="det_He_opt_batch" series="0">
+         <parameter name="driver_epoch">batched</parameter>
+  </project>
   <random seed="509"/>
 
   <!-- Location of atoms -->
@@ -71,7 +73,7 @@
   <!-- Optimize parameters - in this case only the B value on the Jastrow is adjustable -->
 
 <loop max="2">
- <qmc method="linear_batch" move="pbyp" checkpoint="-1" gpu="yes">
+ <qmc method="linear" move="pbyp" checkpoint="-1" gpu="yes">
    <parameter name="blocks">   5 </parameter>
    <parameter name="warmupsteps"> 1 </parameter>
    <parameter name="substeps"> 2     </parameter>
