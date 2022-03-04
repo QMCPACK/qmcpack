@@ -11,6 +11,7 @@
 
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include <PlatformSelector.hpp>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"

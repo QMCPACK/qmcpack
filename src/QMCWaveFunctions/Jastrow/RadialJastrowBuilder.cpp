@@ -12,19 +12,16 @@
 
 #include "RadialJastrowBuilder.h"
 #include <type_traits>
+#include <PlatformSelector.hpp>
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-
-#if defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
-#endif
 
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif
-
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
@@ -67,7 +64,6 @@ public:
 };
 #endif
 
-#if defined(ENABLE_OFFLOAD)
 template<>
 class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::OMPTARGET>
 {
@@ -75,7 +71,6 @@ public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
   using J2Type      = J2OMPTarget<RadFuncType>;
 };
-#endif
 
 RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
     : WaveFunctionComponentBuilder(comm, target), SourcePtcl(&source)
@@ -506,9 +501,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
   aAttrib.add(TypeOpt, "type");
   aAttrib.add(Jastfunction, "function");
   aAttrib.add(SpinOpt, "spin", {"no", "yes"});
-#if defined(ENABLE_OFFLOAD)
-  aAttrib.add(useGPU, "gpu", {"yes", "no"});
-#endif
+  aAttrib.add(useGPU, "gpu", OMPTargetSelector::candidate_values);
   aAttrib.put(cur);
   NameOpt = lowerCase(NameOpt);
   TypeOpt = lowerCase(TypeOpt);
@@ -588,8 +581,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
 #if defined(QMC_CUDA)
       return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
 #else
-#if defined(ENABLE_OFFLOAD)
-      if (useGPU == "yes")
+      if (OMPTargetSelector::convertToPlatform(useGPU) == PlatformKind::OMPTARGET)
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
                                    J2OMPTarget<BsplineFunctor<RealType>>>::value,
@@ -605,7 +597,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
         return createJ2<BsplineFunctor<RealType>, detail::OMPTARGET>(cur);
       }
       else
-#endif
         return createJ2<BsplineFunctor<RealType>>(cur);
 #endif
     }
