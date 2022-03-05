@@ -239,11 +239,14 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  * @param colchanged column index to be replaced
  * @return \f$ M^{new}/M\f$
  */
+template<typename DT>
+using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
 template<typename T>
 inline void mw_DetRatioByColumn(const int nw,
                                 int colchanged,
                                 const RefVector<Matrix<T>>& Minv_list,
-                                const RefVector<Vector<T>>& newv_list,
+                                const RefVector<OffloadVector<T>>& newv_list,
                                 std::vector<T>& curRatio_list)
 
 {
@@ -283,9 +286,9 @@ inline void InverseUpdateByRow(MatA& Minv,
   //for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 }
 
-template<typename MatA, typename VecT>
+template<typename MatA, typename VecT,typename T>
 inline void InverseUpdateByColumn(MatA& Minv,
-                                  VecT& newcol,
+                                  OffloadVector<T>& newcol,
                                   VecT& rvec,
                                   VecT& rvecinv,
                                   int colchanged,
@@ -307,7 +310,7 @@ inline void InverseUpdateByColumn(MatA& Minv,
 template<typename T>
 inline void mw_InverseUpdateByColumn(const int nw,
                                      const RefVector<Matrix<T>>& Minv_list,
-                                     const RefVector<Vector<T>>& newcol_list,
+                                     const RefVector<OffloadVector<T>>& newcol_list,
                                      const RefVector<Vector<T>>& rvec_list,
                                      const RefVector<Vector<T>>& rvecinv_list,
                                      int colchanged,
