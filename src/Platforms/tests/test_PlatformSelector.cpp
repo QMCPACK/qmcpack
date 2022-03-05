@@ -18,15 +18,36 @@ namespace qmcplusplus
 {
 TEST_CASE("PlatformSelector", "[platform]")
 {
+  SECTION("CPU_OMPTARGET")
+  {
 #if defined(ENABLE_OFFLOAD)
-  CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::OMPTARGET);
-  CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::OMPTARGET);
 #else
-  CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::CPU);
-  CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSelector::selectPlatform("yes") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSelector::selectPlatform("") == PlatformKind::CPU);
 #endif
-  CHECK(CPUOMPTargetSelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
-  CHECK(CPUOMPTargetSelector::selectPlatform("cpu") == PlatformKind::CPU);
-  CHECK(CPUOMPTargetSelector::selectPlatform("no") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetSelector::selectPlatform("cpu") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSelector::selectPlatform("no") == PlatformKind::CPU);
+  }
+
+  SECTION("CPU_OMPTARGET_CUDA")
+  {
+#if defined(ENABLE_CUDA)
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("yes") == PlatformKind::CUDA);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("") == PlatformKind::CUDA);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("cuda") == PlatformKind::CUDA);
+#elif defined(ENABLE_OFFLOAD)
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("yes") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("") == PlatformKind::OMPTARGET);
+#else
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("yes") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("") == PlatformKind::CPU);
+#endif
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("cpu") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetCUDASelector::selectPlatform("no") == PlatformKind::CPU);
+  }
 }
 } // namespace qmcplusplus

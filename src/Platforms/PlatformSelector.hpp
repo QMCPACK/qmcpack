@@ -44,5 +44,15 @@ public:
 };
 
 using CPUOMPTargetSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
+
+template<>
+class PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>
+{
+public:
+  static const std::vector<std::string> candidate_values;
+  static PlatformKind selectPlatform(std::string_view value);
+};
+
+using CPUOMPTargetCUDASelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
 } // namespace qmcplusplus
 #endif
