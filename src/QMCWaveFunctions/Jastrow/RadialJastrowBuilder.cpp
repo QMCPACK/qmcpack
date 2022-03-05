@@ -582,6 +582,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
 #if defined(QMC_CUDA)
       return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
 #else
+      if (useGPU.empty())
+        useGPU = targetPtcl.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
+
       if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
