@@ -269,7 +269,6 @@ AGPDeterminant::PsiValueType AGPDeterminant::ratio(ParticleSet& P, int iat)
     for (int u = 0; u < Nup; u++)
       //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
       psiD[u] = simd::dot(y_ptr, phiT[u], BasisSize);
-    psiD.updateTo();
     //curRatio=DetRatioTranspose(psiM, psiD.data(),iat-Nup);
     curRatio = DetRatioByColumn(psiM, psiD, iat - Nup);
   }
@@ -329,7 +328,6 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
     psiD[u] = simd::dot(y_ptr, phiT[u], BasisSize);
     //psiD[u]=BLAS::dot(BasisSize,y_ptr,phiT[u]);
   }
-  psiD.updateTo();
   //curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
   curRatio = DetRatioByColumn(psiM_temp, psiD, d);
   InverseUpdateByColumn(psiM_temp, psiD, workV1, workV2, d, curRatio);

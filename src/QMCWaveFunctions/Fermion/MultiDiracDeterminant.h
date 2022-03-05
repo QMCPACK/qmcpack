@@ -566,9 +566,9 @@ private:
   /// value of single-particle orbital for particle-by-particle update
   //ValueVector psiV, psiV_temp;
   OffloadVector<ValueType> psiV, psiV_temp;
-  GradVector dpsiV;
-  ValueVector d2psiV;
-  ValueVector workV1, workV2;
+  OffloadVector<GradType> dpsiV;
+  OffloadVector<ValueType> d2psiV;
+  OffloadVector<ValueType> workV1, workV2;
   //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
   ValueVector dspin_psiV;
 

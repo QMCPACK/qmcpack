@@ -264,11 +264,11 @@ inline void mw_DetRatioByColumn(const int nw,
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<class MatA, class VecT>
+template<class MatA, class VecT,typename T>
 inline void InverseUpdateByRow(MatA& Minv,
                                VecT& newrow,
-                               VecT& rvec,
-                               VecT& rvecinv,
+                               OffloadVector<T>& rvec,
+                               OffloadVector<T>& rvecinv,
                                int rowchanged,
                                typename MatA::value_type c_ratio)
 {
@@ -286,11 +286,11 @@ inline void InverseUpdateByRow(MatA& Minv,
   //for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 }
 
-template<typename MatA, typename VecT,typename T>
+template<typename MatA, typename T>
 inline void InverseUpdateByColumn(MatA& Minv,
                                   OffloadVector<T>& newcol,
-                                  VecT& rvec,
-                                  VecT& rvecinv,
+                                  OffloadVector<T>& rvec,
+                                  OffloadVector<T>& rvecinv,
                                   int colchanged,
                                   typename MatA::value_type c_ratio)
 {
@@ -311,8 +311,8 @@ template<typename T>
 inline void mw_InverseUpdateByColumn(const int nw,
                                      const RefVector<Matrix<T>>& Minv_list,
                                      const RefVector<OffloadVector<T>>& newcol_list,
-                                     const RefVector<Vector<T>>& rvec_list,
-                                     const RefVector<Vector<T>>& rvecinv_list,
+                                     const RefVector<OffloadVector<T>>& rvec_list,
+                                     const RefVector<OffloadVector<T>>& rvecinv_list,
                                      int colchanged,
                                      std::vector<T> ratiolist)
 {

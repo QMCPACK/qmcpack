@@ -158,7 +158,7 @@ public:
   OffloadVector<ValueType> psiD;
   GradVector dpsiUv, dpsiDv;
   ValueVector d2psiUv, d2psiDv;
-  ValueVector workV1, workV2;
+  OffloadVector<ValueType> workV1, workV2;
   ValueVector WorkSpace;
   IndexVector Pivot;
 

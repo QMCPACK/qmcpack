@@ -252,10 +252,11 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   std::vector<ValueType> det0_list(nw, 1.0);
 
 
-  RefVector<ValueVector> workV1_list, workV2_list;
+
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list;
 
 
+  RefVector<OffloadVector<ValueType>> workV1_list, workV2_list;
   RefVector<OffloadVector<ValueType>> psiV_list, psiV_temp_list, new_ratios_to_ref_list;
   RefVector<OffloadMatrix<ValueType>> TpsiM_list, psiM_list, dotProducts_list;
 
@@ -390,8 +391,11 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
 {
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
+  ///Using Host Views for Phi-evaluateVGL since not ported to GPU
   Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
-  Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV, d2psiV);
+  Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
+  Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
+  Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
   evalOrb1Timer.stop();
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
@@ -441,8 +445,11 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   assert(P.isSpinor() == is_spinor_);
   UpdateMode = ORB_PBYP_PARTIAL;
   evalOrb1Timer.start();
+  ///Creating Host view to call Phi->evaluateVGL
   Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
-  Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV, d2psiV, dspin_psiV);
+  Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
+  Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
+  Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV);
   evalOrb1Timer.stop();
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
@@ -512,8 +519,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  RefVector<ValueVector> d2psiV_list, workV1_list, workV2_list;
-  RefVector<GradVector> dpsiV_list;
+  RefVector<OffloadVector<ValueType>> d2psiV_list, workV1_list, workV2_list;
+  RefVector<OffloadVector<GradType>> dpsiV_list;
   RefVector<GradMatrix> new_grads_list;
   RefVector<ValueMatrix> psiMinv_temp_list, psiMinv_list, dpsiMinv_list;
 
@@ -582,11 +589,13 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
-    det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list[iw].get(), d2psiV_list[iw].get());
+    Vector<GradType> dpsiV_list_host_view(dpsiV_list[iw].get().data(), dpsiV_list[iw].get().size());
+    Vector<ValueType> d2psiV_list_host_view(d2psiV_list[iw].get().data(), d2psiV_list[iw].get().size());
+    det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
     ///Pinn PsiV_list, dpsiV_list and d2psiV_list to GPU
     psiV_list[iw].get().updateTo();
-    //dpsiV_list[iw].get().updateTo();
-    //d2psiV_list[iw].get().updateTo();
+    dpsiV_list[iw].get().updateTo();
+    d2psiV_list[iw].get().updateTo();
   }
   det_leader.evalOrb1Timer.stop();
   ///PRAGMA OFFLOAD FOR here
@@ -749,11 +758,10 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const int WorkingIndex            = iat - det_leader.FirstIndex;
 
 
-  RefVector<ValueVector> workV1_list, workV2_list;
   RefVector<ValueMatrix> dpsiMinv_list, psiMinv_list;
   RefVector<GradMatrix> dpsiM_list;
   RefVector<GradMatrix> grads_list;
-  RefVector<OffloadVector<ValueType>> psiV_temp_list, WorkSpace_list;
+  RefVector<OffloadVector<ValueType>> psiV_temp_list, WorkSpace_list,workV1_list, workV2_list;
   RefVector<OffloadMatrix<ValueType>> dotProducts_list, TpsiM_list, psiM_list;
   std::vector<ValueType> ratioG_list;
 
