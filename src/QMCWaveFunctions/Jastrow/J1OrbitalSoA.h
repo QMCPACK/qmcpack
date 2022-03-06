@@ -27,6 +27,10 @@
 
 namespace qmcplusplus
 {
+
+template<typename T>
+struct J1OrbitalSoAMultiWalkerMem;
+
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for one-body Jastrow function using multiple functors
  */
@@ -83,6 +87,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
+  std::unique_ptr<J1OrbitalSoAMultiWalkerMem<RealType>> mw_mem_;
+
   void resizeWFOptVectors()
   {
     dLogPsi.resize(myVars.size());
@@ -90,20 +96,11 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     lapLogPsi.resize(myVars.size(), ValueDerivVec(Nelec));
   }
 
-  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
-      : WaveFunctionComponent("J1OrbitalSoA", obj_name),
-        myTableID(els.addTable(ions)),
-        Nions(ions.getTotalNum()),
-        Nelec(els.getTotalNum()),
-        NumGroups(ions.groups()),
-        Ions(ions)
-  {
-    if (myName.empty())
-      throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
-    initialize(els);
-  }
+  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els);
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
+
+  ~J1OrbitalSoA();
 
   /* initialize storage */
   void initialize(const ParticleSet& els)
@@ -131,6 +128,14 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     //  delete J1UniqueFunctors[source_type];
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
+
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   void recompute(const ParticleSet& P) override
   {
@@ -684,7 +689,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     return g_return;
   }
 };
-
 
 } // namespace qmcplusplus
 #endif
