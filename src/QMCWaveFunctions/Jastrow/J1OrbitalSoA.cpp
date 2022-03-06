@@ -14,11 +14,6 @@
 #include "J1OrbitalSoA.h"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
-#include "BsplineFunctor.h"
-#include "SplineFunctors.h"
-#include "UserFunctor.h"
-#include "ShortRangeCuspFunctor.h"
-#include "PadeFunctors.h"
 
 namespace qmcplusplus
 {
@@ -86,5 +81,4 @@ template class J1OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
 template class J1OrbitalSoA<ShortRangeCuspFunctor<QMCTraits::RealType>>;
 template class J1OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J1OrbitalSoA<Pade2ndOrderFunctor<QMCTraits::RealType>>;
-
 }

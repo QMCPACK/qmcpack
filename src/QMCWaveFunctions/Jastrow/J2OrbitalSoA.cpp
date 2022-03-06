@@ -15,10 +15,6 @@
 
 #include "J2OrbitalSoA.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "BsplineFunctor.h"
-#include "PadeFunctors.h"
-#include "UserFunctor.h"
-#include "FakeFunctor.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
@@ -738,5 +734,4 @@ template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<FakeFunctor<QMCTraits::RealType>>;
-
 } // namespace qmcplusplus

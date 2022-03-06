@@ -14,6 +14,9 @@
 // -*- C++ -*-
 #ifndef QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
+
+#include <map>
+#include <numeric>
 #include "Configuration.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -22,8 +25,12 @@
 #include "Utilities/IteratorUtility.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "CPU/SIMD/algorithm.hpp"
-#include <map>
-#include <numeric>
+
+#include "BsplineFunctor.h"
+#include "SplineFunctors.h"
+#include "UserFunctor.h"
+#include "ShortRangeCuspFunctor.h"
+#include "PadeFunctors.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +42,7 @@ struct J1OrbitalSoAMultiWalkerMem;
  *  @brief Specialization for one-body Jastrow function using multiple functors
  */
 template<class FT>
-struct J1OrbitalSoA : public WaveFunctionComponent
+class J1OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
   using FuncType = FT;
@@ -96,6 +103,81 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     lapLogPsi.resize(myVars.size(), ValueDerivVec(Nelec));
   }
 
+  /// compute G and L from internally stored data
+  inline QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const
+  {
+    for (size_t iat = 0; iat < Nelec; ++iat)
+    {
+      G[iat] += Grad[iat];
+      L[iat] -= Lap[iat];
+    }
+    return -simd::accumulate_n(Vat.data(), Nelec, QTFull::RealType());
+  }
+
+  inline LogValueType evaluateGL(const ParticleSet& P,
+                                 ParticleSet::ParticleGradient& G,
+                                 ParticleSet::ParticleLaplacian& L,
+                                 bool fromscratch = false) override
+  {
+    return log_value_ = computeGL(G, L);
+  }
+
+  /** compute gradient and lap
+   * @return lap
+   */
+  inline valT accumulateGL(const valT* restrict du, const valT* restrict d2u, const DisplRow& displ, posT& grad) const
+  {
+    valT lap(0);
+    constexpr valT lapfac = OHMMS_DIM - RealType(1);
+    //#pragma omp simd reduction(+:lap)
+    for (int jat = 0; jat < Nions; ++jat)
+      lap += d2u[jat] + lapfac * du[jat];
+    for (int idim = 0; idim < OHMMS_DIM; ++idim)
+    {
+      const valT* restrict dX = displ.data(idim);
+      valT s                  = valT();
+      //#pragma omp simd reduction(+:s)
+      for (int jat = 0; jat < Nions; ++jat)
+        s += du[jat] * dX[jat];
+      grad[idim] = s;
+    }
+    return lap;
+  }
+
+  inline valT computeU(const DistRow& dist)
+  {
+    valT curVat(0);
+    for (int jg = 0; jg < NumGroups; ++jg)
+    {
+      if (J1UniqueFunctors[jg] != nullptr)
+        curVat +=
+            J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
+    }
+    return curVat;
+  }
+
+  /** compute U, dU and d2U
+   * @param P quantum particleset
+   * @param iat the moving particle
+   * @param dist starting address of the distances of the ions wrt the iat-th particle
+   */
+  inline void computeU3(const ParticleSet& P, int iat, const DistRow& dist)
+  {
+    constexpr valT czero(0);
+    std::fill_n(U.data(), Nions, czero);
+    std::fill_n(dU.data(), Nions, czero);
+    std::fill_n(d2U.data(), Nions, czero);
+
+    for (int jg = 0; jg < NumGroups; ++jg)
+    {
+      if (J1UniqueFunctors[jg] == nullptr)
+        continue;
+      J1UniqueFunctors[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
+                                        DistCompressed.data(), DistIndice.data());
+    }
+  }
+
+public:
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els);
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
@@ -128,6 +210,8 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     //  delete J1UniqueFunctors[source_type];
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
+
+  const auto& getFunctors() const { return J1Functors; }
 
   void createResource(ResourceCollection& collection) const override;
 
@@ -310,18 +394,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
     }
   }
 
-  inline valT computeU(const DistRow& dist)
-  {
-    valT curVat(0);
-    for (int jg = 0; jg < NumGroups; ++jg)
-    {
-      if (J1UniqueFunctors[jg] != nullptr)
-        curVat +=
-            J1UniqueFunctors[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist.data(), DistCompressed.data());
-    }
-    return curVat;
-  }
-
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
     const auto& dist = P.getDistTableAB(myTableID).getTempDists();
@@ -334,68 +406,6 @@ struct J1OrbitalSoA : public WaveFunctionComponent
 
     for (int i = 0; i < Nelec; ++i)
       ratios[i] = std::exp(Vat[i] - curAt);
-  }
-
-  /// compute G and L from internally stored data
-  inline QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const
-  {
-    for (size_t iat = 0; iat < Nelec; ++iat)
-    {
-      G[iat] += Grad[iat];
-      L[iat] -= Lap[iat];
-    }
-    return -simd::accumulate_n(Vat.data(), Nelec, QTFull::RealType());
-  }
-
-  inline LogValueType evaluateGL(const ParticleSet& P,
-                                 ParticleSet::ParticleGradient& G,
-                                 ParticleSet::ParticleLaplacian& L,
-                                 bool fromscratch = false) override
-  {
-    return log_value_ = computeGL(G, L);
-  }
-
-  /** compute gradient and lap
-   * @return lap
-   */
-  inline valT accumulateGL(const valT* restrict du, const valT* restrict d2u, const DisplRow& displ, posT& grad) const
-  {
-    valT lap(0);
-    constexpr valT lapfac = OHMMS_DIM - RealType(1);
-    //#pragma omp simd reduction(+:lap)
-    for (int jat = 0; jat < Nions; ++jat)
-      lap += d2u[jat] + lapfac * du[jat];
-    for (int idim = 0; idim < OHMMS_DIM; ++idim)
-    {
-      const valT* restrict dX = displ.data(idim);
-      valT s                  = valT();
-      //#pragma omp simd reduction(+:s)
-      for (int jat = 0; jat < Nions; ++jat)
-        s += du[jat] * dX[jat];
-      grad[idim] = s;
-    }
-    return lap;
-  }
-
-  /** compute U, dU and d2U
-   * @param P quantum particleset
-   * @param iat the moving particle
-   * @param dist starting address of the distances of the ions wrt the iat-th particle
-   */
-  inline void computeU3(const ParticleSet& P, int iat, const DistRow& dist)
-  {
-    constexpr valT czero(0);
-    std::fill_n(U.data(), Nions, czero);
-    std::fill_n(dU.data(), Nions, czero);
-    std::fill_n(d2U.data(), Nions, czero);
-
-    for (int jg = 0; jg < NumGroups; ++jg)
-    {
-      if (J1UniqueFunctors[jg] == nullptr)
-        continue;
-      J1UniqueFunctors[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist.data(), U.data(), dU.data(), d2U.data(),
-                                        DistCompressed.data(), DistIndice.data());
-    }
   }
 
   /** compute the gradient during particle-by-particle update
@@ -690,5 +700,11 @@ struct J1OrbitalSoA : public WaveFunctionComponent
   }
 };
 
+extern template class J1OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
+extern template class J1OrbitalSoA<CubicSplineSingle<QMCTraits::RealType, CubicBspline<QMCTraits::RealType, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>>>;
+extern template class J1OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
+extern template class J1OrbitalSoA<ShortRangeCuspFunctor<QMCTraits::RealType>>;
+extern template class J1OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
+extern template class J1OrbitalSoA<Pade2ndOrderFunctor<QMCTraits::RealType>>;
 } // namespace qmcplusplus
 #endif
