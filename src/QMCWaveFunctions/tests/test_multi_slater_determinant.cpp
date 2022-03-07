@@ -17,6 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "TWFGrads.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -43,8 +44,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -228,19 +229,19 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
 
-    std::vector<GradType> grad_old(2);
+    TWFGrads<CoordsType::POS> grad_old(2);
 
     const int moved_elec_id = 1;
     TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
-    CHECK(grad_old[0][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[0][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[0][2] == ValueApprox(-5.8209379274));
-    CHECK(grad_old[1][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[1][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[1][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[0][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[0][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[0][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[1][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[1][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[1][2] == ValueApprox(-5.8209379274));
 
-    std::vector<GradType> grad_new(2);
+    TWFGrads<CoordsType::POS> grad_new(2);
     std::vector<PsiValueType> ratios(2);
 
     ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displ);
@@ -254,12 +255,12 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(ratios[0] == ValueApprox(PsiValueType(-0.6181619459)));
     CHECK(ratios[1] == ValueApprox(PsiValueType(1.6186330488)));
 
-    CHECK(grad_new[0][0] == ValueApprox(1.2418467899));
-    CHECK(grad_new[0][1] == ValueApprox(1.2425653495));
-    CHECK(grad_new[0][2] == ValueApprox(4.4273237873));
-    CHECK(grad_new[1][0] == ValueApprox(-0.8633778143));
-    CHECK(grad_new[1][1] == ValueApprox(0.8245347691));
-    CHECK(grad_new[1][2] == ValueApprox(-5.1513380151));
+    CHECK(grad_new.grads_positions[0][0] == ValueApprox(1.2418467899));
+    CHECK(grad_new.grads_positions[0][1] == ValueApprox(1.2425653495));
+    CHECK(grad_new.grads_positions[0][2] == ValueApprox(4.4273237873));
+    CHECK(grad_new.grads_positions[1][0] == ValueApprox(-0.8633778143));
+    CHECK(grad_new.grads_positions[1][1] == ValueApprox(0.8245347691));
+    CHECK(grad_new.grads_positions[1][2] == ValueApprox(-5.1513380151));
   }
 }
 
@@ -330,8 +331,8 @@ void test_Bi_msd(const std::string& spo_xml_string,
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 

@@ -298,10 +298,10 @@ public:
     return nullptr;
   }
 
-  virtual const RealType* mw_evaluate_range(const RefVectorWithLeader<DistanceTable>& dt_list,
-                                            const RefVectorWithLeader<ParticleSet>& p_list,
-                                            size_t range_begin,
-                                            size_t range_end) const
+  virtual const RealType* mw_evalDistsInRange(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              size_t range_begin,
+                                              size_t range_end) const
   {
     return nullptr;
   }

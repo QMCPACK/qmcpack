@@ -82,7 +82,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
 
   std::string vp_file_to_load;
   cur          = cur->children;
-  bool success = true;
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
@@ -90,7 +89,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
       sposet_builder_factory.buildSPOSetCollection(cur);
     else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
-      success = addFermionTerm(*targetPsi, sposet_builder_factory, cur);
+      addFermionTerm(*targetPsi, sposet_builder_factory, cur);
       bool foundtwist(false);
       xmlNodePtr kcur = cur->children;
       while (kcur != NULL)
@@ -122,7 +121,6 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
     {
       auto jbuilder = std::make_unique<JastrowBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(jbuilder->buildComponent(cur));
-      success = true;
     }
     else if (cname == "fdlrwfn")
     {
@@ -132,25 +130,21 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
     {
       auto builder = std::make_unique<LatticeGaussianProductBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(builder->buildComponent(cur));
-      success = true;
     }
     else if ((cname == "Molecular") || (cname == "molecular"))
     {
       APP_ABORT("  Removed Helium Molecular terms from qmcpack ");
-      success = false;
     }
     else if (cname == "example_he")
     {
       auto exampleHe_builder = std::make_unique<ExampleHeBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(exampleHe_builder->buildComponent(cur));
-      success = true;
     }
 #if !defined(QMC_COMPLEX) && OHMMS_DIM == 3
     else if (cname == "agp")
     {
       auto agpbuilder = std::make_unique<AGPDeterminantBuilder>(myComm, targetPtcl, ptclPool);
       targetPsi->addComponent(agpbuilder->buildComponent(cur));
-      success = true;
     }
 #endif
     else if (cname == "override_variational_parameters")
@@ -180,7 +174,7 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
 
   targetPsi->resetParameters(dummy);
   targetPsi->storeSPOMap(sposet_builder_factory.exportSPOSets());
-  return std::move(targetPsi);
+  return targetPsi;
 }
 
 bool WaveFunctionFactory::addFermionTerm(TrialWaveFunction& psi, SPOSetBuilderFactory& spo_factory, xmlNodePtr cur)

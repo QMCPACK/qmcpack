@@ -549,7 +549,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       const size_t last            = std::min(first + chunk_size, total_num_half);
       const size_t this_chunk_size = last - first;
 
-      auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
+      auto* mw_dist = dtaa_leader.mw_evalDistsInRange(dt_list, p_list, first, last);
 
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 

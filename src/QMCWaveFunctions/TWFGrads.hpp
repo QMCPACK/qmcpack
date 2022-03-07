@@ -24,7 +24,9 @@ struct TWFGrads;
 template<>
 struct TWFGrads<CoordsType::POS>
 {
-  void resize(const std::size_t size);
+  TWFGrads(const std::size_t size);
+
+  TWFGrads& operator+=(const TWFGrads& rhs);
 
   std::vector<QMCTraits::GradType> grads_positions;
 };
@@ -32,7 +34,9 @@ struct TWFGrads<CoordsType::POS>
 template<>
 struct TWFGrads<CoordsType::POS_SPIN>
 {
-  void resize(const std::size_t size);
+  TWFGrads(const std::size_t size);
+
+  TWFGrads& operator+=(const TWFGrads& rhs);
 
   std::vector<QMCTraits::GradType> grads_positions;
   std::vector<QMCTraits::ComplexType> grads_spins;
