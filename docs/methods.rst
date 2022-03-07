@@ -120,15 +120,16 @@ Batched drivers
 ---------------
 
 Under the Exascale Computing Project effort a new set of QMC drivers was developed
-to eliminate the divergence of CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
+to eliminate the divergence of legacy CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
 The divergence came from the the fact that the CPU code path favors executing all the compute tasks within a step
 for one walker and then advance walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
 In this way, walkers are not synchronized with each other and maximal throughout can be achieved on CPU.
 The GPU code path favors executing the same compute task over all the walkers together to maximize GPU throughput.
-This GPU code path choice also minimizes the overhead of dispatching computation and host-device data transfer.
-However, there is only one host thread responsible for handling all the interaction between the host and GPUs.
-The CPU code path handles computation with a walker batch size of one and many batches.
-The GPU code path uses only one batch containing all the walkers.
+This compute dispatch pattern minimizes the overhead of dispatching computation and host-device data transfer.
+However, the legacy GPU code path only leverages the OpenMP main host thread for handling
+all the interaction between the host and GPUs and limit the kernel dispatch capability.
+In brief, the CPU code path handles computation with a walker batch size of one and many batches
+while the GPU code path uses only one batch containing all the walkers.
 The new drivers that implement this flexible batching scheme are called "batched drivers".
 
 The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
