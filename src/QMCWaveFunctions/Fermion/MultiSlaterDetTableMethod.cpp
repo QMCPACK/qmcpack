@@ -1128,9 +1128,8 @@ void MultiSlaterDetTableMethod::precomputeC_otherDs(const ParticleSet& P, int ig
         product *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
     C_otherDs[ig][(*C2node)[ig][i]] += product;
   }
-  //put C_otherDs in host
-  auto* C_otherDs_ptr = C_otherDs[ig].data();
-  PRAGMA_OFFLOAD("omp target update to(C_otherDs_ptr[:Dets[ig]->getNumDets()])") //transfer content to device
+  //put C_otherDs in device
+  C_otherDs[ig].updateTo();
 }
 
 
