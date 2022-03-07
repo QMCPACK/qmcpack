@@ -32,6 +32,10 @@
 
 namespace qmcplusplus
 {
+template<typename DT>
+using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+template<typename DT>
+using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 /** LU factorization of double */
 inline void LUFactorization(int n, int m, double* restrict a, int n0, int* restrict piv)
 {
@@ -239,13 +243,12 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  * @param colchanged column index to be replaced
  * @return \f$ M^{new}/M\f$
  */
-template<typename DT>
-using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+
 
 template<typename T>
 inline void mw_DetRatioByColumn(const int nw,
                                 int colchanged,
-                                const RefVector<Matrix<T>>& Minv_list,
+                                const RefVector<OffloadMatrix<T>>& Minv_list,
                                 const RefVector<OffloadVector<T>>& newv_list,
                                 std::vector<T>& curRatio_list)
 
@@ -253,7 +256,7 @@ inline void mw_DetRatioByColumn(const int nw,
   //use BLAS dot since the stride is not uniform
   for (size_t iw = 0; iw < nw; iw++)
     curRatio_list[iw] = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
-                                        Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
+                                  Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
 }
 
 /** update a inverse matrix by a row substitution
@@ -264,7 +267,7 @@ inline void mw_DetRatioByColumn(const int nw,
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<class MatA, class VecT,typename T>
+template<class MatA, class VecT, typename T>
 inline void InverseUpdateByRow(MatA& Minv,
                                VecT& newrow,
                                OffloadVector<T>& rvec,
@@ -286,13 +289,13 @@ inline void InverseUpdateByRow(MatA& Minv,
   //for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 }
 
-template<typename MatA, typename T>
-inline void InverseUpdateByColumn(MatA& Minv,
+template<typename T>
+inline void InverseUpdateByColumn(OffloadMatrix<T>& Minv,
                                   OffloadVector<T>& newcol,
                                   OffloadVector<T>& rvec,
                                   OffloadVector<T>& rvecinv,
                                   int colchanged,
-                                  typename MatA::value_type c_ratio)
+                                  T c_ratio)
 {
   det_col_update(Minv.data(), newcol.data(), Minv.rows(), colchanged, c_ratio, rvec.data(), rvecinv.data());
   //int nrows=Minv.rows();
@@ -309,7 +312,7 @@ inline void InverseUpdateByColumn(MatA& Minv,
 
 template<typename T>
 inline void mw_InverseUpdateByColumn(const int nw,
-                                     const RefVector<Matrix<T>>& Minv_list,
+                                     const RefVector<OffloadMatrix<T>>& Minv_list,
                                      const RefVector<OffloadVector<T>>& newcol_list,
                                      const RefVector<OffloadVector<T>>& rvec_list,
                                      const RefVector<OffloadVector<T>>& rvecinv_list,

@@ -201,8 +201,8 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGradWithSpin_
   const auto& grads = (newpos) ? Dets[det_id]->getNewGrads() : Dets[det_id]->getGrads();
   const OffloadVector<ValueType>& detValues0 =
       (newpos) ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
-  const ValueMatrix& spingrads = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
-  const size_t noffset         = Dets[det_id]->getFirstIndex();
+  const OffloadMatrix<ValueType>& spingrads = (newpos) ? Dets[det_id]->getNewSpinGrads() : Dets[det_id]->getSpinGrads();
+  const size_t noffset                      = Dets[det_id]->getFirstIndex();
 
   PsiValueType psi(0);
   for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
@@ -230,7 +230,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   const int nw             = WFC_list.size();
   const int ndets          = det_leader.Dets[det_id]->getNumDets();
 
-  app_log()<<"Line 219: mw_evalGrad_impl"<<std::endl;
+  app_log() << "Line 219: mw_evalGrad_impl" << std::endl;
 
   RefVectorWithLeader<MultiDiracDeterminant> det_list(*det_leader.Dets[det_id]);
   det_list.reserve(WFC_list.size());
@@ -418,7 +418,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad(const RefVectorWithLeader<WaveFuncti
                                             int iat,
                                             std::vector<GradType>& grad_now) const
 {
-  app_log()<<"Line 421: mw_evalGrad"<<std::endl;
+  app_log() << "Line 421: mw_evalGrad" << std::endl;
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_evalGrad(WFC_list, P_list, iat, grad_now);
@@ -477,7 +477,7 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
                                              std::vector<WaveFunctionComponent::PsiValueType>& ratios,
                                              std::vector<GradType>& grad_new) const
 {
-  app_log()<<"Line 474: mw_ratioGrad"<<std::endl;
+  app_log() << "Line 474: mw_ratioGrad" << std::endl;
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_ratioGrad(WFC_list, P_list, iat, ratios, grad_new);
@@ -570,7 +570,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
                                              int iat,
                                              std::vector<PsiValueType>& ratios) const
 {
-  app_log()<<"Line 573: mw_calcRatio"<<std::endl;
+  app_log() << "Line 573: mw_calcRatio" << std::endl;
   if (!use_pre_computing_)
   {
     WaveFunctionComponent::mw_calcRatio(WFC_list, P_list, iat, ratios);

@@ -37,6 +37,8 @@ public:
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   BasisSetType* GeminalBasis;
 
@@ -127,7 +129,7 @@ public:
   ValueMatrix LambdaUP;
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix psiM, psiM_temp;
+  OffloadMatrix<ValueType> psiM, psiM_temp;
 
 
   /**  Transient data for gradient and laplacian evaluation

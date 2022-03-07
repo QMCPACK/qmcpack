@@ -136,8 +136,12 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   {
     ///Force host view as no implementation of evaluate_notranspose
     Matrix<ValueType> psiM_host_view(psiM.data(), psiM.rows(), psiM.cols());
-    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM, d2psiM);
+    Matrix<GradType> dpsiM_host_view(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
+    Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
+    Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
     ///psiM.updateTo();
+    ///dpsiM.updateTo();
+    ///d2psiM.updateTo();
   }
 
   InverseTimer.start();
@@ -218,7 +222,10 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   {
     ///Force host view as no implementation of evaluate_notranspose
     Matrix<ValueType> psiM_host_view(psiM.data(), psiM.rows(), psiM.cols());
-    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM, d2psiM, dspin_psiM);
+    Matrix<GradType> dpsiM_host_view(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
+    Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
+    Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view,
+                                   dspin_psiM);
   }
 
   InverseTimer.start();
