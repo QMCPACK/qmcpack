@@ -29,6 +29,7 @@
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
 #include "type_traits/template_types.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -267,9 +268,9 @@ inline void mw_DetRatioByColumn(const int nw,
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<class MatA, class VecT, typename T>
+template<class MatA, typename T>
 inline void InverseUpdateByRow(MatA& Minv,
-                               VecT& newrow,
+                               Vector<T>& newrow,
                                OffloadVector<T>& rvec,
                                OffloadVector<T>& rvecinv,
                                int rowchanged,

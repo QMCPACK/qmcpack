@@ -96,12 +96,12 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     dotProducts_list[iw].get().updateTo();
   }
 
-  const int Max_ext_level = (ndets_per_excitation_level_->size() - 1);
+  const int max_ext_level = (ndets_per_excitation_level_->size() - 1);
   size_t count_0          = 1;
   size_t it_shift         = 1;
 
 
-  for (size_t ext_level = 1; ext_level <= Max_ext_level; ext_level++)
+  for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++)
   {
     const size_t n = ext_level;
 

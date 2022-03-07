@@ -684,4 +684,86 @@ int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
 }
 
 
+void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
+                                                const opt_variables_type& optvars,
+                                                std::vector<ValueType>& dlogpsi,
+                                                std::vector<ValueType>& dhpsioverpsi,
+                                                const MultiDiracDeterminant& pseudo_dn,
+                                                const ValueType& psiCurrent,
+                                                const std::vector<ValueType>& Coeff,
+                                                const std::vector<size_t>& C2node_up,
+                                                const std::vector<size_t>& C2node_dn)
+{
+  if (!Optimizable)
+    return;
+
+  const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
+  const OffloadVector<ValueType>& detValues_dn = pseudo_dn.getRatiosToRefDet();
+  const OffloadMatrix<GradType>& grads_up      = grads;
+  const OffloadMatrix<GradType>& grads_dn      = pseudo_dn.grads;
+  const OffloadMatrix<ValueType>& lapls_up     = lapls;
+  const OffloadMatrix<ValueType>& lapls_dn     = pseudo_dn.lapls;
+  const OffloadMatrix<ValueType>& M_up         = psiM;
+  const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
+  const OffloadMatrix<ValueType>& Minv_up      = psiMinv;
+  const OffloadMatrix<ValueType>& Minv_dn      = pseudo_dn.psiMinv;
+  const OffloadMatrix<GradType>& B_grad        = dpsiM;
+  const OffloadMatrix<ValueType>& B_lapl       = d2psiM;
+
+  const size_t N1  = FirstIndex;
+  const size_t N2  = pseudo_dn.FirstIndex;
+  const size_t NP1 = NumPtcls;
+  const size_t NP2 = pseudo_dn.NumPtcls;
+  ///This function needs really to be ported...
+  ///What is return from here?? whatever is returned needs to be send to device
+  Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
+  Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
+  Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
+  Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(), M_dn.cols());
+  Matrix<ValueType> Minv_up_host_view(const_cast<ValueType*>(Minv_up.data()), Minv_up.rows(), Minv_up.cols());
+  Matrix<ValueType> Minv_dn_host_view(const_cast<ValueType*>(Minv_dn.data()), Minv_dn.rows(), Minv_dn.cols());
+  Matrix<GradType> B_grad_host_view(const_cast<GradType*>(B_grad.data()), B_grad.rows(), B_grad.cols());
+  Matrix<ValueType> B_lapl_host_view(const_cast<ValueType*>(B_lapl.data()), B_lapl.rows(), B_lapl.cols());
+  Matrix<GradType> grads_up_host_view(const_cast<GradType*>(grads_up.data()), grads_up.rows(), grads_up.cols());
+  Matrix<GradType> grads_dn_host_view(const_cast<GradType*>(grads_dn.data()), grads_dn.rows(), grads_dn.cols());
+  Matrix<ValueType> lapls_up_host_view(const_cast<ValueType*>(lapls_up.data()), lapls_up.rows(), lapls_up.cols());
+  Matrix<ValueType> lapls_dn_host_view(const_cast<ValueType*>(lapls_dn.data()), lapls_dn.rows(), lapls_dn.cols());
+  Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
+                           detValues_up_host_view, detValues_dn_host_view, grads_up_host_view, grads_dn_host_view,
+                           lapls_up_host_view, lapls_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up_host_view,
+                           Minv_dn_host_view, B_grad_host_view, B_lapl_host_view, *detData, N1, N2, NP1, NP2,
+                           lookup_tbl);
+}
+
+
+void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
+                                                  const opt_variables_type& optvars,
+                                                  std::vector<ValueType>& dlogpsi,
+                                                  const MultiDiracDeterminant& pseudo_dn,
+                                                  const PsiValueType& psiCurrent,
+                                                  const std::vector<ValueType>& Coeff,
+                                                  const std::vector<size_t>& C2node_up,
+                                                  const std::vector<size_t>& C2node_dn)
+{
+  if (!Optimizable)
+    return;
+
+  const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
+  const OffloadVector<ValueType>& detValues_dn = pseudo_dn.getRatiosToRefDet();
+  const OffloadMatrix<ValueType>& M_up         = psiM;
+  const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
+  const OffloadMatrix<ValueType>& Minv_up      = psiMinv;
+  const OffloadMatrix<ValueType>& Minv_dn      = pseudo_dn.psiMinv;
+
+  Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
+  Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
+  Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
+  Matrix<ValueType> M_dn_host_view(const_cast<ValueType*>(M_dn.data()), M_dn.rows(), M_dn.cols());
+  Matrix<ValueType> Minv_up_host_view(const_cast<ValueType*>(Minv_up.data()), Minv_up.rows(), Minv_up.cols());
+  Matrix<ValueType> Minv_dn_host_view(const_cast<ValueType*>(Minv_dn.data()), Minv_dn.rows(), Minv_dn.cols());
+  Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up_host_view,
+                             detValues_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up_host_view,
+                             Minv_dn_host_view, *detData, lookup_tbl);
+}
+
 } // namespace qmcplusplus

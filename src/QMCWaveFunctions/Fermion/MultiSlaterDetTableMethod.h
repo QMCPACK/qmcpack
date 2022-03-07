@@ -267,10 +267,11 @@ private:
   PsiValueType curRatio;
 
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
-  std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  //std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
+  std::vector<OffloadVector<ValueType>> C_otherDs;
   /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> C_otherDs_ptr_list;
-  Vector<const ValueType*, OffloadPinnedAllocator<const ValueType*>> det_value_ptr_list;
+  OffloadVector<const ValueType*> C_otherDs_ptr_list;
+  OffloadVector<const ValueType*> det_value_ptr_list;
 
   ParticleSet::ParticleGradient myG, myG_temp;
   ParticleSet::ParticleLaplacian myL, myL_temp;
