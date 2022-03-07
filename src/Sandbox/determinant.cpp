@@ -19,6 +19,7 @@
 #include "Utilities/Timer.h"
 #include "random.hpp"
 #include "mpi/collectives.h"
+#include "Platforms/PinnedAllocator.h"
 #include <getopt.h>
 using namespace std;
 #include "determinant.hpp"
