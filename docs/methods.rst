@@ -119,27 +119,28 @@ In the project id section, make sure that the series number is different from an
 Batched drivers
 ---------------
 
-Under the Exascale Computing Project effort, we developed a new set of QMC drivers, called "batched drivers",
+Under the Exascale Computing Project effort a new set of QMC drivers was developed
 to eliminate the divergence of CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
-The divergence came from the the fact that the CPU code path favors executing all the compute tasks, within a step,
-of one walker and advances walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
-In this way, walkers are not synchornized with each other and maximal throughout can be achieved on CPU.
-The GPU code path favors executing the same compute task of all the walkers together to maximize GPU thorughput.
-This GPU code path choice also minimizes the overhead on dispatching computation and host-device data transfer due to the GPU nature.
-However, there is only one host thread responisible for handling all the interaction between the host and GPUs.
-In brief, CPU code path handles computation in walker batch size 1 with many batches.
-The GPU code path uses only one batch with all the walkres in it.
-Thus we need to introduce a flexible batching scheme in the new drivers.
+The divergence came from the the fact that the CPU code path favors executing all the compute tasks within a step
+for one walker and then advance walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
+In this way, walkers are not synchronized with each other and maximal throughout can be achieved on CPU.
+The GPU code path favors executing the same compute task over all the walkers together to maximize GPU throughput.
+This GPU code path choice also minimizes the overhead of dispatching computation and host-device data transfer.
+However, there is only one host thread responsible for handling all the interaction between the host and GPUs.
+The CPU code path handles computation with a walker batch size of one and many batches.
+The GPU code path uses only one batch containing all the walkers.
+The new drivers that implement this flexible batching scheme are called "batched drivers".
 
-A new concept "crowd" is introduced as a suborganization of walker population referring to a walker batch.
+The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
+A crowd is a subset of the walkers that are operated on as as single batch.
 Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
 Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
-With this flexible batching capability, new drivers are capable of delivering maxmimal performance of given hardwares.
+With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
 In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
-Thus batched drivers are feature complete as they allow mixing and matching CPU-only and GPU accellerated features
-that is not feasible with the legacy GPU implementation.
+Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
+in a way that is not feasible with the legacy GPU implementation.
 
-For OpenMP GPU offload users, batched drivers are musts to effectively use GPUs.
+For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
 
 .. _transition_guide:
 
@@ -150,18 +151,18 @@ Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
 There are notable changes in the driver input section when moving from classic drivers to batched drivers:
 
   - ``walkers`` is not supported in any batched driver inputs.
-    Instead, ``walkers_per_rank`` and ``total_walkers`` allow to specify the population at the start of a driver run.
+    Instead, ``walkers_per_rank`` and ``total_walkers`` specify the population at the start of a driver run.
 
-  - ``crowds`` is added in batched drivers to specify the number of crowds.
+  - ``crowds`` can added in batched drivers to specify the number of crowds.
 
-  - If a classic driver input section contains ``walkers`` equals 1. To achieve the same effect,
-    just avoid specifying ``walkers_per_rank``, ``total_walkers`` or ``crowds`` in batched drivers.
+  - If a classic driver input section contains ``walkers`` equals 1, the same effect can be achieved by
+    omitting the specification of ``walkers_per_rank``, ``total_walkers`` or ``crowds`` in batched drivers.
 
-  - None of ``walkers_per_rank``, ``total_walkers`` or ``crowds`` is mandatory.
+  - The ``walkers_per_rank``, ``total_walkers`` or ``crowds`` parameters are optional.
     See driver-specific parameter additional information below about default values.
 
-  - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is likely needed to maximize GPU throughput
-    just like tuning ``walkers`` in classic drivers.
+  - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is likely needed to maximize GPU throughput,
+    just like tuning ``walkers`` in the classic drivers.
 
   - Only particle-by-particle move is supported. No all-particle move support.
 

@@ -65,7 +65,7 @@ feature that you are interested in, check the remainder of this manual or ask if
 
 -  Highly efficient vectorized CPU code tailored for modern architectures. :cite:`IPCC_SC17`
 
--  OpenMP offload based performance portable GPU implementation, see :ref:`gpufeatures`.
+-  OpenMP-offload-based performance portable GPU implementation, see :ref:`gpufeatures`.
 
 -  Legacy GPU (NVIDIA CUDA) implementation (limited functionality - see :ref:`gpufeatures`).
 
@@ -119,13 +119,13 @@ Supported GPU features for real space QMC
 
 There are two GPU implementations in the code base.
 
-  - **Performance portable implementation** (recommended). It implements real space QMC methods
+  - **Performance portable implementation** (recommended). Implements real space QMC methods
     using OpenMP offload programming model and accelerated linear algebra libraries.
-    It runs with good performance on NVIDIA and AMD GPUs and the Intel GPU support is under development.
+    Runs with good performance on NVIDIA and AMD GPUs, and the Intel GPU support is under development.
     Unlike the "legacy" implementation, it is feature complete
     and users may mix and match CPU-only and GPU-accelerated features.
 
-  - **Legacy implementation** fully based on NVIDIA CUDA. It achieves very good speedup on NVIDIA GPUs.
+  - **Legacy implementation**. Fully based on NVIDIA CUDA. Achieves very good speedup on NVIDIA GPUs.
     However, only a very limited subset of features is available.
 
 
