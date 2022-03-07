@@ -191,10 +191,10 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
    * half of the table due to the symmetry of AA table. See note of the output data object mw_distances_subset
    * To keep resident memory minimal on the device, range_end - range_begin < num_particls_stored is required.
    */
-  const RealType* mw_evaluate_range(const RefVectorWithLeader<DistanceTable>& dt_list,
-                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                    size_t range_begin,
-                                    size_t range_end) const override
+  const RealType* mw_evalDistsInRange(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      size_t range_begin,
+                                      size_t range_end) const override
   {
     auto& dt_leader          = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
     const size_t subset_size = range_end - range_begin;
