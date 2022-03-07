@@ -28,6 +28,8 @@ set(PARTICLE
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp
     HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
@@ -36,10 +38,6 @@ set(PARTICLE
     LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp)
-
-if(ENABLE_OFFLOAD)
-  set(PARTICLE ${PARTICLE} createDistanceTableAAOMPTarget.cpp createDistanceTableABOMPTarget.cpp)
-endif(ENABLE_OFFLOAD)
 
 set(PARTICLEIO
     ParticleTags.cpp
