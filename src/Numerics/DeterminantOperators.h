@@ -268,13 +268,13 @@ inline void mw_DetRatioByColumn(const int nw,
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<class MatA, typename T>
-inline void InverseUpdateByRow(MatA& Minv,
+template<typename T>
+inline void InverseUpdateByRow(OffloadMatrix<T>& Minv,
                                Vector<T>& newrow,
                                OffloadVector<T>& rvec,
                                OffloadVector<T>& rvecinv,
                                int rowchanged,
-                               typename MatA::value_type c_ratio)
+                               T c_ratio)
 {
   //using gemv+ger
   det_row_update(Minv.data(), newrow.data(), Minv.cols(), rowchanged, c_ratio, rvec.data(), rvecinv.data());
