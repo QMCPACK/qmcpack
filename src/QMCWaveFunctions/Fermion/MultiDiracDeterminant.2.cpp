@@ -96,7 +96,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     dotProducts_list[iw].get().updateTo();
   }
 
-  const int Max_ext_level = (ndets_per_excitation_level->size() - 1);
+  const int Max_ext_level = (ndets_per_excitation_level_->size() - 1);
   size_t count_0          = 1;
   size_t it_shift         = 1;
 
@@ -110,7 +110,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     {
       std::vector<int>::const_iterator it2 = data.begin() + it_shift;
       //PRAGMA_OFFLOAD("omp parallel for")
-      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level)[ext_level]; ++count_1)
+      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
       {
         size_t count                 = count_0 + count_1;
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
@@ -118,8 +118,8 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       }
       ratios_list[iw].get().updateTo();
     }
-    count_0 += (*ndets_per_excitation_level)[ext_level];
-    it_shift += (*ndets_per_excitation_level)[ext_level] * (3 * ext_level + 1);
+    count_0 += (*ndets_per_excitation_level_)[ext_level];
+    it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
   }
   readMatTimer.stop();
 }
