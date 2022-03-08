@@ -101,7 +101,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   std::vector<size_t> sum_ndets_per_excitation_level;
   std::vector<size_t> sum_with_shift_ndets_per_excitation_level;
 
-  // Ugly but working
   {
     size_t count_0          = 1;
     size_t it_shift         = 1;
@@ -112,23 +111,38 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
         sum_with_shift_ndets_per_excitation_level.push_back(it_shift);
     }
   }
-
-  for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++)
+  // Can replaced by variadic template at some point if needed
+  // Can put break to short-circuit
+  if (max_ext_level <= 0)
+    update_ratios_list<0>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+  if ( max_ext_level <= 1 )
+    update_ratios_list<1>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+  if ( max_ext_level <= 2)
+    update_ratios_list<2>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+  if (max_ext_level <= 3)
+    update_ratios_list<3>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+  if (max_ext_level <= 4)
+    update_ratios_list<4>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+  if (max_ext_level <= 5)
+    update_ratios_list<5>(nw, ratios_list,
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
+    
+  for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
   {
-    size_t count_0 = sum_ndets_per_excitation_level[ext_level];
-    size_t it_shift = sum_with_shift_ndets_per_excitation_level.push_back[ext_level];
-
-    for (size_t iw = 0; iw < nw; iw++)
-    {
-      std::vector<int>::const_iterator it2 = data.begin() + it_shift;
-      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
-      {
-        size_t count                 = count_0 + count_1;
-        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            CalculateRatioFromMatrixElements(ext_level, dotProducts_list[iw].get(),
-                                             &(*(it2 + 1 + count_1 * (3 * ext_level + 1))));
-      }
-    }
+    update_ratios_list(ext_level, nw, ratios_list, 
+                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
+                       data, sign, det0_list, dotProducts_list);
   }
 
   for (size_t iw = 0; iw < nw; iw++)
