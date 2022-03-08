@@ -116,11 +116,14 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
             CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1 + count_1 * (3 * n + 1));
       }
-      ratios_list[iw].get().updateTo();
     }
     count_0 += (*ndets_per_excitation_level_)[ext_level];
     it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
   }
+
+  for (size_t iw = 0; iw < nw; iw++)
+    ratios_list[iw].get().updateTo();
+
   readMatTimer.stop();
 }
 
