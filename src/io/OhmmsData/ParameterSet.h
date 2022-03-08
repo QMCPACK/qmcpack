@@ -63,7 +63,7 @@ struct ParameterSet : public OhmmsElementBase
   template<class PDT>
   void add(PDT& aparam,
            const std::string& aname_in,
-           std::vector<PDT>&& candidate_values = {},
+           std::vector<PDT> candidate_values = {},
            TagStatus status                    = TagStatus::OPTIONAL);
 
   template<class PDT>
@@ -72,24 +72,24 @@ struct ParameterSet : public OhmmsElementBase
 
 extern template void ParameterSet::add<std::string>(std::string&,
                                                     const std::string&,
-                                                    std::vector<std::string>&&,
+                                                    std::vector<std::string>,
                                                     TagStatus);
-extern template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>&&, TagStatus);
-extern template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>&&, TagStatus);
-extern template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>&&, TagStatus);
-extern template void ParameterSet::add<float>(float&, const std::string&, std::vector<float>&&, TagStatus);
+extern template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>, TagStatus);
+extern template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>, TagStatus);
+extern template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>, TagStatus);
+extern template void ParameterSet::add<float>(float&, const std::string&, std::vector<float>, TagStatus);
 extern template void ParameterSet::add<std::complex<double>>(std::complex<double>&,
                                                              const std::string&,
-                                                             std::vector<std::complex<double>>&&,
+                                                             std::vector<std::complex<double>>,
                                                              TagStatus);
 extern template void ParameterSet::add<std::complex<float>>(std::complex<float>&,
                                                             const std::string&,
-                                                            std::vector<std::complex<float>>&&,
+                                                            std::vector<std::complex<float>>,
                                                             TagStatus);
 extern template void ParameterSet::add<qmcplusplus::TinyVector<int, 3u>>(
     qmcplusplus::TinyVector<int, 3u>&,
     const std::string&,
-    std::vector<qmcplusplus::TinyVector<int, 3u>>&&,
+    std::vector<qmcplusplus::TinyVector<int, 3u>>,
     TagStatus);
 
 extern template void ParameterSet::setValue<int>(const std::string& aname_in, int aval);

@@ -38,29 +38,33 @@ struct double_tag
 struct float_tag
 {};
 
+struct OffloadSwitches
+{
+  bool spo;
+  bool jas;
+};
+
 /** Templated test of TrialWF with different DiracDet flavors.
  *  If QMC_CUDA there is no testing converage beyond setup.
  *  \todo at the very least the prepocessor define QMC_CUDA shouldn't be 
  *  used and a constexpr based on DeterminantTypes that actually depend on legacy cuda.
  */
 template<class DiracDet, class SPO_precision>
-void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
+void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitches& offload_switches)
 {
 #if defined(MIXED_PRECISION)
   const double grad_precision  = 1.3e-4;
   const double ratio_precision = 2e-4;
 #else
-  const double grad_precision               = std::is_same<SPO_precision, float_tag>::value ? 1.3e-4 : 1e-8;
-  const double ratio_precision              = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
+  const double grad_precision  = std::is_same<SPO_precision, float_tag>::value ? 1.3e-4 : 1e-8;
+  const double ratio_precision = std::is_same<SPO_precision, float_tag>::value ? 2e-4 : 1e-5;
 #endif
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
-#if defined(ENABLE_OFFLOAD)
-  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS_OFFLOAD;
-#else
-  const DynamicCoordinateKind kind_selected = DynamicCoordinateKind::DC_POS;
-#endif
+  const DynamicCoordinateKind kind_selected =
+      offload_switches.jas ? DynamicCoordinateKind::DC_POS_OFFLOAD : DynamicCoordinateKind::DC_POS;
+
   // diamondC_2x1x1
   ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0)   = 6.7463223;
@@ -123,18 +127,21 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  std::string spo_xml = "<tmp> \
-               <determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.5\" precision=\"float\" size=\"2\"/> \
-               </tmp> \
-               ";
+  std::string spo_xml     = R"XML(<tmp> \
+               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="no"/> \
+               </tmp>)XML";
+  std::string spo_omp_xml = R"XML(<tmp> \
+               <determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.5" precision="float" size="2" gpu="omptarget"/> \
+               </tmp>)XML";
 #ifndef MIXED_PRECISION
   if (std::is_same<SPO_precision, double_tag>::value)
   {
-    spo_xml = std::regex_replace(spo_xml, std::regex("float"), "double");
+    spo_xml     = std::regex_replace(spo_xml, std::regex("float"), "double");
+    spo_omp_xml = std::regex_replace(spo_omp_xml, std::regex("float"), "double");
   }
 #endif
   Libxml2Document doc;
-  bool okay = doc.parseFromString(spo_xml);
+  bool okay = doc.parseFromString(offload_switches.spo ? spo_omp_xml : spo_xml);
   REQUIRE(okay);
 
   xmlNodePtr spo_root = doc.getRoot();
@@ -155,16 +162,24 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
 
-  const char* jas_input = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+  const char* jas_input = R"XML(<tmp> \
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no"> \
+   <correlation size="10" speciesA="u" speciesB="u"> \
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
    </correlation> \
 </jastrow> \
-</tmp> \
-";
+</tmp>)XML";
+
+  const char* jas_omp_input = R"XML(<tmp> \
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="omptarget"> \
+   <correlation size="10" speciesA="u" speciesB="u"> \
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+   </correlation> \
+</jastrow> \
+</tmp>)XML";
+
   Libxml2Document doc_jas;
-  okay = doc.parseFromString(jas_input);
+  okay = doc.parseFromString(offload_switches.jas ? jas_omp_input : jas_input);
   REQUIRE(okay);
 
   xmlNodePtr jas_root = doc.getRoot();
@@ -356,13 +371,17 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
 #if defined(QMC_COMPLEX)
   CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-5));
 #if defined(MIXED_PRECISION)
-  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(2e-5));
+  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(5e-5));
 #else
   CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)));
 #endif
 #else
   CHECK(ratios[0] == Approx(1).epsilon(5e-5));
+#if defined(MIXED_PRECISION)
+  CHECK(ratios[1] == Approx(0.12487384604697).epsilon(5e-5));
+#else
   CHECK(ratios[1] == Approx(0.12487384604697));
+#endif
 #endif
 
   std::fill(ratios.begin(), ratios.end(), 0);
@@ -393,7 +412,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
         ComplexApprox(ValueType(713.71203320654, 0.020838031944677)).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[0][2] ==
         ComplexApprox(ValueType(-768.42842826889, -0.020838032035842)).epsilon(grad_precision));
-  CHECK(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)));
+  CHECK(ratios[1] == ComplexApprox(ValueType(0.12487384604679, 0)).epsilon(5e-5));
   CHECK(grad_new.grads_positions[1][0] ==
         ComplexApprox(ValueType(713.71203320656, 0.020838031892613)).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[1][1] ==
@@ -405,7 +424,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay)
   CHECK(grad_new.grads_positions[0][0] == Approx(713.69119517463).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[0][1] == Approx(713.69119517463).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[0][2] == Approx(-768.40759023689).epsilon(grad_precision));
-  CHECK(ratios[1] == Approx(0.12487384604697));
+  CHECK(ratios[1] == Approx(0.12487384604697).epsilon(5e-5));
   CHECK(grad_new.grads_positions[1][0] == Approx(713.69119517467).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[1][1] == Approx(713.69119517468).epsilon(grad_precision));
   CHECK(grad_new.grads_positions[1][2] == Approx(-768.40759023695).epsilon(grad_precision));
@@ -574,25 +593,104 @@ TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
   SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, float_tag>(2);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>, double_tag>(2);
+    using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, false});
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_spo")
+  {
+    using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, false});
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_jas")
+  {
+    using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, true});
+  }
+  SECTION("DiracDeterminantBatched<MatrixDelayedUpdateCUDA>_offload_spo_jas")
+  {
+    using Det = DiracDeterminantBatched<MatrixDelayedUpdateCUDA<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, true});
   }
 #endif
+
+  // DiracDeterminantBatched<MatrixUpdateOMPTarget>
   SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, float_tag>(2);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>, double_tag>(2);
+    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, false});
   }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo")
+  {
+    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, false});
+  }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_jas")
+  {
+    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, true});
+  }
+  SECTION("DiracDeterminantBatched<MatrixUpdateOMPTarget>_offload_spo_jas")
+  {
+    using Det = DiracDeterminantBatched<MatrixUpdateOMPTarget<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, true});
+  }
+
+  // DiracDeterminant<DelayedUpdate>
   SECTION("DiracDeterminant<DelayedUpdate>")
   {
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, float_tag>(2);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(1);
-    testTrialWaveFunction_diamondC_2x1x1<DiracDeterminant<DelayedUpdate<VT, FPVT>>, double_tag>(2);
+    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, false});
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_spo")
+  {
+    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, false});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, false});
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_Jas")
+  {
+    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{false, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{false, true});
+  }
+  SECTION("DiracDeterminant<DelayedUpdate>_offload_spo_jas")
+  {
+    using Det = DiracDeterminant<DelayedUpdate<VT, FPVT>>;
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, float_tag>(2, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(1, OffloadSwitches{true, true});
+    testTrialWaveFunction_diamondC_2x1x1<Det, double_tag>(2, OffloadSwitches{true, true});
   }
 }
 

@@ -17,9 +17,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#include <PlatformSelector.hpp>
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
-#include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
@@ -122,11 +123,7 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string skip_checks("no");
   std::string use_einspline_set_extended(
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
-#if defined(QMC_CUDA) || defined(ENABLE_OFFLOAD)
-  std::string useGPU = "yes";
-#else
-  std::string useGPU = "no";
-#endif
+  std::string useGPU;
   std::string GPUsharing = "no";
   ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
@@ -141,7 +138,11 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add(sourceName, "source");
     a.add(MeshFactor, "meshfactor");
     a.add(hybrid_rep, "hybridrep");
-    a.add(useGPU, "gpu");
+#if defined(QMC_CUDA)
+    useGPU = "yes";
+#else
+    a.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
+#endif
     a.add(GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add(spo_prec, "precision");
     a.add(truncate, "truncate");
@@ -346,12 +347,12 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
 #endif
         temp_OrbitalSet = std::make_unique<EinsplineSetExtended<double>>();
-      temp_OrbitalSet->MultiSpline              = MixedSplineReader->export_MultiSplineDouble().release();
+      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
       temp_OrbitalSet->HalfG = dynamic_cast<BsplineSet&>(*OrbitalSet).getHalfG();
-      new_OrbitalSet         = std::move(temp_OrbitalSet);
+      new_OrbitalSet = std::move(temp_OrbitalSet);
     }
     else
     {
@@ -362,13 +363,13 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       else
 #endif
         temp_OrbitalSet = std::make_unique<EinsplineSetExtended<std::complex<double>>>();
-      temp_OrbitalSet->MultiSpline              = MixedSplineReader->export_MultiSplineComplexDouble().release();
+      temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineComplexDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       for (int iorb = 0, num = 0; iorb < NumDistinctOrbitals; iorb++)
       {
-        int ti                               = (*FullBands[spinSet])[iorb].TwistIndex;
-        temp_OrbitalSet->kPoints[iorb]       = PrimCell.k_cart(-TwistAngles[ti]);
+        int ti = (*FullBands[spinSet])[iorb].TwistIndex;
+        temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(-TwistAngles[ti]);
         temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
         num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
       }
