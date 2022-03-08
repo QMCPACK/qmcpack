@@ -297,9 +297,9 @@ void QMCCostFunction::checkConfigurations()
 
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
-	
 
-	/*
+
+        /*
 	  Currently not compatible with complex coefficients
 	  NB: Dsaved = "dlogpsi", HDsaved = "dhpsioverpsi"
 	*/
@@ -308,7 +308,7 @@ void QMCCostFunction::checkConfigurations()
           rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-	
+
         copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
         copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
@@ -721,8 +721,8 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
     }
   }
 
-  myComm->allreduce(D_avg);  
-  
+  myComm->allreduce(D_avg);
+
   for (int ip = 0; ip < NumThreads; ip++)
   {
     int nw = wClones[ip]->numSamples();
@@ -772,9 +772,8 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
-  
-  
-  
+
+
   Left(0, 0)  = (1 - b2) * curAvg_w + b2 * V_avg;
   Right(0, 0) = 1.0 + b1 * H2_avg * V_avg;
   if (GEVType == "H2")

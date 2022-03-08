@@ -1296,15 +1296,13 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
   getLowestEigenvector(prdMat, parameterDirections);
-
+  
   // compute the scaling constant to apply to the update
   // and then scale the parameter updates
   Lambda = getNonLinearRescale(parameterDirections, ovlMat);  
   for (int i = 0; i < numParams; i++)
-    {
-      parameterDirections.at(i + 1) *= Lambda;
-    }
-
+    parameterDirections.at(i + 1) *= Lambda;
+  
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
 
