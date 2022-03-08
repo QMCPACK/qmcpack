@@ -97,17 +97,30 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   }
 
   const int max_ext_level = (ndets_per_excitation_level_->size() - 1);
-  size_t count_0          = 1;
-  size_t it_shift         = 1;
 
+  std::vector<size_t> sum_ndets_per_excitation_level;
+  std::vector<size_t> sum_with_shift_ndets_per_excitation_level;
+
+  // Ugly but working
+  {
+    size_t count_0          = 1;
+    size_t it_shift         = 1;
+    for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++) {
+        count_0 += (*ndets_per_excitation_level_)[ext_level];
+        it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
+        sum_ndets_per_excitation_level.push_back(count_0);
+        sum_with_shift_ndets_per_excitation_level.push_back(it_shift);
+    }
+  }
 
   for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++)
   {
-    // PRAGMA_OFFLOAD("omp target teams distribute map")
+    size_t count_0 = sum_ndets_per_excitation_level[ext_level];
+    size_t it_shift = sum_with_shift_ndets_per_excitation_level.push_back[ext_level];
+
     for (size_t iw = 0; iw < nw; iw++)
     {
       std::vector<int>::const_iterator it2 = data.begin() + it_shift;
-      //PRAGMA_OFFLOAD("omp parallel for")
       for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
       {
         size_t count                 = count_0 + count_1;
@@ -116,8 +129,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
                                              &(*(it2 + 1 + count_1 * (3 * ext_level + 1))));
       }
     }
-    count_0 += (*ndets_per_excitation_level_)[ext_level];
-    it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
   }
 
   for (size_t iw = 0; iw < nw; iw++)
