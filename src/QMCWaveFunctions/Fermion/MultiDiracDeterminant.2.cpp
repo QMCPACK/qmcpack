@@ -103,8 +103,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 
   for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++)
   {
-    const size_t n = ext_level;
-
     // PRAGMA_OFFLOAD("omp target teams distribute map")
     for (size_t iw = 0; iw < nw; iw++)
     {
@@ -114,7 +112,8 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       {
         size_t count                 = count_0 + count_1;
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            CalculateRatioFromMatrixElements(n, dotProducts_list[iw].get(), it2 + 1 + count_1 * (3 * n + 1));
+            CalculateRatioFromMatrixElements(ext_level, dotProducts_list[iw].get(),
+                                             it2 + 1 + count_1 * (3 * ext_level + 1));
       }
     }
     count_0 += (*ndets_per_excitation_level_)[ext_level];
