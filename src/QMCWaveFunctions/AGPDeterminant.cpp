@@ -292,7 +292,7 @@ void AGPDeterminant::ratioUp(ParticleSet& P, int iat)
   }
   //curRatio = DetRatio(psiM_temp, psiU.data(),iat);
   curRatio = DetRatioByRow(psiM_temp, psiU, iat);
-  InverseUpdateByRow(psiM_temp, psiU, workV1, workV2, iat, curRatio);
+  InverseUpdateByRow(psiM_temp, psiU, workV1, workV2, iat, static_cast<ValueType>(curRatio));
   std::copy(dpsiU[iat], dpsiU[iat] + Nup, dpsiUv.begin());
   std::copy(d2psiU[iat], d2psiU[iat] + Nup, d2psiUv.begin());
   //const GradType* restrict  dy_ptr = GeminalBasis->dy(0);
@@ -330,7 +330,7 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
   }
   //curRatio = DetRatioTranspose(psiM_temp, psiD.data(),d);
   curRatio = DetRatioByColumn(psiM_temp, psiD, d);
-  InverseUpdateByColumn(psiM_temp, psiD, workV1, workV2, d, curRatio);
+  InverseUpdateByColumn(psiM_temp, psiD, workV1, workV2, d, static_cast<ValueType>(curRatio));
   std::copy(dpsiD[d], dpsiD[d] + Nup, dpsiDv.begin());
   std::copy(d2psiD[d], d2psiD[d] + Nup, d2psiDv.begin());
   //const GradType* restrict dy_ptr = GeminalBasis->dy(0);
@@ -361,9 +361,9 @@ void AGPDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   {
     APP_ABORT("Incomplete AGPDeterminant::acceptMove Turn on useDrift ");
     if (iat < Nup)
-      InverseUpdateByRow(psiM, psiU, workV1, workV2, iat, curRatio);
+      InverseUpdateByRow(psiM, psiU, workV1, workV2, iat, static_cast<ValueType>(curRatio));
     else
-      InverseUpdateByColumn(psiM, psiD, workV1, workV2, iat - Nup, curRatio);
+      InverseUpdateByColumn(psiM, psiD, workV1, workV2, iat - Nup, static_cast<ValueType>(curRatio));
     psiM_temp = psiM;
     //psiM = psiM_temp;
   }
