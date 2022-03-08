@@ -55,7 +55,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     const size_t n = *it2;
     //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
     if (count != ref)
-      ratios[count] = sign[count] * det0 * CalculateRatioFromMatrixElements(n, dotProducts, it2 + 1);
+      ratios[count] = sign[count] * det0 * CalculateRatioFromMatrixElements(n, dotProducts, &(*(it2 + 1)) );
     it2 += 3 * n + 1;
   }
 
@@ -113,7 +113,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
         size_t count                 = count_0 + count_1;
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
             CalculateRatioFromMatrixElements(ext_level, dotProducts_list[iw].get(),
-                                             it2 + 1 + count_1 * (3 * ext_level + 1));
+                                             &(*(it2 + 1 + count_1 * (3 * ext_level + 1))));
       }
     }
     count_0 += (*ndets_per_excitation_level_)[ext_level];

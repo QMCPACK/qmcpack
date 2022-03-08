@@ -41,14 +41,14 @@ struct MultiDiracDeterminantCalculator
     Pivot.resize(n);
   }
 
-  inline T evaluate(T a11, T a12, T a21, T a22) { return a11 * a22 - a21 * a12; }
+  static T evaluate(T a11, T a12, T a21, T a22) { return a11 * a22 - a21 * a12; }
 
-  inline T evaluate(T a11, T a12, T a13, T a21, T a22, T a23, T a31, T a32, T a33)
+  static T evaluate(T a11, T a12, T a13, T a21, T a22, T a23, T a31, T a32, T a33)
   {
     return (a11 * (a22 * a33 - a32 * a23) - a21 * (a12 * a33 - a32 * a13) + a31 * (a12 * a23 - a22 * a13));
   }
 
-  inline T evaluate(T a11,
+  static T evaluate(T a11,
                     T a12,
                     T a13,
                     T a14,
@@ -71,7 +71,7 @@ struct MultiDiracDeterminantCalculator
             a41 * (a12 * (a23 * a34 - a33 * a24) - a22 * (a13 * a34 - a33 * a14) + a32 * (a13 * a24 - a23 * a14)));
   }
 
-  inline T evaluate(T a11,
+  static T evaluate(T a11,
                     T a12,
                     T a13,
                     T a14,
