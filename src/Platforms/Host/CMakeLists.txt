@@ -10,8 +10,8 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-set(SYCL_RT_SRCS SYCLDeviceManager.cpp)
-
-add_library(platform_sycl_runtime ${SYCL_RT_SRCS})
-target_link_libraries(platform_sycl_runtime PUBLIC SYCL::host
-                                            PRIVATE platform_host_runtime)
+# platform_host_runtime is the target for host runtime system which includes
+# interaction with OS libraries
+set(HOST_SRCS sysutil.cpp InfoStream.cpp OutputManager.cpp)
+add_library(platform_host_runtime ${HOST_SRCS})
+target_include_directories(platform_host_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

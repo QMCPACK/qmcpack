@@ -27,8 +27,7 @@ target_link_libraries(platform_LA INTERFACE platform_runtime)
 
 # platform_host_runtime is the target for host runtime system which includes
 # interaction with OS libraries
-set(HOST_SRCS Host/sysutil.cpp Host/InfoStream.cpp Host/OutputManager.cpp)
-add_library(platform_host_runtime ${HOST_SRCS})
+add_subdirectory(Host)
 
 # include CPU platform
 add_subdirectory(CPU)
