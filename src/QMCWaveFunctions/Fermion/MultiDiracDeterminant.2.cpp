@@ -113,34 +113,30 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   }
   // Can replaced by variadic template at some point if needed
   // Can put break to short-circuit
-  if (max_ext_level <= 0)
-    update_ratios_list<0>(nw, ratios_list,
-                       sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
-                       data, sign, det0_list, dotProducts_list);
   if ( max_ext_level <= 1 )
-    update_ratios_list<1>(nw, ratios_list,
+    mw_updateRatios<1>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
   if ( max_ext_level <= 2)
-    update_ratios_list<2>(nw, ratios_list,
+    mw_updateRatios<2>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
   if (max_ext_level <= 3)
-    update_ratios_list<3>(nw, ratios_list,
+    mw_updateRatios<3>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
   if (max_ext_level <= 4)
-    update_ratios_list<4>(nw, ratios_list,
+    mw_updateRatios<4>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
   if (max_ext_level <= 5)
-    update_ratios_list<5>(nw, ratios_list,
+    mw_updateRatios<5>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
     
   for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
   {
-    update_ratios_list(ext_level, nw, ratios_list, 
+    mw_updateRatios(ext_level, nw, ratios_list, 
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
   }

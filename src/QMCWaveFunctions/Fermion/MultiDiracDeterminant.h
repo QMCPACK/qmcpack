@@ -294,7 +294,7 @@ public:
   // Anouar explain what does kevin did
   //
   // Do not offlaod this one
-  void update_ratios_list(int ext_level,
+  void mw_updateRatios(int ext_level,
                           int nw,
                           const RefVector<OffloadVector<ValueType>>& ratios_list,
                           const std::vector<size_t>& sum_ndets_per_excitation_level,
@@ -325,7 +325,7 @@ public:
   // Anouar explain what does kevin did
   // This one should be offloaded
   template<int Ext_level>
-  void update_ratios_list(int nw,
+  void mw_updateRatios(int nw,
                           const RefVector<OffloadVector<ValueType>>& ratios_list,
                           const std::vector<size_t>& sum_ndets_per_excitation_level,
                           const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
