@@ -852,6 +852,20 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
+    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 

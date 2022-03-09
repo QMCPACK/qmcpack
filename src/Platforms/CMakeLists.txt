@@ -60,6 +60,12 @@ if(ENABLE_ROCM)
   target_link_libraries(platform_LA INTERFACE platform_rocm_LA)
 endif(ENABLE_ROCM)
 
+# include SYCL platform
+if(ENABLE_SYCL)
+  add_subdirectory(SYCL)
+  target_link_libraries(platform_runtime PUBLIC platform_sycl_runtime)
+endif(ENABLE_SYCL)
+
 if(BUILD_UNIT_TESTS)
   add_subdirectory(tests)
 endif()
