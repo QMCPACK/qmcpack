@@ -105,10 +105,10 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     size_t count_0          = 1;
     size_t it_shift         = 1;
     for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++) {
-        count_0 += (*ndets_per_excitation_level_)[ext_level];
-        it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
         sum_ndets_per_excitation_level.push_back(count_0);
         sum_with_shift_ndets_per_excitation_level.push_back(it_shift);
+        count_0 += (*ndets_per_excitation_level_)[ext_level];
+        it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
     }
   }
   // Can replaced by variadic template at some point if needed
