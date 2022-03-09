@@ -199,6 +199,11 @@ public:
   ///return the i-th random generator
   inline RandomGenerator& getRng(int i) override { return (*Rng[i]); }
 
+  /** intended for logging output and debugging
+   *  you should base behavior on type preferably at compile time or if
+   *  necessary at runtime using and protected by dynamic cast.
+   *  QMCType is primarily for use in the debugger.
+   */
   std::string getEngineName() override { return QMCType; }
   unsigned long getDriverMode() override { return qmc_driver_mode_.to_ulong(); }
 

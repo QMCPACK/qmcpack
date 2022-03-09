@@ -27,9 +27,14 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ProjectData.h"
 #include "Message/Communicate.h"
+#include "QMCDrivers/VMC/VMC.h"
+#include "QMCDrivers/DMC/DMC.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
+#include "QMCDrivers/DMC/DMCBatched.h"
 
 namespace qmcplusplus
 {
+
 TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
 {
   using namespace testing;
@@ -57,34 +62,70 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   qmc_driver =
       driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
+  REQUIRE_THROWS(dynamic_cast<VMCBatched&>(*qmc_driver));
+  REQUIRE_NOTHROW(dynamic_cast<VMC&>(*qmc_driver));
+  CHECK(qmc_driver->getEngineName() == "VMC");
 }
 
 TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 {
-  using namespace testing;
   Communicate* comm;
   comm = OHMMS::Controller;
+  using namespace testing;
 
-  ProjectData test_project("batched");
-  QMCDriverFactory driver_factory(test_project);
+  SECTION("driver epoch behavior")
+  {
+    ProjectData test_project("batched");
+    QMCDriverFactory driver_factory(test_project);
 
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
-  REQUIRE(okay);
-  xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
-  REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
+    REQUIRE(okay);
+    xmlNodePtr node                           = doc.getRoot();
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  std::string target("e");
-  MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    std::string target("e");
+    MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
-  std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver =
-      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
-  REQUIRE(qmc_driver != nullptr);
+    std::unique_ptr<QMCDriverInterface> qmc_driver;
+    qmc_driver = driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool,
+                                                hamiltonian_pool, comm);
+    REQUIRE(qmc_driver != nullptr);
+    REQUIRE_NOTHROW(dynamic_cast<VMCBatched&>(*qmc_driver));
+    REQUIRE_THROWS(dynamic_cast<VMC&>(*qmc_driver));
+    CHECK(qmc_driver->getEngineName() == "VMCBatched");
+  }
+  SECTION("Deprecated _batch behavior")
+  {
+    using namespace testing;
+    ProjectData test_project;
+    QMCDriverFactory driver_factory(test_project);
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_batch_input_vmc_batch_index]);
+    REQUIRE(okay);
+    xmlNodePtr node                           = doc.getRoot();
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
+
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    std::string target("e");
+    MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+
+    std::unique_ptr<QMCDriverInterface> qmc_driver;
+    qmc_driver = driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool,
+                                                hamiltonian_pool, comm);
+    REQUIRE(qmc_driver != nullptr);
+    REQUIRE_NOTHROW(dynamic_cast<VMCBatched&>(*qmc_driver));
+    REQUIRE_THROWS(dynamic_cast<VMC&>(*qmc_driver));
+    CHECK(qmc_driver->getEngineName() == "VMCBatched");
+  }
 }
 
 TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
@@ -113,6 +154,9 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   qmc_driver =
       driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
   REQUIRE(qmc_driver != nullptr);
+  REQUIRE_THROWS(dynamic_cast<DMCBatched&>(*qmc_driver));
+  REQUIRE_NOTHROW(dynamic_cast<DMC&>(*qmc_driver));
+  CHECK(qmc_driver->getEngineName() == "DMC");
 }
 
 TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
@@ -121,27 +165,59 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  ProjectData test_project("batched");
+  SECTION("driver epoch behavior")
+  {
+    ProjectData test_project("batched");
 
-  QMCDriverFactory driver_factory(test_project);
+    QMCDriverFactory driver_factory(test_project);
 
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
-  REQUIRE(okay);
-  xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
-  REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
+    REQUIRE(okay);
+    xmlNodePtr node                           = doc.getRoot();
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  std::string target("e");
-  MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    std::string target("e");
+    MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
 
-  std::unique_ptr<QMCDriverInterface> qmc_driver;
-  qmc_driver =
-      driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool, hamiltonian_pool, comm);
-  REQUIRE(qmc_driver != nullptr);
+    std::unique_ptr<QMCDriverInterface> qmc_driver;
+    qmc_driver = driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool,
+                                                hamiltonian_pool, comm);
+    REQUIRE(qmc_driver != nullptr);
+    REQUIRE_NOTHROW(dynamic_cast<DMCBatched&>(*qmc_driver));
+    REQUIRE_THROWS(dynamic_cast<DMC&>(*qmc_driver));
+    CHECK(qmc_driver->getEngineName() == "DMCBatched");
+  }
+  SECTION("Deprecated _batch behavior")
+  {
+    ProjectData test_project;
+    QMCDriverFactory driver_factory(test_project);
+
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_batch_input_dmc_batch_index]);
+    REQUIRE(okay);
+    xmlNodePtr node                           = doc.getRoot();
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
+
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    std::string target("e");
+    MCWalkerConfiguration* qmc_system = particle_pool.getWalkerSet(target);
+
+    std::unique_ptr<QMCDriverInterface> qmc_driver;
+    qmc_driver = driver_factory.createQMCDriver(node, das, *qmc_system, particle_pool, wavefunction_pool,
+                                                hamiltonian_pool, comm);
+    REQUIRE(qmc_driver != nullptr);
+    REQUIRE_NOTHROW(dynamic_cast<DMCBatched&>(*qmc_driver));
+    REQUIRE_THROWS(dynamic_cast<DMC&>(*qmc_driver));
+    CHECK(qmc_driver->getEngineName() == "DMCBatched");
+  }
 }
 
 } // namespace qmcplusplus

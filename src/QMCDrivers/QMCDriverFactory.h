@@ -48,12 +48,23 @@ public:
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
 
+  /** Application uses this constructor
+   *  param[in] project_data    this is stored as a reference and this state controls later behavior.
+   *                            For both the driver factory i.e. driver epoch. And the drivers it creates
+   *                            i.e. the section id and max CPU seconds.
+   */
   QMCDriverFactory(const ProjectData& project_data);
 
   /** default constructor **/
   //QMCDriverFactory() ;
 
-  /** read the current QMC Section */
+  /** read the current QMC Section
+   *  In the application context project data can indicate the input be read in the context of
+   *  the batched driver architecture. 
+   *  param[in] cur            qmc section node
+   *  param[in] force_batch    forces input to be evaluated as if project driver type = batched
+   *                           false does not force unbatched!
+   */
   DriverAssemblyState readSection(xmlNodePtr cur) const;
   
   /** create a new QMCDriver
