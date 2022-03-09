@@ -35,6 +35,11 @@ public:
   using GradVector   = BasisSetType::GradVector;
   using GradMatrix   = BasisSetType::GradMatrix;
 
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
+
   BasisSetType* GeminalBasis;
 
   /** constructor
@@ -124,7 +129,7 @@ public:
   ValueMatrix LambdaUP;
 
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix psiM, psiM_temp;
+  OffloadMatrix<ValueType> psiM, psiM_temp;
 
 
   /**  Transient data for gradient and laplacian evaluation
@@ -151,10 +156,11 @@ public:
    * phiTv = Lambda Y(iat)
    */
   ValueVector phiTv;
-  ValueVector psiU, psiD;
+  ValueVector psiU;
+  OffloadVector<ValueType> psiD;
   GradVector dpsiUv, dpsiDv;
   ValueVector d2psiUv, d2psiDv;
-  ValueVector workV1, workV2;
+  OffloadVector<ValueType> workV1, workV2;
   ValueVector WorkSpace;
   IndexVector Pivot;
 
