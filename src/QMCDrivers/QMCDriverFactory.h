@@ -66,7 +66,7 @@ public:
    *                           false does not force unbatched!
    */
   DriverAssemblyState readSection(xmlNodePtr cur) const;
-  
+
   /** create a new QMCDriver
    *
    *  Broken out for unit tests

@@ -122,7 +122,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
     throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
                              "Please use OpenMP offload build.");
 #endif
-  if (qmc_mode.find("linear_batch") < nchars)  // order matters here
+  if (qmc_mode.find("linear_batch") < nchars) // order matters here
     das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
   else if (qmc_mode.find("linear") < nchars)
     das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
@@ -136,11 +136,11 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.what_to_do[SPACEWARP_MODE] = 1;
     if (qmc_mode.find("rmc") < nchars)
       das.new_run_type = QMCRunType::RMC;
-    else if (qmc_mode.find("vmc_batch") < nchars)  // order matters here
+    else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
       das.new_run_type = QMCRunType::VMC_BATCH;
     else if (qmc_mode.find("vmc") < nchars)
       das.new_run_type = QMCRunType::VMC;
-    else if (qmc_mode.find("dmc_batch") < nchars)  // order matters here
+    else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
       das.new_run_type = QMCRunType::DMC_BATCH;
     else if (qmc_mode.find("dmc") < nchars)
       das.new_run_type = QMCRunType::DMC;

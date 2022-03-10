@@ -28,9 +28,9 @@ namespace qmcplusplus
 //----------------------------------------------------------------------------
 // constructors and destructors
 ProjectData::ProjectData(const std::string& driver_epoch)
-  : m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
+    : m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
 {
-  myComm = OHMMS::Controller;
+  myComm  = OHMMS::Controller;
   m_title = getDateAndTime("%Y%m%dT%H%M");
   setName(m_title);
 }
@@ -184,9 +184,9 @@ bool ProjectData::put(xmlNodePtr cur)
   m_param.add(driver_epoch_, "driver_epoch");
   m_param.put(cur);
 
-  if (! (driver_epoch_ == "legacy" || driver_epoch_ == "batched" ))
+  if (!(driver_epoch_ == "legacy" || driver_epoch_ == "batched"))
     throw UniformCommunicateError("driver_epoch has valid values of only \"legacy\" or \"batched\"");
-  
+
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
   while (cur != NULL)

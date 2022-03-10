@@ -392,12 +392,14 @@ bool QMCMain::validateXML()
   }
   else
   {
-    try {
-    myProject.put(result[0]);
-    } catch (const UniformCommunicateError& ue)
-      {
-        myComm->barrier_and_abort(ue.what());
-      }
+    try
+    {
+      myProject.put(result[0]);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
   app_summary() << std::endl;
   myProject.get(app_summary());
@@ -589,80 +591,83 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
       qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
       append_run = das.append_run;
     }
-    catch (const UniformCommunicateError& ue) { myComm->barrier_and_abort(ue.what()); }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
 
-    if (qmc_driver)
+  if (qmc_driver)
+  {
+    if (last_branch_engine_legacy_driver)
     {
-      if (last_branch_engine_legacy_driver)
-      {
-        last_branch_engine_legacy_driver->resetRun(cur);
-        qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
-      }
+      last_branch_engine_legacy_driver->resetRun(cur);
+      qmc_driver->setBranchEngine(std::move(last_branch_engine_legacy_driver));
+    }
 
-      //advance the project id
-      //if it is NOT the first qmc node and qmc/@append!='yes'
-      if (!FirstQMC && !append_run)
-        myProject.advance();
+    //advance the project id
+    //if it is NOT the first qmc node and qmc/@append!='yes'
+    if (!FirstQMC && !append_run)
+      myProject.advance();
 
-      qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
-      // PD:
-      // Q: How does m_walkerset_in end up being non empty?
-      // A: Anytime that we aren't doing a restart.
-      // So put walkers is an exceptional call. This code does not tell a useful
-      // story of a QMCDriver's life.
-      qmc_driver->putWalkers(m_walkerset_in);
+    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
+    // PD:
+    // Q: How does m_walkerset_in end up being non empty?
+    // A: Anytime that we aren't doing a restart.
+    // So put walkers is an exceptional call. This code does not tell a useful
+    // story of a QMCDriver's life.
+    qmc_driver->putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
-      qmc_driver->putTraces(traces_xml);
+    qmc_driver->putTraces(traces_xml);
 #endif
-      qmc_driver->process(cur);
-      infoSummary.flush();
-      infoLog.flush();
-      Timer qmcTimer;
-      qmc_driver->run();
-      app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
-      // transfer the states of a driver before its destruction
-      last_branch_engine_legacy_driver = qmc_driver->getBranchEngine();
-      // save the driver in a driver loop
-      if (reuse)
-        last_driver = std::move(qmc_driver);
-      return true;
-    }
-    else
-    {
-      // Ye: in which case, the code hits this?
-      return false;
-    }
+    qmc_driver->process(cur);
+    infoSummary.flush();
+    infoLog.flush();
+    Timer qmcTimer;
+    qmc_driver->run();
+    app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs" << std::endl;
+    // transfer the states of a driver before its destruction
+    last_branch_engine_legacy_driver = qmc_driver->getBranchEngine();
+    // save the driver in a driver loop
+    if (reuse)
+      last_driver = std::move(qmc_driver);
+    return true;
   }
+  else
+  {
+    // Ye: in which case, the code hits this?
+    return false;
+  }
+}
 
 
-  /** Reads walkers sets from the restart file during XML validation
+/** Reads walkers sets from the restart file during XML validation
  *
  *  TODO: Move this, it is not a concern of QMCMain
  */
-  bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
+bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
+{
+  OhmmsXPathObject result("/simulation/mcwalkerset", context_);
+  for (int iconf = 0; iconf < result.size(); iconf++)
   {
-    OhmmsXPathObject result("/simulation/mcwalkerset", context_);
-    for (int iconf = 0; iconf < result.size(); iconf++)
-    {
-      xmlNodePtr mc_ptr = result[iconf];
-      m_walkerset.push_back(mc_ptr);
-      m_walkerset_in.push_back(mc_ptr);
-    }
-    //use the last mcwalkerset to initialize random numbers if possible
-    if (result.size())
-    {
-      std::string fname;
-      OhmmsAttributeSet a;
-      a.add(fname, "fileroot");
-      a.add(fname, "href");
-      a.add(fname, "src");
-      a.put(result[result.size() - 1]);
-      if (fname.size())
-        RandomNumberControl::read(fname, myComm);
-    }
-    return true;
+    xmlNodePtr mc_ptr = result[iconf];
+    m_walkerset.push_back(mc_ptr);
+    m_walkerset_in.push_back(mc_ptr);
   }
+  //use the last mcwalkerset to initialize random numbers if possible
+  if (result.size())
+  {
+    std::string fname;
+    OhmmsAttributeSet a;
+    a.add(fname, "fileroot");
+    a.add(fname, "href");
+    a.add(fname, "src");
+    a.put(result[result.size() - 1]);
+    if (fname.size())
+      RandomNumberControl::read(fname, myComm);
+  }
+  return true;
+}
 
 
 } // namespace qmcplusplus

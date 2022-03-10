@@ -38,7 +38,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-     R"(
+    R"(
   <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -51,7 +51,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-     R"(
+    R"(
   <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 1 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -64,7 +64,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-     R"(
+    R"(
   <qmc method="vmc_batch" move="pbyp">
     <parameter name="crowds">                 8 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -76,14 +76,13 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
   </qmc>
-)"
-};
+)"};
 
 
 // to avoid creating a situation where section test xml is in two places
-constexpr int valid_vmc_input_vmc_index       = 0;
-constexpr int valid_vmc_input_vmc_batch_index = 1;
-constexpr int valid_vmc_input_vmc_tiny_index = 2;
+constexpr int valid_vmc_input_vmc_index             = 0;
+constexpr int valid_vmc_input_vmc_batch_index       = 1;
+constexpr int valid_vmc_input_vmc_tiny_index        = 2;
 constexpr int valid_vmc_batch_input_vmc_batch_index = 3;
 
 constexpr std::array<const char*, 3> valid_dmc_input_sections{
@@ -99,7 +98,7 @@ constexpr std::array<const char*, 3> valid_dmc_input_sections{
     <parameter name="nonlocalmoves">         no </parameter>
   </qmc>
 )",
-     R"(
+    R"(
   <qmc method="dmc" move="pbyp">
     <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -113,7 +112,7 @@ constexpr std::array<const char*, 3> valid_dmc_input_sections{
     <parameter name="usedrift">              no </parameter>
   </qmc>
 )",
-      R"(
+    R"(
   <qmc method="dmc_batch" move="pbyp">
     <parameter name="crowds">                 4 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
@@ -129,8 +128,8 @@ constexpr std::array<const char*, 3> valid_dmc_input_sections{
 )"};
 
 // to avoid creating a situation where section test xml is in two places
-constexpr int valid_dmc_input_dmc_index       = 0;
-constexpr int valid_dmc_input_dmc_batch_index = 1;
+constexpr int valid_dmc_input_dmc_index             = 0;
+constexpr int valid_dmc_input_dmc_batch_index       = 1;
 constexpr int valid_dmc_batch_input_dmc_batch_index = 2;
 
 /** As far as I can tell these are no longer valid */

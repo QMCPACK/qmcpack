@@ -40,11 +40,11 @@ class ProjectData
 public:
   /// constructor
   ProjectData(const std::string& driver_epoch = "legacy");
-  
-  bool get(std::ostream& os) const ;
-  bool put(std::istream& is) ;
-  bool put(xmlNodePtr cur) ;
-  void reset() ;
+
+  bool get(std::ostream& os) const;
+  bool put(std::istream& is);
+  bool put(xmlNodePtr cur);
+  void reset();
 
   ///increment a series number and reset m_projectroot
   void advance();

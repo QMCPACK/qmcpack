@@ -140,8 +140,7 @@ public:
   * @param nwalkers number of walkers to add
   *
   */
-  void makeLocalWalkers(int nwalkers,
-                        RealType reserve);
+  void makeLocalWalkers(int nwalkers, RealType reserve);
 
   DriftModifierBase& get_drift_modifier() const { return *drift_modifier_; }
 
