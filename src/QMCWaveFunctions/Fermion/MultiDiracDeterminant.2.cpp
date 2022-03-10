@@ -53,7 +53,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
   for (size_t count = 0; count < nitems; ++count)
   {
     const size_t n = *it2;
-    //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
+    //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
           (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts, it2 + 1));
@@ -259,7 +259,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
         count++;
         continue;
       }
-      ratios(count,iat) = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+      ratios(count,iat) = sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1);
       count++;
       it2+=3*n+1;
     }
@@ -890,7 +890,7 @@ void MultiDiracDeterminant::mw_updateRatios(int nw,
     {
       size_t det_id                 = det_offset + count;
       ratios_list[iw].get()[det_id] = sign[det_id] * det0_list[iw] *
-          CalculateRatioFromMatrixElements<NEXCITED>::evaluate(dotProducts_list[iw].get(),
+          CustomizedMatrixDet<NEXCITED>::evaluate(dotProducts_list[iw].get(),
                                                                it2 + 1 + count * (3 * NEXCITED + 1));
     }
 }

@@ -125,7 +125,7 @@ struct SmallMatrixDetCalculator
              a42 * (a13 * (a24 * a35 - a34 * a25) - a23 * (a14 * a35 - a34 * a15) + a33 * (a14 * a25 - a24 * a15))));
   }
 
-  /** default implementation of MultiDiracDeterminant::CalculateRatioFromMatrixElements
+  /** default implementation of MultiDiracDeterminant::CustomizedMatrixDet
    *  If you don't have a perfect square below 25 of dots this is what you hit
    *  dots must be a 2n by 2n Matrix
    *  iter must be size n^2
@@ -148,10 +148,10 @@ struct SmallMatrixDetCalculator
 };
 
 template<unsigned NEXCITED>
-class CalculateRatioFromMatrixElements;
+class CustomizedMatrixDet;
 
 template<>
-class CalculateRatioFromMatrixElements<0>
+class CustomizedMatrixDet<0>
 {
 public:
   template<typename VALUE>
@@ -162,7 +162,7 @@ public:
 };
 
 template<>
-class CalculateRatioFromMatrixElements<1>
+class CustomizedMatrixDet<1>
 {
 public:
   template<typename VALUE>
@@ -173,7 +173,7 @@ public:
 };
 
 template<>
-class CalculateRatioFromMatrixElements<2>
+class CustomizedMatrixDet<2>
 {
 public:
   template<typename VALUE>
@@ -189,7 +189,7 @@ public:
 };
 
 template<>
-class CalculateRatioFromMatrixElements<3>
+class CustomizedMatrixDet<3>
 {
 public:
   template<typename VALUE>
@@ -208,7 +208,7 @@ public:
 };
 
 template<>
-class CalculateRatioFromMatrixElements<4>
+class CustomizedMatrixDet<4>
 {
 public:
   template<typename VALUE>
@@ -232,7 +232,7 @@ public:
 };
 
 template<>
-class CalculateRatioFromMatrixElements<5>
+class CustomizedMatrixDet<5>
 {
 public:
   template<typename VALUE>
@@ -266,17 +266,17 @@ inline VALUE calcSmallDeterminant(size_t n, OffloadMatrix<VALUE>& dotProducts, c
   switch (n)
   {
   case 0:
-    return CalculateRatioFromMatrixElements<0>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<0>::evaluate(dotProducts, it);
   case 1:
-    return CalculateRatioFromMatrixElements<1>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<1>::evaluate(dotProducts, it);
   case 2:
-    return CalculateRatioFromMatrixElements<2>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<2>::evaluate(dotProducts, it);
   case 3:
-    return CalculateRatioFromMatrixElements<3>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<3>::evaluate(dotProducts, it);
   case 4:
-    return CalculateRatioFromMatrixElements<4>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<4>::evaluate(dotProducts, it);
   case 5:
-    return CalculateRatioFromMatrixElements<5>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<5>::evaluate(dotProducts, it);
   default:
     throw std::runtime_error("calculateSmallDeterminant only handles the number of excitations <= 5.");
   }

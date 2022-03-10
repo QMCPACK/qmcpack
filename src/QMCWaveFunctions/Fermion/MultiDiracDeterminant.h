@@ -216,7 +216,7 @@ public:
                        const std::vector<ValueType>& det0_list,
                        const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
-  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
    *@param ref ID of the reference determinant
    *@param det0_list takes lists of ValueType(1) for the value or RatioGrad/curRatio for the gradients
@@ -239,7 +239,7 @@ public:
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                                   const RefVector<OffloadVector<ValueType>>& ratios_list);
 
-  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
    *@param det0 take ValueType(1) for the value or RatioGrad/curRatio for the gradients
    *@param ratios returned computed ratios
@@ -283,7 +283,7 @@ public:
                                              const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                              const RefVector<OffloadVector<ValueType>>& ratios_list);
 
-  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
    *@param psiinv
    *@param psi
@@ -308,7 +308,7 @@ public:
                                                int iat,
                                                OffloadMatrix<GradType>& grads);
 
-  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
    *@param ref ID of the reference determinant
    *@param iat atom ID 
