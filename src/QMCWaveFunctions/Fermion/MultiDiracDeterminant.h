@@ -195,26 +195,26 @@ public:
   //
   // Do not offlaod this one
   void mw_updateRatios(int ext_level,
-                          int nw,
-                          const RefVector<OffloadVector<ValueType>>& ratios_list,
-                          const std::vector<size_t>& sum_ndets_per_excitation_level,
-                          const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
-                          const std::vector<int>& data,
-                          const std::vector<RealType>& sign,
-                          const std::vector<ValueType>& det0_list,
-                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
+                       int nw,
+                       const RefVector<OffloadVector<ValueType>>& ratios_list,
+                       const std::vector<size_t>& sum_ndets_per_excitation_level,
+                       const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
+                       const std::vector<int>& data,
+                       const std::vector<RealType>& sign,
+                       const std::vector<ValueType>& det0_list,
+                       const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
 
   // Anouar explain what does kevin did
   // This one should be offloaded
   template<unsigned NEXCITED>
   void mw_updateRatios(int nw,
-                          const RefVector<OffloadVector<ValueType>>& ratios_list,
-                          const std::vector<size_t>& sum_ndets_per_excitation_level,
-                          const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
-                          const std::vector<int>& data,
-                          const std::vector<RealType>& sign,
-                          const std::vector<ValueType>& det0_list,
-                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
+                       const RefVector<OffloadVector<ValueType>>& ratios_list,
+                       const std::vector<size_t>& sum_ndets_per_excitation_level,
+                       const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
+                       const std::vector<int>& data,
+                       const std::vector<RealType>& sign,
+                       const std::vector<ValueType>& det0_list,
+                       const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
