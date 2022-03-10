@@ -202,29 +202,11 @@ public:
                           const std::vector<int>& data,
                           const std::vector<RealType>& sign,
                           const std::vector<ValueType>& det0_list,
-                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list)
-
-   {
-    size_t count_0 = sum_ndets_per_excitation_level[ext_level];
-    size_t it_shift = sum_with_shift_ndets_per_excitation_level[ext_level];
-
-    for (size_t iw = 0; iw < nw; iw++)
-    {
-      std::vector<int>::const_iterator it2 = data.begin() + it_shift;
-      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
-      {
-        size_t count                 = count_0 + count_1;
-
-        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            DetCalculator.evaluate(dotProducts_list[iw].get(),
-                                   it2 + 1 + count_1 * (3 * ext_level + 1), ext_level);
-      }
-    }
-  }
+                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
 
   // Anouar explain what does kevin did
   // This one should be offloaded
-  template<int Ext_level>
+  template<unsigned NEXCITED>
   void mw_updateRatios(int nw,
                           const RefVector<OffloadVector<ValueType>>& ratios_list,
                           const std::vector<size_t>& sum_ndets_per_excitation_level,
@@ -232,26 +214,7 @@ public:
                           const std::vector<int>& data,
                           const std::vector<RealType>& sign,
                           const std::vector<ValueType>& det0_list,
-                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list)
-                         
-   {
-    size_t count_0 = sum_ndets_per_excitation_level[Ext_level];
-    size_t it_shift = sum_with_shift_ndets_per_excitation_level[Ext_level];
-
-    for (size_t iw = 0; iw < nw; iw++)
-    {
-      const int* it2 = data.data() + it_shift;
-      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[Ext_level]; ++count_1)
-      {
-        size_t count                 = count_0 + count_1;
-
-        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            CalculateRatioFromMatrixElements<Ext_level>::evaluate(dotProducts_list[iw].get(),
-                                             it2 + 1 + count_1 * (3 * Ext_level + 1));
-      }
-    }
-  }
-
+                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch

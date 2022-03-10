@@ -857,4 +857,58 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   }
 }
 
+  void MultiDiracDeterminant::mw_updateRatios(int ext_level,
+                          int nw,
+                          const RefVector<OffloadVector<ValueType>>& ratios_list,
+                          const std::vector<size_t>& sum_ndets_per_excitation_level,
+                          const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
+                          const std::vector<int>& data,
+                          const std::vector<RealType>& sign,
+                          const std::vector<ValueType>& det0_list,
+                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list)
+   {
+    size_t count_0 = sum_ndets_per_excitation_level[ext_level];
+    size_t it_shift = sum_with_shift_ndets_per_excitation_level[ext_level];
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      std::vector<int>::const_iterator it2 = data.begin() + it_shift;
+      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
+      {
+        size_t count                 = count_0 + count_1;
+
+        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
+            DetCalculator.evaluate(dotProducts_list[iw].get(),
+                                   it2 + 1 + count_1 * (3 * ext_level + 1), ext_level);
+      }
+    }
+  }
+
+  template<unsigned NEXCITED>
+  void MultiDiracDeterminant::mw_updateRatios(int nw,
+                          const RefVector<OffloadVector<ValueType>>& ratios_list,
+                          const std::vector<size_t>& sum_ndets_per_excitation_level,
+                          const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
+                          const std::vector<int>& data,
+                          const std::vector<RealType>& sign,
+                          const std::vector<ValueType>& det0_list,
+                          const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const
+   {
+    size_t count_0 = sum_ndets_per_excitation_level[NEXCITED];
+    size_t it_shift = sum_with_shift_ndets_per_excitation_level[NEXCITED];
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      const int* it2 = data.data() + it_shift;
+      for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[NEXCITED]; ++count_1)
+      {
+        size_t count                 = count_0 + count_1;
+
+        ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
+            CalculateRatioFromMatrixElements<NEXCITED>::evaluate(dotProducts_list[iw].get(),
+                                             it2 + 1 + count_1 * (3 * NEXCITED + 1));
+      }
+    }
+  }
+
 } // namespace qmcplusplus
