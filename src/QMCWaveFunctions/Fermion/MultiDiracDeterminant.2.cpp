@@ -30,18 +30,19 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
                                                                     const OffloadMatrix<ValueType>& psi,
                                                                     OffloadMatrix<ValueType>& dotProducts,
                                                                     const std::vector<int>& data,
-                                                                    const std::vector<std::pair<int, int>>& pairs,
+                                                                    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                                     const std::vector<RealType>& sign)
 {
   buildTableTimer.start();
   const size_t num    = psi.extent(1);
   const size_t npairs = pairs.size();
   //MatrixOperators::product_ABt(psiinv,psi,dotProducts);
-  const std::pair<int, int>* restrict p = pairs.data();
+  const int* first=pairs.data(0);
+  const int* second=pairs.data(1);
   for (size_t i = 0; i < npairs; ++i)
   {
-    const int I       = p[i].first;
-    const int J       = p[i].second;
+    const int I       = first[i];
+    const int J       = second[i];
     dotProducts(I, J) = simd::dot(psiinv[I], psi[J], num);
   }
   dotProducts.updateTo();
@@ -71,25 +72,27 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
     const std::vector<int>& data,
-    const std::vector<std::pair<int, int>>& pairs,
+    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
     const std::vector<RealType>& sign,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
   const size_t npairs = pairs.size();
   const size_t num                      = psi_list[0].get().extent(1);
-  const std::pair<int, int>* restrict p = pairs.data();
   const size_t nitems                   = sign.size();
 
-
+  const int* first=pairs.data(0);
+  const int* second=pairs.data(1);
   readMatTimer.start();
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t i = 0; i < npairs; ++i)
     {
-      const int I                      = p[i].first;
-      const int J                      = p[i].second;
-      dotProducts_list[iw].get()(I, J) = simd::dot(psiinv_list[iw].get()[I], psi_list[iw].get()[J], num);
+      const int I                      = first[i];
+      const int J                      = second[i];
+      dotProducts_list[iw].get()(I, J) = 0.0;
+      for (size_t j=0;j<num;j++)
+        dotProducts_list[iw].get()(I, J) += psiinv_list[iw].get()[I][j] * psi_list[iw].get()[J][j]; 
     }
     ratios_list[iw].get()[0] = det0_list[iw];
     dotProducts_list[iw].get().updateTo();
@@ -155,7 +158,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
                                                                const OffloadMatrix<ValueType>& psiinv,
                                                                const OffloadMatrix<ValueType>& psi,
                                                                const std::vector<int>& data,
-                                                               const std::vector<std::pair<int, int>>& pairs,
+							       const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                                const std::vector<RealType>& sign,
                                                                OffloadMatrix<ValueType>& dotProducts,
                                                                OffloadVector<ValueType>& ratios)
@@ -171,7 +174,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
     const std::vector<int>& data,
-    const std::vector<std::pair<int, int>>& pairs,
+    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
     const std::vector<RealType>& sign,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
@@ -184,7 +187,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                                     const OffloadMatrix<ValueType>& psiinv,
                                                                     const OffloadMatrix<ValueType>& psi,
                                                                     const std::vector<int>& data,
-                                                                    const std::vector<std::pair<int, int>>& pairs,
+								    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                                     const std::vector<RealType>& sign,
                                                                     const ValueType& det0_grad,
                                                                     OffloadMatrix<ValueType>& dotProducts,
@@ -208,7 +211,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
     const std::vector<int>& data,
-    const std::vector<std::pair<int, int>>& pairs,
+    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
     const std::vector<RealType>& sign,
     const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
@@ -227,7 +230,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
     const OffloadMatrix<ValueType>& psiinv,
     const OffloadMatrix<ValueType>& psi,
     const std::vector<int>& data,
-    const std::vector<std::pair<int, int>>& pairs,
+    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
     const std::vector<RealType>& sign,
     OffloadMatrix<ValueType>& dotProducts,
     int iat,
@@ -638,13 +641,12 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     det_leader.ExtraStuffTimer.stop();
   }
 
-  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
-
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
 
 
+  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,

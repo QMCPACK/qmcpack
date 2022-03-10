@@ -45,6 +45,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
   auto& ndets_per_excitation_level = *ndets_per_excitation_level_;
 
   const size_t nci = configlist_unsorted.size();
+  std::vector<std::pair<int, int>> pairs_local;
 
   size_t nex_max = 0;
   std::vector<size_t> pos(NumPtcls);
@@ -54,7 +55,6 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
   std::map<int, std::vector<int>> dataMap;
   std::map<int, std::vector<int>> sortMap;
   std::vector<RealType> tmp_sign(nci, 0);
-  pairs.clear();
   for (size_t i = 0; i < nci; i++)
   {
     size_t nex;
@@ -76,10 +76,20 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
       {
         //           std::pair<int,int> temp(ocp[k1],uno[k2]);
         std::pair<int, int> temp(pos[k1], uno[k2]);
-        if (find(pairs.begin(), pairs.end(), temp) == pairs.end()) //pair is new
-          pairs.push_back(temp);
+        if (find(pairs_local.begin(), pairs_local.end(), temp) == pairs_local.end()) //pair is new
+          pairs_local.push_back(temp);
       }
   }
+  pairs.resize(pairs_local.size());
+  int* first=pairs.data(0);
+  int* second=pairs.data(1);
+
+  for (size_t i=0; i<pairs_local.size();i++)
+  {
+    first[i]=pairs_local[i].first;
+    second[i]=pairs_local[i].second;
+  }
+  pairs.updateTo();
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
   ndets_per_excitation_level.resize(nex_max + 1, 0);
   //reorder configs and det data
@@ -515,7 +525,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
 
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
   detData                     = std::make_shared<std::vector<int>>();
-  uniquePairs                 = std::make_shared<std::vector<std::pair<int, int>>>();
+  uniquePairs                 = std::make_shared<VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>>();
   DetSigns                    = std::make_shared<std::vector<RealType>>();
   ndets_per_excitation_level_ = std::make_shared<std::vector<int>>();
 

@@ -300,7 +300,7 @@ private:
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
-                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                   const std::vector<RealType>& sign,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                                   const RefVector<OffloadVector<ValueType>>& ratios_list);
@@ -323,7 +323,7 @@ private:
                                                const OffloadMatrix<ValueType>& psi,
                                                OffloadMatrix<ValueType>& dotProducts,
                                                const std::vector<int>& data,
-                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                const std::vector<RealType>& sign);
 
   /** compute the ratio of the excited determinants to the reference determinant
@@ -333,7 +333,7 @@ private:
                                           const OffloadMatrix<ValueType>& psiinv,
                                           const OffloadMatrix<ValueType>& psi,
                                           const std::vector<int>& data,
-                                          const std::vector<std::pair<int, int>>& pairs,
+                                          const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                           const std::vector<RealType>& sign,
                                           OffloadMatrix<ValueType>& dotProducts,
                                           OffloadVector<ValueType>& ratios);
@@ -344,7 +344,7 @@ private:
                                              const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                              const std::vector<int>& data,
-                                             const std::vector<std::pair<int, int>>& pairs,
+                                          const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                              const std::vector<RealType>& sign,
                                              const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                              const RefVector<OffloadVector<ValueType>>& ratios_list);
@@ -366,7 +366,7 @@ private:
                                                const OffloadMatrix<ValueType>& psiinv,
                                                const OffloadMatrix<ValueType>& psi,
                                                const std::vector<int>& data,
-                                               const std::vector<std::pair<int, int>>& pairs,
+                                               const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                const std::vector<RealType>& sign,
                                                const ValueType& det0_grad,
                                                OffloadMatrix<ValueType>& dotProducts,
@@ -398,7 +398,7 @@ private:
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
-                                                  const std::vector<std::pair<int, int>>& pairs,
+                                                  const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                   const std::vector<RealType>& sign,
                                                   const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
@@ -408,7 +408,7 @@ private:
                                                                 const OffloadMatrix<ValueType>& psiinv,
                                                                 const OffloadMatrix<ValueType>& psi,
                                                                 const std::vector<int>& data,
-                                                                const std::vector<std::pair<int, int>>& pairs,
+                                                                const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
                                                                 const std::vector<RealType>& sign,
                                                                 OffloadMatrix<ValueType>& dotProducts,
                                                                 int iat,
@@ -513,7 +513,7 @@ private:
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
   std::shared_ptr<std::vector<int>> detData;
-  std::shared_ptr<std::vector<std::pair<int, int>>> uniquePairs;
+  std::shared_ptr<VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>> uniquePairs;
   std::shared_ptr<std::vector<RealType>> DetSigns;
   /** number of unique determinants at each excitation level (relative to reference)
    *  {1, n_singles, n_doubles, n_triples, ...}
