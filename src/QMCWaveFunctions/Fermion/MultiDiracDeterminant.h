@@ -194,23 +194,23 @@ public:
   // Anouar explain what does kevin did
   //
   // Do not offlaod this one
-  void mw_updateRatios(int ext_level,
-                       int nw,
-                       const RefVector<OffloadVector<ValueType>>& ratios_list,
-                       const std::vector<size_t>& sum_ndets_per_excitation_level,
-                       const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
-                       const std::vector<int>& data,
-                       const std::vector<RealType>& sign,
-                       const std::vector<ValueType>& det0_list,
-                       const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
+  void mw_updateRatios_generic(const int ext_level,
+                               const int nw,
+                               const size_t det_offset,
+                               const size_t data_offset,
+                               const RefVector<OffloadVector<ValueType>>& ratios_list,
+                               const std::vector<int>& data,
+                               const std::vector<RealType>& sign,
+                               const std::vector<ValueType>& det0_list,
+                               const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
 
   // Anouar explain what does kevin did
   // This one should be offloaded
   template<unsigned NEXCITED>
-  void mw_updateRatios(int nw,
+  void mw_updateRatios(const int nw,
+                       const size_t det_offset,
+                       const size_t data_offset,
                        const RefVector<OffloadVector<ValueType>>& ratios_list,
-                       const std::vector<size_t>& sum_ndets_per_excitation_level,
-                       const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
                        const std::vector<int>& data,
                        const std::vector<RealType>& sign,
                        const std::vector<ValueType>& det0_list,

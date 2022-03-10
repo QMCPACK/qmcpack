@@ -97,44 +97,53 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     dotProducts_list[iw].get().updateTo();
   }
 
-  const int max_ext_level = (ndets_per_excitation_level_->size() - 1);
+  const int max_ext_level = ndets_per_excitation_level_->size() - 1;
 
-  std::vector<size_t> sum_ndets_per_excitation_level;
-  std::vector<size_t> sum_with_shift_ndets_per_excitation_level;
-
-  {
-    size_t count_0  = 0;
-    size_t it_shift = 0;
-    for (size_t ext_level = 0; ext_level <= max_ext_level; ext_level++)
-    {
-      sum_ndets_per_excitation_level.push_back(count_0);
-      sum_with_shift_ndets_per_excitation_level.push_back(it_shift);
-      count_0 += (*ndets_per_excitation_level_)[ext_level];
-      it_shift += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
-    }
-  }
   // Can replaced by variadic template at some point if needed
   // Can put break to short-circuit
+  size_t det_offset  = 1;
+  size_t data_offset = 1;
+
+  auto update_offsets = [&](size_t ext_level) {
+    det_offset += (*ndets_per_excitation_level_)[ext_level];
+    data_offset += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
+  };
+
   if (max_ext_level >= 1)
-    mw_updateRatios<1>(nw, ratios_list, sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level, data,
-                       sign, det0_list, dotProducts_list);
+  {
+    mw_updateRatios<1>(nw, det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
+    update_offsets(1);
+  }
+
   if (max_ext_level >= 2)
-    mw_updateRatios<2>(nw, ratios_list, sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level, data,
-                       sign, det0_list, dotProducts_list);
+  {
+    mw_updateRatios<2>(nw, det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
+    update_offsets(2);
+  }
+
   if (max_ext_level >= 3)
-    mw_updateRatios<3>(nw, ratios_list, sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level, data,
-                       sign, det0_list, dotProducts_list);
+  {
+    mw_updateRatios<3>(nw, det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
+    update_offsets(3);
+  }
+
   if (max_ext_level >= 4)
-    mw_updateRatios<4>(nw, ratios_list, sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level, data,
-                       sign, det0_list, dotProducts_list);
+  {
+    mw_updateRatios<4>(nw, det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
+    update_offsets(4);
+  }
+
   if (max_ext_level >= 5)
-    mw_updateRatios<5>(nw, ratios_list, sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level, data,
-                       sign, det0_list, dotProducts_list);
+  {
+    mw_updateRatios<5>(nw, det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
+    update_offsets(5);
+  }
 
   for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
   {
-    mw_updateRatios(ext_level, nw, ratios_list, sum_ndets_per_excitation_level,
-                    sum_with_shift_ndets_per_excitation_level, data, sign, det0_list, dotProducts_list);
+    mw_updateRatios_generic(ext_level, nw, det_offset, data_offset, ratios_list, data, sign, det0_list,
+                            dotProducts_list);
+    update_offsets(ext_level);
   }
 
   for (size_t iw = 0; iw < nw; iw++)
@@ -852,57 +861,45 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   }
 }
 
-void MultiDiracDeterminant::mw_updateRatios(int ext_level,
-                                            int nw,
-                                            const RefVector<OffloadVector<ValueType>>& ratios_list,
-                                            const std::vector<size_t>& sum_ndets_per_excitation_level,
-                                            const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
-                                            const std::vector<int>& data,
-                                            const std::vector<RealType>& sign,
-                                            const std::vector<ValueType>& det0_list,
-                                            const RefVector<OffloadMatrix<ValueType>>& dotProducts_list)
+void MultiDiracDeterminant::mw_updateRatios_generic(int ext_level,
+                                                    const int nw,
+                                                    const size_t det_offset,
+                                                    const size_t data_offset,
+                                                    const RefVector<OffloadVector<ValueType>>& ratios_list,
+                                                    const std::vector<int>& data,
+                                                    const std::vector<RealType>& sign,
+                                                    const std::vector<ValueType>& det0_list,
+                                                    const RefVector<OffloadMatrix<ValueType>>& dotProducts_list)
 {
-  size_t count_0  = sum_ndets_per_excitation_level[ext_level];
-  size_t it_shift = sum_with_shift_ndets_per_excitation_level[ext_level];
-
+  const int* it2 = data.data() + data_offset;
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    std::vector<int>::const_iterator it2 = data.begin() + it_shift;
-    for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[ext_level]; ++count_1)
+    for (size_t count = 0; count < (*ndets_per_excitation_level_)[ext_level]; ++count)
     {
-      size_t count = count_0 + count_1;
-
-      ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-          det_calculator_.evaluate(dotProducts_list[iw].get(), it2 + 1 + count_1 * (3 * ext_level + 1), ext_level);
+      size_t det_id                 = det_offset + count;
+      ratios_list[iw].get()[det_id] = sign[det_id] * det0_list[iw] *
+          det_calculator_.evaluate(dotProducts_list[iw].get(), it2 + 1 + count * (3 * ext_level + 1), ext_level);
     }
-  }
 }
 
 template<unsigned NEXCITED>
 void MultiDiracDeterminant::mw_updateRatios(int nw,
+                                            const size_t det_offset,
+                                            const size_t data_offset,
                                             const RefVector<OffloadVector<ValueType>>& ratios_list,
-                                            const std::vector<size_t>& sum_ndets_per_excitation_level,
-                                            const std::vector<size_t>& sum_with_shift_ndets_per_excitation_level,
                                             const std::vector<int>& data,
                                             const std::vector<RealType>& sign,
                                             const std::vector<ValueType>& det0_list,
                                             const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const
 {
-  size_t count_0  = sum_ndets_per_excitation_level[NEXCITED];
-  size_t it_shift = sum_with_shift_ndets_per_excitation_level[NEXCITED];
-
+  const int* it2 = data.data() + data_offset;
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    const int* it2 = data.data() + it_shift;
-    for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[NEXCITED]; ++count_1)
+    for (size_t count = 0; count < (*ndets_per_excitation_level_)[NEXCITED]; ++count)
     {
-      size_t count = count_0 + count_1;
-
-      ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
+      size_t det_id                 = det_offset + count;
+      ratios_list[iw].get()[det_id] = sign[det_id] * det0_list[iw] *
           CalculateRatioFromMatrixElements<NEXCITED>::evaluate(dotProducts_list[iw].get(),
-                                                               it2 + 1 + count_1 * (3 * NEXCITED + 1));
+                                                               it2 + 1 + count * (3 * NEXCITED + 1));
     }
-  }
 }
 
 } // namespace qmcplusplus
