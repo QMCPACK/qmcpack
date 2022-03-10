@@ -191,24 +191,90 @@ public:
                      const std::vector<size_t>& C2nodes_unsorted,
                      std::vector<size_t>& C2nodes_sorted);
 
-  // Anouar explain what does kevin did
-  //
-  // Do not offlaod this one
+  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
+   *@param P particle set which provides the positions
+   *@param iat the index of the moved electron
+   *@param refPtcl if given, the id of the reference particle in virtual moves
+   */
+  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+  /// multi walker version of evaluateDetsForPtclMove
+  void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat);
+
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
+  void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
+
+
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateGrads(ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateGrads
+  void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int iat);
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateGradsWithSpin(ParticleSet& P, int iat);
+
+  // full evaluation of all the structures from scratch, used in evaluateLog for example
+  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
+  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
+  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
+
+  // accessors
+  inline int getNumDets() const { return ciConfigList->size(); }
+  inline int getNumPtcls() const { return NumPtcls; }
+  inline int getFirstIndex() const { return FirstIndex; }
+
+  const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
+  const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const OffloadMatrix<GradType>& getGrads() const { return grads; }
+  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
+  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
+  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
+  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
+  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
+
+  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
+  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+
+private:
+  /** update ratios with respect to the reference deteriminant for a given excitation level
+   * @param ext_level excitation level
+   * @param det_offset offset of the determinant id
+   * @param data_offset offset of the "data" structure
+   * @param sign of determinants
+   * @param det0_list list of reference det value
+   * @param dotProducts_list list of dotProducts
+   *
+   * this is a general implementation. Support abitrary excitation level
+   */
   void mw_updateRatios_generic(const int ext_level,
-                               const int nw,
                                const size_t det_offset,
                                const size_t data_offset,
                                const RefVector<OffloadVector<ValueType>>& ratios_list,
+                               SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const std::vector<int>& data,
                                const std::vector<RealType>& sign,
                                const std::vector<ValueType>& det0_list,
-                               const RefVector<OffloadMatrix<ValueType>>& dotProducts_list);
+                               const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
-  // Anouar explain what does kevin did
-  // This one should be offloaded
-  template<unsigned NEXCITED>
-  void mw_updateRatios(const int nw,
-                       const size_t det_offset,
+  /** update ratios with respect to the reference deteriminant for a given excitation level
+   * @param det_offset offset of the determinant id
+   * @param data_offset offset of the "data" structure
+   * @param sign of determinants
+   * @param det0_list list of reference det value
+   * @param dotProducts_list list of dotProducts
+   *
+   * this is intended to be customized based on EXT_LEVEL
+   */
+  template<unsigned EXT_LEVEL>
+  void mw_updateRatios(const size_t det_offset,
                        const size_t data_offset,
                        const RefVector<OffloadVector<ValueType>>& ratios_list,
                        const std::vector<int>& data,
@@ -365,59 +431,6 @@ public:
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
 
-  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
-   *@param P particle set which provides the positions
-   *@param iat the index of the moved electron
-   *@param refPtcl if given, the id of the reference particle in virtual moves
-   */
-  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
-  /// multi walker version of evaluateDetsForPtclMove
-  void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                                         const RefVectorWithLeader<ParticleSet>& P_list,
-                                         int iat);
-
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
-  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
-  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
-  void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                                                 const RefVectorWithLeader<ParticleSet>& P_list,
-                                                 int iat);
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
-  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
-
-
-  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
-  void evaluateGrads(ParticleSet& P, int iat);
-  /// multi walker version of mw_evaluateGrads
-  void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                               const RefVectorWithLeader<ParticleSet>& P_list,
-                               int iat);
-  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
-  void evaluateGradsWithSpin(ParticleSet& P, int iat);
-
-  // full evaluation of all the structures from scratch, used in evaluateLog for example
-  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
-  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
-  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
-
-  // accessors
-  inline int getNumDets() const { return ciConfigList->size(); }
-  inline int getNumPtcls() const { return NumPtcls; }
-  inline int getFirstIndex() const { return FirstIndex; }
-
-  const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
-  const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  const OffloadMatrix<GradType>& getGrads() const { return grads; }
-  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
-  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
-  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
-  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
-  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
-
-  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
-  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
-
-private:
   ///reset the size: with the number of particles
   void resize();
 

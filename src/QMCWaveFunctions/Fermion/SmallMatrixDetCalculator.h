@@ -261,7 +261,7 @@ public:
 };
 
 template<typename VALUE>
-inline VALUE calcSmallDeterminant(size_t n, OffloadMatrix<VALUE>& dotProducts, const int* it)
+inline VALUE calcSmallDeterminant(size_t n, const OffloadMatrix<VALUE>& dotProducts, const int* it)
 {
   switch (n)
   {
