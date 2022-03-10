@@ -30,7 +30,7 @@ namespace qmcplusplus
  *  includes manual expansions for smaller evaluations
  */
 template<typename T>
-struct MultiDiracDeterminantCalculator
+struct SmallMatrixDetCalculator
 {
   std::vector<T> M;
   std::vector<int> Pivot;
@@ -183,7 +183,7 @@ public:
       const int j = *(it + 1);
       const int a = *(it + 2);
       const int b = *(it + 3);
-      return  MultiDiracDeterminantCalculator<VALUE>::evaluate( dotProducts(i, a), dotProducts(i, b), dotProducts(j, a), dotProducts(j, b));
+      return  SmallMatrixDetCalculator<VALUE>::evaluate( dotProducts(i, a), dotProducts(i, b), dotProducts(j, a), dotProducts(j, b));
   }
   };
 
@@ -200,7 +200,7 @@ public:
       const int a1 = *(it + 3);
       const int a2 = *(it + 4);
       const int a3 = *(it + 5);
-      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
+      return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
                                     dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
                                     dotProducts(i3, a3));
   }
@@ -221,7 +221,7 @@ public:
       const int a2 = *(it + 5);
       const int a3 = *(it + 6);
       const int a4 = *(it + 7);
-      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+      return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
                                     dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
                                     dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
                                     dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
@@ -245,7 +245,7 @@ public:
       const int a3 = *(it + 7);
       const int a4 = *(it + 8);
       const int a5 = *(it + 9);
-      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+      return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
                                     dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
                                     dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
                                     dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),

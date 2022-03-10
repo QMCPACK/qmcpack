@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
+#include "QMCWaveFunctions/Fermion/SmallMatrixDetCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "CPU/BLAS.hpp"
@@ -506,7 +506,7 @@ private:
    *  {1, n_singles, n_doubles, n_triples, ...}
    */
   std::shared_ptr<std::vector<int>> ndets_per_excitation_level_;
-  MultiDiracDeterminantCalculator<ValueType> DetCalculator;
+  SmallMatrixDetCalculator<ValueType> det_calculator_;
 };
 
 

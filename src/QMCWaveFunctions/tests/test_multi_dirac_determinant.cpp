@@ -24,14 +24,14 @@ using std::string;
 namespace qmcplusplus
 {
 template<class T>
-class TestMultiDiracDeterminantCalculator
+class TestSmallMatrixDetCalculator
 {
 public:
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   T default_evaluate(int power_of_two)
   {
-    MultiDiracDeterminantCalculator<double> MDDC;
+    SmallMatrixDetCalculator<double> MDDC;
     int power2 = std::pow(2, power_of_two);
     MDDC.resize(power2);
     OffloadMatrix<double> dots(2 * power2); //This is an 2n by 2n matrix if you don't reduce pairs
@@ -60,9 +60,9 @@ public:
 
 /** Simple synthetic test case will trip on changes in this method.
  */
-TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Small", "[wavefunction][fermion][multidet]")
+TEST_CASE("SmallMatrixDetCalculator::evaluate-Small", "[wavefunction][fermion][multidet]")
 {
-  TestMultiDiracDeterminantCalculator<double> double_test;
+  TestSmallMatrixDetCalculator<double> double_test;
   double det_value_expect = -1.1086723208;
   REQUIRE(double_test.default_evaluate(3) == Approx(det_value_expect));
   det_value_expect = -1.3432116824;
