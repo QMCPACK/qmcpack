@@ -210,7 +210,7 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   ParticleSet elec(simulation_cell, kind);
 
   elec.setName("elec");
-  elec.create({1,2});
+  elec.create({1, 2});
   elec.R[0] = {0.0, 0.0, 0.0};
   elec.R[1] = {0.1, 0.2, 0.3};
   elec.R[2] = {0.3, 0.1, 0.2};
@@ -261,8 +261,6 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
 TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
 {
   test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS);
-#if defined(ENABLE_OFFLOAD)
   test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS_OFFLOAD);
-#endif
 }
 } // namespace qmcplusplus

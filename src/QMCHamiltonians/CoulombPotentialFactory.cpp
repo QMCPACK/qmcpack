@@ -21,17 +21,18 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
+#include "OhmmsData/AttributeSet.h"
+#include <PlatformSelector.hpp>
+
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "QMCHamiltonians/ForceCeperley.h"
-
 #include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
 #endif
 #endif
-#include "OhmmsData/AttributeSet.h"
 
 #ifdef QMC_CUDA
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
@@ -56,6 +57,13 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   hAttrib.put(cur);
   renameProperty(a);
   isphysical = (physical == "yes" || physical == "true");
+
+  app_summary() << std::endl;
+  app_summary() << "   MPC Potential" << std::endl;
+  app_summary() << "   -------------" << std::endl;
+  app_summary() << "    Name: " << title << "   Physical : " << physical << std::endl;
+  app_summary() << std::endl;
+
 #ifdef QMC_CUDA
   std::unique_ptr<MPC_CUDA> mpc = std::make_unique<MPC_CUDA>(targetPtcl, cutoff);
 #else
@@ -86,11 +94,19 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   hAttrib.add(pbc, "pbc");
   hAttrib.add(physical, "physical");
   hAttrib.add(forces, "forces");
-  hAttrib.add(use_gpu, "gpu", {"", "yes", "no"});
+  hAttrib.add(use_gpu, "gpu", CPUOMPTargetSelector::candidate_values);
   hAttrib.put(cur);
   const bool applyPBC = (PBCType && pbc == "yes");
   const bool doForces = (forces == "yes") || (forces == "true");
-  ParticleSet* ptclA  = &targetPtcl;
+
+  app_summary() << std::endl;
+  app_summary() << "   Coulomb Potential" << std::endl;
+  app_summary() << "   -----------------" << std::endl;
+  app_summary() << "    Name: " << title << "   Type: " << (sourceInp == targetInp ? "AA" : "AB")
+                << "   PBC: " << (applyPBC ? "yes" : "no") << std::endl;
+  app_summary() << std::endl;
+
+  ParticleSet* ptclA = &targetPtcl;
   if (sourceInp != targetPtcl.getName())
   {
     //renameProperty(sourceInp);
@@ -128,11 +144,13 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if (use_gpu.empty())
         use_gpu = ptclA->getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
 
-      if (use_gpu == "yes" && ptclA->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
-        throw std::runtime_error("Requested gpu=yes in CoulombPBCAA but the particle set has gpu=no.");
+      const bool use_offload = CPUOMPTargetSelector::selectPlatform(use_gpu) == PlatformKind::OMPTARGET;
+      if (use_offload)
+        app_summary() << "    Running OpenMP offload code path." << std::endl;
+      if (use_offload && ptclA->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+        throw std::runtime_error("Requested OpenMP offload in CoulombPBCAA but the particle set has gpu=no.");
 
-      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_gpu == "yes"), title,
-                           physical);
+      targetH->addOperator(std::make_unique<CoulombPBCAA>(*ptclA, quantum, doForces, use_offload), title, physical);
     }
     else
     {
@@ -271,7 +289,13 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   }
   //remember the TrialWaveFunction used by this pseudopotential
   psiName = wfname;
-  app_log() << std::endl << "  ECPotential builder for pseudopotential " << std::endl;
+
+  app_summary() << std::endl;
+  app_summary() << "   Pseudo Potential" << std::endl;
+  app_summary() << "   ----------------" << std::endl;
+  app_summary() << "    Name: " << title << "   Wavefunction : " << psiName << std::endl;
+  app_summary() << std::endl;
+
   ECPotentialBuilder ecp(*targetH, *ion, targetPtcl, *psi, myComm);
   ecp.put(cur);
 #else

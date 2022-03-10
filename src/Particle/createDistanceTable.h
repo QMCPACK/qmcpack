@@ -45,11 +45,9 @@ inline std::unique_ptr<DistanceTable> createDistanceTable(ParticleSet& s, std::o
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
-#if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
     return createDistanceTableAAOMPTarget(s, description);
   else
-#endif
     return createDistanceTableAA(s, description);
 }
 
@@ -66,11 +64,9 @@ inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s,
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
-#if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
     return createDistanceTableABOMPTarget(s, t, description);
   else
-#endif
     return createDistanceTableAB(s, t, description);
 }
 

@@ -40,13 +40,17 @@ public:
   // Optimizable parameter
   opt_variables_type myVars;
 
-  using IndexVector = SPOSet::IndexVector;
-  using ValueVector = SPOSet::ValueVector;
-  using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector  = SPOSet::GradVector;
-  using GradMatrix  = SPOSet::GradMatrix;
-  using HessMatrix  = SPOSet::HessMatrix;
-  using HessType    = SPOSet::HessType;
+  template<typename DT>
+  using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
+  using IndexVector   = SPOSet::IndexVector;
+  using ValueVector   = SPOSet::ValueVector;
+  using ValueMatrix   = SPOSet::ValueMatrix;
+  using GradVector    = SPOSet::GradVector;
+  using GradMatrix    = SPOSet::GradMatrix;
+  using HessMatrix    = SPOSet::HessMatrix;
+  using HessType      = SPOSet::HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;
@@ -102,33 +106,7 @@ public:
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
-                           const std::vector<size_t>& C2node_dn)
-  {
-    if (!Optimizable)
-      return;
-
-    const ValueVector& detValues_up = getRatiosToRefDet();
-    const ValueVector& detValues_dn = pseudo_dn.getRatiosToRefDet();
-    const GradMatrix& grads_up      = grads;
-    const GradMatrix& grads_dn      = pseudo_dn.grads;
-    const ValueMatrix& lapls_up     = lapls;
-    const ValueMatrix& lapls_dn     = pseudo_dn.lapls;
-    const ValueMatrix& M_up         = psiM;
-    const ValueMatrix& M_dn         = pseudo_dn.psiM;
-    const ValueMatrix& Minv_up      = psiMinv;
-    const ValueMatrix& Minv_dn      = pseudo_dn.psiMinv;
-    const GradMatrix& B_grad        = dpsiM;
-    const ValueMatrix& B_lapl       = d2psiM;
-
-    const size_t N1  = FirstIndex;
-    const size_t N2  = pseudo_dn.FirstIndex;
-    const size_t NP1 = NumPtcls;
-    const size_t NP2 = pseudo_dn.NumPtcls;
-
-    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up,
-                             detValues_dn, grads_up, grads_dn, lapls_up, lapls_dn, M_up, M_dn, Minv_up, Minv_dn, B_grad,
-                             B_lapl, *detData, N1, N2, NP1, NP2, lookup_tbl);
-  }
+                           const std::vector<size_t>& C2node_dn);
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
@@ -137,21 +115,7 @@ public:
                              const PsiValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
-                             const std::vector<size_t>& C2node_dn)
-  {
-    if (!Optimizable)
-      return;
-
-    const ValueVector& detValues_up = getRatiosToRefDet();
-    const ValueVector& detValues_dn = pseudo_dn.getRatiosToRefDet();
-    const ValueMatrix& M_up         = psiM;
-    const ValueMatrix& M_dn         = pseudo_dn.psiM;
-    const ValueMatrix& Minv_up      = psiMinv;
-    const ValueMatrix& Minv_dn      = pseudo_dn.psiMinv;
-
-    Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn,
-                               M_up, M_dn, Minv_up, Minv_dn, *detData, lookup_tbl);
-  }
+                             const std::vector<size_t>& C2node_dn);
 
 
   inline void reportStatus(std::ostream& os) override {}
@@ -228,7 +192,7 @@ public:
                      std::vector<size_t>& C2nodes_sorted);
 
   template<typename ITER>
-  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix& dotProducts, ITER it)
+  inline ValueType CalculateRatioFromMatrixElements(int n, OffloadMatrix<ValueType>& dotProducts, ITER it)
   {
     switch (n)
     {
@@ -308,13 +272,13 @@ public:
   void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                   int ref,
                                                   const std::vector<ValueType>& det0_list,
-                                                  const RefVector<ValueMatrix>& psiinv_list,
-                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
                                                   const std::vector<std::pair<int, int>>& pairs,
                                                   const std::vector<RealType>& sign,
-                                                  const RefVector<ValueMatrix>& dotProducts_list,
-                                                  const RefVector<ValueVector>& ratios_list);
+                                                  const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                                  const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
@@ -330,9 +294,9 @@ public:
   void BuildDotProductsAndCalculateRatios_impl(int ref,
                                                ValueType det0,
                                                ValueType* restrict ratios,
-                                               const ValueMatrix& psiinv,
-                                               const ValueMatrix& psi,
-                                               ValueMatrix& dotProducts,
+                                               const OffloadMatrix<ValueType>& psiinv,
+                                               const OffloadMatrix<ValueType>& psi,
+                                               OffloadMatrix<ValueType>& dotProducts,
                                                const std::vector<int>& data,
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign);
@@ -341,24 +305,24 @@ public:
    * @param ratios the output.
    */
   void BuildDotProductsAndCalculateRatios(int ref,
-                                          const ValueMatrix& psiinv,
-                                          const ValueMatrix& psi,
+                                          const OffloadMatrix<ValueType>& psiinv,
+                                          const OffloadMatrix<ValueType>& psi,
                                           const std::vector<int>& data,
                                           const std::vector<std::pair<int, int>>& pairs,
                                           const std::vector<RealType>& sign,
-                                          ValueMatrix& dotProducts,
-                                          ValueVector& ratios);
+                                          OffloadMatrix<ValueType>& dotProducts,
+                                          OffloadVector<ValueType>& ratios);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,
                                              const std::vector<ValueType>& det0_list,
-                                             const RefVector<ValueMatrix>& psiinv_list,
-                                             const RefVector<ValueMatrix>& psi_list,
+                                             const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                             const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                              const std::vector<int>& data,
                                              const std::vector<std::pair<int, int>>& pairs,
                                              const std::vector<RealType>& sign,
-                                             const RefVector<ValueMatrix>& dotProducts_list,
-                                             const RefVector<ValueVector>& ratios_list);
+                                             const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                             const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
@@ -374,16 +338,16 @@ public:
    *@param grads returned computed gradients
    */
   void BuildDotProductsAndCalculateRatiosGrads(int ref,
-                                               const ValueMatrix& psiinv,
-                                               const ValueMatrix& psi,
+                                               const OffloadMatrix<ValueType>& psiinv,
+                                               const OffloadMatrix<ValueType>& psi,
                                                const std::vector<int>& data,
                                                const std::vector<std::pair<int, int>>& pairs,
                                                const std::vector<RealType>& sign,
                                                const ValueType& det0_grad,
-                                               ValueMatrix& dotProducts,
+                                               OffloadMatrix<ValueType>& dotProducts,
                                                int dx,
                                                int iat,
-                                               GradMatrix& grads);
+                                               OffloadMatrix<GradType>& grads);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
@@ -406,24 +370,24 @@ public:
                                                   int dx,
                                                   int getNumDets,
                                                   const std::vector<ValueType>& det0_grad_list,
-                                                  const RefVector<ValueMatrix>& psiinv_list,
-                                                  const RefVector<ValueMatrix>& psi_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const std::vector<int>& data,
                                                   const std::vector<std::pair<int, int>>& pairs,
                                                   const std::vector<RealType>& sign,
-                                                  const RefVector<ValueVector>& WorkSpace_list,
-                                                  const RefVector<ValueMatrix>& dotProducts_list,
-                                                  const RefVector<GradMatrix>& ratios_list);
+                                                  const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                                  const RefVector<OffloadMatrix<GradType>>& ratios_list);
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
-                                                                const ValueMatrix& psiinv,
-                                                                const ValueMatrix& psi,
+                                                                const OffloadMatrix<ValueType>& psiinv,
+                                                                const OffloadMatrix<ValueType>& psi,
                                                                 const std::vector<int>& data,
                                                                 const std::vector<std::pair<int, int>>& pairs,
                                                                 const std::vector<RealType>& sign,
-                                                                ValueMatrix& dotProducts,
+                                                                OffloadMatrix<ValueType>& dotProducts,
                                                                 int iat,
-                                                                ValueMatrix& ratios);
+                                                                OffloadMatrix<ValueType>& ratios);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
@@ -482,14 +446,14 @@ public:
   inline int getNumPtcls() const { return NumPtcls; }
   inline int getFirstIndex() const { return FirstIndex; }
 
-  const ValueVector& getRatiosToRefDet() const { return ratios_to_ref_; }
-  const ValueVector& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  const GradMatrix& getGrads() const { return grads; }
-  const GradMatrix& getNewGrads() const { return new_grads; }
-  const ValueMatrix& getLapls() const { return lapls; }
-  const ValueMatrix& getNewLapls() const { return new_lapls; }
-  const ValueMatrix& getSpinGrads() const { return spingrads; }
-  const ValueMatrix& getNewSpinGrads() const { return new_spingrads; }
+  const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
+  const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const OffloadMatrix<GradType>& getGrads() const { return grads; }
+  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
+  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
+  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
+  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
+  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
 
   PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
@@ -519,31 +483,32 @@ private:
 
   /// psiM(i,j) \f$= \psi_j({\bf r}_i)\f$
   /// TpsiM(i,j) \f$= psiM(j,i) \f$
-  ValueMatrix psiM, TpsiM;
+  OffloadMatrix<ValueType> psiM, TpsiM;
   /// inverse Dirac determinant matrix of the reference det
-  ValueMatrix psiMinv, psiMinv_temp;
+  OffloadMatrix<ValueType> psiMinv, psiMinv_temp;
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix dpsiM;
+  OffloadMatrix<GradType> dpsiM;
   // temporaty storage
-  ValueMatrix dpsiMinv;
+  OffloadMatrix<ValueType> dpsiMinv;
   /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix d2psiM;
+  OffloadMatrix<ValueType> d2psiM;
   /* dspin_psiM(i,j) \f$= \partial_{s_i} \psi_j({\bf r}_i,s_i)\f$ where \f$s_i\f$s is the spin variable
    * This is only resized if a spinor calculation is used
    */
   ValueMatrix dspin_psiM;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector psiV, psiV_temp;
-  GradVector dpsiV;
-  ValueVector d2psiV;
-  ValueVector workV1, workV2;
+  //ValueVector psiV, psiV_temp;
+  OffloadVector<ValueType> psiV, psiV_temp;
+  OffloadVector<GradType> dpsiV;
+  OffloadVector<ValueType> d2psiV;
+  OffloadVector<ValueType> workV1, workV2;
   //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
   ValueVector dspin_psiV;
 
-  ValueMatrix dotProducts;
+  OffloadMatrix<ValueType> dotProducts;
 
-  Vector<ValueType> WorkSpace;
+  OffloadVector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
   ValueType* FirstAddressOfGrads;
@@ -552,19 +517,19 @@ private:
   ValueType* LastAddressOfdpsiM;
 
   /// determinant ratios with respect to the reference determinant
-  ValueVector ratios_to_ref_;
+  OffloadVector<ValueType> ratios_to_ref_;
   /// new determinant ratios with respect to the updated reference determinant upon a proposed move
-  ValueVector new_ratios_to_ref_;
+  OffloadVector<ValueType> new_ratios_to_ref_;
   /// new value of the reference determinant over the old value upon a proposed move
   ValueType curRatio;
   /// log value of the reference determinant
   LogValueType log_value_ref_det_;
   /// store determinant grads (old and new)
-  GradMatrix grads, new_grads;
+  OffloadMatrix<GradType> grads, new_grads;
   /// store determinant lapls (old and new)
-  ValueMatrix lapls, new_lapls;
+  OffloadMatrix<ValueType> lapls, new_lapls;
   // additional storage for spin derivatives. Only resized if the calculation uses spinors
-  ValueMatrix spingrads, new_spingrads;
+  OffloadMatrix<ValueType> spingrads, new_spingrads;
 
 
   /* mmorales:

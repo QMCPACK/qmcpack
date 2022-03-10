@@ -131,8 +131,10 @@ struct MultiDiracDeterminantCalculator
    *  iter must be size n^2
    *  this object must have been resized to n
    */
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename ITER>
-  inline T evaluate(Matrix<T>& dots, ITER it, int n)
+  inline T evaluate(OffloadMatrix<T>& dots, ITER it, int n)
   {
     typename std::vector<T>::iterator d = M.begin();
     for (int i = 0; i < n; i++)

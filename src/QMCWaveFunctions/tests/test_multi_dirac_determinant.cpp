@@ -27,12 +27,14 @@ template<class T>
 class TestMultiDiracDeterminantCalculator
 {
 public:
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   T default_evaluate(int power_of_two)
   {
     MultiDiracDeterminantCalculator<double> MDDC;
     int power2 = std::pow(2, power_of_two);
     MDDC.resize(power2);
-    Matrix<double> dots(2 * power2); //This is an 2n by 2n matrix if you don't reduce pairs
+    OffloadMatrix<double> dots(2 * power2); //This is an 2n by 2n matrix if you don't reduce pairs
     double n = 0.0;
     int i    = 0;
     //Just making some non trivial data
