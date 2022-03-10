@@ -55,7 +55,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     const size_t n = *it2;
     //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
     if (count != ref)
-      ratios[count] = sign[count] * det0 * CalculateRatioFromMatrixElements(n, dotProducts, &(*(it2 + 1)) );
+      ratios[count] = sign[count] * det0 * calculateDeterminant(DetCalculator, n, dotProducts, &(*(it2 + 1)) );
     it2 += 3 * n + 1;
   }
 
@@ -102,9 +102,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   std::vector<size_t> sum_with_shift_ndets_per_excitation_level;
 
   {
-    size_t count_0          = 1;
-    size_t it_shift         = 1;
-    for (size_t ext_level = 1; ext_level <= max_ext_level; ext_level++) {
+    size_t count_0          = 0;
+    size_t it_shift         = 0;
+    for (size_t ext_level = 0; ext_level <= max_ext_level; ext_level++) {
         sum_ndets_per_excitation_level.push_back(count_0);
         sum_with_shift_ndets_per_excitation_level.push_back(it_shift);
         count_0 += (*ndets_per_excitation_level_)[ext_level];
@@ -113,23 +113,23 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   }
   // Can replaced by variadic template at some point if needed
   // Can put break to short-circuit
-  if ( max_ext_level <= 1 )
+  if ( max_ext_level >= 1 )
     mw_updateRatios<1>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
-  if ( max_ext_level <= 2)
+  if ( max_ext_level >= 2)
     mw_updateRatios<2>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
-  if (max_ext_level <= 3)
+  if (max_ext_level >= 3)
     mw_updateRatios<3>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
-  if (max_ext_level <= 4)
+  if (max_ext_level >= 4)
     mw_updateRatios<4>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);
-  if (max_ext_level <= 5)
+  if (max_ext_level >= 5)
     mw_updateRatios<5>(nw, ratios_list,
                        sum_ndets_per_excitation_level, sum_with_shift_ndets_per_excitation_level,
                        data, sign, det0_list, dotProducts_list);

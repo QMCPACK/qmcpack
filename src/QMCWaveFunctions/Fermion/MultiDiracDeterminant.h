@@ -191,106 +191,6 @@ public:
                      const std::vector<size_t>& C2nodes_unsorted,
                      std::vector<size_t>& C2nodes_sorted);
 
-  template<int N>
-  ValueType CalculateRatioFromMatrixElements(OffloadMatrix<ValueType>& dotProducts, const int *it);
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<0>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-    return 1.0;
-  }
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<1>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-    return dotProducts(*it, *(it + 1));
-  }
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<2>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-      const int i = *it;
-      const int j = *(it + 1);
-      const int a = *(it + 2);
-      const int b = *(it + 3);
-      return  MultiDiracDeterminantCalculator<ValueType>::evaluate( dotProducts(i, a), dotProducts(j, b), dotProducts(i, b), dotProducts(j, a));
-  }
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<3>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int a1 = *(it + 3);
-      const int a2 = *(it + 4);
-      const int a3 = *(it + 5);
-      return MultiDiracDeterminantCalculator<ValueType>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
-                                    dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
-                                    dotProducts(i3, a3));
-  }
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<4>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int i4 = *(it + 3);
-      const int a1 = *(it + 4);
-      const int a2 = *(it + 5);
-      const int a3 = *(it + 6);
-      const int a4 = *(it + 7);
-      return MultiDiracDeterminantCalculator<ValueType>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
-                                    dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
-                                    dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
-                                    dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
-  }
-
-  template<>
-  inline ValueType CalculateRatioFromMatrixElements<5>(OffloadMatrix<ValueType>& dotProducts, const int *it)
-  {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int i4 = *(it + 3);
-      const int i5 = *(it + 4);
-      const int a1 = *(it + 5);
-      const int a2 = *(it + 6);
-      const int a3 = *(it + 7);
-      const int a4 = *(it + 8);
-      const int a5 = *(it + 9);
-      return MultiDiracDeterminantCalculator<ValueType>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
-                                    dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
-                                    dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
-                                    dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),
-                                    dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4), dotProducts(i4, a5),
-                                    dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
-                                    dotProducts(i5, a5));
-  }
-
-  inline ValueType CalculateRatioFromMatrixElements(int n, OffloadMatrix<ValueType>& dotProducts, const int* it)
-  {
-    switch (n)
-    {
-    case 0:
-      return CalculateRatioFromMatrixElements<0>(dotProducts, it);
-    case 1:
-      return CalculateRatioFromMatrixElements<1>(dotProducts, it);
-    case 2:
-      return CalculateRatioFromMatrixElements<2>(dotProducts, it);
-    case 3:
-      return CalculateRatioFromMatrixElements<3>(dotProducts, it);
-    case 4:
-      return CalculateRatioFromMatrixElements<4>(dotProducts, it);
-    case 5:
-      return CalculateRatioFromMatrixElements<5>(dotProducts, it);
-    default:
-      return DetCalculator.evaluate(dotProducts, it, n);
-    }
-    return 0.0;
-  }
-
   // Anouar explain what does kevin did
   //
   // Do not offlaod this one
@@ -316,7 +216,7 @@ public:
         size_t count                 = count_0 + count_1;
 
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            CalculateRatioFromMatrixElements(ext_level, dotProducts_list[iw].get(),
+            calculateDeterminant(DetCalculator, ext_level, dotProducts_list[iw].get(),
                                              &(*(it2 + 1 + count_1 * (3 * ext_level + 1))));
       }
     }
@@ -346,7 +246,7 @@ public:
         size_t count                 = count_0 + count_1;
 
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            CalculateRatioFromMatrixElements<Ext_level>(dotProducts_list[iw].get(),
+            CalculateRatioFromMatrixElements<Ext_level>::evaluate(dotProducts_list[iw].get(),
                                              &(*(it2 + 1 + count_1 * (3 * Ext_level + 1))));
       }
     }

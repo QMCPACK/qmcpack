@@ -147,5 +147,136 @@ struct MultiDiracDeterminantCalculator
   }
 };
 
+  template<unsigned NEXCITED>
+  class CalculateRatioFromMatrixElements;
+
+  template<>
+  class CalculateRatioFromMatrixElements<0>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+    return 1.0;
+  }
+  };
+
+  template<>
+  class CalculateRatioFromMatrixElements<1>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+    return dotProducts(*it, *(it + 1));
+  }
+  };
+
+  template<>
+class CalculateRatioFromMatrixElements<2>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+      const int i = *it; 
+      const int j = *(it + 1);
+      const int a = *(it + 2);
+      const int b = *(it + 3);
+      return  MultiDiracDeterminantCalculator<VALUE>::evaluate( dotProducts(i, a), dotProducts(i, b), dotProducts(j, a), dotProducts(j, b));
+  }
+  };
+
+  template<>
+class CalculateRatioFromMatrixElements<3>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+      const int i1 = *it; 
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int a1 = *(it + 3);
+      const int a2 = *(it + 4);
+      const int a3 = *(it + 5);
+      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
+                                    dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
+                                    dotProducts(i3, a3));
+  }
+  };
+
+  template<>
+class CalculateRatioFromMatrixElements<4>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+      const int i1 = *it; 
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int i4 = *(it + 3);
+      const int a1 = *(it + 4);
+      const int a2 = *(it + 5);
+      const int a3 = *(it + 6);
+      const int a4 = *(it + 7);
+      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
+                                    dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
+                                    dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
+  }
+  };
+
+  template<>
+class CalculateRatioFromMatrixElements<5>
+  {
+public:
+    template<typename VALUE>
+    static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int *it)
+  {
+      const int i1 = *it;
+      const int i2 = *(it + 1);
+      const int i3 = *(it + 2);
+      const int i4 = *(it + 3);
+      const int i5 = *(it + 4);
+      const int a1 = *(it + 5);
+      const int a2 = *(it + 6);
+      const int a3 = *(it + 7);
+      const int a4 = *(it + 8);
+      const int a5 = *(it + 9);
+      return MultiDiracDeterminantCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
+                                    dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
+                                    dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
+                                    dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),
+                                    dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4), dotProducts(i4, a5),
+                                    dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
+                                    dotProducts(i5, a5));
+  }
+  };
+
+    template<class DETCALCULATOR, typename VALUE>
+  inline VALUE calculateDeterminant(DETCALCULATOR& DetCalculator, size_t n, OffloadMatrix<VALUE>& dotProducts, const int* it)
+  {
+    switch (n)
+    {
+    case 0:
+      return CalculateRatioFromMatrixElements<0>::evaluate(dotProducts, it);
+    case 1:
+      return CalculateRatioFromMatrixElements<1>::evaluate(dotProducts, it);
+    case 2:
+      return CalculateRatioFromMatrixElements<2>::evaluate(dotProducts, it);
+    case 3:
+      return CalculateRatioFromMatrixElements<3>::evaluate(dotProducts, it);
+    case 4:
+      return CalculateRatioFromMatrixElements<4>::evaluate(dotProducts, it);
+    case 5:
+      return CalculateRatioFromMatrixElements<5>::evaluate(dotProducts, it);
+    default:
+      return DetCalculator.evaluate(dotProducts, it, n);
+    }
+    return 0.0;
+  }
+
 } // namespace qmcplusplus
 #endif
