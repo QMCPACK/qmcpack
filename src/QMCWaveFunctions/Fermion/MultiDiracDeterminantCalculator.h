@@ -255,8 +255,8 @@ public:
   }
   };
 
-    template<class DETCALCULATOR, typename VALUE>
-  inline VALUE calculateDeterminant(DETCALCULATOR& DetCalculator, size_t n, OffloadMatrix<VALUE>& dotProducts, const int* it)
+    template<typename VALUE>
+  inline VALUE calcSmallDeterminant(size_t n, OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     switch (n)
     {
@@ -273,7 +273,7 @@ public:
     case 5:
       return CalculateRatioFromMatrixElements<5>::evaluate(dotProducts, it);
     default:
-      return DetCalculator.evaluate(dotProducts, it, n);
+      throw std::runtime_error("calculateSmallDeterminant only handles the number of excitations <= 5.");
     }
     return 0.0;
   }

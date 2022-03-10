@@ -47,7 +47,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
   dotProducts.updateTo();
   buildTableTimer.stop();
   readMatTimer.start();
-  std::vector<int>::const_iterator it2 = data.begin();
+  const int* it2 = data.data();
   const size_t nitems                  = sign.size();
   // explore Inclusive Scan for OpenMP
   for (size_t count = 0; count < nitems; ++count)
@@ -55,7 +55,8 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     const size_t n = *it2;
     //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
     if (count != ref)
-      ratios[count] = sign[count] * det0 * calculateDeterminant(DetCalculator, n, dotProducts, &(*(it2 + 1)) );
+      ratios[count] = sign[count] * det0 * 
+                      (n > 5 ? DetCalculator.evaluate(dotProducts, it2 + 1, n ) : calcSmallDeterminant(n, dotProducts, it2 + 1));
     it2 += 3 * n + 1;
   }
 

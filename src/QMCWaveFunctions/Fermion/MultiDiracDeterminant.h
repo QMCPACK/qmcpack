@@ -216,8 +216,8 @@ public:
         size_t count                 = count_0 + count_1;
 
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
-            calculateDeterminant(DetCalculator, ext_level, dotProducts_list[iw].get(),
-                                             &(*(it2 + 1 + count_1 * (3 * ext_level + 1))));
+            DetCalculator.evaluate(dotProducts_list[iw].get(),
+                                   it2 + 1 + count_1 * (3 * ext_level + 1), ext_level);
       }
     }
   }
@@ -240,14 +240,14 @@ public:
 
     for (size_t iw = 0; iw < nw; iw++)
     {
-      std::vector<int>::const_iterator it2 = data.begin() + it_shift;
+      const int* it2 = data.data() + it_shift;
       for (size_t count_1 = 0; count_1 < (*ndets_per_excitation_level_)[Ext_level]; ++count_1)
       {
         size_t count                 = count_0 + count_1;
 
         ratios_list[iw].get()[count] = sign[count] * det0_list[iw] *
             CalculateRatioFromMatrixElements<Ext_level>::evaluate(dotProducts_list[iw].get(),
-                                             &(*(it2 + 1 + count_1 * (3 * Ext_level + 1))));
+                                             it2 + 1 + count_1 * (3 * Ext_level + 1));
       }
     }
   }
