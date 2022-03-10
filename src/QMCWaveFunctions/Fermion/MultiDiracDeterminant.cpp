@@ -137,9 +137,9 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     Matrix<GradType> dpsiM_host_view(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
-    ///psiM.updateTo();
-    ///dpsiM.updateTo();
-    ///d2psiM.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
+    d2psiM.updateTo();
   }
 
   InverseTimer.start();
@@ -717,8 +717,6 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   const size_t N2  = pseudo_dn.FirstIndex;
   const size_t NP1 = NumPtcls;
   const size_t NP2 = pseudo_dn.NumPtcls;
-  ///This function needs really to be ported...
-  ///What is return from here?? whatever is returned needs to be send to device
   Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
   Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
   Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());

@@ -77,14 +77,12 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
   const size_t npairs = pairs.size();
-  //This is not sure but I think it is the case dur to the use of a const...
   const size_t num                      = psi_list[0].get().extent(1);
   const std::pair<int, int>* restrict p = pairs.data();
   const size_t nitems                   = sign.size();
 
 
   readMatTimer.start();
-  ///To be flattned with Nb_unique_dets*NW. Needs reorg by excitation for mempry access by stride.
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t i = 0; i < npairs; ++i)
@@ -240,7 +238,6 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
   //splatt
   for (size_t count = 0; count < getNumDets(); ++count)
     ratios(count, iat) = WorkSpace[count];
-  ///Not sure if this is ever called from Batched...
   ratios.updateTo();
 #if 0
     ValueType det0 = ratios(ref,iat);
@@ -333,7 +330,6 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   det_leader.evalOrbTimer.stop();
 
   det_leader.ExtraStuffTimer.start();
-  ///PRAGMA OFFLOAD to assign values in the GPU
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
@@ -352,7 +348,6 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
 
-  ///PRAGMA OFFLOAD TO ASSIGN TpsiM_list
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
@@ -612,7 +607,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   }
 
   det_leader.evalOrb1Timer.start();
-  ///Should be optimized for real Batched + Offload
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
@@ -626,7 +620,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     d2psiV_list[iw].get().updateTo();
   }
   det_leader.evalOrb1Timer.stop();
-  ///PRAGMA OFFLOAD FOR here
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
