@@ -134,7 +134,7 @@ struct SmallMatrixDetCalculator
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename ITER>
-  inline T evaluate(OffloadMatrix<T>& dots, ITER it, int n)
+  inline T evaluate(const OffloadMatrix<T>& dots, ITER it, int n)
   {
     typename std::vector<T>::iterator d = M.begin();
     for (int i = 0; i < n; i++)
@@ -155,7 +155,7 @@ class CalculateRatioFromMatrixElements<0>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     return 1.0;
   }
@@ -166,7 +166,7 @@ class CalculateRatioFromMatrixElements<1>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     return dotProducts(*it, *(it + 1));
   }
@@ -177,7 +177,7 @@ class CalculateRatioFromMatrixElements<2>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     const int i = *it;
     const int j = *(it + 1);
@@ -193,7 +193,7 @@ class CalculateRatioFromMatrixElements<3>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
@@ -212,7 +212,7 @@ class CalculateRatioFromMatrixElements<4>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
@@ -236,7 +236,7 @@ class CalculateRatioFromMatrixElements<5>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
