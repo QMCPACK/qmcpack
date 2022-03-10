@@ -507,6 +507,9 @@ private:
    */
   std::shared_ptr<std::vector<int>> ndets_per_excitation_level_;
   SmallMatrixDetCalculator<ValueType> det_calculator_;
+
+  /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
+  static constexpr size_t MaxSmallDet = 5;
 };
 
 

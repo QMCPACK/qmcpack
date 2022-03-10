@@ -56,7 +56,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
-          (n > 5 ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts, it2 + 1));
+          (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts, it2 + 1));
     it2 += 3 * n + 1;
   }
 
@@ -99,8 +99,8 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 
   const int max_ext_level = ndets_per_excitation_level_->size() - 1;
 
-  // Can replaced by variadic template at some point if needed
-  // Can put break to short-circuit
+  // Compute workload changes drastically as the excitation level increases.
+  // this may need different parallelization strategy.
   size_t det_offset  = 1;
   size_t data_offset = 1;
 
