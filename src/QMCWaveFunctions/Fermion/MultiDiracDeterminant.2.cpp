@@ -58,10 +58,11 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
-          (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts.data(), it2 + 1,nb_cols));
+          det_calculator_.evaluate(dotProducts, it2 + 1, n);
+    ///      (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant2(n, dotProducts.data(), it2 + 1,nb_cols));
     it2 += 3 * n + 1;
   }
-
+  
   ratios[ref] = det0;
   readMatTimer.stop();
 }
@@ -110,8 +111,8 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   const auto* psiinv_list_ptr      = psiinv_deviceptr_list.data();
   const auto* psi_list_ptr         = psi_deviceptr_list.data();
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
-          map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
+  ///PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
+  ////        map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < npairs; ++i)
     {
@@ -188,7 +189,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   }
 
   for (size_t iw = 0; iw < nw; iw++)
-    ratios_list[iw].get().updateTo();
+    ratios_list[iw].get().updateFrom();
 
   readMatTimer.stop();
 }
@@ -948,6 +949,7 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   const size_t ndet_ext = (*ndets_per_excitation_level_)[EXT_LEVEL]; 
   const int* it2 = data.data() + data_offset;
 
+  //OffloadVector<OffloadVector<ValueType>> ratios_deviceptr_list(nw);
   OffloadVector<ValueType*> ratios_deviceptr_list(nw);
   OffloadVector<ValueType*> dotProducts_deviceptr_list(nw); 
 
@@ -957,49 +959,21 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
 	  dotProducts_deviceptr_list[iw]=dotProducts_list[iw].get().device_data();
   }
 
-
   auto* ratios_list_ptr            = ratios_deviceptr_list.data();
   const auto* sign_ptr             = sign.data();
   const auto* det0_list_ptr        = det0_list.data();
   const auto* dotProducts_list_ptr = dotProducts_deviceptr_list.data();
-//  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always,to:ratios_list_ptr[:nw]) \
-//		  map(always, to:   sign_ptr[:size_sign], det0_list_ptr[:nw],dotProducts_list_ptr[:nw])")
+  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always,from:ratios_list_ptr[:nw]) \
+		  map(always, to:   sign_ptr[:size_sign], det0_list_ptr[:nw],dotProducts_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    for (size_t icol = 0; icol < nb_cols; icol++){
-      for (size_t irow = 0; irow < nb_rows; irow++){
-        auto val = dotProducts_list[iw].get()(irow,icol);
-        if (std::norm(val) > 1.0E-10){
-         app_log() << "iw: " << iw << " ir: " << irow << " icol: " << icol << " val: " << val << std::endl;
-        }
-      }
-    }
-    ValueType ratio_local(0);
     for (size_t count = 0; count < ndet_ext; ++count)
     {
       size_t det_id                 = det_offset + count;
-      app_log() << "iw: " << iw << " count: " << count << " ext_lvl: " << EXT_LEVEL << std::endl;
+
       ratios_list_ptr[iw][det_id] = sign_ptr[det_id] * det0_list_ptr[iw] *
           CustomizedMatrixDet<EXT_LEVEL>::evaluate(dotProducts_list_ptr[iw],
                                                                it2 + 1 + count * (3 * EXT_LEVEL + 1),nb_cols_dotProd);
     }
-  }
-
-/*  for (size_t iw = 0; iw < nw; iw++)
-//        app_log()<<"dotProducts_list["<<iw<<"].get()="<<dotProducts_list[iw].get()<<std::endl;
-
- 
-  for (size_t iw = 0; iw < nw; iw++)
-    for (size_t count = 0; count < (*ndets_per_excitation_level_)[EXT_LEVEL]; ++count)
-    {
-      size_t det_id                 = det_offset + count;
-      ratios_list[iw].get()[det_id] = sign[det_id] * det0_list[iw] *
-          CustomizedMatrixDet2<EXT_LEVEL>::evaluate2(dotProducts_list[iw].get(),
-                                                               it2 + 1 + count * (3 * EXT_LEVEL + 1));
-    }
-
-*/
-
 
 }
 
