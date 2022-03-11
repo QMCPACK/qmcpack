@@ -36,6 +36,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
   buildTableTimer.start();
   const size_t num    = psi.extent(1);
   const size_t npairs = pairs.size();
+  const size_t nb_cols = dotProducts.size();
   //MatrixOperators::product_ABt(psiinv,psi,dotProducts);
   const int* first=pairs.data(0);
   const int* second=pairs.data(1);
@@ -57,7 +58,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
-          (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts, it2 + 1));
+          (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts.data(), it2 + 1,nb_cols));
     it2 += 3 * n + 1;
   }
 
@@ -83,19 +84,52 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 
   const int* first=pairs.data(0);
   const int* second=pairs.data(1);
-  readMatTimer.start();
+
+
+
+
+  OffloadVector<ValueType*> psiinv_deviceptr_list(nw);
+  OffloadVector<ValueType*> psi_deviceptr_list(nw);
+  OffloadVector<ValueType*> dotProducts_deviceptr_list(nw); 
+
+
   for (size_t iw = 0; iw < nw; iw++)
   {
+	  psiinv_deviceptr_list[iw]=psiinv_list[iw].get().device_data();
+	  psi_deviceptr_list[iw]=psi_list[iw].get().device_data();
+	  dotProducts_deviceptr_list[iw]=dotProducts_list[iw].get().device_data();
+  }
+
+  readMatTimer.start();
+
+  const size_t nb_cols_psi(psi_list[0].get().cols());
+  const size_t nb_cols_psiinv(psiinv_list[0].get().cols());
+  const size_t nb_cols_dotProd(dotProducts_list[0].get().cols());
+
+  auto* dotProducts_list_ptr = dotProducts_deviceptr_list.data();
+  const auto* psiinv_list_ptr      = psiinv_deviceptr_list.data();
+  const auto* psi_list_ptr         = psi_deviceptr_list.data();
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
+          map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
+  for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < npairs; ++i)
     {
       const int I                      = first[i];
       const int J                      = second[i];
-      dotProducts_list[iw].get()(I, J) = 0.0;
-      for (size_t j=0;j<num;j++)
-        dotProducts_list[iw].get()(I, J) += psiinv_list[iw].get()[I][j] * psi_list[iw].get()[J][j]; 
+      
+      ValueType dotProducts_local = 0.0;
+     /// PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
+      for (size_t ind=0;ind<num;ind++)
+        dotProducts_local += psiinv_list_ptr[iw][I*nb_cols_psiinv+ind] * psi_list_ptr[iw][J*nb_cols_psi+ind]; 
+      dotProducts_list_ptr[iw][I*nb_cols_dotProd+J]=dotProducts_local;
     }
+
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
     ratios_list[iw].get()[0] = det0_list[iw];
-    dotProducts_list[iw].get().updateTo();
+    dotProducts_list[iw].get().updateFrom();
   }
 
   const int max_ext_level = ndets_per_excitation_level_->size() - 1;
@@ -140,8 +174,14 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     update_offsets(5);
   }
 
+  if(max_ext_level>=6)
+  {
+	  for (size_t iw = 0; iw < nw; iw++)
+		   dotProducts_list[iw].get().updateFrom();
+  }
   for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
   {
+
     mw_updateRatios_generic(ext_level, det_offset, data_offset, ratios_list, det_calculator_, data, sign, det0_list,
                             dotProducts_list);
     update_offsets(ext_level);
@@ -350,12 +390,13 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
-
+  
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
     TpsiM_list[iw].get().updateTo();
+    psiMinv_temp_list[iw].get().updateTo();
   }
 
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
@@ -649,6 +690,11 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+	  psiMinv_temp_list[iw].get().updateTo();
+	  TpsiM_list[iw].get().updateTo();
+  }
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
@@ -674,7 +720,11 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiV_list[iw].get()[i][idim];
       det0_grad_list[iw] = ratioGradReflistIdim[iw] / curRatio_list[iw];
+
+      dpsiMinv_list[iw].get().updateTo();
+      TpsiM_list[iw].get().updateTo();
     }
+
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
@@ -842,8 +892,12 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
     mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex, ratioG_list);
 
     for (size_t iw = 0; iw < nw; iw++)
+    {
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
+      dpsiMinv_list[iw].get().updateTo();
+      TpsiM_list[iw].get().updateTo();
+    }
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
@@ -886,16 +940,67 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
                                             const std::vector<ValueType>& det0_list,
                                             const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const
 {
+  const size_t nb_cols(dotProducts_list[0].get().cols());
+  const size_t nb_rows(dotProducts_list[0].get().rows());
   const size_t nw = ratios_list.size();
+  const size_t size_sign=sign.size();
+  const size_t nb_cols_dotProd(dotProducts_list[0].get().cols());
+  const size_t ndet_ext = (*ndets_per_excitation_level_)[EXT_LEVEL]; 
   const int* it2 = data.data() + data_offset;
+
+  OffloadVector<ValueType*> ratios_deviceptr_list(nw);
+  OffloadVector<ValueType*> dotProducts_deviceptr_list(nw); 
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+	  ratios_deviceptr_list[iw]=ratios_list[iw].get().device_data();
+	  dotProducts_deviceptr_list[iw]=dotProducts_list[iw].get().device_data();
+  }
+
+
+  auto* ratios_list_ptr            = ratios_deviceptr_list.data();
+  const auto* sign_ptr             = sign.data();
+  const auto* det0_list_ptr        = det0_list.data();
+  const auto* dotProducts_list_ptr = dotProducts_deviceptr_list.data();
+//  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always,to:ratios_list_ptr[:nw]) \
+//		  map(always, to:   sign_ptr[:size_sign], det0_list_ptr[:nw],dotProducts_list_ptr[:nw])")
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    for (size_t icol = 0; icol < nb_cols; icol++){
+      for (size_t irow = 0; irow < nb_rows; irow++){
+        auto val = dotProducts_list[iw].get()(irow,icol);
+        if (std::norm(val) > 1.0E-10){
+         app_log() << "iw: " << iw << " ir: " << irow << " icol: " << icol << " val: " << val << std::endl;
+        }
+      }
+    }
+    ValueType ratio_local(0);
+    for (size_t count = 0; count < ndet_ext; ++count)
+    {
+      size_t det_id                 = det_offset + count;
+      app_log() << "iw: " << iw << " count: " << count << " ext_lvl: " << EXT_LEVEL << std::endl;
+      ratios_list_ptr[iw][det_id] = sign_ptr[det_id] * det0_list_ptr[iw] *
+          CustomizedMatrixDet<EXT_LEVEL>::evaluate(dotProducts_list_ptr[iw],
+                                                               it2 + 1 + count * (3 * EXT_LEVEL + 1),nb_cols_dotProd);
+    }
+  }
+
+/*  for (size_t iw = 0; iw < nw; iw++)
+//        app_log()<<"dotProducts_list["<<iw<<"].get()="<<dotProducts_list[iw].get()<<std::endl;
+
+ 
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < (*ndets_per_excitation_level_)[EXT_LEVEL]; ++count)
     {
       size_t det_id                 = det_offset + count;
       ratios_list[iw].get()[det_id] = sign[det_id] * det0_list[iw] *
-          CustomizedMatrixDet<EXT_LEVEL>::evaluate(dotProducts_list[iw].get(),
+          CustomizedMatrixDet2<EXT_LEVEL>::evaluate2(dotProducts_list[iw].get(),
                                                                it2 + 1 + count * (3 * EXT_LEVEL + 1));
     }
+
+*/
+
+
 }
 
 } // namespace qmcplusplus
