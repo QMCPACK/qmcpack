@@ -21,6 +21,6 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
     - name: Automatic Rebase
-      run: external_codes/github_actions/auto-rebase.sh
+      run: tests/test_automation/github-actions/ci/run_step.sh rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
