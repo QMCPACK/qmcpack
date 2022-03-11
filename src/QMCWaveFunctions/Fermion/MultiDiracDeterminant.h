@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantCalculator.h"
+#include "QMCWaveFunctions/Fermion/SmallMatrixDetCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "CPU/BLAS.hpp"
@@ -191,73 +191,98 @@ public:
                      const std::vector<size_t>& C2nodes_unsorted,
                      std::vector<size_t>& C2nodes_sorted);
 
-  template<typename ITER>
-  inline ValueType CalculateRatioFromMatrixElements(int n, OffloadMatrix<ValueType>& dotProducts, ITER it)
-  {
-    switch (n)
-    {
-    case 0:
-      return 1.0;
-    case 1:
-      return dotProducts(*it, *(it + 1));
-    case 2: {
-      const int i = *it;
-      const int j = *(it + 1);
-      const int a = *(it + 2);
-      const int b = *(it + 3);
-      return dotProducts(i, a) * dotProducts(j, b) - dotProducts(i, b) * dotProducts(j, a);
-    }
-    case 3: {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int a1 = *(it + 3);
-      const int a2 = *(it + 4);
-      const int a3 = *(it + 5);
-      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i2, a1),
-                                    dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i3, a1), dotProducts(i3, a2),
-                                    dotProducts(i3, a3));
-    }
-    case 4: {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int i4 = *(it + 3);
-      const int a1 = *(it + 4);
-      const int a2 = *(it + 5);
-      const int a3 = *(it + 6);
-      const int a4 = *(it + 7);
-      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
-                                    dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
-                                    dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
-                                    dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4));
-    }
-    case 5: {
-      const int i1 = *it;
-      const int i2 = *(it + 1);
-      const int i3 = *(it + 2);
-      const int i4 = *(it + 3);
-      const int i5 = *(it + 4);
-      const int a1 = *(it + 5);
-      const int a2 = *(it + 6);
-      const int a3 = *(it + 7);
-      const int a4 = *(it + 8);
-      const int a5 = *(it + 9);
-      return DetCalculator.evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3), dotProducts(i1, a4),
-                                    dotProducts(i1, a5), dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
-                                    dotProducts(i2, a4), dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
-                                    dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5), dotProducts(i4, a1),
-                                    dotProducts(i4, a2), dotProducts(i4, a3), dotProducts(i4, a4), dotProducts(i4, a5),
-                                    dotProducts(i5, a1), dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
-                                    dotProducts(i5, a5));
-    }
-    default:
-      return DetCalculator.evaluate(dotProducts, it, n);
-    }
-    return 0.0;
-  }
+  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
+   *@param P particle set which provides the positions
+   *@param iat the index of the moved electron
+   *@param refPtcl if given, the id of the reference particle in virtual moves
+   */
+  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
+  /// multi walker version of evaluateDetsForPtclMove
+  void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                         const RefVectorWithLeader<ParticleSet>& P_list,
+                                         int iat);
 
-  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
+  void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                                                 const RefVectorWithLeader<ParticleSet>& P_list,
+                                                 int iat);
+  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
+
+
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
+  void evaluateGrads(ParticleSet& P, int iat);
+  /// multi walker version of mw_evaluateGrads
+  void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
+                               const RefVectorWithLeader<ParticleSet>& P_list,
+                               int iat);
+  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
+  void evaluateGradsWithSpin(ParticleSet& P, int iat);
+
+  // full evaluation of all the structures from scratch, used in evaluateLog for example
+  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
+  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
+  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
+
+  // accessors
+  inline int getNumDets() const { return ciConfigList->size(); }
+  inline int getNumPtcls() const { return NumPtcls; }
+  inline int getFirstIndex() const { return FirstIndex; }
+
+  const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
+  const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
+  const OffloadMatrix<GradType>& getGrads() const { return grads; }
+  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
+  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
+  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
+  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
+  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
+
+  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
+  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
+
+private:
+  /** update ratios with respect to the reference deteriminant for a given excitation level
+   * @param ext_level excitation level
+   * @param det_offset offset of the determinant id
+   * @param data_offset offset of the "data" structure
+   * @param sign of determinants
+   * @param det0_list list of reference det value
+   * @param dotProducts_list list of dotProducts
+   *
+   * this is a general implementation. Support abitrary excitation level
+   */
+  void mw_updateRatios_generic(const int ext_level,
+                               const size_t det_offset,
+                               const size_t data_offset,
+                               const RefVector<OffloadVector<ValueType>>& ratios_list,
+                               SmallMatrixDetCalculator<ValueType>& det_calculator,
+                               const std::vector<int>& data,
+                               const std::vector<RealType>& sign,
+                               const std::vector<ValueType>& det0_list,
+                               const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
+
+  /** update ratios with respect to the reference deteriminant for a given excitation level
+   * @param det_offset offset of the determinant id
+   * @param data_offset offset of the "data" structure
+   * @param sign of determinants
+   * @param det0_list list of reference det value
+   * @param dotProducts_list list of dotProducts
+   *
+   * this is intended to be customized based on EXT_LEVEL
+   */
+  template<unsigned EXT_LEVEL>
+  void mw_updateRatios(const size_t det_offset,
+                       const size_t data_offset,
+                       const RefVector<OffloadVector<ValueType>>& ratios_list,
+                       const std::vector<int>& data,
+                       const std::vector<RealType>& sign,
+                       const std::vector<ValueType>& det0_list,
+                       const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
+
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
    *@param ref ID of the reference determinant
    *@param det0_list takes lists of ValueType(1) for the value or RatioGrad/curRatio for the gradients
@@ -280,7 +305,7 @@ public:
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                                   const RefVector<OffloadVector<ValueType>>& ratios_list);
 
-  /** Function to calculate the ratio of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
    *@param det0 take ValueType(1) for the value or RatioGrad/curRatio for the gradients
    *@param ratios returned computed ratios
@@ -324,7 +349,7 @@ public:
                                              const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                              const RefVector<OffloadVector<ValueType>>& ratios_list);
 
-  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
    *@param psiinv
    *@param psi
@@ -349,7 +374,7 @@ public:
                                                int iat,
                                                OffloadMatrix<GradType>& grads);
 
-  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CalculateRatioFromMatrixElements following the paper by Clark et al. JCP 135(24), 244105
+  /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
    *@param ref ID of the reference determinant
    *@param iat atom ID 
@@ -406,59 +431,6 @@ public:
     BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
   }
 
-  /** evaluate the value of all the unique determinants with one electron moved. Used by the table method
-   *@param P particle set which provides the positions
-   *@param iat the index of the moved electron
-   *@param refPtcl if given, the id of the reference particle in virtual moves
-   */
-  void evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl = -1);
-  /// multi walker version of evaluateDetsForPtclMove
-  void static mw_evaluateDetsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                                         const RefVectorWithLeader<ParticleSet>& P_list,
-                                         int iat);
-
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method
-  void evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat);
-  /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
-  void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                                                 const RefVectorWithLeader<ParticleSet>& P_list,
-                                                 int iat);
-  /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
-  void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
-
-
-  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method
-  void evaluateGrads(ParticleSet& P, int iat);
-  /// multi walker version of mw_evaluateGrads
-  void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
-                               const RefVectorWithLeader<ParticleSet>& P_list,
-                               int iat);
-  /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
-  void evaluateGradsWithSpin(ParticleSet& P, int iat);
-
-  // full evaluation of all the structures from scratch, used in evaluateLog for example
-  void evaluateForWalkerMove(const ParticleSet& P, bool fromScratch = true);
-  // full evaluation of all the structures from scratch, used in evaluateLog for example. Includes spin gradients for spin moves
-  void evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch = true);
-
-  // accessors
-  inline int getNumDets() const { return ciConfigList->size(); }
-  inline int getNumPtcls() const { return NumPtcls; }
-  inline int getFirstIndex() const { return FirstIndex; }
-
-  const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
-  const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  const OffloadMatrix<GradType>& getGrads() const { return grads; }
-  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
-  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
-  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
-  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
-  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
-
-  PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
-  LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
-
-private:
   ///reset the size: with the number of particles
   void resize();
 
@@ -547,7 +519,10 @@ private:
    *  {1, n_singles, n_doubles, n_triples, ...}
    */
   std::shared_ptr<std::vector<int>> ndets_per_excitation_level_;
-  MultiDiracDeterminantCalculator<ValueType> DetCalculator;
+  SmallMatrixDetCalculator<ValueType> det_calculator_;
+
+  /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
+  static constexpr size_t MaxSmallDet = 5;
 };
 
 
