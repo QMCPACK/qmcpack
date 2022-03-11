@@ -53,7 +53,6 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
   for (size_t count = 0; count < nitems; ++count)
   {
     const size_t n = *it2;
-    //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
           (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts, it2 + 1));
@@ -91,8 +90,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       const int J                      = p[i].second;
       dotProducts_list[iw].get()(I, J) = simd::dot(psiinv_list[iw].get()[I], psi_list[iw].get()[J], num);
     }
-    ratios_list[iw].get()[0] = det0_list[iw];
     dotProducts_list[iw].get().updateTo();
+    // reference determinant
+    ratios_list[iw].get()[0] = det0_list[iw];
   }
 
   const int max_ext_level = ndets_per_excitation_level_->size() - 1;

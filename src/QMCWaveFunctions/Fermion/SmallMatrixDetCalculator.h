@@ -151,17 +151,6 @@ template<unsigned NEXCITED>
 class CustomizedMatrixDet;
 
 template<>
-class CustomizedMatrixDet<0>
-{
-public:
-  template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
-  {
-    return 1.0;
-  }
-};
-
-template<>
 class CustomizedMatrixDet<1>
 {
 public:
@@ -265,8 +254,6 @@ inline VALUE calcSmallDeterminant(size_t n, const OffloadMatrix<VALUE>& dotProdu
 {
   switch (n)
   {
-  case 0:
-    return CustomizedMatrixDet<0>::evaluate(dotProducts, it);
   case 1:
     return CustomizedMatrixDet<1>::evaluate(dotProducts, it);
   case 2:
