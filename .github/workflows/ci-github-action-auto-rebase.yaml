@@ -6,8 +6,8 @@ on:
 
 jobs:
   rebase:
-    if: |
-      contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
+    # if: |
+    #   contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
 
     #  &&
     # github.event.review.state == 'approved' &&
