@@ -1,5 +1,5 @@
 on:
-  pull_request:
+  workflow_run:
     branches:
       - develop
       - main
