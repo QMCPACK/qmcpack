@@ -63,12 +63,12 @@ class J1OrbitalSoA : public WaveFunctionComponent
   const int Nions;
   ///number of electrons
   const int Nelec;
-  /* the number of ion groups if ions in 'Ions' particleset are grouped by species. 0 otherwise.
-   * 0 Use slow code path. >= 1 use the code path with ion grouping
-   */
+  /// number of ion groups
   const int NumGroups;
   ///reference to the sources (ions)
   const ParticleSet& Ions;
+  /// the group_id of each particle
+  Vector<int, OffloadPinnedAllocator<int>> grp_ids;
 
   ///variables handled by this orbital
   opt_variables_type myVars;
@@ -86,6 +86,12 @@ class J1OrbitalSoA : public WaveFunctionComponent
   Vector<valT> Lap;
   ///Container for \f$F[ig*NIons+jg]\f$
   std::vector<FT*> J1Functors;
+  /** functor for each ion group
+   * Conceptually, this is different from unique functions.
+   * In a spin polarized system, two species may share the same J1 functor.
+   * FIXME However this is not supported right now. Each species needs its dedicated function.
+   */
+  std::vector<FT*> GroupFunctors;
   ///container for the unique Jastrow functions
   std::vector<std::unique_ptr<FT>> J1UniqueFunctors;
 
@@ -188,6 +194,7 @@ public:
   void initialize(const ParticleSet& els)
   {
     J1Functors.resize(Nions, nullptr);
+    GroupFunctors.resize(NumGroups, nullptr);
     J1UniqueFunctors.resize(Ions.getSpeciesSet().getTotalNum());
     Vat.resize(Nelec);
     Grad.resize(Nelec);
@@ -206,8 +213,7 @@ public:
     for (int i = 0; i < J1Functors.size(); i++)
       if (Ions.getGroupID(i) == source_type)
         J1Functors[i] = afunc.get();
-    //if (J1UniqueFunctors[source_type] != nullptr)
-    //  delete J1UniqueFunctors[source_type];
+    GroupFunctors[source_type]    = afunc.get();
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
 
@@ -281,6 +287,10 @@ public:
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Vat[VP.refPtcl] - computeU(VP.getDistTableAB(myTableID).getDistRow(k)));
   }
+
+  void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                         std::vector<std::vector<ValueType>>& ratios) const override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -701,7 +711,8 @@ public:
 };
 
 extern template class J1OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
-extern template class J1OrbitalSoA<CubicSplineSingle<QMCTraits::RealType, CubicBspline<QMCTraits::RealType, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>>>;
+extern template class J1OrbitalSoA<
+    CubicSplineSingle<QMCTraits::RealType, CubicBspline<QMCTraits::RealType, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>>>;
 extern template class J1OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
 extern template class J1OrbitalSoA<ShortRangeCuspFunctor<QMCTraits::RealType>>;
 extern template class J1OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
