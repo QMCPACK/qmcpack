@@ -98,13 +98,20 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
 
   // populate data, ordered by exc. lvl.
   // make mapping from new to old det idx
+  std::vector<int>data_local;
+  data_local.clear();
   data.clear();
+
   for (const auto& [nex, det_idx_old] : sortMap)
   {
-    data.insert(data.end(), dataMap[nex].begin(), dataMap[nex].end());
+    data_local.insert(data_local.end(), dataMap[nex].begin(), dataMap[nex].end());
     det_idx_order.insert(det_idx_order.end(), det_idx_old.begin(), det_idx_old.end());
     ndets_per_excitation_level[nex] = det_idx_old.size();
   }
+  data.resize(data_local.size());
+  for (size_t i=0;i<data_local.size();i++)
+	  data[i]=data_local[i];
+  data.updateTo(); 
   assert(det_idx_order.size() == nci);
 
   // make reverse mapping (old to new) and reorder confgList by exc. lvl.
@@ -116,7 +123,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
     configlist_sorted[i]              = configlist_unsorted[det_idx_order[i]];
     sign[i]                           = tmp_sign[det_idx_order[i]];
   }
-
+  sign.updateTo();
   // update C2nodes for new det ordering
   C2nodes_sorted.resize(C2nodes_unsorted.size());
   for (int i = 0; i < C2nodes_unsorted.size(); i++)
@@ -524,9 +531,9 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
-  detData                     = std::make_shared<std::vector<int>>();
+  detData                     = std::make_shared<OffloadVector<int>>();
   uniquePairs                 = std::make_shared<VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>>();
-  DetSigns                    = std::make_shared<std::vector<RealType>>();
+  DetSigns                    = std::make_shared<OffloadVector<RealType>>();
   ndets_per_excitation_level_ = std::make_shared<std::vector<int>>();
 
   registerTimers();
@@ -666,16 +673,16 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
   Phi->buildOptVariables(m_act_rot_inds);
 }
 
-int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
+int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
                                          const size_t nel,
                                          const size_t nmo,
                                          std::vector<int>& occ_vec)
 {
-  auto it   = data.begin();
+  size_t it=0; 
   int count = 0; //number of determinants
-  while (it != data.end())
+  while (it < data.size())
   {
-    int k = *it; // number of excitations with respect to the reference matrix
+    int k = data[it]; // number of excitations with respect to the reference matrix
     if (count == 0)
     {
       it += 3 * k + 1;
@@ -686,8 +693,8 @@ int MultiDiracDeterminant::build_occ_vec(const std::vector<int>& data,
       for (int i = 0; i < k; i++)
       {
         //for determining active orbitals
-        occ_vec[*(it + 1 + i)]++;
-        occ_vec[*(it + 1 + k + i)]++;
+        occ_vec[data[it + 1 + i]]++;
+        occ_vec[data[it + 1 + k + i]]++;
       }
       it += 3 * k + 1;
       count++;
@@ -722,6 +729,10 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   const OffloadMatrix<ValueType>& Minv_dn      = pseudo_dn.psiMinv;
   const OffloadMatrix<GradType>& B_grad        = dpsiM;
   const OffloadMatrix<ValueType>& B_lapl       = d2psiM;
+  std::vector<int> detData_local(detData->size());
+  for (size_t i=0;i<detData->size();i++)
+	  detData_local[i]=(*detData)[i];
+
 
   const size_t N1  = FirstIndex;
   const size_t N2  = pseudo_dn.FirstIndex;
@@ -742,7 +753,7 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
                            detValues_up_host_view, detValues_dn_host_view, grads_up_host_view, grads_dn_host_view,
                            lapls_up_host_view, lapls_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up_host_view,
-                           Minv_dn_host_view, B_grad_host_view, B_lapl_host_view, *detData, N1, N2, NP1, NP2,
+                           Minv_dn_host_view, B_grad_host_view, B_lapl_host_view, detData_local, N1, N2, NP1, NP2,
                            lookup_tbl);
 }
 
@@ -766,6 +777,9 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
   const OffloadMatrix<ValueType>& Minv_up      = psiMinv;
   const OffloadMatrix<ValueType>& Minv_dn      = pseudo_dn.psiMinv;
 
+  std::vector<int> detData_local(detData->size());
+  for (size_t i=0;i<detData->size();i++)
+	  detData_local[i]=(*detData)[i];
   Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
   Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
   Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
@@ -774,7 +788,7 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
   Matrix<ValueType> Minv_dn_host_view(const_cast<ValueType*>(Minv_dn.data()), Minv_dn.rows(), Minv_dn.cols());
   Phi->evaluateDerivativesWF(P, optvars, dlogpsi, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up_host_view,
                              detValues_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up_host_view,
-                             Minv_dn_host_view, *detData, lookup_tbl);
+                             Minv_dn_host_view, detData_local, lookup_tbl);
 }
 
 } // namespace qmcplusplus

@@ -88,7 +88,7 @@ public:
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
-  int build_occ_vec(const std::vector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
+  int build_occ_vec(const OffloadVector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
   void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
@@ -259,8 +259,8 @@ private:
                                const size_t data_offset,
                                const RefVector<OffloadVector<ValueType>>& ratios_list,
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
-                               const std::vector<int>& data,
-                               const std::vector<RealType>& sign,
+                               const OffloadVector<int>& data,
+                               const OffloadVector<RealType>& sign,
                                const std::vector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
@@ -277,8 +277,8 @@ private:
   void mw_updateRatios(const size_t det_offset,
                        const size_t data_offset,
                        const RefVector<OffloadVector<ValueType>>& ratios_list,
-                       const std::vector<int>& data,
-                       const std::vector<RealType>& sign,
+                       const OffloadVector<int>& data,
+                       const OffloadVector<RealType>& sign,
                        const std::vector<ValueType>& det0_list,
                        const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
@@ -299,9 +299,9 @@ private:
                                                   const std::vector<ValueType>& det0_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                                  const std::vector<int>& data,
+                                                  const OffloadVector<int>& data,
                                                   const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                  const std::vector<RealType>& sign,
+                                                  const OffloadVector<RealType>& sign,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                                   const RefVector<OffloadVector<ValueType>>& ratios_list);
 
@@ -322,9 +322,9 @@ private:
                                                const OffloadMatrix<ValueType>& psiinv,
                                                const OffloadMatrix<ValueType>& psi,
                                                OffloadMatrix<ValueType>& dotProducts,
-                                               const std::vector<int>& data,
+                                               const OffloadVector<int>& data,
                                                const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                               const std::vector<RealType>& sign);
+                                               const OffloadVector<RealType>& sign);
 
   /** compute the ratio of the excited determinants to the reference determinant
    * @param ratios the output.
@@ -332,9 +332,9 @@ private:
   void BuildDotProductsAndCalculateRatios(int ref,
                                           const OffloadMatrix<ValueType>& psiinv,
                                           const OffloadMatrix<ValueType>& psi,
-                                          const std::vector<int>& data,
+                                          const OffloadVector<int>& data,
                                           const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                          const std::vector<RealType>& sign,
+                                          const OffloadVector<RealType>& sign,
                                           OffloadMatrix<ValueType>& dotProducts,
                                           OffloadVector<ValueType>& ratios);
 
@@ -343,9 +343,9 @@ private:
                                              const std::vector<ValueType>& det0_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                             const std::vector<int>& data,
+                                             const OffloadVector<int>& data,
                                           const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                             const std::vector<RealType>& sign,
+                                             const OffloadVector<RealType>& sign,
                                              const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                              const RefVector<OffloadVector<ValueType>>& ratios_list);
 
@@ -365,9 +365,9 @@ private:
   void BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                const OffloadMatrix<ValueType>& psiinv,
                                                const OffloadMatrix<ValueType>& psi,
-                                               const std::vector<int>& data,
+                                               const OffloadVector<int>& data,
                                                const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                               const std::vector<RealType>& sign,
+                                               const OffloadVector<RealType>& sign,
                                                const ValueType& det0_grad,
                                                OffloadMatrix<ValueType>& dotProducts,
                                                int dx,
@@ -397,9 +397,9 @@ private:
                                                   const std::vector<ValueType>& det0_grad_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                                  const std::vector<int>& data,
+                                                  const OffloadVector<int>& data,
                                                   const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                  const std::vector<RealType>& sign,
+                                                  const OffloadVector<RealType>& sign,
                                                   const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
                                                   const RefVector<OffloadMatrix<GradType>>& ratios_list);
@@ -407,9 +407,9 @@ private:
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(int ref,
                                                                 const OffloadMatrix<ValueType>& psiinv,
                                                                 const OffloadMatrix<ValueType>& psi,
-                                                                const std::vector<int>& data,
+                                                                const OffloadVector<int>& data,
                                                                 const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                                const std::vector<RealType>& sign,
+                                                                const OffloadVector<RealType>& sign,
                                                                 OffloadMatrix<ValueType>& dotProducts,
                                                                 int iat,
                                                                 OffloadMatrix<ValueType>& ratios);
@@ -512,9 +512,9 @@ private:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::shared_ptr<std::vector<int>> detData;
+  std::shared_ptr<OffloadVector<int>> detData;
   std::shared_ptr<VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>> uniquePairs;
-  std::shared_ptr<std::vector<RealType>> DetSigns;
+  std::shared_ptr<OffloadVector<RealType>> DetSigns;
   /** number of unique determinants at each excitation level (relative to reference)
    *  {1, n_singles, n_doubles, n_triples, ...}
    */

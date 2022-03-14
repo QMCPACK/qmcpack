@@ -29,14 +29,14 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
                                                                     const OffloadMatrix<ValueType>& psiinv,
                                                                     const OffloadMatrix<ValueType>& psi,
                                                                     OffloadMatrix<ValueType>& dotProducts,
-                                                                    const std::vector<int>& data,
+                                                                    const OffloadVector<int>& data,
                                                                     const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                                    const std::vector<RealType>& sign)
+                                                                    const OffloadVector<RealType>& sign)
 {
   buildTableTimer.start();
   const size_t num    = psi.extent(1);
   const size_t npairs = pairs.size();
-  const size_t nb_cols = dotProducts.size();
+  const size_t nb_cols = dotProducts.cols();
   //MatrixOperators::product_ABt(psiinv,psi,dotProducts);
   const int* first=pairs.data(0);
   const int* second=pairs.data(1);
@@ -58,8 +58,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref,
     //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
-          det_calculator_.evaluate(dotProducts, it2 + 1, n);
-    ///      (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant2(n, dotProducts.data(), it2 + 1,nb_cols));
+          (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n) : calcSmallDeterminant(n, dotProducts.data(), it2 + 1,nb_cols));
     it2 += 3 * n + 1;
   }
   
@@ -73,9 +72,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     const std::vector<ValueType>& det0_list,
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
-    const std::vector<int>& data,
+    const OffloadVector<int>& data,
     const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-    const std::vector<RealType>& sign,
+    const OffloadVector<RealType>& sign,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
@@ -93,11 +92,10 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   OffloadVector<ValueType*> psi_deviceptr_list(nw);
   OffloadVector<ValueType*> dotProducts_deviceptr_list(nw); 
 
-
   for (size_t iw = 0; iw < nw; iw++)
   {
-	  psiinv_deviceptr_list[iw]=psiinv_list[iw].get().device_data();
-	  psi_deviceptr_list[iw]=psi_list[iw].get().device_data();
+	  psiinv_deviceptr_list[iw]     =psiinv_list[iw].get().device_data();
+	  psi_deviceptr_list[iw]        =psi_list[iw].get().device_data();
 	  dotProducts_deviceptr_list[iw]=dotProducts_list[iw].get().device_data();
   }
 
@@ -107,12 +105,12 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   const size_t nb_cols_psiinv(psiinv_list[0].get().cols());
   const size_t nb_cols_dotProd(dotProducts_list[0].get().cols());
 
-  auto* dotProducts_list_ptr = dotProducts_deviceptr_list.data();
+  auto* dotProducts_list_ptr       = dotProducts_deviceptr_list.data();
   const auto* psiinv_list_ptr      = psiinv_deviceptr_list.data();
   const auto* psi_list_ptr         = psi_deviceptr_list.data();
 
-  ///PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
-  ////        map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
+          map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])") 
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < npairs; ++i)
     {
@@ -120,18 +118,10 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       const int J                      = second[i];
       
       ValueType dotProducts_local = 0.0;
-     /// PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
       for (size_t ind=0;ind<num;ind++)
         dotProducts_local += psiinv_list_ptr[iw][I*nb_cols_psiinv+ind] * psi_list_ptr[iw][J*nb_cols_psi+ind]; 
       dotProducts_list_ptr[iw][I*nb_cols_dotProd+J]=dotProducts_local;
     }
-
-
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-    ratios_list[iw].get()[0] = det0_list[iw];
-    dotProducts_list[iw].get().updateFrom();
-  }
 
   const int max_ext_level = ndets_per_excitation_level_->size() - 1;
 
@@ -189,7 +179,10 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   }
 
   for (size_t iw = 0; iw < nw; iw++)
+  {
+    dotProducts_list[iw].get().updateFrom();
     ratios_list[iw].get().updateFrom();
+  }
 
   readMatTimer.stop();
 }
@@ -198,9 +191,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref,
                                                                const OffloadMatrix<ValueType>& psiinv,
                                                                const OffloadMatrix<ValueType>& psi,
-                                                               const std::vector<int>& data,
+                                                               const OffloadVector<int>& data,
 							       const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                               const std::vector<RealType>& sign,
+                                                               const OffloadVector<RealType>& sign,
                                                                OffloadMatrix<ValueType>& dotProducts,
                                                                OffloadVector<ValueType>& ratios)
 {
@@ -214,9 +207,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
     const std::vector<ValueType>& det0_list,
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
-    const std::vector<int>& data,
+    const OffloadVector<int>& data,
     const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-    const std::vector<RealType>& sign,
+    const OffloadVector<RealType>& sign,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
@@ -227,9 +220,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(int ref,
                                                                     const OffloadMatrix<ValueType>& psiinv,
                                                                     const OffloadMatrix<ValueType>& psi,
-                                                                    const std::vector<int>& data,
+                                                                    const OffloadVector<int>& data,
 								    const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-                                                                    const std::vector<RealType>& sign,
+                                                                    const OffloadVector<RealType>& sign,
                                                                     const ValueType& det0_grad,
                                                                     OffloadMatrix<ValueType>& dotProducts,
                                                                     int dx,
@@ -251,9 +244,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const std::vector<ValueType>& det0_grad_list,
     const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
     const RefVector<OffloadMatrix<ValueType>>& psi_list,
-    const std::vector<int>& data,
+    const OffloadVector<int>& data,
     const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-    const std::vector<RealType>& sign,
+    const OffloadVector<RealType>& sign,
     const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadMatrix<GradType>>& grads_list)
@@ -270,9 +263,9 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
     int ref,
     const OffloadMatrix<ValueType>& psiinv,
     const OffloadMatrix<ValueType>& psi,
-    const std::vector<int>& data,
+    const OffloadVector<int>& data,
     const VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>& pairs,
-    const std::vector<RealType>& sign,
+    const OffloadVector<RealType>& sign,
     OffloadMatrix<ValueType>& dotProducts,
     int iat,
     OffloadMatrix<ValueType>& ratios)
@@ -369,7 +362,8 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     MultiDiracDeterminant& det = (det_list[iw]);
     Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
     det.getPhi()->evaluateValue(P_list[iw], iat, psiV_list_host_view);
-    psiV_list[iw].get().updateTo();
+    ///First heavy Transfer from Host to Device.
+    ///psiV_list[iw].get().updateTo();
   }
   det_leader.evalOrbTimer.stop();
 
@@ -377,15 +371,15 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
-
     const auto& confgList = *det.ciConfigList;
     auto it(confgList[det.ReferenceDeterminant].occup.begin());
     psiMinv_temp_list[iw].get()                                       = psiMinv_list[iw].get();
-    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant] = ValueType(1);
+//    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant] = ValueType(1);
     for (size_t i = 0; i < det_leader.NumPtcls; i++)
       psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[*(it++)];
-    ///Pin psiV_temp to device
-    psiV_temp_list[iw].get().updateTo();
+    ///Pin psiV_temp and new_ratios_to_ref_list to device
+    //psiV_temp_list[iw].get().updateTo();
+    //new_ratios_to_ref_list[iw].get().updateTo();
   }
 
   mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
@@ -668,6 +662,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
+
     det_leader.ExtraStuffTimer.start();
     psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
     const auto& confgList       = *det.ciConfigList;
@@ -695,6 +690,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
 	  psiMinv_temp_list[iw].get().updateTo();
 	  TpsiM_list[iw].get().updateTo();
+
+	  new_ratios_to_ref_list[iw].get().updateTo();
+
   }
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
@@ -724,6 +722,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
       dpsiMinv_list[iw].get().updateTo();
       TpsiM_list[iw].get().updateTo();
+      new_grads_list[iw].get().updateTo();
     }
 
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
@@ -898,6 +897,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
       dpsiMinv_list[iw].get().updateTo();
       TpsiM_list[iw].get().updateTo();
+      grads_list[iw].get().updateTo();
     }
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
@@ -916,8 +916,8 @@ void MultiDiracDeterminant::mw_updateRatios_generic(int ext_level,
                                                     const size_t data_offset,
                                                     const RefVector<OffloadVector<ValueType>>& ratios_list,
                                                     SmallMatrixDetCalculator<ValueType>& det_calculator,
-                                                    const std::vector<int>& data,
-                                                    const std::vector<RealType>& sign,
+                                                    const OffloadVector<int>& data,
+                                                    const OffloadVector<RealType>& sign,
                                                     const std::vector<ValueType>& det0_list,
                                                     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const
 {
@@ -936,20 +936,17 @@ template<unsigned EXT_LEVEL>
 void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
                                             const size_t data_offset,
                                             const RefVector<OffloadVector<ValueType>>& ratios_list,
-                                            const std::vector<int>& data,
-                                            const std::vector<RealType>& sign,
+                                            const OffloadVector<int>& data,
+                                            const OffloadVector<RealType>& sign,
                                             const std::vector<ValueType>& det0_list,
                                             const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const
 {
-  const size_t nb_cols(dotProducts_list[0].get().cols());
-  const size_t nb_rows(dotProducts_list[0].get().rows());
   const size_t nw = ratios_list.size();
   const size_t size_sign=sign.size();
   const size_t nb_cols_dotProd(dotProducts_list[0].get().cols());
   const size_t ndet_ext = (*ndets_per_excitation_level_)[EXT_LEVEL]; 
-  const int* it2 = data.data() + data_offset;
 
-  //OffloadVector<OffloadVector<ValueType>> ratios_deviceptr_list(nw);
+
   OffloadVector<ValueType*> ratios_deviceptr_list(nw);
   OffloadVector<ValueType*> dotProducts_deviceptr_list(nw); 
 
@@ -961,20 +958,26 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
 
   auto* ratios_list_ptr            = ratios_deviceptr_list.data();
   const auto* sign_ptr             = sign.data();
+  const int*  data_ptr             = data.data();
   const auto* det0_list_ptr        = det0_list.data();
   const auto* dotProducts_list_ptr = dotProducts_deviceptr_list.data();
-  PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always,from:ratios_list_ptr[:nw]) \
-		  map(always, to:   sign_ptr[:size_sign], det0_list_ptr[:nw],dotProducts_list_ptr[:nw])")
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to:ratios_list_ptr[:nw]) \
+		  map(always, to: det0_list_ptr[:nw]) \
+		  map(always, to: dotProducts_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < ndet_ext; ++count)
     {
       size_t det_id                 = det_offset + count;
-
-      ratios_list_ptr[iw][det_id] = sign_ptr[det_id] * det0_list_ptr[iw] *
+      ValueType ratios_local;
+      ///Initialization here to avoid one additional transfer and allow the use of collapse(2)
+  //    printf("iw=,  %zu   Before ratios_list_ptr[iw][0] %f \n", iw, ratios_list_ptr[iw][0]);
+      ratios_list_ptr[iw][0] = det0_list_ptr[iw]; 
+      ratios_local = sign_ptr[det_id] * det0_list_ptr[iw] *
           CustomizedMatrixDet<EXT_LEVEL>::evaluate(dotProducts_list_ptr[iw],
-                                                               it2 + 1 + count * (3 * EXT_LEVEL + 1),nb_cols_dotProd);
+                                                               (data_ptr+data_offset) + 1 + count * (3 * EXT_LEVEL + 1),nb_cols_dotProd);
+      ratios_list_ptr[iw][det_id] = ratios_local; 
     }
-
 }
 
 } // namespace qmcplusplus
