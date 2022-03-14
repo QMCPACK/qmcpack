@@ -57,6 +57,9 @@ class J1OrbitalSoA : public WaveFunctionComponent
   using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
   using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
 
+  /// if true use offload
+  const bool use_offload_;
+
   ///table index
   const int myTableID;
   ///number of ions
@@ -184,7 +187,7 @@ class J1OrbitalSoA : public WaveFunctionComponent
   }
 
 public:
-  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els);
+  J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload);
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs) = delete;
 
@@ -496,7 +499,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp);
+    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
     j1copy->Optimizable = Optimizable;
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {

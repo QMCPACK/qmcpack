@@ -90,7 +90,7 @@ struct J1Spin : public WaveFunctionComponent
     lapLogPsi.resize(myVars.size(), ValueDerivVec(Nelec));
   }
 
-  J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
+  J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
       : WaveFunctionComponent("J1Spin", obj_name),
         myTableID(els.addTable(ions)),
         Nions(ions.getTotalNum()),

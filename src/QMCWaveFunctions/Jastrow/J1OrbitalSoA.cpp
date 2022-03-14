@@ -45,8 +45,9 @@ struct J1OrbitalSoAMultiWalkerMem : public Resource
 };
 
 template<typename FT>
-J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els)
+J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
     : WaveFunctionComponent("J1OrbitalSoA", obj_name),
+      use_offload_(use_offload),
       myTableID(els.addTable(ions)),
       Nions(ions.getTotalNum()),
       Nelec(els.getTotalNum()),
@@ -55,6 +56,10 @@ J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& i
 {
   if (myName.empty())
     throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
+
+  if (use_offload_)
+    assert(ions.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
   initialize(els);
 
   // set up grp_ids
@@ -100,6 +105,12 @@ void J1OrbitalSoA<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionC
                                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                          std::vector<std::vector<ValueType>>& ratios) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateRatios(wfc_list, vp_list, ratios);
+    return;
+  }
+
   // add early return to prevent from accessing vp_list[0]
   if (wfc_list.size() == 0)
     return;
