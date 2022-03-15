@@ -777,16 +777,13 @@ struct BsplineFunctor : public OptimizableFunctorBase
         cAttrib.add(type, "type");
         cAttrib.add(optimize, "optimize");
         cAttrib.put(xmlCoefs);
-        std::cout << "Array type " << type << " " << (type != "Array") << std::endl;
         if (type != "Array")
         {
           PRE.error("Unknown correlation type " + type + " in BsplineFunctor." + "Resetting to \"Array\"");
           xmlNewProp(xmlCoefs, (const xmlChar*)"type", (const xmlChar*)"Array");
         }
         std::vector<real_type> params;
-        std::cout << "Array type before putContent  " << params.size() << std::endl;
         putContent(params, xmlCoefs);
-        std::cout << "Array type after " << params.size() << std::endl;
         if (params.size() == NumParams)
           Parameters = params;
         else

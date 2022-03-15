@@ -56,12 +56,12 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
   REQUIRE(u == 0.0);
 }
 
-TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
+void test_J1_spline(const DynamicCoordinateKind kind_selected)
 {
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions_(simulation_cell);
+  ParticleSet ions_(simulation_cell, kind_selected);
   ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
@@ -78,7 +78,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   ions_.update();
 
   elec_.setName("elec");
-  elec_.create({1,1});
+  elec_.create({1, 1});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -94,19 +94,29 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  const char* particles = "<tmp> \
-   <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
-       <correlation elementType=\"C\" rcut=\"10\" size=\"8\" cusp=\"0.0\"> \
-               <coefficients id=\"eC\" type=\"Array\"> \
--0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 \
--0.04445345869 -0.02135082917 \
-               </coefficients> \
-            </correlation> \
-         </jastrow> \
-</tmp> \
-";
+  const char* j1_xml_char = R"XML(<tmp>
+   <jastrow type="One-Body" name="J1" function="bspline" source="ion" print="yes" gpu="no">
+       <correlation elementType="C" rcut="10" size="8" cusp="0.0">
+               <coefficients id="eC" type="Array">
+-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 -0.04445345869 -0.02135082917
+               </coefficients>
+            </correlation>
+         </jastrow>
+</tmp>)XML";
+
+  const char* j1_omptarget_xml_char = R"XML(<tmp>
+   <jastrow type="One-Body" name="J1" function="bspline" source="ion" print="yes" gpu="omptarget">
+       <correlation elementType="C" rcut="10" size="8" cusp="0.0">
+               <coefficients id="eC" type="Array">
+-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 -0.04445345869 -0.02135082917
+               </coefficients>
+            </correlation>
+         </jastrow>
+</tmp>)XML";
+
   Libxml2Document doc;
-  bool okay = doc.parseFromString(particles);
+  bool okay =
+      doc.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char : j1_xml_char);
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
@@ -390,7 +400,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   ResourceCollectionTeamLock<VirtualParticleSet> mw_vp_lock(vp_res, vp_list);
 
   const int ei_table_index = elec_.addTable(ions_);
-  const auto& ei_table1 = elec_.getDistTableAB(ei_table_index);
+  const auto& ei_table1    = elec_.getDistTableAB(ei_table_index);
   // make virtual move of elec 0, reference ion 1
   NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
   const auto& ei_table2 = elec_clone.getDistTableAB(ei_table_index);
@@ -413,5 +423,11 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   CHECK(ValueApprox(nlpp_ratios[1][0]) == ValueType(1.0001773019));
   CHECK(ValueApprox(nlpp_ratios[1][1]) == ValueType(1.000242931));
   CHECK(ValueApprox(nlpp_ratios[1][2]) == ValueType(1.0004189199));
+}
+
+TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
+{
+  test_J1_spline(DynamicCoordinateKind::DC_POS);
+  test_J1_spline(DynamicCoordinateKind::DC_POS_OFFLOAD);
 }
 } // namespace qmcplusplus
