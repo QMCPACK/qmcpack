@@ -56,7 +56,6 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(
   for (size_t count = 0; count < nitems; ++count)
   {
     const size_t n = *it2;
-    //ratios[count]=(count!=ref)?sign[count]*det0*CustomizedMatrixDet(n,dotProducts,it2+1):det0;
     if (count != ref)
       ratios[count] = sign[count] * det0 *
           (n > MaxSmallDet ? det_calculator_.evaluate(dotProducts, it2 + 1, n)
