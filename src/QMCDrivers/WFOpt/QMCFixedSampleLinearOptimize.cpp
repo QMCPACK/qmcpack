@@ -319,7 +319,7 @@ bool QMCFixedSampleLinearOptimize::run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda   = getNonLinearRescale(currentParameterDirections, S);
+      Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -1218,21 +1218,20 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // generate samples and compute weights, local energies, and derivative vectors
   start();
-  
+
   // get number of optimizable parameters
   numParams = optTarget->getNumParams();
 
-  
   // get dimension of the linear method matrices
   N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currentParameters(numParams, 0.0);  
+  std::vector<RealType> currentParameters(numParams, 0.0);
 
   // prepare vectors to hold the parameter update directions for each shift
   std::vector<RealType> parameterDirections;
   parameterDirections.assign(N, 0.0);
-  
+
   // compute the initial cost
 #ifdef QMC_CUDA
   // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
@@ -1241,7 +1240,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 #else
   const RealType initCost = optTarget->computedCost();
 #endif
-  
+
   // say what we are doing
   app_log() << std::endl
             << "*****************************************" << std::endl
@@ -1261,7 +1260,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // build the overlap and hamiltonian matrices
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
-  
+
   // DEBUG: This is supposed to print the
   // hamiltonian and overlap matrices, but doesn't seem to work
   if (do_output_matrices_)
@@ -1296,13 +1295,13 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
   getLowestEigenvector(prdMat, parameterDirections);
-  
+
   // compute the scaling constant to apply to the update
   // and then scale the parameter updates
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);  
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
   for (int i = 0; i < numParams; i++)
     parameterDirections.at(i + 1) *= Lambda;
-  
+
   // now that we are done building the matrices, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
 
@@ -1310,9 +1309,9 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   if (!freeze_parameters_)
   {
     for (int i = 0; i < numParams; i++)
-      {
-	optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
-      }
+    {
+      optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i + 1);
+    }
   }
 
   RealType largestChange(0);
@@ -1330,7 +1329,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   // compute the new cost
   optTarget->IsValid     = true;
   const RealType newCost = optTarget->Cost(false);
-  
+
   app_log() << std::endl
             << "******************************************************************************" << std::endl
             << "Init Cost = " << std::scientific << std::right << std::setw(12) << std::setprecision(4) << initCost
@@ -1371,7 +1370,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
 
   // perform some finishing touches for this linear method iteration
   finish();
-  
+
   // return whether the cost function's report counter is positive
   return (optTarget->getReportCounter() > 0);
 }

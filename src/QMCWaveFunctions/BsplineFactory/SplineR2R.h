@@ -68,9 +68,6 @@ protected:
   IndexType m_nvir_orbs;   // The number of virtual SPOs
   IndexType m_nocc_orbs;   // The number of electrons
 
-  // True if no rotation
-  bool Identity;
-
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
   /// intermediate result vectors
@@ -83,9 +80,10 @@ protected:
 public:
   SplineR2R()
   {
-    is_complex = false;
-    className  = "SplineR2R";
-    KeyWord    = "SplineR2R";
+    m_ntot_orbs = 0;
+    is_complex  = false;
+    className   = "SplineR2R";
+    KeyWord     = "SplineR2R";
   }
 
   void setOrbitalSetSize(int norbs) override;
@@ -115,9 +113,9 @@ public:
   {
     std::cerr << "Function SplineR2R::storeParamsBeforeRotation() not implemented!\n";
   }
-  
-  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy) override;
 
+  // Rotates the splines owned by SplineInst
+  void applyRotation(const ValueMatrix_t& rot_mat, bool use_stored_copy) override;
   
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 

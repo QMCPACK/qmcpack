@@ -163,9 +163,15 @@ def save_eigensystem(mf,gvec_fname = 'gvectors.dat'
     aoR = ao_on_grid(mf.cell)
     gvecs,psig = mo_coeff_to_psig(mf.mo_coeff,aoR,mf.cell.gs,mf.cell.vol)
     nstate,npw,ncomp = psig.shape
+
+    print("DEBUG:")
+    print("mf.kpt= ", mf.kpt)
+    print("mf.mf_mo_energy= ", mf.mo_energy)
+    print("psig= ", psig)
+    print("psig.shape= ", psig.shape)
     for istate in range(nstate):
       entry = {'ikpt':ikpt,'ispin':ispin,'istate':istate,
-        'reduced_k':mf.kpt,'evalue':mf.mo_energy[istate],'evector':psig[istate,:,:]}
+        'reduced_k':mf.kpt,'evalue':mf.mo_energy[0][istate],'evector':psig[istate,:,:]}
       data.append(entry)
     # end for istate
     eig_df = pd.DataFrame(data).set_index(
@@ -210,7 +216,8 @@ def mo_coeff_to_psig(mo_coeff,aoR,cell_gs,cell_vol,int_gvecs=None):
   npw = len(int_gvecs) # number of plane waves 
 
   # put molecular orbitals on real-space grid
-  moR = np.dot(aoR,mo_coeff)
+  # JPT DEBUG: mo_coeff is a list containing 1 element?!
+  moR = np.dot(aoR,mo_coeff[0])
   nao,nmo = moR.shape
   rgrid_shape = 2*np.array(cell_gs)+1
   assert nao == np.prod(rgrid_shape)

@@ -27,23 +27,20 @@ namespace qmcplusplus
   template<typename ST>
   inline void SplineR2R<ST>::setOrbitalSetSize( int norbs )
   {
-    Identity       = false;
     m_ntot_orbs    = norbs;
     myV.resize(m_ntot_orbs);
     myL.resize(m_ntot_orbs);
-    this->checkObject();
+    //this->checkObject();  // Do we need this?
   }
 
-  // Sanity checks:
-  // If no virtuals, ensure that the number of occupied SPOs = total number of SPOs
+  // Checks that we have virtual orbitals
   template <typename ST>
   void SplineR2R<ST>::checkObject() const
   {
-    // If no rotation, ensure the number of electrons = number of orbitals
-    if (Identity && m_ntot_orbs != m_nocc_orbs )
-      throw std::runtime_error("SplineR2R::checkObject() Norbs and Nelec must be equal if Identity = true!");
+    std::cerr << "SplineR2R::checkObject():\n";
+    std::cerr << " m_ntot_orbs= " << m_ntot_orbs << "\n";
+    std::cerr << " m_nocc_orbs= " << m_nocc_orbs << "\n";
   }
-  // End function
 
   /* 
      This is called by RotatedSPOs::apply_rotation()...
@@ -74,19 +71,16 @@ namespace qmcplusplus
 {
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
   auto spline_ptr = SplineInst->getSplinePtr();
-  if ( spline_ptr == nullptr )
-    {
-      APP_ABORT("ERROR in SplineR2R::applyRotation()! spline_ptr is nullptr.");
-    }
+  assert(spline_ptr != nullptr);
 
   /* 
      ~~ Spline stuff ~~
-     num_splines = Total number of SPOs per spin channel (determinant)
-     coefs_size  = Size of the coefs = N_x_coefs * N_y_coefs * N_z_coefs * N_orbs
-     spl_coefs   = Raw pointer to a hunk o' memory
+     spl_coefs      = Raw pointer to a hunk o' memory
+     BasisSetSize   = Number of orbitals + possibly some padding
+     OrbitalSetSize = Number of spline coefs per orbital
      
      Because coefs is a raw pointer, we have to take care to index into it
-     with some care. Supposedly, the value of the nth SPO at a point xi, yi, zi
+     with some care. The value of the nth SPO at a point xi, yi, zi
      is given by:
 
      coefs[offset] = x_stride*xi + y_stride*yi + z_stride*zi + n
@@ -96,37 +90,31 @@ namespace qmcplusplus
      boundary conditions. For 3d PBC's, the padding seems to be 3 
      (Cf. MultiBspline.hpp). I.e. for a 100x100x100 mesh, the "size" of 
      the x-,y-, and z-dimensions of the coefs is actually 103x103x103. 
-     The orbital index is padded in order to achieve 16byte? alignment.
+     The orbital index is padded for SIMD alignment.
 
-     You can think of spl_coefs as pointing to a matrix of size
-     (Nx*Ny*Nz) x Nsplines, with the spline index adjacent in memory.     
+     Here, we don't care about the individual x,y,z components. For our
+     purposes, we can think of spl_coefs as pointing to a matrix of size
+     (Nx*Ny*Nz) x Nsplines, with the spline index adjacent in memory.
 
-     Due to SIMD alignment, rot_mat may be smaller than BasisSetSize
-     so we put rot_mat inside bigger matrix. Padding is at the end, 
-     so put rot_mat at top left corner of tmpU. 
-  
-     // This stuff is not needed, but I want to keep here just in case
-     // someone needs to see how the splines are laid out in memory
-     // in the future...
-     const auto x_stride = spline_ptr->x_stride;
-     const auto y_stride = spline_ptr->y_stride;
-     const auto z_stride = spline_ptr->z_stride;
-     
-     const auto nx_nopad = spline_ptr->x_grid.num;
-     const auto ny_nopad = spline_ptr->y_grid.num;
-     const auto nz_nopad = spline_ptr->z_grid.num;
-     
-     // Padding in x,y,z directions
-     // Cf. multi_bspline_create.c lines 290-292.
-     const auto nz_pad = y_stride / z_stride;
-     const auto ny_pad = x_stride / y_stride;
-     const auto nx_pad = coefs_tot_size / ny_pad / nz_pad / z_stride;
+     However, due to SIMD alignment, Nsplines may be larger than the actual
+     number of splined orbitals, which means that in practice rot_mat may 
+     be smaller than BasisSetSize. Therefore, we put rot_mat inside "tmpU",
+     a bigger matrix. The padding of the splines is at the end, so if we 
+     put rot_mat at top left corner of tmpU, then we can apply tmpU to the
+     spl_coefs safely regardless of padding.   
+
+     Typically, OrbitalSetSize >> BasisSetSize, so our spl_coefs "matrix"
+     is very tall and skinny.
   */
   const auto spl_coefs      = spline_ptr->coefs;
-  const auto num_splines    = spline_ptr->num_splines;
+  const auto BasisSetSize   = spline_ptr->num_splines;  // May include padding
   const auto coefs_tot_size = spline_ptr->coefs_size;
-  const auto OrbitalSetSize = coefs_tot_size / num_splines;
-  const auto BasisSetSize   = num_splines;
+  const auto OrbitalSetSize = coefs_tot_size / BasisSetSize;
+  const auto TrueNOrbs      = rot_mat.size1(); // == BasisSetSize - padding
+
+  assert(BasisSetSize >= TrueNOrbs);
+
+  // Fill top left corner of tmpU with rot_mat
   ValueMatrix_t tmpU;
   tmpU.resize(BasisSetSize, BasisSetSize);
   std::fill(tmpU.begin(), tmpU.end(), 0.0);
