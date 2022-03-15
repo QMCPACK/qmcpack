@@ -962,7 +962,6 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
       size_t det_id = det_offset + count;
       ValueType ratios_local;
       ///Initialization here to avoid one additional transfer and allow the use of collapse(2)
-      //    printf("iw=,  %zu   Before ratios_list_ptr[iw][0] %f \n", iw, ratios_list_ptr[iw][0]);
       ratios_list_ptr[iw][0] = det0_list_ptr[iw];
       ratios_local           = sign_ptr[det_id] * det0_list_ptr[iw] *
           CustomizedMatrixDet<EXT_LEVEL>::evaluate(dotProducts_list_ptr[iw],
