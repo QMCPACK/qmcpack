@@ -36,7 +36,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   // If no name given, it gets set to time and date
   //   and the title is set equal to the name
   REQUIRE(proj1.getTitle().size() > 0);
-  REQUIRE(proj1.getTitle() == proj1.getName());
 
   ProjectData proj2;
   REQUIRE(proj2.getSeriesIndex() == 0);
@@ -79,5 +78,59 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 
   // host and date nodes get added for output to the .cont.xml file
 }
+
+TEST_CASE("ProjectData::TestDriverEpoch", "[ohmmsapp]")
+{
+  using DE = ProjectData::DriverEpoch;
+  SECTION("driver epoch batch")
+  {
+    ProjectData proj;
+
+    const char* xml_input = "<project id='test1' series='1'><parameter name='driver_epoch'>batch</parameter></project>";
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(xml_input);
+    REQUIRE(okay);
+
+    xmlNodePtr root = doc.getRoot();
+
+    proj.put(root);
+    REQUIRE(proj.getSeriesIndex() == 1);
+    REQUIRE(proj.get_driver_epoch() == DE::BATCH);
+  }
+  SECTION("driver epoch legacy")
+  {
+      ProjectData proj;
+      REQUIRE(proj.get_driver_epoch() == DE::LEGACY);    
+
+    const char* xml_input =
+        "<project id='test1' series='1'><parameter name='driver_epoch'>legacy</parameter></project>";
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(xml_input);
+    REQUIRE(okay);
+
+    xmlNodePtr root = doc.getRoot();
+
+    proj.put(root);
+    REQUIRE(proj.getSeriesIndex() == 1);
+    REQUIRE(proj.get_driver_epoch() == DE::LEGACY);    
+  }
+  SECTION("driver epoch bad value")
+  {
+    ProjectData proj;
+
+    const char* xml_input =
+        "<project id='test1' series='1'><parameter name='driver_epoch'>linear</parameter></project>";
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(xml_input);
+    REQUIRE(okay);
+
+    xmlNodePtr root = doc.getRoot();
+
+    REQUIRE_THROWS(proj.put(root));
+  }
+
+  // host and date nodes get added for output to the .cont.xml file
+}
+
 
 } // namespace qmcplusplus

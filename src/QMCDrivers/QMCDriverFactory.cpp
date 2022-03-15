@@ -99,9 +99,11 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
 
   const int nchars = qmc_mode.size();
 
-  // Begin to separate batch input reading from the legacy input parsing
-  if (project_data_.get_driver_epoch() == "batched")
+  using DE = ProjectData::DriverEpoch;
+  DE driver_epoch = project_data_.get_driver_epoch();
+  switch (driver_epoch)
   {
+  case DE::BATCH:
 #if defined(QMC_CUDA)
     throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
                              "Please use OpenMP offload build.");
@@ -115,41 +117,42 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
     return das;
-  }
-
+  // Begin to separate batch epoch input reading from the legacy input parsing
+  case DE::LEGACY:
 #if defined(QMC_CUDA)
-  if (qmc_mode.find("batch") < nchars)
-    throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
-                             "Please use OpenMP offload build.");
+    if (qmc_mode.find("batch") < nchars)
+      throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
+                               "Please use OpenMP offload build.");
 #endif
-  if (qmc_mode.find("linear_batch") < nchars) // order matters here
-    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
-  else if (qmc_mode.find("linear") < nchars)
-    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
-  else
-  {
-    if (qmc_mode.find("ptcl") < nchars)
-      das.what_to_do[UPDATE_MODE] = 1;
-    if (qmc_mode.find("mul") < nchars)
-      das.what_to_do[MULTIPLE_MODE] = 1;
-    if (qmc_mode.find("warp") < nchars)
-      das.what_to_do[SPACEWARP_MODE] = 1;
-    if (qmc_mode.find("rmc") < nchars)
-      das.new_run_type = QMCRunType::RMC;
-    else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
-      das.new_run_type = QMCRunType::VMC_BATCH;
-    else if (qmc_mode.find("vmc") < nchars)
-      das.new_run_type = QMCRunType::VMC;
-    else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
-      das.new_run_type = QMCRunType::DMC_BATCH;
-    else if (qmc_mode.find("dmc") < nchars)
-      das.new_run_type = QMCRunType::DMC;
-    else if (qmc_mode == "wftest")
-      das.new_run_type = QMCRunType::WF_TEST;
+    if (qmc_mode.find("linear_batch") < nchars) // order matters here
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
+    else if (qmc_mode.find("linear") < nchars)
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
     else
-      throw std::runtime_error("qmc method cannot be empty!");
+    {
+      if (qmc_mode.find("ptcl") < nchars)
+        das.what_to_do[UPDATE_MODE] = 1;
+      if (qmc_mode.find("mul") < nchars)
+        das.what_to_do[MULTIPLE_MODE] = 1;
+      if (qmc_mode.find("warp") < nchars)
+        das.what_to_do[SPACEWARP_MODE] = 1;
+      if (qmc_mode.find("rmc") < nchars)
+        das.new_run_type = QMCRunType::RMC;
+      else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
+        das.new_run_type = QMCRunType::VMC_BATCH;
+      else if (qmc_mode.find("vmc") < nchars)
+        das.new_run_type = QMCRunType::VMC;
+      else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
+        das.new_run_type = QMCRunType::DMC_BATCH;
+      else if (qmc_mode.find("dmc") < nchars)
+        das.new_run_type = QMCRunType::DMC;
+      else if (qmc_mode == "wftest")
+        das.new_run_type = QMCRunType::WF_TEST;
+      else
+        throw std::runtime_error("qmc method cannot be empty!");
+    }
+    return das;
   }
-  return das;
 }
 
 std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr cur,
@@ -270,9 +273,9 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE_BATCH)
   {
 #ifdef MIXED_PRECISION
-    APP_ABORT(
-        "QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. Please use "
-        "full precision build instead.");
+    APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
+              "Please use "
+              "full precision build instead.");
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
         QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,

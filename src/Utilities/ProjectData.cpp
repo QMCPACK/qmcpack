@@ -27,12 +27,11 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const std::string& driver_epoch)
+ProjectData::ProjectData(ProjectData::DriverEpoch driver_epoch)
     : m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
 {
   myComm  = OHMMS::Controller;
   m_title = getDateAndTime("%Y%m%dT%H%M");
-  setName(m_title);
 }
 
 void ProjectData::setCommunicator(Communicate* c) { myComm = c; }
@@ -181,11 +180,11 @@ bool ProjectData::put(xmlNodePtr cur)
 
   ParameterSet m_param;
   m_param.add(max_cpu_secs_, "max_seconds");
-  m_param.add(driver_epoch_, "driver_epoch");
+  m_param.add(driver_epoch_str_, "driver_epoch");
   m_param.put(cur);
 
-  if (!(driver_epoch_ == "legacy" || driver_epoch_ == "batched"))
-    throw UniformCommunicateError("driver_epoch has valid values of only \"legacy\" or \"batched\"");
+  if (!driver_epoch_str_.empty())
+    driver_epoch_ = lookupDriverEpoch(driver_epoch_str_);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
@@ -223,6 +222,18 @@ bool ProjectData::put(xmlNodePtr cur)
   }
   reset();
   return true;
+}
+
+ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_value) {
+  std::string enum_value_str(lowerCase(enum_value));
+  try
+  {
+    return lookup_input_enum_value.at(enum_value_str);
+  }
+  catch (std::out_of_range& oor_exc)
+  {
+    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
+  }
 }
 
 } // namespace qmcplusplus

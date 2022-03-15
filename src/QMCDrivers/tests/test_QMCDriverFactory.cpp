@@ -104,7 +104,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
 
   SECTION("driver epoch behavior")
   {
-    ProjectData test_project("batched");
+    ProjectData test_project(ProjectData::DriverEpoch::BATCH);
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
@@ -174,7 +174,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
 
   SECTION("driver epoch behavior")
   {
-    ProjectData test_project("batched");
+    ProjectData test_project(ProjectData::DriverEpoch::BATCH);
 
     QMCDriverFactory driver_factory(test_project);
 

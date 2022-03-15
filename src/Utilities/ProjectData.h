@@ -38,8 +38,26 @@ namespace qmcplusplus
 class ProjectData
 {
 public:
+  enum class DriverEpoch
+  {
+    LEGACY,
+    BATCH
+  };
+
+private:
+  inline static const std::unordered_map<std::string, DriverEpoch> lookup_input_enum_value{{"legacy",
+                                                                                            DriverEpoch::LEGACY},
+                                                                                           {"batch",
+                                                                                            DriverEpoch::BATCH},
+                                                                                           {"batched",
+                                                                                            DriverEpoch::BATCH}
+
+  };
+
+public:
   /// constructor
-  ProjectData(const std::string& driver_epoch = "legacy");
+  ProjectData() = default;
+  ProjectData(DriverEpoch de);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -86,13 +104,11 @@ public:
 
   int getSeriesIndex() const { return m_series; }
   int getMaxCPUSeconds() const { return max_cpu_secs_; }
-  const std::string& get_driver_epoch() const { return driver_epoch_; }
-
-  const std::string& getName() const { return name_; }
-  void setName(const std::string& aname) { name_ = aname; }
+  const DriverEpoch get_driver_epoch() const { return driver_epoch_; }
 
 private:
-  std::string name_;
+  static DriverEpoch lookupDriverEpoch(const std::string& enum_value);
+
   ///title of the project
   std::string m_title;
 
@@ -123,7 +139,9 @@ private:
   ///max cpu seconds
   int max_cpu_secs_;
 
-  std::string driver_epoch_;
+  // The input string for the parser
+  std::string driver_epoch_str_;
+  DriverEpoch driver_epoch_ = DriverEpoch::LEGACY;
 };
 } // namespace qmcplusplus
 
