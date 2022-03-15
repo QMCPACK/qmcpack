@@ -81,13 +81,13 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
       }
   }
   pairs.resize(pairs_local.size());
-  int* first=pairs.data(0);
-  int* second=pairs.data(1);
+  int* first  = pairs.data(0);
+  int* second = pairs.data(1);
 
-  for (size_t i=0; i<pairs_local.size();i++)
+  for (size_t i = 0; i < pairs_local.size(); i++)
   {
-    first[i]=pairs_local[i].first;
-    second[i]=pairs_local[i].second;
+    first[i]  = pairs_local[i].first;
+    second[i] = pairs_local[i].second;
   }
   pairs.updateTo();
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
@@ -98,7 +98,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
 
   // populate data, ordered by exc. lvl.
   // make mapping from new to old det idx
-  std::vector<int>data_local;
+  std::vector<int> data_local;
   data_local.clear();
   data.clear();
 
@@ -109,9 +109,9 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
     ndets_per_excitation_level[nex] = det_idx_old.size();
   }
   data.resize(data_local.size());
-  for (size_t i=0;i<data_local.size();i++)
-	  data[i]=data_local[i];
-  data.updateTo(); 
+  for (size_t i = 0; i < data_local.size(); i++)
+    data[i] = data_local[i];
+  data.updateTo();
   assert(det_idx_order.size() == nci);
 
   // make reverse mapping (old to new) and reorder confgList by exc. lvl.
@@ -532,7 +532,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
 
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
   detData                     = std::make_shared<OffloadVector<int>>();
-  uniquePairs                 = std::make_shared<VectorSoaContainer<int,2,OffloadPinnedAllocator<int>>>();
+  uniquePairs                 = std::make_shared<VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>>();
   DetSigns                    = std::make_shared<OffloadVector<RealType>>();
   ndets_per_excitation_level_ = std::make_shared<std::vector<int>>();
 
@@ -678,7 +678,7 @@ int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
                                          const size_t nmo,
                                          std::vector<int>& occ_vec)
 {
-  size_t it=0; 
+  size_t it = 0;
   int count = 0; //number of determinants
   while (it < data.size())
   {
@@ -730,8 +730,8 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   const OffloadMatrix<GradType>& B_grad        = dpsiM;
   const OffloadMatrix<ValueType>& B_lapl       = d2psiM;
   std::vector<int> detData_local(detData->size());
-  for (size_t i=0;i<detData->size();i++)
-	  detData_local[i]=(*detData)[i];
+  for (size_t i = 0; i < detData->size(); i++)
+    detData_local[i] = (*detData)[i];
 
 
   const size_t N1  = FirstIndex;
@@ -778,8 +778,8 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
   const OffloadMatrix<ValueType>& Minv_dn      = pseudo_dn.psiMinv;
 
   std::vector<int> detData_local(detData->size());
-  for (size_t i=0;i<detData->size();i++)
-	  detData_local[i]=(*detData)[i];
+  for (size_t i = 0; i < detData->size(); i++)
+    detData_local[i] = (*detData)[i];
   Vector<ValueType> detValues_up_host_view(const_cast<ValueType*>(detValues_up.data()), detValues_up.size());
   Vector<ValueType> detValues_dn_host_view(const_cast<ValueType*>(detValues_dn.data()), detValues_dn.size());
   Matrix<ValueType> M_up_host_view(const_cast<ValueType*>(M_up.data()), M_up.rows(), M_up.cols());
