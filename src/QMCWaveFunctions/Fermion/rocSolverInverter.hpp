@@ -15,7 +15,11 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-// This file assumes thats QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
+
+#if !defined(QMC_CUDA2HIP)
+#error rocSolverInverter.hpp expects QMC_CUDA2HIP to be defined
+#endif
+// This file assumes that QMC_CUDA2HIP is defined and that creates HIP versions of these functions (despite being labeled with "CUDA")
 #include "CUDA/CUDAruntime.hpp"
 #include "CUDA/CUDAallocator.hpp"
 #include "ROCm/rocsolver.hpp"
