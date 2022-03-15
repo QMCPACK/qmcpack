@@ -309,8 +309,18 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   REQUIRE(std::real(j1->get_log_value()) == Approx(0.32013531536));
 
   // test to make sure that setting cusp for J1 works properly
-  const char* particles2 = R"XML(<tmp>
-<jastrow type="One-Body" name="J1" function="bspline" source="ion" print="yes">
+  const char* j1_xml_char_2 = R"XML(<tmp>
+<jastrow type="One-Body" name="J1" function="bspline" source="ion" print="yes" gpu="no">
+    <correlation elementType="C" rcut="10" size="8" cusp="2.0">
+        <coefficients id="eC" type="Array">
+ -0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 -0.04445345869 -0.02135082917
+        </coefficients>
+    </correlation>
+</jastrow>
+</tmp>)XML";
+
+  const char* j1_omptarget_xml_char_2 = R"XML(<tmp>
+<jastrow type="One-Body" name="J1" function="bspline" source="ion" print="yes" gpu="omptarget">
     <correlation elementType="C" rcut="10" size="8" cusp="2.0">
         <coefficients id="eC" type="Array">
  -0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 -0.04445345869 -0.02135082917
@@ -320,7 +330,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
 </tmp>)XML";
 
   Libxml2Document doc2;
-  bool okay2 = doc2.parseFromString(particles2);
+  bool okay2 = doc2.parseFromString(kind_selected == DynamicCoordinateKind::DC_POS_OFFLOAD ? j1_omptarget_xml_char_2
+                                                                                           : j1_xml_char_2);
   REQUIRE(okay2);
 
   xmlNodePtr root2 = doc2.getRoot();
