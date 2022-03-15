@@ -88,7 +88,6 @@ set(SPOSET_SRC
     test_pw.cpp
     ${MO_SRCS})
 set(JASTROW_SRC
-    test_bspline_jastrow.cpp
     test_counting_jastrow.cpp
     test_polynomial_eeI_jastrow.cpp
     test_rpa_jastrow.cpp
@@ -96,6 +95,7 @@ set(JASTROW_SRC
     test_kspace_jastrow.cpp
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
+    test_J1_bspline.cpp
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
