@@ -162,20 +162,20 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
 
-  const char* jas_input = R"XML(<tmp> \
-<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no"> \
-   <correlation size="10" speciesA="u" speciesB="u"> \
-      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-   </correlation> \
-</jastrow> \
+  const char* jas_input = R"XML(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+   <correlation size="10" speciesA="u" speciesB="u">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+   </correlation>
+</jastrow>
 </tmp>)XML";
 
-  const char* jas_omp_input = R"XML(<tmp> \
-<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="omptarget"> \
-   <correlation size="10" speciesA="u" speciesB="u"> \
-      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-   </correlation> \
-</jastrow> \
+  const char* jas_omp_input = R"XML(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="omptarget">
+   <correlation size="10" speciesA="u" speciesB="u">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+   </correlation>
+</jastrow>
 </tmp>)XML";
 
   Libxml2Document doc_jas;

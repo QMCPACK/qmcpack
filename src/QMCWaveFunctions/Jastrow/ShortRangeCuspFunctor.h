@@ -22,6 +22,7 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "ModernStringUtils.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -55,7 +56,6 @@ namespace qmcplusplus
 template<class T>
 struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 {
-
   //*****************************************************************************//
   //*******************************  Member Data ********************************//
   //*****************************************************************************//
@@ -84,8 +84,15 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   //*****************************************************************************//
 
   ///default constructor
-  ShortRangeCuspFunctor() : Opt_A(false), Opt_R0(true), Opt_B(true), A(1.0), R0(0.06),
-                            ID_A("string_not_set"), ID_R0("string_not_set"), ID_B("string_not_set")
+  ShortRangeCuspFunctor()
+      : Opt_A(false),
+        Opt_R0(true),
+        Opt_B(true),
+        A(1.0),
+        R0(0.06),
+        ID_A("string_not_set"),
+        ID_R0("string_not_set"),
+        ID_B("string_not_set")
   {
     cutoff_radius = 1.0e4; //some big range
     reset();
@@ -112,7 +119,6 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   ///compute U(r) at a particular value of r
   inline real_type evaluate(real_type r) const
   {
-
     // the functor will be almost exactly zero at long range, so just return that if r is beyond the hard cutoff
     if (r >= cutoff_radius)
       return 0.0;
@@ -122,24 +128,24 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
     // sum up the sigmoidal function expansion
     real_type sig_sum = 0.0;
-    real_type sn = s * s; // s^n
-    for (int i = 0; i < B.size(); i++) {
-      sig_sum += B[i] * sn / ( 1.0 + sn );
-      sn *= s;  // update s^n
+    real_type sn      = s * s; // s^n
+    for (int i = 0; i < B.size(); i++)
+    {
+      sig_sum += B[i] * sn / (1.0 + sn);
+      sn *= s; // update s^n
     }
 
     // return U(r)
-    return -1.0 * std::exp(-s) * ( A * R0 + sig_sum );
-
+    return -1.0 * std::exp(-s) * (A * R0 + sig_sum);
   }
 
   ///compute U(r), dU/dr, and d^2U/dr^2 at a particular value of r
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
-
     // the functor will be almost exactly zero at long range, so just return that if r is beyond the hard cutoff
-    if (r >= cutoff_radius) {
-      dudr = 0.0;
+    if (r >= cutoff_radius)
+    {
+      dudr   = 0.0;
       d2udr2 = 0.0;
       return 0.0;
     }
@@ -154,18 +160,19 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     real_type sig_sum_0 = 0.0; // contributes to U(r)
     real_type sig_sum_1 = 0.0; // contributes to dU/dr
     real_type sig_sum_2 = 0.0; // contributes to d2U/dr2
-    real_type n = 2.0;
-    real_type sn = s * s; // s^{n  }
-    real_type snm1 = s;   // s^{n-1}
-    real_type snm2 = 1.0; // s^{n-2}
-    for (int i = 0; i < B.size(); i++) {
-      const real_type d = 1.0 + sn;
-      const real_type d2 = d * d;
-      const real_type soverd = s / d;
+    real_type n         = 2.0;
+    real_type sn        = s * s; // s^{n  }
+    real_type snm1      = s;     // s^{n-1}
+    real_type snm2      = 1.0;   // s^{n-2}
+    for (int i = 0; i < B.size(); i++)
+    {
+      const real_type d       = 1.0 + sn;
+      const real_type d2      = d * d;
+      const real_type soverd  = s / d;
       const real_type noverd2 = n / d2;
       sig_sum_0 += B[i] * sn / d;
-      sig_sum_1 += B[i] * ( sn * sn + sn - n * snm1 ) / d2;
-      sig_sum_2 += B[i] * snm2 * ( d * noverd2 * noverd2 * ( sn - 1.0 ) + noverd2 * ( 1.0 + 2.0 * s ) - soverd * s );
+      sig_sum_1 += B[i] * (sn * sn + sn - n * snm1) / d2;
+      sig_sum_2 += B[i] * snm2 * (d * noverd2 * noverd2 * (sn - 1.0) + noverd2 * (1.0 + 2.0 * s) - soverd * s);
       snm2 = snm1; // update s^{n-2}
       snm1 = sn;   // update s^{n-1}
       sn *= s;     // update s^{n  }
@@ -183,8 +190,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     d2udr2 = -A * exoverR0 + exoverR02 * sig_sum_2;
 
     // return U(r)
-    return -1.0 * ex * ( A * R0 + sig_sum_0 );
-
+    return -1.0 * ex * (A * R0 + sig_sum_0);
   }
 
   ///compute U(r), dU/dr, d^2U/dr^2, and d^3U/dr^3
@@ -207,6 +213,33 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       if (idx != iat)
         sum += evaluate(_distArray[idx]);
     return sum;
+  }
+
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const ShortRangeCuspFunctor* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const T* mw_dist,
+                           const int dist_stride,
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    for (int ip = 0; ip < num_pairs; ip++)
+    {
+      mw_vals[ip] = 0;
+      for (int j = 0; j < n_src; j++)
+      {
+        const int ig = grp_ids[j];
+        auto& functor(*functors[ig]);
+        if (j != ref_at[ip])
+          mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+      }
+    }
   }
 
   ///compute U(r), dU/dr, and d^2U/dr^2 at multiple values of r
@@ -250,7 +283,6 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   /// compute derivatives of U(r), dU/dr, and d^2U/dr^2 with respect to the variational parameters
   inline bool evaluateDerivatives(real_type r, std::vector<TinyVector<real_type, 3>>& derivs) override
   {
-
     // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
 
@@ -268,33 +300,34 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     // evaluate derivatives with respect to the cusp condition variable A
     if (Opt_A)
     {
-      derivs[i][0] = -ex * R0;   //dU/da
-      derivs[i][1] = ex;         //d(dU/da)/dr
-      derivs[i][2] = -exoverR0;  //d^2 (dU/da)/dr^2
+      derivs[i][0] = -ex * R0;  //dU/da
+      derivs[i][1] = ex;        //d(dU/da)/dr
+      derivs[i][2] = -exoverR0; //d^2 (dU/da)/dr^2
       ++i;
     }
 
     // evaluate derivatives with respect to the soft cutoff radius
     if (Opt_R0)
     {
-
       // sum up terms related to the sigmoidal exansion
-      real_type n = 2.0;
-      real_type sn = s * s; // s^{n  }
-      real_type snm1 = s;   // s^{n-1}
-      real_type snm2 = 1.0; // s^{n-2}
-      real_type sig_sum_0 = 0.0; // contributes to dUdR0
-      real_type sig_sum_1 = 0.0; // contributes to d(dU/dR0)/dr
-      real_type sig_sum_2 = 0.0; // contributes to d^2(dU/dR0)/dr^2
-      for (int j = 0; j < B.size(); j++) {
-        const real_type d = 1.0 + sn;
-        const real_type d2 = d * d;
-        const real_type soverd = s / d;
+      real_type n         = 2.0;
+      real_type sn        = s * s; // s^{n  }
+      real_type snm1      = s;     // s^{n-1}
+      real_type snm2      = 1.0;   // s^{n-2}
+      real_type sig_sum_0 = 0.0;   // contributes to dUdR0
+      real_type sig_sum_1 = 0.0;   // contributes to d(dU/dR0)/dr
+      real_type sig_sum_2 = 0.0;   // contributes to d^2(dU/dR0)/dr^2
+      for (int j = 0; j < B.size(); j++)
+      {
+        const real_type d       = 1.0 + sn;
+        const real_type d2      = d * d;
+        const real_type soverd  = s / d;
         const real_type noverd2 = n / d2;
-        sig_sum_0 += B[j] * sn * ( noverd2 - soverd );
-        sig_sum_1 += B[j] * snm1 * ( d * noverd2 * noverd2 * ( 1.0 - sn ) - 2.0 * noverd2 * s + soverd * ( s - 1.0 ) );
-        sig_sum_2 += B[j] * snm2 * (   s * ( 3.0 * s - 1.0 ) * noverd2 - s * ( s - 2.0 ) * soverd
-                                     + ( n + n * sn * ( sn - 4.0 ) + ( 3.0 * s + 1.0 ) * ( sn * sn - 1.0 ) ) * noverd2 * noverd2 );
+        sig_sum_0 += B[j] * sn * (noverd2 - soverd);
+        sig_sum_1 += B[j] * snm1 * (d * noverd2 * noverd2 * (1.0 - sn) - 2.0 * noverd2 * s + soverd * (s - 1.0));
+        sig_sum_2 += B[j] * snm2 *
+            (s * (3.0 * s - 1.0) * noverd2 - s * (s - 2.0) * soverd +
+             (n + n * sn * (sn - 4.0) + (3.0 * s + 1.0) * (sn * sn - 1.0)) * noverd2 * noverd2);
         snm2 = snm1; // update s^{n-2}
         snm1 = sn;   // update s^{n-1}
         sn *= s;     // update s^{n  }
@@ -302,45 +335,43 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       }
 
       // compute terms related to the cusp-inducing term
-      const real_type cusp_part_0 = -A * ex        * ( s + 1.0 ); // contributes to dUdR0
-      const real_type cusp_part_1 =  A * exoverR0  * s;           // contributes to d(dU/dR0)/dr
-      const real_type cusp_part_2 = -A * exoverR02 * ( s - 1.0 ); // contributes to d^2(dU/dR0)/dr^2
+      const real_type cusp_part_0 = -A * ex * (s + 1.0);        // contributes to dUdR0
+      const real_type cusp_part_1 = A * exoverR0 * s;           // contributes to d(dU/dR0)/dr
+      const real_type cusp_part_2 = -A * exoverR02 * (s - 1.0); // contributes to d^2(dU/dR0)/dr^2
 
       // compute the desired derivatives
-      derivs[i][0] = cusp_part_0 + exoverR0  * sig_sum_0; // dUdR0
+      derivs[i][0] = cusp_part_0 + exoverR0 * sig_sum_0;  // dUdR0
       derivs[i][1] = cusp_part_1 + exoverR02 * sig_sum_1; // d(dU/dR0)/dr
       derivs[i][2] = cusp_part_2 + exoverR03 * sig_sum_2; // d^2(dU/dR0)/dr^2
 
       // increment the index tracking where to put derivatives
       ++i;
-
     }
 
     // evaluate derivatives with respect to the sigmoidal expansion coefficients
     if (Opt_B)
     {
-
       // loop over the terms in the expansion over sigmoidal functions
-      real_type n = 2.0;
-      real_type sn = s * s; // s^{n  }
-      real_type snm1 = s;   // s^{n-1}
-      real_type snm2 = 1.0; // s^{n-2}
-      for (int j = 0; j < B.size(); j++) {
-
+      real_type n    = 2.0;
+      real_type sn   = s * s; // s^{n  }
+      real_type snm1 = s;     // s^{n-1}
+      real_type snm2 = 1.0;   // s^{n-2}
+      for (int j = 0; j < B.size(); j++)
+      {
         // compute some useful values
-        const real_type d = 1.0 + sn;
-        const real_type d2 = d * d;
-        const real_type soverd = s / d;
+        const real_type d       = 1.0 + sn;
+        const real_type d2      = d * d;
+        const real_type soverd  = s / d;
         const real_type noverd2 = n / d2;
 
         // dU/dB_j
         derivs[i][0] = -ex * sn / d;
 
         // d(dU/dB_j)/dr
-        derivs[i][1] = exoverR0 * ( sn * sn + sn - n * snm1 ) / d2;
+        derivs[i][1] = exoverR0 * (sn * sn + sn - n * snm1) / d2;
 
         // d^2(dU/dB_j)/dr^2
-        derivs[i][2] = exoverR02 * snm2 * ( d * noverd2 * noverd2 * ( sn - 1.0 ) + noverd2 * ( 1.0 + 2.0 * s ) - soverd * s );
+        derivs[i][2] = exoverR02 * snm2 * (d * noverd2 * noverd2 * (sn - 1.0) + noverd2 * (1.0 + 2.0 * s) - soverd * s);
 
         snm2 = snm1; // update s^{n-2}
         snm1 = sn;   // update s^{n-1}
@@ -349,9 +380,7 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
 
         // increment the index tracking where to put derivatives
         ++i;
-
       }
-
     }
 
     return true;
@@ -360,7 +389,6 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   /// compute derivatives of U(r) with respect to the variational parameters
   inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
-
     // get the ratio of the distance and the soft cutoff distance
     const real_type s = r / R0;
 
@@ -376,47 +404,47 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     // evaluate derivatives with respect to the cusp condition variable A
     if (Opt_A)
     {
-      derivs[i] = -ex * R0;   //dU/da
+      derivs[i] = -ex * R0; //dU/da
       ++i;
     }
 
     // evaluate derivatives with respect to the soft cutoff radius
     if (Opt_R0)
     {
-
       // sum up terms related to the sigmoidal exansion
-      real_type n = 2.0;
-      real_type sn = s * s; // s^n
+      real_type n       = 2.0;
+      real_type sn      = s * s; // s^n
       real_type sig_sum = 0.0;
-      for (int j = 0; j < B.size(); j++) {
-        const real_type d = 1.0 + sn;
-        const real_type d2 = d * d;
-        const real_type soverd = s / d;
+      for (int j = 0; j < B.size(); j++)
+      {
+        const real_type d       = 1.0 + sn;
+        const real_type d2      = d * d;
+        const real_type soverd  = s / d;
         const real_type noverd2 = n / d2;
-        sig_sum += B[j] * sn * ( noverd2 - soverd );
+        sig_sum += B[j] * sn * (noverd2 - soverd);
         sn *= s;  // update s^n
         n += 1.0; // update n
       }
 
       // compute term related to the cusp-inducing term
-      const real_type cusp_part = -A * ex * ( s + 1.0 );
+      const real_type cusp_part = -A * ex * (s + 1.0);
 
       // compute dU/dR0
       derivs[i] = cusp_part + exoverR0 * sig_sum;
 
       // increment the index tracking where to put derivatives
       ++i;
-
     }
 
     // evaluate derivatives with respect to the sigmoidal expansion coefficients
     if (Opt_B)
     {
       real_type sn = s * s; // s^n
-      for (int j = 0; j < B.size(); j++) {
-        derivs[i] = -ex * sn / ( 1.0 + sn ); // dU/dB_j
-        sn *= s;  // update s^n
-        ++i;      // increment the index tracking where to put derivatives
+      for (int j = 0; j < B.size(); j++)
+      {
+        derivs[i] = -ex * sn / (1.0 + sn); // dU/dB_j
+        sn *= s;                           // update s^n
+        ++i;                               // increment the index tracking where to put derivatives
       }
     }
 
@@ -424,17 +452,20 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   }
 
   /// set up a variational parameter using the supplied xml node
-  template <class U>
-  void set_variable_from_xml(ReportEngine & PRE, xmlNodePtr cur, U & variable_to_set, std::string & id_to_set, bool & opt_to_set)
+  template<class U>
+  void set_variable_from_xml(ReportEngine& PRE,
+                             xmlNodePtr cur,
+                             U& variable_to_set,
+                             std::string& id_to_set,
+                             bool& opt_to_set)
   {
-
     // get id, name, and optimize info
-    std::string       id("string_not_set");
-    std::string     name("string_not_set");
+    std::string id("string_not_set");
+    std::string name("string_not_set");
     std::string optimize("string_not_set");
     OhmmsAttributeSet rAttrib;
-    rAttrib.add(      id,       "id");
-    rAttrib.add(    name,     "name");
+    rAttrib.add(id, "id");
+    rAttrib.add(name, "name");
     rAttrib.add(optimize, "optimize");
     rAttrib.put(cur);
 
@@ -442,34 +473,37 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     putContent(variable_to_set, cur);
 
     // set the id if we have it
-    if ( id != "string_not_set" )
+    if (id != "string_not_set")
       id_to_set = id;
 
     // if we are to optimize the variable, add it to the optimizable variable set
     optimize = lowerCase(optimize);
-    if ( optimize == "yes" ) {
-      if ( id == "string_not_set" )
+    if (optimize == "yes")
+    {
+      if (id == "string_not_set")
         PRE.error("\"id\" must be set if we are going to optimize variable " + name, true);
       opt_to_set = true;
       myVars.insert(id, variable_to_set, opt_to_set, optimize::OTHER_P);
-    } else if ( optimize == "no" ) {
+    }
+    else if (optimize == "no")
+    {
       opt_to_set = false;
-    } else if ( optimize != "string_not_set" ) {
+    }
+    else if (optimize != "string_not_set")
+    {
       PRE.error("Unrecognized value for \"optimize\". Should be either yes or no", true);
     }
-
   }
 
   ///read in information about the functor from an xml node
   bool put(xmlNodePtr cur) override
   {
-
     // set up an object for info / warning / error reporting
     ReportEngine PRE("ShortRangeCuspFunctor", "put(xmlNodePtr)");
 
     // create some variables to read information in to
-    real_type radius = -1.0;    // hard cutoff radius
-    real_type cusp_in = -1.0;   // cusp condition
+    real_type radius  = -1.0; // hard cutoff radius
+    real_type cusp_in = -1.0; // cusp condition
 
     // read from the xml node
     OhmmsAttributeSet rAttrib;
@@ -490,9 +524,9 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
     xmlNodePtr childPtr = cur->xmlChildrenNode;
     while (childPtr != NULL)
     {
-
       // skip blank nodes
-      if ( xmlIsBlankNode(childPtr) ) {
+      if (xmlIsBlankNode(childPtr))
+      {
         childPtr = childPtr->next;
         continue;
       }
@@ -502,7 +536,6 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       // read in a variable
       if (cname == "var")
       {
-
         // read in the name of the variable
         std::string v_name("string_not_set");
         OhmmsAttributeSet att;
@@ -518,20 +551,18 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
           PRE.error("variable name not set", true);
         else
           PRE.error("unrecognized variable name: " + v_name, true);
-
       }
 
       // read in the B coefficients
       else if (cname == "coefficients")
       {
-
         // read in the id, whether to optimize, and the node type
-        std::string       id("string_not_set");
-        std::string     type("string_not_set");
+        std::string id("string_not_set");
+        std::string type("string_not_set");
         std::string optimize("string_not_set");
         OhmmsAttributeSet att;
-        att.add(      id,       "id");
-        att.add(    type,     "type");
+        att.add(id, "id");
+        att.add(type, "type");
         att.add(optimize, "optimize");
         att.put(childPtr);
 
@@ -543,31 +574,39 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
         putContent(B, childPtr);
 
         // set the id if we have it
-        if ( id != "string_not_set" )
+        if (id != "string_not_set")
           ID_B = id;
 
         // if the coefficients are to be optimized, add them to the variable set
         optimize = lowerCase(optimize);
-        if ( optimize == "yes" ) {
-          if ( id == "string_not_set" )
+        if (optimize == "yes")
+        {
+          if (id == "string_not_set")
             PRE.error("\"id\" must be set if we are going to optimize B coefficients", true);
           Opt_B = true;
-          for (int i = 0; i < B.size(); i++) {
+          for (int i = 0; i < B.size(); i++)
+          {
             std::stringstream sstr;
             sstr << ID_B << "_" << i;
             myVars.insert(sstr.str(), B.at(i), Opt_B, optimize::OTHER_P);
           }
-        } else if ( optimize == "no" ) {
+        }
+        else if (optimize == "no")
+        {
           Opt_B = false;
-        } else if ( optimize != "string_not_set" ) {
+        }
+        else if (optimize != "string_not_set")
+        {
           PRE.error("Unrecognized value for \"optimize\". Should be either yes or no", true);
         }
-
       }
 
       // error if cname is not recognized
-      else {
-        PRE.error("\"" + cname + "\" is not a recognized value for \"cname\". Allowed values are \"var\" and \"coefficients\"", true);
+      else
+      {
+        PRE.error("\"" + cname +
+                      "\" is not a recognized value for \"cname\". Allowed values are \"var\" and \"coefficients\"",
+                  true);
       }
 
       // go to the next node
@@ -583,9 +622,9 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       app_summary() << " " << B.at(i);
     app_summary() << std::endl;
     app_summary() << "                    hard cutoff radius: " << cutoff_radius << std::endl;
-    app_summary() << "                                 Opt_A: " << ( Opt_A  ? "yes" : "no" ) << std::endl;
-    app_summary() << "                                Opt_R0: " << ( Opt_R0 ? "yes" : "no" ) << std::endl;
-    app_summary() << "                                 Opt_B: " << ( Opt_B  ? "yes" : "no" ) << std::endl;
+    app_summary() << "                                 Opt_A: " << (Opt_A ? "yes" : "no") << std::endl;
+    app_summary() << "                                Opt_R0: " << (Opt_R0 ? "yes" : "no") << std::endl;
+    app_summary() << "                                 Opt_B: " << (Opt_B ? "yes" : "no") << std::endl;
 
     // reset the functor now that we've read its info in (currently does nothing)
     reset();
@@ -614,16 +653,15 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
       {
         int i = 0;
         if (Opt_A)
-          A = std::real( myVars[i++] = active[ia++] );
+          A = std::real(myVars[i++] = active[ia++]);
         if (Opt_R0)
-          R0 = std::real( myVars[i++] = active[ia++] );
+          R0 = std::real(myVars[i++] = active[ia++]);
         for (int j = 0; Opt_B && j < B.size(); j++)
-          B.at(j) = std::real( myVars[i++] = active[ia++] );
+          B.at(j) = std::real(myVars[i++] = active[ia++]);
       }
       reset();
     }
   }
-
 };
 
 } // namespace qmcplusplus

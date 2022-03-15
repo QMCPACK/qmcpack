@@ -25,6 +25,10 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "J2KECorrection.h"
 
+#include "BsplineFunctor.h"
+#include "PadeFunctors.h"
+#include "UserFunctor.h"
+
 namespace qmcplusplus
 {
 
@@ -117,6 +121,22 @@ private:
 
   /// compute G and L from internally stored data
   QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const;
+
+  /*@{ internal compute engines*/
+  valT computeU(const ParticleSet& P, int iat, const DistRow& dist);
+
+  void computeU3(const ParticleSet& P,
+                 int iat,
+                 const DistRow& dist,
+                 RealType* restrict u,
+                 RealType* restrict du,
+                 RealType* restrict d2u,
+                 bool triangle = false);
+
+  /** compute gradient
+   */
+  posT accumulateG(const valT* restrict du, const DisplRow& displ) const;
+  /**@} */
 
 public:
   J2OMPTarget(const std::string& obj_name, ParticleSet& p);
@@ -218,22 +238,6 @@ public:
 
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
 
-  /*@{ internal compute engines*/
-  valT computeU(const ParticleSet& P, int iat, const DistRow& dist);
-
-  void computeU3(const ParticleSet& P,
-                 int iat,
-                 const DistRow& dist,
-                 RealType* restrict u,
-                 RealType* restrict du,
-                 RealType* restrict d2u,
-                 bool triangle = false);
-
-  /** compute gradient
-   */
-  posT accumulateG(const valT* restrict du, const DisplRow& displ) const;
-  /**@} */
-
   inline RealType ChiesaKEcorrection() { return KEcorr = j2_ke_corr_helper.computeKEcorr(); }
 
   inline RealType KECorrection() override { return KEcorr; }
@@ -255,5 +259,8 @@ public:
                            Matrix<ValueType>& dratios) override;
 };
 
+extern template class J2OMPTarget<BsplineFunctor<QMCTraits::RealType>>;
+extern template class J2OMPTarget<PadeFunctor<QMCTraits::RealType>>;
+extern template class J2OMPTarget<UserFunctor<QMCTraits::RealType>>;
 } // namespace qmcplusplus
 #endif
