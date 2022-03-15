@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_He_opt_batch" series="0">
-  </project>
+  <project id="det_He_opt_batch" series="0"/>
   <random seed="509"/>
 
   <!-- Location of atoms -->

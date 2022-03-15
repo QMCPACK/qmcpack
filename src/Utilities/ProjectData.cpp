@@ -232,7 +232,7 @@ ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_
   }
   catch (std::out_of_range& oor_exc)
   {
-    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
+    throw(UniformCommunicateError("bad_enum_tag_value: " + enum_value_str));
   }
 }
 
