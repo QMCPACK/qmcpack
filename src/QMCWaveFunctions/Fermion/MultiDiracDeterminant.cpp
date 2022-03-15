@@ -583,7 +583,7 @@ void MultiDiracDeterminant::resize()
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
   dotProducts.resize(NumOrbitals, NumOrbitals);
-  DetCalculator.resize(nel);
+  det_calculator_.resize(nel);
 
   if (is_spinor_)
   {
