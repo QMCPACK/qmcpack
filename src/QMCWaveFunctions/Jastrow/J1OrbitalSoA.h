@@ -95,8 +95,6 @@ class J1OrbitalSoA : public WaveFunctionComponent
    * FIXME However this is not supported right now. Each species needs its dedicated function.
    */
   std::vector<FT*> GroupFunctors;
-  ///container for the unique Jastrow functions
-  std::vector<std::unique_ptr<FT>> J1UniqueFunctors;
 
   std::vector<std::pair<int, int>> OffSet;
   Vector<RealType> dLogPsi;
@@ -185,6 +183,10 @@ class J1OrbitalSoA : public WaveFunctionComponent
                                         DistCompressed.data(), DistIndice.data());
     }
   }
+
+protected:
+  ///container for the unique Jastrow functions
+  std::vector<std::unique_ptr<FT>> J1UniqueFunctors;
 
 public:
   J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload);
