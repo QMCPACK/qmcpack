@@ -140,11 +140,10 @@ public:
   template<typename TREAL>
   void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-#if defined(QMC_CUDA2HIP)
     clearDelayCount();
+#if defined(QMC_CUDA2HIP)
     rocsolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
 #else
-    clearDelayCount();
     cusolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
 #endif
   }
