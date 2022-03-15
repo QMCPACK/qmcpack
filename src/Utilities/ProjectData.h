@@ -56,8 +56,7 @@ private:
 
 public:
   /// constructor
-  ProjectData() = default;
-  ProjectData(DriverEpoch de);
+  ProjectData(DriverEpoch de = DriverEpoch::LEGACY);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -141,7 +140,7 @@ private:
 
   // The input string for the parser
   std::string driver_epoch_str_;
-  DriverEpoch driver_epoch_ = DriverEpoch::LEGACY;
+  DriverEpoch driver_epoch_;
 };
 } // namespace qmcplusplus
 
