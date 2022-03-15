@@ -5,6 +5,7 @@
 // Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Thomas Applencourt, apl@anl.gov, Argonne National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Thomas Applencourt, apl@anl.gov, Argonne National Laboratory
 //
@@ -86,12 +87,20 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
 #if defined(_OPENMP)
 std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
 {
+  enum class Backend
+  {
+    UNKNOWN,
+    LEVEL_ZERO,
+    OPENCL
+  };
+
   const auto num_omp_devices = omp_get_num_devices();
+  Backend selected_backend   = Backend::UNKNOWN;
   std::vector<struct syclDeviceInfo> devices(num_omp_devices);
   for (int id = 0; id < num_omp_devices; id++)
   {
-    omp_interop_t o     = 0;
-    bool known_platform = true;
+    omp_interop_t o    = 0;
+    Backend my_backend = Backend::UNKNOWN;
 #pragma omp interop init(prefer_type("sycl"), targetsync : o) device(id)
     int err = -1;
 
@@ -100,13 +109,14 @@ std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
 
     if (omp_backend.find("level_zero") == 0)
     {
+      my_backend = Backend::LEVEL_ZERO;
+
       auto hPlatform = omp_get_interop_ptr(o, omp_ipr_platform, &err);
       assert(err >= 0 && "omp_get_interop_ptr(omp_ipr_platform)");
       auto hContext = omp_get_interop_ptr(o, omp_ipr_device_context, &err);
       assert(err >= 0 && "omp_get_interop_ptr(omp_ipr_device_context)");
       auto hDevice = omp_get_interop_ptr(o, omp_ipr_device, &err);
       assert(err >= 0 && "omp_get_interop_ptr(omp_ipr_device)");
-
 
       const sycl::platform sycl_platform =
           sycl::ext::oneapi::level_zero::make_platform(reinterpret_cast<pi_native_handle>(hPlatform));
@@ -120,6 +130,7 @@ std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
     }
     else if (omp_backend.find("opencl") == 0)
     {
+      my_backend = Backend::OPENCL;
       /*
                 auto hContext = omp_get_interop_ptr(o, omp_ipr_device_context, &err);
                 assert (err >= 0 && "omp_get_interop_ptr(omp_ipr_device_context)");
@@ -129,13 +140,29 @@ std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
           devices[id].context = sycl::make_context<sycl::backend::opencl>(static_cast<cl_context>(hContext));
 */
     }
-    else
-      known_platform = false;
 
 #pragma omp interop destroy(o)
-    if (!known_platform)
-      throw std::runtime_error("Failed in extracting OpenMP backend supported by SYCL.");
+
+    if (selected_backend == Backend::UNKNOWN)
+      selected_backend = my_backend;
+    else if (selected_backend != my_backend)
+      throw std::runtime_error("Inconsistent backends detected among OpenMP devices.");
   }
+
+  if (devices.size() > 0)
+    switch (selected_backend)
+    {
+    case Backend::LEVEL_ZERO:
+      app_log() << "SYCL adopts the Level Zero backend chosen by OpenMP." << std::endl;
+      break;
+    case Backend::OPENCL:
+      throw std::runtime_error("OpenMP has chosen the OpenCL backend. "
+                               "We have not yet worked out its interoperability with SYCL. "
+                               "Please set the Level Zero backend in OpenMP!");
+      break;
+    default:
+      throw std::runtime_error("Failed in extracting OpenMP backend supported by SYCL.");
+    }
 
   return devices;
 }

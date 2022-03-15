@@ -5,6 +5,7 @@
 // Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Thomas Applencourt, apl@anl.gov, Argonne National Laboratory
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
 // File created by: Thomas Applencourt, apl@anl.gov, Argonne National Laboratory
 //
