@@ -61,6 +61,7 @@ private:
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
+  
 protected:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
@@ -71,16 +72,42 @@ protected:
   hContainer_type myH;
   ghContainer_type mygH;
 
+  IndexType m_true_norbs;
+
 public:
   SplineR2R()
   {
     is_complex = false;
     className  = "SplineR2R";
     KeyWord    = "SplineR2R";
+    m_true_norbs = 0;
+  }
+
+  // Sets the number of spline SPOs
+  // Note that this might be < number of splines due to padding
+  void setOrbitalSetSize(int norbs) override
+  {
+    m_true_norbs = norbs;
+  }
+
+  // Gives the number of splined SPOs
+  int getOrbitalSetSize() const override
+  {
+    return m_true_norbs;       
+  }
+
+  // Gives the number of splined SPOs
+  // JPT DEBUG: Shouldn't this be different from orbitalsetsize?
+  int getBasisSetSize() const override
+  {
+    return SplineInst->num_splines();
   }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 
+  // Rotates the splines owned by SplineInst
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+  
   inline void resizeStorage(size_t n, size_t nvals)
   {
     init_base(n);

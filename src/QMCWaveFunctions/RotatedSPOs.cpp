@@ -61,7 +61,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
   const size_t nb  = Phi->getBasisSetSize();
-
+  
   // create active rotations
   m_act_rot_inds = rotations;
 
