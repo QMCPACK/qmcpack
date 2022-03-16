@@ -88,7 +88,6 @@ set(SPOSET_SRC
     test_pw.cpp
     ${MO_SRCS})
 set(JASTROW_SRC
-    test_bspline_jastrow.cpp
     test_counting_jastrow.cpp
     test_polynomial_eeI_jastrow.cpp
     test_rpa_jastrow.cpp
@@ -96,6 +95,7 @@ set(JASTROW_SRC
     test_kspace_jastrow.cpp
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
+    test_J1_bspline.cpp
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
@@ -115,6 +115,9 @@ if(ENABLE_CUDA)
     set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
   endif()
 endif(ENABLE_CUDA)
+if (ENABLE_ROCM AND QMC_CUDA2HIP)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_rocSolverInverter.cpp)
+endif()
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
@@ -154,7 +157,9 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
-  if (NOT QMC_CUDA2HIP)
+  if (QMC_CUDA2HIP)
+    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
+  else()
     set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_cuSolverInverter.cpp)
   endif()
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})

@@ -427,7 +427,11 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_CUDA)
       if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
+#ifdef QMC_CUDA2HIP
+        app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
+#else
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
+#endif
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,

@@ -24,51 +24,75 @@ using std::string;
 namespace qmcplusplus
 {
 template<class T>
-class TestMultiDiracDeterminantCalculator
+class TestSmallMatrixDetCalculator
 {
-public:
   template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
-  T default_evaluate(int power_of_two)
+
+  SmallMatrixDetCalculator<double> MDDC;
+  OffloadMatrix<double> dots;
+  std::vector<int> it_things;
+
+public:
+  void build_interal_data(int dim_size)
   {
-    MultiDiracDeterminantCalculator<double> MDDC;
-    int power2 = std::pow(2, power_of_two);
-    MDDC.resize(power2);
-    OffloadMatrix<double> dots(2 * power2); //This is an 2n by 2n matrix if you don't reduce pairs
+    MDDC.resize(dim_size);
+    dots.resize(dim_size, dim_size);
+    it_things.resize(2 * dim_size);
+
     double n = 0.0;
     int i    = 0;
     //Just making some non trivial data
     for (auto& m : dots)
     {
       if (++i % 2 != 0)
-        m = -n / (T)power2;
+        m = -n / (T)dim_size;
       else
-        m = n / (T)power2;
-      if (n > (T)power2 - 0.5)
+        m = n / (T)dim_size;
+      if (n > (T)dim_size - 0.5)
         n = 0.0;
       else
         n += 1.0;
     }
-    std::vector<int> it_things(power2 * power2);
-    i = 0;
-    for (auto& itt : it_things)
-      itt = i++;
-    std::vector<int>::const_iterator it = it_things.begin();
-    return MDDC.evaluate(dots, it, power2);
+
+    for (size_t i = 0; i < dim_size; i++)
+      it_things[i] = it_things[i + dim_size] = i;
+  }
+
+  T generic_evaluate(int dim_size)
+  {
+    build_interal_data(dim_size);
+    return MDDC.evaluate(dots, it_things.data(), dim_size);
+  }
+
+  template<unsigned EXT_LEVEL>
+  T customized_evaluate()
+  {
+    build_interal_data(EXT_LEVEL);
+    return calcSmallDeterminant(EXT_LEVEL, dots, it_things.data());
   }
 };
 
 /** Simple synthetic test case will trip on changes in this method.
  */
-TEST_CASE("MultiDiracDeterminantCalculator::evaluate-Small", "[wavefunction][fermion][multidet]")
+TEST_CASE("SmallMatrixDetCalculator::evaluate-Small", "[wavefunction][fermion][multidet]")
 {
-  TestMultiDiracDeterminantCalculator<double> double_test;
-  double det_value_expect = -1.1086723208;
-  REQUIRE(double_test.default_evaluate(3) == Approx(det_value_expect));
-  det_value_expect = -1.3432116824;
-  REQUIRE(double_test.default_evaluate(7) == Approx(det_value_expect));
-  det_value_expect = -1.3586431786;
-  REQUIRE(double_test.default_evaluate(12) == Approx(det_value_expect));
+  TestSmallMatrixDetCalculator<double> double_test;
+  CHECK(double_test.generic_evaluate(1) == Approx(0.0));
+  CHECK(double_test.generic_evaluate(2) == Approx(0.5));
+  CHECK(double_test.generic_evaluate(3) == Approx(-0.7407407407));
+  CHECK(double_test.generic_evaluate(4) == Approx(-0.87890625));
+  CHECK(double_test.generic_evaluate(5) == Approx(-0.96768));
+
+  CHECK(double_test.customized_evaluate<1>() == Approx(0.0));
+  CHECK(double_test.customized_evaluate<2>() == Approx(0.5));
+  CHECK(double_test.customized_evaluate<3>() == Approx(-0.7407407407));
+  CHECK(double_test.customized_evaluate<4>() == Approx(-0.87890625));
+  CHECK(double_test.customized_evaluate<5>() == Approx(-0.96768));
+
+  CHECK(double_test.generic_evaluate(1<<3) == Approx(-1.1086723208));
+  CHECK(double_test.generic_evaluate(1<<7) == Approx(-1.3432116824));
+  CHECK(double_test.generic_evaluate(1<<12) == Approx(-1.3586431786));
 }
 
 } // namespace qmcplusplus

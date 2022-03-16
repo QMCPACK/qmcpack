@@ -205,8 +205,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     }
   }
   else
-    for (int iw = 0; iw < o_list.size(); iw++)
-      o_list[iw].evaluate(p_list[iw]);
+    OperatorBase::mw_evaluate(o_list, wf_list, p_list);
 }
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
