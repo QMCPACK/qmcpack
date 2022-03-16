@@ -43,6 +43,8 @@ public:
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
+  using UnpinnedOffloadVector = Vector<DT, OffloadAllocator<DT>>;
+  template<typename DT>
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using IndexVector   = SPOSet::IndexVector;
   using ValueVector   = SPOSet::ValueVector;
