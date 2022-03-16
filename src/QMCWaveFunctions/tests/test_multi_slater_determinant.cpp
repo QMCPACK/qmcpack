@@ -16,7 +16,8 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "WaveFunctionFactory.h"
+#include "LCAO/LCAOrbitalSet.h"
 #include "TWFGrads.hpp"
 
 #include <stdio.h>
@@ -84,7 +85,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
   auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   CHECK(spo.getOrbitalSetSize() == check_spo_size);
   CHECK(spo.getBasisSetSize() == check_basisset_size);
 
@@ -377,7 +378,6 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   auto& spo = twf_ptr->getSPOSet(check_sponame);
   CHECK(spo.getOrbitalSetSize() == check_spo_size);
-  CHECK(spo.getBasisSetSize() == check_basisset_size);
 
   ions_.update();
   elec_.update();
