@@ -17,8 +17,8 @@
 #ifndef QMCPLUSPLUS_PROJECTDATA_H__
 #define QMCPLUSPLUS_PROJECTDATA_H__
 
-#include "OhmmsData/OhmmsElementBase.h"
 #include <unordered_map>
+#include "OhmmsData/libxmldefs.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -29,8 +29,8 @@ namespace qmcplusplus
  * Default: m_title = getDateAndTime("%Y%m%dT%H%M")
  *
  * \todo This shouldn't contain MPI information it is only used to calculate the
- *       path information and the communication parameters should just beinput params to that call.
- *       this will massively reduce the internal state.
+ *       path information and the communication parameters should just be input params to that call.
+ *       This reduce the internal state.
  */
 class ProjectData
 {
