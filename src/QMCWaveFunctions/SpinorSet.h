@@ -41,10 +41,6 @@ public:
    */
   void setOrbitalSetSize(int norbs) override;
 
-  //gets the BasisSetSize from the underlying SPOSet that make up the spinor
-  int getBasisSetSize() const override;
-
-
   /** evaluate the values of this spinor set
    * @param P current ParticleSet
    * @param iat active particle

@@ -96,9 +96,6 @@ public:
   */
   inline bool hasIonDerivs() const { return ionDerivs; }
 
-  /// return the size of the basis set if there is any
-  virtual int getBasisSetSize() const { return 0; }
-
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
 

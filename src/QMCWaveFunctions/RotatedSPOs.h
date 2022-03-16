@@ -206,10 +206,6 @@ public:
   //the following functions simply call Phi's corresponding functions
   void setOrbitalSetSize(int norbs) override { Phi->setOrbitalSetSize(norbs); }
 
-  //  void setBasisSet(basis_type* bs);
-
-  int getBasisSetSize() const override { return Phi->getBasisSetSize(); }
-
   void checkObject() const override { Phi->checkObject(); }
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
