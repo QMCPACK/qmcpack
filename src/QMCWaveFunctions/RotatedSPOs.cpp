@@ -60,7 +60,6 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
-  const size_t nb  = Phi->getBasisSetSize();
 
   // create active rotations
   m_act_rot_inds = rotations;
@@ -361,7 +360,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     myL_J.resize(NP);
     myL_J            = 0.0;
     const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -431,7 +429,6 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   if (recalculate)
   {
     const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,
