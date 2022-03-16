@@ -72,7 +72,7 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   [2] Toulouse & Umrigar, JCP 126, (2007)
   [3] Townsend et al., PRB 102, (2020)
 */
-template <typename ST>
+template<typename ST>
 void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
@@ -113,7 +113,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
      is very tall and skinny.
   */
   const auto spl_coefs      = spline_ptr->coefs;
-  const auto BasisSetSize   = spline_ptr->num_splines;  // May include padding
+  const auto BasisSetSize   = spline_ptr->num_splines; // May include padding
   const auto coefs_tot_size = spline_ptr->coefs_size;
   const auto OrbitalSetSize = coefs_tot_size / BasisSetSize;
   const auto TrueNOrbs      = rot_mat.size1(); // == BasisSetSize - padding
@@ -124,39 +124,39 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   ValueMatrix tmpU;
   tmpU.resize(BasisSetSize, BasisSetSize);
   std::fill(tmpU.begin(), tmpU.end(), 0.0);
-  for ( auto i=0; i<rot_mat.size1(); i++ )
+  for (auto i = 0; i < rot_mat.size1(); i++)
+  {
+    for (auto j = 0; j < rot_mat.size2(); j++)
     {
-      for ( auto j=0; j<rot_mat.size2(); j++ )
-	{
-	  tmpU[i][j] = rot_mat[i][j];
-	}
+      tmpU[i][j] = rot_mat[i][j];
     }
-  
+  }
+
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  for ( auto i=0; i<OrbitalSetSize; i++ )
+  for (auto i = 0; i < OrbitalSetSize; i++)
+  {
+    for (auto j = 0; j < BasisSetSize; j++)
     {
-      for ( auto j=0; j<BasisSetSize; j++ )
-	{
-	  const auto cur_elem = BasisSetSize*i + j;
-	  auto newval{0.};
-	  for ( auto k=0; k<BasisSetSize; k++ )
-	    {
-	      const auto index = i*BasisSetSize + k;
-	      newval += *(spl_coefs + index) * tmpU[k][j];
-	    }
-	  *(spl_coefs + cur_elem) = newval;
-	}
+      const auto cur_elem = BasisSetSize * i + j;
+      auto newval{0.};
+      for (auto k = 0; k < BasisSetSize; k++)
+      {
+        const auto index = i * BasisSetSize + k;
+        newval += *(spl_coefs + index) * tmpU[k][j];
+      }
+      *(spl_coefs + cur_elem) = newval;
     }
-  
+  }
+
   /*
     // Here is my attempt to use gemm but it doesn't work...
     int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
     int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
     BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
-  */  
+  */
 }
 
-  
+
 template<typename ST>
 inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, ValueVector& psi, int first, int last)
     const
