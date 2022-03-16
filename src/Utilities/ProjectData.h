@@ -31,8 +31,8 @@ namespace qmcplusplus
  * Should not modify the name, since composite types, such as MDRunData, use the name.
  *  There is no MDRunData and the use of a "name" memeber of an object is at odd with the rest of the codebase.
  *
- * \todo This shouldn't contain MPI information it is only used to calculate the 
- *       path information and the communication parameters should just beinput params to that call.  
+ * \todo This shouldn't contain MPI information it is only used to calculate the
+ *       path information and the communication parameters should just beinput params to that call.
  *       this will massively reduce the internal state.
  */
 class ProjectData
@@ -138,8 +138,7 @@ private:
   ///max cpu seconds
   int max_cpu_secs_;
 
-  // The input string for the parser
-  std::string driver_epoch_str_;
+  // The driver epoch of the project
   DriverEpoch driver_epoch_;
 };
 } // namespace qmcplusplus

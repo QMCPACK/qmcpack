@@ -178,13 +178,14 @@ bool ProjectData::put(xmlNodePtr cur)
   if (!series_str.empty())
     m_series = std::stoi(series_str);
 
+  std::string driver_epoch_str;
   ParameterSet m_param;
   m_param.add(max_cpu_secs_, "max_seconds");
-  m_param.add(driver_epoch_str_, "driver_epoch");
+  m_param.add(driver_epoch_str, "driver_epoch");
   m_param.put(cur);
 
-  if (!driver_epoch_str_.empty())
-    driver_epoch_ = lookupDriverEpoch(driver_epoch_str_);
+  if (!driver_epoch_str.empty())
+    driver_epoch_ = lookupDriverEpoch(driver_epoch_str);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
@@ -224,7 +225,8 @@ bool ProjectData::put(xmlNodePtr cur)
   return true;
 }
 
-ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_value) {
+ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_value)
+{
   std::string enum_value_str(lowerCase(enum_value));
   try
   {
@@ -232,7 +234,7 @@ ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_
   }
   catch (std::out_of_range& oor_exc)
   {
-    throw(UniformCommunicateError("bad_enum_tag_value: " + enum_value_str));
+    throw UniformCommunicateError("bad_enum_tag_value: " + enum_value_str);
   }
 }
 
