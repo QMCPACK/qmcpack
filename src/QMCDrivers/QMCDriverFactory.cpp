@@ -58,7 +58,7 @@ QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_da
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur) const
 {
   DriverAssemblyState das;
-  std::string curName((const char*)cur->name);
+  std::string curName(castXMLCharToChar(cur->name));
   std::string update_mode("pbyp");
   std::string qmc_mode;
   std::string multi_tag("no");
@@ -100,8 +100,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   const int nchars = qmc_mode.size();
 
   using DE = ProjectData::DriverEpoch;
-  DE driver_epoch = project_data_.get_driver_epoch();
-  switch (driver_epoch)
+  switch (project_data_.get_driver_epoch())
   {
   case DE::BATCH:
 #if defined(QMC_CUDA)
@@ -116,7 +115,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
-    return das;
+    break;
   // Begin to separate batch epoch input reading from the legacy input parsing
   case DE::LEGACY:
 #if defined(QMC_CUDA)
@@ -151,8 +150,8 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       else
         throw std::runtime_error("qmc method cannot be empty!");
     }
-    return das;
   }
+  return das;
 }
 
 std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr cur,
