@@ -27,9 +27,7 @@ namespace qmcplusplus
 /**class ProjectData
  *\brief Encapsulate data for a project
  *
- * Default: myName = getDateAndTime("%Y%m%dT%H%M")
- * Should not modify the name, since composite types, such as MDRunData, use the name.
- *  There is no MDRunData and the use of a "name" memeber of an object is at odd with the rest of the codebase.
+ * Default: m_title = getDateAndTime("%Y%m%dT%H%M")
  *
  * \todo This shouldn't contain MPI information it is only used to calculate the
  *       path information and the communication parameters should just beinput params to that call.
@@ -56,7 +54,7 @@ private:
 
 public:
   /// constructor
-  ProjectData(DriverEpoch de = DriverEpoch::LEGACY);
+  ProjectData(const std::string& atitle = "", DriverEpoch de = DriverEpoch::LEGACY);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -68,13 +66,6 @@ public:
 
   ///roll-back a series number and reset m_projectroot by one
   void rewind();
-
-  ///set the title
-  inline void setTitle(const std::string& atitle)
-  {
-    m_title = atitle;
-    reset();
-  }
 
   void setCommunicator(Communicate* c);
 

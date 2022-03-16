@@ -37,10 +37,11 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   //   and the title is set equal to the name
   REQUIRE(proj1.getTitle().size() > 0);
 
-  ProjectData proj2;
+  ProjectData proj2("asample");
   REQUIRE(proj2.getSeriesIndex() == 0);
   proj2.advance();
   REQUIRE(proj2.getSeriesIndex() == 1);
+  REQUIRE(proj2.getTitle() == std::string("asample"));
 
   proj2.setCommunicator(c);
   std::stringstream o2;
@@ -60,6 +61,7 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 
   proj.put(root);
   REQUIRE(proj.getSeriesIndex() == 0);
+  REQUIRE(proj.getTitle() == std::string("test1"));
 }
 
 TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
@@ -75,6 +77,7 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 
   proj.put(root);
   REQUIRE(proj.getSeriesIndex() == 1);
+  REQUIRE(proj.getTitle() == std::string("test1"));
 
   // host and date nodes get added for output to the .cont.xml file
 }

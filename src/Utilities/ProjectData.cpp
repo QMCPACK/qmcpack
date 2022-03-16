@@ -27,11 +27,12 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(ProjectData::DriverEpoch driver_epoch)
-    : m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
+ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverEpoch driver_epoch)
+    : m_title(atitle), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
 {
   myComm  = OHMMS::Controller;
-  m_title = getDateAndTime("%Y%m%dT%H%M");
+  if (m_title.empty())
+    m_title = getDateAndTime("%Y%m%dT%H%M");
 }
 
 void ProjectData::setCommunicator(Communicate* c) { myComm = c; }
