@@ -251,7 +251,7 @@ inline void mw_DetRatioByColumn(const int nw,
                                 int colchanged,
                                 const RefVector<OffloadMatrix<T>>& Minv_list,
                                 const RefVector<OffloadVector<T>>& newv_list,
-                                std::vector<T>& curRatio_list)
+                                OffloadVector<T>& curRatio_list)
 
 {
   //use BLAS dot since the stride is not uniform
@@ -318,7 +318,7 @@ inline void mw_InverseUpdateByColumn(const int nw,
                                      const RefVector<OffloadVector<T>>& rvec_list,
                                      const RefVector<OffloadVector<T>>& rvecinv_list,
                                      int colchanged,
-                                     std::vector<T> ratiolist)
+                                     OffloadVector<T> ratiolist)
 {
   for (size_t iw = 0; iw < nw; iw++)
     det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,

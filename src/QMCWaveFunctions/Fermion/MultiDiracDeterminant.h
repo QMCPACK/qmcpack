@@ -261,7 +261,7 @@ private:
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
-                               const std::vector<ValueType>& det0_list,
+                               const OffloadVector<ValueType>& det0_list,
                                const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
@@ -279,7 +279,7 @@ private:
                        const RefVector<OffloadVector<ValueType>>& ratios_list,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
-                       const std::vector<ValueType>& det0_list,
+                       const OffloadVector<ValueType>& det0_list,
                        const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
@@ -296,7 +296,7 @@ private:
    */
   void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
                                                   int ref,
-                                                  const std::vector<ValueType>& det0_list,
+                                                  const OffloadVector<ValueType>& det0_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const OffloadVector<int>& data,
@@ -340,7 +340,7 @@ private:
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
                                              int ref,
-                                             const std::vector<ValueType>& det0_list,
+                                             const OffloadVector<ValueType>& det0_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                              const OffloadVector<int>& data,
@@ -394,7 +394,7 @@ private:
                                                   int iat,
                                                   int dx,
                                                   int getNumDets,
-                                                  const std::vector<ValueType>& det0_grad_list,
+                                                  const OffloadVector<ValueType>& det0_grad_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psi_list,
                                                   const OffloadVector<int>& data,
