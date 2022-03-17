@@ -60,7 +60,7 @@ public:
 
   /** read the current QMC Section
    *  In the application context project data can indicate the input be read in the context of
-   *  the batched driver architecture. 
+   *  the batched driver architecture.
    *  param[in] cur            qmc section node
    *  param[in] force_batch    forces input to be evaluated as if project driver type = batched
    *                           false does not force unbatched!
