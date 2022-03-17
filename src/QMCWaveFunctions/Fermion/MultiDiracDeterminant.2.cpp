@@ -703,6 +703,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     psiV_temp_list[iw].get().updateTo();
     psiMinv_temp_list[iw].get().updateTo();
     TpsiM_list[iw].get().updateTo();
+    psiMinv_list[iw].get().updateTo();
+    
   }
 
 
@@ -711,6 +713,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   OffloadVector<ValueType*> psiV_temp_deviceptr_list(nw);
   OffloadVector<ValueType*> psiMinv_temp_deviceptr_list(nw);
+  OffloadVector<ValueType*> psiMinv_deviceptr_list(nw);
+  OffloadVector<ValueType*> dpsiMinv_deviceptr_list(nw);
 
   OffloadVector<ValueType*> TpsiM_list_deviceptr_list(nw);
   OffloadVector<ValueType*> dpsiV_list_deviceptr_list(nw);
@@ -719,14 +723,18 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
     psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
     psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
-
+    psiMinv_deviceptr_list[iw] = psiMinv_list[iw].get().device_data();
+    dpsiMinv_deviceptr_list[iw] = dpsiMinv_list[iw].get().device_data();
     TpsiM_list_deviceptr_list[iw] = TpsiM_list[iw].get().device_data();
+
     ///GradType!!!
     ///dpsiV_list_deviceptr_list[iw] = dpsiV_list[iw].get().device_data();
   }
 
   auto* psiV_temp_list_ptr    = psiV_temp_deviceptr_list.data();
   auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.data();
+  auto* psiMinv_list_ptr= psiMinv_deviceptr_list.data();
+  auto* dpsiMinv_list_ptr= dpsiMinv_deviceptr_list.data();
   auto* TpsiM_list_ptr = TpsiM_list_deviceptr_list.data();
 
   auto* curRatio_list_ptr = curRatio_list.data();
@@ -757,23 +765,22 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
-
-    ////PRAGMA	  
+/*    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always, to:dpsiMinv_list_ptr[:nw]) \
+	                                                    map(always, from:psiMinv_list_ptr[:nw])")
+    for (size_t iw = 0; iw < nw; iw++)
+      dpsiMinv_list_ptr[iw] = psiMinv_list_ptr[iw];
+*/
     for (size_t iw = 0; iw < nw; iw++)
     {
+      dpsiMinv_list[iw].get() = psiMinv_list[iw].get();
       MultiDiracDeterminant& det = (det_list[iw]);
       ratioGradReflistIdim[iw]   = ratioGradRef_list[iw][idim];
       const auto& confgList      = *det_list[iw].ciConfigList;
-      auto it(confgList[det_leader.ReferenceDeterminant].occup.begin());
-      //ExtraStuffTimer.start();
-
-      dpsiMinv_list[iw].get() = psiMinv_list[iw].get();
-      it                      = confgList[det_leader.ReferenceDeterminant].occup.begin();
       for (size_t i = 0; i < det_leader.NumPtcls; i++)
-        psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[*(it++)][idim];
+        psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[confgList[det_leader.ReferenceDeterminant].occup[i]][idim];
       ///Value of psiV_temp to be updated.
-      psiV_temp_list[iw].get().updateTo();
       dpsiMinv_list[iw].get().updateTo();
+      psiV_temp_list[iw].get().updateTo();
     }
 
 
