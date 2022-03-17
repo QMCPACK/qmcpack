@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="det_vmcbatch_noj" series="0">
-         <parameter name="driver_epoch">batched</parameter>
+         <parameter name="driver_version">batched</parameter>
   </project>
   <include href="FeCO6.structure.xml"/>
   <include href="FeCO6.wfnoj.xml"/>

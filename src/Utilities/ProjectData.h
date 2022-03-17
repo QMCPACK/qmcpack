@@ -35,25 +35,30 @@ namespace qmcplusplus
 class ProjectData
 {
 public:
-  enum class DriverEpoch
-  {
-    LEGACY,
-    BATCH
-  };
+
+/** Enum for global scope switch of design from legacy driver based to batch driver based.
+ *  This effects more than just which drivers are used. Currently it just effects the meaning of
+ *  qmc section vmc, dmc, linear name attributes.
+ */
+enum class DriverVersion
+{
+  LEGACY,
+  BATCH
+};
 
 private:
-  inline static const std::unordered_map<std::string, DriverEpoch> lookup_input_enum_value{{"legacy",
-                                                                                            DriverEpoch::LEGACY},
+  inline static const std::unordered_map<std::string, DriverVersion> lookup_input_enum_value{{"legacy",
+                                                                                            DriverVersion::LEGACY},
                                                                                            {"batch",
-                                                                                            DriverEpoch::BATCH},
+                                                                                            DriverVersion::BATCH},
                                                                                            {"batched",
-                                                                                            DriverEpoch::BATCH}
+                                                                                            DriverVersion::BATCH}
 
   };
 
 public:
   /// constructor
-  ProjectData(const std::string& atitle = "", DriverEpoch de = DriverEpoch::LEGACY);
+  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::LEGACY);
 
   bool get(std::ostream& os) const;
   bool put(std::istream& is);
@@ -93,10 +98,10 @@ public:
 
   int getSeriesIndex() const { return m_series; }
   int getMaxCPUSeconds() const { return max_cpu_secs_; }
-  const DriverEpoch get_driver_epoch() const { return driver_epoch_; }
+  const DriverVersion get_driver_version() const { return driver_version_; }
 
 private:
-  static DriverEpoch lookupDriverEpoch(const std::string& enum_value);
+  static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
   ///title of the project
   std::string m_title;
@@ -129,7 +134,7 @@ private:
   int max_cpu_secs_;
 
   // The driver epoch of the project
-  DriverEpoch driver_epoch_;
+  DriverVersion driver_version_;
 };
 } // namespace qmcplusplus
 

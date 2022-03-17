@@ -2,7 +2,7 @@
 <simulation>
    <project id="qmc_onebodydensitymatrices_short" series="0">
      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-     <parameter name="driver_epoch">batched</parameter>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <qmcsystem>
       <simulationcell>

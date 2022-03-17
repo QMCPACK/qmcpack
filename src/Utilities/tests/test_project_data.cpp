@@ -82,14 +82,14 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
   // host and date nodes get added for output to the .cont.xml file
 }
 
-TEST_CASE("ProjectData::TestDriverEpoch", "[ohmmsapp]")
+TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
 {
-  using DE = ProjectData::DriverEpoch;
+  using DV = ProjectData::DriverVersion;
   SECTION("driver epoch batch")
   {
     ProjectData proj;
 
-    const char* xml_input = "<project id='test1' series='1'><parameter name='driver_epoch'>batch</parameter></project>";
+    const char* xml_input = "<project id='test1' series='1'><parameter name='driver_version'>batch</parameter></project>";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);
@@ -98,15 +98,15 @@ TEST_CASE("ProjectData::TestDriverEpoch", "[ohmmsapp]")
 
     proj.put(root);
     REQUIRE(proj.getSeriesIndex() == 1);
-    REQUIRE(proj.get_driver_epoch() == DE::BATCH);
+    REQUIRE(proj.get_driver_version() == DV::BATCH);
   }
   SECTION("driver epoch legacy")
   {
       ProjectData proj;
-      REQUIRE(proj.get_driver_epoch() == DE::LEGACY);    
+      REQUIRE(proj.get_driver_version() == DV::LEGACY);    
 
     const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_epoch'>legacy</parameter></project>";
+        "<project id='test1' series='1'><parameter name='driver_version'>legacy</parameter></project>";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);
@@ -115,14 +115,14 @@ TEST_CASE("ProjectData::TestDriverEpoch", "[ohmmsapp]")
 
     proj.put(root);
     REQUIRE(proj.getSeriesIndex() == 1);
-    REQUIRE(proj.get_driver_epoch() == DE::LEGACY);    
+    REQUIRE(proj.get_driver_version() == DV::LEGACY);    
   }
   SECTION("driver epoch bad value")
   {
     ProjectData proj;
 
     const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_epoch'>linear</parameter></project>";
+        "<project id='test1' series='1'><parameter name='driver_version '>linear</parameter></project>";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);

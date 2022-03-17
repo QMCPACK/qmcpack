@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <simulation>
   <project id="det_qmc_vmcbatch_dmcbatch_mwalkers" series="0">
-         <parameter name="driver_epoch">batched</parameter>
+         <parameter name="driver_version">batched</parameter>
   </project>
   <random seed="903"/>
   <include href="C_diamond-twist.structure.xml"/>

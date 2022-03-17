@@ -27,8 +27,8 @@ namespace qmcplusplus
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
-ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverEpoch driver_epoch)
-    : m_title(atitle), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_epoch_(driver_epoch)
+ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
+    : m_title(atitle), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_version_(driver_version)
 {
   myComm  = OHMMS::Controller;
   if (m_title.empty())
@@ -179,14 +179,14 @@ bool ProjectData::put(xmlNodePtr cur)
   if (!series_str.empty())
     m_series = std::stoi(series_str);
 
-  std::string driver_epoch_str;
+  std::string driver_version_str;
   ParameterSet m_param;
   m_param.add(max_cpu_secs_, "max_seconds");
-  m_param.add(driver_epoch_str, "driver_epoch");
+  m_param.add(driver_version_str, "driver_version");
   m_param.put(cur);
 
-  if (!driver_epoch_str.empty())
-    driver_epoch_ = lookupDriverEpoch(driver_epoch_str);
+  if (!driver_version_str.empty())
+    driver_version_ = lookupDriverVersion(driver_version_str);
 
   ///first, overwrite the existing xml nodes
   cur = cur->xmlChildrenNode;
@@ -226,7 +226,7 @@ bool ProjectData::put(xmlNodePtr cur)
   return true;
 }
 
-ProjectData::DriverEpoch ProjectData::lookupDriverEpoch(const std::string& enum_value)
+ProjectData::DriverVersion ProjectData::lookupDriverVersion(const std::string& enum_value)
 {
   std::string enum_value_str(lowerCase(enum_value));
   try

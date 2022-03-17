@@ -4,7 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       DMC for NiO-fcc-S1-tw0
     </application>
-    <parameter name="driver_epoch">batched</parameter>
+    <parameter name="driver_version">batched</parameter>
   </project>
 
   <random seed="37831"/>

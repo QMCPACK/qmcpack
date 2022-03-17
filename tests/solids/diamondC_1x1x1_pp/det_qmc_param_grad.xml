@@ -2,7 +2,7 @@
 <simulation>
    <project id="det_qmc_short_param_grad" series="0">
      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
-     <parameter name="driver_epoch">batched</parameter>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <random seed="2"/>
    <qmcsystem>

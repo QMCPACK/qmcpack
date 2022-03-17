@@ -99,10 +99,10 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
 
   const int nchars = qmc_mode.size();
 
-  using DE = ProjectData::DriverEpoch;
-  switch (project_data_.get_driver_epoch())
+  using DV = ProjectData::DriverVersion;
+  switch (project_data_.get_driver_version())
   {
-  case DE::BATCH:
+  case DV::BATCH:
 #if defined(QMC_CUDA)
     throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
                              "Please use OpenMP offload build.");
@@ -117,7 +117,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
     break;
   // Begin to separate batch epoch input reading from the legacy input parsing
-  case DE::LEGACY:
+  case DV::LEGACY:
 #if defined(QMC_CUDA)
     if (qmc_mode.find("batch") < nchars)
       throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
