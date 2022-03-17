@@ -246,6 +246,13 @@ public:
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
+  void omp_mw_InverseUpdateByColumn(const int nw,
+		                  const int idx,
+                                  const OffloadVector<ValueType>& invCurRatio_list,
+                                  const RefVector<OffloadVector<ValueType>>& psiV_list,
+                                                         RefVector<OffloadVector<ValueType>>& workV1_list,
+                                                         RefVector<OffloadVector<ValueType>>& workV2_list,
+                                  RefVector<OffloadMatrix<ValueType>>& psiMinv_list) const;
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param ext_level excitation level
    * @param det_offset offset of the determinant id
