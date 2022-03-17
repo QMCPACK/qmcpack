@@ -319,7 +319,6 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   int dummy_handle=0;
 
   OffloadVector<ValueType> curRatio_list(nw, 0.0);
-  OffloadVector<ValueType> curRatio2_list(nw, 0.0);
   OffloadVector<ValueType> invCurRatio_list(nw, 1.0);
   RefVector<OffloadVector<ValueType>> workV1_list, workV2_list, workV3_list;
   RefVector<OffloadVector<ValueType>> psiV_list, psiV_temp_list, new_ratios_to_ref_list;
@@ -409,7 +408,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
     psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
     workV1_deviceptr_list[iw] = workV1_list[iw].get().data();
-    workV2_deviceptr_list[iw] = workV2_list[iw].get().device_data();
+    workV2_deviceptr_list[iw] = workV2_list[iw].get().data();
 
 
     psiV_temp_hostptr_list[iw]    = psiV_temp_list[iw].get().data();
@@ -445,41 +444,34 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   }
 
 
-  ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_temp_list_ptr, psiMinv_rows, psiV_temp_list_ptr, 1, czero_ptr, workV2_list_ptr, 1,nw);
+  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
+                           curRatio_list);
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for") 
-  for (size_t iw = 0; iw < nw; iw++)
-     workV1_list[iw].get().data()[WorkingIndex] = cone - invCurRatio_list[iw];  
+ /* ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_temp_list_ptr, psiMinv_rows, psiV_temp_list_ptr, 1, czero_ptr, workV2_list_ptr, 1,nw);
 
-  ompBLAS::copy_batched(psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
-  ompBLAS::ger_batched(psiMinv_rows, psiMinv_rows, -1.0, workV1_list[iw].get().data(), 1, workV2_list_ptr[iw], 1,
-/*
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always,tofrom:psiMinv_temp_list_ptr[:nw]), \
+		  map(always tofrom:workV2_list_ptr[:nw])") 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    workV1_list[iw].get().updateFrom(); 
-    ValueType c_ratio=invCurRatio_list[iw];
-    BLAS::gemv('N', psiMinv_rows, psiMinv_rows, c_ratio, psiMinv_temp_list_Hptr[iw], psiMinv_rows,
-               psiV_temp_list_Hptr[iw], 1, ValueType(), workV1_list_ptr[iw], 1);
-    for (size_t i=0;i <psiMinv_rows;i++)
-    {
-       app_log()<<"V2="<< workV2_list_ptr[iw][i]<<"    V1="<<workV1_list_ptr[iw][i]<<std::endl;
-    }
-    workV1_list[iw].get().data()[WorkingIndex] = cone - c_ratio;
-    BLAS::copy(psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
-    BLAS::ger(psiMinv_rows, psiMinv_rows, -1.0, workV1_list[iw].get().data(), 1, workV2_list_ptr[iw], 1,
-              psiMinv_temp_list_Hptr[iw], psiMinv_rows);
-    //workV1_list_ptr[iw][WorkingIndex] = cone - c_ratio;
-    //BLAS::copy(psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
-    //BLAS::ger(psiMinv_rows, psiMinv_rows, -1.0, workV1_list_ptr[iw], 1, workV2_list_ptr[iw], 1,
-     //         psiMinv_temp_list_Hptr[iw], psiMinv_rows);
+     workV1_list_ptr[iw][WorkingIndex] = cone - invCurRatio_list_ptr[iw];  
+     BLAS::copy(psiMinv_rows, psiMinv_temp_list_ptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
   }
+
+  ompBLAS::ger_batched(dummy_handle,psiMinv_rows, psiMinv_rows, workV1_list_ptr, workV2_list_ptr, 1,
+              psiMinv_temp_list_ptr, psiMinv_rows,nw);
+
+  //for (size_t iw = 0; iw < nw; iw++)
+  //BLAS::ger(psiMinv_rows, psiMinv_rows, -1.0, workV1_list_ptr[iw], 1, workV2_list_ptr[iw], 1,
+   //         psiMinv_temp_list_Hptr[iw], psiMinv_rows);
+
+*/
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     psiMinv_temp_list[iw].get().updateTo();
     psiV_temp_list[iw].get().updateTo();
   }
-*/
+
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
@@ -677,8 +669,17 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<OffloadMatrix<GradType>> new_grads_list;
 
 
-  OffloadVector<ValueType> curRatio_list, det0_grad_list, det0_list(nw, 1.0), ratioGradReflistIdim;
+  OffloadVector<ValueType> curRatio_list(nw,0.0), det0_grad_list, det0_list(nw, 1.0), ratioGradReflistIdim;
   std::vector<GradType> ratioGradRef_list;
+
+  constexpr ValueType czero(0);
+  UnpinnedOffloadVector<ValueType> czero_vec(nw,czero);
+  OffloadVector<ValueType> invCurRatio_list(nw, 1.0);
+  
+  ValueType* czero_ptr = czero_vec.data();
+  int dummy_handle=0;
+
+
 
 
   phi_list.reserve(nw);
@@ -699,7 +700,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   dpsiMinv_list.reserve(nw);
   WorkSpace_list.reserve(nw);
 
-  curRatio_list.resize(nw);
   ratioGradReflistIdim.resize(nw);
   ratioGradRef_list.resize(nw);
   det0_grad_list.resize(nw);
@@ -738,10 +738,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     Vector<GradType> dpsiV_list_host_view(dpsiV_list[iw].get().data(), dpsiV_list[iw].get().size());
     Vector<ValueType> d2psiV_list_host_view(d2psiV_list[iw].get().data(), d2psiV_list[iw].get().size());
     det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
-    ///Pinn PsiV_list, dpsiV_list and d2psiV_list to GPU
-    psiV_list[iw].get().updateTo();
-    dpsiV_list[iw].get().updateTo();
-    d2psiV_list[iw].get().updateTo();
   }
   det_leader.evalOrb1Timer.stop();
   for (size_t iw = 0; iw < nw; iw++)
@@ -761,21 +757,101 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     }
     psiV_temp_list.push_back(psiV_temp_list[iw].get());
     det_leader.ExtraStuffTimer.stop();
-  }
 
-  for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
 
-
-  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
-  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                           curRatio_list);
-  for (size_t iw = 0; iw < nw; iw++)
-  {
+    psiV_temp_list[iw].get().updateTo();
     psiMinv_temp_list[iw].get().updateTo();
     TpsiM_list[iw].get().updateTo();
   }
+
+
+  const ValueType cone(1);
+  const auto psiMinv_rows = psiMinv_list[0].get().rows();
+  const auto psiMinv_cols = psiMinv_list[0].get().cols();
+  const int xmax          = psiMinv_cols * psiMinv_cols;
+
+  OffloadVector<ValueType*> psiV_temp_deviceptr_list(nw);
+  OffloadVector<ValueType*> psiMinv_temp_deviceptr_list(nw);
+  OffloadVector<ValueType*> workV1_deviceptr_list(nw);
+  OffloadVector<ValueType*> workV2_deviceptr_list(nw);
+
+  OffloadVector<ValueType*> psiV_temp_hostptr_list(nw);
+  OffloadVector<ValueType*> psiMinv_temp_hostptr_list(nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
+    psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
+    workV1_deviceptr_list[iw] = workV1_list[iw].get().data();
+    workV2_deviceptr_list[iw] = workV2_list[iw].get().data();
+
+
+    psiV_temp_hostptr_list[iw]    = psiV_temp_list[iw].get().data();
+    psiMinv_temp_hostptr_list[iw] = psiMinv_temp_list[iw].get().data();
+  }
+
+  auto* psiV_temp_list_Hptr    = psiV_temp_hostptr_list.data();
+  auto* psiMinv_temp_list_Hptr = psiMinv_temp_hostptr_list.data();
+
+
+  auto* psiV_temp_list_ptr    = psiV_temp_deviceptr_list.data();
+  auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.data();
+  auto* workV1_list_ptr   = workV1_deviceptr_list.data();
+  auto* workV2_list_ptr   = workV2_deviceptr_list.data();
+  auto* curRatio_list_ptr = curRatio_list.data();
+  auto* invCurRatio_list_ptr = invCurRatio_list.data();
+
+
+  PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
+		  map(always, from:invCurRatio_list_ptr[:nw]) \
+                  map(always, to: psiV_temp_list_ptr[:nw], psiMinv_temp_list_ptr[:nw])")
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    ValueType c_ratio = 0.0;
+    PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
+    for (size_t jc = 0; jc < psiMinv_cols; jc +=1)
+    {
+      size_t ic=jc*psiMinv_cols;
+      c_ratio += (psiMinv_temp_list_ptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
+    }
+    curRatio_list_ptr[iw] = c_ratio;
+    invCurRatio_list_ptr[iw] = cone / curRatio_list_ptr[iw] ;
+  }
+
+ /* ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_temp_list_ptr, psiMinv_rows, psiV_temp_list_ptr, 1, czero_ptr, workV2_list_ptr, 1,nw);
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always,tofrom:psiMinv_temp_list_ptr[:nw]), \
+		  map(always tofrom:workV2_list_ptr[:nw])") 
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+     workV1_list_ptr[iw][WorkingIndex] = cone - invCurRatio_list_ptr[iw];  
+     BLAS::copy(psiMinv_rows, psiMinv_temp_list_ptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
+  }
+
+  ompBLAS::ger_batched(dummy_handle,psiMinv_rows, psiMinv_rows, workV1_list_ptr, workV2_list_ptr, 1,
+              psiMinv_temp_list_ptr, psiMinv_rows,nw);
+
+  //for (size_t iw = 0; iw < nw; iw++)
+  //BLAS::ger(psiMinv_rows, psiMinv_rows, -1.0, workV1_list_ptr[iw], 1, workV2_list_ptr[iw], 1,
+   //         psiMinv_temp_list_Hptr[iw], psiMinv_rows);
+
+*/
+
+
+  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
+                           curRatio_list);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    psiMinv_temp_list[iw].get().updateTo();
+    psiV_temp_list[iw].get().updateTo();
+  }
+
+
+
+
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
