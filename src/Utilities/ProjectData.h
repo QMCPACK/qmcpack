@@ -133,7 +133,7 @@ private:
   ///max cpu seconds
   int max_cpu_secs_;
 
-  // The driver epoch of the project
+  // The driver version of the project
   DriverVersion driver_version_;
 };
 } // namespace qmcplusplus

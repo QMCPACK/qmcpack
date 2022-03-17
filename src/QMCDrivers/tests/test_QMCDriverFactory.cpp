@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -102,7 +102,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
   comm = OHMMS::Controller;
   using namespace testing;
 
-  SECTION("driver epoch behavior")
+  SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
     QMCDriverFactory driver_factory(test_project);
@@ -172,7 +172,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  SECTION("driver epoch behavior")
+  SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
 

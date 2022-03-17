@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -12,6 +12,7 @@
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +47,7 @@ namespace qmcplusplus
 {
 QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_data_(project_data) {}
 
-/** Read the xml specifify the driver for this QMC section
+/** Read the xml defining the driver for this QMC section
  *
  *  Copy elision should result in just a move of the
  *  DriverAssemblyState
@@ -116,7 +117,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
     break;
-  // Begin to separate batch epoch input reading from the legacy input parsing
+  // Begin to separate driver version = batch input reading from the legacy input parsing
   case DV::LEGACY:
 #if defined(QMC_CUDA)
     if (qmc_mode.find("batch") < nchars)
