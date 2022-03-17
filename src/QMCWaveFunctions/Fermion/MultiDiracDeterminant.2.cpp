@@ -450,9 +450,8 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   PRAGMA_OFFLOAD("omp target teams distribute parallel for") 
   for (size_t iw = 0; iw < nw; iw++)
      workV1_list[iw].get().data()[WorkingIndex] = cone - invCurRatio_list[iw];  
-
-  ompBLAS::copy_batched(psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
-  ompBLAS::ger_batched(psiMinv_rows, psiMinv_rows, -1.0, workV1_list[iw].get().data(), 1, workV2_list_ptr[iw], 1,
+  ompBLAS::copy_batched(dummy_handle, psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
+  ompBLAS::ger_batched(dummy_handle, psiMinv_rows, psiMinv_rows, -1.0, workV1_list[iw].get().data(), 1, workV2_list_ptr[iw], 1,
 /*
   for (size_t iw = 0; iw < nw; iw++)
   {
