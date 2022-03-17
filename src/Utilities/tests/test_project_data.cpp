@@ -85,7 +85,7 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
 {
   using DV = ProjectData::DriverVersion;
-  SECTION("driver epoch batch")
+  SECTION("driver version batch")
   {
     ProjectData proj;
 
@@ -100,7 +100,7 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
     REQUIRE(proj.getSeriesIndex() == 1);
     REQUIRE(proj.get_driver_version() == DV::BATCH);
   }
-  SECTION("driver epoch legacy")
+  SECTION("driver version legacy")
   {
       ProjectData proj;
       REQUIRE(proj.get_driver_version() == DV::LEGACY);    
@@ -117,12 +117,12 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
     REQUIRE(proj.getSeriesIndex() == 1);
     REQUIRE(proj.get_driver_version() == DV::LEGACY);    
   }
-  SECTION("driver epoch bad value")
+  SECTION("driver version bad value")
   {
     ProjectData proj;
 
     const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_version '>linear</parameter></project>";
+        "<project id='test1' series='1'><parameter name='driver_version'>linear</parameter></project>";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);
