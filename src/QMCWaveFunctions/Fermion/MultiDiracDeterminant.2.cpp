@@ -447,10 +447,14 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                            curRatio_list);
 
- /* ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_temp_list_ptr, psiMinv_rows, psiV_temp_list_ptr, 1, czero_ptr, workV2_list_ptr, 1,nw);
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for") 
+  for (size_t iw = 0; iw < nw; iw++)
+     workV1_list[iw].get().data()[WorkingIndex] = cone - invCurRatio_list[iw];  
+  ompBLAS::copy_batched(dummy_handle, psiMinv_rows, psiMinv_temp_list_Hptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
+  ompBLAS::ger_batched(dummy_handle, psiMinv_rows, psiMinv_rows, -1.0, workV1_list[iw].get().data(), 1, workV2_list_ptr[iw], 1,
+/*
+=======
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always,tofrom:psiMinv_temp_list_ptr[:nw]), \
-		  map(always tofrom:workV2_list_ptr[:nw])") 
   for (size_t iw = 0; iw < nw; iw++)
   {
      workV1_list_ptr[iw][WorkingIndex] = cone - invCurRatio_list_ptr[iw];  
