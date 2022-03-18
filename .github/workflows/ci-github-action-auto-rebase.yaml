@@ -14,7 +14,7 @@ on:
 jobs:
   rebase:
     if: |
-      contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
+      contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
     # && github.event.review.state == 'approved' 
     # && github.event.pull_request.auto_merge
        
