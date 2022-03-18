@@ -120,7 +120,7 @@ private:
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.getLattice()),
-        DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAB(source, target, DTModes::ALL_OFF),
         offload_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::evaluate_") + name_, timer_level_fine)),
         move_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::move_") + name_, timer_level_fine)),
