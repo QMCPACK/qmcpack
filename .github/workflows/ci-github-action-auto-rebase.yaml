@@ -3,6 +3,7 @@ on:
     branches:
       - develop
       - main
+      - github_actions_automatic_rebase
 
 jobs:
   rebase:
