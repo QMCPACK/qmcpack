@@ -22,6 +22,8 @@ jobs:
     steps:
     - name: Echo Github Context To Debug
       run: echo "$GITHUB_CONTEXT"
+      env: 
+        GITHUB_CONTEXT: ${{ toJSON(github) }}
     - name: Checkout Action
       uses: actions/checkout@v2
       with:
