@@ -4,15 +4,24 @@ on:
       - develop
       - main
       - github_actions_automatic_rebase
-
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+    branches:
+      - develop
+      - main
+      - github_actions_automatic_rebase
+  auto_merge_enabled:
+    branches:
+      - develop
+      - main
+      - github_actions_automatic_rebase  
+          
 jobs:
   rebase:
-    # if: |
-    #   contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
-
-    #  &&
-    # github.event.review.state == 'approved' &&
-    # github.event.pull_request.auto_merge
+    if: |
+      contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
+      && github.event.review.state == 'approved' 
+    # && github.event.pull_request.auto_merge
        
     runs-on: ubuntu-latest
     steps:
