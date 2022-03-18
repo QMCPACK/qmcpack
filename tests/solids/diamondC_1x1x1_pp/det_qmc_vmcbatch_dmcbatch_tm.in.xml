@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="det_qmc_vmcbatch_dmcbatch_tm" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <random seed="36"/>
    <qmcsystem>
@@ -83,7 +84,7 @@
       </hamiltonian>
    </qmcsystem>
 
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>

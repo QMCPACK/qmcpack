@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="He_param_grad" series="0"/>
+  <project id="He_param_grad" series="0">
+         <parameter name="driver_version">batched</parameter>
+  </project>
 
   <!-- Location of atoms -->
 
@@ -78,7 +80,7 @@
   <!-- QMC method(s) to run -->
 
   <loop max="10">
-    <qmc method="linear_batch" move="pbyp" checkpoint="-1" gpu="no">
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
       <optimize method="gradient_test">
         <parameter name="output_param_file">yes</parameter>
       </optimize>
