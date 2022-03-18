@@ -29,3 +29,12 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  debugrebase:
+    if: |
+      false == contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
+    # && github.event.review.state == 'approved' 
+    # && github.event.pull_request.auto_merge
+    runs-on: ubuntu-latest
+    steps:
+    - name: Echo Failed Data
+      run: echo github.event
