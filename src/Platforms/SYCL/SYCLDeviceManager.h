@@ -28,10 +28,6 @@ struct syclDeviceInfo
   sycl::device device;
 };
 
-#if defined(_OPENMP)
-std::vector<struct syclDeviceInfo> xomp_get_sycl_devices();
-#endif
-
 /** SYCL device manager
  */
 class SYCLDeviceManager
@@ -43,6 +39,12 @@ class SYCLDeviceManager
 public:
   SYCLDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size);
 
+  /** access the the DeviceManager owned default queue.
+   * Restrict the use of it to performance non-critical operations.
+   * Note: CUDA has a default queue but all the SYCL queues are explicit.
+   * Right now we return a copy of the default queue. Queues hold contexts and devices by referece.
+   * So making a copy is expected to be cheap. If this is not the case, we will find a cheap solution.
+   */
   sycl::queue getDefaultDeviceQueue() const { return default_device_queue; }
 };
 } // namespace qmcplusplus

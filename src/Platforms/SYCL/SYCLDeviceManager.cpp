@@ -28,6 +28,13 @@
 namespace qmcplusplus
 {
 
+#if defined(_OPENMP)
+/** create SYCL device/contexts from OpenMP owned ones to ensure interoperability.
+ * CUDA has the notion of primary context while SYCL requires explicitly sharing context.
+ */
+static std::vector<struct syclDeviceInfo> xomp_get_sycl_devices();
+#endif
+
 SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, int local_rank, int local_size)
     : sycl_default_device_num(-1)
 {
@@ -85,7 +92,7 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
 }
 
 #if defined(_OPENMP)
-std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
+static std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
 {
   enum class Backend
   {
