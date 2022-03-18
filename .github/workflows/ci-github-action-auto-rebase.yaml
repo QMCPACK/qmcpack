@@ -1,20 +1,11 @@
-name: Automatic Rebase
 on:
-  issue_comment:
-    types: [created]
+  pull_request_target:
     branches:
       - develop
       - main
 
-# on:
-#   workflow_run:
-#     branches:
-#       - develop
-#       - main
-
 jobs:
   rebase:
-    if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/rebase')
     # if: |
     #   contains(github.event.issue.body, '!-> Feel free to automatically rebase this PR. <-!')
 
