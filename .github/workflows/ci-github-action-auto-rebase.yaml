@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Echo Failed Data
-      run: echo ${{github.event}}
+      run: echo ${{github.event.pull_request.body}}
     - name: Checkout Action
       uses: actions/checkout@v2
       with:
