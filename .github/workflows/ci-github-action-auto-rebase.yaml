@@ -20,8 +20,8 @@ jobs:
        
     runs-on: ubuntu-latest
     steps:
-    - name: Echo Failed Data
-      run: echo ${{github.event.pull_request.body}}
+    - name: Echo Github Context To Debug
+      run: echo "$GITHUB_CONTEXT"
     - name: Checkout Action
       uses: actions/checkout@v2
       with:
