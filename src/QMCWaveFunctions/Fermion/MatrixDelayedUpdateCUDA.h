@@ -303,11 +303,11 @@ private:
     const int lda              = engine_leader.get_ref_psiMinv().cols();
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
-    updateRow_buffer_H2D.resize((sizeof(Value*) * 8 + sizeof(Value)) * n_accepted);
+    updateRow_buffer_H2D.resize((sizeof(Value*) * 6 + sizeof(Value)) * n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateRow_buffer_H2D.data()), 8, n_accepted);
-    Value* c_ratio_inv = reinterpret_cast<Value*>(updateRow_buffer_H2D.data() + sizeof(Value*) * 8 * n_accepted);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateRow_buffer_H2D.data()), 6, n_accepted);
+    Value* c_ratio_inv = reinterpret_cast<Value*>(updateRow_buffer_H2D.data() + sizeof(Value*) * 6 * n_accepted);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
@@ -317,8 +317,6 @@ private:
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
         ptr_buffer[5][count] = psiM_l_list[count];
-        ptr_buffer[6][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[7][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
 
         c_ratio_inv[count] = Value(-1) / ratios[iw];
         count++;
@@ -333,7 +331,8 @@ private:
 
     {
       Value** Ainv_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data());
-      Value** phiV_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
+      Value** phiVGL_mw_ptr =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
       Value** temp_mw_ptr =
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 2);
       Value** rcopy_mw_ptr =
@@ -342,21 +341,18 @@ private:
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 4);
       Value** d2psiM_mw_out =
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 5);
-      Value** dpsiM_mw_in =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
-      Value** d2psiM_mw_in =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 7);
       Value* ratio_inv_mw =
-          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 8);
+          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
+
 
       // invoke the Fahy's variant of Sherman-Morrison update.
       cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, lda,
-                                              phiV_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted),
+                                              phiVGL_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_MFs::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
-                                                   rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
-                                                   n_accepted),
+                                                   rcopy_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out,
+                                                   d2psiM_mw_out, n_accepted),
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
@@ -579,11 +575,11 @@ public:
     const int lda                     = engine_leader.get_psiMinv().cols();
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
-    accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * 14 + sizeof(Value)) * nw);
+    accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * 12 + sizeof(Value)) * nw);
     engine_leader.resize_fill_constant_arrays(nw);
 
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.data()), 14, nw);
-    Value* c_ratio_inv = reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * 14 * nw);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.data()), 12, nw);
+    Value* c_ratio_inv = reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * 12 * nw);
     for (int iw = 0, count_accepted = 0, count_rejected = 0; iw < nw; iw++)
     {
       This_t& engine = engines[iw];
@@ -599,10 +595,8 @@ public:
         ptr_buffer[7][count_accepted]  = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
         ptr_buffer[8][count_accepted]  = engine.V_gpu.data() + norb * delay_count;
         ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[10][count_accepted] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[11][count_accepted] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
-        ptr_buffer[12][count_accepted] = psiM_g_list[count_accepted];
-        ptr_buffer[13][count_accepted] = psiM_l_list[count_accepted];
+        ptr_buffer[10][count_accepted] = psiM_g_list[count_accepted];
+        ptr_buffer[11][count_accepted] = psiM_l_list[count_accepted];
         c_ratio_inv[count_accepted]    = Value(1) / ratios[iw];
         count_accepted++;
       }
@@ -640,18 +634,14 @@ public:
         reinterpret_cast<int**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 7);
     Value** V_row_mw_ptr =
         reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 8);
-    Value** phiV_mw_ptr =
+    Value** phiVGL_mw_ptr =
         reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 9);
-    Value** dpsiM_mw_in =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
-    Value** d2psiM_mw_in =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
     Value** dpsiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
     Value** d2psiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 13);
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
     Value* ratio_inv_mw_ptr =
-        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 14);
+        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
@@ -660,7 +650,7 @@ public:
     // the new Binv is [[X Y] [Z sigma]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
     cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_vec.device_data(), V_mw_ptr,
-                                            norb, phiV_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, n_accepted),
+                                            norb, phiVGL_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // Y
     //BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
@@ -677,8 +667,8 @@ public:
                    "cuBLAS_MFs::ger_batched failed!");
     // sigma and Z
     cudaErrorCheck(CUDA::add_delay_list_save_sigma_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
-                                                               Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiV_mw_ptr,
-                                                               dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr, dpsiM_mw_out,
+                                                               Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiVGL_mw_ptr,
+                                                               phi_vgl_stride, U_row_mw_ptr, dpsiM_mw_out,
                                                                d2psiM_mw_out, norb, n_accepted, nw),
                    "CUDA::add_delay_list_save_y_VGL_batched failed!");
     delay_count++;
