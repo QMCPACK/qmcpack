@@ -599,6 +599,7 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
 
     det_value_ptr_list[iw] = det.Dets[det_id]->getNewRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
+
   }
 
   std::vector<PsiValueType> psi_list(nw, 0);
@@ -606,15 +607,17 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
   auto* C_otherDs_ptr_list_ptr = C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   OffloadRatioTimer.start();
-  PRAGMA_OFFLOAD("omp target teams distribute map(from: psi_list_ptr[:nw]) \
+  PRAGMA_OFFLOAD("omp target teams distribute map(always,from: psi_list_ptr[:nw]) \
           map(always, to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
   {
     PsiValueType psi_local(0);
     PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
-    for (size_t i = 0; i < ndets; i++)
+    for (size_t i = 0; i < ndets; i++){
       psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
+    }
     psi_list_ptr[iw] = psi_local;
+
   }
   OffloadRatioTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)
