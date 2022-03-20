@@ -211,7 +211,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const auto num_padded        = dt_leader.num_targets_padded_;
     mw_mem.mw_distances_subset.resize(nw * subset_size * num_padded);
 
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_local + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
@@ -320,7 +320,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
     }
 
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_targets_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
