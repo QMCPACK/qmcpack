@@ -201,7 +201,7 @@ public:
     assert(distances_[0].data() + num_padded == displacements_[0].data());
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
     const size_t stride_size   = getPerTargetPctlStrideSize();
 
@@ -301,7 +301,7 @@ public:
     }
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr              = mw_r_dr.data();
