@@ -335,6 +335,8 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   psiM_list.reserve(nw);
   new_ratios_to_ref_list.reserve(nw);
 
+  int success = 0;
+  int dummy_handle=0;
 
 
   for (size_t iw = 0; iw < nw; iw++)
@@ -363,50 +365,77 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     MultiDiracDeterminant& det = (det_list[iw]);
     Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
     det.getPhi()->evaluateValue(P_list[iw], iat, psiV_list_host_view);
+    ///Big transfer
+    psiV_list[iw].get().updateTo();
   }
-  
-
   det_leader.evalOrbTimer.stop();
 
+
+
+
+
+  OffloadVector<ValueType*> psiMinv_temp_deviceptr_list(nw);
+  OffloadVector<ValueType*> psiMinv_deviceptr_list(nw);
+  OffloadVector<ValueType*> psiV_deviceptr_list(nw);
+  OffloadVector<ValueType*> TpsiM_deviceptr_list(nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    psiV_deviceptr_list[iw]         = psiV_list[iw].get().device_data();
+    TpsiM_deviceptr_list[iw]         = TpsiM_list[iw].get().device_data();
+    psiMinv_deviceptr_list[iw]      = psiMinv_list[iw].get().device_data();
+    psiMinv_temp_deviceptr_list[iw]      = psiMinv_temp_list[iw].get().device_data();
+  }
+
+  auto* psiV_list_ptr = psiV_deviceptr_list.device_data();
+  auto* TpsiM_list_ptr = TpsiM_deviceptr_list.device_data();
+  auto* psiMinv_list_ptr = psiMinv_deviceptr_list.device_data();
+  auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.device_data();
+  auto* curRatio_list_ptr = curRatio_list.data();
+
+  psiMinv_deviceptr_list.updateTo();
+  psiMinv_temp_deviceptr_list.updateTo();
+  TpsiM_deviceptr_list.updateTo();
+  psiV_deviceptr_list.updateTo();
+
+  const auto psiMinv_rows   = psiMinv_list[0].get().rows();
+  const auto psiMinv_cols   = psiMinv_list[0].get().cols();
+  const auto TpsiM_num_cols = TpsiM_list[0].get().cols(); 
+
   det_leader.ExtraStuffTimer.start();
+  success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,psiMinv_temp_list_ptr, 1, nw) ;
+  if (success != 0)
+        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+
+  success=ompBLAS::copy_batched_offset(dummy_handle, det_leader.NumOrbitals, psiV_list_ptr, 0, 1, TpsiM_list_ptr, WorkingIndex, TpsiM_num_cols, nw);
+  if (success != 0)
+        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+
+
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
     const auto& confgList      = *det.ciConfigList;
-    auto it(confgList[det.ReferenceDeterminant].occup.begin());
-    psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
     for (size_t i = 0; i < det_leader.NumPtcls; i++)
-      psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[*(it++)];
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
-
+      psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[confgList[det_leader.ReferenceDeterminant].occup[i]];
     ///Pin psiV_temp and psiMinv and Tpsi_list to device
     psiV_temp_list[iw].get().updateTo();
-    psiMinv_temp_list[iw].get().updateTo();
-    TpsiM_list[iw].get().updateTo();
-
   }
 
-  const auto psiMinv_cols = psiMinv_list[0].get().cols();
 
   OffloadVector<ValueType*> psiV_temp_deviceptr_list(nw);
-  OffloadVector<ValueType*> psiMinv_temp_deviceptr_list(nw);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
-    psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
   }
 
 
   auto* psiV_temp_list_ptr    = psiV_temp_deviceptr_list.data();
-  auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.data();
-  auto* curRatio_list_ptr = curRatio_list.data();
-
-
 
   PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
-                  map(always, to: psiV_temp_list_ptr[:nw], psiMinv_temp_list_ptr[:nw])")
+                  map(always, to: psiV_temp_list_ptr[:nw]) is_device_ptr(psiMinv_temp_list_ptr)")
+
   for (size_t iw = 0; iw < nw; iw++)
   {
     ValueType c_ratio = 0.0;

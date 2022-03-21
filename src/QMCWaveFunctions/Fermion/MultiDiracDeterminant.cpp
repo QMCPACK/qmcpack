@@ -185,6 +185,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
                                      dotProducts, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
   ratios_to_ref_.updateTo();
+  ///Pinning psiMinv to the device
+  psiMinv.updateTo();
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
