@@ -72,27 +72,32 @@ protected:
   hContainer_type myH;
   ghContainer_type mygH;
 
-  IndexType m_true_norbs;
-
 public:
   SplineR2R()
   {
-    is_complex   = false;
-    className    = "SplineR2R";
-    KeyWord      = "SplineR2R";
-    m_true_norbs = 0;
+    is_complex = false;
+    className  = "SplineR2R";
+    KeyWord    = "SplineR2R";
   }
 
-  // Sets the number of spline SPOs
-  // Note that this might be < number of splines due to padding
-  void setOrbitalSetSize(int norbs) override { m_true_norbs = norbs; }
+  // Sets the number of splines
+  // NB: This may be <= number of splined orbs from SplineInst
+  void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
-  // Gives the number of splined SPOs
-  int getOrbitalSetSize() const override { return m_true_norbs; }
+  // Gives the number of SPOs
+  int getOrbitalSetSize() const override { return OrbitalSetSize; }
 
-  // Gives the number of splined SPOs
-  // JPT DEBUG: Shouldn't this be different from orbitalsetsize?
-  int getBasisSetSize() const override { return SplineInst->num_splines(); }
+  // Gives the number of spline coefs for 1 spline
+  int getBasisSetSize() const override
+  {
+    const auto spline_ptr = SplineInst->getSplinePtr();
+    assert(spline_ptr != nullptr);
+    const auto spl_coefs      = spline_ptr->coefs;
+    const auto Nsplines       = spline_ptr->num_splines; // May include padding
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    const auto BasisSetSize   = coefs_tot_size / Nsplines;
+    return BasisSetSize;
+  }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 
