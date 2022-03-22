@@ -83,7 +83,7 @@ public:
 
   inline void reportStatus(std::ostream& os) final {}
 
-  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
+  virtual void registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
     throw std::runtime_error("DiracDeterminantBase::registerTWFFastDerivWrapper must be overridden\n");
   }

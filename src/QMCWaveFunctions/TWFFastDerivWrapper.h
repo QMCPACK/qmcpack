@@ -54,8 +54,8 @@ public:
    *  @param[in] spo.  Pointer to SPOSet.  
    *  @return void.
    */
-  void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
+  void addGroup(ParticleSet& P, const IndexType groupid, SPOSet* spo);
+  inline void addJastrow(ParticleSet& P, std::unique_ptr<WaveFunctionComponent>& j) { jastrow_list_.push_back(j->makeClone(P)); };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -218,7 +218,7 @@ private:
   std::vector<IndexType> groups_;
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
-  std::vector<WaveFunctionComponent*> jastrow_list_;
+  std::vector<std::unique_ptr<WaveFunctionComponent> > jastrow_list_;
 };
 
 /**@}*/

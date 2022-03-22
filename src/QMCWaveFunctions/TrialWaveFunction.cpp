@@ -1236,7 +1236,7 @@ RefVector<ParticleSet::ParticleLaplacian> TrialWaveFunction::extractLRefList(
   return l_list;
 }
 
-void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+void TrialWaveFunction::initializeTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf)
 {
   for (int i = 0; i < Z.size(); ++i)
   {
@@ -1249,7 +1249,9 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
     else //Is Jastrow, so do nothing right now.
-    {}
+    {
+      twf.addJastrow(P,Z[i]);  
+    }
   }
 }
 

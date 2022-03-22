@@ -963,7 +963,7 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DET_ENGINE>
-void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(const ParticleSet& P,
+void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(ParticleSet& P,
                                                                       TWFFastDerivWrapper& twf) const
 {
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());

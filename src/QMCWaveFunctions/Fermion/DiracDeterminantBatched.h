@@ -212,7 +212,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
+  void registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const override;
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set

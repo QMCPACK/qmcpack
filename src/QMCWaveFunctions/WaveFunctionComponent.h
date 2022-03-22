@@ -164,7 +164,7 @@ public:
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
-  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+  virtual void registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const;
 
   /** evaluate the value of the WaveFunctionComponent from scratch
    * \param[in] P  active ParticleSet

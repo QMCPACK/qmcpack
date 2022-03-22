@@ -26,7 +26,7 @@ TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const Index
   return return_group_index;
 }
 
-void TWFFastDerivWrapper::addGroup(const ParticleSet& P, const IndexType gid, SPOSet* spo)
+void TWFFastDerivWrapper::addGroup(ParticleSet& P, const IndexType gid, SPOSet* spo)
 {
   if (std::find(groups_.begin(), groups_.end(), gid) == groups_.end())
   {

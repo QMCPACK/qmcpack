@@ -82,7 +82,7 @@ public:
 
   /** Finds the SPOSet associated with this determinant, and registers it with WFN wrapper
    */
-  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const final;
+  void registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const final;
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
