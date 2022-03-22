@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,10 +17,8 @@
 #ifndef QMCPLUSPLUS_PROJECTDATA_H__
 #define QMCPLUSPLUS_PROJECTDATA_H__
 
-#include "OhmmsData/OhmmsElementBase.h"
-//#include <vector>
-//#include <string>
-//#include <iostream>
+#include <unordered_map>
+#include "OhmmsData/libxmldefs.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -27,33 +26,50 @@ namespace qmcplusplus
 /**class ProjectData
  *\brief Encapsulate data for a project
  *
- * Default: myName = "Project"
- * Should not modify the name, since composite types, such as MDRunData, use the name.
+ * Default: m_title = getDateAndTime("%Y%m%dT%H%M")
  *
+ * \todo This shouldn't contain MPI information it is only used to calculate the
+ *       path information and the communication parameters should just be input params to that call.
+ *       This reduce the internal state.
  */
-class ProjectData : public OhmmsElementBase
+class ProjectData
 {
 public:
-  /// constructor
-  ProjectData(const char* aname = 0);
 
-  bool get(std::ostream& os) const override;
-  bool put(std::istream& is) override;
-  bool put(xmlNodePtr cur) override;
-  void reset() override;
+/** Enum for global scope switch of design from legacy driver based to batch driver based.
+ *  This effects more than just which drivers are used. Currently it just effects the meaning of
+ *  qmc section vmc, dmc, linear name attributes.
+ */
+enum class DriverVersion
+{
+  LEGACY,
+  BATCH
+};
+
+private:
+  inline static const std::unordered_map<std::string, DriverVersion> lookup_input_enum_value{{"legacy",
+                                                                                            DriverVersion::LEGACY},
+                                                                                           {"batch",
+                                                                                            DriverVersion::BATCH},
+                                                                                           {"batched",
+                                                                                            DriverVersion::BATCH}
+
+  };
+
+public:
+  /// constructor
+  ProjectData(const std::string& atitle = "", DriverVersion de = DriverVersion::LEGACY);
+
+  bool get(std::ostream& os) const;
+  bool put(std::istream& is);
+  bool put(xmlNodePtr cur);
+  void reset();
 
   ///increment a series number and reset m_projectroot
   void advance();
 
   ///roll-back a series number and reset m_projectroot by one
   void rewind();
-
-  ///set the title
-  inline void setTitle(const std::string& atitle)
-  {
-    m_title = atitle;
-    reset();
-  }
 
   void setCommunicator(Communicate* c);
 
@@ -82,8 +98,11 @@ public:
 
   int getSeriesIndex() const { return m_series; }
   int getMaxCPUSeconds() const { return max_cpu_secs_; }
+  const DriverVersion get_driver_version() const { return driver_version_; }
 
 private:
+  static DriverVersion lookupDriverVersion(const std::string& enum_value);
+
   ///title of the project
   std::string m_title;
 
@@ -113,6 +132,9 @@ private:
 
   ///max cpu seconds
   int max_cpu_secs_;
+
+  // The driver version of the project
+  DriverVersion driver_version_;
 };
 } // namespace qmcplusplus
 

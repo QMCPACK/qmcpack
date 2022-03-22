@@ -15,9 +15,6 @@
 
 #include "J2OMPTarget.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "BsplineFunctor.h"
-#include "PadeFunctors.h"
-#include "UserFunctor.h"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -1029,5 +1026,4 @@ void J2OMPTarget<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
 template class J2OMPTarget<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OMPTarget<PadeFunctor<QMCTraits::RealType>>;
 template class J2OMPTarget<UserFunctor<QMCTraits::RealType>>;
-
 } // namespace qmcplusplus

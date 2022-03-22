@@ -19,7 +19,7 @@
 #include "CUDA/cuBLAS.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
 #if defined(QMC_CUDA2HIP)
-#include "DiracMatrix.h"
+#include "rocSolverInverter.hpp"
 #else
 #include "cuSolverInverter.hpp"
 #endif
@@ -75,9 +75,9 @@ class DelayedUpdateCUDA
   int delay_count;
 
 #if defined(QMC_CUDA2HIP)
-  DiracMatrix<T_FP> host_inverter_;
+  rocSolverInverter<T_FP> rocsolver_inverter;
 #else
-  cuSolverInverter<T_FP> cusolver_invertor;
+  cuSolverInverter<T_FP> cusolver_inverter;
 #endif
 
   // the range of prefetched_Ainv_rows
@@ -140,12 +140,11 @@ public:
   template<typename TREAL>
   void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-#if defined(QMC_CUDA2HIP)
-    host_inverter_.invert_transpose(logdetT, Ainv, log_value);
-    initializeInv(Ainv);
-#else
     clearDelayCount();
-    cusolver_invertor.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
+#if defined(QMC_CUDA2HIP)
+    rocsolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
+#else
+    cusolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
 #endif
   }
 

@@ -122,9 +122,6 @@ public:
 
   ~PWBasis() {}
 
-  ///basis size
-  inline IndexType getBasisSetSize() const { return NumPlaneWaves; }
-
   ///set the twist angle
   void setTwistAngle(const PosType& tang);
 
