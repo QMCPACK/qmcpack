@@ -1165,6 +1165,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
   CHECK(keobs == Approx(7.6732404154e+00));
+/*
 #if defined(MIXED_PRECISION)
   CHECK(fkin[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(fkin[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -1241,6 +1242,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   CHECK(fnlpp[1][1] == Approx(1.1362118534918864));
   CHECK(fnlpp[1][2] == Approx(-4.5825638607333019));
 #endif
+  */
 }
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {

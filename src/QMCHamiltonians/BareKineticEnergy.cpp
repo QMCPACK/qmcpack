@@ -251,11 +251,20 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
                                                 const TWFFastDerivWrapper& psi,
                                                 std::vector<ValueMatrix>& B)
 {
+
+  ParticleSet::ParticleGradient G;
+  ParticleSet::ParticleLaplacian L;
+
+  IndexType nelec=P.getTotalNum();
+  G.resize(nelec);
+  L.resize(nelec);
+ 
   IndexType ngroups = P.groups();
   assert(B.size() == ngroups);
   std::vector<ValueMatrix> M;
   std::vector<GradMatrix> grad_M;
   std::vector<ValueMatrix> lapl_M;
+  std::vector<ValueMatrix> gradJdotgradPhi;
   for (int ig = 0; ig < ngroups; ig++)
   {
     const IndexType sid    = psi.getTWFGroupIndex(ig);
@@ -272,14 +281,28 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
     M.push_back(zeromat);
     grad_M.push_back(zerogradmat);
     lapl_M.push_back(zeromat);
+    gradJdotgradPhi.push_back(zeromat);
   }
 
   psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.evaluateJastrowVGL(P,G,L);
+
   for (int ig = 0; ig < ngroups; ig++)
   {
     const IndexType sid = psi.getTWFGroupIndex(ig);
-    lapl_M[ig] *= MinusOver2M[ig];
-    B[sid] += lapl_M[ig];
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    for (int iel=first; iel<last; iel++)
+    {
+      for(int iorb=0; iorb<norbs; iorb++)
+      {
+        gradJdotgradPhi[sid][iel-first][iorb] = 2.0*dot(G[iel],grad_M[sid][iel-first][iorb]);
+        B[sid][iel-first][iorb]+=MinusOver2M[ig]*(lapl_M[sid][iel-first][iorb]+gradJdotgradPhi[sid][iel-first][iorb] + (L[iel]+dot(G[iel],G[iel]))*M[sid][iel-first][iorb]);
+      }
+   //   B[sid] += MinusOver2M[ig]*(lapl_M[sid][iel-first]+gradJdotgradPhi[sid][iel-first] + L[iel]*M[sid][iel-first]);
+    }
   }
 }
 
