@@ -481,6 +481,78 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   }
 }
 
+void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                  const TWFFastDerivWrapper& psi,
+                                                  std::vector<ValueMatrix>& B)
+{
+  bool keepGrid = true;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+  {
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          PP[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi, jel, dist[iat], -displ[iat], B);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
+  }
+}
+
+void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                            const ParticleSet& source,
+                                                            const TWFFastDerivWrapper& psi,
+                                                            const int iat_source,
+                                                            std::vector<std::vector<ValueMatrix>>& Bforce)
+{
+  bool keepGrid = true;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+  {
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
+                                                         Bforce);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
+  }
+}
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;

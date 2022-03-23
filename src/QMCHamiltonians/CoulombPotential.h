@@ -66,7 +66,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       : ForceBase(s, s),
         Pa(s),
         Pb(s),
-        myTableIndex(s.addTable(s)),
+        myTableIndex(s.addTable(s, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
         is_AA(true),
         is_active(active),
         ComputeForces(computeForces)

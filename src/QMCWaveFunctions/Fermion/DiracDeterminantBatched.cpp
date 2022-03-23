@@ -380,16 +380,16 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_completeUpdates(
 
     if (UpdateMode == ORB_PBYP_PARTIAL)
     {
+      RefVector<DualVGLVector> psiM_vgl_list;
+      psiM_vgl_list.reserve(nw);
       for (int iw = 0; iw < nw; iw++)
       {
-        auto& det          = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-        auto& my_psiM_vgl  = det.psiM_vgl;
-        auto* psiM_vgl_ptr = my_psiM_vgl.data();
-        // transfer device to host, total size 4, g(3) + l(1)
-        PRAGMA_OFFLOAD("omp target update from(psiM_vgl_ptr[my_psiM_vgl.capacity():my_psiM_vgl.capacity()*4]) nowait")
+        auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+        psiM_vgl_list.push_back(det.psiM_vgl);
       }
-      // The only tasks being waited on here are the psiM_vgl updates
-      PRAGMA_OFFLOAD("omp taskwait")
+
+      // transfer device to host, total size 4, g(3) + l(1), skipping v
+      DET_ENGINE::mw_transferVGL_D2H(wfc_leader.det_engine_, psiM_vgl_list, 1, 4);
     }
   }
 }
@@ -939,15 +939,17 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
   { // transfer dpsiM, d2psiM, psiMinv to device
     ScopedTimer d2h(H2DTimer);
 
+    RefVector<DualVGLVector> psiM_vgl_list;
+    psiM_vgl_list.reserve(nw);
     for (int iw = 0; iw < wfc_filtered_list.size(); iw++)
     {
-      auto& det          = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
-      auto* psiM_vgl_ptr = det.psiM_vgl.data();
-      size_t stride      = wfc_leader.psiM_vgl.capacity();
-      PRAGMA_OFFLOAD("omp target update to(psiM_vgl_ptr[stride:stride*4]) nowait")
+      auto& det = wfc_filtered_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      psiM_vgl_list.push_back(det.psiM_vgl);
       det.UpdateMode = ORB_WALKER;
     }
-    PRAGMA_OFFLOAD("omp taskwait")
+
+    // transfer host to device, total size 4, g(3) + l(1), skipping v
+    DET_ENGINE::mw_transferVGL_H2D(wfc_leader.det_engine_, psiM_vgl_list, 1, 4);
   }
 }
 

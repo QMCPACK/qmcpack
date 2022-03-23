@@ -17,7 +17,6 @@
 #include "Numerics/MatrixOperators.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 
 
 namespace qmcplusplus
@@ -29,9 +28,8 @@ using MatrixOperators::product_AtB;
 
 DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
                                      TrialWaveFunction& psi,
-                                     ParticleSet* Pcl,
-                                     const WaveFunctionFactory& factory)
-    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl), wf_factory_(factory)
+                                     ParticleSet* Pcl)
+    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
@@ -43,8 +41,7 @@ DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, 
       lattice_(P.getLattice()),
       Psi(psi),
       Pq(P),
-      Pc(master.Pc),
-      wf_factory_(master.wf_factory_)
+      Pc(master.Pc)
 {
   reset();
   set_state(master);
@@ -235,14 +232,14 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     metric     = 1.0 / samples;
   }
   else
-    APP_ABORT("DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
+    throw std::runtime_error("DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
 
   if (evstr == "loop")
     evaluator = loop;
   else if (evstr == "matrix")
     evaluator = matrix;
   else
-    APP_ABORT("DensityMatrices1B::set_state  invalid evaluator\n  valid options are: loop, matrix");
+    throw std::runtime_error("DensityMatrices1B::set_state  invalid evaluator\n  valid options are: loop, matrix");
 
   normalized             = nmstr == "yes";
   volume_normed          = vnstr == "yes";
@@ -255,19 +252,20 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
 
   // get the sposets that form the basis
   if (sposets.size() == 0)
-    APP_ABORT("DensityMatrices1B::put  basis must have at least one sposet");
+    throw std::runtime_error("DensityMatrices1B::put  basis must have at least one sposet");
 
   for (int i = 0; i < sposets.size(); ++i)
   {
-    SPOSet* sposet = wf_factory_.getSPOSet(sposets[i]);
-    if (sposet == 0)
-      APP_ABORT("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist");
-    basis_functions.add(sposet->makeClone());
+    auto& spomap = Psi.getSPOMap();
+    auto spo_it = spomap.find(sposets[i]);
+    if (spo_it == spomap.end())
+      throw std::runtime_error("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist.");
+    basis_functions.add(spo_it->second->makeClone());
   }
   basis_size = basis_functions.size();
 
   if (basis_size < 1)
-    APP_ABORT("DensityMatrices1B::put  basis_size must be greater than one");
+    throw std::runtime_error("DensityMatrices1B::put  basis_size must be greater than one");
 }
 
 

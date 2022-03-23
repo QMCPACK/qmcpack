@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="qmc_short" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <qmcsystem>
       <simulationcell>
@@ -82,7 +83,7 @@
    </qmcsystem>
 
 <loop max="4">
-  <qmc method="linear_batch" move="pbyp" checkpoint="-1" gpu="yes">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="yes">
       <parameter name="walkers_per_rank"    >    16              </parameter>
       <parameter name="blocks"              >    100            </parameter>
       <parameter name="steps"               >    80             </parameter>

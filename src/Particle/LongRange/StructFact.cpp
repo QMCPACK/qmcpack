@@ -19,15 +19,15 @@
 #include "CPU/SIMD/vmath.hpp"
 #include "CPU/BLAS.hpp"
 #include "Utilities/qmc_common.h"
+#include "OMPTarget/OMPTargetMath.hpp"
+#include "RealSpacePositionsOMPTarget.h"
 
 namespace qmcplusplus
 {
 //Constructor - pass arguments to k_lists_' constructor
-StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const KContainer& k_lists)
+StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
     : SuperCellEnum(SUPERCELL_BULK),
       k_lists_(k_lists),
-      num_ptcls(nptcls),
-      num_species(ns),
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
@@ -36,16 +36,13 @@ StructFact::StructFact(int nptcls, int ns, const ParticleLayout& lattice, const 
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;
   }
-
-  resize(k_lists_.numk);
 }
 
 //Destructor
 StructFact::~StructFact() = default;
 
-void StructFact::resize(int nkpts)
+void StructFact::resize(int nkpts, int num_species, int num_ptcls)
 {
-  phiV.resize(nkpts);
   rhok_r.resize(num_species, nkpts);
   rhok_i.resize(num_species, nkpts);
   if (StorePerParticle)
@@ -53,8 +50,6 @@ void StructFact::resize(int nkpts)
     eikr_r.resize(num_ptcls, nkpts);
     eikr_i.resize(num_ptcls, nkpts);
   }
-  eikr_r_temp.resize(nkpts);
-  eikr_i_temp.resize(nkpts);
 }
 
 
@@ -65,12 +60,75 @@ void StructFact::updateAllPart(const ParticleSet& P)
 }
 
 void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
-                                  const RefVectorWithLeader<ParticleSet>& p_list)
+                                  const RefVectorWithLeader<ParticleSet>& p_list,
+                                  SKMultiWalkerMem& mw_mem)
 {
   auto& sk_leader = sk_list.getLeader();
+  auto& p_leader  = p_list.getLeader();
   ScopedTimer local(sk_leader.update_all_timer_);
-  for (int iw = 0; iw < sk_list.size(); iw++)
-    sk_list[iw].computeRhok(p_list[iw]);
+  if (p_leader.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD || sk_leader.StorePerParticle)
+    for (int iw = 0; iw < sk_list.size(); iw++)
+      sk_list[iw].computeRhok(p_list[iw]);
+  else
+  {
+    const size_t nw          = p_list.size();
+    const size_t num_species = p_leader.groups();
+    const auto& kpts_cart    = sk_leader.k_lists_.get_kpts_cart_soa();
+    const size_t nk          = sk_leader.k_lists_.numk;
+    const size_t nk_padded   = kpts_cart.capacity();
+
+    auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(p_leader.getCoordinates());
+    auto& mw_rsoa_dev_ptrs   = coordinates_leader.getMultiWalkerRSoADevicePtrs();
+    const size_t np_padded   = p_leader.getCoordinates().getAllParticlePos().capacity();
+
+    constexpr size_t cplx_stride = 2;
+    mw_mem.nw_rhok.resize(nw * num_species * cplx_stride, nk_padded);
+
+    // make the compute over nk by blocks
+    constexpr size_t kblock_size = 512;
+    const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
+
+    auto* mw_rsoa_ptr   = mw_rsoa_dev_ptrs.data();
+    auto* kpts_cart_ptr = kpts_cart.data();
+    auto* mw_rhok_ptr   = mw_mem.nw_rhok.data();
+    auto* group_offsets = p_leader.get_group_offsets().data();
+
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) map(always, from : mw_rhok_ptr[:mw_mem.nw_rhok.size()])")
+    for (int iw = 0; iw < nw; iw++)
+      for (int ib = 0; ib < num_kblocks; ib++)
+      {
+        const size_t offset          = ib * kblock_size;
+        const size_t this_block_size = omptarget::min(kblock_size, nk - offset);
+        const auto* rsoa_ptr         = mw_rsoa_ptr[iw];
+
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int ik = 0; ik < this_block_size; ik++)
+          for (int is = 0; is < num_species; is++)
+          {
+            RealType rhok_r(0), rhok_i(0);
+
+            for (int ip = group_offsets[is]; ip < group_offsets[is + 1]; ip++)
+            {
+              RealType s, c, phase(0);
+              for (int idim = 0; idim < DIM; idim++)
+                phase += kpts_cart_ptr[ik + offset + nk_padded * idim] * rsoa_ptr[ip + idim * np_padded];
+              omptarget::sincos(phase, &s, &c);
+              rhok_r += c;
+              rhok_i += s;
+            }
+
+            mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + offset + ik]             = rhok_r;
+            mw_rhok_ptr[(iw * num_species + is) * cplx_stride * nk_padded + nk_padded + offset + ik] = rhok_i;
+          }
+      }
+
+    for (int iw = 0; iw < nw; iw++)
+      for (int is = 0; is < num_species; is++)
+      {
+        std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride], nk, sk_list[iw].rhok_r[is]);
+        std::copy_n(mw_mem.nw_rhok[(iw * num_species + is) * cplx_stride + 1], nk, sk_list[iw].rhok_i[is]);
+      }
+  }
 }
 
 
@@ -78,15 +136,17 @@ void StructFact::mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list
  */
 void StructFact::computeRhok(const ParticleSet& P)
 {
-  int npart = P.getTotalNum();
+  const size_t num_ptcls   = P.getTotalNum();
+  const size_t num_species = P.groups();
+  const size_t nk          = k_lists_.numk;
+  resize(nk, num_species, num_ptcls);
+
   rhok_r = 0.0;
   rhok_i = 0.0;
-  //algorithmA
-  const int nk = k_lists_.numk;
   if (StorePerParticle)
   {
     // save per particle and species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict eikr_r_ptr = eikr_r[i];
@@ -105,7 +165,7 @@ void StructFact::computeRhok(const ParticleSet& P)
   else
   {
     // save per species value
-    for (int i = 0; i < npart; ++i)
+    for (int i = 0; i < num_ptcls; ++i)
     {
       const auto& pos           = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.getGroupID(i)];
@@ -120,13 +180,23 @@ void StructFact::computeRhok(const ParticleSet& P)
         rhok_i_ptr[ki] += s;
       }
 #else
-      for (int ki = 0; ki < nk; ki++)
-        phiV[ki] = dot(k_lists_.kpts_cart[ki], pos);
-      eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
-      for (int ki = 0; ki < nk; ki++)
+      // make the compute over nk by blocks
+      constexpr size_t kblock_size = 512;
+      const size_t num_kblocks     = (nk + kblock_size) / kblock_size;
+      RealType phiV[kblock_size], eikr_r_temp[kblock_size], eikr_i_temp[kblock_size];
+
+      for (int ib = 0; ib < num_kblocks; ib++)
       {
-        rhok_r_ptr[ki] += eikr_r_temp[ki];
-        rhok_i_ptr[ki] += eikr_i_temp[ki];
+        const size_t offset          = ib * kblock_size;
+        const size_t this_block_size = std::min(kblock_size, nk - offset);
+        for (int ki = 0; ki < this_block_size; ki++)
+          phiV[ki] = dot(k_lists_.kpts_cart[ki + offset], pos);
+        eval_e2iphi(this_block_size, phiV, eikr_r_temp, eikr_i_temp);
+        for (int ki = 0; ki < this_block_size; ki++)
+        {
+          rhok_r_ptr[ki + offset] += eikr_r_temp[ki];
+          rhok_i_ptr[ki + offset] += eikr_i_temp[ki];
+        }
       }
 #endif
     }
@@ -138,9 +208,6 @@ void StructFact::turnOnStorePerParticle(const ParticleSet& P)
   if (!StorePerParticle)
   {
     StorePerParticle = true;
-    const int nptcl  = P.getTotalNum();
-    eikr_r.resize(nptcl, k_lists_.numk);
-    eikr_i.resize(nptcl, k_lists_.numk);
     computeRhok(P);
   }
 }

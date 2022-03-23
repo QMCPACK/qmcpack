@@ -20,6 +20,7 @@
 #include "Numerics/CubicBspline.h"
 #include "OptimizableFunctorBase.h"
 #include "Message/Communicate.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -130,6 +131,23 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   {
     // need to actually implement this!
     return real_type(0);
+  }
+
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const CubicSplineSingle* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const RT* mw_dist,
+                           const int dist_stride,
+                           RT* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    throw std::runtime_error("mw_evaluateV not implemented!");
   }
 
   inline void evaluateVGL(const int iat,

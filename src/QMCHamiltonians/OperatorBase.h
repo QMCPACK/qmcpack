@@ -27,6 +27,7 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -60,6 +61,11 @@ public:
    */
   using Return_t = FullPrecRealType;
 
+  /** For fast derivative evaluation
+   */
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix  = SPOSet::GradMatrix;
+
   /** typedef for the serialized buffer
    *
    * PooledData<RealType> is used to serialized an anonymous buffer
@@ -71,6 +77,9 @@ public:
 
   ///typedef for the ParticleScalar
   using ParticleScalar = ParticleSet::Scalar_t;
+
+  ///typedef for SPOMap
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
 
   ///enum to denote energy domain of operators
   enum EnergyDomains
@@ -327,6 +336,35 @@ public:
                                                       ParticleSet::ParticlePos& hf_term,
                                                       ParticleSet::ParticlePos& pulay_term);
 
+  /** 
+   * @brief Evaluate "B" matrix for observable.  Filippi scheme for computing fast derivatives.
+
+   * @param[in] P target particle set (electrons)
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in,out] B.  List of B matrices for each species.  
+   * @return Void
+   */
+  inline virtual void evaluateOneBodyOpMatrix(ParticleSet& P,
+                                              const TWFFastDerivWrapper& psi,
+                                              std::vector<ValueMatrix>& B)
+  {}
+
+  /** 
+   * @brief Evaluate "dB/dR" matrices for observable.  Filippi scheme for computing fast derivatives.
+
+   * @param[in] P, target particle set (electrons)
+   * @param[in] source, ion particle set 
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in] iat, 
+   * @param[in,out] dB/dR. Specifically, [ dB/dx_iat, dB/dy_iat, dB/dz_iat ], B is defined above.
+   * @return Void
+   */
+  inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                        const ParticleSet& source,
+                                                        const TWFFastDerivWrapper& psi,
+                                                        const int iat,
+                                                        std::vector<std::vector<ValueMatrix>>& Bforce)
+  {}
   /** 
    * @brief Update data associated with a particleset.
    * Default implementation does nothing. Only A-A interactions for s needs to implement its own method.

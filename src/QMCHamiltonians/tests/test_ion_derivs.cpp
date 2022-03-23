@@ -119,34 +119,33 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
@@ -288,34 +287,33 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
@@ -456,34 +454,33 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
@@ -595,34 +592,33 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
@@ -739,8 +735,9 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
-  ParticleSet ions(simulation_cell);
-  ParticleSet elec(simulation_cell);
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   //Build a CN test molecule.
   create_CN_particlesets(elec, ions);
@@ -752,17 +749,15 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  psi_map.emplace("psi0", wff.buildTWF(root2));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
-
-  wff.put(root2);
-
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
   //end incantation
 
@@ -837,7 +832,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
-  //  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
 
   std::vector<ValueMatrix> minv;
@@ -892,7 +887,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     }
 
     twf.getIonGradM(elec, ions, ionid, dM);
-    //    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -908,21 +903,21 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   RealType keobs  = 0.0;
   keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
-//  CHECK(keobs == Approx(9.1821937928e+00));
+  CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
 #else
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454));
 #endif
 
   app_log() << " KEVal = " << keval << std::endl;
@@ -933,21 +928,21 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-  //  twf.wipeMatrices(B);
-  //  twf.wipeMatrices(B_gs);
-  //  twf.wipeMatrices(X);
-  //  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-  //  twf.getGSMatrices(B, B_gs);
-  //  twf.buildX(minv, B_gs, X);
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
   RealType nlpp_obs = 0.0;
-  //  nlpp              = twf.trAB(minv, B_gs);
+  nlpp              = twf.trAB(minv, B_gs);
   convertToReal(nlpp, nlpp_obs);
 
   app_log() << "NLPP = " << nlpp << std::endl;
 
-  //  CHECK(nlpp_obs == Approx(1.3849558361e+01));
+  CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
@@ -955,36 +950,36 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      //      twf.wipeMatrices(dB[idim]);
-      //      twf.wipeMatrices(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
-    //    twf.getIonGradM(elec, ions, ionid, dM);
-    //    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      //      twf.getGSMatrices(dB[idim], dB_gs[idim]);
-      //      twf.getGSMatrices(dM[idim], dM_gs[idim]);
-      //      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
   }
 
 #if defined(MIXED_PRECISION)
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
 #else
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
 #endif
 }
 
@@ -1004,7 +999,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1012,7 +1007,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1189,7 +1184,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1197,7 +1192,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1344,7 +1339,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1352,7 +1347,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \

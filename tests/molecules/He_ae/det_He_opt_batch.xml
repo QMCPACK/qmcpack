@@ -84,9 +84,9 @@
    <parameter name="MinMethod">OneShiftOnly</parameter>
  </qmc>
 </loop>
-   <qmc method="vmc" move="pbyp">
+   <qmc method="vmc_batch" move="pbyp">
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="total_walkers"             >    1               </parameter>
       <parameter name="blocks"              >    3               </parameter>
       <parameter name="steps"               >    3               </parameter>
       <parameter name="subSteps"            >    2               </parameter>

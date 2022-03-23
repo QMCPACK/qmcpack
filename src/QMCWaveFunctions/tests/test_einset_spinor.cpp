@@ -116,9 +116,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
-  auto& builder = fac.createSPOSetBuilder(ein1);
+  const auto spo_builder_ptr = fac.createSPOSetBuilder(ein1);
+  auto& builder              = *spo_builder_ptr;
 
-  SPOSet* spo = builder.createSPOSet(ein1);
+  auto spo = builder.createSPOSet(ein1);
   CHECK(spo);
 
   SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
@@ -445,6 +446,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   elec_.R = Rnew;
   elec_.update();
 
+  //just going to use zero displacements for particle spins in test
+  ParticleSet::ParticleScalar dS;
+  dS.resize(3);
+
   //now create second walker, with permuted particle positions
   ParticleSet elec_2(elec_);
   // permute electrons
@@ -528,10 +533,13 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   //first, lets displace all the electrons in each walker.
   for (int iat = 0; iat < 3; iat++)
   {
-    std::vector<ParticleSet::SingleParticlePos> displs = {dR[iat], dR[iat]};
+    MCCoords<CoordsType::POS_SPIN> displs(2);
+    displs.positions = {dR[iat], dR[iat]};
+    displs.spins     = {dS[iat], dS[iat]};
+
     elec_.mw_makeMove(p_list, iat, displs);
     std::vector<bool> accept = {true, true};
-    elec_.mw_accept_rejectMove(p_list, iat, accept);
+    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
   elec_.mw_update(p_list);
 
@@ -557,7 +565,10 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     d2psi_work_2 = 0.0;
     dspsi_work_2 = 0.0;
 
-    std::vector<ParticleSet::SingleParticlePos> displs = {-dR[iat], -dR[iat]};
+    MCCoords<CoordsType::POS_SPIN> displs(2);
+    displs.positions = {-dR[iat], -dR[iat]};
+    displs.spins     = {-dS[iat], -dS[iat]};
+
     elec_.mw_makeMove(p_list, iat, displs);
     spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
     //walker 0
@@ -611,7 +622,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(dspsi_v_list[1].get()[2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
 
     std::vector<bool> accept = {false, false};
-    elec_.mw_accept_rejectMove(p_list, iat, accept);
+    elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }
 }
 

@@ -78,6 +78,18 @@ void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFuncti
     wfc_list[iw].prepareGroup(p_list[iw], ig);
 }
 
+template<CoordsType CT>
+void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                        const int iat,
+                                        TWFGrads<CT>& grad_now) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_evalGradWithSpin(wfc_list, p_list, iat, grad_now.grads_positions, grad_now.grads_spins);
+  else
+    mw_evalGrad(wfc_list, p_list, iat, grad_now.grads_positions);
+}
+
 void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                         const RefVectorWithLeader<ParticleSet>& p_list,
                                         int iat,
@@ -87,6 +99,18 @@ void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionCo
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     grad_now[iw] = wfc_list[iw].evalGrad(p_list[iw], iat);
+}
+
+void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                int iat,
+                                                std::vector<GradType>& grad_now,
+                                                std::vector<ComplexType>& spingrad_now) const
+{
+  assert(this == &wfc_list.getLeader());
+#pragma omp parallel for
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
 }
 
 void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -107,6 +131,19 @@ PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType&
   return ValueType();
 }
 
+template<CoordsType CT>
+void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         int iat,
+                                         std::vector<PsiValueType>& ratios,
+                                         TWFGrads<CT>& grad_new) const
+{
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_ratioGradWithSpin(wfc_list, p_list, iat, ratios, grad_new.grads_positions, grad_new.grads_spins);
+  else
+    mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new.grads_positions);
+}
+
 void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                          const RefVectorWithLeader<ParticleSet>& p_list,
                                          int iat,
@@ -117,6 +154,19 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
 #pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGrad(p_list[iw], iat, grad_new[iw]);
+}
+
+void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 int iat,
+                                                 std::vector<PsiValueType>& ratios,
+                                                 std::vector<GradType>& grad_new,
+                                                 std::vector<ComplexType>& spingrad_new) const
+{
+  assert(this == &wfc_list.getLeader());
+#pragma omp parallel for
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
 
 void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -218,5 +268,28 @@ void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TW
   o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
   APP_ABORT(o.str());
 }
+
+template void WaveFunctionComponent::mw_evalGrad<CoordsType::POS>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    TWFGrads<CoordsType::POS>& grad_now) const;
+template void WaveFunctionComponent::mw_evalGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    TWFGrads<CoordsType::POS_SPIN>& grad_now) const;
+template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS>& grad_new) const;
+template void WaveFunctionComponent::mw_ratioGrad<CoordsType::POS_SPIN>(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValueType>& ratios,
+    TWFGrads<CoordsType::POS_SPIN>& grad_new) const;
 
 } // namespace qmcplusplus

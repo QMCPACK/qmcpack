@@ -232,12 +232,12 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M)
   if (TA == 'N' || TA == 'Z')
   {
     if (M.size(0) != A.size(0) or M.size(1) != A.size(1))
-      M.reextent({A.size(0), A.size(1)});
+      M.reextent({static_cast<typename MultiArray2D::size_type>(A.size(0)), static_cast<typename MultiArray2D::size_type>(A.size(1))});
   }
   else if (TA == 'T' || TA == 'H')
   {
     if (M.size(0) != A.size(1) or M.size(1) != A.size(0))
-      M.reextent({A.size(1), A.size(0)});
+      M.reextent({static_cast<typename MultiArray2D::size_type>(A.size(1)), static_cast<typename MultiArray2D::size_type>(A.size(0))});
   }
   else
   {
@@ -349,12 +349,12 @@ void Matrix2MA(char TA, CSR const& A, MultiArray2D& M, Vector const& occups)
   if (TA == 'N' || TA == 'Z')
   {
     if (M.size(0) != nrows || M.size(1) != A.size(1))
-      M.reextent({nrows, A.size(1)});
+      M.reextent({nrows, static_cast<typename MultiArray2D::size_type>(A.size(1))});
   }
   else if (TA == 'T' || TA == 'H')
   {
     if (M.size(1) != nrows || M.size(0) != A.size(1))
-      M.reextent({A.size(1), nrows});
+      M.reextent({static_cast<typename MultiArray2D::size_type>(A.size(1)), nrows});
   }
   else
     throw std::runtime_error(" Error: Unknown operation in Matrix2MA.\n");

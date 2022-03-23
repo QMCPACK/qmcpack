@@ -197,7 +197,7 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
   auto spo_now = std::make_unique<CompositeSPOSet>();
   for (int i = 0; i < spolist.size(); ++i)
   {
-    SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
+    const SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);
     if (spo)
       spo_now->add(spo->makeClone());
   }

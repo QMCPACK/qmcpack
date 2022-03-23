@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
+#include "TWFGrads.hpp"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -75,7 +76,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create({2,2});
+  elec_.create({2, 2});
   elec_.R[0] = {0.0, 0.0, 0.0};
   elec_.R[1] = {0.0, 1.0, 1.0};
   elec_.R[2] = {1.0, 1.0, 0.0};
@@ -232,29 +233,31 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
           LogComplexApprox(std::complex<RealType>(-1.471840358291562, 3.141592653589793)));
 #endif
 
-  std::vector<GradType> grad_old(2);
+  TWFGrads<CoordsType::POS> grad_old(2);
 
-  grad_old[0] = wf_ref_list[0].evalGrad(p_ref_list[0], moved_elec_id);
-  grad_old[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
+  grad_old.grads_positions[0] = wf_ref_list[0].evalGrad(p_ref_list[0], moved_elec_id);
+  grad_old.grads_positions[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
 
-  std::cout << "evalGrad " << std::setprecision(14) << grad_old[0][0] << " " << grad_old[0][1] << " " << grad_old[0][2]
-            << " " << grad_old[1][0] << " " << grad_old[1][1] << " " << grad_old[1][2] << std::endl;
+  std::cout << "evalGrad " << std::setprecision(14) << grad_old.grads_positions[0][0] << " "
+            << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
+            << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
+            << grad_old.grads_positions[1][2] << std::endl;
 
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
-  CHECK(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
-  CHECK(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
-  CHECK(grad_old[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
-  CHECK(grad_old[1][0] == ComplexApprox(ValueType(47.387717528888, -8.7703065253151e-06)));
-  CHECK(grad_old[1][1] == ComplexApprox(ValueType(-54.671696901113, -7.3126138879524)));
-  CHECK(grad_old[1][2] == ComplexApprox(ValueType(6.6288917088321, 7.3126230586018)));
+  CHECK(grad_old.grads_positions[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  CHECK(grad_old.grads_positions[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  CHECK(grad_old.grads_positions[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  CHECK(grad_old.grads_positions[1][0] == ComplexApprox(ValueType(47.387717528888, -8.7703065253151e-06)));
+  CHECK(grad_old.grads_positions[1][1] == ComplexApprox(ValueType(-54.671696901113, -7.3126138879524)));
+  CHECK(grad_old.grads_positions[1][2] == ComplexApprox(ValueType(6.6288917088321, 7.3126230586018)));
 #else
-  CHECK(grad_old[0][0] == Approx(14.77249702264));
-  CHECK(grad_old[0][1] == Approx(-20.385235323777));
-  CHECK(grad_old[0][2] == Approx(4.8529516184558));
-  CHECK(grad_old[1][0] == Approx(47.38770710732));
-  CHECK(grad_old[1][1] == Approx(-63.361119579044));
-  CHECK(grad_old[1][2] == Approx(15.318325284049));
+  CHECK(grad_old.grads_positions[0][0] == Approx(14.77249702264));
+  CHECK(grad_old.grads_positions[0][1] == Approx(-20.385235323777));
+  CHECK(grad_old.grads_positions[0][2] == Approx(4.8529516184558));
+  CHECK(grad_old.grads_positions[1][0] == Approx(47.38770710732));
+  CHECK(grad_old.grads_positions[1][1] == Approx(-63.361119579044));
+  CHECK(grad_old.grads_positions[1][2] == Approx(15.318325284049));
 #endif
 
   PosType delta_sign_changed(0.1, 0.1, -0.2);
@@ -298,16 +301,17 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
 
   std::fill(ratios.begin(), ratios.end(), 0);
-  std::vector<GradType> grad_new(2);
+  TWFGrads<CoordsType::POS> grad_new(2);
 
   if (kind_selected != DynamicCoordinateKind::DC_POS_OFFLOAD)
   {
-    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new[0]);
-    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new[1]);
+    ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new.grads_positions[0]);
+    ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new.grads_positions[1]);
 
     std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-              << grad_new[0][0] << " " << grad_new[0][1] << " " << grad_new[0][2] << " " << grad_new[1][0] << " "
-              << grad_new[1][1] << " " << grad_new[1][2] << std::endl;
+              << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
+              << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
+              << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
@@ -315,22 +319,22 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
 #if defined(QMC_COMPLEX)
   CHECK(ratios[0] == ComplexApprox(ValueType(1, 0)));
-  CHECK(grad_new[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
-  CHECK(grad_new[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
-  CHECK(grad_new[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  CHECK(grad_new.grads_positions[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  CHECK(grad_new.grads_positions[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  CHECK(grad_new.grads_positions[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
   CHECK(ratios[1] == ComplexApprox(ValueType(1.6538214581548, 0.54849918598717)));
-  CHECK(grad_new[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
-  CHECK(grad_new[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
-  CHECK(grad_new[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  CHECK(grad_new.grads_positions[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  CHECK(grad_new.grads_positions[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  CHECK(grad_new.grads_positions[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
 #else
   CHECK(ratios[0] == Approx(1));
-  CHECK(grad_new[0][0] == Approx(14.77249702264));
-  CHECK(grad_new[0][1] == Approx(-20.385235323777));
-  CHECK(grad_new[0][2] == Approx(4.8529516184558));
+  CHECK(grad_new.grads_positions[0][0] == Approx(14.77249702264));
+  CHECK(grad_new.grads_positions[0][1] == Approx(-20.385235323777));
+  CHECK(grad_new.grads_positions[0][2] == Approx(4.8529516184558));
   CHECK(ratios[1] == Approx(2.3055913093424));
-  CHECK(grad_new[1][0] == Approx(14.77249702264));
-  CHECK(grad_new[1][1] == Approx(-20.385235323777));
-  CHECK(grad_new[1][2] == Approx(4.8529516184558));
+  CHECK(grad_new.grads_positions[1][0] == Approx(14.77249702264));
+  CHECK(grad_new.grads_positions[1][1] == Approx(-20.385235323777));
+  CHECK(grad_new.grads_positions[1][2] == Approx(4.8529516184558));
 #endif
 
   std::vector<bool> isAccepted(2, true);
@@ -349,19 +353,19 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 #if defined(QMC_COMPLEX)
-  CHECK(grad_old[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
-  CHECK(grad_old[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
-  CHECK(grad_old[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
-  CHECK(grad_old[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
-  CHECK(grad_old[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
-  CHECK(grad_old[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  CHECK(grad_old.grads_positions[0][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  CHECK(grad_old.grads_positions[0][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  CHECK(grad_old.grads_positions[0][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
+  CHECK(grad_old.grads_positions[1][0] == ComplexApprox(ValueType(18.817970466022, -6.5837500306076)));
+  CHECK(grad_old.grads_positions[1][1] == ComplexApprox(ValueType(-22.840838391977, 3.9963373883645)));
+  CHECK(grad_old.grads_positions[1][2] == ComplexApprox(ValueType(3.8805320617146, 1.5825508129169)));
 #else
-  CHECK(grad_old[0][0] == Approx(14.77249702264));
-  CHECK(grad_old[0][1] == Approx(-20.385235323777));
-  CHECK(grad_old[0][2] == Approx(4.8529516184558));
-  CHECK(grad_old[1][0] == Approx(14.77249702264));
-  CHECK(grad_old[1][1] == Approx(-20.385235323777));
-  CHECK(grad_old[1][2] == Approx(4.8529516184558));
+  CHECK(grad_old.grads_positions[0][0] == Approx(14.77249702264));
+  CHECK(grad_old.grads_positions[0][1] == Approx(-20.385235323777));
+  CHECK(grad_old.grads_positions[0][2] == Approx(4.8529516184558));
+  CHECK(grad_old.grads_positions[1][0] == Approx(14.77249702264));
+  CHECK(grad_old.grads_positions[1][1] == Approx(-20.385235323777));
+  CHECK(grad_old.grads_positions[1][2] == Approx(4.8529516184558));
 #endif
 
 #endif

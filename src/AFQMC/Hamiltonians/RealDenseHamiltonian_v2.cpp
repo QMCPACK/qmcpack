@@ -201,7 +201,7 @@ HamiltonianOperations RealDenseHamiltonian_v2::getHamiltonianOperations(bool pur
   std::vector<shmSp3Tensor> Lnak;
   Lnak.reserve(PsiT.size());
   for (int nd = 0; nd < PsiT.size(); nd++)
-    Lnak.emplace_back(shmSp3Tensor({local_ncv, PsiT[nd].size(0), NMO}, shared_allocator<SPComplexType>{distNode}));
+    Lnak.emplace_back(shmSp3Tensor({local_ncv, static_cast<boost::multi::size_t>(PsiT[nd].size(0)), NMO}, shared_allocator<SPComplexType>{distNode}));
   TG.Node().barrier();
 
   // for simplicity
