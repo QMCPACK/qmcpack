@@ -153,6 +153,16 @@ public:
                                std::vector<std::vector<ValueMatrix>>& dlmat) const;
 
 
+  /** @brief Evaluates value, gradient, and laplacian of jastrow.  So of J in exp(J).
+    *
+    * @param[in] Particle set.
+    * @param[in,out] Electron gradients.
+    * @param[in,out] Electron laplacians.
+    * @return Jastrow value
+    */
+  RealType evaluateJastrowVGL(const ParticleSet& P,
+                                   ParticleSet::ParticleGradient& G,
+                                   ParticleSet::ParticleLaplacian& L) const;
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
    *

@@ -53,6 +53,21 @@ void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& m
   }
 }
 
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowVGL(const ParticleSet& P,
+                                   ParticleSet::ParticleGradient& G,
+                                   ParticleSet::ParticleLaplacian& L) const
+{
+  WaveFunctionComponent::LogValueType logpsi=0.0;
+  G=0.0;
+  L=0.0;
+  for(int i=0; i<jastrow_list_.size(); ++i)
+  {
+    logpsi+= jastrow_list_[i]->evaluateLog(P,G,L);
+  }
+  RealType rval=std::real(logpsi);  
+  return rval;
+}
+
 void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
                                          std::vector<ValueMatrix>& mvec,
                                          std::vector<GradMatrix>& gmat,
