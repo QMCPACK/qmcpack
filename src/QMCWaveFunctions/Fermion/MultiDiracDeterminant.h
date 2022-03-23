@@ -263,7 +263,7 @@ private:
    *
    * this is a general implementation. Support abitrary excitation level
    */
-  void mw_updateRatios_generic(const int ext_level,
+   void mw_updateRatios_generic(const int ext_level,
                                const size_t det_offset,
                                const size_t data_offset,
                                const RefVector<OffloadVector<ValueType>>& ratios_list,
