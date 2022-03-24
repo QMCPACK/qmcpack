@@ -154,8 +154,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     Matrix<GradType> dpsiM_host_view(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
-    psiM.updateTo();
-    dpsiM.updateTo();
+    //psiM.updateTo();
+    //dpsiM.updateTo();
     //d2psiM.updateTo();
   }
 
@@ -399,7 +399,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     ratios_to_ref_.updateTo();
-    psiM.updateTo();
+    //psiM.updateTo();
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
@@ -410,8 +410,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
-    psiM.updateTo();
-    dpsiM.updateTo();
+    //psiM.updateTo();
+    //dpsiM.updateTo();
     if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
@@ -426,9 +426,9 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    grads.updateTo();
+    //psiM.updateTo();
+    //dpsiM.updateTo();
+    //grads.updateTo();
     if (is_spinor_)
     {
       std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
