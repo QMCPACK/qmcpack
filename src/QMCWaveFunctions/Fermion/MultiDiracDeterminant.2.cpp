@@ -474,7 +474,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     for (size_t i = 0; i < NumOrbitals; i++)
     {
       TpsiM_list_ptr[iw][i*TpsiM_num_cols+WorkingIndex] = psiV_list_ptr[iw][i];
-      printf("-1  iw=%zu   i=%zu   Tpsi=%f   psiV=%f \n", iw, i, TpsiM_list_ptr[iw][i*TpsiM_num_cols+WorkingIndex] , psiV_list_ptr[iw][i]);
+  //    printf("-1  iw=%zu   i=%zu   Tpsi=%f   psiV=%f \n", iw, i, TpsiM_list_ptr[iw][i*TpsiM_num_cols+WorkingIndex] , psiV_list_ptr[iw][i]);
     }
 
 /*  success=ompBLAS::copy_batched_offset(dummy_handle, det_leader.NumOrbitals, psiV_list_ptr, 0, 1, TpsiM_list_ptr, WorkingIndex, TpsiM_num_cols, nw);
@@ -487,7 +487,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
     {
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
-      printf("-2  iw=%zu   i=%zu   Tpsi=%f   psiV=%f \n", iw, i, TpsiM_list[iw].get()(i, WorkingIndex) , psiV_list[iw].get()[i]);
+   //   printf("-2  iw=%zu   i=%zu   Tpsi=%f   psiV=%f \n", iw, i, TpsiM_list[iw].get()(i, WorkingIndex) , psiV_list[iw].get()[i]);
     }
     TpsiM_list[iw].get().updateTo();
   }
