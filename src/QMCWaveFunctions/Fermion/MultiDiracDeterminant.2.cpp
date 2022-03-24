@@ -378,7 +378,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   const auto psiMinv_rows   = psiMinv_list[0].get().rows();
   const auto psiMinv_cols   = psiMinv_list[0].get().cols();
   const auto TpsiM_num_cols = TpsiM_list[0].get().cols(); 
+  const auto TpsiM_num_rows = TpsiM_list[0].get().rows(); 
   const auto NumPtcls     = det_leader.NumPtcls;
+  const auto NumOrbitals     = det_leader.NumOrbitals;
   
   const auto& confgList      = *det_leader.ciConfigList;
   for (size_t i = 0; i < det_leader.NumPtcls; i++)
@@ -428,6 +430,14 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   if (success != 0)
         throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
+ */ 
+
+
+
+
+  success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,psiMinv_temp_list_ptr, 1, nw) ;
+  if (success != 0)
+        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(psiV_temp_list_ptr, psiV_list_ptr, confgListOccup_ptr)")
   for (size_t iw = 0; iw < nw; iw++)
@@ -451,47 +461,33 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     curRatio_list_ptr[iw] = c_ratio;
   }
 
+
   det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,curRatio_list,psiV_temp_list,workV1_list,workV2_list,psiMinv_temp_list);
- */ 
 
+/////////////////////
+//  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)   is_device_ptr(TpsiM_list_ptr,psiV_list_ptr)")
+//  for (size_t iw = 0; iw < nw; iw++)
+//    for (size_t i = 0; i < NumOrbitals; i++)
+//      TpsiM_list_ptr[iw][i, WorkingIndex] = psiV_list_ptr[iw][i];
 
-
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-      psiMinv_list[iw].get().updateTo();
-  }
-
-  success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,psiMinv_temp_list_ptr, 1, nw) ;
-  if (success != 0)
-        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
-
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-    //psiMinv_temp_list[iw].get()                                       = psiMinv_list[iw].get();
-    new_ratios_to_ref_list[iw].get()[det_leader.ReferenceDeterminant] = ValueType(1);
-    for (size_t i = 0; i < det_leader.NumPtcls; i++)
-    {
-      size_t J=confgListOccup[i];
-      psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[J];
-    }
-  }
-
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-      psiMinv_temp_list[iw].get().updateFrom();
-  }
-
-
-  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
-  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                           curRatio_list);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
-  //  TpsiM_list[iw].get().updateTo();
+    TpsiM_list[iw].get().updateTo();
   }
+
+///////
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+      psiMinv_temp_list[iw].get().updateFrom();
+      psiV_temp_list[iw].get().updateFrom();
+      TpsiM_list[iw].get().updateFrom();
+  }
+
+
 
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
