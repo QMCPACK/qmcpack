@@ -186,7 +186,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   ///Pinning ratios_to_ref_ to the device.
   ratios_to_ref_.updateTo();
   ///Pinning psiMinv to the device
-  //psiMinv.updateTo();
+  psiMinv.updateTo();
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
@@ -272,6 +272,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
                                      dotProducts, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
   ratios_to_ref_.updateTo();
+  psiMinv.updateTo();
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -399,6 +400,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
     //psiM.updateTo();
     break;
   case ORB_PBYP_PARTIAL:
@@ -410,6 +412,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
     //psiM.updateTo();
     //dpsiM.updateTo();
     if (is_spinor_)
@@ -426,6 +429,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
     //psiM.updateTo();
     //dpsiM.updateTo();
     //grads.updateTo();
