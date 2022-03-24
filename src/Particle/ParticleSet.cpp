@@ -441,7 +441,6 @@ void ParticleSet::mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list
     p_list[iw].active_spin_val_ = p_list[iw].spins[iat] + sdispls[iw];
 }
 
-
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
 {
   active_ptcl_     = iat;
@@ -1038,5 +1037,4 @@ template void ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(const RefV
                                                                       Index_t iat,
                                                                       const std::vector<bool>& isAccepted,
                                                                       bool forward_mode);
-
 } // namespace qmcplusplus

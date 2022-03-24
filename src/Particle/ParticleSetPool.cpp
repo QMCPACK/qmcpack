@@ -26,6 +26,7 @@
 #include "Particle/InitMolecularSystem.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include <Message/UniformCommunicateError.h>
+#include <PlatformSelector.hpp>
 
 namespace qmcplusplus
 {
@@ -124,9 +125,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   pAttrib.add(randomsrc, "randomsrc");
   pAttrib.add(randomsrc, "random_source");
   pAttrib.add(spinor, "spinor", {"no", "yes"});
-#if defined(ENABLE_OFFLOAD)
-  pAttrib.add(useGPU, "gpu", {"yes", "no"});
-#endif
+  pAttrib.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
   pAttrib.put(cur);
   //backward compatibility
   if (id == "e" && role == "none")
@@ -134,14 +133,15 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if (pTemp == 0)
   {
+    const bool use_offload = CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET;
     app_summary() << std::endl;
     app_summary() << " Particle Set" << std::endl;
     app_summary() << " ------------" << std::endl;
-    app_summary() << "  Name: " << id << "   Offload : " << useGPU << std::endl;
+    app_summary() << "  Name: " << id << "   Offload : " << (use_offload ? "yes" : "no") << std::endl;
     app_summary() << std::endl;
 
     // select OpenMP offload implementation in ParticleSet.
-    if (useGPU == "yes")
+    if (use_offload)
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS_OFFLOAD);
     else
       pTemp = new MCWalkerConfiguration(*simulation_cell_, DynamicCoordinateKind::DC_POS);

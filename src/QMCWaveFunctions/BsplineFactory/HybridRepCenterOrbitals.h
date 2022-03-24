@@ -443,7 +443,7 @@ public:
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
-    myTableID  = els.addTable(ions);
+    myTableID  = els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST);
     Super2Prim = mapping;
   }
 

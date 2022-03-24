@@ -132,7 +132,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
   int nAcceptTemp(0);
-  int nRejectTemp(0);
   //copy the old energy and scale factor of drift
   RealType eold(prophead.Properties(WP::LOCALENERGY));
   RealType vqold(prophead.Properties(WP::DRIFTSCALE));
@@ -157,7 +156,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {
-        ++nRejectTemp;
         W.accept_rejectMove(iat, false);
         continue;
       }
@@ -165,7 +163,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
-        ++nRejectTemp;
         ++nNodeCrossing;
         W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
@@ -188,7 +185,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         }
         else
         {
-          ++nRejectTemp;
           Psi.rejectMove(iat);
         }
         W.accept_rejectMove(iat, is_accepted);
@@ -261,7 +257,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
 
   makeGaussRandomWithEngine(deltaR, RandomGen);
   int nAcceptTemp(0);
-  int nRejectTemp(0);
   //copy the old energy and scale factor of drift
   RealType eold(prophead.Properties(WP::LOCALENERGY));
   RealType vqold(prophead.Properties(WP::DRIFTSCALE));
@@ -285,7 +280,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {
-        ++nRejectTemp;
         W.accept_rejectMove(iat, false);
         continue;
       }
@@ -293,7 +287,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
-        ++nRejectTemp;
         ++nNodeCrossing;
         W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
@@ -316,7 +309,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         }
         else
         {
-          ++nRejectTemp;
           Psi.rejectMove(iat);
         }
         W.accept_rejectMove(iat, is_accepted);

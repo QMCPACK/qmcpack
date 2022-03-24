@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
+#include "PlatformSelector.hpp"
 
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
@@ -196,7 +197,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
 
       for (int grp = 0; grp < nGroups; grp++)
       {
-        SPOSetPtr spo_tmp = sposet_builder_factory_.getSPOSet(spoNames[grp]);
+        const SPOSet* spo_tmp = sposet_builder_factory_.getSPOSet(spoNames[grp]);
         if (spo_tmp == nullptr)
         {
           std::stringstream err_msg;
@@ -211,30 +212,13 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
       if (BFTrans)
         myComm->barrier_and_abort("Backflow is not supported by Multi-Slater determinants using the table method!");
 
-      const bool spinor = targetPtcl.isSpinor();
-      std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
-      for (int grp = 0; grp < nGroups; grp++)
-      {
-        app_log() << "      Creating base determinant (" << grp << ") for MSD expansion. \n";
-        dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor));
-      }
-
-      std::unique_ptr<MultiSlaterDetTableMethod> msd_fast;
       if (msd_algorithm == "precomputed_table_method")
-      {
         app_summary() << "    Using the table method with precomputing. Faster" << std::endl;
-        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), true);
-      }
       else
-      {
         app_summary() << "    Using the table method without precomputing. Slower." << std::endl;
-        msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), false);
-      }
 
-      msd_fast->initialize();
-      createMSDFast(msd_fast->Dets, *msd_fast->C2node, *msd_fast->C, *msd_fast->CSFcoeff, *msd_fast->DetsPerCSF,
-                    *msd_fast->CSFexpansion, msd_fast->usingCSF, *msd_fast->myVars, msd_fast->Optimizable,
-                    msd_fast->CI_Optimizable, cur);
+      auto msd_fast = createMSDFast(cur, targetPtcl, std::move(spo_clones), targetPtcl.isSpinor(),
+                                    msd_algorithm == "precomputed_table_method");
 
       // The primary purpose of this function is to create all the optimizable orbital rotation parameters.
       // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
@@ -244,7 +228,6 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetBuilder::buildComponent(xmlNodeP
     }
     cur = cur->next;
   }
-
 
   if (built_singledet_or_multidets)
     return built_singledet_or_multidets;
@@ -346,7 +329,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                 << std::endl;
   app_summary() << std::endl;
 
-  SPOSetPtr psi = sposet_builder_factory_.getSPOSet(sposet_name);
+  const SPOSet* psi = sposet_builder_factory_.getSPOSet(sposet_name);
   //check if the named sposet exists
   if (psi == 0)
   {
@@ -411,8 +394,9 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
     if (use_batch == "yes")
     {
       app_summary() << "      Using walker batching." << std::endl;
+
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-      if (useGPU == "yes")
+      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<
@@ -424,19 +408,30 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       else
 #endif
       {
-        app_summary() << "      Running OpenMP offload code path. Only SM1 update is supported. "
-                         "delay_rank is ignored."
-                      << std::endl;
+#if defined(ENABLE_OFFLOAD)
+        if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CPU)
+          throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
+        app_summary() << "      Running OpenMP offload code path on GPU. "
+#else
+        app_summary() << "      Running OpenMP offload code path on CPU. "
+#endif
+                      << "Only SM1 update is supported. delay_rank is ignored." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                            matrix_inverter_kind);
       }
     }
     else
     {
+      if (useGPU == "omptarget")
+        throw std::runtime_error("No OpenMP offload implementation of single-walker Slater determinant.");
 #if defined(ENABLE_CUDA)
-      if (useGPU == "yes")
+      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
+#ifdef QMC_CUDA2HIP
+        app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
+#else
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
+#endif
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
@@ -463,22 +458,30 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   return adet;
 }
 
-bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
-                                     std::vector<std::vector<size_t>>& C2nodes,
-                                     std::vector<ValueType>& C,
-                                     std::vector<ValueType>& CSFcoeff,
-                                     std::vector<size_t>& DetsPerCSF,
-                                     std::vector<RealType>& CSFexpansion,
-                                     bool& usingCSF,
-                                     opt_variables_type& myVars,
-                                     bool& Optimizable,
-                                     bool& CI_Optimizable,
-                                     xmlNodePtr cur) const
+std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
+    xmlNodePtr cur,
+    ParticleSet& target_ptcl,
+    std::vector<std::unique_ptr<SPOSet>>&& spo_clones,
+    const bool spinor,
+    const bool use_precompute) const
 {
+  const size_t nGroups = targetPtcl.groups();
+
+  std::vector<std::vector<size_t>> C2nodes(nGroups);
+  auto C2nodes_sorted_ptr = std::make_unique<std::vector<std::vector<size_t>>>(nGroups);
+  auto& C2nodes_sorted(*C2nodes_sorted_ptr);
+
+  auto C_ptr = std::make_unique<std::vector<ValueType>>();
+  auto& C(*C_ptr);
+
+  auto myVars_ptr = std::make_unique<opt_variables_type>();
+  auto& myVars(*myVars_ptr);
+
+  bool Optimizable    = false;
+  bool CI_Optimizable = false;
+
   bool optimizeCI;
 
-  const int nGroups = targetPtcl.groups();
-  assert(nGroups == Dets.size());
   std::vector<int> nptcls(nGroups);
   for (int grp = 0; grp < nGroups; grp++)
     nptcls[grp] = targetPtcl.groupsize(grp);
@@ -498,24 +501,30 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     curTemp = curTemp->next;
   }
 
-  bool success = true;
+  std::unique_ptr<CSFData> csf_data_ptr;
+
   std::string HDF5Path(getXMLAttributeValue(DetListNode, "href"));
   if (!HDF5Path.empty())
   {
     app_log() << "Found Multideterminants in H5 File" << std::endl;
-    success = readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
+    readDetListH5(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls);
   }
   else
-    success = readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, CSFcoeff, DetsPerCSF, CSFexpansion,
-                          usingCSF);
+    readDetList(cur, uniqueConfgs, C2nodes, CItags, C, optimizeCI, nptcls, csf_data_ptr);
 
-  if (!success)
-    return false;
+  const auto maxloc   = std::max_element(C.begin(), C.end(), [](ValueType const& lhs, ValueType const& rhs) {
+    return std::norm(lhs) < std::norm(rhs);
+  });
+  const int refdet_id = std::distance(C.begin(), maxloc);
+  app_log() << "max CI coeff at det number " << refdet_id << " with value " << std::abs(C[refdet_id]) << std::endl;
 
+  assert(nGroups == spo_clones.size());
+  std::vector<std::unique_ptr<MultiDiracDeterminant>> dets;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    std::vector<ci_configuration2>& list = Dets[grp]->getCIConfigList();
-    list.resize(uniqueConfgs[grp].size());
+    dets.emplace_back(std::make_unique<MultiDiracDeterminant>(std::move(spo_clones[grp]), spinor, targetPtcl.first(grp),
+                                                              nptcls[grp]));
+    std::vector<ci_configuration2> list(uniqueConfgs[grp].size());
     for (int i = 0; i < list.size(); i++)
     {
       list[i].occup.resize(nptcls[grp]);
@@ -529,12 +538,12 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    // you should choose the det with highest weight for reference. for now choosing 0
-    Dets[grp]->set(targetPtcl.first(grp), nptcls[grp], 0);
+    dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
-  if (CSFcoeff.size() == 1)
+  if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
     optimizeCI = false;
+
   if (optimizeCI)
   {
     app_log() << "CI coefficients are optimizable. \n";
@@ -544,18 +553,18 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     spoAttrib.put(cur);
     if (resetCI == "yes")
     {
-      if (usingCSF)
-        for (int i = 1; i < CSFcoeff.size(); i++)
-          CSFcoeff[i] = 0;
+      if (csf_data_ptr)
+        for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
+          csf_data_ptr->coeffs[i] = 0;
       else
         for (int i = 1; i < C.size(); i++)
           C[i] = 0;
       app_log() << "CI coefficients are reset. \n";
     }
     Optimizable = CI_Optimizable = true;
-    if (usingCSF)
-      for (int i = 1; i < CSFcoeff.size(); i++)
-        myVars.insert(CItags[i], CSFcoeff[i], true, optimize::LINEAR_P);
+    if (csf_data_ptr)
+      for (int i = 1; i < csf_data_ptr->coeffs.size(); i++)
+        myVars.insert(CItags[i], csf_data_ptr->coeffs[i], true, optimize::LINEAR_P);
     else
       for (int i = 1; i < C.size(); i++)
         myVars.insert(CItags[i], C[i], true, optimize::LINEAR_P);
@@ -569,7 +578,7 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   bool any_optimizable = false;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    if (Dets[grp]->Optimizable == true)
+    if (dets[grp]->Optimizable == true)
     {
       any_optimizable = true;
       break;
@@ -579,10 +588,10 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
   {
     for (int grp = 0; grp < nGroups; grp++)
     {
-      if (Dets[grp]->Optimizable != true)
+      if (dets[grp]->Optimizable != true)
         APP_ABORT("Optimizing the SPOSet of only only species is not supported!\n");
     }
-    if (usingCSF)
+    if (csf_data_ptr)
       APP_ABORT("Currently, Using CSF is not available with MSJ Orbital Optimization!\n");
 
     for (int grp = 0; grp < nGroups; grp++)
@@ -600,7 +609,11 @@ bool SlaterDetBuilder::createMSDFast(std::vector<std::unique_ptr<MultiDiracDeter
     Optimizable = true;
   }
 
-  return success;
+  auto msd_fast = std::make_unique<MultiSlaterDetTableMethod>(targetPtcl, std::move(dets), use_precompute);
+  msd_fast->initialize(std::move(C2nodes_sorted_ptr), std::move(C_ptr), std::move(myVars_ptr), std::move(csf_data_ptr),
+                       Optimizable, CI_Optimizable);
+
+  return msd_fast;
 }
 
 bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
@@ -610,10 +623,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
                                    std::vector<ValueType>& coeff,
                                    bool& optimizeCI,
                                    std::vector<int>& nptcls,
-                                   std::vector<ValueType>& CSFcoeff,
-                                   std::vector<size_t>& DetsPerCSF,
-                                   std::vector<RealType>& CSFexpansion,
-                                   bool& usingCSF) const
+                                   std::unique_ptr<CSFData>& csf_data_ptr) const
 {
   bool success = true;
 
@@ -625,9 +635,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   }
   CItags.clear();
   coeff.clear();
-  CSFcoeff.clear();
-  DetsPerCSF.clear();
-  CSFexpansion.clear();
   std::vector<std::vector<ci_configuration>> confgLists(nGroups);
   std::string optCI    = "no";
   RealType cutoff      = 0.0;
@@ -654,7 +661,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   std::vector<size_t> NEs(nGroups);
   size_t nstates        = 0;
   size_t ndets          = 0;
-  size_t count          = 0;
   size_t cnt0           = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
@@ -685,11 +691,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
     APP_ABORT("size==0 in detlist is not allowed. Use slaterdeterminant in this case.\n");
   }
 
-  if (Dettype == "DETS" || Dettype == "Determinants")
-    usingCSF = false;
-  else if (Dettype == "CSF")
-    usingCSF = true;
-  else
+  if (Dettype == "CSF")
+    csf_data_ptr = std::make_unique<CSFData>();
+  else if (Dettype != "DETS" && Dettype != "Determinants")
   {
     APP_ABORT("Only allowed type in detlist is DETS or CSF.\n");
   }
@@ -715,8 +719,12 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   }
   RealType sumsq_qc = 0.0;
   RealType sumsq    = 0.0;
-  if (usingCSF)
+  if (csf_data_ptr)
   {
+    auto& CSFcoeff     = csf_data_ptr->coeffs;
+    auto& DetsPerCSF   = csf_data_ptr->dets_per_csf;
+    auto& CSFexpansion = csf_data_ptr->expansion;
+
     app_log() << "Reading CSFs." << std::endl;
     while (cur != NULL) //check the basis set
     {
@@ -763,7 +771,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
         CItags.push_back(tag);
-        count++;
         xmlNodePtr csf = cur->children;
         while (csf != NULL)
         {

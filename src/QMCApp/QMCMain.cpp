@@ -36,6 +36,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
+#include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
 #include <queue>
 #include <cstring>
@@ -204,7 +205,6 @@ bool QMCMain::execute()
     return false;
   }
 #endif
-
 
   NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
   t2->start();
@@ -392,7 +392,14 @@ bool QMCMain::validateXML()
   }
   else
   {
-    myProject.put(result[0]);
+    try
+    {
+      myProject.put(result[0]);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
   app_summary() << std::endl;
   myProject.get(app_summary());
@@ -578,10 +585,16 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   else
   {
     QMCDriverFactory driver_factory(myProject);
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-
-    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
-    append_run = das.append_run;
+    try
+    {
+      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      append_run = das.append_run;
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
 
   if (qmc_driver)

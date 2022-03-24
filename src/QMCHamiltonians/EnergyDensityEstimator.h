@@ -26,7 +26,7 @@ class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
 {
 public:
   using Point  = ReferencePoints::Point;
-  using PSPool = std::map<std::string, std::unique_ptr<ParticleSet>>;
+  using PSPool = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE);
   ~EnergyDensityEstimator() override;

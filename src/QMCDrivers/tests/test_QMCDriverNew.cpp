@@ -48,7 +48,6 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
                                     MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getPrimary(),
-                                                 wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                  hamiltonian_pool.getPrimary()),
                                     samples, comm);
 
@@ -103,7 +102,6 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(),
-                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
@@ -144,12 +142,117 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
   QMCDriverNewTestWrapper qmc_batched(std::move(qmcdriver_copy),
                                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(),
-                                                   wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                                    hamiltonian_pool.getPrimary()),
                                       samples, comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();
 }
 #endif
+
+TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
+{
+  using namespace testing;
+  Concurrency::OverrideMaxCapacity<> override(8);
+  Communicate* comm;
+  comm = OHMMS::Controller;
+  outputManager.pause();
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_tiny_index]);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  QMCDriverInput qmcdriver_input;
+  qmcdriver_input.readXML(node);
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  SampleStack samples;
+  WalkerConfigurations walker_confs;
+  QMCDriverNewTestWrapper qmcdriver(std::move(qmcdriver_input),
+                                    MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                                 wavefunction_pool.getPrimary(),
+                                                 hamiltonian_pool.getPrimary()),
+                                    samples, comm);
+
+
+  auto tau       = 1.0;
+  auto invmass   = 0.2;
+  auto spin_mass = 0.5;
+  {
+    TauParams<QMCTraits::RealType, CoordsType::POS> taus(tau, invmass, spin_mass);
+    constexpr auto mct = CoordsType::POS;
+    auto mc_coords     = MCCoords<mct>(3);
+    QMCTraits::PosType p1({0.1, 0.2, 0.3});
+    QMCTraits::PosType p2({0.4, 0.5, 0.6});
+    QMCTraits::PosType p3({0.7, 0.8, 0.9});
+    mc_coords.positions = {p1, p2, p3};
+
+    auto deltas = mc_coords;
+    QMCDriverNew::scaleBySqrtTau(taus, deltas);
+    mc_coords += deltas;
+    CHECK(Approx(mc_coords.positions[0][0]) == 0.14472135955);
+    CHECK(Approx(mc_coords.positions[0][1]) == 0.28944271910);
+    CHECK(Approx(mc_coords.positions[0][2]) == 0.43416407865);
+    CHECK(Approx(mc_coords.positions[1][0]) == 0.57888543820);
+    CHECK(Approx(mc_coords.positions[1][1]) == 0.72360679775);
+    CHECK(Approx(mc_coords.positions[1][2]) == 0.86832815730);
+    CHECK(Approx(mc_coords.positions[2][0]) == 1.01304951685);
+    CHECK(Approx(mc_coords.positions[2][1]) == 1.15777087640);
+    CHECK(Approx(mc_coords.positions[2][2]) == 1.30249223595);
+
+    std::vector<QMCTraits::RealType> loggf(3), loggb(3);
+
+    qmcdriver.computeLogGreensFunction(deltas, taus, loggf);
+    CHECK(Approx(loggf[0]) == -0.07);
+    CHECK(Approx(loggf[1]) == -0.385);
+    CHECK(Approx(loggf[2]) == -0.97);
+
+    qmcdriver.computeLogGreensFunction(mc_coords, taus, loggb);
+    CHECK(Approx(loggb[0]) == -0.733049516850);
+    CHECK(Approx(loggb[1]) == -4.031772342675);
+    CHECK(Approx(loggb[2]) == -10.15797187635);
+  }
+
+  {
+    TauParams<QMCTraits::RealType, CoordsType::POS_SPIN> taus(tau, invmass, spin_mass);
+    constexpr auto mct = CoordsType::POS_SPIN;
+    auto mc_coords     = MCCoords<mct>(3);
+    QMCTraits::PosType p1({-0.1, -0.2, -0.3});
+    QMCTraits::PosType p2({-0.4, -0.5, -0.6});
+    QMCTraits::PosType p3({-0.7, -0.8, -0.9});
+    mc_coords.positions = {p1, p2, p3};
+    mc_coords.spins     = {0.1, 0.2, 0.3};
+
+    auto deltas = mc_coords;
+    QMCDriverNew::scaleBySqrtTau(taus, deltas);
+    mc_coords += deltas;
+    CHECK(Approx(mc_coords.positions[0][0]) == -0.14472135955);
+    CHECK(Approx(mc_coords.positions[0][1]) == -0.28944271910);
+    CHECK(Approx(mc_coords.positions[0][2]) == -0.43416407865);
+    CHECK(Approx(mc_coords.positions[1][0]) == -0.57888543820);
+    CHECK(Approx(mc_coords.positions[1][1]) == -0.72360679775);
+    CHECK(Approx(mc_coords.positions[1][2]) == -0.86832815730);
+    CHECK(Approx(mc_coords.positions[2][0]) == -1.01304951685);
+    CHECK(Approx(mc_coords.positions[2][1]) == -1.15777087640);
+    CHECK(Approx(mc_coords.positions[2][2]) == -1.30249223595);
+
+    CHECK(Approx(mc_coords.spins[0]) == 0.163245553203);
+    CHECK(Approx(mc_coords.spins[1]) == 0.326491106407);
+    CHECK(Approx(mc_coords.spins[2]) == 0.489736659610);
+
+    std::vector<QMCTraits::RealType> loggf(3), loggb(3);
+
+    qmcdriver.computeLogGreensFunction(deltas, taus, loggf);
+    CHECK(Approx(loggf[0]) == -0.075);
+    CHECK(Approx(loggf[1]) == -0.405);
+    CHECK(Approx(loggf[2]) == -1.015);
+
+    qmcdriver.computeLogGreensFunction(mc_coords, taus, loggb);
+    CHECK(Approx(loggb[0]) == -0.766360905151);
+    CHECK(Approx(loggb[1]) == -4.165017895878);
+    CHECK(Approx(loggb[2]) == -10.457774371057);
+  }
+}
 
 } // namespace qmcplusplus

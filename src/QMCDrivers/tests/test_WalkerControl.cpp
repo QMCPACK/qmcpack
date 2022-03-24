@@ -39,7 +39,6 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
                                         dpools_.particle_pool->getParticleSet("e"),
                                         dpools_.wavefunction_pool->getPrimary(),
-                                        dpools_.wavefunction_pool->getWaveFunctionFactory("wavefunction"),
                                         dpools_.hamiltonian_pool->getPrimary());
 
   pop_->createWalkers(1);

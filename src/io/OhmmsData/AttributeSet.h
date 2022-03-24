@@ -41,7 +41,7 @@ struct OhmmsAttributeSet
   template<class PDT>
   void add(PDT& aparam,
            const std::string& aname,
-           std::vector<PDT>&& candidate_values = {},
+           std::vector<PDT> candidate_values = {},
            TagStatus status                    = TagStatus::OPTIONAL)
   {
     if (auto it = m_param.find(aname); it == m_param.end())

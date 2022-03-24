@@ -30,17 +30,15 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset             = *particle_pool.getParticleSet("e");
-  auto& wf_factory       = *wavefunction_pool.getWaveFunctionFactory("wavefunction");
+  auto& twf              = *wavefunction_pool.getWaveFunction("wavefunction");
 
   CompositeSPOSet comp_sposet;
 
   std::vector<std::string> sposets{"spo_ud", "spo_dm"};
   for (auto sposet_str : sposets)
   {
-    SPOSet* sposet = wf_factory.getSPOSet(sposet_str);
-    if (sposet == 0)
-      throw std::runtime_error("MinimalWaveFunctionPool sposet " + sposet_str + " does not exist");
-    comp_sposet.add(sposet->makeClone());
+    auto& sposet = twf.getSPOSet(sposet_str);
+    comp_sposet.add(sposet.makeClone());
   }
   CHECK(comp_sposet.size() == 8);
 

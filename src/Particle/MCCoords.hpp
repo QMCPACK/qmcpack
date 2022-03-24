@@ -5,6 +5,7 @@
 // Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +15,7 @@
 
 #include "Configuration.h"
 #include "type_traits/complex_help.hpp"
+#include <algorithm>
 
 #include <vector>
 
@@ -31,7 +33,14 @@ struct MCCoords;
 template<>
 struct MCCoords<CoordsType::POS>
 {
-  void resize(const std::size_t size);
+  MCCoords(const std::size_t size) : positions(size) {}
+
+  MCCoords& operator+=(const MCCoords& rhs);
+
+  /** get subset of MCCoords
+   * [param,out] out
+   */
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS>& out) const;
 
   std::vector<QMCTraits::PosType> positions;
 };
@@ -39,7 +48,14 @@ struct MCCoords<CoordsType::POS>
 template<>
 struct MCCoords<CoordsType::POS_SPIN>
 {
-  void resize(const std::size_t size);
+  MCCoords(const std::size_t size) : positions(size), spins(size) {}
+
+  MCCoords& operator+=(const MCCoords& rhs);
+
+  /** get subset of MCCoords
+   * [param,out] out
+   */
+  void getSubset(const std::size_t offset, const std::size_t size, MCCoords<CoordsType::POS_SPIN>& out) const;
 
   std::vector<QMCTraits::PosType> positions;
   std::vector<QMCTraits::FullPrecRealType> spins;

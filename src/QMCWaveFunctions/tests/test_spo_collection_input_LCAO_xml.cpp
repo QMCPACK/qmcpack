@@ -65,12 +65,10 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
-  REQUIRE(spo_ptr);
-  std::unique_ptr<SPOSet> sposet(spo_ptr->makeClone());
+  std::unique_ptr<SPOSet> sposet(twf_ptr->getSPOSet("spo").makeClone());
 
   SPOSet::ValueVector values;
   SPOSet::GradVector dpsi;

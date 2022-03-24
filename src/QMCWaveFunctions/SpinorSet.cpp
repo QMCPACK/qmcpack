@@ -40,14 +40,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
   d2psi_work_down.resize(OrbitalSetSize);
 }
 
-int SpinorSet::getBasisSetSize() const
-{
-  IndexType basis_up = spo_up->getBasisSetSize();
-  IndexType basis_dn = spo_dn->getBasisSetSize();
-  assert(basis_up == basis_dn);
-  return basis_up;
-}
-
 void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
 
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };

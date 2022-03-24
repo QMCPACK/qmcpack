@@ -132,7 +132,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
-  TrialWaveFunction* targetPsi = psi_it->second->getTWF();
+  TrialWaveFunction* targetPsi = psi_it->second.get();
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while (cur != NULL)
@@ -278,7 +278,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log() << "  Adding OrbitalImages" << std::endl;
         std::unique_ptr<OrbitalImages> apot =
-            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, *psi_it->second);
+            std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, targetPsi->getSPOMap());
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }
@@ -308,7 +308,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
         std::unique_ptr<DensityMatrices1B> apot =
-            std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc, *psi_it->second);
+            std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }
@@ -347,7 +347,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for Chiesa correction.");
         }
-        const TrialWaveFunction& psi             = *psi_it->second->getTWF();
+        const TrialWaveFunction& psi             = *psi_it->second;
         std::unique_ptr<ChiesaCorrection> chiesa = std::make_unique<ChiesaCorrection>(source, psi);
         targetH->addOperator(std::move(chiesa), "KEcorr", false);
       }
@@ -400,8 +400,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \"" + PsiName + "\" for momentum.");
         }
-        TrialWaveFunction* psi                = (*psi_it).second->getTWF();
-        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi);
+        std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi_it->second);
         bool rt(myComm->rank() == 0);
         ME->putSpecial(cur, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);

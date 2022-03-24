@@ -285,19 +285,15 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   MCWalkerConfiguration::iterator it_end(W.end());
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), nrn(0), ncr(0), nc(0);
+  int nrn(0), ncr(0);
   while (it != it_end)
   {
-    bool inFN = (((*it)->ReleasedNodeAge) == 0);
-    nc        = std::min(static_cast<int>((*it)->Multiplicity), MaxCopy);
+    bool inFN    = (((*it)->ReleasedNodeAge) == 0);
+    const int nc = std::min(static_cast<int>((*it)->Multiplicity), MaxCopy);
     if (write_release_nodes_)
     {
       if ((*it)->ReleasedNodeAge == 1)
         ncr += 1;
-      else if ((*it)->ReleasedNodeAge == 0)
-      {
-        nfn += 1;
-      }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
       FullPrecRealType local_energy((*it)->Properties(WP::LOCALENERGY));
@@ -313,9 +309,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     }
     else
     {
-      if (nc > 0)
-        nfn++;
-      else
+      if (nc == 0)
         ncr++;
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);

@@ -87,12 +87,10 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
-  REQUIRE(spo_ptr);
-  std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
+  std::unique_ptr<SPOSet> spo(twf_ptr->getSPOSet("spo").makeClone());
 
   // for vgl
   SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());

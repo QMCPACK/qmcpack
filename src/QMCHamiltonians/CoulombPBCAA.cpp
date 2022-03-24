@@ -205,8 +205,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     }
   }
   else
-    for (int iw = 0; iw < o_list.size(); iw++)
-      o_list[iw].evaluate(p_list[iw]);
+    OperatorBase::mw_evaluate(o_list, wf_list, p_list);
 }
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
@@ -549,7 +548,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       const size_t last            = std::min(first + chunk_size, total_num_half);
       const size_t this_chunk_size = last - first;
 
-      auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
+      auto* mw_dist = dtaa_leader.mw_evalDistsInRange(dt_list, p_list, first, last);
 
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
