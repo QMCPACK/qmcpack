@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
+#include "Particle/HDFWalkerIO.h"
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
@@ -49,7 +50,6 @@ class Communicate;
 namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
-class HDFWalkerOutput;
 class TraceManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
@@ -429,7 +429,7 @@ protected:
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */

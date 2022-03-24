@@ -17,7 +17,6 @@
 
 #include "QMCDriverNew.h"
 #include "Concurrency/ParallelExecutor.hpp"
-#include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/FairDivide.h"
@@ -54,10 +53,10 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
+      root_name_(project_data.CurrentMainRoot()),
       population_(std::move(population)),
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
-      wOut(0),
       timers_(timer_prefix),
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
@@ -94,6 +93,8 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     auto& lattice = population.get_golden_electrons()->getLattice();
     max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
+
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons()->getTotalNum(), root_name_, myComm);
 }
 
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
