@@ -789,7 +789,9 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.device_data();
 
   auto* curRatio_list_ptr = curRatio_list.data();
+  auto* det0_grad_list_ptr = det0_grad_list.data();
   auto* confgListOccup_ptr = confgListOccup.device_data();
+  auto* ratioGradReflistIdim_ptr=ratioGradReflistIdim.device_data();
 
   psiMinv_deviceptr_list.updateTo();
   dpsiMinv_deviceptr_list.updateTo();
@@ -820,16 +822,12 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   }
 
   for (size_t iw = 0; iw < nw; iw++)
-  {
-//    psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
     for (size_t i = 0; i < NumPtcls; i++)
     {
       size_t J=confgListOccup[i];
-  //    psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[J];
       ratioGradRef_list[iw] += psiMinv_temp_list[iw].get()(i, WorkingIndex) * dpsiV_list[iw].get()[J];
     }
 
-  }
 
   PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
                   is_device_ptr(psiV_temp_list_ptr,psiMinv_temp_list_ptr)")
@@ -844,7 +842,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     }
     curRatio_list_ptr[iw] = c_ratio;
   }
-  ///mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
 
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
@@ -853,22 +850,22 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,curRatio_list,psiV_temp_list,workV1_list,workV2_list,psiMinv_temp_list);
   for (size_t iw = 0; iw < nw; iw++)
-  {
    psiMinv_temp_list[iw].get().updateFrom();
-  }
 
-  ///mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-  ///                         curRatio_list);
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
 
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
+
+    success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,dpsiMinv_list_ptr, 1, nw) ;
+    if (success != 0)
+          throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+
     for (size_t iw = 0; iw < nw; iw++)
     {
       ratioGradReflistIdim[iw]   = ratioGradRef_list[iw][idim];
-      dpsiMinv_list[iw].get() = psiMinv_list[iw].get();
 
       for (size_t i = 0; i < NumPtcls; i++)
       {
@@ -876,14 +873,28 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[J][idim];
       }
     }
-    mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                             ratioGradReflistIdim);
+
+    for (size_t iw = 0; iw < nw; iw++)
+      psiV_temp_list[iw].get().updateTo();
+    ratioGradReflistIdim.updateTo();
+
+    det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,ratioGradReflistIdim,psiV_temp_list,workV1_list,workV2_list,dpsiMinv_list);
+
+    for (size_t iw = 0; iw < nw; iw++)
+	    dpsiMinv_list[iw].get().updateFrom();
+
     for (size_t iw = 0; iw < nw; iw++)
     {
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiV_list[iw].get()[i][idim];
-      det0_grad_list[iw] = ratioGradReflistIdim[iw] / curRatio_list[iw];
     }
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for  map(always,from:det0_grad_list_ptr[:nw]) \
+                  map(always, to: curRatio_list_ptr[:nw]) is_device_ptr(ratioGradReflistIdim_ptr)")
+  for (size_t iw = 0; iw < nw; iw++)
+      det0_grad_list_ptr[iw] = ratioGradReflistIdim_ptr[iw] / curRatio_list_ptr[iw];
+
+
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
