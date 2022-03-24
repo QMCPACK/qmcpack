@@ -749,7 +749,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
     psiV_list[iw].get().updateTo();
     dpsiV_list[iw].get().updateTo();
-    psiMinv_list[iw].get().updateTo();
 
   }
   det_leader.evalOrb1Timer.stop();
@@ -802,28 +801,64 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
 
 
+  success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,psiMinv_temp_list_ptr, 1, nw) ;
+  if (success != 0)
+        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(psiV_temp_list_ptr, psiV_list_ptr, confgListOccup_ptr)")
+  for (size_t iw = 0; iw < nw; iw++)
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      size_t J=confgListOccup_ptr[i];
+      psiV_temp_list_ptr[iw][i] = psiV_list_ptr[iw][J];
+    }
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
+   psiMinv_temp_list[iw].get().updateFrom();
+   psiV_temp_list[iw].get().updateFrom();
+  }
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+//    psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
     for (size_t i = 0; i < NumPtcls; i++)
     {
       size_t J=confgListOccup[i];
-      psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[J];
+  //    psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[J];
       ratioGradRef_list[iw] += psiMinv_temp_list[iw].get()(i, WorkingIndex) * dpsiV_list[iw].get()[J];
     }
 
   }
 
-  mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
+  PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
+                  is_device_ptr(psiV_temp_list_ptr,psiMinv_temp_list_ptr)")
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    ValueType c_ratio = 0.0;
+    PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
+    for (size_t jc = 0; jc < psiMinv_cols; jc +=1)
+    {
+      size_t ic=jc*psiMinv_cols;
+      c_ratio += (psiMinv_temp_list_ptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
+    }
+    curRatio_list_ptr[iw] = c_ratio;
+  }
+  ///mw_DetRatioByColumn(nw, WorkingIndex, psiMinv_temp_list, psiV_temp_list, curRatio_list);
 
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
 
 
-  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                           curRatio_list);
+  det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,curRatio_list,psiV_temp_list,workV1_list,workV2_list,psiMinv_temp_list);
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+   psiMinv_temp_list[iw].get().updateFrom();
+  }
+
+  ///mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
+  ///                         curRatio_list);
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, dotProducts_list, new_ratios_to_ref_list);
@@ -832,15 +867,14 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   {
     for (size_t iw = 0; iw < nw; iw++)
     {
-      MultiDiracDeterminant& det = (det_list[iw]);
       ratioGradReflistIdim[iw]   = ratioGradRef_list[iw][idim];
-      const auto& confgList      = *det.ciConfigList;
-      auto it(confgList[det_leader.ReferenceDeterminant].occup.begin());
-      //ExtraStuffTimer.start();
       dpsiMinv_list[iw].get() = psiMinv_list[iw].get();
-      it                      = confgList[det_leader.ReferenceDeterminant].occup.begin();
-      for (size_t i = 0; i < det_leader.NumPtcls; i++)
-        psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[*(it++)][idim];
+
+      for (size_t i = 0; i < NumPtcls; i++)
+      {
+        size_t J=confgListOccup[i];
+        psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[J][idim];
+      }
     }
     mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
                              ratioGradReflistIdim);
