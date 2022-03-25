@@ -13,8 +13,6 @@ on:
       - github_actions_automatic_rebase
   push:
       branches:
-      - develop
-      - main
       - github_actions_automatic_rebase
           
 jobs:
@@ -37,5 +35,15 @@ jobs:
         fetch-depth: 0 # otherwise, you will fail to push refs to dest repo
     - name: Automatic Rebase
       run: tests/test_automation/github-actions/ci/run_step.sh rebase
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trigger-rebase:
+    if: github.event_name == "push"
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Push Update To Opt'd in PR's
+      run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
