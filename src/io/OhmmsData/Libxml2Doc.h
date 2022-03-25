@@ -83,7 +83,7 @@ struct Libxml2Document
 
   bool parse(const std::string& fname);
   bool parseFromString(const std::string_view data);
-  
+
   inline xmlDocPtr getDocument() { return m_doc; }
   inline xmlNodePtr getRoot() { return m_root; }
   xmlXPathContextPtr getXPathContext();

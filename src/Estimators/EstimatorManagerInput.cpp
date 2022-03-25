@@ -9,8 +9,8 @@
 // File refactored from: EstimatorManagerNew.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "ScalarEstimatorInputs.h"
 #include "EstimatorManagerInput.h"
+#include "ScalarEstimatorInputs.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"

@@ -29,7 +29,7 @@ using MatrixOperators::product_AtB;
 OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obdmi,
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
-                                               const SPOSetBuilderFactory::SPOMap& spomap,
+                                               const SPOMap& spomap,
                                                ParticleSet& pset_target)
     : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
