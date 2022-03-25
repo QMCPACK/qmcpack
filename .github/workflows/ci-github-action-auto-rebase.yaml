@@ -43,6 +43,10 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout Action
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
     - name: Push Update To Opt'd in PR's
       run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
       env:
