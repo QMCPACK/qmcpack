@@ -29,6 +29,6 @@ for pr in "${pr_list[@]}"; do
         RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PULL_NUMBER}")
-        $(echo "$RESULT")
+        RESULT=$(echo "$RESULT")
     fi
 done
