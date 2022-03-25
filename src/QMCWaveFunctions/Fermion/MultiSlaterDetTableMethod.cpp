@@ -236,31 +236,33 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     det_list.push_back(*det.Dets[det_id]);
   }
 
+  //Data layout change for grads function
+  OffloadMatrix<ValueType> Grads;
+  Grads.resize(3 * nw, ndets);
   if (newpos)
-    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat);
+    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat,Grads);
   else
-    det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat);
+    det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat,Grads);
 
   det_value_ptr_list.resize(nw);
   C_otherDs_ptr_list.resize(nw);
-  //Data layout change for grads function
-  Matrix<ValueType, OMPallocator<ValueType, PinnedAlignedAllocator<ValueType>>> Grads_copy;
-  Grads_copy.resize(3 * nw, ndets);
+
+  Grads.updateFrom();
 
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
-
+/*
     const size_t noffset = det.Dets[det_id]->getFirstIndex();
     const auto& grads    = (newpos) ? det.Dets[det_id]->getNewGrads() : det.Dets[det_id]->getGrads();
 
     for (size_t i = 0; i < ndets; i++)
     {
-      Grads_copy[3 * iw + 0][i] = grads(i, iat - noffset)[0];
-      Grads_copy[3 * iw + 1][i] = grads(i, iat - noffset)[1];
-      Grads_copy[3 * iw + 2][i] = grads(i, iat - noffset)[2];
+      app_log()<<"Arg0="<<Grads[3 * iw + 0][i] - grads(i, iat - noffset)[0]<<std::endl;
+      app_log()<<"Arg1="<<Grads[3 * iw + 1][i] - grads(i, iat - noffset)[1]<<std::endl;
+      app_log()<<"Arg2="<<Grads[3 * iw + 2][i] - grads(i, iat - noffset)[2]<<std::endl;
     }
-
+    */
     det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data()
                                       : det.Dets[det_id]->getRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
@@ -268,7 +270,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
 
   std::vector<ValueType> grad_now_list(nw * 3, 0);
   auto* grad_now_list_ptr      = grad_now_list.data();
-  auto* Grads_copy_ptr         = Grads_copy.data();
+  auto* Grads_ptr              = Grads.data();
   auto* psi_list_ptr           = psi_list.data();
   auto* C_otherDs_ptr_list_ptr = C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
@@ -277,7 +279,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     PRAGMA_OFFLOAD("omp target teams distribute map(from: psi_list_ptr[:nw]) \
                     map(from: grad_now_list_ptr[:3 * nw]) \
                     map(always, to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw]) \
-                    map(always, to: Grads_copy_ptr[:Grads_copy.size()])")
+                    map(always, to: Grads_ptr[:Grads.size()])")
     for (size_t iw = 0; iw < nw; iw++)
     {
       // enforce full precision reduction due to numerical sensitivity
@@ -289,9 +291,9 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
       for (size_t i = 0; i < ndets; i++)
       {
         psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
-        grad_local_x += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 0) * ndets + i];
-        grad_local_y += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 1) * ndets + i];
-        grad_local_z += C_otherDs_ptr_list_ptr[iw][i] * Grads_copy_ptr[(3 * iw + 2) * ndets + i];
+        grad_local_x += C_otherDs_ptr_list_ptr[iw][i] * Grads_ptr[(3 * iw + 0) * ndets + i];
+        grad_local_y += C_otherDs_ptr_list_ptr[iw][i] * Grads_ptr[(3 * iw + 1) * ndets + i];
+        grad_local_z += C_otherDs_ptr_list_ptr[iw][i] * Grads_ptr[(3 * iw + 2) * ndets + i];
       }
       psi_list_ptr[iw]              = psi_local;
       grad_now_list_ptr[iw * 3 + 0] = grad_local_x;
