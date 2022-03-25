@@ -24,7 +24,7 @@ for pr in "${pr_list[@]}"; do
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         # edit pr to cause rebase
         UPDATE_PARAMETERS='{"body":'
-        UPDATE_PARAMETERS+="\"${BODY}"
+        UPDATE_PARAMETERS+="\"'"${BODY//$'\n'/'\n'}"'"
         UPDATE_PARAMETERS+="\r\n"
         UPDATE_PARAMETERS+="AUTOMATED CHANGE: Rebase to new base head of ${HEAD}\"}"
         RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
