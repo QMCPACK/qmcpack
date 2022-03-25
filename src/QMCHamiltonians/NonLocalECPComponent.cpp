@@ -660,7 +660,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 }
 
 void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
-                                                                 const ParticleSet& ions,
+                                                                 ParticleSet& ions,
                                                                  const int iat,
                                                                  const int iat_src,
                                                                  const TWFFastDerivWrapper& psi,
