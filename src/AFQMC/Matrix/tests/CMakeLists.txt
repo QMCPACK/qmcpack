@@ -11,7 +11,6 @@
 
 message(VERBOSE "Adding AFQMC matrix unit tests")
 
-
 set(SRC_DIR afqmc_matrix)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})

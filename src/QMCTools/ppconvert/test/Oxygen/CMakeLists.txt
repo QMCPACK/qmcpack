@@ -7,7 +7,7 @@ add_test(
   NAME ${THISTESTNAME}
   COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/O_test.sh $<TARGET_FILE:ppconvert>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-SET_TESTS_PROPERTIES(${THISTESTNAME} PROPERTIES LABELS "deterministic")
+set_tests_properties(${THISTESTNAME} PROPERTIES LABELS "deterministic")
 
 find_program(HAVE_NUMDIFF numdiff)
 if(HAVE_NUMDIFF)
@@ -16,6 +16,5 @@ if(HAVE_NUMDIFF)
     COMMAND numdiff -a 0.001 ${CMAKE_CURRENT_BINARY_DIR}/O.BFD.xml
             ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/O.BFD.xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  set_tests_properties(ppconvert_o_diff PROPERTIES DEPENDS ppconvert_runs
-   LABELS "deterministic")
+  set_tests_properties(ppconvert_o_diff PROPERTIES DEPENDS ppconvert_runs LABELS "deterministic")
 endif(HAVE_NUMDIFF)
