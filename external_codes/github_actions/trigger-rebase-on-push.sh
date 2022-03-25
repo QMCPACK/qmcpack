@@ -23,7 +23,9 @@ for pr in "${pr_list[@]}"; do
     PULL_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         # edit pr to cause rebase
-        UPDATE_PARAMETERS="{'body':${BODY}" + "\r\n" + "AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
+        UPDATE_PARAMETERS="{'body':${BODY}"
+        UPDATE_PARAMETERS+="\r\n"
+        UPDATE_PARAMETERS+="AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
         RESULT = $(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PULL_NUMBER}")
