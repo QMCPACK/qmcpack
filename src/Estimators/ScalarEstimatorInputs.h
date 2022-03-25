@@ -22,8 +22,8 @@ class LocalEnergyInput
     LocalEnergyInputSection()
     {
       section_name = "LocalEnergy";
-      attributes   = {"type", "use_hdf5"};
-      bools        = {"use_hdf5"};
+      attributes   = {"type", "hdf5"};
+      bools        = {"hdf5"};
       strings      = {"type"};
     };
   };
@@ -46,7 +46,7 @@ class CSLocalEnergyInput
     {
       section_name = "CSLocalEnergy";
       attributes   = {"npsi", "type"};
-      integers     = {"nspi"};
+      integers     = {"npsi"};
       strings      = {"type"};
     }
   };

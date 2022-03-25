@@ -19,7 +19,7 @@ LocalEnergyInput::LocalEnergyInput(xmlNodePtr cur)
 {
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
-  setIfInInput(use_hdf5_, "use_hdf5");
+  setIfInInput(use_hdf5_, "hdf5");
 }
 
 CSLocalEnergyInput::CSLocalEnergyInput(xmlNodePtr cur)

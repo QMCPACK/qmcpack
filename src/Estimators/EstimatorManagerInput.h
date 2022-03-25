@@ -60,7 +60,8 @@ public:
   EstimatorManagerInput()                            = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
   EstimatorManagerInput(xmlNodePtr cur);
-  EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; };
+  EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
+  ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }
   /** read <Estimators> node
    *  Note that this can be done multiple times to combine global and section local estimator inputs.
    */
