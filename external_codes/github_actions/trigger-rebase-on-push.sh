@@ -27,7 +27,7 @@ for pr in "${pr_list[@]}"; do
         UPDATE_PARAMETERS+="\r\n"
         UPDATE_PARAMETERS+="AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
         RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
-        -d "${PARAMETERS}" \
+        -d "${UPDATE_PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PULL_NUMBER}")
         RESULT=$(echo "$RESULT")
     fi
