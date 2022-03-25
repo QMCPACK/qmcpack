@@ -1,6 +1,6 @@
 on:
   pull_request_target:
-    types: [opened, synchronize, reopen, edited]
+    types: [opened, synchronize, reopen, edited, auto_merge_enabled]
     branches:
       - develop
       - main
@@ -11,11 +11,16 @@ on:
       - develop
       - main
       - github_actions_automatic_rebase
+  push:
+      branches:
+      - develop
+      - main
+      - github_actions_automatic_rebase
           
 jobs:
   rebase:
-    # if: |
-    #   contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
+    if: |
+      contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
     # && github.event.review.state == 'approved' 
     # && github.event.pull_request.auto_merge
        
