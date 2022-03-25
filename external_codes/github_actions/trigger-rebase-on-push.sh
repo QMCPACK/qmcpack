@@ -22,6 +22,7 @@ for pr in "${pr_list[@]}"; do
     HEAD=$(echo "$pr" | jq -r .[0].head)
     PR_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
+        source external_codes/github_actions/auto-rebase.sh
         # edit pr to cause rebase
         UPDATE_PARAMETERS=$(jq --null-input \
         --arg body "${BODY}"'\r\nAUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
@@ -30,6 +31,5 @@ for pr in "${pr_list[@]}"; do
         RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${UPDATE_PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PR_NUMBER}")
-        source external_codes/github_actions/auto-rebase.sh
     fi
 done
