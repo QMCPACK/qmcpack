@@ -16,11 +16,11 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls")
 
-
-$pr_list | jq '.[] | {pr_number: .number, body: .body, head: .base.sha}' | while read object; do
-    BODY=$(echo "$object" | jq -r .body)
-    HEAD=$(echo "$object" | jq -r .head)
-    PULL_NUMBER=$(echo "$object" | jq -r .pr_number)
+pr_list=$(${pr_list} | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha}]')
+for pr in "${pr_list[@]}"; do
+    BODY=$(echo "$pr" | jq -r .body)
+    HEAD=$(echo "$pr" | jq -r .head)
+    PULL_NUMBER=$(echo "$pr" | jq -r .pr_number)
     if [["$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"*]]; then
         # edit pr to cause rebase
         UPDATE_PARAMETERS="{'body':${BODY}" + "\n" + "AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
