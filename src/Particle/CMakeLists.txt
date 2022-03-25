@@ -39,12 +39,8 @@ set(PARTICLE
     LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
-set(PARTICLEIO
-    ParticleTags.cpp
-    ParticleIO/LatticeIO.cpp
-    ParticleIO/XMLParticleIO.cpp
-    HDFWalkerOutput.cpp
-    HDFWalkerInput_0_4.cpp)
+set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp
+               HDFWalkerInput_0_4.cpp)
 
 if(USE_OBJECT_TARGET)
   add_library(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})
