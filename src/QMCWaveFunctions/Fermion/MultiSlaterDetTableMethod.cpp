@@ -247,22 +247,9 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   det_value_ptr_list.resize(nw);
   C_otherDs_ptr_list.resize(nw);
 
-  Grads.updateFrom();
-
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
-/*
-    const size_t noffset = det.Dets[det_id]->getFirstIndex();
-    const auto& grads    = (newpos) ? det.Dets[det_id]->getNewGrads() : det.Dets[det_id]->getGrads();
-
-    for (size_t i = 0; i < ndets; i++)
-    {
-      app_log()<<"Arg0="<<Grads[3 * iw + 0][i] - grads(i, iat - noffset)[0]<<std::endl;
-      app_log()<<"Arg1="<<Grads[3 * iw + 1][i] - grads(i, iat - noffset)[1]<<std::endl;
-      app_log()<<"Arg2="<<Grads[3 * iw + 2][i] - grads(i, iat - noffset)[2]<<std::endl;
-    }
-    */
     det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data()
                                       : det.Dets[det_id]->getRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
