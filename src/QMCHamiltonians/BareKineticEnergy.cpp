@@ -301,18 +301,39 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
         gradJdotgradPhi[sid][iel-first][iorb] = 2.0*dot(G[iel],grad_M[sid][iel-first][iorb]);
         B[sid][iel-first][iorb]+=MinusOver2M[ig]*(lapl_M[sid][iel-first][iorb]+gradJdotgradPhi[sid][iel-first][iorb] + (L[iel]+dot(G[iel],G[iel]))*M[sid][iel-first][iorb]);
       }
-   //   B[sid] += MinusOver2M[ig]*(lapl_M[sid][iel-first]+gradJdotgradPhi[sid][iel-first] + L[iel]*M[sid][iel-first]);
     }
   }
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                          const ParticleSet& source,
+                                                          ParticleSet& source,
                                                           const TWFFastDerivWrapper& psi,
                                                           const int iat,
                                                           std::vector<std::vector<ValueMatrix>>& Bforce)
 {
   IndexType ngroups = P.groups();
+  IndexType nelec = P.getTotalNum();
+ 
+  ParticleSet::ParticleGradient Gtmp,G;
+  ParticleSet::ParticleLaplacian Ltmp,L;
+  Gtmp.resize(nelec);
+  G.resize(nelec);
+  Ltmp.resize(nelec);
+  L.resize(nelec);
+
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> dG;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> dL;
+  
+  for (int dim=0; dim<OHMMS_DIM; dim++)
+  {
+    dG[dim]=Gtmp;
+    dL[dim]=Ltmp;
+  }
+ 
   assert(Bforce.size() == OHMMS_DIM);
   assert(Bforce[0].size() == ngroups);
   std::vector<ValueMatrix> mtmp;
@@ -331,9 +352,15 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     zerogradmat.resize(nptcls, norbs);
 
     mtmp.push_back(zeromat);
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
+    
   }
 
+  
   std::vector<std::vector<ValueMatrix>> dm, dlapl;
+  std::vector<std::vector<GradMatrix>> dgmat;
   dm.push_back(mtmp);
   dm.push_back(mtmp);
   dm.push_back(mtmp);
@@ -342,14 +369,36 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   dlapl.push_back(mtmp);
   dlapl.push_back(mtmp);
 
-  psi.getIonGradIonGradELaplM(P, source, iat, dm, dlapl);
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+  
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.getIonGradIonGradELaplM(P, source, iat, dm, dgmat, dlapl);
+  psi.evaluateJastrowVGL(P,G,L);
+  psi.evaluateJastrowGradSource(P,source,iat,dG,dL);
   for (int idim = 0; idim < OHMMS_DIM; idim++)
     for (int ig = 0; ig < ngroups; ig++)
     {
-      const IndexType sid = psi.getTWFGroupIndex(ig);
-      dlapl[idim][ig] *= MinusOver2M[ig];
-      Bforce[idim][sid] += dlapl[idim][ig];
-    }
+      const IndexType sid    = psi.getTWFGroupIndex(ig);
+      const IndexType norbs  = psi.numOrbitals(sid);
+      const IndexType first  = P.first(ig);
+      const IndexType last   = P.last(ig);
+      const IndexType nptcls = last - first;
+
+      //dlapl[idim][ig] *= MinusOver2M[ig];
+      //Bforce[idim][sid] += dlapl[idim][ig];
+      for (int iel=first; iel<last; iel++)
+      {
+        for(int iorb=0; iorb<norbs; iorb++)
+        {
+          Bforce[idim][sid][iel-first][iorb] = MinusOver2M[ig]*( dlapl[idim][sid][iel-first][iorb]
+                                           + 2.0*(dot(G[iel],dgmat[idim][sid][iel-first][iorb])+dot(dG[idim][iel],grad_M[sid][iel-first][iorb]))
+                                           + M[sid][iel-first][iorb]*(dL[idim][iel]+2.0*dot(dG[idim][iel],G[iel]))
+                                           + (L[iel]+dot(G[iel],G[iel]))*dm[idim][sid][iel-first][iorb]);
+         }
+      }
+    } 
 }
 
 #if !defined(REMOVE_TRACEMANAGER)

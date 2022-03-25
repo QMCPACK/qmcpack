@@ -1165,7 +1165,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
   CHECK(keobs == Approx(7.6732404154e+00));
-/*
+
 #if defined(MIXED_PRECISION)
   CHECK(fkin[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
   CHECK(fkin[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
@@ -1182,7 +1182,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   CHECK(fkin[1][2] == Approx(5.8844148870917925));
 #endif
   app_log() << " KEVal = " << keval << std::endl;
-
+/*
   app_log() << " Now evaluating nonlocalecp\n";
   OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
   app_log() << "nlppop = " << nlppop << std::endl;
