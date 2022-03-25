@@ -31,7 +31,7 @@ namespace testing
 /** class to allow private method testing in unit tests
  */
 class EstimatorManagerInputTests;
-}
+} // namespace testing
 
 /** These are the estimator input types EstimatorManagerInput delegates to.
  *  We of course know all the estimator types at compile time and it is useful to have type safety for their usage.
@@ -39,14 +39,14 @@ class EstimatorManagerInputTests;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
-using EstimatorInput = std::variant<SpinDensityInput, MomentumDistributionInput, OneBodyDensityMatricesInput>;
+using EstimatorInput  = std::variant<MomentumDistributionInput, SpinDensityInput, OneBodyDensityMatricesInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs
  */
-class ELocalInput;
+class LocalEnergyInput;
 class CSLocalEnergyInput;
-using ScalarEstimatorInput = std::variant<ELocalInput, CSLocalEnergyInput>;
+using ScalarEstimatorInput  = std::variant<LocalEnergyInput, CSLocalEnergyInput>;
 using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 
 /** Input type for EstimatorManagerNew
@@ -57,7 +57,7 @@ using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput() = default;
+  EstimatorManagerInput()                            = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
   EstimatorManagerInput(xmlNodePtr cur);
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; };
@@ -65,8 +65,8 @@ public:
    *  Note that this can be done multiple times to combine global and section local estimator inputs.
    */
   void readXML(xmlNodePtr cur);
-private:
 
+private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;
   ScalarEstimatorInputs scalar_estimator_inputs_;
@@ -74,13 +74,15 @@ private:
   template<typename T, typename... Args>
   void appendEstimatorInput(Args&&... args)
   {
-    estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);;
+    estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
+    ;
   }
 
   template<typename T, typename... Args>
   void appendScalarEstimatorInput(Args&&... args)
   {
-    scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);;
+    scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
+    ;
   }
 
   friend class testing::EstimatorManagerInputTests;

@@ -15,7 +15,7 @@
 namespace qmcplusplus
 {
 
-ELocalInput::ELocalInput(xmlNodePtr cur)
+LocalEnergyInput::LocalEnergyInput(xmlNodePtr cur)
 {
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;

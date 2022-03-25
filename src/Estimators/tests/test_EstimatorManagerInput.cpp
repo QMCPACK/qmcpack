@@ -12,9 +12,14 @@
 #include "catch.hpp"
 #include "EstimatorManagerInput.h"
 #include "test_EstimatorManagerInput.h"
+#include "ScalarEstimatorInputs.h"
 #include "SpinDensityInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
+#include "ValidOneBodyDensityMatricesInput.h"
+#include "ValidSpinDensityInput.h"
+#include "ValidMomentumDistributionInput.h"
+#include "ValidScalarEstimatorInput.h"
 
 namespace qmcplusplus
 {
@@ -65,7 +70,16 @@ Libxml2Document createEstimatorManagerNewInputXML()
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }  
+  }
+  for (auto& input_xml : valid_scalar_estimator_input_sections)
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(input_xml);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
   return estimators_doc;
 }
 
@@ -101,7 +115,7 @@ TEST_CASE("EstimatorManagerInput::readXML", "[estimators]")
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  CHECK(emi.get_estimator_inputs().size() == 3);
+  CHECK(emi.get_estimator_inputs().size() == 5);
 
   // CHECK EMI throws if unparsable estimators are in input.
   Libxml2Document doc;

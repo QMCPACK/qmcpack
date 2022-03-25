@@ -12,9 +12,6 @@
 #ifndef QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 #define QMCPLUSPLUS_TEST_ESTIMATOR_MANAGER_INPUT
 
-#include "ValidOneBodyDensityMatricesInput.h"
-#include "ValidSpinDensityInput.h"
-#include "ValidMomentumDistributionInput.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 namespace qmcplusplus

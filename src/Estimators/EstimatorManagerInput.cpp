@@ -9,6 +9,7 @@
 // File refactored from: EstimatorManagerNew.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "ScalarEstimatorInputs.h"
 #include "EstimatorManagerInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
@@ -29,9 +30,9 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       if (atype == "localenergy")
-        appendScalarEstimatorInput<LocalEnergy>(child);
+        appendScalarEstimatorInput<LocalEnergyInput>(child);
       else if (atype == "cslocalenergy")
-        appendScalarEstimatorInput<CSLocalEnergy>(child);
+        appendScalarEstimatorInput<CSLocalEnergyInput>(child);
       else if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
       else if (atype == "spindensity")
@@ -39,7 +40,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
       else
-        throw UniformCommunicateError(error_tag + "unparsable child node, name: " + aname + " type: " + atype +
+        throw UniformCommunicateError(error_tag + "unparsable child node, name: " + cname + " type: " + atype +
                                       " in Estimators input.");
     }
     else

@@ -9,29 +9,31 @@
 // File refactored from: EstimatorManagerNew.h
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Configuration.h"
 #include "InputSection.h"
 
 namespace qmcplusplus
 {
 
-class ELocalInput
+class LocalEnergyInput
 {
-  class ELocalInputSection : public InputSection
+  class LocalEnergyInputSection : public InputSection
   {
   public:
-    ELocalInputSection()
+    LocalEnergyInputSection()
     {
-      section_name = "ELocal";
-      attributes   = {"use_hdf5"};
+      section_name = "LocalEnergy";
+      attributes   = {"type", "use_hdf5"};
       bools        = {"use_hdf5"};
+      strings      = {"type"};
     };
   };
 
-  ELocalInput(xmlNodePtr cur);
+public:
+  LocalEnergyInput(xmlNodePtr cur);
   bool get_use_hdf5() const { return use_hdf5_; }
+
 private:
-  ELocalInputSection input_section_;
+  LocalEnergyInputSection input_section_;
   bool use_hdf5_ = true;
 };
 
@@ -43,10 +45,13 @@ class CSLocalEnergyInput
     CSLocalEnergyInputSection()
     {
       section_name = "CSLocalEnergy";
-      attributes   = {"npsi"};
+      attributes   = {"npsi", "type"};
       integers     = {"nspi"};
+      strings      = {"type"};
     }
   };
+
+public:
   CSLocalEnergyInput(xmlNodePtr cur);
   int get_n_psi() const { return n_psi_; }
 
