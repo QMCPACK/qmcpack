@@ -9,7 +9,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 add_subdirectory(CPU)
 
 if(ENABLE_CUDA)
