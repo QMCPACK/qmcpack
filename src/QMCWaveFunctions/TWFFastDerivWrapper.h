@@ -36,7 +36,7 @@ public:
   using IndexType   = QMCTraits::IndexType;
   using RealType    = QMCTraits::RealType;
   using ValueType   = QMCTraits::ValueType;
-
+  using GradType    = QMCTraits::GradType;
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
@@ -150,6 +150,7 @@ public:
                                const ParticleSet& source,
                                int iat,
                                std::vector<std::vector<ValueMatrix>>& dmvec,
+                               std::vector<std::vector<GradMatrix>>& dgmat,
                                std::vector<std::vector<ValueMatrix>>& dlmat) const;
 
 
@@ -163,6 +164,11 @@ public:
   RealType evaluateJastrowVGL(const ParticleSet& P,
                                    ParticleSet::ParticleGradient& G,
                                    ParticleSet::ParticleLaplacian& L) const;
+  GradType evaluateJastrowGradSource(ParticleSet& P,
+                                     ParticleSet& source,
+                                     const int iat,
+                                     TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                     TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const ;
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
    *

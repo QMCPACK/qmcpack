@@ -68,6 +68,25 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowVGL(const Part
   return rval;
 }
 
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
+             						                     ParticleSet& source,
+    									     const int iat,
+    							TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    							TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const
+{
+
+  GradType grad_iat = GradType();
+  for (int dim = 0; dim < OHMMS_DIM; dim++)
+    for (int i = 0; i < grad_grad[0].size(); i++)
+    {
+      grad_grad[dim][i] = GradType();
+      lapl_grad[dim][i] = 0.0;
+    }
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat, grad_grad, lapl_grad);
+  return grad_iat;
+}
+ 
 void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
                                          std::vector<ValueMatrix>& mvec,
                                          std::vector<GradMatrix>& gmat,
@@ -118,6 +137,7 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
                                                   const ParticleSet& source,
                                                   int iat,
                                                   std::vector<std::vector<ValueMatrix>>& dmvec,
+                                                  std::vector<std::vector<GradMatrix>>&  dgmat,
                                                   std::vector<std::vector<ValueMatrix>>& dlmat) const
 {
   IndexType ngroups = dmvec[0].size();
@@ -145,6 +165,8 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
         {
           dmvec[idim][i][iptcl][iorb] += grad_phi[iptcl][iorb][idim];
           dlmat[idim][i][iptcl][iorb] += grad_lapl_phi[iptcl][iorb][idim];
+          for(IndexType ielec=0; ielec <OHMMS_DIM; ielec++)
+            dgmat[idim][i][iptcl][iorb][ielec] += grad_grad_phi[iptcl][iorb](idim,ielec);
         }
   }
 }
