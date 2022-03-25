@@ -18,12 +18,12 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
 
 pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha}]')
 for pr in "${pr_list[@]}"; do
-    BODY=$(echo "$pr" | jq -r .body)
-    HEAD=$(echo "$pr" | jq -r .head)
-    PULL_NUMBER=$(echo "$pr" | jq -r .pr_number)
+    BODY=$(echo "$pr" | jq -r .[0].body)
+    HEAD=$(echo "$pr" | jq -r .[0].head)
+    PULL_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
     if [["$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"*]]; then
         # edit pr to cause rebase
-        UPDATE_PARAMETERS="{'body':${BODY}" + "\n" + "AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
+        UPDATE_PARAMETERS="{'body':${BODY}" + "\r\n" + "AUTOMATED CHANGE: Rebase to new base head of ${HEAD}}"
         RESULT = $(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PULL_NUMBER}")
