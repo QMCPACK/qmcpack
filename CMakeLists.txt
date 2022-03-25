@@ -55,7 +55,7 @@ option(
   "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
   OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP)
+if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
 # explicit HIP source codes only exist in AFQMC.

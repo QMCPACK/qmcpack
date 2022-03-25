@@ -89,7 +89,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -124,17 +124,16 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP)
   app_summary() << "  CPU only build" << std::endl;
 #else
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+#if defined(ENABLE_HIP) || defined(QMC_CUDA2HIP)
+  app_summary() << "  HIP acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_CUDA) || defined(QMC_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
-#endif
-#if defined(ENABLE_ROCM)
-  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
 #endif
 #endif
 #ifdef ENABLE_TIMERS
