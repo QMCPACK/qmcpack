@@ -199,7 +199,7 @@ bool Libxml2Document::parse(const std::string& xmlfile)
   return true;
 }
 
-bool Libxml2Document::parseFromString(const std::string& data)
+bool Libxml2Document::parseFromString(const std::string_view data)
 {
   if (m_doc != NULL)
     xmlFreeDoc(m_doc);
@@ -207,8 +207,7 @@ bool Libxml2Document::parseFromString(const std::string& data)
   // read xml document w/o memory limits
   // note that XML_PARSE_HUGE is part of an enum in libxml2
   // it is only available in libxml 2.7+
-  m_doc = xmlReadMemory(data.c_str(), data.length(), NULL, NULL, XML_PARSE_HUGE);
-  //m_doc = xmlParseFile(xmlfile.c_str());
+  m_doc = xmlReadMemory(data.data(), data.length(), NULL, NULL, XML_PARSE_HUGE);
 
   if (m_doc == NULL)
   {

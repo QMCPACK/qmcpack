@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(UTEST_EXE test_containers_ohmmspete)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
