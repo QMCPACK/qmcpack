@@ -155,7 +155,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
     psiM.updateTo();
-    //dpsiM.updateTo();
+    dpsiM.updateTo();
     //d2psiM.updateTo();
   }
 
@@ -243,6 +243,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view,
                                    dspin_psiM);
+    psiM.updateTo();
+    dpsiM.updateTo();
   }
 
   InverseTimer.start();
@@ -401,7 +403,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     ratios_to_ref_.updateTo();
     psiMinv.updateTo();
-    //psiM.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
@@ -413,8 +416,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
     psiMinv.updateTo();
-    //psiM.updateTo();
-    //dpsiM.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
     if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
@@ -430,8 +433,8 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
     ratios_to_ref_.updateTo();
     psiMinv.updateTo();
-    //psiM.updateTo();
-    //dpsiM.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
     //grads.updateTo();
     if (is_spinor_)
     {

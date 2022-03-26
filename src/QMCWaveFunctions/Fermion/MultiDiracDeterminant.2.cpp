@@ -266,6 +266,14 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
   auto* Grads_ptr              = Grads.data();
   const size_t Grads_cols   = Grads.cols();
 
+  ///For tests only--- Tests will need to be fixed to avoid failure////
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+     WorkSpace_list[iw].get().updateFrom();
+     for (size_t count = 0; count < getNumDets; ++count)
+         grads_list[iw].get()(count, iat)[dx] = WorkSpace_list[iw].get()[count];
+  }
+  ///End of Tests
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(always,from:Grads_ptr[:Grads.size()]) \
 		                                                        map(always, to:WorkSpace_list_ptr[:nw])") 
