@@ -240,9 +240,9 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   OffloadMatrix<ValueType> Grads;
   Grads.resize(3 * nw, ndets);
   if (newpos)
-    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat,Grads);
+    det_leader.Dets[det_id]->mw_evaluateDetsAndGradsForPtclMove(det_list, P_list, iat, Grads);
   else
-    det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat,Grads);
+    det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat, Grads);
 
   det_value_ptr_list.resize(nw);
   C_otherDs_ptr_list.resize(nw);
@@ -252,7 +252,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
+    auto& det              = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data()
                                       : det.Dets[det_id]->getRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
@@ -591,7 +591,6 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
 
     det_value_ptr_list[iw] = det.Dets[det_id]->getNewRatiosToRefDet().device_data();
     C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
-
   }
 
   std::vector<PsiValueType> psi_list(nw, 0);
@@ -605,11 +604,11 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
   {
     PsiValueType psi_local(0);
     PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
-    for (size_t i = 0; i < ndets; i++){
+    for (size_t i = 0; i < ndets; i++)
+    {
       psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
     }
     psi_list_ptr[iw] = psi_local;
-
   }
   OffloadRatioTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)

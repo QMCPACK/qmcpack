@@ -249,34 +249,33 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadMatrix<GradType>>& grads_list,
-    OffloadMatrix<ValueType>&Grads)
+    OffloadMatrix<ValueType>& Grads)
 {
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
                                              dotProducts_list, WorkSpace_list);
 
   OffloadVector<ValueType*> WorkSpace_deviceptr_list(nw);
   for (size_t iw = 0; iw < nw; iw++)
-	  WorkSpace_deviceptr_list[iw]=WorkSpace_list[iw].get().device_data();
+    WorkSpace_deviceptr_list[iw] = WorkSpace_list[iw].get().device_data();
 
   auto* WorkSpace_list_ptr = WorkSpace_deviceptr_list.data();
-  auto* Grads_ptr              = Grads.data();
-  const size_t Grads_cols   = Grads.cols();
+  auto* Grads_ptr          = Grads.data();
+  const size_t Grads_cols  = Grads.cols();
 
   ///For tests only--- Tests will need to be fixed to avoid failure////
   for (size_t iw = 0; iw < nw; iw++)
   {
-     WorkSpace_list[iw].get().updateFrom();
-     for (size_t count = 0; count < getNumDets; ++count)
-         grads_list[iw].get()(count, iat)[dx] = WorkSpace_list[iw].get()[count];
+    WorkSpace_list[iw].get().updateFrom();
+    for (size_t count = 0; count < getNumDets; ++count)
+      grads_list[iw].get()(count, iat)[dx] = WorkSpace_list[iw].get()[count];
   }
   ///End of Tests
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(always,from:Grads_ptr[:Grads.size()]) \
-		                                                        map(always, to:WorkSpace_list_ptr[:nw])") 
+		                                                        map(always, to:WorkSpace_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < getNumDets; ++count)
-      Grads_ptr[(3 * iw + dx)*Grads_cols+count]= WorkSpace_list_ptr[iw][count];
-
+      Grads_ptr[(3 * iw + dx) * Grads_cols + count] = WorkSpace_list_ptr[iw][count];
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
@@ -335,10 +334,10 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   OffloadVector<ValueType> det0_list(nw, 1.0);
 
   constexpr ValueType czero(0);
-  UnpinnedOffloadVector<ValueType> czero_vec(nw,czero);
-  
+  UnpinnedOffloadVector<ValueType> czero_vec(nw, czero);
+
   ValueType* czero_ptr = czero_vec.data();
-  int dummy_handle=0;
+  int dummy_handle     = 0;
 
   OffloadVector<ValueType> curRatio_list(nw, 0.0);
   RefVector<OffloadVector<ValueType>> workV1_list, workV2_list, workV3_list;
@@ -389,7 +388,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
     det.getPhi()->evaluateValue(P_list[iw], iat, psiV_list_host_view);
   }
-  
+
 
   det_leader.evalOrbTimer.stop();
 
@@ -428,8 +427,8 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   {
     psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
     psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
-    workV1_deviceptr_list[iw] = workV1_list[iw].get().data();
-    workV2_deviceptr_list[iw] = workV2_list[iw].get().data();
+    workV1_deviceptr_list[iw]       = workV1_list[iw].get().data();
+    workV2_deviceptr_list[iw]       = workV2_list[iw].get().data();
 
 
     psiV_temp_hostptr_list[iw]    = psiV_temp_list[iw].get().data();
@@ -442,9 +441,9 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 
   auto* psiV_temp_list_ptr    = psiV_temp_deviceptr_list.data();
   auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.data();
-  auto* workV1_list_ptr   = workV1_deviceptr_list.data();
-  auto* workV2_list_ptr   = workV2_deviceptr_list.data();
-  auto* curRatio_list_ptr = curRatio_list.data();
+  auto* workV1_list_ptr       = workV1_deviceptr_list.data();
+  auto* workV2_list_ptr       = workV2_deviceptr_list.data();
+  auto* curRatio_list_ptr     = curRatio_list.data();
 
 
   PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
@@ -453,18 +452,19 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   {
     ValueType c_ratio = 0.0;
     PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
-    for (size_t jc = 0; jc < psiMinv_cols; jc +=1)
+    for (size_t jc = 0; jc < psiMinv_cols; jc += 1)
     {
-      size_t ic=jc*psiMinv_cols;
+      size_t ic = jc * psiMinv_cols;
       c_ratio += (psiMinv_temp_list_ptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
     }
     curRatio_list_ptr[iw] = c_ratio;
   }
 
-  det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,curRatio_list,psiV_temp_list,workV1_list,workV2_list,psiMinv_temp_list);
+  det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex, curRatio_list, psiV_temp_list, workV1_list, workV2_list,
+                                          psiMinv_temp_list);
   ///This is needed by acceptMove. Eventually acceptMove will need to become mw_acceptMove.
   for (size_t iw = 0; iw < nw; iw++)
-	  psiMinv_temp_list[iw].get().updateFrom();
+    psiMinv_temp_list[iw].get().updateFrom();
 
 
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
@@ -478,7 +478,6 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     det.curRatio               = curRatio_list_ptr[iw];
     for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
-    
   }
 
   det_leader.RatioTimer.stop();
@@ -655,8 +654,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  int success = 0;
-  int dummy_handle=0;
+  int success      = 0;
+  int dummy_handle = 0;
   const size_t NumOrbitals(det_leader.NumOrbitals);
   const size_t NumPtcls(det_leader.NumPtcls);
 
@@ -671,8 +670,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<OffloadMatrix<GradType>> new_grads_list;
 
 
-  OffloadVector<size_t> confgListOccup(NumPtcls,0.0);
-  OffloadVector<ValueType> curRatio_list(nw,0.0), det0_grad_list, det0_list(nw, 1.0), ratioGradReflistIdim;
+  OffloadVector<size_t> confgListOccup(NumPtcls, 0.0);
+  OffloadVector<ValueType> curRatio_list(nw, 0.0), det0_grad_list, det0_list(nw, 1.0), ratioGradReflistIdim;
   OffloadVector<GradType> ratioGradRef_list;
 
   phi_list.reserve(nw);
@@ -733,17 +732,16 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
     psiV_list[iw].get().updateTo();
     dpsiV_list[iw].get().updateTo();
-
   }
-	det_leader.evalOrb1Timer.stop();
+  det_leader.evalOrb1Timer.stop();
 
-  const auto psiMinv_cols   = psiMinv_list[0].get().cols();
   const auto psiMinv_rows   = psiMinv_list[0].get().rows();
-  const auto TpsiM_num_cols = TpsiM_list[0].get().cols(); 
-  const auto psiM_num_cols = psiM_list[0].get().cols(); 
-  const auto& confgList      = *det_leader.ciConfigList;
+  const auto psiMinv_cols   = psiMinv_list[0].get().cols();
+  const auto TpsiM_num_cols = TpsiM_list[0].get().cols();
+  const auto psiM_num_cols  = psiM_list[0].get().cols();
+  const auto& confgList     = *det_leader.ciConfigList;
   for (size_t i = 0; i < det_leader.NumPtcls; i++)
-      confgListOccup[i]=confgList[det_leader.ReferenceDeterminant].occup[i];
+    confgListOccup[i] = confgList[det_leader.ReferenceDeterminant].occup[i];
 
 
   OffloadVector<ValueType*> psiV_deviceptr_list(nw);
@@ -758,29 +756,29 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   for (size_t iw = 0; iw < nw; iw++)
   {
     psiV_deviceptr_list[iw]         = psiV_list[iw].get().device_data();
-    psiV_temp_deviceptr_list[iw]         = psiV_temp_list[iw].get().device_data();
-    TpsiM_deviceptr_list[iw]         = TpsiM_list[iw].get().device_data();
+    psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
+    TpsiM_deviceptr_list[iw]        = TpsiM_list[iw].get().device_data();
     psiM_deviceptr_list[iw]         = psiM_list[iw].get().device_data();
     psiMinv_deviceptr_list[iw]      = psiMinv_list[iw].get().device_data();
-    dpsiMinv_deviceptr_list[iw] = dpsiMinv_list[iw].get().device_data();
-    psiMinv_temp_deviceptr_list[iw]      = psiMinv_temp_list[iw].get().device_data();
-    dpsiV_deviceptr_list[iw]        =dpsiV_list[iw].get().device_data();
+    dpsiMinv_deviceptr_list[iw]     = dpsiMinv_list[iw].get().device_data();
+    psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
+    dpsiV_deviceptr_list[iw]        = dpsiV_list[iw].get().device_data();
   }
 
-  auto* psiV_list_ptr = psiV_deviceptr_list.device_data();
-  auto* psiV_temp_list_ptr = psiV_temp_deviceptr_list.device_data();
-  auto* TpsiM_list_ptr = TpsiM_deviceptr_list.device_data();
-  auto* psiM_list_ptr = psiM_deviceptr_list.data();
-  auto* psiMinv_list_ptr = psiMinv_deviceptr_list.device_data();
-  auto* dpsiMinv_list_ptr= dpsiMinv_deviceptr_list.device_data();
+  auto* psiV_list_ptr         = psiV_deviceptr_list.device_data();
+  auto* psiV_temp_list_ptr    = psiV_temp_deviceptr_list.device_data();
+  auto* TpsiM_list_ptr        = TpsiM_deviceptr_list.device_data();
+  auto* psiM_list_ptr         = psiM_deviceptr_list.data();
+  auto* psiMinv_list_ptr      = psiMinv_deviceptr_list.device_data();
+  auto* dpsiMinv_list_ptr     = dpsiMinv_deviceptr_list.device_data();
   auto* psiMinv_temp_list_ptr = psiMinv_temp_deviceptr_list.device_data();
 
-  auto* curRatio_list_ptr = curRatio_list.data();
-  auto* det0_grad_list_ptr = det0_grad_list.data();
-  auto* confgListOccup_ptr = confgListOccup.data();
-  auto* ratioGradReflistIdim_ptr=ratioGradReflistIdim.data();
+  auto* curRatio_list_ptr        = curRatio_list.data();
+  auto* det0_grad_list_ptr       = det0_grad_list.data();
+  auto* confgListOccup_ptr       = confgListOccup.data();
+  auto* ratioGradReflistIdim_ptr = ratioGradReflistIdim.data();
 
-  auto* dpsiV_list_ptr = dpsiV_deviceptr_list.data();
+  auto* dpsiV_list_ptr        = dpsiV_deviceptr_list.data();
   auto* ratioGradRef_list_ptr = ratioGradRef_list.data();
 
   psiMinv_deviceptr_list.updateTo();
@@ -791,99 +789,52 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   psiV_temp_deviceptr_list.updateTo();
   ///Data Transfer to Device
   confgListOccup.updateTo();
+  det0_list.updateTo();
 
 
-
-
-  success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,psiMinv_temp_list_ptr, 1, nw) ;
+  success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1, psiMinv_temp_list_ptr,
+                                  1, nw);
   if (success != 0)
-        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
-
-  for (size_t iw = 0; iw < nw; iw++)
-     psiMinv_temp_list[iw].get().updateFrom();
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
 
+  PRAGMA_OFFLOAD("omp target teams distribute  is_device_ptr(psiV_temp_list_ptr, psiV_list_ptr,psiMinv_temp_list_ptr) \
+		                                                       map(always,from:curRatio_list_ptr[:nw]) \
+		                                                       map(always,to: dpsiV_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
   {
-    MultiDiracDeterminant& det = (det_list[iw]);
-
-    det_leader.ExtraStuffTimer.start();
-  //  psiMinv_temp_list[iw].get() = psiMinv_list[iw].get();
-    const auto& confgList       = *det.ciConfigList;
-    auto it(confgList[det_leader.ReferenceDeterminant].occup.begin());
-
-    for (size_t i = 0; i < det_leader.NumPtcls; i++)
+    GradType ratioGradRef_local(0);
+    PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioGradRef_local)")
+    for (size_t i = 0; i < NumPtcls; i++)
     {
-      psiV_temp_list[iw].get()[i] = psiV_list[iw].get()[*it];
-      ratioGradRef_list[iw] += psiMinv_temp_list[iw].get()(i, WorkingIndex) * dpsiV_list[iw].get()[*it];
-      it++;
+      const size_t J            = confgListOccup_ptr[i];
+      psiV_temp_list_ptr[iw][i] = psiV_list_ptr[iw][J];
+      ratioGradRef_local += psiMinv_temp_list_ptr[iw][i * psiMinv_cols + WorkingIndex] * dpsiV_list_ptr[iw][J];
     }
-    psiV_temp_list.push_back(psiV_temp_list[iw].get());
-    det_leader.ExtraStuffTimer.stop();
+    ratioGradRef_list_ptr[iw] = ratioGradRef_local;
 
-    for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-      TpsiM_list[iw].get()(i, WorkingIndex) = psiV_list[iw].get()[i];
-
-    psiV_temp_list[iw].get().updateTo();
-    psiMinv_temp_list[iw].get().updateTo();
-    TpsiM_list[iw].get().updateTo();
-  }
-
-
-  const ValueType cone(1);
-
-  OffloadVector<ValueType*> workV1_deviceptr_list(nw);
-  OffloadVector<ValueType*> workV2_deviceptr_list(nw);
-
-  OffloadVector<ValueType*> psiV_temp_hostptr_list(nw);
-  OffloadVector<ValueType*> psiMinv_temp_hostptr_list(nw);
-
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-    psiV_temp_deviceptr_list[iw]    = psiV_temp_list[iw].get().device_data();
-    psiMinv_temp_deviceptr_list[iw] = psiMinv_temp_list[iw].get().device_data();
-    workV1_deviceptr_list[iw] = workV1_list[iw].get().data();
-    workV2_deviceptr_list[iw] = workV2_list[iw].get().data();
-
-
-    psiV_temp_hostptr_list[iw]    = psiV_temp_list[iw].get().data();
-    psiMinv_temp_hostptr_list[iw] = psiMinv_temp_list[iw].get().data();
-  }
-
-  auto* psiV_temp_list_Hptr    = psiV_temp_hostptr_list.data();
-  auto* psiMinv_temp_list_Hptr = psiMinv_temp_hostptr_list.data();
-
-
-  auto* workV1_list_ptr   = workV1_deviceptr_list.data();
-  auto* workV2_list_ptr   = workV2_deviceptr_list.data();
-
-
-  PRAGMA_OFFLOAD("omp target teams distribute map(always,from:curRatio_list_ptr[:nw]) \
-                  map(always, to: psiV_temp_list_ptr[:nw], psiMinv_temp_list_ptr[:nw])")
-  for (size_t iw = 0; iw < nw; iw++)
-  {
     ValueType c_ratio = 0.0;
     PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
-    for (size_t jc = 0; jc < psiMinv_cols; jc +=1)
+    for (size_t jc = 0; jc < psiMinv_cols; jc += 1)
     {
-      size_t ic=jc*psiMinv_cols;
+      const size_t ic = jc * psiMinv_cols;
       c_ratio += (psiMinv_temp_list_ptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
     }
     curRatio_list_ptr[iw] = c_ratio;
   }
 
+  success = ompBLAS::copy_batched_offset(dummy_handle, det_leader.NumOrbitals, psiV_list_ptr, 0, 1, TpsiM_list_ptr,
+                                         WorkingIndex, TpsiM_num_cols, nw);
+  if (success != 0)
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
-  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                           curRatio_list);
 
+  det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex, curRatio_list, psiV_temp_list, workV1_list, workV2_list,
+                                          psiMinv_temp_list);
+
+  ///This is needed by Host in acceptMove. Eventually acceptMove will need to become mw_acceptMove.
   for (size_t iw = 0; iw < nw; iw++)
-  {
-    psiMinv_temp_list[iw].get().updateTo();
-    psiV_temp_list[iw].get().updateTo();
-  }
-
-
-
+    psiMinv_temp_list[iw].get().updateFrom();
 
   det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
@@ -891,43 +842,59 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
+    success =
+        ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1, dpsiMinv_list_ptr, 1, nw);
+    if (success != 0)
+      throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+
+    PRAGMA_OFFLOAD(
+        "omp target teams distribute  is_device_ptr(psiV_temp_list_ptr, psiV_list_ptr,psiMinv_temp_list_ptr) \
+		                                 map(to: dpsiV_list_ptr[:nw]) \
+		                                 map(to: ratioGradRef_list_ptr[:nw]) \
+		                                 map(always, from: ratioGradReflistIdim_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
     {
-      MultiDiracDeterminant& det = (det_list[iw]);
-      ratioGradReflistIdim[iw]   = ratioGradRef_list[iw][idim];
-      const auto& confgList      = *det.ciConfigList;
-      auto it(confgList[det_leader.ReferenceDeterminant].occup.begin());
-      //ExtraStuffTimer.start();
-      dpsiMinv_list[iw].get() = psiMinv_list[iw].get();
-      it                      = confgList[det_leader.ReferenceDeterminant].occup.begin();
-      for (size_t i = 0; i < det_leader.NumPtcls; i++)
-        psiV_temp_list[iw].get()[i] = dpsiV_list[iw].get()[*(it++)][idim];
+      ratioGradReflistIdim_ptr[iw] = ratioGradRef_list_ptr[iw][idim];
+
+      for (size_t i = 0; i < NumPtcls; i++)
+      {
+        const size_t J            = confgListOccup_ptr[i];
+        psiV_temp_list_ptr[iw][i] = dpsiV_list_ptr[iw][J][idim];
+      }
     }
-    mw_InverseUpdateByColumn(nw, dpsiMinv_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                             ratioGradReflistIdim);
+
+    det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex, ratioGradReflistIdim, psiV_temp_list, workV1_list,
+                                            workV2_list, dpsiMinv_list);
+
+    PRAGMA_OFFLOAD(
+        "omp target teams distribute map(to:dpsiV_list_ptr[:nw], curRatio_list_ptr[:nw],ratioGradReflistIdim_ptr[:nw]) \
+		                                map(always,from:det0_grad_list_ptr[:nw]) \
+		                                is_device_ptr(TpsiM_list_ptr)")
     for (size_t iw = 0; iw < nw; iw++)
     {
-      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
-        TpsiM_list[iw].get()(i, WorkingIndex) = dpsiV_list[iw].get()[i][idim];
-      det0_grad_list[iw] = ratioGradReflistIdim[iw] / curRatio_list[iw];
-      dpsiMinv_list[iw].get().updateTo();
-      TpsiM_list[iw].get().updateTo();
+      det0_grad_list_ptr[iw] = ratioGradReflistIdim_ptr[iw] / curRatio_list_ptr[iw];
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = dpsiV_list_ptr[iw][i][idim];
     }
 
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                          new_grads_list,Grads);
+                                                          new_grads_list, Grads);
 
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(TpsiM_list_ptr) \
+		                                    map(always, to:psiM_list_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
-      for (int i = 0; i < det_leader.NumOrbitals; i++)
-        TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
+      for (size_t i = 0; i < NumOrbitals; i++)
+        TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = psiM_list_ptr[iw][i * psiM_num_cols + WorkingIndex];
   }
 
 
   for (size_t iw = 0; iw < nw; iw++)
   {
+    ///@YE_LUO:Not sure if this transfer is needed.
+    TpsiM_list[iw].get().updateFrom();
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list[iw];
   }
@@ -1014,13 +981,13 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
 void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                              int iat,
-					     OffloadMatrix<ValueType>& Grads)
+                                             OffloadMatrix<ValueType>& Grads)
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   const int WorkingIndex            = iat - det_leader.FirstIndex;
-  int success=0;
-  int dummy_handle=0;
+  int success                       = 0;
+  int dummy_handle                  = 0;
   const size_t NumOrbitals(det_leader.NumOrbitals);
   const size_t NumPtcls(det_leader.NumPtcls);
 
@@ -1034,7 +1001,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   OffloadVector<ValueType> ratioG_list;
 
 
-  OffloadVector<size_t> confgListOccup(NumPtcls,0.0);
+  OffloadVector<size_t> confgListOccup(NumPtcls, 0.0);
 
   psiMinv_list.reserve(nw);
   dpsiMinv_list.reserve(nw);
@@ -1067,16 +1034,15 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   }
 
 
-
-  const auto psiMinv_rows   = psiMinv_list[0].get().rows();
-  const auto psiMinv_cols   = psiMinv_list[0].get().cols();
-  const auto TpsiM_cols = TpsiM_list[0].get().cols(); 
-  const auto psiM_cols = psiM_list[0].get().cols(); 
-  const auto dpsiM_cols = dpsiM_list[0].get().cols(); 
-  const auto dpsiM_rows = dpsiM_list[0].get().rows(); 
-  const auto& confgList      = *det_leader.ciConfigList;
+  const auto psiMinv_rows = psiMinv_list[0].get().rows();
+  const auto psiMinv_cols = psiMinv_list[0].get().cols();
+  const auto TpsiM_cols   = TpsiM_list[0].get().cols();
+  const auto psiM_cols    = psiM_list[0].get().cols();
+  const auto dpsiM_cols   = dpsiM_list[0].get().cols();
+  const auto dpsiM_rows   = dpsiM_list[0].get().rows();
+  const auto& confgList   = *det_leader.ciConfigList;
   for (size_t i = 0; i < det_leader.NumPtcls; i++)
-      confgListOccup[i]=confgList[det_leader.ReferenceDeterminant].occup[i];
+    confgListOccup[i] = confgList[det_leader.ReferenceDeterminant].occup[i];
 
 
   OffloadVector<ValueType*> TpsiM_deviceptr_list(nw);
@@ -1089,22 +1055,22 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    psiMinv_deviceptr_list[iw]      = psiMinv_list[iw].get().device_data();
-    dpsiMinv_deviceptr_list[iw] = dpsiMinv_list[iw].get().device_data();
-    TpsiM_deviceptr_list[iw]         = TpsiM_list[iw].get().device_data();
-    psiM_deviceptr_list[iw]         = psiM_list[iw].get().device_data();
-    psiV_temp_deviceptr_list[iw]         = psiV_temp_list[iw].get().device_data();
-    dpsiM_deviceptr_list[iw]         = dpsiM_list[iw].get().device_data();
+    psiMinv_deviceptr_list[iw]   = psiMinv_list[iw].get().device_data();
+    dpsiMinv_deviceptr_list[iw]  = dpsiMinv_list[iw].get().device_data();
+    TpsiM_deviceptr_list[iw]     = TpsiM_list[iw].get().device_data();
+    psiM_deviceptr_list[iw]      = psiM_list[iw].get().device_data();
+    psiV_temp_deviceptr_list[iw] = psiV_temp_list[iw].get().device_data();
+    dpsiM_deviceptr_list[iw]     = dpsiM_list[iw].get().device_data();
   }
 
-  auto* psiMinv_list_ptr = psiMinv_deviceptr_list.device_data();
-  auto* dpsiMinv_list_ptr= dpsiMinv_deviceptr_list.device_data();
-  auto* TpsiM_list_ptr = TpsiM_deviceptr_list.data();
-  auto* psiM_list_ptr = psiM_deviceptr_list.data();
+  auto* psiMinv_list_ptr   = psiMinv_deviceptr_list.device_data();
+  auto* dpsiMinv_list_ptr  = dpsiMinv_deviceptr_list.device_data();
+  auto* TpsiM_list_ptr     = TpsiM_deviceptr_list.data();
+  auto* psiM_list_ptr      = psiM_deviceptr_list.data();
   auto* psiV_temp_list_ptr = psiV_temp_deviceptr_list.data();
-  auto* dpsiM_list_ptr = dpsiM_deviceptr_list.data();
+  auto* dpsiM_list_ptr     = dpsiM_deviceptr_list.data();
   auto* confgListOccup_ptr = confgListOccup.data();
-  auto* ratioG_list_ptr  = ratioG_list.data();
+  auto* ratioG_list_ptr    = ratioG_list.data();
 
 
   psiMinv_deviceptr_list.updateTo();
@@ -1114,19 +1080,18 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
-
-
-    success=ompBLAS::copy_batched(dummy_handle, psiMinv_rows*psiMinv_cols, psiMinv_list_ptr,1,dpsiMinv_list_ptr, 1, nw) ;
+    success =
+        ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1, dpsiMinv_list_ptr, 1, nw);
     if (success != 0)
-          throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+      throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
     PRAGMA_OFFLOAD("omp target teams distribute  map(always, to: psiV_temp_list_ptr[:nw]) \
 		                                  map(always, to: dpsiM_list_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < NumPtcls; i++)
       {
-        size_t J=confgListOccup_ptr[i];
-        psiV_temp_list_ptr[iw][i] = dpsiM_list_ptr[iw][WorkingIndex*dpsiM_cols+ J][idim];
+        size_t J                  = confgListOccup_ptr[i];
+        psiV_temp_list_ptr[iw][i] = dpsiM_list_ptr[iw][WorkingIndex * dpsiM_cols + J][idim];
       }
 
     PRAGMA_OFFLOAD("omp target teams distribute   is_device_ptr(psiMinv_list_ptr) \
@@ -1138,16 +1103,18 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioG_local)")
       for (size_t i = 0; i < NumPtcls; i++)
       {
-        size_t J=confgListOccup_ptr[i];
-        ratioG_local += psiMinv_list_ptr[iw][i*psiMinv_cols+ WorkingIndex] * dpsiM_list_ptr[iw][WorkingIndex*dpsiM_cols+ J][idim];
+        size_t J = confgListOccup_ptr[i];
+        ratioG_local += psiMinv_list_ptr[iw][i * psiMinv_cols + WorkingIndex] *
+            dpsiM_list_ptr[iw][WorkingIndex * dpsiM_cols + J][idim];
       }
-      ratioG_list_ptr[iw]=ratioG_local;
+      ratioG_list_ptr[iw] = ratioG_local;
     }
 
-    det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,ratioG_list,psiV_temp_list,workV1_list,workV2_list,dpsiMinv_list);
+    det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex, ratioG_list, psiV_temp_list, workV1_list, workV2_list,
+                                            dpsiMinv_list);
 
 
-/*    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:dpsiM_list_ptr[:nw]) \
+    /*    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:dpsiM_list_ptr[:nw]) \
 		                                              map(always,to: TpsiM_list_ptr[:nw])") 
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < NumOrbitals; i++)
@@ -1156,7 +1123,8 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
 
     for (size_t iw = 0; iw < nw; iw++)
     {
-      for (size_t i = 0; i < det_leader.NumOrbitals; i++){
+      for (size_t i = 0; i < det_leader.NumOrbitals; i++)
+      {
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
       }
       TpsiM_list[iw].get().updateTo();
@@ -1166,22 +1134,21 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                          grads_list,Grads);
+                                                          grads_list, Grads);
 
 
-//    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(from:TpsiM_list_ptr[:nw]) \
-//		                                    map(always,to:psiM_list_ptr[:nw])") 
-//    for (size_t iw = 0; iw < nw; iw++)
-//      for (size_t i = 0; i < NumOrbitals; i++)
-//        TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex] = psiM_list_ptr[iw][i+psiM_cols*WorkingIndex];
-    
+    //    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(from:TpsiM_list_ptr[:nw]) \
+//		                                    map(always,to:psiM_list_ptr[:nw])")
+    //    for (size_t iw = 0; iw < nw; iw++)
+    //      for (size_t i = 0; i < NumOrbitals; i++)
+    //        TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex] = psiM_list_ptr[iw][i+psiM_cols*WorkingIndex];
+
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
-
   }
   //for (size_t iw = 0; iw < nw; iw++)
-//	  TpsiM_list[iw].get().updateFrom();
+  //	  TpsiM_list[iw].get().updateFrom();
 }
 
 void MultiDiracDeterminant::mw_updateRatios_generic(int ext_level,
@@ -1253,31 +1220,28 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
     }
 }
 
- void MultiDiracDeterminant::omp_mw_InverseUpdateByColumn(int nw,
-		                                         const int idx,
+void MultiDiracDeterminant::omp_mw_InverseUpdateByColumn(int nw,
+                                                         const int idx,
                                                          OffloadVector<ValueType>& curRatio_list,
                                                          const RefVector<OffloadVector<ValueType>>& psiV_list,
                                                          RefVector<OffloadVector<ValueType>>& workV1_list,
                                                          RefVector<OffloadVector<ValueType>>& workV2_list,
                                                          RefVector<OffloadMatrix<ValueType>>& psiMinv_list) const
 {
-
-
-
   const ValueType cone(1);
   constexpr ValueType czero(0);
-  OffloadVector<ValueType> czero_vec(nw,czero);
+  OffloadVector<ValueType> czero_vec(nw, czero);
   ValueType* czero_ptr = czero_vec.device_data();
   czero_vec.updateTo();
 
   int success = 0;
 
   constexpr ValueType cminus_one(-1.0);
-  OffloadVector<ValueType> cminus_one_vec(nw,cminus_one);
+  OffloadVector<ValueType> cminus_one_vec(nw, cminus_one);
   ValueType* cminus_one_ptr = cminus_one_vec.device_data();
   cminus_one_vec.updateTo();
 
-  int dummy_handle=0;
+  int dummy_handle        = 0;
   const auto psiMinv_rows = psiMinv_list[0].get().rows();
   OffloadVector<ValueType> invCurRatio_list(nw, 1.0);
 
@@ -1290,15 +1254,15 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   {
     psiV_deviceptr_list[iw]    = psiV_list[iw].get().device_data();
     psiMinv_deviceptr_list[iw] = psiMinv_list[iw].get().device_data();
-    workV1_deviceptr_list[iw] = workV1_list[iw].get().device_data();
-    workV2_deviceptr_list[iw] = workV2_list[iw].get().device_data();
+    workV1_deviceptr_list[iw]  = workV1_list[iw].get().device_data();
+    workV2_deviceptr_list[iw]  = workV2_list[iw].get().device_data();
   }
 
-  auto* psiV_list_ptr    = psiV_deviceptr_list.device_data();
-  auto* psiMinv_list_ptr = psiMinv_deviceptr_list.device_data();
-  auto* workV1_list_ptr   = workV1_deviceptr_list.device_data();
-  auto* workV2_list_ptr   = workV2_deviceptr_list.device_data();
-  auto* curRatio_list_ptr = curRatio_list.data();
+  auto* psiV_list_ptr        = psiV_deviceptr_list.device_data();
+  auto* psiMinv_list_ptr     = psiMinv_deviceptr_list.device_data();
+  auto* workV1_list_ptr      = workV1_deviceptr_list.device_data();
+  auto* workV2_list_ptr      = workV2_deviceptr_list.device_data();
+  auto* curRatio_list_ptr    = curRatio_list.data();
   auto* invCurRatio_list_ptr = invCurRatio_list.device_data();
 
 
@@ -1307,40 +1271,38 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   workV1_deviceptr_list.updateTo();
   workV2_deviceptr_list.updateTo();
 
-  auto WorkingIndex=idx;
+  auto WorkingIndex = idx;
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(invCurRatio_list_ptr)")
   for (size_t iw = 0; iw < nw; iw++)
     invCurRatio_list_ptr[iw] = cone / curRatio_list_ptr[iw];
 
-  success=ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_list_ptr, psiMinv_rows, psiV_list_ptr, 1, czero_ptr, workV1_list_ptr, 1,nw);
+  success = ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_list_ptr,
+                                  psiMinv_rows, psiV_list_ptr, 1, czero_ptr, workV1_list_ptr, 1, nw);
   if (success != 0)
-        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::gemv_batched failed.");
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::gemv_batched failed.");
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(workV1_list_ptr,invCurRatio_list_ptr)")
   for (size_t iw = 0; iw < nw; iw++)
     workV1_list_ptr[iw][idx] = cone - invCurRatio_list_ptr[iw];
   if (success != 0)
-        throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-	  psiMinv_list[iw].get().updateFrom();
-	  workV1_list[iw].get().updateFrom();
+    psiMinv_list[iw].get().updateFrom();
+    workV1_list[iw].get().updateFrom();
 
-    BLAS::copy(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().data() + idx, psiMinv_list[iw].get().rows(), workV2_list[iw].get().data(), 1);
+    BLAS::copy(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().data() + idx, psiMinv_list[iw].get().rows(),
+               workV2_list[iw].get().data(), 1);
 
-    BLAS::ger(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().rows(), -1.0, workV1_list[iw].get().data(), 1,workV2_list[iw].get().data() ,1, psiMinv_list[iw].get().data(), psiMinv_list[iw].get().rows());
-
-
+    BLAS::ger(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().rows(), -1.0, workV1_list[iw].get().data(), 1,
+              workV2_list[iw].get().data(), 1, psiMinv_list[iw].get().data(), psiMinv_list[iw].get().rows());
 
 
     psiMinv_list[iw].get().updateTo();
   }
-
-
 }
 
 } // namespace qmcplusplus
-
