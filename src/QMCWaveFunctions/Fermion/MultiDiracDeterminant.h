@@ -250,7 +250,7 @@ public:
 private:
   void omp_mw_InverseUpdateByColumn(const int nw,
 		                  const int idx,
-                                  const OffloadVector<ValueType>& invCurRatio_list,
+                                  OffloadVector<ValueType>& curRatio_list,
                                   const RefVector<OffloadVector<ValueType>>& psiV_list,
                                                          RefVector<OffloadVector<ValueType>>& workV1_list,
                                                          RefVector<OffloadVector<ValueType>>& workV2_list,

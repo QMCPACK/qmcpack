@@ -462,31 +462,17 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
       c_ratio += (psiMinv_temp_list_ptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
     }
     curRatio_list_ptr[iw] = c_ratio;
-    invCurRatio_list_ptr[iw] = cone / curRatio_list_ptr[iw] ;
+//    invCurRatio_list_ptr[iw] = cone / curRatio_list_ptr[iw] ;
   }
 
-
-  mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
-                           curRatio_list);
-
- /* ompBLAS::gemv_batched(dummy_handle, 'N', psiMinv_rows, psiMinv_rows, invCurRatio_list_ptr, psiMinv_temp_list_ptr, psiMinv_rows, psiV_temp_list_ptr, 1, czero_ptr, workV2_list_ptr, 1,nw);
-
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for map(always,tofrom:psiMinv_temp_list_ptr[:nw]), \
-		  map(always tofrom:workV2_list_ptr[:nw])") 
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-     workV1_list_ptr[iw][WorkingIndex] = cone - invCurRatio_list_ptr[iw];  
-     BLAS::copy(psiMinv_rows, psiMinv_temp_list_ptr[iw]+WorkingIndex, psiMinv_rows, workV2_list_ptr[iw], 1);
-  }
-
-  ompBLAS::ger_batched(dummy_handle,psiMinv_rows, psiMinv_rows, workV1_list_ptr, workV2_list_ptr, 1,
-              psiMinv_temp_list_ptr, psiMinv_rows,nw);
+  curRatio_list.updateFrom();
+  det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex,curRatio_list,psiV_temp_list,workV1_list,workV2_list,psiMinv_temp_list);
+ // mw_InverseUpdateByColumn(nw, psiMinv_temp_list, psiV_temp_list, workV1_list, workV2_list, WorkingIndex,
+ //                          curRatio_list);
 
   //for (size_t iw = 0; iw < nw; iw++)
-  //BLAS::ger(psiMinv_rows, psiMinv_rows, -1.0, workV1_list_ptr[iw], 1, workV2_list_ptr[iw], 1,
-   //         psiMinv_temp_list_Hptr[iw], psiMinv_rows);
+  //  det_col_update(psiMinv_temp_list[iw].get().data(), psiV_temp_list[iw].get().data(), psiMinv_temp_list[iw].get().rows(), WorkingIndex,  curRatio_list[iw], workV1_list[iw].get().data(), workV2_list[iw].get().data());
 
-*/
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -1162,7 +1148,7 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
 
  void MultiDiracDeterminant::omp_mw_InverseUpdateByColumn(int nw,
 		                                         const int idx,
-                                                         const OffloadVector<ValueType>& curRatio_list,
+                                                         OffloadVector<ValueType>& curRatio_list,
                                                          const RefVector<OffloadVector<ValueType>>& psiV_list,
                                                          RefVector<OffloadVector<ValueType>>& workV1_list,
                                                          RefVector<OffloadVector<ValueType>>& workV2_list,
@@ -1214,6 +1200,22 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   workV1_deviceptr_list.updateTo();
   workV2_deviceptr_list.updateTo();
 
+  auto WorkingIndex=idx;
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    invCurRatio_list[iw] = cone / curRatio_list[iw];
+
+    BLAS::gemv('N', psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().rows(), invCurRatio_list[iw], psiMinv_list[iw].get().data(), psiMinv_list[iw].get().rows(), psiV_list[iw].get().data(), 1, ValueType(), workV1_list[iw].get().data(), 1);
+
+    workV1_list[iw].get().data()[WorkingIndex] = cone - invCurRatio_list[iw];
+    BLAS::copy(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().data() + WorkingIndex, psiMinv_list[iw].get().rows(), workV2_list[iw].get().data(), 1);
+    BLAS::ger(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().rows(), -1.0, workV1_list[iw].get().data(), 1,workV2_list[iw].get().data() ,1, psiMinv_list[iw].get().data(), psiMinv_list[iw].get().rows());
+
+  }
+ //   invCurRatio_list.updateTo();
+
+/*
   PRAGMA_OFFLOAD("omp target teams distribute parallel for is_device_ptr(invCurRatio_list_ptr)")
   for (size_t iw = 0; iw < nw; iw++)
     invCurRatio_list_ptr[iw] = cone / curRatio_list_ptr[iw];
@@ -1237,6 +1239,7 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
         throw std::runtime_error("In MultiDiracDeterminant ompBLAS::ger_batched failed.");
 
 
+*/
 }
 
 } // namespace qmcplusplus
