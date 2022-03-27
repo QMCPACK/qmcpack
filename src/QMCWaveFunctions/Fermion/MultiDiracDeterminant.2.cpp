@@ -109,7 +109,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   const auto* psiinv_list_ptr = psiinv_deviceptr_list.data();
   const auto* psi_list_ptr    = psi_deviceptr_list.data();
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
+  PRAGMA_OFFLOAD("omp target teams distribute  map(always,to: dotProducts_list_ptr[:nw]) \
           map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < npairs; ++i)
@@ -118,6 +118,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       const int J = second[i];
 
       ValueType dotProducts_local = 0.0;
+      PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
       for (size_t ind = 0; ind < num; ind++)
         dotProducts_local += psiinv_list_ptr[iw][I * nb_cols_psiinv + ind] * psi_list_ptr[iw][J * nb_cols_psi + ind];
       dotProducts_list_ptr[iw][I * nb_cols_dotProd + J] = dotProducts_local;
@@ -177,9 +178,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     update_offsets(ext_level);
   }
 
-  for (size_t iw = 0; iw < nw; iw++)
-    ratios_list[iw].get().updateFrom();
-
   readMatTimer.stop();
 }
 
@@ -212,6 +210,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
 {
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
                                              dotProducts_list, ratios_list);
+
+  for (size_t iw = 0; iw < nw; iw++)
+    ratios_list[iw].get().updateFrom();
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(

@@ -156,7 +156,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
     psiM.updateTo();
     dpsiM.updateTo();
-    d2psiM.updateTo();
+    //d2psiM.updateTo();
   }
 
   InverseTimer.start();
@@ -185,6 +185,8 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
                                      dotProducts, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
   ratios_to_ref_.updateTo();
+  ///Pinning psiMinv to the device
+  psiMinv.updateTo();
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
@@ -241,6 +243,8 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view,
                                    dspin_psiM);
+    psiM.updateTo();
+    dpsiM.updateTo();
   }
 
   InverseTimer.start();
@@ -270,6 +274,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
                                      dotProducts, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
   ratios_to_ref_.updateTo();
+  psiMinv.updateTo();
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -397,16 +402,22 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
-    ratios_to_ref_.updateTo();
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
     if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
@@ -415,12 +426,16 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
-    ratios_to_ref_.updateTo();
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
+    ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
+    psiM.updateTo();
+    dpsiM.updateTo();
+    //grads.updateTo();
     if (is_spinor_)
     {
       std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
