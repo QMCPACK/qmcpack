@@ -209,7 +209,8 @@ public:
   /// multi walker version of mw_evaluateDetsAndGradsForPtclMove
   void static mw_evaluateDetsAndGradsForPtclMove(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                                  const RefVectorWithLeader<ParticleSet>& P_list,
-                                                 int iat);
+                                                 int iat,
+						 OffloadMatrix<ValueType>& Grads);
   /// evaluate the value and gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
   void evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat);
 
@@ -219,7 +220,8 @@ public:
   /// multi walker version of mw_evaluateGrads
   void static mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                const RefVectorWithLeader<ParticleSet>& P_list,
-                               int iat);
+                               int iat,
+			       OffloadMatrix<ValueType>& Grads);
   /// evaluate the gradients of all the unique determinants with one electron moved. Used by the table method. Includes Spin Gradient data
   void evaluateGradsWithSpin(ParticleSet& P, int iat);
 
@@ -246,6 +248,13 @@ public:
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
+  void omp_mw_InverseUpdateByColumn(const int nw,
+		                  const int idx,
+                                  const OffloadVector<ValueType>& invCurRatio_list,
+                                  const RefVector<OffloadVector<ValueType>>& psiV_list,
+                                                         RefVector<OffloadVector<ValueType>>& workV1_list,
+                                                         RefVector<OffloadVector<ValueType>>& workV2_list,
+                                  RefVector<OffloadMatrix<ValueType>>& psiMinv_list) const;
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param ext_level excitation level
    * @param det_offset offset of the determinant id
@@ -404,7 +413,8 @@ private:
                                                   const OffloadVector<RealType>& sign,
                                                   const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
-                                                  const RefVector<OffloadMatrix<GradType>>& ratios_list);
+                                                  const RefVector<OffloadMatrix<GradType>>& ratios_list,
+						  OffloadMatrix<ValueType>& Grads);
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
       int ref,
