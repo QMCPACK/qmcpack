@@ -374,6 +374,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
           }
         }
     }
+
     if (modes_ & DTModes::NEED_TEMP_DATA_ON_HOST)
     {
       PRAGMA_OFFLOAD("omp target update nowait depend(inout: r_dr_ptr[:mw_new_old_dist_displ.size()]) \
