@@ -427,7 +427,11 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #if defined(ENABLE_CUDA)
       if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
+#ifdef QMC_CUDA2HIP
+        app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
+#else
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration." << std::endl;
+#endif
         adet = std::make_unique<
             DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
                                                                                           firstIndex, lastIndex,
@@ -657,7 +661,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
   std::vector<size_t> NEs(nGroups);
   size_t nstates        = 0;
   size_t ndets          = 0;
-  size_t count          = 0;
   size_t cnt0           = 0;
   std::string Dettype   = "DETS";
   std::string CSFChoice = "qchem_coeff";
@@ -768,7 +771,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
         sumsq_qc += qc_ci * qc_ci;
         DetsPerCSF.push_back(0);
         CItags.push_back(tag);
-        count++;
         xmlNodePtr csf = cur->children;
         while (csf != NULL)
         {

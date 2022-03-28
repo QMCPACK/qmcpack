@@ -15,15 +15,13 @@ target_link_libraries(container_testing utilities_for_test containers)
 # This test is always built and works due to openmp pragmas becoming no ops
 # even in versions of the code that do not use OMPAllocator.
 
-
 set(SRC_DIR dualallocators)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-integration_${SRC_DIR})
 
-set(INTEGRATION_TEST_SRC
-  test_dual_allocators_ohmms_containers.cpp)
+set(INTEGRATION_TEST_SRC test_dual_allocators_ohmms_containers.cpp)
 
 add_executable(${UTEST_EXE} ${INTEGRATION_TEST_SRC})
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")

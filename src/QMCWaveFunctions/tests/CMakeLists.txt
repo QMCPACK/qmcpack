@@ -10,7 +10,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR wavefunction)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
@@ -88,7 +87,6 @@ set(SPOSET_SRC
     test_pw.cpp
     ${MO_SRCS})
 set(JASTROW_SRC
-    test_bspline_jastrow.cpp
     test_counting_jastrow.cpp
     test_polynomial_eeI_jastrow.cpp
     test_rpa_jastrow.cpp
@@ -96,6 +94,7 @@ set(JASTROW_SRC
     test_kspace_jastrow.cpp
     test_pade_jastrow.cpp
     test_short_range_cusp_jastrow.cpp
+    test_J1_bspline.cpp
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
@@ -115,6 +114,9 @@ if(ENABLE_CUDA)
     set(DETERMINANT_SRC ${DETERMINANT_SRC} test_cuSolverInverter.cpp)
   endif()
 endif(ENABLE_CUDA)
+if(ENABLE_CUDA AND QMC_CUDA2HIP)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_rocSolverInverter.cpp)
+endif()
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
@@ -125,8 +127,14 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
   string(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
-  target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
-                        utilities_for_test container_testing)
+  target_link_libraries(
+    ${UTEST_EXE}
+    catch_main
+    qmcwfs
+    platform_LA
+    platform_runtime
+    utilities_for_test
+    container_testing)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
   endif()
@@ -154,16 +162,24 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   set(UTEST_EXE benchmark_diracmatrixcompute)
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   set(BENCHMARK_SRC benchmark_DiracMatrixComputeCUDA.cpp)
-  if (NOT QMC_CUDA2HIP)
+  if(QMC_CUDA2HIP)
+    set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_rocSolverInverter.cpp)
+  else()
     set(BENCHMARK_SRC ${BENCHMARK_SRC} benchmark_cuSolverInverter.cpp)
   endif()
   add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
-  target_link_libraries(${UTEST_EXE} catch_main qmcwfs platform_LA platform_runtime
-                        utilities_for_test container_testing)
+  target_link_libraries(
+    ${UTEST_EXE}
+    catch_main
+    qmcwfs
+    platform_LA
+    platform_runtime
+    utilities_for_test
+    container_testing)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
   endif()
-#  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+  #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 endif()

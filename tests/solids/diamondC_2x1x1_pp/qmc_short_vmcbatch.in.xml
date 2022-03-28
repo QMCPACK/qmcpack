@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="qmc_short" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <qmcsystem>
       <simulationcell>
@@ -82,7 +83,7 @@
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
       <parameter name="total_walkers"             >    16              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
       <parameter name="steps"               >    2.0             </parameter>

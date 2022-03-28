@@ -399,6 +399,33 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     return sum;
   }
 
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const Pade2ndOrderFunctor* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const T* mw_dist,
+                           const int dist_stride,
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    for (int ip = 0; ip < num_pairs; ip++)
+    {
+      mw_vals[ip] = 0;
+      for (int j = 0; j < n_src; j++)
+      {
+        const int ig = grp_ids[j];
+        auto& functor(*functors[ig]);
+        if (j != ref_at[ip])
+          mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+      }
+    }
+  }
+
   inline void evaluateVGL(const int iat,
                           const int iStart,
                           const int iEnd,

@@ -479,7 +479,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 
   std::vector<int> gsOcc(maxOrbs);
   int N_gs_orbs = numOrbs;
-  int nocced(0), ntoshift(0);
+  int nocced(0);
   for (int ti = 0; ti < SortBands.size(); ti++)
   {
     if (nocced < N_gs_orbs)
@@ -487,13 +487,11 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       if (SortBands[ti].MakeTwoCopies && (N_gs_orbs - nocced > 1))
       {
         nocced += 2;
-        ntoshift++;
         gsOcc[ti] = 2;
       }
       else if ((SortBands[ti].MakeTwoCopies && (N_gs_orbs - nocced == 1)) || !SortBands[ti].MakeTwoCopies)
       {
         nocced += 1;
-        ntoshift++;
         gsOcc[ti] = 1;
       }
     }

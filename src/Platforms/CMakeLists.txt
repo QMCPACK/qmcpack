@@ -9,7 +9,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 # Targets under Platforms are designed to abstract external libraries
 # platform_runtime, platform_LA may be used outside Platforms.
 # Device specific targets should not be referenced used outside Platforms.

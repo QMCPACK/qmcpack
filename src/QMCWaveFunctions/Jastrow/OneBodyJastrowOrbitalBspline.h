@@ -145,8 +145,8 @@ public:
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
                            RealMatrix_t& dlapl_over_psi) override;
-  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs)
-      : J1OrbitalSoA<FT>(obj_name, centers, elecs),
+  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs, bool use_offload)
+      : J1OrbitalSoA<FT>(obj_name, centers, elecs, use_offload),
         ElecRef(elecs),
         L(obj_name + "L"),
         Linv(obj_name + "Linv"),

@@ -25,7 +25,7 @@ if [[ ! -d /ccs/proj/mat151/opt/modules ]] ; then
   exit 1
 fi
 module use /ccs/proj/mat151/opt/modules
-module load llvm/main-20220304-cuda11.0
+module load llvm/main-20220317-cuda11.0
 
 TYPE=Release
 Compiler=Clang
