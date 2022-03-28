@@ -86,7 +86,7 @@ public:
 
   /** return the size of the orbitals
    */
-  virtual inline int getOrbitalSetSize() const { return OrbitalSetSize; }
+  inline int getOrbitalSetSize() const { return OrbitalSetSize; }
 
   /** Query if this SPOSet uses OpenMP offload
   */

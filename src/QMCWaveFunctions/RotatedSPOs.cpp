@@ -139,7 +139,34 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
+  // JPT DEBUG
+  app_log() << "Kappa:\n";
+  app_log() << " " << rot_mat.size1() << " x " << rot_mat.size2() << "\n";
+  app_log() << std::fixed;
+  for (auto i = 0; i < rot_mat.size1(); i++)
+  {
+    for (auto j = 0; j < rot_mat.size2(); j++)
+    {
+      app_log() << " " << std::setw(10) << std::setprecision(5) << rot_mat[i][j];
+    }
+    app_log() << "\n";
+  }
+
   exponentiate_antisym_matrix(rot_mat);
+
+  // JPT DEBUG
+  app_log() << "Orbital Transformation (exp(-Kappa)):\n";
+  app_log() << " " << rot_mat.size1() << " x " << rot_mat.size2() << "\n";
+  app_log() << std::fixed;
+  for (auto i = 0; i < rot_mat.size1(); i++)
+  {
+    for (auto j = 0; j < rot_mat.size2(); j++)
+    {
+      app_log() << " " << std::setw(10) << std::setprecision(5) << rot_mat[i][j];
+    }
+    app_log() << "\n";
+  }
+
 
   Phi->applyRotation(rot_mat, use_stored_copy);
 }

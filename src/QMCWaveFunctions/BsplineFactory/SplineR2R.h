@@ -84,9 +84,6 @@ public:
   // NB: This may be <= number of splined orbs from SplineInst
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
-  // Gives the number of SPOs
-  int getOrbitalSetSize() const override { return OrbitalSetSize; }
-
   // Gives the number of spline coefs for 1 spline
   int getBasisSetSize() const override
   {
