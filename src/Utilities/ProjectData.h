@@ -98,7 +98,7 @@ public:
 
   int getSeriesIndex() const { return m_series; }
   int getMaxCPUSeconds() const { return max_cpu_secs_; }
-  const DriverVersion get_driver_version() const { return driver_version_; }
+  DriverVersion get_driver_version() const { return driver_version_; }
 
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);

@@ -11,7 +11,6 @@
 
 message(VERBOSE "Adding AFQMC Slater Determinant Operations unit tests")
 
-
 set(SRC_DIR afqmc_slaterdeterminantoperations)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})

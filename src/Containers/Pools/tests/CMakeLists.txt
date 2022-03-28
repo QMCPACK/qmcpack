@@ -9,7 +9,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(UTEST_EXE test_containers_pools)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
