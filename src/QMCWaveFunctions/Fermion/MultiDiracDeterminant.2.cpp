@@ -1294,20 +1294,15 @@ void MultiDiracDeterminant::omp_mw_InverseUpdateByColumn(int nw,
     throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
 
-  for (size_t iw = 0; iw < nw; iw++)
-  {
-    psiMinv_list[iw].get().updateFrom();
-    workV1_list[iw].get().updateFrom();
+  success = ompBLAS::copy_batched_offset(dummy_handle, psiMinv_rows, psiMinv_list_ptr, idx, psiMinv_rows,
+                                         workV2_list_ptr, 0, 1, nw);
+  if (success != 0)
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::copy_batched_offset failed.");
 
-    BLAS::copy(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().data() + idx, psiMinv_list[iw].get().rows(),
-               workV2_list[iw].get().data(), 1);
-
-    BLAS::ger(psiMinv_list[iw].get().rows(), psiMinv_list[iw].get().rows(), -1.0, workV1_list[iw].get().data(), 1,
-              workV2_list[iw].get().data(), 1, psiMinv_list[iw].get().data(), psiMinv_list[iw].get().rows());
-
-
-    psiMinv_list[iw].get().updateTo();
-  }
+  success = ompBLAS::ger_batched(dummy_handle, psiMinv_rows, psiMinv_rows, cminus_one_ptr, workV1_list_ptr, 1,
+                                 workV2_list_ptr, 1, psiMinv_list_ptr, psiMinv_rows, nw);
+  if (success != 0)
+    throw std::runtime_error("In MultiDiracDeterminant ompBLAS::ger_batched failed.");
 }
 
 } // namespace qmcplusplus
