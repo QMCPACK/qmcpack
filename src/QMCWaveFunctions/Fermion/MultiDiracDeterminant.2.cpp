@@ -373,6 +373,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     TpsiM_list.push_back(det.TpsiM);
   }
 
+
   det_leader.UpdateMode  = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - det_leader.FirstIndex;
 
@@ -495,7 +496,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 		                                    map(always, to:psiM_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM_list_ptr[iw][i * TpsiM_cols + WorkingIndex] = psiM_list_ptr[iw][i * psiM_cols + WorkingIndex];
+      TpsiM_list_ptr[iw][i * TpsiM_cols + WorkingIndex] = psiM_list_ptr[iw][i + psiM_cols * WorkingIndex];
 
   det_leader.ExtraStuffTimer.stop();
   for (size_t iw = 0; iw < nw; iw++)
@@ -913,8 +914,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 		                                    map(always, to:psiM_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < NumOrbitals; i++)
-      TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = psiM_list_ptr[iw][i * psiM_num_cols + WorkingIndex];
-
+      TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = psiM_list_ptr[iw][i + psiM_num_cols * WorkingIndex];
 
   for (size_t iw = 0; iw < nw; iw++)
   {
