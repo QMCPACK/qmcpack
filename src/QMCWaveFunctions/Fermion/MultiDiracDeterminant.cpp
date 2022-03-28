@@ -228,6 +228,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       TpsiM(i, iat) = psiM(iat, i);
   }
 
+  TpsiM.updateTo();
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
 }
@@ -329,6 +330,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = psiM(iat, i);
   }
+  TpsiM.updateTo();
   psiMinv_temp = psiMinv;
   evalWTimer.stop();
 }
@@ -397,8 +399,15 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
   {
   case ORB_PBYP_RATIO:
     psiMinv = psiMinv_temp;
+    // Ye: During acceptMove and restore, TpsiM is updated on the host, thus need to update the device copy.
+    // Ideally, this should be done directly on the device.
+    // However, acceptMove/restore are shared by both single walker and batched APIs.
+    // So the data motion must be kept consistently in all implementations.
+    // Right now in batched APIs, ratio and ratioGad implementation also doesn't have the same data motion.
+    // Thus also need a fix.
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
+    TpsiM.updateTo();
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     ratios_to_ref_.updateTo();
@@ -410,6 +419,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
+    TpsiM.updateTo();
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
@@ -425,6 +435,7 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     psiMinv = psiMinv_temp;
     for (int i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = psiV[i];
+    TpsiM.updateTo();
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
     std::copy(new_grads.begin(), new_grads.end(), grads.begin());
     std::copy(new_lapls.begin(), new_lapls.end(), lapls.begin());
@@ -454,6 +465,7 @@ void MultiDiracDeterminant::restore(int iat)
   psiMinv_temp = psiMinv;
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
+  TpsiM.updateTo();
   curRatio = ValueType(1);
   /*
       switch(UpdateMode)

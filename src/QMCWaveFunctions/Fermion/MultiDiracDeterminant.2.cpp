@@ -883,18 +883,17 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
                                                           new_grads_list, Grads);
 
+  }
+
     PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(TpsiM_list_ptr) \
 		                                    map(always, to:psiM_list_ptr[:nw])")
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = psiM_list_ptr[iw][i * psiM_num_cols + WorkingIndex];
-  }
 
 
   for (size_t iw = 0; iw < nw; iw++)
   {
-    ///@YE_LUO:Not sure if this transfer is needed.
-    TpsiM_list[iw].get().updateFrom();
     MultiDiracDeterminant& det = (det_list[iw]);
     det.curRatio               = curRatio_list[iw];
   }
@@ -1114,21 +1113,26 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
                                             dpsiMinv_list);
 
 
-    /*    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:dpsiM_list_ptr[:nw]) \
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(to:dpsiM_list_ptr[:nw]) \
 		                                              map(always,to: TpsiM_list_ptr[:nw])") 
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < NumOrbitals; i++)
+	   {
          TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex] = dpsiM_list_ptr[iw][dpsiM_cols*WorkingIndex+i][idim];
-*/
+	  //printf("check iw = %ld, i = %ld, %lf out %lf\n", iw, i, dpsiM_list_ptr[iw][dpsiM_cols*WorkingIndex+i][idim], TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex]);
+	  }
 
+    /*
     for (size_t iw = 0; iw < nw; iw++)
     {
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
       {
         TpsiM_list[iw].get()(i, WorkingIndex) = dpsiM_list[iw].get()(WorkingIndex, i)[idim];
+	printf("check iw = %ld, i = %ld, %lf out %lf\n", iw, i, dpsiM_list[iw].get()(WorkingIndex, i)[idim], TpsiM_list[iw].get()(i, WorkingIndex));
       }
       TpsiM_list[iw].get().updateTo();
     }
+    */
 
     det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
@@ -1137,18 +1141,19 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
                                                           grads_list, Grads);
 
 
-    //    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(from:TpsiM_list_ptr[:nw]) \
-//		                                    map(always,to:psiM_list_ptr[:nw])")
-    //    for (size_t iw = 0; iw < nw; iw++)
-    //      for (size_t i = 0; i < NumOrbitals; i++)
-    //        TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex] = psiM_list_ptr[iw][i+psiM_cols*WorkingIndex];
+  }
 
+    /*
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < det_leader.NumOrbitals; i++)
         TpsiM_list[iw].get()(i, WorkingIndex) = psiM_list[iw].get()(WorkingIndex, i);
-  }
-  //for (size_t iw = 0; iw < nw; iw++)
-  //	  TpsiM_list[iw].get().updateFrom();
+	  */
+
+    PRAGMA_OFFLOAD("omp target teams distribute parallel for map(from:TpsiM_list_ptr[:nw]) \
+		                                    map(always,to:psiM_list_ptr[:nw])")
+        for (size_t iw = 0; iw < nw; iw++)
+          for (size_t i = 0; i < NumOrbitals; i++)
+            TpsiM_list_ptr[iw][i*TpsiM_cols+ WorkingIndex] = psiM_list_ptr[iw][i+psiM_cols*WorkingIndex];
 }
 
 void MultiDiracDeterminant::mw_updateRatios_generic(int ext_level,
