@@ -68,6 +68,30 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowVGL(const Part
   return rval;
 }
 
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(ParticleSet& P, const int iel) const
+{
+  //legacy calls are hit and miss with const.  Remove const for index.
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0); 
+  for(int i=0; i<jastrow_list_.size(); ++i)
+  {
+    r*=jastrow_list_[i]->ratio(P,iel_);
+  }
+
+  return static_cast<RealType>(r);
+}
+
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
+             						                     ParticleSet& source,
+    									     const int iat) const
+{
+
+  GradType grad_iat = GradType();
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat);
+  return grad_iat;
+}
+ 
 TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
              						                     ParticleSet& source,
     									     const int iat,

@@ -1182,7 +1182,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   CHECK(fkin[1][2] == Approx(5.8844148870917925));
 #endif
   app_log() << " KEVal = " << keval << std::endl;
-/*
+
   app_log() << " Now evaluating nonlocalecp\n";
   OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
   app_log() << "nlppop = " << nlppop << std::endl;
@@ -1204,7 +1204,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   app_log() << "NLPP = " << nlpp << std::endl;
 
   CHECK(nlpp_obs == Approx(1.37365415248e+01));
-
+/*
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)

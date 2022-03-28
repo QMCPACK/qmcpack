@@ -164,6 +164,13 @@ public:
   RealType evaluateJastrowVGL(const ParticleSet& P,
                                    ParticleSet::ParticleGradient& G,
                                    ParticleSet::ParticleLaplacian& L) const;
+
+  RealType evaluateJastrowRatio(ParticleSet& P,
+				const int iel) const; 
+  GradType evaluateJastrowGradSource(ParticleSet& P,
+                                     ParticleSet& source,
+                                     const int iat) const;
+
   GradType evaluateJastrowGradSource(ParticleSet& P,
                                      ParticleSet& source,
                                      const int iat,

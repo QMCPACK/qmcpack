@@ -637,6 +637,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
   {
     W.makeMove(iel, deltaV[j], false); //Update distance tables.
     psi.getRowM(W, iel, phi_row);
+    RealType jratio=psi.evaluateJastrowRatio(W,iel);
     W.rejectMove(iel);
 
     RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
@@ -654,7 +655,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
     {
       temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * phi_row;
       for (int iorb = 0; iorb < numOrbs; iorb++)
-        B[sid][thisIndex][iorb] += temp_row[iorb];
+        B[sid][thisIndex][iorb] += jratio*temp_row[iorb];
     }
   }
 }
