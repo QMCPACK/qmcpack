@@ -16,14 +16,6 @@ In brief, the CPU code path handles computation with a walker batch size of one 
 while the GPU code path uses only one batch containing all the walkers.
 The new drivers that implement this flexible batching scheme are called "batched drivers".
 
-The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
-A crowd is a subset of the walkers that are operated on as as single batch.
-Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
-Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
-With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
-In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
-Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
-in a way that is not feasible with the legacy GPU implementation.
-
 For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
 
+More information about the new drivers is given in the :ref:`Batched Drivers <batched_drivers>` section.

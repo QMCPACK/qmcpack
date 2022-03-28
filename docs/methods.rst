@@ -115,6 +115,22 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
 
+.. _batched_drivers:
+
+Batched drivers
+---------------
+
+The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
+A crowd is a subset of the walkers that are operated on as as single batch.
+Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
+Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
+In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
+Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
+in a way that is not feasible with the legacy GPU implementation.
+
+
+
 .. _transition_guide:
 
 Transition from classic drivers
