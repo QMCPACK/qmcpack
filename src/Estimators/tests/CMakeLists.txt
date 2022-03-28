@@ -29,7 +29,9 @@ set(SRCS
     EstimatorTesting.cpp
     test_SpinDensityInput.cpp
     test_SpinDensityNew.cpp
-    test_InputSection.cpp)
+    test_InputSection.cpp
+    test_EstimatorManagerInput.cpp
+    )
 
 # OneBodyDensityMatrices are not tested with legacy CUDA
 # DiracDeterminantsCUDA cannot be copied

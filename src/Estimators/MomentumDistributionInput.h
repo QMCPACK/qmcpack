@@ -16,25 +16,57 @@
 namespace qmcplusplus
 {
 
+class MomentumDistribution;
 
 /** Native representation for Momentum Distribution Estimators inputs
  */
-// clang-format: off
-class MomentumDistributionInput : public InputSection
+class MomentumDistributionInput
 {
 public:
-  MomentumDistributionInput()
+  using Consumer = MomentumDistribution;
+  using Real = QMCTraits::RealType;
+
+  class MomentumDistributionInputSection : public InputSection
   {
-    section_name   = "MomentumDistribution";
-    attributes     = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
-    strings        = {"type", "name"};
-    integers       = {"samples"};
-    reals          = {"kmax", "kmax0", "kmax1", "kmax2"};
-    default_values = {{"name", std::string("nofk")}, {"samples", int(40)}, {"kmax", Real(0.0)},
-                      {"kmax0", Real(0.0)},          {"kmax1", Real(0.0)}, {"kmax2", Real(0.0)}};
-  }
+  public:
+    // clang-format: off
+    MomentumDistributionInputSection()
+    {
+      section_name   = "MomentumDistribution";
+      attributes     = {"type", "name", "samples", "kmax", "kmax0", "kmax1", "kmax2"};
+      strings        = {"type", "name"};
+      integers       = {"samples"};
+      reals          = {"kmax", "kmax0", "kmax1", "kmax2"};
+      // default_values = {{"name", std::string("nofk")}, {"samples", int(40)}, {"kmax", Real(0.0)},
+      //                   {"kmax0", Real(0.0)},          {"kmax1", Real(0.0)}, {"kmax2", Real(0.0)}};
+    }
+    // clang-format: on
+  };
+
+  MomentumDistributionInput(xmlNodePtr cur);
+private:
+  MomentumDistributionInputSection input_section_;
+
+  std::string name_{"nofk"};
+  std::string type_;
+  ///number of samples
+  int samples_ = 40;
+  //maximum k-value in the k-grid in cartesian coordinates
+  Real kmax_ = 0.0;
+  //maximum k-values in the k-grid along the reciprocal cell axis
+  Real kmax0_ = 0.0;
+  Real kmax1_ = 0.0;
+  Real kmax2_ = 0.0;
+
+public:
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
+  const int& get_samples() const { return samples_; }
+  const Real& get_kmax() const { return kmax_; }
+  const Real& get_kmax0() const { return kmax0_; }
+  const Real& get_kmax1() const { return kmax1_; }
+  const Real& get_kmax2() const { return kmax2_; }  
 };
-// clang-format: on
 
 } // namespace qmcplusplus
 #endif /* MOMENTUMDISTRIBUTIONINPUT_H */
