@@ -142,7 +142,7 @@ public:
   virtual void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
-                       const IndexType iat = 0,
+                       const IndexType iat,
                        bool prepare_old    = true) const
   {
 #pragma omp parallel for
