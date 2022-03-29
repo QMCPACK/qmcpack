@@ -186,17 +186,25 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   std::cout << "Testing TRANS gemv" << std::endl;
   test_gemv<float>(M, N, 'T');
   test_gemv<double>(M, N, 'T');
+  test_gemv<float>(M, N, 'N');
+  test_gemv<double>(M, N, 'N');
 #if defined(QMC_COMPLEX)
   test_gemv<std::complex<float>>(N, M, 'T');
   test_gemv<std::complex<double>>(N, M, 'T');
+  test_gemv<std::complex<float>>(N, M, 'N');
+  test_gemv<std::complex<double>>(N, M, 'N');
 #endif
   // Batched Test
   std::cout << "Testing TRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'T', batch_count);
   test_gemv_batched<double>(M, N, 'T', batch_count);
+  test_gemv_batched<float>(M, N, 'N', batch_count);
+  test_gemv_batched<double>(M, N, 'N', batch_count);
 #if defined(QMC_COMPLEX)
   test_gemv_batched<std::complex<float>>(N, M, 'T', batch_count);
   test_gemv_batched<std::complex<double>>(N, M, 'T', batch_count);
+  test_gemv_batched<std::complex<float>>(N, M, 'N', batch_count);
+  test_gemv_batched<std::complex<double>>(N, M, 'N', batch_count);
 #endif
 }
 } // namespace qmcplusplus

@@ -57,7 +57,23 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
   }
   else
   {
-    throw std::runtime_error("trans = 'N' not implemented in ompBLAS::gemv_impl!");
+    
+    if (incx !=1 || incy != 1)
+      throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
+
+    PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
+    for(size_t i = 0; i < n; i++)
+    {
+      T dot_sum(0);
+      PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
+      for(size_t j = 0; j < m; j++)
+        dot_sum += x[j] * A[j * lda + i];
+      if (beta == T(0))
+        y[i] = alpha * dot_sum; // protecting NaN from y
+      else
+        y[i] = alpha * dot_sum + beta * y[i];
+    }
+    return 0;
   }
 }
 
