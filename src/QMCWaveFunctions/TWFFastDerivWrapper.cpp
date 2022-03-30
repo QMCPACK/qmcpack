@@ -81,6 +81,17 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(Particle
   return static_cast<RealType>(r);
 }
 
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::calcJastrowRatioGrad(ParticleSet& P, const int iel, GradType& grad) const
+{
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0);
+  for(int i=0; i<jastrow_list_.size(); ++i)
+  {
+    r*=jastrow_list_[i]->ratioGrad(P,iel_,grad);
+  }
+  return static_cast<RealType>(r); 
+}
+
 TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
              						                     ParticleSet& source,
     									     const int iat) const

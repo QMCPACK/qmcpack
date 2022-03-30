@@ -167,6 +167,8 @@ public:
 
   RealType evaluateJastrowRatio(ParticleSet& P,
 				const int iel) const; 
+
+  RealType calcJastrowRatioGrad(ParticleSet& P, const int iel, GradType& grad) const;
   GradType evaluateJastrowGradSource(ParticleSet& P,
                                      ParticleSet& source,
                                      const int iat) const;
