@@ -280,20 +280,18 @@ the path to the source directory.
 
   ::
 
-    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
     QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                           (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
     ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                           to avoid potential slowdown in tiny systems.
                           For systems beyond tiny sizes (100+ electrons) there is no risk.
+
+See the section below, :ref:`offload_build`, for more details on how to configure the OpenMP offload build for various GPU types and compilers.
 
 - General build options
 
@@ -335,6 +333,22 @@ the path to the source directory.
                            saving default use of symbolic links for test files. Useful
                            if the build is on a separate filesystem from the source, as
                            required on some HPC systems.
+
+- Legacy CUDA version of QMCPACK
+
+  ::
+
+    QMC_CUDA      Enable legacy CUDA code path for NVIDIA GPU acceleration (default: OFF)
+    QMC_CUDA2HIP  AMD GPU support by translating CUDA to HIP (default: OFF)
+
+- Auxiliary Field Quantum Monte Carlo
+
+  ::
+
+    BUILD_AFQMC  Build AFQMC-capable code (default: OFF)
+    ENABLE_HIP   AMD GPU support through HIP (default: OFF)
+    ENABLE_CUDA  NVIDIA GPU support through CUDA (default: OFF)
+
 
 - BLAS/LAPACK related
 
@@ -397,6 +411,8 @@ the path to the source directory.
 `Clang thread sanitizer library msan <https://clang.llvm.org/docs/MemorySanitizer.html>`_
 
 See :ref:`Sanitizer-Libraries` for more information.
+
+.. _offload_build:
 
 Notes for OpenMP target offload to accelerators (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
