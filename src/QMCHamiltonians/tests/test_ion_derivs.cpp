@@ -1204,7 +1204,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   app_log() << "NLPP = " << nlpp << std::endl;
 
   CHECK(nlpp_obs == Approx(1.37365415248e+01));
-/*
+
   ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
   ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
@@ -1242,7 +1242,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   CHECK(fnlpp[1][1] == Approx(1.1362118534918864));
   CHECK(fnlpp[1][2] == Approx(-4.5825638607333019));
 #endif
-  */
+  
 }
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
