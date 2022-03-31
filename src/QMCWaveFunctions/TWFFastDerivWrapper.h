@@ -154,7 +154,7 @@ public:
                                std::vector<std::vector<ValueMatrix>>& dlmat) const;
 
 
-  /** @brief Evaluates value, gradient, and laplacian of jastrow.  So of J in exp(J).
+  /** @brief Evaluates value, gradient, and laplacian of the total jastrow.  So of J in exp(J).
     *
     * @param[in] Particle set.
     * @param[in,out] Electron gradients.
@@ -165,19 +165,51 @@ public:
                                    ParticleSet::ParticleGradient& G,
                                    ParticleSet::ParticleLaplacian& L) const;
 
+  /** @brief Given a proposed move of electron iel from r->r', computes exp(J')/exp(J)
+    *
+    * @param[in] P electron particle set.
+    * @param[in] iel electron being moved.
+    * @return Jastrow ratio.
+    */
   RealType evaluateJastrowRatio(ParticleSet& P,
 				const int iel) const; 
 
+  /** @brief Given a proposed move of electron iel from r->r', computes exp(J(r'))/exp(J(r))
+    *   and grad_iel(J(r')).)
+    *
+    * @param[in] P electron particle set.
+    * @param[in] iel electron being moved.
+    * @param[in,out] grad grad_iel(J(r')). So iel electron gradient at new position.
+    * @return Jastrow ratio.
+    */
   RealType calcJastrowRatioGrad(ParticleSet& P, const int iel, GradType& grad) const;
+
+  /** @brief Return ionic gradient of J(r).
+    *
+    * @param[in] P electron particle set.
+    * @param[in] source ion particle set.
+    * @param[in] iat Ion to take derivative w.r.t.
+    * @return Gradient of J(r) w.r.t. ion iat.
+    */
   GradType evaluateJastrowGradSource(ParticleSet& P,
                                      ParticleSet& source,
                                      const int iat) const;
 
+  /** @brief Return ionic gradients of J(r), grad_iel(J(r)), and lapl_iel(J(r)).
+    *
+    * @param[in] P electron particle set.
+    * @param[in] source ion particle set.
+    * @param[in] iat Ion to take derivative w.r.t.
+    * @param[in,out] grad_grad iat ion gradient of electron gradients of J(r).  
+    * @param[in,out] grad_lapl iat ion gradient of electron laplacians of J(r).
+    * @return Gradient of J(r) w.r.t. ion iat.
+    */
   GradType evaluateJastrowGradSource(ParticleSet& P,
                                      ParticleSet& source,
                                      const int iat,
                                      TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
                                      TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const ;
+
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
    *
