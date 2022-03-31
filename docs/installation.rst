@@ -276,6 +276,8 @@ precedent over the environment and default variables.  To set them,
 add -D FLAG=VALUE to the configure line between the CMake command and
 the path to the source directory.
 
+.. highlight:: none
+
 - Key QMCPACK build options
 
   ::
