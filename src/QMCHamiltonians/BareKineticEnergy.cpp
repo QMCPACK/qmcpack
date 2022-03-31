@@ -386,8 +386,6 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       const IndexType last   = P.last(ig);
       const IndexType nptcls = last - first;
 
-      //dlapl[idim][ig] *= MinusOver2M[ig];
-      //Bforce[idim][sid] += dlapl[idim][ig];
       for (int iel = first; iel < last; iel++)
       {
         for (int iorb = 0; iorb < norbs; iorb++)
