@@ -787,8 +787,6 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   using ValueMatrix = SPOSet::ValueMatrix;
 
-  int IONINDEX = 1;
-
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
   //These matrices are not necessarily square to accomodate orb opt and multidets.
 
@@ -1047,8 +1045,6 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
-
-  int IONINDEX = 1;
 
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
   //These matrices are not necessarily square to accomodate orb opt and multidets.
