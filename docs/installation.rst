@@ -349,6 +349,7 @@ the path to the source directory.
 - Scalar and vector math functions
 
   ::
+
     QMC_MATH_VENDOR     Select a vendor optimized library for scalar and vector math functions.
                         Providers are GENERIC INTEL_VML IBM_MASS AMD_LIBM
 
