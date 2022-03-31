@@ -114,6 +114,11 @@ public:
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;
 
+/*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override ;
+*/
   void prepareGroup(ParticleSet& P, int ig) override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;

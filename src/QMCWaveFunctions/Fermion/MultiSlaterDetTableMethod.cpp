@@ -143,7 +143,6 @@ WaveFunctionComponent::LogValueType MultiSlaterDetTableMethod::evaluateLog(const
     else
       Dets[id]->evaluateForWalkerMove(P);
   }
-
   log_value_ = evaluate_vgl_impl(P, myG, myL);
 
   G += myG;
@@ -152,6 +151,16 @@ WaveFunctionComponent::LogValueType MultiSlaterDetTableMethod::evaluateLog(const
 
   return log_value_;
 }
+/*
+void MultiSlaterDetTableMethod::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list)
+{
+	APP_ABORT("Iam In MW_LOG");
+}
+*/
+
 
 WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl(ParticleSet& P,
                                                                              int iat,
@@ -300,6 +309,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     grad_now[iw][1] = grad_now_list[iw * 3 + 1] * psi_inv;
     grad_now[iw][2] = grad_now_list[iw * 3 + 2] * psi_inv;
   }
+
 }
 
 WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::evalGrad_impl_no_precompute(ParticleSet& P,
@@ -612,12 +622,14 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     psi_list_ptr[iw] = psi_local;
   }
   OffloadRatioTimer.stop();
+
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det                         = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.new_psi_ratio_to_new_ref_det_ = psi_list[iw];
     ratios[iw] = det.curRatio = det.Dets[det_id]->getRefDetRatio() * psi_list[iw] / det.psi_ratio_to_ref_det_;
   }
+
 }
 
 void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)

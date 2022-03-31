@@ -36,7 +36,9 @@ public:
   void registerTimers();
   NewTimer &UpdateTimer, &RatioTimer, &MWRatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer,
       &evalOrbTimer, &evalOrb1Timer;
-  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer;
+  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer, &MWbuildDotProductTimer, &MWbuildDotProductGradTimer;
+  NewTimer &MWevaluateDetsForPtclMoveTimer, &MWevaluateDetsAndGradsForPtclMoveTimer, &MWevaluateGradsTimer;
+  NewTimer &OffloadDotProductTimer, &MWupdateRatiosTimer,&MWDetRatioColTimer,&MWevaluateDetsOffloadTimer,&MWevaluateDetsAndGradsOffloadTimer, &OffloadevaluateGradsTimer, &MWInverseUpdateTimer,&OffloadTransferTimer,&OffloadTransfer2Timer;
   // Optimizable parameter
   opt_variables_type myVars;
 
