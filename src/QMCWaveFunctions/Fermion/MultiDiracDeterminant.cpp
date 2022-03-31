@@ -819,10 +819,10 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
   const OffloadVector<ValueType>& detValues_dn = pseudo_dn.getRatiosToRefDet();
-  const OffloadMatrix<GradType>& grads_up      = grads;
-  const OffloadMatrix<GradType>& grads_dn      = pseudo_dn.grads;
-  const OffloadMatrix<ValueType>& lapls_up     = lapls;
-  const OffloadMatrix<ValueType>& lapls_dn     = pseudo_dn.lapls;
+  const Matrix<GradType>& grads_up      = grads;
+  const Matrix<GradType>& grads_dn      = pseudo_dn.grads;
+  const Matrix<ValueType>& lapls_up     = lapls;
+  const Matrix<ValueType>& lapls_dn     = pseudo_dn.lapls;
   const OffloadMatrix<ValueType>& M_up         = psiM;
   const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
   const OffloadMatrix<ValueType>& Minv_up      = psiMinv;
@@ -846,13 +846,9 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   Matrix<ValueType> Minv_dn_host_view(const_cast<ValueType*>(Minv_dn.data()), Minv_dn.rows(), Minv_dn.cols());
   Matrix<GradType> B_grad_host_view(const_cast<GradType*>(B_grad.data()), B_grad.rows(), B_grad.cols());
   Matrix<ValueType> B_lapl_host_view(const_cast<ValueType*>(B_lapl.data()), B_lapl.rows(), B_lapl.cols());
-  Matrix<GradType> grads_up_host_view(const_cast<GradType*>(grads_up.data()), grads_up.rows(), grads_up.cols());
-  Matrix<GradType> grads_dn_host_view(const_cast<GradType*>(grads_dn.data()), grads_dn.rows(), grads_dn.cols());
-  Matrix<ValueType> lapls_up_host_view(const_cast<ValueType*>(lapls_up.data()), lapls_up.rows(), lapls_up.cols());
-  Matrix<ValueType> lapls_dn_host_view(const_cast<ValueType*>(lapls_dn.data()), lapls_dn.rows(), lapls_dn.cols());
   Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
-                           detValues_up_host_view, detValues_dn_host_view, grads_up_host_view, grads_dn_host_view,
-                           lapls_up_host_view, lapls_dn_host_view, M_up_host_view, M_dn_host_view, Minv_up_host_view,
+                           detValues_up_host_view, detValues_dn_host_view, grads_up, grads_dn,
+                           lapls_up, lapls_dn, M_up_host_view, M_dn_host_view, Minv_up_host_view,
                            Minv_dn_host_view, B_grad_host_view, B_lapl_host_view, detData_local, N1, N2, NP1, NP2,
                            lookup_tbl);
 }

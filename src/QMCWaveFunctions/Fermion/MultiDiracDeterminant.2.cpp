@@ -121,7 +121,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       const int J = second[i];
 
       ValueType dotProducts_local = 0.0;
-      //PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
       for (size_t ind = 0; ind < num; ind++)
         dotProducts_local += psiinv_list_ptr[iw][I * nb_cols_psiinv + ind] * psi_list_ptr[iw][J * nb_cols_psi + ind];
       dotProducts_list_ptr[iw][I * nb_cols_dotProd + J] = dotProducts_local;
@@ -230,7 +229,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(
     OffloadMatrix<ValueType>& dotProducts,
     int dx,
     int iat,
-    OffloadMatrix<GradType>& grads)
+    Matrix<GradType>& grads)
 {
   BuildDotProductsAndCalculateRatios_impl(ref, det0_grad, WorkSpace.data(), psiinv, psi, dotProducts, data, pairs,
                                           sign);
@@ -252,7 +251,6 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const OffloadVector<RealType>& sign,
     const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
-    const RefVector<OffloadMatrix<GradType>>& grads_list,
     OffloadMatrix<ValueType>& Grads)
 {
   ScopedTimer local_timer(MWbuildDotProductGradTimer);
@@ -292,14 +290,13 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
     const OffloadVector<RealType>& sign,
     OffloadMatrix<ValueType>& dotProducts,
     int iat,
-    OffloadMatrix<ValueType>& ratios)
+    Matrix<ValueType>& ratios)
 {
   const ValueType det0 = ratios(ref, iat);
   BuildDotProductsAndCalculateRatios_impl(ref, det0, WorkSpace.data(), psiinv, psi, dotProducts, data, pairs, sign);
   //splatt
   for (size_t count = 0; count < getNumDets(); ++count)
     ratios(count, iat) = WorkSpace[count];
-  ratios.updateTo();
 #if 0
     ValueType det0 = ratios(ref,iat);
     int num=psi.extent(1);
@@ -703,7 +700,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<OffloadMatrix<ValueType>> dotProducts_list, psiM_list, TpsiM_list;
 
   RefVector<OffloadVector<GradType>> dpsiV_list;
-  RefVector<OffloadMatrix<GradType>> new_grads_list;
+  //RefVector<OffloadMatrix<GradType>> new_grads_list;
 
 
   OffloadVector<size_t> confgListOccup(NumPtcls, 0.0);
@@ -723,7 +720,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   TpsiM_list.reserve(nw);
   new_ratios_to_ref_list.reserve(nw);
-  new_grads_list.reserve(nw);
+  //new_grads_list.reserve(nw);
   dotProducts_list.reserve(nw);
   dpsiMinv_list.reserve(nw);
   WorkSpace_list.reserve(nw);
@@ -751,7 +748,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     psiM_list.push_back(det.psiM);
     psiMinv_temp_list.push_back(det.psiMinv_temp);
     new_ratios_to_ref_list.push_back(det.new_ratios_to_ref_);
-    new_grads_list.push_back(det.new_grads);
+    //new_grads_list.push_back(det.new_grads);
     TpsiM_list.push_back(det.TpsiM);
     dotProducts_list.push_back(det.dotProducts);
     dpsiMinv_list.push_back(det.dpsiMinv);
@@ -923,7 +920,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
                                                           det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                          new_grads_list, Grads);
+                                                           Grads);
   }
 
   // restore the modified column of TpsiM.
@@ -1038,7 +1035,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   RefVector<OffloadMatrix<GradType>> dpsiM_list;
   RefVector<OffloadVector<ValueType>> psiV_temp_list, WorkSpace_list, workV1_list, workV2_list;
   RefVector<OffloadMatrix<ValueType>> dotProducts_list, TpsiM_list, psiM_list;
-  RefVector<OffloadMatrix<GradType>> grads_list;
+  //RefVector<OffloadMatrix<GradType>> grads_list;
 
   OffloadVector<ValueType> ratioG_list;
 
@@ -1051,7 +1048,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   workV2_list.reserve(nw);
   dpsiM_list.reserve(nw);
   psiV_temp_list.reserve(nw);
-  grads_list.reserve(nw);
+  //grads_list.reserve(nw);
   dotProducts_list.reserve(nw);
   TpsiM_list.reserve(nw);
   psiM_list.reserve(nw);
@@ -1068,7 +1065,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
     workV1_list.push_back(det.workV1);
     workV2_list.push_back(det.workV2);
     dpsiM_list.push_back(det.dpsiM);
-    grads_list.push_back(det.grads);
+    //grads_list.push_back(det.grads);
     TpsiM_list.push_back(det.TpsiM);
     psiM_list.push_back(det.psiM);
     dotProducts_list.push_back(det.dotProducts);
@@ -1172,7 +1169,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                          grads_list, Grads);
+                                                           Grads);
   }
 
   // restore the modified column of TpsiM.

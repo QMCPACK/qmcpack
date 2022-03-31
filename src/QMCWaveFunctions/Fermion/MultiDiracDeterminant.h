@@ -239,12 +239,12 @@ public:
 
   const OffloadVector<ValueType>& getRatiosToRefDet() const { return ratios_to_ref_; }
   const OffloadVector<ValueType>& getNewRatiosToRefDet() const { return new_ratios_to_ref_; }
-  const OffloadMatrix<GradType>& getGrads() const { return grads; }
-  const OffloadMatrix<GradType>& getNewGrads() const { return new_grads; }
-  const OffloadMatrix<ValueType>& getLapls() const { return lapls; }
-  const OffloadMatrix<ValueType>& getNewLapls() const { return new_lapls; }
-  const OffloadMatrix<ValueType>& getSpinGrads() const { return spingrads; }
-  const OffloadMatrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
+  const Matrix<GradType>& getGrads() const { return grads; }
+  const Matrix<GradType>& getNewGrads() const { return new_grads; }
+  const Matrix<ValueType>& getLapls() const { return lapls; }
+  const Matrix<ValueType>& getNewLapls() const { return new_lapls; }
+  const Matrix<ValueType>& getSpinGrads() const { return spingrads; }
+  const Matrix<ValueType>& getNewSpinGrads() const { return new_spingrads; }
 
   PsiValueType getRefDetRatio() const { return static_cast<PsiValueType>(curRatio); }
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
@@ -385,7 +385,7 @@ private:
                                                OffloadMatrix<ValueType>& dotProducts,
                                                int dx,
                                                int iat,
-                                               OffloadMatrix<GradType>& grads);
+                                               Matrix<GradType>& grads);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
@@ -415,7 +415,6 @@ private:
                                                   const OffloadVector<RealType>& sign,
                                                   const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
-                                                  const RefVector<OffloadMatrix<GradType>>& ratios_list,
                                                   OffloadMatrix<ValueType>& Grads);
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
@@ -427,7 +426,7 @@ private:
       const OffloadVector<RealType>& sign,
       OffloadMatrix<ValueType>& dotProducts,
       int iat,
-      OffloadMatrix<ValueType>& ratios);
+      Matrix<ValueType>& ratios);
 
   //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
@@ -512,11 +511,11 @@ private:
   /// log value of the reference determinant
   LogValueType log_value_ref_det_;
   /// store determinant grads (old and new)
-  OffloadMatrix<GradType> grads, new_grads;
+  Matrix<GradType> grads, new_grads;
   /// store determinant lapls (old and new)
-  OffloadMatrix<ValueType> lapls, new_lapls;
+  Matrix<ValueType> lapls, new_lapls;
   // additional storage for spin derivatives. Only resized if the calculation uses spinors
-  OffloadMatrix<ValueType> spingrads, new_spingrads;
+  Matrix<ValueType> spingrads, new_spingrads;
 
 
   /* mmorales:
