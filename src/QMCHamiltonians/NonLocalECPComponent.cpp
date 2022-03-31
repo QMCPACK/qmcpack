@@ -77,7 +77,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vgrad.resize(m);
   wvec.resize(n);
   lpol.resize(l + 1, 1.0);
-  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.  
+  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.
   //This +2 guards against l=0 case.
   dlpol.resize(l + 2, 0.0);
   rrotsgrid_m.resize(n);
@@ -637,7 +637,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
   {
     W.makeMove(iel, deltaV[j], false); //Update distance tables.
     psi.getRowM(W, iel, phi_row);
-    RealType jratio=psi.evaluateJastrowRatio(W,iel);
+    RealType jratio = psi.evaluateJastrowRatio(W, iel);
     W.rejectMove(iel);
 
     RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
@@ -646,8 +646,8 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      lpol[l + 1] = Lfactor2[l]*(Lfactor1[l] * zz * lpol[l] - l * lpolprev);
-      lpolprev = lpol[l];
+      lpol[l + 1] = Lfactor2[l] * (Lfactor1[l] * zz * lpol[l] - l * lpolprev);
+      lpolprev    = lpol[l];
     }
 
     ValueType lsum = 0.0;
@@ -674,7 +674,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   using GradVector  = SPOSet::GradVector;
   constexpr RealType czero(0);
   constexpr RealType cone(1);
-  
+
   //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
   //We check this by seeing if |r|^2 = 1 to machine precision.
   for (int j = 0; j < nknot; j++)
@@ -750,20 +750,20 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   gwfn.resize(norbs);
 
   buildQuadraturePointDeltaPositions(r, dr, deltaV);
-  //This is the ion gradient of J at the original (non quadrature) coordinate. 
-  GradType jigradref(0.0); 
-  
-  jigradref = psi.evaluateJastrowGradSource(W,ions,iat_src);
-  
-  //Until we have a more efficient routine, we move to a quadrature point, 
+  //This is the ion gradient of J at the original (non quadrature) coordinate.
+  GradType jigradref(0.0);
+
+  jigradref = psi.evaluateJastrowGradSource(W, ions, iat_src);
+
+  //Until we have a more efficient routine, we move to a quadrature point,
   //update distance tables, compute the ion gradient of J, then move the particle back.
   //At cost of distance table updates.  Not good, but works.
-  for(int j=0; j<nknot; j++)
+  for (int j = 0; j < nknot; j++)
   {
     W.makeMove(iel, deltaV[j], false);
     W.acceptMove(iel);
-    jgrad_quad[j]=psi.evaluateJastrowGradSource(W,ions, iat_src);
-    W.makeMove(iel,-deltaV[j],false);
+    jgrad_quad[j] = psi.evaluateJastrowGradSource(W, ions, iat_src);
+    W.makeMove(iel, -deltaV[j], false);
     W.acceptMove(iel);
   }
 
@@ -776,14 +776,14 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     GradType jegrad(0.0);
     GradType jigrad(0.0);
 
-    RealType jratio=psi.calcJastrowRatioGrad(W,iel,jegrad);
-    jigrad=psi.evaluateJastrowGradSource(W,ions, iat_src);
+    RealType jratio = psi.calcJastrowRatioGrad(W, iel, jegrad);
+    jigrad          = psi.evaluateJastrowGradSource(W, ions, iat_src);
 
     spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
 
-    //Quick comment on the matrix elements being computed below.  
-    //For the no jastrow implementation, phimat, gradphimat, iongrad_phimat were straightforward containers storing phi_j(r_i), grad(phi_j), etc.  
-    //Generalizing to jastrows is straightforward if we replace phi_j(q) with exp(J(q))/exp(J(r))*phi(q).  Storing these in the phimat, gradphimat, etc. 
+    //Quick comment on the matrix elements being computed below.
+    //For the no jastrow implementation, phimat, gradphimat, iongrad_phimat were straightforward containers storing phi_j(r_i), grad(phi_j), etc.
+    //Generalizing to jastrows is straightforward if we replace phi_j(q) with exp(J(q))/exp(J(r))*phi(q).  Storing these in the phimat, gradphimat, etc.
     //data structures allows us to not modify the rather complicated expressions we have already derived.
     if (iat == iat_src)
     {
@@ -791,16 +791,16 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
-        phimat[j][iorb]     = jratio*phi[iorb]; 
+        phimat[j][iorb] = jratio * phi[iorb];
         //This is the electron gradient of the above expression.
-        gradphimat[j][iorb] = jratio*(gradphi[iorb]+jegrad*phi[iorb]);
+        gradphimat[j][iorb] = jratio * (gradphi[iorb] + jegrad * phi[iorb]);
         laplphimat[j][iorb] = laplphi[iorb]; //this is not used, so not including jastrow contribution.
       }
     }
     for (int iorb = 0; iorb < norbs; iorb++)
     {
       //This is the ion gradient of exp(J(q))/exp(J(r))phi_j(q).
-      iongrad_phimat[j][iorb] = jratio*(iongrad_phi[iorb]+phi[iorb]*(jgrad_quad[j]-jigradref));
+      iongrad_phimat[j][iorb] = jratio * (iongrad_phi[iorb] + phi[iorb] * (jgrad_quad[j] - jigradref));
     }
     W.rejectMove(iel);
   }
@@ -868,9 +868,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
         gwfn[iorb] += nlpp_prefactor[j] * (wfgradmat[j][iorb]);
       }
   }
-    for (int idim = 0; idim < OHMMS_DIM; idim++)
-      for (int iorb = 0; iorb < norbs; iorb++)
-        dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int iorb = 0; iorb < norbs; iorb++)
+      dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
 }
 
 ///Randomly rotate sgrid_m

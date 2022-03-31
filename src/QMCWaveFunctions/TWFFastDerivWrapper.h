@@ -55,7 +55,10 @@ public:
    *  @return void.
    */
   void addGroup(ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(ParticleSet& P, std::unique_ptr<WaveFunctionComponent>& j) { jastrow_list_.push_back(j->makeClone(P)); };
+  inline void addJastrow(ParticleSet& P, std::unique_ptr<WaveFunctionComponent>& j)
+  {
+    jastrow_list_.push_back(j->makeClone(P));
+  };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
@@ -162,8 +165,8 @@ public:
     * @return Jastrow value
     */
   RealType evaluateJastrowVGL(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient& G,
-                                   ParticleSet::ParticleLaplacian& L) const;
+                              ParticleSet::ParticleGradient& G,
+                              ParticleSet::ParticleLaplacian& L) const;
 
   /** @brief Given a proposed move of electron iel from r->r', computes exp(J')/exp(J)
     *
@@ -171,8 +174,7 @@ public:
     * @param[in] iel electron being moved.
     * @return Jastrow ratio.
     */
-  RealType evaluateJastrowRatio(ParticleSet& P,
-				const int iel) const; 
+  RealType evaluateJastrowRatio(ParticleSet& P, const int iel) const;
 
   /** @brief Given a proposed move of electron iel from r->r', computes exp(J(r'))/exp(J(r))
     *   and grad_iel(J(r')).)
@@ -191,9 +193,7 @@ public:
     * @param[in] iat Ion to take derivative w.r.t.
     * @return Gradient of J(r) w.r.t. ion iat.
     */
-  GradType evaluateJastrowGradSource(ParticleSet& P,
-                                     ParticleSet& source,
-                                     const int iat) const;
+  GradType evaluateJastrowGradSource(ParticleSet& P, ParticleSet& source, const int iat) const;
 
   /** @brief Return ionic gradients of J(r), grad_iel(J(r)), and lapl_iel(J(r)).
     *
@@ -208,7 +208,7 @@ public:
                                      ParticleSet& source,
                                      const int iat,
                                      TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
-                                     TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const ;
+                                     TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const;
 
   /** @brief Takes sub matrices of full SPOSet quantities (evaluated on all particles and all orbitals), consistent with ground
    *   state occupations.
@@ -275,7 +275,7 @@ private:
   std::vector<IndexType> groups_;
   std::vector<ValueMatrix> psi_M_;
   std::vector<ValueMatrix> psi_M_inv_;
-  std::vector<std::unique_ptr<WaveFunctionComponent> > jastrow_list_;
+  std::vector<std::unique_ptr<WaveFunctionComponent>> jastrow_list_;
 };
 
 /**@}*/
