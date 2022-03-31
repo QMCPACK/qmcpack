@@ -11,6 +11,7 @@
 
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "Numerics/DeterminantOperators.h"
+#include "type_traits/ConvertToReal.h"
 #include <iostream>
 namespace qmcplusplus
 {
@@ -78,7 +79,9 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(Particle
     r*=jastrow_list_[i]->ratio(P,iel_);
   }
 
-  return static_cast<RealType>(r);
+  RealType ratio_return(1.0);
+  convertToReal(r,ratio_return);
+  return ratio_return; 
 }
 
 TWFFastDerivWrapper::RealType TWFFastDerivWrapper::calcJastrowRatioGrad(ParticleSet& P, const int iel, GradType& grad) const
@@ -89,7 +92,9 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::calcJastrowRatioGrad(Particle
   {
     r*=jastrow_list_[i]->ratioGrad(P,iel_,grad);
   }
-  return static_cast<RealType>(r); 
+  RealType ratio_return(1.0);
+  convertToReal(r,ratio_return);
+  return ratio_return; 
 }
 
 TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
