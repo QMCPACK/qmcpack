@@ -111,8 +111,9 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 
   {
   ScopedTimer local_timer(OffloadDotProductTimer);
-  PRAGMA_OFFLOAD("omp target teams distribute  map(always,to: dotProducts_list_ptr[:nw]) \
-          map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw],first[:npairs],second[:npairs])")
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
+          map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw]) \
+	  map(to:first[:npairs],second[:npairs])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t i = 0; i < npairs; ++i)
     {
@@ -120,7 +121,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
       const int J = second[i];
 
       ValueType dotProducts_local = 0.0;
-      PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
+      //PRAGMA_OFFLOAD("omp parallel for reduction(+ : dotProducts_local)")
       for (size_t ind = 0; ind < num; ind++)
         dotProducts_local += psiinv_list_ptr[iw][I * nb_cols_psiinv + ind] * psi_list_ptr[iw][J * nb_cols_psi + ind];
       dotProducts_list_ptr[iw][I * nb_cols_dotProd + J] = dotProducts_local;
@@ -275,7 +276,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
 //  }
   ///End of Tests
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(always,from:Grads_ptr[:Grads.size()]) \
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(from:Grads_ptr[:Grads.size()]) \
 		                                                        map(always, to:WorkSpace_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < getNumDets; ++count)

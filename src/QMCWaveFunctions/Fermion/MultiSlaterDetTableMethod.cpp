@@ -279,7 +279,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     PRAGMA_OFFLOAD("omp target teams distribute map(from: psi_list_ptr[:nw]) \
                     map(from: grad_now_list_ptr[:3 * nw]) \
                     map(always, to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw]) \
-                    map(always, to: Grads_ptr[:Grads.size()])")
+                    map(to: Grads_ptr[:Grads.size()])")
     for (size_t iw = 0; iw < nw; iw++)
     {
       // enforce full precision reduction due to numerical sensitivity
