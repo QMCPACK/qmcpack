@@ -197,11 +197,11 @@ if(SYCL_COMPILER)
   get_filename_component(SYCL_PACKAGE_DIR "${SYCL_BIN_DIR}" DIRECTORY CACHE)
 
   # Find Include path from binary
-  find_file(SYCL_INCLUDE_DIR
+  find_path(SYCL_INCLUDE_DIR
     NAMES
-      include
+      CL/sycl.hpp
     HINTS
-      ${SYCL_PACKAGE_DIR}
+      ${SYCL_PACKAGE_DIR}/include/sycl
     NO_DEFAULT_PATH
       )
 
@@ -307,5 +307,5 @@ target_link_options(OneAPI::DPCPP-device INTERFACE ${SYCL_FLAGS})
 
 # sycl target for host APIs
 add_library(OneAPI::DPCPP-host INTERFACE IMPORTED)
-target_include_directories(OneAPI::DPCPP-host INTERFACE ${SYCL_INCLUDE_DIR})
+target_include_directories(OneAPI::DPCPP-host INTERFACE "${SYCL_INCLUDE_DIR};${SYCL_INCLUDE_DIR}/..")
 target_link_libraries(OneAPI::DPCPP-host INTERFACE ${SYCL_LIBRARY})

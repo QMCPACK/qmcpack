@@ -16,13 +16,13 @@
 #include <stdexcept>
 #include <string>
 #include <algorithm>
-#include <CL/sycl/backend.hpp>
-#include <level_zero/ze_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
 #include "OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 #if defined(_OPENMP)
 #include <omp.h>
+#include <CL/sycl/backend.hpp>
+#include <level_zero/ze_api.h>
+#include <CL/sycl/backend/level_zero.hpp>
 #endif
 
 namespace qmcplusplus
@@ -131,9 +131,9 @@ static std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
           sycl::ext::oneapi::level_zero::make_device(sycl_platform, reinterpret_cast<pi_native_handle>(hDevice));
 
       const sycl::context sycl_context =
-          sycl::make_context<sycl::backend::ext_oneapi_level_zero>({reinterpret_cast<_ze_context_handle_t*>(hContext),
-                                                                    {devices[id].device},
-                                                                    sycl::ext::oneapi::level_zero::ownership::keep});
+          sycl::ext::oneapi::level_zero::make_context({devices[id].device},
+                                                      reinterpret_cast<pi_native_handle>(hContext),
+                                                      true /* keep the ownership, no transfer */);
     }
     else if (omp_backend.find("opencl") == 0)
     {
