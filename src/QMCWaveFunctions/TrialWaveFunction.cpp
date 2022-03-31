@@ -1248,10 +1248,8 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(ParticleSet& P, TWFFastDer
       //det->registerTWFFastDerivWrapper(P, twf);
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
-    else //Is Jastrow, so do nothing right now.
-    {
+    else 
       twf.addJastrow(P,Z[i]);  
-    }
   }
 }
 
