@@ -653,9 +653,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
     ValueType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
     {
-      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * phi_row;
+      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * jratio * phi_row;
       for (int iorb = 0; iorb < numOrbs; iorb++)
-        B[sid][thisIndex][iorb] += jratio*temp_row[iorb];
+        B[sid][thisIndex][iorb] += temp_row[iorb];
     }
   }
 }
@@ -714,6 +714,8 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   GradVector gradphi;
   GradMatrix wfgradmat;
 
+  //This stores all ion gradients of the Jastrow, evaluated on all quadrature points.
+  //Has length nknot.
   ParticleSet::ParticleGradient jgrad_quad;
   jgrad_quad.resize(nknot);
 
@@ -753,6 +755,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   
   jigradref = psi.evaluateJastrowGradSource(W,ions,iat_src);
   
+  //Until we have a more efficient routine, we move to a quadrature point, 
+  //update distance tables, compute the ion gradient of J, then move the particle back.
+  //At cost of distance table updates.  Not good, but works.
   for(int j=0; j<nknot; j++)
   {
     W.makeMove(iel, deltaV[j], false);
@@ -775,21 +780,27 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     jigrad=psi.evaluateJastrowGradSource(W,ions, iat_src);
 
     spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
+
+    //Quick comment on the matrix elements being computed below.  
+    //For the no jastrow implementation, phimat, gradphimat, iongrad_phimat were straightforward containers storing phi_j(r_i), grad(phi_j), etc.  
+    //Generalizing to jastrows is straightforward if we replace phi_j(q) with exp(J(q))/exp(J(r))*phi(q).  Storing these in the phimat, gradphimat, etc. 
+    //data structures allows us to not modify the rather complicated expressions we have already derived.
     if (iat == iat_src)
     {
       ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
-     // spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
       for (int iorb = 0; iorb < norbs; iorb++)
       {
-        phimat[j][iorb]     = jratio*phi[iorb]; //Need to keep this unmodified for now because total jastrow+orbital derivs require it.
+        //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
+        phimat[j][iorb]     = jratio*phi[iorb]; 
+        //This is the electron gradient of the above expression.
         gradphimat[j][iorb] = jratio*(gradphi[iorb]+jegrad*phi[iorb]);
         laplphimat[j][iorb] = laplphi[iorb]; //this is not used, so not including jastrow contribution.
       }
     }
     for (int iorb = 0; iorb < norbs; iorb++)
     {
+      //This is the ion gradient of exp(J(q))/exp(J(r))phi_j(q).
       iongrad_phimat[j][iorb] = jratio*(iongrad_phi[iorb]+phi[iorb]*(jgrad_quad[j]-jigradref));
-      //iongrad_phimat[j][iorb] = iongrad_phi[iorb];
     }
     W.rejectMove(iel);
   }
