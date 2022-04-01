@@ -111,7 +111,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     ScopedTimer local_timer(OffloadDotProductTimer);
     PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
           map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw]) \
-	  map(to:first[:npairs],second[:npairs])")
+	  map(to:first[:npairs], second[:npairs])")
     for (size_t iw = 0; iw < nw; iw++)
       for (size_t i = 0; i < npairs; ++i)
       {
@@ -135,6 +135,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     det_offset += (*ndets_per_excitation_level_)[ext_level];
     data_offset += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
   };
+
   if (max_ext_level >= 1)
   {
     mw_updateRatios<1>(det_offset, data_offset, ratios_list, data, sign, det0_list, dotProducts_list);
@@ -169,12 +170,13 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   {
     for (size_t iw = 0; iw < nw; iw++)
       dotProducts_list[iw].get().updateFrom();
-  }
-  for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
-  {
-    mw_updateRatios_generic(ext_level, det_offset, data_offset, ratios_list, det_calculator_, data, sign, det0_list,
-                            dotProducts_list);
-    update_offsets(ext_level);
+    for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
+    {
+      mw_updateRatios_generic(ext_level, det_offset, data_offset, ratios_list, det_calculator_, data, sign, det0_list,
+                              dotProducts_list);
+      update_offsets(ext_level);
+    }
+    // FIXME need to transfer the part of det ratios ext_level >= 6 to the device.
   }
 }
 
