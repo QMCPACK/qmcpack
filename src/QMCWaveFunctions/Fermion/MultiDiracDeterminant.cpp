@@ -429,13 +429,13 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
-  OffloadTransferTimer.start();
+    OffloadTransferTimer.start();
     ratios_to_ref_.updateTo();
     TpsiM.updateTo();
     psiMinv.updateTo();
     psiM.updateTo();
     dpsiM.updateTo();
-  OffloadTransferTimer.stop();
+    OffloadTransferTimer.stop();
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
@@ -445,13 +445,13 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-  OffloadTransferTimer.start();
+    OffloadTransferTimer.start();
     TpsiM.updateTo();
     ratios_to_ref_.updateTo();
     psiMinv.updateTo();
     psiM.updateTo();
     dpsiM.updateTo();
-  OffloadTransferTimer.stop();
+    OffloadTransferTimer.stop();
     if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
@@ -724,7 +724,6 @@ void MultiDiracDeterminant::registerTimers()
   MWInverseUpdateTimer.reset();
   OffloadTransferTimer.reset();
   OffloadTransfer2Timer.reset();
-
 }
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
@@ -819,10 +818,10 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
   const OffloadVector<ValueType>& detValues_dn = pseudo_dn.getRatiosToRefDet();
-  const Matrix<GradType>& grads_up      = grads;
-  const Matrix<GradType>& grads_dn      = pseudo_dn.grads;
-  const Matrix<ValueType>& lapls_up     = lapls;
-  const Matrix<ValueType>& lapls_dn     = pseudo_dn.lapls;
+  const Matrix<GradType>& grads_up             = grads;
+  const Matrix<GradType>& grads_dn             = pseudo_dn.grads;
+  const Matrix<ValueType>& lapls_up            = lapls;
+  const Matrix<ValueType>& lapls_dn            = pseudo_dn.lapls;
   const OffloadMatrix<ValueType>& M_up         = psiM;
   const OffloadMatrix<ValueType>& M_dn         = pseudo_dn.psiM;
   const OffloadMatrix<ValueType>& Minv_up      = psiMinv;
@@ -847,10 +846,9 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
   Matrix<GradType> B_grad_host_view(const_cast<GradType*>(B_grad.data()), B_grad.rows(), B_grad.cols());
   Matrix<ValueType> B_lapl_host_view(const_cast<ValueType*>(B_lapl.data()), B_lapl.rows(), B_lapl.cols());
   Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent, Coeff, C2node_up, C2node_dn,
-                           detValues_up_host_view, detValues_dn_host_view, grads_up, grads_dn,
-                           lapls_up, lapls_dn, M_up_host_view, M_dn_host_view, Minv_up_host_view,
-                           Minv_dn_host_view, B_grad_host_view, B_lapl_host_view, detData_local, N1, N2, NP1, NP2,
-                           lookup_tbl);
+                           detValues_up_host_view, detValues_dn_host_view, grads_up, grads_dn, lapls_up, lapls_dn,
+                           M_up_host_view, M_dn_host_view, Minv_up_host_view, Minv_dn_host_view, B_grad_host_view,
+                           B_lapl_host_view, detData_local, N1, N2, NP1, NP2, lookup_tbl);
 }
 
 
