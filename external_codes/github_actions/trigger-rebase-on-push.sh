@@ -17,7 +17,7 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls")
 
-pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha, base: .base.ref, login: .user.login}]')
+pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha, base: .base.ref, login: .user.login, auto_merge: .auto_merge}]')
 for pr in "${pr_list[@]}"; do
     BODY=$(echo "$pr" | jq -r .[0].body)
     BASE=$(echo "$pr" | jq -r .[0].base)
