@@ -4,10 +4,10 @@ on:
     branches:
       - develop
       - main
-      - github_actions_automatic_rebase
   push:
       branches:
-      - github_actions_automatic_rebase
+      - develop
+      - main
           
 jobs:
   rebase:

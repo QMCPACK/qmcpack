@@ -1,6 +1,6 @@
 set -e
 
-TARGET_BASES=("develop" "main" "github_actions_automatic_rebase")
+TARGET_BASES=("develop" "main")
 
 if [[ -z "$GITHUB_TOKEN" ]]; then
 	echo "Set the GITHUB_TOKEN env variable."
@@ -28,10 +28,8 @@ for pr in "${pr_list[@]}"; do
     # Only process if the pr wants to be autorebased, else save some cycles
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
-        AUTO_MERGE="force this to pass just to test the text appending"
         if [[ "$AUTO_MERGE" != "null" ]] && [[ " ${TARGET_BASES[*]} " =~ " ${BASE} " ]]; then
             source external_codes/github_actions/auto-rebase.sh
-            # edit pr to cause rebase
             UPDATE_PARAMETERS=$(jq --null-input \
             --arg body "${BODY}"$'\n''> AUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
             '{"body": $body}')
