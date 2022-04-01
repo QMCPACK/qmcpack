@@ -19,7 +19,7 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
 pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha}]')
 for pr in "${pr_list[@]}"; do
     BODY=$(echo "$pr" | jq -r .[0].body)
-    HEAD=$(echo "$pr" | jq -r .[0].head)
+    HEAD=$(jq -r ".after" "$GITHUB_EVENT_PATH")
     PR_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
     PR_USER_LOGIN=$(echo "$pr" | jq -r .[0].pull_request.user.login)
 
