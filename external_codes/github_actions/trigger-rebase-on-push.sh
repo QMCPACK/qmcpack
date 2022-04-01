@@ -29,7 +29,7 @@ for pr in "${pr_list[@]}"; do
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
         AUTO_MERGE="force this to pass just to test the text appending"
-        if [[ "$AUTO_MERGE" != "null" ] && [ " ${TARGET_BASES[*]} " =~ " ${BASE} " ]]; then
+        if [[ "$AUTO_MERGE" != "null" ]] && [[ " ${TARGET_BASES[*]} " =~ " ${BASE} " ]]; then
             source external_codes/github_actions/auto-rebase.sh
             # edit pr to cause rebase
             UPDATE_PARAMETERS=$(jq --null-input \
