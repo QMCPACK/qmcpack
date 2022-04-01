@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "Platforms/PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 
 namespace qmcplusplus
@@ -70,9 +70,6 @@ public:
   NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
   NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
   NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
-
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
@@ -301,7 +298,7 @@ private:
     Resource* makeClone() const override { return new MultiSlaterDetTableMethodMultiWalkerResource(*this); }
 
     /// grads of each unique determinants for multiple walkers
-    OffloadMatrix<ValueType> mw_grads;
+    Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
     /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
     OffloadVector<const ValueType*> C_otherDs_ptr_list;
     OffloadVector<const ValueType*> det_value_ptr_list;

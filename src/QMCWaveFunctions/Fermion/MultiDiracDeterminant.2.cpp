@@ -251,7 +251,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const OffloadVector<RealType>& sign,
     const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
-    OffloadMatrix<ValueType>& Grads)
+    UnpinnedOffloadMatrix<ValueType>& mw_grads)
 {
   ScopedTimer local_timer(MWbuildDotProductGradTimer);
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
@@ -262,8 +262,8 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     WorkSpace_deviceptr_list[iw] = WorkSpace_list[iw].get().device_data();
 
   auto* WorkSpace_list_ptr = WorkSpace_deviceptr_list.data();
-  auto* Grads_ptr          = Grads.data();
-  const size_t Grads_cols  = Grads.cols();
+  auto* mw_grads_ptr          = mw_grads.data();
+  const size_t Grads_cols  = mw_grads.cols();
 
   ///For tests only--- Tests will need to be fixed to avoid failure////
 //  for (size_t iw = 0; iw < nw; iw++)
@@ -274,11 +274,11 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
 //  }
   ///End of Tests
 
-  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(from:Grads_ptr[:Grads.size()]) \
+  PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2)  map(from:mw_grads_ptr[:mw_grads.size()]) \
 		                                                        map(always, to:WorkSpace_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
     for (size_t count = 0; count < getNumDets; ++count)
-      Grads_ptr[(3 * iw + dx) * Grads_cols + count] = WorkSpace_list_ptr[iw][count];
+      mw_grads_ptr[(3 * iw + dx) * Grads_cols + count] = WorkSpace_list_ptr[iw][count];
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
@@ -680,7 +680,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
     const RefVectorWithLeader<ParticleSet>& P_list,
     int iat,
-    OffloadMatrix<ValueType>& Grads)
+    UnpinnedOffloadMatrix<ValueType>& mw_grads)
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
@@ -920,7 +920,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
                                                           det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                           Grads);
+                                                          mw_grads);
   }
 
   // restore the modified column of TpsiM.
@@ -1019,7 +1019,7 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
 void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDiracDeterminant>& det_list,
                                              const RefVectorWithLeader<ParticleSet>& P_list,
                                              int iat,
-                                             OffloadMatrix<ValueType>& Grads)
+                                             UnpinnedOffloadMatrix<ValueType>& mw_grads)
 {
   const int nw                      = det_list.size();
   MultiDiracDeterminant& det_leader = det_list.getLeader();
@@ -1169,7 +1169,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
                                                           det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
                                                           TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                           *det_leader.DetSigns, WorkSpace_list, dotProducts_list,
-                                                           Grads);
+                                                          mw_grads);
   }
 
   // restore the modified column of TpsiM.
