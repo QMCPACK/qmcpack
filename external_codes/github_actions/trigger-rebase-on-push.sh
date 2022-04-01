@@ -26,6 +26,7 @@ for pr in "${pr_list[@]}"; do
     # Only process if the pr wants to be autorebased, else save some cycles
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
+        AUTO_MERGE="force this to pass just to test the text appending"
         if [[ "$AUTO_MERGE" != "null" ]]; then
             source external_codes/github_actions/auto-rebase.sh
             # edit pr to cause rebase
