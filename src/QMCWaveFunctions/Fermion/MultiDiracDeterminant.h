@@ -34,11 +34,14 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer &UpdateTimer, &RatioTimer, &MWRatioTimer, &InverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer,
+  NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTableTimer, &readMatTimer, &evalWTimer,
       &evalOrbTimer, &evalOrb1Timer;
-  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer, &MWbuildDotProductTimer, &MWbuildDotProductGradTimer;
-  NewTimer &MWevaluateDetsForPtclMoveTimer, &MWevaluateDetsAndGradsForPtclMoveTimer, &MWevaluateGradsTimer;
-  NewTimer &OffloadDotProductTimer, &MWupdateRatiosTimer,&MWDetRatioColTimer,&MWevaluateDetsOffloadTimer,&MWevaluateDetsAndGradsOffloadTimer, &OffloadevaluateGradsTimer, &MWInverseUpdateTimer,&OffloadTransferTimer,&OffloadTransfer2Timer;
+  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer, &mw_buildDotProductTimer,
+      &mw_buildDotProductGradTimer;
+  NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
+  NewTimer &offloadDotProductTimer, &mw_updateRatiosTimer, &mw_detRatioColTimer, &mw_evaluateDetsOffloadTimer,
+      &mw_evaluateDetsAndGradsOffloadTimer, &offloadevaluateGradsTimer, &mw_inverseUpdateTimer, &offloadTransferTimer,
+      &offloadTransfer2Timer;
   // Optimizable parameter
   opt_variables_type myVars;
 
@@ -51,13 +54,13 @@ public:
   template<typename DT>
   using UnpinnedOffloadMatrix = Matrix<DT, OffloadAllocator<DT>>;
 
-  using IndexVector   = SPOSet::IndexVector;
-  using ValueVector   = SPOSet::ValueVector;
-  using ValueMatrix   = SPOSet::ValueMatrix;
-  using GradVector    = SPOSet::GradVector;
-  using GradMatrix    = SPOSet::GradMatrix;
-  using HessMatrix    = SPOSet::HessMatrix;
-  using HessType      = SPOSet::HessType;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessType    = SPOSet::HessType;
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;

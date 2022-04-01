@@ -89,9 +89,8 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
     first[i]  = pairs_local[i].first;
     second[i] = pairs_local[i].second;
   }
-  OffloadTransferTimer.start();
-  pairs.updateTo();
-  OffloadTransferTimer.stop();
+
+
   app_log() << "Number of terms in pairs array: " << pairs.size() << std::endl;
   ndets_per_excitation_level.resize(nex_max + 1, 0);
   //reorder configs and det data
@@ -113,9 +112,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
   data.resize(data_local.size());
   for (size_t i = 0; i < data_local.size(); i++)
     data[i] = data_local[i];
-  OffloadTransferTimer.start();
-  data.updateTo();
-  OffloadTransferTimer.stop();
+
   assert(det_idx_order.size() == nci);
 
   // make reverse mapping (old to new) and reorder confgList by exc. lvl.
@@ -127,9 +124,13 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
     configlist_sorted[i]              = configlist_unsorted[det_idx_order[i]];
     sign[i]                           = tmp_sign[det_idx_order[i]];
   }
-  OffloadTransferTimer.start();
-  sign.updateTo();
-  OffloadTransferTimer.stop();
+
+  {
+    ScopedTimer local_timer(offloadTransferTimer);
+    sign.updateTo();
+    pairs.updateTo();
+    data.updateTo();
+  }
   // update C2nodes for new det ordering
   C2nodes_sorted.resize(C2nodes_unsorted.size());
   for (int i = 0; i < C2nodes_unsorted.size(); i++)
@@ -152,7 +153,7 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
 
 void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fromScratch)
 {
-  evalWTimer.start();
+  ScopedTimer local_timer(evalWTimer);
   if (fromScratch)
   {
     ///Force host view as no implementation of evaluate_notranspose
@@ -160,14 +161,14 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     Matrix<GradType> dpsiM_host_view(dpsiM.data(), dpsiM.rows(), dpsiM.cols());
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view);
-    OffloadTransferTimer.start();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    OffloadTransferTimer.stop();
-    //d2psiM.updateTo();
+    {
+      ScopedTimer local_timer(offloadTransferTimer);
+      psiM.updateTo();
+      dpsiM.updateTo();
+      //d2psiM.updateTo();
+    }
   }
 
-  InverseTimer.start();
 
   const auto& confgList = *ciConfigList;
 
@@ -186,17 +187,12 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
 
   std::complex<RealType> logValueRef;
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
-  log_value_ref_det_ = logValueRef;
-  InverseTimer.stop();
+  log_value_ref_det_     = logValueRef;
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      dotProducts, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
-  OffloadTransferTimer.start();
-  ratios_to_ref_.updateTo();
-  ///Pinning psiMinv to the device
-  psiMinv.updateTo();
-  OffloadTransferTimer.stop();
+
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
@@ -238,17 +234,19 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       TpsiM(i, iat) = psiM(iat, i);
   }
 
-  OffloadTransferTimer.start();
-  TpsiM.updateTo();
-  OffloadTransferTimer.stop();
+  {
+    ScopedTimer local_timer(offloadTransferTimer);
+    ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
+    TpsiM.updateTo();
+  }
 
   psiMinv_temp = psiMinv;
-  evalWTimer.stop();
 }
 
 void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, bool fromScratch)
 {
-  evalWTimer.start();
+  ScopedTimer local_timer(evalWTimer);
   if (fromScratch)
   {
     ///Force host view as no implementation of evaluate_notranspose
@@ -257,43 +255,39 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     Matrix<ValueType> d2psiM_host_view(d2psiM.data(), d2psiM.rows(), d2psiM.cols());
     Phi->evaluate_notranspose_spin(P, FirstIndex, LastIndex, psiM_host_view, dpsiM_host_view, d2psiM_host_view,
                                    dspin_psiM);
-    OffloadTransferTimer.start();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    OffloadTransferTimer.stop();
+    {
+      ScopedTimer local_timer(offloadTransferTimer);
+      psiM.updateTo();
+      dpsiM.updateTo();
+    }
   }
 
-  InverseTimer.start();
 
   const auto& confgList = *ciConfigList;
+  std::complex<RealType> logValueRef;
 
   //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
   auto it(confgList[ReferenceDeterminant].occup.begin());
-  for (size_t i = 0; i < NumPtcls; i++)
   {
-    for (size_t j = 0; j < NumPtcls; j++)
-      psiMinv(j, i) = psiM(j, *it);
-    it++;
-  }
-  for (size_t i = 0; i < NumPtcls; i++)
-  {
-    for (size_t j = 0; j < NumOrbitals; j++)
-      TpsiM(j, i) = psiM(i, j);
-  }
-
-  std::complex<RealType> logValueRef;
-  InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
-  log_value_ref_det_ = logValueRef;
-  InverseTimer.stop();
+    ScopedTimer local_timer(inverseTimer);
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      for (size_t j = 0; j < NumPtcls; j++)
+        psiMinv(j, i) = psiM(j, *it);
+      it++;
+    }
+    for (size_t i = 0; i < NumPtcls; i++)
+    {
+      for (size_t j = 0; j < NumOrbitals; j++)
+        TpsiM(j, i) = psiM(i, j);
+    }
+    InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
+    log_value_ref_det_ = logValueRef;
+  } ///Stop inverseTimerScop
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      dotProducts, ratios_to_ref_);
-  ///Pinning ratios_to_ref_ to the device.
 
-  OffloadTransferTimer.start();
-  ratios_to_ref_.updateTo();
-  psiMinv.updateTo();
-  OffloadTransferTimer.stop();
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
     it = confgList[ReferenceDeterminant].occup.begin();
@@ -348,11 +342,14 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = psiM(iat, i);
   }
-  OffloadTransferTimer.start();
-  TpsiM.updateTo();
-  OffloadTransferTimer.stop();
+
+  {
+    ScopedTimer local_timer(offloadTransferTimer);
+    ratios_to_ref_.updateTo();
+    psiMinv.updateTo();
+    TpsiM.updateTo();
+  }
   psiMinv_temp = psiMinv;
-  evalWTimer.stop();
 }
 
 
@@ -429,13 +426,14 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
       TpsiM(i, WorkingIndex) = psiV[i];
     std::copy(psiV.begin(), psiV.end(), psiM[iat - FirstIndex]);
     std::copy(new_ratios_to_ref_.begin(), new_ratios_to_ref_.end(), ratios_to_ref_.begin());
-    OffloadTransferTimer.start();
-    ratios_to_ref_.updateTo();
-    TpsiM.updateTo();
-    psiMinv.updateTo();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    OffloadTransferTimer.stop();
+    {
+      ScopedTimer local_timer(offloadTransferTimer);
+      ratios_to_ref_.updateTo();
+      TpsiM.updateTo();
+      psiMinv.updateTo();
+      psiM.updateTo();
+      dpsiM.updateTo();
+    }
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
@@ -445,13 +443,14 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-    OffloadTransferTimer.start();
-    TpsiM.updateTo();
-    ratios_to_ref_.updateTo();
-    psiMinv.updateTo();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    OffloadTransferTimer.stop();
+    {
+      ScopedTimer local_timer(offloadTransferTimer);
+      ratios_to_ref_.updateTo();
+      TpsiM.updateTo();
+      psiMinv.updateTo();
+      psiM.updateTo();
+      dpsiM.updateTo();
+    }
     if (is_spinor_)
       std::copy(dspin_psiV.begin(), dspin_psiV.end(), dspin_psiM[WorkingIndex]);
     break;
@@ -466,15 +465,14 @@ void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat, bool safe_to_del
     std::copy(psiV.begin(), psiV.end(), psiM[WorkingIndex]);
     std::copy(dpsiV.begin(), dpsiV.end(), dpsiM[WorkingIndex]);
     std::copy(d2psiV.begin(), d2psiV.end(), d2psiM[WorkingIndex]);
-
-    OffloadTransferTimer.start();
-    ratios_to_ref_.updateTo();
-    TpsiM.updateTo();
-    psiMinv.updateTo();
-    psiM.updateTo();
-    dpsiM.updateTo();
-    OffloadTransferTimer.stop();
-    //grads.updateTo();
+    {
+      ScopedTimer local_timer(offloadTransferTimer);
+      ratios_to_ref_.updateTo();
+      TpsiM.updateTo();
+      psiMinv.updateTo();
+      psiM.updateTo();
+      dpsiM.updateTo();
+    }
     if (is_spinor_)
     {
       std::copy(new_spingrads.begin(), new_spingrads.end(), spingrads.begin());
@@ -493,9 +491,10 @@ void MultiDiracDeterminant::restore(int iat)
   psiMinv_temp = psiMinv;
   for (int i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
-  OffloadTransferTimer.start();
-  TpsiM.updateTo();
-  OffloadTransferTimer.stop();
+  {
+    ScopedTimer local_timer(offloadTransferTimer);
+    TpsiM.updateTo();
+  }
   curRatio = ValueType(1);
   /*
       switch(UpdateMode)
@@ -521,8 +520,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
-      InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
+      mw_ratioTimer(*timer_manager.createTimer(ClassName + "::mw_ratio")),
+      inverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
@@ -530,21 +529,21 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
-      MWbuildDotProductTimer(*timer_manager.createTimer(ClassName + "::mwDotProduct")),
-      MWbuildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mwDotProductGrad")),
-      MWevaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mwevaluateDetPtcl")),
-      MWDetRatioColTimer(*timer_manager.createTimer(ClassName + "::mwDetRatioCol")),
-      MWevaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mwevaluateDetAndGradPtcl")),
-      MWevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mwevaluateGrad")),
-      OffloadDotProductTimer(*timer_manager.createTimer(ClassName + "::OffloadDotProd")),
-      MWupdateRatiosTimer(*timer_manager.createTimer(ClassName + "::MWupdateRatios")),
-      MWevaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
-      MWevaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
-      OffloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
-      MWInverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mwInverseUpdateTimer")),
-      OffloadTransferTimer(*timer_manager.createTimer(ClassName + "::deviceTransferMDDTimer")),
-      OffloadTransfer2Timer(*timer_manager.createTimer(ClassName + "::deviceTransferMDD2Timer")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
+      mw_buildDotProductTimer(*timer_manager.createTimer(ClassName + "::mw_dotProduct")),
+      mw_buildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mw_dotProductGrad")),
+      mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
+      mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
+      mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
+      mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
+      offloadDotProductTimer(*timer_manager.createTimer(ClassName + "::offloadDotProd")),
+      mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
+      mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
+      mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
+      offloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
+      mw_inverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mw_inverseUpdateTimer")),
+      offloadTransferTimer(*timer_manager.createTimer(ClassName + "::deviceTransferMDDTimer")),
+      offloadTransfer2Timer(*timer_manager.createTimer(ClassName + "::deviceTransferMDD2Timer")),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(s.FirstIndex),
@@ -581,8 +580,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
     : WaveFunctionComponent("MultiDiracDeterminant"),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
-      InverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
+      mw_ratioTimer(*timer_manager.createTimer(ClassName + "::mw_ratio")),
+      inverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
       buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
       readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
@@ -590,21 +589,21 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
       readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
       buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
-      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::RefDetInvUpdate")),
-      MWbuildDotProductTimer(*timer_manager.createTimer(ClassName + "::mwDotProduct")),
-      MWbuildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mwDotProductGrad")),
-      MWevaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mwevaluateDetPtcl")),
-      MWDetRatioColTimer(*timer_manager.createTimer(ClassName + "::mwDetRatioCol")),
-      MWevaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mwevaluateDetAndGradPtcl")),
-      MWevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mwevaluateGrad")),
-      OffloadDotProductTimer(*timer_manager.createTimer(ClassName + "::OffloadDotProd")),
-      MWupdateRatiosTimer(*timer_manager.createTimer(ClassName + "::MWupdateRatios")),
-      MWevaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
-      MWevaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
-      OffloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
-      MWInverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mwInverseUpdateTimer")),
-      OffloadTransferTimer(*timer_manager.createTimer(ClassName + "::deviceTransferMDDTimer")),
-      OffloadTransfer2Timer(*timer_manager.createTimer(ClassName + "::deviceTransferMDD2Timer")),
+      ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
+      mw_buildDotProductTimer(*timer_manager.createTimer(ClassName + "::mw_dotProduct")),
+      mw_buildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mw_dotProductGrad")),
+      mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
+      mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
+      mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
+      mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
+      offloadDotProductTimer(*timer_manager.createTimer(ClassName + "::offloadDotProd")),
+      mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
+      mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
+      mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
+      offloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
+      mw_inverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mw_inverseUpdateTimer")),
+      offloadTransferTimer(*timer_manager.createTimer(ClassName + "::deviceTransferMDDTimer")),
+      offloadTransfer2Timer(*timer_manager.createTimer(ClassName + "::deviceTransferMDD2Timer")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(first),
@@ -700,8 +699,8 @@ void MultiDiracDeterminant::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();
-  MWRatioTimer.reset();
-  InverseTimer.reset();
+  mw_ratioTimer.reset();
+  inverseTimer.reset();
   buildTableTimer.reset();
   readMatTimer.reset();
   evalOrbTimer.reset();
@@ -710,20 +709,19 @@ void MultiDiracDeterminant::registerTimers()
   ExtraStuffTimer.reset();
   readMatGradTimer.reset();
   buildTableGradTimer.reset();
-  MWbuildDotProductTimer.reset();
-  MWbuildDotProductGradTimer.reset();
-  MWDetRatioColTimer.reset();
-  MWevaluateDetsForPtclMoveTimer.reset();
-  MWevaluateDetsAndGradsForPtclMoveTimer.reset();
-  MWevaluateGradsTimer.reset();
-  OffloadDotProductTimer.reset();
-  MWupdateRatiosTimer.reset();
-  MWevaluateDetsOffloadTimer.reset();
-  MWevaluateDetsAndGradsOffloadTimer.reset();
-  OffloadevaluateGradsTimer.reset();
-  MWInverseUpdateTimer.reset();
-  OffloadTransferTimer.reset();
-  OffloadTransfer2Timer.reset();
+  mw_buildDotProductTimer.reset();
+  mw_buildDotProductGradTimer.reset();
+  mw_detRatioColTimer.reset();
+  mw_evaluateDetsForPtclMoveTimer.reset();
+  mw_evaluateDetsAndGradsForPtclMoveTimer.reset();
+  mw_evaluateGradsTimer.reset();
+  offloadDotProductTimer.reset();
+  mw_updateRatiosTimer.reset();
+  mw_evaluateDetsOffloadTimer.reset();
+  mw_evaluateDetsAndGradsOffloadTimer.reset();
+  offloadevaluateGradsTimer.reset();
+  mw_inverseUpdateTimer.reset();
+  offloadTransferTimer.reset();
 }
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)

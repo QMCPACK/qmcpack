@@ -108,7 +108,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
   const auto* psi_list_ptr    = psi_deviceptr_list.data();
 
   {
-    ScopedTimer local_timer(OffloadDotProductTimer);
+    ScopedTimer local_timer(offloadDotProductTimer);
     PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: dotProducts_list_ptr[:nw]) \
           map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw]) \
 	  map(to:first[:npairs], second[:npairs])")
@@ -207,14 +207,15 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
-  ScopedTimer local_timer(MWbuildDotProductTimer);
+  ScopedTimer local_timer(mw_buildDotProductTimer);
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
                                              dotProducts_list, ratios_list);
 
-  OffloadTransfer2Timer.start();
-  for (size_t iw = 0; iw < nw; iw++)
-    ratios_list[iw].get().updateFrom();
-  OffloadTransfer2Timer.stop();
+  {
+    ScopedTimer local_timer(offloadTransfer2Timer);
+    for (size_t iw = 0; iw < nw; iw++)
+      ratios_list[iw].get().updateFrom();
+  }
 }
 
 void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(
@@ -252,7 +253,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
     UnpinnedOffloadMatrix<ValueType>& mw_grads)
 {
-  ScopedTimer local_timer(MWbuildDotProductGradTimer);
+  ScopedTimer local_timer(mw_buildDotProductGradTimer);
   mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
                                              dotProducts_list, WorkSpace_list);
 
@@ -322,7 +323,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.MWevaluateDetsForPtclMoveTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateDetsForPtclMoveTimer);
   OffloadVector<ValueType> det0_list(nw, 1.0);
   OffloadVector<ValueType> curRatio_list(nw, 0.0);
   OffloadVector<size_t> confgListOccup(det_leader.NumPtcls, 0.0);
@@ -369,19 +370,20 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   det_leader.UpdateMode  = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - det_leader.FirstIndex;
 
-  det_leader.evalOrbTimer.start();
-  for (size_t iw = 0; iw < nw; iw++)
   {
-    MultiDiracDeterminant& det = (det_list[iw]);
-    Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
-    det.getPhi()->evaluateValue(P_list[iw], iat, psiV_list_host_view);
-    ///Transfer of data from host to Device
-    det_leader.OffloadTransfer2Timer.start();
-    psiV_list[iw].get().updateTo();
-    det_leader.OffloadTransfer2Timer.stop();
+    ScopedTimer local_timer(det_leader.evalOrbTimer);
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      MultiDiracDeterminant& det = (det_list[iw]);
+      Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
+      det.getPhi()->evaluateValue(P_list[iw], iat, psiV_list_host_view);
+      ///Transfer of data from host to Device
+      {
+        ScopedTimer local_timer(det.offloadTransfer2Timer);
+        psiV_list[iw].get().updateTo();
+      }
+    }
   }
-
-  det_leader.evalOrbTimer.stop();
 
   const ValueType cone(1);
   size_t success          = 0;
@@ -434,13 +436,13 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 
   psiMinv_deviceptr_list.updateTo();
   psiMinv_temp_deviceptr_list.updateTo();
-  det_leader.OffloadTransfer2Timer.start();
-  confgListOccup.updateTo();
-  det0_list.updateTo();
-  det_leader.OffloadTransfer2Timer.stop();
-
   {
-    ScopedTimer local_timer(det_leader.MWevaluateDetsOffloadTimer);
+    ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+    confgListOccup.updateTo();
+    det0_list.updateTo();
+  }
+  {
+    ScopedTimer local_timer(det_leader.mw_evaluateDetsOffloadTimer);
 
     success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1,
                                     psiMinv_temp_list_ptr, 1, nw);
@@ -480,10 +482,11 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     det_leader.omp_mw_InverseUpdateByColumn(nw, WorkingIndex, curRatio_list, psiV_temp_list, workV1_list, workV2_list,
                                             psiMinv_temp_list);
     ///This is needed by acceptMove. Eventually acceptMove will need to become mw_acceptMove.
-    det_leader.OffloadTransfer2Timer.start();
-    for (size_t iw = 0; iw < nw; iw++)
-      psiMinv_temp_list[iw].get().updateFrom();
-    det_leader.OffloadTransfer2Timer.stop();
+    {
+      ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+      for (size_t iw = 0; iw < nw; iw++)
+        psiMinv_temp_list[iw].get().updateFrom();
+    }
 
 
     det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
@@ -675,7 +678,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.MWevaluateDetsAndGradsForPtclMoveTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsForPtclMoveTimer);
   int success      = 0;
   int dummy_handle = 0;
   const size_t NumOrbitals(det_leader.NumOrbitals);
@@ -744,20 +747,23 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     WorkSpace_list.push_back(det.WorkSpace);
   }
 
-  det_leader.evalOrb1Timer.start();
-  for (size_t iw = 0; iw < nw; iw++)
   {
-    MultiDiracDeterminant& det = (det_list[iw]);
-    Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
-    Vector<GradType> dpsiV_list_host_view(dpsiV_list[iw].get().data(), dpsiV_list[iw].get().size());
-    Vector<ValueType> d2psiV_list_host_view(d2psiV_list[iw].get().data(), d2psiV_list[iw].get().size());
-    det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
-    det_leader.OffloadTransfer2Timer.start();
-    psiV_list[iw].get().updateTo();
-    dpsiV_list[iw].get().updateTo();
-    det_leader.OffloadTransfer2Timer.stop();
+    ScopedTimer local_timer(det_leader.evalOrb1Timer);
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      MultiDiracDeterminant& det = (det_list[iw]);
+      Vector<ValueType> psiV_list_host_view(psiV_list[iw].get().data(), psiV_list[iw].get().size());
+      Vector<GradType> dpsiV_list_host_view(dpsiV_list[iw].get().data(), dpsiV_list[iw].get().size());
+      Vector<ValueType> d2psiV_list_host_view(d2psiV_list[iw].get().data(), d2psiV_list[iw].get().size());
+      det.Phi->evaluateVGL(P_list[iw], iat, psiV_list_host_view, dpsiV_list_host_view, d2psiV_list_host_view);
+
+      {
+        ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+        psiV_list[iw].get().updateTo();
+        dpsiV_list[iw].get().updateTo();
+      }
+    }
   }
-  det_leader.evalOrb1Timer.stop();
 
   const auto psiMinv_rows   = psiMinv_list[0].get().rows();
   const auto psiMinv_cols   = psiMinv_list[0].get().cols();
@@ -812,12 +818,13 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   psiV_deviceptr_list.updateTo();
   psiV_temp_deviceptr_list.updateTo();
   ///Data Transfer to Device
-  det_leader.OffloadTransfer2Timer.start();
-  confgListOccup.updateTo();
-  det0_list.updateTo();
-  det_leader.OffloadTransfer2Timer.stop();
   {
-    ScopedTimer local_timer(det_leader.MWevaluateDetsAndGradsOffloadTimer);
+    ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+    confgListOccup.updateTo();
+    det0_list.updateTo();
+  }
+  {
+    ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsOffloadTimer);
     success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1,
                                     psiMinv_temp_list_ptr, 1, nw);
     if (success != 0)
@@ -860,10 +867,11 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
                                             psiMinv_temp_list);
 
     ///This is needed by Host in acceptMove. Eventually acceptMove will need to become mw_acceptMove.
-    det_leader.OffloadTransfer2Timer.start();
-    for (size_t iw = 0; iw < nw; iw++)
-      psiMinv_temp_list[iw].get().updateFrom();
-    det_leader.OffloadTransfer2Timer.stop();
+    {
+      ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+      for (size_t iw = 0; iw < nw; iw++)
+        psiMinv_temp_list[iw].get().updateFrom();
+    }
 
     det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                      TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
@@ -1018,7 +1026,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const size_t NumOrbitals(det_leader.NumOrbitals);
   const size_t NumPtcls(det_leader.NumPtcls);
 
-  ScopedTimer local_timer(det_leader.MWevaluateGradsTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateGradsTimer);
 
   RefVector<OffloadMatrix<ValueType>> dpsiMinv_list, psiMinv_list;
   RefVector<OffloadMatrix<GradType>> dpsiM_list;
@@ -1104,12 +1112,13 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   psiMinv_deviceptr_list.updateTo();
   dpsiMinv_deviceptr_list.updateTo();
   ///Data Transfer
-  det_leader.OffloadTransfer2Timer.start();
-  confgListOccup.updateTo();
-  det_leader.OffloadTransfer2Timer.stop();
+  {
+    ScopedTimer local_timer(det_leader.offloadTransfer2Timer);
+    confgListOccup.updateTo();
+  }
 
   {
-    ScopedTimer local_timer(det_leader.OffloadevaluateGradsTimer);
+    ScopedTimer local_timer(det_leader.offloadevaluateGradsTimer);
 
     for (size_t idim = 0; idim < OHMMS_DIM; idim++)
     {
@@ -1205,7 +1214,7 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   const size_t nb_cols_dotProd(dotProducts_list[0].get().cols());
   const size_t ndet_ext = (*ndets_per_excitation_level_)[EXT_LEVEL];
 
-  ScopedTimer local_timer(MWupdateRatiosTimer);
+  ScopedTimer local_timer(mw_updateRatiosTimer);
 
   OffloadVector<ValueType*> ratios_deviceptr_list(nw);
   OffloadVector<ValueType*> dotProducts_deviceptr_list(nw);
@@ -1248,23 +1257,22 @@ void MultiDiracDeterminant::omp_mw_InverseUpdateByColumn(int nw,
                                                          RefVector<OffloadVector<ValueType>>& workV2_list,
                                                          RefVector<OffloadMatrix<ValueType>>& psiMinv_list) const
 {
-  ScopedTimer local_timer(MWInverseUpdateTimer);
+  ScopedTimer local_timer(mw_inverseUpdateTimer);
   const ValueType cone(1);
   constexpr ValueType czero(0);
   OffloadVector<ValueType> czero_vec(nw, czero);
   ValueType* czero_ptr = czero_vec.device_data();
-  OffloadTransfer2Timer.start();
-  czero_vec.updateTo();
-  OffloadTransfer2Timer.stop();
 
   int success = 0;
 
   constexpr ValueType cminus_one(-1.0);
   OffloadVector<ValueType> cminus_one_vec(nw, cminus_one);
   ValueType* cminus_one_ptr = cminus_one_vec.device_data();
-  OffloadTransfer2Timer.start();
-  cminus_one_vec.updateTo();
-  OffloadTransfer2Timer.stop();
+  {
+    ScopedTimer local_timer(offloadTransfer2Timer);
+    czero_vec.updateTo();
+    cminus_one_vec.updateTo();
+  }
 
   int dummy_handle        = 0;
   const auto psiMinv_rows = psiMinv_list[0].get().rows();
