@@ -230,10 +230,10 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
                                                  std::vector<GradType>& grad_now,
                                                  std::vector<PsiValueType>& psi_list)
 {
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  const int det_id         = det_leader.getDetID(iat);
-  const int nw             = WFC_list.size();
-  const int ndets          = det_leader.Dets[det_id]->getNumDets();
+  auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  const int det_id = det_leader.getDetID(iat);
+  const int nw     = WFC_list.size();
+  const int ndets  = det_leader.Dets[det_id]->getNumDets();
 
   RefVectorWithLeader<MultiDiracDeterminant> det_list(*det_leader.Dets[det_id]);
   det_list.reserve(WFC_list.size());
@@ -252,28 +252,25 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
     det_leader.Dets[det_id]->mw_evaluateGrads(det_list, P_list, iat, mw_grads);
 
   auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
-  auto& C_otherDs_ptr_list = det_leader.mw_res_->C_otherDs_ptr_list;
   det_value_ptr_list.resize(nw);
-  C_otherDs_ptr_list.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det              = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det_value_ptr_list[iw] = (newpos) ? det.Dets[det_id]->getNewRatiosToRefDet().device_data()
                                       : det.Dets[det_id]->getRatiosToRefDet().device_data();
-    C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
 
   std::vector<ValueType> grad_now_list(nw * 3, 0);
   auto* grad_now_list_ptr      = grad_now_list.data();
   auto* mw_grads_ptr           = mw_grads.data();
   auto* psi_list_ptr           = psi_list.data();
-  auto* C_otherDs_ptr_list_ptr = C_otherDs_ptr_list.data();
+  auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   {
     ScopedTimer local_timer(det_leader.OffloadGradTimer);
     PRAGMA_OFFLOAD("omp target teams distribute map(from: psi_list_ptr[:nw]) \
                     map(from: grad_now_list_ptr[:3 * nw]) \
-                    map(always, to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw]) \
+                    map(always, to: det_value_ptr_list_ptr[:nw]) \
                     map(to: mw_grads_ptr[:mw_grads.size()])")
     for (size_t iw = 0; iw < nw; iw++)
     {
@@ -474,8 +471,8 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
     return;
   }
 
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  const int nw             = WFC_list.size();
+  auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  const int nw     = WFC_list.size();
 
   ScopedTimer local_timer(det_leader.MWRatioGradTimer);
   std::vector<PsiValueType> psi_list(nw, 0);
@@ -566,9 +563,9 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
 
   const int det_id = getDetID(iat);
 
-  const int nw             = WFC_list.size();
-  auto& det_leader         = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  const int ndets          = det_leader.Dets[det_id]->getNumDets();
+  const int nw     = WFC_list.size();
+  auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  const int ndets  = det_leader.Dets[det_id]->getNumDets();
 
   ScopedTimer local_timer(det_leader.MWRatioTimer);
 
@@ -583,25 +580,22 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
   det_leader.Dets[det_id]->mw_evaluateDetsForPtclMove(det_list, P_list, iat);
 
   auto& det_value_ptr_list = det_leader.mw_res_->det_value_ptr_list;
-  auto& C_otherDs_ptr_list = det_leader.mw_res_->C_otherDs_ptr_list;
   det_value_ptr_list.resize(nw);
-  C_otherDs_ptr_list.resize(nw);
   for (size_t iw = 0; iw < nw; iw++)
   {
     auto& det      = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
     det.UpdateMode = ORB_PBYP_RATIO;
 
     det_value_ptr_list[iw] = det.Dets[det_id]->getNewRatiosToRefDet().device_data();
-    C_otherDs_ptr_list[iw] = det.C_otherDs[det_id].device_data();
   }
 
   std::vector<PsiValueType> psi_list(nw, 0);
   auto* psi_list_ptr           = psi_list.data();
-  auto* C_otherDs_ptr_list_ptr = C_otherDs_ptr_list.data();
+  auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   OffloadRatioTimer.start();
   PRAGMA_OFFLOAD("omp target teams distribute map(always,from: psi_list_ptr[:nw]) \
-          map(always, to: det_value_ptr_list_ptr[:nw], C_otherDs_ptr_list_ptr[:nw])")
+          map(always, to: det_value_ptr_list_ptr[:nw])")
   for (size_t iw = 0; iw < nw; iw++)
   {
     PsiValueType psi_local(0);
@@ -1097,6 +1091,26 @@ void MultiSlaterDetTableMethod::prepareGroup(ParticleSet& P, int ig)
     return;
   precomputeC_otherDs(P, ig);
 }
+
+void MultiSlaterDetTableMethod::mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                                const RefVectorWithLeader<ParticleSet>& p_list,
+                                                int ig) const
+{
+  auto& det_leader = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  const size_t nw  = wfc_list.size();
+  assert(this == &det_leader);
+
+  auto& C_otherDs_ptr_list = det_leader.mw_res_->C_otherDs_ptr_list;
+  C_otherDs_ptr_list.resize(nw);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det = wfc_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
+    det.prepareGroup(p_list[iw], ig);
+    C_otherDs_ptr_list[iw] = det.C_otherDs[ig].device_data();
+  }
+  C_otherDs_ptr_list.updateTo();
+}
+
 
 void MultiSlaterDetTableMethod::precomputeC_otherDs(const ParticleSet& P, int ig)
 {

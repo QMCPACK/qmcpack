@@ -242,6 +242,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
 
+    TrialWaveFunction::mw_prepareGroup(wf_ref_list, p_ref_list, 0);
+
     TWFGrads<CoordsType::POS> grad_old(2);
 
     const int moved_elec_id = 1;

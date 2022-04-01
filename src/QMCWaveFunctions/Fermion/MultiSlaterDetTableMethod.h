@@ -119,6 +119,10 @@ public:
 */
   void prepareGroup(ParticleSet& P, int ig) override;
 
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       int ig) const override;
+
   GradType evalGrad(ParticleSet& P, int iat) override;
   //evalGrad, but returns the spin gradient as well
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
