@@ -269,7 +269,7 @@ private:
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
    * @param det0_list list of reference det value
-   * @param dotProducts_list list of dotProducts
+   * @param table_matrix_list list of table_matrix
    *
    * this is a general implementation. Support abitrary excitation level
    */
@@ -281,14 +281,14 @@ private:
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
                                const OffloadVector<ValueType>& det0_list,
-                               const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
+                               const RefVector<OffloadMatrix<ValueType>>& table_matrix_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
    * @param data_offset offset of the "data" structure
    * @param sign of determinants
    * @param det0_list list of reference det value
-   * @param dotProducts_list list of dotProducts
+   * @param table_matrix_list list of table_matrix
    *
    * this is intended to be customized based on EXT_LEVEL
    */
@@ -299,7 +299,7 @@ private:
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
                        const OffloadVector<ValueType>& det0_list,
-                       const RefVector<OffloadMatrix<ValueType>>& dotProducts_list) const;
+                       const RefVector<OffloadMatrix<ValueType>>& table_matrix_list) const;
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
@@ -310,7 +310,7 @@ private:
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
-   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratio_list returned computed ratios
    */
   void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
@@ -321,7 +321,7 @@ private:
                                                   const OffloadVector<int>& data,
                                                   const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                                   const OffloadVector<RealType>& sign,
-                                                  const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                                   const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
@@ -330,7 +330,7 @@ private:
    *@param ratios returned computed ratios
    *@param psiinv
    *@param psi
-   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param table_matrix stores all the dot products between 2 determinants (I,J)
    *@param data  (Shared by all determinants)
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
@@ -340,7 +340,7 @@ private:
                                                ValueType* restrict ratios,
                                                const OffloadMatrix<ValueType>& psiinv,
                                                const OffloadMatrix<ValueType>& psi,
-                                               OffloadMatrix<ValueType>& dotProducts,
+                                               OffloadMatrix<ValueType>& table_matrix,
                                                const OffloadVector<int>& data,
                                                const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                                const OffloadVector<RealType>& sign);
@@ -354,7 +354,7 @@ private:
                                           const OffloadVector<int>& data,
                                           const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                           const OffloadVector<RealType>& sign,
-                                          OffloadMatrix<ValueType>& dotProducts,
+                                          OffloadMatrix<ValueType>& table_matrix,
                                           OffloadVector<ValueType>& ratios);
 
   void mw_BuildDotProductsAndCalculateRatios(int nw,
@@ -365,7 +365,7 @@ private:
                                              const OffloadVector<int>& data,
                                              const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                              const OffloadVector<RealType>& sign,
-                                             const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                             const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                              const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
@@ -376,7 +376,7 @@ private:
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
    *@param det0_grad gradient value taking RatioGrad/curRatio 
-   *@param dotProducts stores all the dot products between 2 determinants (I,J)
+   *@param table_matrix stores all the dot products between 2 determinants (I,J)
    *@param dx dimension (OHMMS_DIM)
    *@param iat atom ID 
    *@param grads returned computed gradients
@@ -388,7 +388,7 @@ private:
                                                const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                                const OffloadVector<RealType>& sign,
                                                const ValueType& det0_grad,
-                                               OffloadMatrix<ValueType>& dotProducts,
+                                               OffloadMatrix<ValueType>& table_matrix,
                                                int dx,
                                                int iat,
                                                Matrix<GradType>& grads);
@@ -405,7 +405,7 @@ private:
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
    *@param WorkSpace_list list refering to det.WorkSpace  
-   *@param dotProducts_list stores all the dot products between 2 determinants (I,J)
+   *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratios_list returned computed list of gradients
    */
   void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
@@ -420,7 +420,7 @@ private:
                                                   const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
                                                   const OffloadVector<RealType>& sign,
                                                   const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& dotProducts_list,
+                                                  const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                                   UnpinnedOffloadMatrix<ValueType>& mw_grads);
 
   void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
@@ -430,7 +430,7 @@ private:
       const OffloadVector<int>& data,
       const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
       const OffloadVector<RealType>& sign,
-      OffloadMatrix<ValueType>& dotProducts,
+      OffloadMatrix<ValueType>& table_matrix,
       int iat,
       Matrix<ValueType>& ratios);
 
@@ -498,7 +498,7 @@ private:
   //spin  derivative of single-particle orbitals. Only resized if a spinor calculation
   ValueVector dspin_psiV;
 
-  OffloadMatrix<ValueType> dotProducts;
+  OffloadMatrix<ValueType> table_matrix;
 
   OffloadVector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;

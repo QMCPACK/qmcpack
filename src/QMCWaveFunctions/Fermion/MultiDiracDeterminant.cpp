@@ -190,7 +190,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   log_value_ref_det_     = logValueRef;
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
-                                     dotProducts, ratios_to_ref_);
+                                     table_matrix, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
 
 
@@ -217,7 +217,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
       BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
-                                              gradRatio[idim], dotProducts, idim, iat, grads);
+                                              gradRatio[idim], table_matrix, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
     it       = confgList[ReferenceDeterminant].occup.begin();
@@ -228,7 +228,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
     BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
-                                                             *uniquePairs, *DetSigns, dotProducts, iat, lapls);
+                                                             *uniquePairs, *DetSigns, table_matrix, iat, lapls);
     // restore matrix
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = psiM(iat, i);
@@ -286,7 +286,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   } ///Stop inverseTimerScop
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
   BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
-                                     dotProducts, ratios_to_ref_);
+                                     table_matrix, ratios_to_ref_);
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
   {
@@ -314,7 +314,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
       BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
-                                              gradRatio[idim], dotProducts, idim, iat, grads);
+                                              gradRatio[idim], table_matrix, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
     it       = confgList[ReferenceDeterminant].occup.begin();
@@ -325,7 +325,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
     BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
-                                                             *uniquePairs, *DetSigns, dotProducts, iat, lapls);
+                                                             *uniquePairs, *DetSigns, table_matrix, iat, lapls);
 
     //Adding the spin gradient
     dpsiMinv = psiMinv;
@@ -336,7 +336,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = dspin_psiM(iat, i);
     BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
-                                                             *uniquePairs, *DetSigns, dotProducts, iat, spingrads);
+                                                             *uniquePairs, *DetSigns, table_matrix, iat, spingrads);
 
     // restore matrix
     for (size_t i = 0; i < NumOrbitals; i++)
@@ -683,7 +683,7 @@ void MultiDiracDeterminant::resize()
   new_grads.resize(NumDets, nel);
   lapls.resize(NumDets, nel);
   new_lapls.resize(NumDets, nel);
-  dotProducts.resize(NumOrbitals, NumOrbitals);
+  table_matrix.resize(NumOrbitals, NumOrbitals);
   det_calculator_.resize(nel);
 
   if (is_spinor_)
