@@ -17,13 +17,13 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
         -d "${PARAMETERS}" \
 		"${URI}/repos/$GITHUB_REPOSITORY/pulls")
 
-pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha}]')
+pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha, base: .base.ref, login: .user.login}]')
 for pr in "${pr_list[@]}"; do
     BODY=$(echo "$pr" | jq -r .[0].body)
-    BASE=$(echo "$pr" | jq -r .[0].base.ref)
+    BASE=$(echo "$pr" | jq -r .[0].base)
     HEAD=$(jq -r ".after" "$GITHUB_EVENT_PATH")
     PR_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
-    PR_USER_LOGIN=$(echo "$pr" | jq -r .[0].pull_request.user.login)
+    PR_USER_LOGIN=$(echo "$pr" | jq -r .[0].login)
 
     # Only process if the pr wants to be autorebased, else save some cycles
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
