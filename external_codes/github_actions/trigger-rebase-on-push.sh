@@ -1,5 +1,6 @@
 set -e
 
+TARGET_BASES=("develop" "main" "github_actions_automatic_rebase")
 
 if [[ -z "$GITHUB_TOKEN" ]]; then
 	echo "Set the GITHUB_TOKEN env variable."
@@ -19,6 +20,7 @@ pr_list=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
 pr_list=$(echo "${pr_list}" | jq '[.[] | {pr_number: .number, body: .body, head: .base.sha}]')
 for pr in "${pr_list[@]}"; do
     BODY=$(echo "$pr" | jq -r .[0].body)
+    BASE=$(echo "$pr" | jq -r .[0].base.ref)
     HEAD=$(jq -r ".after" "$GITHUB_EVENT_PATH")
     PR_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
     PR_USER_LOGIN=$(echo "$pr" | jq -r .[0].pull_request.user.login)
@@ -27,7 +29,7 @@ for pr in "${pr_list[@]}"; do
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
         AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
         AUTO_MERGE="force this to pass just to test the text appending"
-        if [[ "$AUTO_MERGE" != "null" ]]; then
+        if [[ "$AUTO_MERGE" != "null" -a " ${TARGET_BASES[*]} " =~ " ${BASE} " ]]; then
             source external_codes/github_actions/auto-rebase.sh
             # edit pr to cause rebase
             UPDATE_PARAMETERS=$(jq --null-input \
