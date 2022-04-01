@@ -31,7 +31,7 @@ for pr in "${pr_list[@]}"; do
             source external_codes/github_actions/auto-rebase.sh
             # edit pr to cause rebase
             UPDATE_PARAMETERS=$(jq --null-input \
-            --arg body "${BODY}\r\n"'AUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
+            --arg body "${BODY}"$'\n''> AUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
             '{"body": $body}')
 
             RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
