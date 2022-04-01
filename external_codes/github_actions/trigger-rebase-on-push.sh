@@ -21,15 +21,29 @@ for pr in "${pr_list[@]}"; do
     BODY=$(echo "$pr" | jq -r .[0].body)
     HEAD=$(echo "$pr" | jq -r .[0].head)
     PR_NUMBER=$(echo "$pr" | jq -r .[0].pr_number)
-    if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
-        source external_codes/github_actions/auto-rebase.sh
-        # edit pr to cause rebase
-        UPDATE_PARAMETERS=$(jq --null-input \
-        --arg body "${BODY}"'\r\nAUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
-        '{"body": $body}')
+    PR_USER_LOGIN=$(echo "$pr" | jq -r .[0].pull_request.user.login)
 
-        RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
-        -d "${UPDATE_PARAMETERS}" \
-		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PR_NUMBER}")
+    # Only process if the pr wants to be autorebased, else save some cycles
+    if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
+        REVIEWS=$(curl -X GET -H "${AUTH_HEADER}" -H "${API_HEADER}" \
+		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PR_NUMBER}/reviews")
+
+        # Is it possible to have automerge enabled but not be approved? 
+        # if not consider skipping looking up reviews
+        AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
+        # Get the latest review's state
+        APPROVED=$(echo "$REVIEWS" | jq -r .[0].state)
+
+        if [[ "$AUTO_MERGE" != "null" -a "$APPROVED" == "APPROVED" ]]; then
+            source external_codes/github_actions/auto-rebase.sh
+            # edit pr to cause rebase
+            UPDATE_PARAMETERS=$(jq --null-input \
+            --arg body "${BODY}\r\n"'AUTOMATED CHANGE: Rebase to new base head of '"${HEAD}" \
+            '{"body": $body}')
+
+            RESULT=$(curl -X PATCH -H "${AUTH_HEADER}" -H "${API_HEADER}" \
+            -d "${UPDATE_PARAMETERS}" \
+            "${URI}/repos/$GITHUB_REPOSITORY/pulls/${PR_NUMBER}")
+        fi
     fi
 done
