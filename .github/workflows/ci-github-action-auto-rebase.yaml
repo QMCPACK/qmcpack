@@ -1,12 +1,6 @@
 on:
   pull_request_target:
-    types: [opened, synchronize, reopen, edited, auto_merge_enabled]
-    branches:
-      - develop
-      - main
-      - github_actions_automatic_rebase
-  pull_request_review:
-    types: [submitted, edited, dismissed]
+    types: [edited, auto_merge_enabled]
     branches:
       - develop
       - main
@@ -14,15 +8,12 @@ on:
   push:
       branches:
       - github_actions_automatic_rebase
-  repository_dispatch:
-    types: rebase
           
 jobs:
   rebase:
     if: |
       contains(github.event.pull_request.body, '!-> Feel free to automatically rebase this PR. <-!')
-    # && github.event.review.state == 'approved' 
-    # && github.event.pull_request.auto_merge
+      && github.event.pull_request.auto_merge
        
     runs-on: ubuntu-latest
     steps:

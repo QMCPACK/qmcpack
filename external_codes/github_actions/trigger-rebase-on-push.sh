@@ -25,16 +25,8 @@ for pr in "${pr_list[@]}"; do
 
     # Only process if the pr wants to be autorebased, else save some cycles
     if [[ "$BODY" == *"!-> Feel free to automatically rebase this PR. <-!"* ]]; then
-        REVIEWS=$(curl -X GET -H "${AUTH_HEADER}" -H "${API_HEADER}" \
-		"${URI}/repos/$GITHUB_REPOSITORY/pulls/${PR_NUMBER}/reviews")
-
-        # Is it possible to have automerge enabled but not be approved? 
-        # if not consider skipping looking up reviews
         AUTO_MERGE=$(echo "$pr" | jq -r .[0].auto_merge)
-        # Get the latest review's state
-        APPROVED=$(echo "$REVIEWS" | jq -r .[0].state)
-
-        if [[ "$AUTO_MERGE" != "null" -a "$APPROVED" == "APPROVED" ]]; then
+        if [[ "$AUTO_MERGE" != "null" ]]; then
             source external_codes/github_actions/auto-rebase.sh
             # edit pr to cause rebase
             UPDATE_PARAMETERS=$(jq --null-input \
