@@ -77,6 +77,11 @@ if [[ "$USER_LOGIN" == "null" ]]; then
 	USER_LOGIN=$(jq -r ".pull_request.user.login" "$GITHUB_EVENT_PATH")
 fi
 
+# EDIT FROM ORIGNAL SCRIPT: Add case for if this is triggered off a push request
+if [[ "$USER_LOGIN" == "null" ]]; then
+	USER_LOGIN=$PR_USER_LOGIN
+fi
+
 user_resp=$(curl -X GET -s -H "${AUTH_HEADER}" -H "${API_HEADER}" \
 	"${URI}/users/${USER_LOGIN}")
 
