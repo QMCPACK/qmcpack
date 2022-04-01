@@ -40,8 +40,8 @@ public:
       &mw_buildDotProductGradTimer;
   NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
   NewTimer &offloadDotProductTimer, &mw_updateRatiosTimer, &mw_detRatioColTimer, &mw_evaluateDetsOffloadTimer,
-      &mw_evaluateDetsAndGradsOffloadTimer, &offloadevaluateGradsTimer, &mw_inverseUpdateTimer, &offloadTransferTimer,
-      &offloadTransfer2Timer;
+      &mw_evaluateDetsAndGradsOffloadTimer, &offloadevaluateGradsTimer, &mw_inverseUpdateTimer, &transferH2D_timer,
+      &transferD2H_timer;
   // Optimizable parameter
   opt_variables_type myVars;
 
