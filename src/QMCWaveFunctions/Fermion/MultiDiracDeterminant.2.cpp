@@ -35,37 +35,39 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(
     const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
     const OffloadVector<RealType>& sign)
 {
-  buildTableTimer.start();
-  const size_t num     = psi.extent(1);
-  const size_t npairs  = pairs.size();
-  const size_t nb_cols = table_matrix.cols();
-  //MatrixOperators::product_ABt(psiinv,psi,table_matrix);
-  const int* first  = pairs.data(0);
-  const int* second = pairs.data(1);
-  for (size_t i = 0; i < npairs; ++i)
   {
-    const int I        = first[i];
-    const int J        = second[i];
-    table_matrix(I, J) = simd::dot(psiinv[I], psi[J], num);
-  }
-  table_matrix.updateTo();
-  buildTableTimer.stop();
-  readMatTimer.start();
-  const int* it2      = data.data();
-  const size_t nitems = sign.size();
-  // explore Inclusive Scan for OpenMP
-  for (size_t count = 0; count < nitems; ++count)
-  {
-    const size_t n = *it2;
-    if (count != ref)
-      ratios[count] = sign[count] * det0 *
-          (n > MaxSmallDet ? det_calculator_.evaluate(table_matrix, it2 + 1, n)
-                           : calcSmallDeterminant(n, table_matrix.data(), it2 + 1, nb_cols));
-    it2 += 3 * n + 1;
+    ScopedTimer local(buildTable_timer);
+    const size_t num    = psi.extent(1);
+    const size_t npairs = pairs.size();
+    //MatrixOperators::product_ABt(psiinv,psi,table_matrix);
+    const int* first  = pairs.data(0);
+    const int* second = pairs.data(1);
+    for (size_t i = 0; i < npairs; ++i)
+    {
+      const int I        = first[i];
+      const int J        = second[i];
+      table_matrix(I, J) = simd::dot(psiinv[I], psi[J], num);
+    }
   }
 
-  ratios[ref] = det0;
-  readMatTimer.stop();
+  {
+    ScopedTimer local(table2ratios_timer);
+    const int* it2       = data.data();
+    const size_t nitems  = sign.size();
+    const size_t nb_cols = table_matrix.cols();
+    // explore Inclusive Scan for OpenMP
+    for (size_t count = 0; count < nitems; ++count)
+    {
+      const size_t n = *it2;
+      if (count != ref)
+        ratios[count] = sign[count] * det0 *
+            (n > MaxSmallDet ? det_calculator_.evaluate(table_matrix, it2 + 1, n)
+                             : calcSmallDeterminant(n, table_matrix.data(), it2 + 1, nb_cols));
+      it2 += 3 * n + 1;
+    }
+
+    ratios[ref] = det0;
+  }
 }
 
 void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
@@ -80,103 +82,110 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
     const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
-  const size_t npairs = pairs.size();
-  const size_t num    = psi_list[0].get().extent(1);
-  const size_t nitems = sign.size();
-
-  const int* first  = pairs.data(0);
-  const int* second = pairs.data(1);
-
-
-  OffloadVector<ValueType*> psiinv_deviceptr_list(nw);
-  OffloadVector<ValueType*> psi_deviceptr_list(nw);
-  OffloadVector<ValueType*> table_matrix_deviceptr_list(nw);
-
-  for (size_t iw = 0; iw < nw; iw++)
   {
-    psiinv_deviceptr_list[iw]       = psiinv_list[iw].get().device_data();
-    psi_deviceptr_list[iw]          = psi_list[iw].get().device_data();
-    table_matrix_deviceptr_list[iw] = table_matrix_list[iw].get().device_data();
-  }
+    ScopedTimer local(buildTable_timer);
+    const size_t npairs = pairs.size();
+    const size_t num    = psi_list[0].get().extent(1);
+    const size_t nitems = sign.size();
 
-  const size_t nb_cols_psi(psi_list[0].get().cols());
-  const size_t nb_cols_psiinv(psiinv_list[0].get().cols());
-  const size_t nb_cols_dotProd(table_matrix_list[0].get().cols());
+    const int* first  = pairs.data(0);
+    const int* second = pairs.data(1);
 
-  auto* table_matrix_list_ptr = table_matrix_deviceptr_list.data();
-  const auto* psiinv_list_ptr = psiinv_deviceptr_list.data();
-  const auto* psi_list_ptr    = psi_deviceptr_list.data();
 
-  {
-    ScopedTimer local_timer(offloadDotProductTimer);
-    PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: table_matrix_list_ptr[:nw]) \
+    OffloadVector<ValueType*> psiinv_deviceptr_list(nw);
+    OffloadVector<ValueType*> psi_deviceptr_list(nw);
+    OffloadVector<ValueType*> table_matrix_deviceptr_list(nw);
+
+    for (size_t iw = 0; iw < nw; iw++)
+    {
+      psiinv_deviceptr_list[iw]       = psiinv_list[iw].get().device_data();
+      psi_deviceptr_list[iw]          = psi_list[iw].get().device_data();
+      table_matrix_deviceptr_list[iw] = table_matrix_list[iw].get().device_data();
+    }
+
+    const size_t nb_cols_psi(psi_list[0].get().cols());
+    const size_t nb_cols_psiinv(psiinv_list[0].get().cols());
+    const size_t nb_cols_dotProd(table_matrix_list[0].get().cols());
+
+    auto* table_matrix_list_ptr = table_matrix_deviceptr_list.data();
+    const auto* psiinv_list_ptr = psiinv_deviceptr_list.data();
+    const auto* psi_list_ptr    = psi_deviceptr_list.data();
+
+    {
+      ScopedTimer local_timer(offload_timer);
+      PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) map(always,to: table_matrix_list_ptr[:nw]) \
           map(always, to: psiinv_list_ptr[:nw], psi_list_ptr[:nw]) \
 	  map(to:first[:npairs], second[:npairs])")
-    for (size_t iw = 0; iw < nw; iw++)
-      for (size_t i = 0; i < npairs; ++i)
-      {
-        const int I = first[i];
-        const int J = second[i];
+      for (size_t iw = 0; iw < nw; iw++)
+        for (size_t i = 0; i < npairs; ++i)
+        {
+          const int I = first[i];
+          const int J = second[i];
 
-        ValueType table_matrix_local = 0.0;
-        for (size_t ind = 0; ind < num; ind++)
-          table_matrix_local += psiinv_list_ptr[iw][I * nb_cols_psiinv + ind] * psi_list_ptr[iw][J * nb_cols_psi + ind];
-        table_matrix_list_ptr[iw][I * nb_cols_dotProd + J] = table_matrix_local;
-      }
-  }
-  const int max_ext_level = ndets_per_excitation_level_->size() - 1;
-
-  // Compute workload changes drastically as the excitation level increases.
-  // this may need different parallelization strategy.
-  size_t det_offset  = 1;
-  size_t data_offset = 1;
-
-  auto update_offsets = [&](size_t ext_level) {
-    det_offset += (*ndets_per_excitation_level_)[ext_level];
-    data_offset += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
-  };
-
-  if (max_ext_level >= 1)
-  {
-    mw_updateRatios<1>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
-    update_offsets(1);
-  }
-
-  if (max_ext_level >= 2)
-  {
-    mw_updateRatios<2>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
-    update_offsets(2);
-  }
-
-  if (max_ext_level >= 3)
-  {
-    mw_updateRatios<3>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
-    update_offsets(3);
-  }
-
-  if (max_ext_level >= 4)
-  {
-    mw_updateRatios<4>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
-    update_offsets(4);
-  }
-
-  if (max_ext_level >= 5)
-  {
-    mw_updateRatios<5>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
-    update_offsets(5);
-  }
-
-  if (max_ext_level >= 6)
-  {
-    for (size_t iw = 0; iw < nw; iw++)
-      table_matrix_list[iw].get().updateFrom();
-    for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
-    {
-      mw_updateRatios_generic(ext_level, det_offset, data_offset, ratios_list, det_calculator_, data, sign, det0_list,
-                              table_matrix_list);
-      update_offsets(ext_level);
+          ValueType table_matrix_local = 0.0;
+          for (size_t ind = 0; ind < num; ind++)
+            table_matrix_local +=
+                psiinv_list_ptr[iw][I * nb_cols_psiinv + ind] * psi_list_ptr[iw][J * nb_cols_psi + ind];
+          table_matrix_list_ptr[iw][I * nb_cols_dotProd + J] = table_matrix_local;
+        }
     }
-    // FIXME need to transfer the part of det ratios ext_level >= 6 to the device.
+  }
+  {
+    ScopedTimer local(table2ratios_timer);
+    const int max_ext_level = ndets_per_excitation_level_->size() - 1;
+
+    // Compute workload changes drastically as the excitation level increases.
+    // this may need different parallelization strategy.
+    size_t det_offset  = 1;
+    size_t data_offset = 1;
+
+    auto update_offsets = [&](size_t ext_level) {
+      det_offset += (*ndets_per_excitation_level_)[ext_level];
+      data_offset += (*ndets_per_excitation_level_)[ext_level] * (3 * ext_level + 1);
+    };
+
+    if (max_ext_level >= 1)
+    {
+      mw_updateRatios<1>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
+      update_offsets(1);
+    }
+
+    if (max_ext_level >= 2)
+    {
+      mw_updateRatios<2>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
+      update_offsets(2);
+    }
+
+    if (max_ext_level >= 3)
+    {
+      mw_updateRatios<3>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
+      update_offsets(3);
+    }
+
+    if (max_ext_level >= 4)
+    {
+      mw_updateRatios<4>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
+      update_offsets(4);
+    }
+
+    if (max_ext_level >= 5)
+    {
+      mw_updateRatios<5>(det_offset, data_offset, ratios_list, data, sign, det0_list, table_matrix_list);
+      update_offsets(5);
+    }
+
+    if (max_ext_level >= 6)
+    {
+      for (size_t iw = 0; iw < nw; iw++)
+        table_matrix_list[iw].get().updateFrom();
+      for (size_t ext_level = 6; ext_level <= max_ext_level; ext_level++)
+      {
+        mw_updateRatios_generic(ext_level, det_offset, data_offset, ratios_list, det_calculator_, data, sign, det0_list,
+                                table_matrix_list);
+        update_offsets(ext_level);
+      }
+      // FIXME need to transfer the part of det ratios ext_level >= 6 to the device.
+    }
   }
 }
 

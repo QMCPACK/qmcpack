@@ -522,8 +522,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       mw_ratioTimer(*timer_manager.createTimer(ClassName + "::mw_ratio")),
       inverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
-      buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
-      readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
+      buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
+      table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
@@ -536,7 +536,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
       mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
       mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
-      offloadDotProductTimer(*timer_manager.createTimer(ClassName + "::offloadDotProd")),
+      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
       mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
       mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
@@ -582,8 +582,8 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       mw_ratioTimer(*timer_manager.createTimer(ClassName + "::mw_ratio")),
       inverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
-      buildTableTimer(*timer_manager.createTimer(ClassName + "::buildTable")),
-      readMatTimer(*timer_manager.createTimer(ClassName + "::readMat")),
+      buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
+      table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
@@ -596,7 +596,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
       mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
       mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
-      offloadDotProductTimer(*timer_manager.createTimer(ClassName + "::offloadDotProd")),
+      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
       mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
       mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
@@ -701,8 +701,8 @@ void MultiDiracDeterminant::registerTimers()
   RatioTimer.reset();
   mw_ratioTimer.reset();
   inverseTimer.reset();
-  buildTableTimer.reset();
-  readMatTimer.reset();
+  buildTable_timer.reset();
+  table2ratios_timer.reset();
   evalOrbTimer.reset();
   evalOrb1Timer.reset();
   evalWTimer.reset();
@@ -715,7 +715,7 @@ void MultiDiracDeterminant::registerTimers()
   mw_evaluateDetsForPtclMoveTimer.reset();
   mw_evaluateDetsAndGradsForPtclMoveTimer.reset();
   mw_evaluateGradsTimer.reset();
-  offloadDotProductTimer.reset();
+  offload_timer.reset();
   mw_updateRatiosTimer.reset();
   mw_evaluateDetsOffloadTimer.reset();
   mw_evaluateDetsAndGradsOffloadTimer.reset();
