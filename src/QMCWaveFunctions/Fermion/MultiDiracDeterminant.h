@@ -36,10 +36,9 @@ public:
   void registerTimers();
   NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer, &table2ratios_timer,
       &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
-  NewTimer &ExtraStuffTimer, &calculateRatios_timer, &calculateGradRatios_timer;
+  NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
   NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
-  NewTimer &updateRatios_timer;
-  NewTimer &offload_timer, &mw_inverseUpdateTimer, &transferH2D_timer, &transferD2H_timer;
+  NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
 
   // Optimizable parameter
   opt_variables_type myVars;
