@@ -532,14 +532,10 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       calculateGradRatios_timer(*timer_manager.createTimer(ClassName + "::mw_dotProductGrad")),
       mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
       mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
-      mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
       mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
-      mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
-      mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
-      offloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
+      updateRatios_timer(*timer_manager.createTimer(ClassName + "::updateRatios")),
       mw_inverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mw_inverseUpdate")),
+      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       transferH2D_timer(*timer_manager.createTimer(ClassName + "::transferH2D")),
       transferD2H_timer(*timer_manager.createTimer(ClassName + "::transferD2H")),
       Phi(s.Phi->makeClone()),
@@ -590,14 +586,10 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       calculateGradRatios_timer(*timer_manager.createTimer(ClassName + "::calculateGradRatios")),
       mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
       mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
-      mw_detRatioColTimer(*timer_manager.createTimer(ClassName + "::mw_detRatioCol")),
       mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      mw_updateRatiosTimer(*timer_manager.createTimer(ClassName + "::mw_updateRatios")),
-      mw_evaluateDetsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDets")),
-      mw_evaluateDetsAndGradsOffloadTimer(*timer_manager.createTimer(ClassName + "::offloadevalDetsAndGrads")),
-      offloadevaluateGradsTimer(*timer_manager.createTimer(ClassName + "::offloadevalGrads")),
+      updateRatios_timer(*timer_manager.createTimer(ClassName + "::updateRatios")),
       mw_inverseUpdateTimer(*timer_manager.createTimer(ClassName + "::mw_inverseUpdate")),
+      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       transferH2D_timer(*timer_manager.createTimer(ClassName + "::transferH2D")),
       transferD2H_timer(*timer_manager.createTimer(ClassName + "::transferD2H")),
       Phi(std::move(spos)),
@@ -705,15 +697,11 @@ void MultiDiracDeterminant::registerTimers()
   ExtraStuffTimer.reset();
   calculateRatios_timer.reset();
   calculateGradRatios_timer.reset();
-  mw_detRatioColTimer.reset();
   mw_evaluateDetsForPtclMoveTimer.reset();
   mw_evaluateDetsAndGradsForPtclMoveTimer.reset();
   mw_evaluateGradsTimer.reset();
   offload_timer.reset();
-  mw_updateRatiosTimer.reset();
-  mw_evaluateDetsOffloadTimer.reset();
-  mw_evaluateDetsAndGradsOffloadTimer.reset();
-  offloadevaluateGradsTimer.reset();
+  updateRatios_timer.reset();
   mw_inverseUpdateTimer.reset();
   transferH2D_timer.reset();
 }

@@ -450,9 +450,8 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     confgListOccup.updateTo();
     det0_list.updateTo();
   }
-  {
-    ScopedTimer local_timer(det_leader.mw_evaluateDetsOffloadTimer);
 
+  {
     success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1,
                                     psiMinv_temp_list_ptr, 1, nw);
     if (success != 0)
@@ -497,7 +496,6 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
         psiMinv_temp_list[iw].get().updateFrom();
     }
 
-
     det_leader.mw_buildTableMatrix_calculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                    TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                    *det_leader.DetSigns, table_matrix_list, new_ratios_to_ref_list);
@@ -509,6 +507,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM_list_ptr[iw][i * TpsiM_cols + WorkingIndex] = psiM_list_ptr[iw][i + psiM_cols * WorkingIndex];
   }
+
   for (size_t iw = 0; iw < nw; iw++)
   {
     MultiDiracDeterminant& det = (det_list[iw]);
@@ -831,8 +830,8 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     confgListOccup.updateTo();
     det0_list.updateTo();
   }
+
   {
-    ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsOffloadTimer);
     success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1,
                                     psiMinv_temp_list_ptr, 1, nw);
     if (success != 0)
@@ -1125,8 +1124,6 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   }
 
   {
-    ScopedTimer local_timer(det_leader.offloadevaluateGradsTimer);
-
     for (size_t idim = 0; idim < OHMMS_DIM; idim++)
     {
       success = ompBLAS::copy_batched(dummy_handle, psiMinv_rows * psiMinv_cols, psiMinv_list_ptr, 1, dpsiMinv_list_ptr,
@@ -1221,7 +1218,7 @@ void MultiDiracDeterminant::mw_updateRatios(const size_t det_offset,
   const size_t nb_cols_dotProd(table_matrix_list[0].get().cols());
   const size_t ndet_ext = (*ndets_per_excitation_level_)[EXT_LEVEL];
 
-  ScopedTimer local_timer(mw_updateRatiosTimer);
+  ScopedTimer local_timer(updateRatios_timer);
 
   OffloadVector<ValueType*> ratios_deviceptr_list(nw);
   OffloadVector<ValueType*> table_matrix_deviceptr_list(nw);

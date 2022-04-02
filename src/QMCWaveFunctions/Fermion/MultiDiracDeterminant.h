@@ -38,9 +38,8 @@ public:
       &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
   NewTimer &ExtraStuffTimer, &calculateRatios_timer, &calculateGradRatios_timer;
   NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
-  NewTimer &offload_timer, &mw_updateRatiosTimer, &mw_detRatioColTimer, &mw_evaluateDetsOffloadTimer,
-      &mw_evaluateDetsAndGradsOffloadTimer, &offloadevaluateGradsTimer, &mw_inverseUpdateTimer, &transferH2D_timer,
-      &transferD2H_timer;
+  NewTimer &updateRatios_timer;
+  NewTimer &offload_timer, &mw_inverseUpdateTimer, &transferH2D_timer, &transferD2H_timer;
 
   // Optimizable parameter
   opt_variables_type myVars;
