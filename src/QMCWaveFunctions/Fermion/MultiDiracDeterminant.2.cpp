@@ -23,8 +23,8 @@
 
 namespace qmcplusplus
 {
-/** shared function used by BuildDotProductsAndCalculateRatios */
-void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(
+/** shared function used by buildTableMatrix_calculateRatios */
+void MultiDiracDeterminant::buildTableMatrix_calculateRatios_impl(
     int ref,
     ValueType det0,
     ValueType* restrict ratios,
@@ -70,7 +70,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(
   }
 }
 
-void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
+void MultiDiracDeterminant::mw_buildTableMatrix_calculateRatios_impl(
     int nw,
     int ref,
     const OffloadVector<ValueType>& det0_list,
@@ -190,7 +190,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios_impl(
 }
 
 
-void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(
+void MultiDiracDeterminant::buildTableMatrix_calculateRatios(
     int ref,
     const OffloadMatrix<ValueType>& psiinv,
     const OffloadMatrix<ValueType>& psi,
@@ -200,11 +200,11 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(
     OffloadMatrix<ValueType>& table_matrix,
     OffloadVector<ValueType>& ratios)
 {
-  BuildDotProductsAndCalculateRatios_impl(ref, ValueType(1), ratios.data(), psiinv, psi, table_matrix, data, pairs,
+  buildTableMatrix_calculateRatios_impl(ref, ValueType(1), ratios.data(), psiinv, psi, table_matrix, data, pairs,
                                           sign);
 }
 
-void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
+void MultiDiracDeterminant::mw_buildTableMatrix_calculateRatios(
     int nw,
     int ref,
     const OffloadVector<ValueType>& det0_list,
@@ -217,7 +217,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
     const RefVector<OffloadVector<ValueType>>& ratios_list)
 {
   ScopedTimer local_timer(mw_buildDotProductTimer);
-  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
+  mw_buildTableMatrix_calculateRatios_impl(nw, ref, det0_list, psiinv_list, psi_list, data, pairs, sign,
                                              table_matrix_list, ratios_list);
 
   {
@@ -227,7 +227,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatios(
   }
 }
 
-void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(
+void MultiDiracDeterminant::buildTableMatrix_calculateRatiosGrads(
     int ref,
     const OffloadMatrix<ValueType>& psiinv,
     const OffloadMatrix<ValueType>& psi,
@@ -240,13 +240,13 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosGrads(
     int iat,
     Matrix<GradType>& grads)
 {
-  BuildDotProductsAndCalculateRatios_impl(ref, det0_grad, WorkSpace.data(), psiinv, psi, table_matrix, data, pairs,
+  buildTableMatrix_calculateRatios_impl(ref, det0_grad, WorkSpace.data(), psiinv, psi, table_matrix, data, pairs,
                                           sign);
   for (size_t count = 0; count < getNumDets(); ++count)
     grads(count, iat)[dx] = WorkSpace[count];
 }
 
-void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
+void MultiDiracDeterminant::mw_buildTableMatrix_calculateRatiosGrads(
     int nw,
     int ref,
     int iat,
@@ -263,7 +263,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
     UnpinnedOffloadMatrix<ValueType>& mw_grads)
 {
   ScopedTimer local_timer(mw_buildDotProductGradTimer);
-  mw_BuildDotProductsAndCalculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
+  mw_buildTableMatrix_calculateRatios_impl(nw, ref, det0_grad_list, psiinv_list, psi_list, data, pairs, sign,
                                              table_matrix_list, WorkSpace_list);
 
   OffloadVector<ValueType*> WorkSpace_deviceptr_list(nw);
@@ -281,7 +281,7 @@ void MultiDiracDeterminant::mw_BuildDotProductsAndCalculateRatiosGrads(
       mw_grads_ptr[(3 * iw + dx) * Grads_cols + count] = WorkSpace_list_ptr[iw][count];
 }
 
-void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
+void MultiDiracDeterminant::buildTableMatrix_calculateRatiosValueMatrixOneParticle(
     int ref,
     const OffloadMatrix<ValueType>& psiinv,
     const OffloadMatrix<ValueType>& psi,
@@ -293,7 +293,7 @@ void MultiDiracDeterminant::BuildDotProductsAndCalculateRatiosValueMatrixOnePart
     Matrix<ValueType>& ratios)
 {
   const ValueType det0 = ratios(ref, iat);
-  BuildDotProductsAndCalculateRatios_impl(ref, det0, WorkSpace.data(), psiinv, psi, table_matrix, data, pairs, sign);
+  buildTableMatrix_calculateRatios_impl(ref, det0, WorkSpace.data(), psiinv, psi, table_matrix, data, pairs, sign);
   //splatt
   for (size_t count = 0; count < getNumDets(); ++count)
     ratios(count, iat) = WorkSpace[count];
@@ -498,7 +498,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
     }
 
 
-    det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
+    det_leader.mw_buildTableMatrix_calculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                      TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                      *det_leader.DetSigns, table_matrix_list, new_ratios_to_ref_list);
 
@@ -546,7 +546,7 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
+  buildTableMatrix_calculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      table_matrix, new_ratios_to_ref_);
   // check comment above
   for (size_t i = 0; i < NumOrbitals; i++)
@@ -585,7 +585,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
+  buildTableMatrix_calculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      table_matrix, new_ratios_to_ref_);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
@@ -599,7 +599,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = dpsiV[i][idim];
     ExtraStuffTimer.stop();
-    BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+    buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                             ratioGradRef[idim] / curRatio, table_matrix, idim, WorkingIndex, new_grads);
   }
   // check comment above
@@ -641,7 +641,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
+  buildTableMatrix_calculateRatios(ReferenceDeterminant, psiMinv_temp, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      table_matrix, new_ratios_to_ref_);
   for (size_t idim = 0; idim < OHMMS_DIM; idim++)
   {
@@ -655,7 +655,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = dpsiV[i][idim];
     ExtraStuffTimer.stop();
-    BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+    buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                             ratioGradRef[idim] / curRatio, table_matrix, idim, WorkingIndex, new_grads);
   }
   //Now compute the spin gradient, same procedure as normal gradient components above
@@ -668,7 +668,7 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = dspin_psiV[i];
   ExtraStuffTimer.stop();
-  BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+  buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
                                                            *uniquePairs, *DetSigns, table_matrix, WorkingIndex,
                                                            new_spingrads);
 
@@ -882,7 +882,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
         psiMinv_temp_list[iw].get().updateFrom();
     }
 
-    det_leader.mw_BuildDotProductsAndCalculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
+    det_leader.mw_buildTableMatrix_calculateRatios(nw, det_leader.ReferenceDeterminant, det0_list, psiMinv_temp_list,
                                                      TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                      *det_leader.DetSigns, table_matrix_list, new_ratios_to_ref_list);
 
@@ -923,7 +923,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
           TpsiM_list_ptr[iw][i * TpsiM_num_cols + WorkingIndex] = dpsiV_list_ptr[iw][i][idim];
       }
 
-      det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
+      det_leader.mw_buildTableMatrix_calculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                             det_leader.getNumDets(), det0_grad_list, dpsiMinv_list,
                                                             TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                             *det_leader.DetSigns, WorkSpace_list, table_matrix_list,
@@ -965,7 +965,7 @@ void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioG);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, i)[idim];
-    BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+    buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                             ratioG, table_matrix, idim, WorkingIndex, grads);
   }
   // check comment above
@@ -995,7 +995,7 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioG);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, WorkingIndex) = dpsiM(WorkingIndex, i)[idim];
-    BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+    buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                             ratioG, table_matrix, idim, WorkingIndex, grads);
   }
 
@@ -1013,7 +1013,7 @@ void MultiDiracDeterminant::evaluateGradsWithSpin(ParticleSet& P, int iat)
   InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, WorkingIndex, ratioSG);
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = dspin_psiM(WorkingIndex, i);
-  BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+  buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
                                                            *uniquePairs, *DetSigns, table_matrix, WorkingIndex,
                                                            spingrads);
 
@@ -1172,7 +1172,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
           TpsiM_list_ptr[iw][i * TpsiM_cols + WorkingIndex] = dpsiM_list_ptr[iw][dpsiM_cols * WorkingIndex + i][idim];
 
 
-      det_leader.mw_BuildDotProductsAndCalculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
+      det_leader.mw_buildTableMatrix_calculateRatiosGrads(nw, det_leader.ReferenceDeterminant, WorkingIndex, idim,
                                                             det_leader.getNumDets(), ratioG_list, dpsiMinv_list,
                                                             TpsiM_list, *det_leader.detData, *det_leader.uniquePairs,
                                                             *det_leader.DetSigns, WorkSpace_list, table_matrix_list,

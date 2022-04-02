@@ -36,7 +36,7 @@ public:
   void registerTimers();
   NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer,
       &table2ratios_timer, &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
-  NewTimer &readMatGradTimer, &buildTableGradTimer, &ExtraStuffTimer, &mw_buildDotProductTimer,
+  NewTimer &ExtraStuffTimer, &mw_buildDotProductTimer,
       &mw_buildDotProductGradTimer;
   NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
   NewTimer &offload_timer, &mw_updateRatiosTimer, &mw_detRatioColTimer, &mw_evaluateDetsOffloadTimer,
@@ -314,7 +314,7 @@ private:
    *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratio_list returned computed ratios
    */
-  void mw_BuildDotProductsAndCalculateRatios_impl(int nw,
+  void mw_buildTableMatrix_calculateRatios_impl(int nw,
                                                   int ref,
                                                   const OffloadVector<ValueType>& det0_list,
                                                   const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
@@ -336,7 +336,7 @@ private:
    *@param pairs is the number of unique determinants (std::pair[Nb_unique_alpha][Nb_unique_beta]) (Shared by all determinants)
    *@param sign (Shared by all determinants)
    */
-  void BuildDotProductsAndCalculateRatios_impl(int ref,
+  void buildTableMatrix_calculateRatios_impl(int ref,
                                                ValueType det0,
                                                ValueType* restrict ratios,
                                                const OffloadMatrix<ValueType>& psiinv,
@@ -349,7 +349,7 @@ private:
   /** compute the ratio of the excited determinants to the reference determinant
    * @param ratios the output.
    */
-  void BuildDotProductsAndCalculateRatios(int ref,
+  void buildTableMatrix_calculateRatios(int ref,
                                           const OffloadMatrix<ValueType>& psiinv,
                                           const OffloadMatrix<ValueType>& psi,
                                           const OffloadVector<int>& data,
@@ -358,7 +358,7 @@ private:
                                           OffloadMatrix<ValueType>& table_matrix,
                                           OffloadVector<ValueType>& ratios);
 
-  void mw_BuildDotProductsAndCalculateRatios(int nw,
+  void mw_buildTableMatrix_calculateRatios(int nw,
                                              int ref,
                                              const OffloadVector<ValueType>& det0_list,
                                              const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
@@ -382,7 +382,7 @@ private:
    *@param iat atom ID 
    *@param grads returned computed gradients
    */
-  void BuildDotProductsAndCalculateRatiosGrads(int ref,
+  void buildTableMatrix_calculateRatiosGrads(int ref,
                                                const OffloadMatrix<ValueType>& psiinv,
                                                const OffloadMatrix<ValueType>& psi,
                                                const OffloadVector<int>& data,
@@ -409,7 +409,7 @@ private:
    *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratios_list returned computed list of gradients
    */
-  void mw_BuildDotProductsAndCalculateRatiosGrads(int nw,
+  void mw_buildTableMatrix_calculateRatiosGrads(int nw,
                                                   int ref,
                                                   int iat,
                                                   int dx,
@@ -424,7 +424,7 @@ private:
                                                   const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
                                                   UnpinnedOffloadMatrix<ValueType>& mw_grads);
 
-  void BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(
+  void buildTableMatrix_calculateRatiosValueMatrixOneParticle(
       int ref,
       const OffloadMatrix<ValueType>& psiinv,
       const OffloadMatrix<ValueType>& psi,

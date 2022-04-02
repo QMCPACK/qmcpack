@@ -189,7 +189,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
   InvertWithLog(psiMinv.data(), NumPtcls, NumPtcls, WorkSpace.data(), Pivot.data(), logValueRef);
   log_value_ref_det_     = logValueRef;
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+  buildTableMatrix_calculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      table_matrix, ratios_to_ref_);
   ///Pinning ratios_to_ref_ to the device.
 
@@ -216,7 +216,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
-      BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+      buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                               gradRatio[idim], table_matrix, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
@@ -227,7 +227,7 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
-    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+    buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
                                                              *uniquePairs, *DetSigns, table_matrix, iat, lapls);
     // restore matrix
     for (size_t i = 0; i < NumOrbitals; i++)
@@ -285,7 +285,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     log_value_ref_det_ = logValueRef;
   } ///Stop inverseTimerScop
   const RealType detsign = (*DetSigns)[ReferenceDeterminant];
-  BuildDotProductsAndCalculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+  buildTableMatrix_calculateRatios(ReferenceDeterminant, psiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                      table_matrix, ratios_to_ref_);
 
   for (size_t iat = 0; iat < NumPtcls; iat++)
@@ -313,7 +313,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
-      BuildDotProductsAndCalculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
+      buildTableMatrix_calculateRatiosGrads(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
                                               gradRatio[idim], table_matrix, idim, iat, grads);
     }
     dpsiMinv = psiMinv;
@@ -324,7 +324,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
-    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+    buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
                                                              *uniquePairs, *DetSigns, table_matrix, iat, lapls);
 
     //Adding the spin gradient
@@ -335,7 +335,7 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, spingradRatio);
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = dspin_psiM(iat, i);
-    BuildDotProductsAndCalculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
+    buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
                                                              *uniquePairs, *DetSigns, table_matrix, iat, spingrads);
 
     // restore matrix
@@ -527,8 +527,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
-      readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
-      buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
       mw_buildDotProductTimer(*timer_manager.createTimer(ClassName + "::mw_dotProduct")),
       mw_buildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mw_dotProductGrad")),
@@ -587,8 +585,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
       evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
       evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
-      readMatGradTimer(*timer_manager.createTimer(ClassName + "::readMatGrad")),
-      buildTableGradTimer(*timer_manager.createTimer(ClassName + "::buildTableGrad")),
       ExtraStuffTimer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
       mw_buildDotProductTimer(*timer_manager.createTimer(ClassName + "::mw_dotProduct")),
       mw_buildDotProductGradTimer(*timer_manager.createTimer(ClassName + "::mw_dotProductGrad")),
@@ -707,8 +703,6 @@ void MultiDiracDeterminant::registerTimers()
   evalOrb1Timer.reset();
   evalWTimer.reset();
   ExtraStuffTimer.reset();
-  readMatGradTimer.reset();
-  buildTableGradTimer.reset();
   mw_buildDotProductTimer.reset();
   mw_buildDotProductGradTimer.reset();
   mw_detRatioColTimer.reset();
