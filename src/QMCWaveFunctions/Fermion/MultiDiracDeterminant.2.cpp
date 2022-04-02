@@ -332,7 +332,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.mw_evaluateDetsForPtclMove_timer);
+  ScopedTimer local_timer(det_leader.evaluateDetsForPtclMove_timer);
   OffloadVector<ValueType> det0_list(nw, 1.0);
   OffloadVector<ValueType> curRatio_list(nw, 0.0);
   OffloadVector<size_t> confgListOccup(det_leader.NumPtcls, 0.0);
@@ -517,10 +517,11 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
 
 void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int iat, int refPtcl)
 {
+  ScopedTimer local_timer(evaluateDetsForPtclMove_timer);
+
   UpdateMode = ORB_PBYP_RATIO;
-  RatioTimer.start();
   {
-    ScopedTimer local_timer(evalOrbValue_timer);
+    ScopedTimer orb_timer(evalOrbValue_timer);
     Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
     Phi->evaluateValue(P, iat, psiV_host_view);
   }
@@ -551,11 +552,11 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
   // check comment above
   for (size_t i = 0; i < NumOrbitals; i++)
     TpsiM(i, WorkingIndex) = psiM(WorkingIndex, i);
-  RatioTimer.stop();
 }
 
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
 {
+  ScopedTimer local_timer(evaluateDetsAndGradsForPtclMove_timer);
   UpdateMode = ORB_PBYP_PARTIAL;
   {
     ScopedTimer local_timer(evalOrbVGL_timer);
@@ -613,9 +614,10 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const ParticleSet& P, int iat)
 {
   assert(P.isSpinor() == is_spinor_);
+  ScopedTimer local_timer(evaluateDetsAndGradsForPtclMove_timer);
   UpdateMode = ORB_PBYP_PARTIAL;
   {
-    ScopedTimer local_timer(evalOrbVGL_timer);
+    ScopedTimer orb_timer(evalOrbVGL_timer);
     // Creating Host view to call Phi->evaluateVGL
     Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
     Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
@@ -694,7 +696,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsForPtclMove_timer);
+  ScopedTimer local_timer(det_leader.evaluateDetsAndGradsForPtclMove_timer);
   int success      = 0;
   int dummy_handle = 0;
   const size_t NumOrbitals(det_leader.NumOrbitals);
@@ -1041,7 +1043,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const size_t NumOrbitals(det_leader.NumOrbitals);
   const size_t NumPtcls(det_leader.NumPtcls);
 
-  ScopedTimer local_timer(det_leader.mw_evaluateGrads_timer);
+  ScopedTimer local_timer(det_leader.evaluateGrads_timer);
 
   RefVector<OffloadMatrix<ValueType>> dpsiMinv_list, psiMinv_list;
   RefVector<OffloadMatrix<GradType>> dpsiM_list;

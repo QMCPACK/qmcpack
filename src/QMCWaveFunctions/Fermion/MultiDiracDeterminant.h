@@ -34,10 +34,10 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer, &table2ratios_timer,
-      &evalWTimer, &evalOrbValue_timer, &evalOrbVGL_timer;
+  NewTimer &inverse_timer, &buildTable_timer, &table2ratios_timer, &evalWalker_timer, &evalOrbValue_timer,
+      &evalOrbVGL_timer;
   NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
-  NewTimer &mw_evaluateDetsForPtclMove_timer, &mw_evaluateDetsAndGradsForPtclMove_timer, &mw_evaluateGrads_timer;
+  NewTimer &evaluateDetsForPtclMove_timer, &evaluateDetsAndGradsForPtclMove_timer, &evaluateGrads_timer;
   NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
 
   // Optimizable parameter
