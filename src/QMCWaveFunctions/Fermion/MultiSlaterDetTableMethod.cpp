@@ -35,7 +35,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  registerTimers();
   //Optimizable=true;
   Optimizable  = false;
   is_fermionic = true;
@@ -1070,17 +1069,6 @@ void MultiSlaterDetTableMethod::buildOptVariables()
 {
   for (size_t id = 0; id < Dets.size(); id++)
     Dets[id]->buildOptVariables((*C2node)[id]);
-}
-
-void MultiSlaterDetTableMethod::registerTimers()
-{
-  RatioTimer.reset();
-  EvalGradTimer.reset();
-  RatioGradTimer.reset();
-  PrepareGroupTimer.reset();
-  UpdateTimer.reset();
-  EvaluateTimer.reset();
-  AccRejTimer.reset();
 }
 
 void MultiSlaterDetTableMethod::prepareGroup(ParticleSet& P, int ig)

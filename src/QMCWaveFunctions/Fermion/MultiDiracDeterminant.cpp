@@ -548,7 +548,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
   Optimizable = s.Optimizable;
 
   resize();
-  registerTimers();
 }
 
 std::unique_ptr<SPOSet> MultiDiracDeterminant::clonePhi() const { return Phi->makeClone(); }
@@ -597,8 +596,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
   uniquePairs                 = std::make_shared<VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>>();
   DetSigns                    = std::make_shared<OffloadVector<RealType>>();
   ndets_per_excitation_level_ = std::make_shared<std::vector<int>>();
-
-  registerTimers();
 }
 
 ///default destructor
@@ -671,25 +668,6 @@ void MultiDiracDeterminant::resize()
     spingrads.resize(NumDets, nel);
     new_spingrads.resize(NumDets, nel);
   }
-}
-
-void MultiDiracDeterminant::registerTimers()
-{
-  inverse_timer.reset();
-  buildTable_timer.reset();
-  table2ratios_timer.reset();
-  evalOrbValue_timer.reset();
-  evalOrbVGL_timer.reset();
-  evalWalker_timer.reset();
-  updateInverse_timer.reset();
-  calculateRatios_timer.reset();
-  calculateGradRatios_timer.reset();
-  evaluateDetsForPtclMove_timer.reset();
-  evaluateDetsAndGradsForPtclMove_timer.reset();
-  evaluateGrads_timer.reset();
-  offload_timer.reset();
-  updateRatios_timer.reset();
-  transferH2D_timer.reset();
 }
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)

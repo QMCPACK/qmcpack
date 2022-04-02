@@ -66,7 +66,6 @@ struct CSFData
 class MultiSlaterDetTableMethod : public WaveFunctionComponent
 {
 public:
-  void registerTimers();
   NewTimer &RatioTimer, &offload_timer;
   NewTimer &EvalGradTimer, &RatioGradTimer;
   NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
