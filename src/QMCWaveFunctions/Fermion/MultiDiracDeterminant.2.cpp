@@ -705,13 +705,10 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   RefVector<OffloadVector<ValueType>> psiV_list, psiV_temp_list, new_ratios_to_ref_list, WorkSpace_list;
   RefVector<OffloadVector<ValueType>> d2psiV_list, workV1_list, workV2_list;
 
-
   RefVector<OffloadMatrix<ValueType>> psiMinv_temp_list, psiMinv_list, dpsiMinv_list;
   RefVector<OffloadMatrix<ValueType>> table_matrix_list, psiM_list, TpsiM_list;
 
   RefVector<OffloadVector<GradType>> dpsiV_list;
-  //RefVector<OffloadMatrix<GradType>> new_grads_list;
-
 
   OffloadVector<size_t> confgListOccup(NumPtcls, 0.0);
   OffloadVector<ValueType> curRatio_list(nw, 0.0), det0_grad_list, det0_list(nw, 1.0), ratioGradReflistIdim;
@@ -730,7 +727,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   TpsiM_list.reserve(nw);
   new_ratios_to_ref_list.reserve(nw);
-  //new_grads_list.reserve(nw);
   table_matrix_list.reserve(nw);
   dpsiMinv_list.reserve(nw);
   WorkSpace_list.reserve(nw);
@@ -741,7 +737,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
 
   det_leader.UpdateMode  = ORB_PBYP_PARTIAL;
   const int WorkingIndex = iat - det_leader.FirstIndex;
-
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -758,7 +753,6 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     psiM_list.push_back(det.psiM);
     psiMinv_temp_list.push_back(det.psiMinv_temp);
     new_ratios_to_ref_list.push_back(det.new_ratios_to_ref_);
-    //new_grads_list.push_back(det.new_grads);
     TpsiM_list.push_back(det.TpsiM);
     table_matrix_list.push_back(det.table_matrix);
     dpsiMinv_list.push_back(det.dpsiMinv);
