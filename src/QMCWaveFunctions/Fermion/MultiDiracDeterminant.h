@@ -35,9 +35,9 @@ public:
   bool Optimizable;
   void registerTimers();
   NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer, &table2ratios_timer,
-      &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
+      &evalWTimer, &evalOrbValue_timer, &evalOrbVGL_timer;
   NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
-  NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
+  NewTimer &mw_evaluateDetsForPtclMove_timer, &mw_evaluateDetsAndGradsForPtclMove_timer, &mw_evaluateGrads_timer;
   NewTimer &offload_timer, &transferH2D_timer, &transferD2H_timer;
 
   // Optimizable parameter
@@ -431,23 +431,6 @@ private:
       OffloadMatrix<ValueType>& table_matrix,
       int iat,
       Matrix<ValueType>& ratios);
-
-  //   Finish this at some point
-  inline void InverseUpdateByColumn_GRAD(ValueMatrix& Minv,
-                                         GradVector& newcol,
-                                         ValueVector& rvec,
-                                         ValueVector& rvecinv,
-                                         int colchanged,
-                                         ValueType c_ratio,
-                                         int dx)
-  {
-    c_ratio = (RealType)1.0 / c_ratio;
-    int m   = Minv.rows();
-    BLAS::gemv('N', m, m, c_ratio, Minv.data(), m, newcol[0].data() + dx, 3, 0.0, rvec.data(), 1);
-    rvec[colchanged] = (RealType)1.0 - c_ratio;
-    BLAS::copy(m, Minv.data() + colchanged, m, rvecinv.data(), 1);
-    BLAS::ger(m, m, -1.0, rvec.data(), 1, rvecinv.data(), 1, Minv.data(), m);
-  }
 
   ///reset the size: with the number of particles
   void resize();

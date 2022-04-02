@@ -172,7 +172,6 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
 
   const auto& confgList = *ciConfigList;
 
-  //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
   auto it(confgList[ReferenceDeterminant].occup.begin());
   for (size_t i = 0; i < NumPtcls; i++)
   {
@@ -213,7 +212,6 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
       for (size_t i = 0; i < NumPtcls; i++)
         psiV_temp[i] = dpsiM(iat, *(it++))[idim];
       InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
-      //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
       buildTableMatrix_calculateGradRatios(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
@@ -224,7 +222,6 @@ void MultiDiracDeterminant::evaluateForWalkerMove(const ParticleSet& P, bool fro
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = d2psiM(iat, *(it++));
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
-    //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
     buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
@@ -266,7 +263,6 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
   const auto& confgList = *ciConfigList;
   std::complex<RealType> logValueRef;
 
-  //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
   auto it(confgList[ReferenceDeterminant].occup.begin());
   {
     ScopedTimer local_timer(inverseTimer);
@@ -310,7 +306,6 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
       for (size_t i = 0; i < NumPtcls; i++)
         psiV_temp[i] = dpsiM(iat, *(it++))[idim];
       InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, gradRatio[idim]);
-      //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
       for (size_t i = 0; i < NumOrbitals; i++)
         TpsiM(i, iat) = dpsiM(iat, i)[idim];
       buildTableMatrix_calculateGradRatios(ReferenceDeterminant, dpsiMinv, TpsiM, *detData, *uniquePairs, *DetSigns,
@@ -321,7 +316,6 @@ void MultiDiracDeterminant::evaluateForWalkerMoveWithSpin(const ParticleSet& P, 
     for (size_t i = 0; i < NumPtcls; i++)
       psiV_temp[i] = d2psiM(iat, *(it++));
     InverseUpdateByColumn(dpsiMinv, psiV_temp, workV1, workV2, iat, ratioLapl);
-    //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
     for (size_t i = 0; i < NumOrbitals; i++)
       TpsiM(i, iat) = d2psiM(iat, i);
     buildTableMatrix_calculateRatiosValueMatrixOneParticle(ReferenceDeterminant, dpsiMinv, TpsiM, *detData,
@@ -518,25 +512,25 @@ void MultiDiracDeterminant::restore(int iat)
 // this has been fixed
 MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "::update")),
-      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      mw_ratioTimer(*timer_manager.createTimer(ClassName + "::mw_ratio")),
-      inverseTimer(*timer_manager.createTimer(ClassName + "::inverse")),
-      buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
-      table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
-      evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
-      evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
-      evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
-      updateInverse_timer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
-      calculateRatios_timer(*timer_manager.createTimer(ClassName + "::calculateRatios")),
-      calculateGradRatios_timer(*timer_manager.createTimer(ClassName + "::calculateGradRatios")),
-      updateRatios_timer(*timer_manager.createTimer(ClassName + "::updateRatios")),
-      mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
-      mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
-      mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      transferH2D_timer(*timer_manager.createTimer(ClassName + "::transferH2D")),
-      transferD2H_timer(*timer_manager.createTimer(ClassName + "::transferD2H")),
+      UpdateTimer(s.UpdateTimer),
+      RatioTimer(s.RatioTimer),
+      mw_ratioTimer(s.mw_ratioTimer),
+      inverseTimer(s.inverseTimer),
+      buildTable_timer(s.buildTable_timer),
+      table2ratios_timer(s.table2ratios_timer),
+      evalWTimer(s.evalWTimer),
+      evalOrbValue_timer(s.evalOrbValue_timer),
+      evalOrbVGL_timer(s.evalOrbVGL_timer),
+      updateInverse_timer(s.updateInverse_timer),
+      calculateRatios_timer(s.calculateRatios_timer),
+      calculateGradRatios_timer(s.calculateGradRatios_timer),
+      updateRatios_timer(s.updateRatios_timer),
+      mw_evaluateDetsForPtclMove_timer(s.mw_evaluateDetsForPtclMove_timer),
+      mw_evaluateDetsAndGradsForPtclMove_timer(s.mw_evaluateDetsAndGradsForPtclMove_timer),
+      mw_evaluateGrads_timer(s.mw_evaluateGrads_timer),
+      offload_timer(s.offload_timer),
+      transferH2D_timer(s.transferH2D_timer),
+      transferD2H_timer(s.transferD2H_timer),
       Phi(s.Phi->makeClone()),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(s.FirstIndex),
@@ -578,15 +572,15 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
       table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
       evalWTimer(*timer_manager.createTimer(ClassName + "::evalW")),
-      evalOrbTimer(*timer_manager.createTimer(ClassName + "::evalOrb")),
-      evalOrb1Timer(*timer_manager.createTimer(ClassName + "::evalOrbGrad")),
-      updateInverse_timer(*timer_manager.createTimer(ClassName + "::refDetInvUpdate")),
+      evalOrbValue_timer(*timer_manager.createTimer(ClassName + "::evalOrbValue")),
+      evalOrbVGL_timer(*timer_manager.createTimer(ClassName + "::evalOrbVGL")),
+      updateInverse_timer(*timer_manager.createTimer(ClassName + "::updateRefDetInv")),
       calculateRatios_timer(*timer_manager.createTimer(ClassName + "::calculateRatios")),
       calculateGradRatios_timer(*timer_manager.createTimer(ClassName + "::calculateGradRatios")),
       updateRatios_timer(*timer_manager.createTimer(ClassName + "::updateRatios")),
-      mw_evaluateDetsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
-      mw_evaluateDetsAndGradsForPtclMoveTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
-      mw_evaluateGradsTimer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
+      mw_evaluateDetsForPtclMove_timer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetPtcl")),
+      mw_evaluateDetsAndGradsForPtclMove_timer(*timer_manager.createTimer(ClassName + "::mw_evaluateDetAndGradPtcl")),
+      mw_evaluateGrads_timer(*timer_manager.createTimer(ClassName + "::mw_evaluateGrad")),
       offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       transferH2D_timer(*timer_manager.createTimer(ClassName + "::transferH2D")),
       transferD2H_timer(*timer_manager.createTimer(ClassName + "::transferD2H")),
@@ -689,15 +683,15 @@ void MultiDiracDeterminant::registerTimers()
   inverseTimer.reset();
   buildTable_timer.reset();
   table2ratios_timer.reset();
-  evalOrbTimer.reset();
-  evalOrb1Timer.reset();
+  evalOrbValue_timer.reset();
+  evalOrbVGL_timer.reset();
   evalWTimer.reset();
   updateInverse_timer.reset();
   calculateRatios_timer.reset();
   calculateGradRatios_timer.reset();
-  mw_evaluateDetsForPtclMoveTimer.reset();
-  mw_evaluateDetsAndGradsForPtclMoveTimer.reset();
-  mw_evaluateGradsTimer.reset();
+  mw_evaluateDetsForPtclMove_timer.reset();
+  mw_evaluateDetsAndGradsForPtclMove_timer.reset();
+  mw_evaluateGrads_timer.reset();
   offload_timer.reset();
   updateRatios_timer.reset();
   transferH2D_timer.reset();

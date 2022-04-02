@@ -332,7 +332,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.mw_evaluateDetsForPtclMoveTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateDetsForPtclMove_timer);
   OffloadVector<ValueType> det0_list(nw, 1.0);
   OffloadVector<ValueType> curRatio_list(nw, 0.0);
   OffloadVector<size_t> confgListOccup(det_leader.NumPtcls, 0.0);
@@ -380,7 +380,7 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
   const int WorkingIndex = iat - det_leader.FirstIndex;
 
   {
-    ScopedTimer local_timer(det_leader.evalOrbTimer);
+    ScopedTimer local_timer(det_leader.evalOrbValue_timer);
     for (size_t iw = 0; iw < nw; iw++)
     {
       MultiDiracDeterminant& det = (det_list[iw]);
@@ -519,11 +519,11 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
 {
   UpdateMode = ORB_PBYP_RATIO;
   RatioTimer.start();
-  evalOrbTimer.start();
-
-  Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
-  Phi->evaluateValue(P, iat, psiV_host_view);
-  evalOrbTimer.stop();
+  {
+    ScopedTimer local_timer(evalOrbValue_timer);
+    Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
+    Phi->evaluateValue(P, iat, psiV_host_view);
+  }
   const int WorkingIndex = (refPtcl < 0 ? iat : refPtcl) - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   const auto& confgList = *ciConfigList;
@@ -557,13 +557,14 @@ void MultiDiracDeterminant::evaluateDetsForPtclMove(const ParticleSet& P, int ia
 void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(const ParticleSet& P, int iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
-  evalOrb1Timer.start();
-  ///Using Host Views for Phi-evaluateVGL since not ported to GPU
-  Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
-  Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
-  Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
-  Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
-  evalOrb1Timer.stop();
+  {
+    ScopedTimer local_timer(evalOrbVGL_timer);
+    // Using Host Views for Phi-evaluateVGL since not ported to GPU
+    Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
+    Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
+    Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
+    Phi->evaluateVGL(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view);
+  }
   const int WorkingIndex = iat - FirstIndex;
   const auto& confgList  = *ciConfigList;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
@@ -613,13 +614,14 @@ void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMoveWithSpin(const Partic
 {
   assert(P.isSpinor() == is_spinor_);
   UpdateMode = ORB_PBYP_PARTIAL;
-  evalOrb1Timer.start();
-  ///Creating Host view to call Phi->evaluateVGL
-  Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
-  Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
-  Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
-  Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV);
-  evalOrb1Timer.stop();
+  {
+    ScopedTimer local_timer(evalOrbVGL_timer);
+    // Creating Host view to call Phi->evaluateVGL
+    Vector<ValueType> psiV_host_view(psiV.data(), psiV.size());
+    Vector<GradType> dpsiV_host_view(dpsiV.data(), dpsiV.size());
+    Vector<ValueType> d2psiV_host_view(d2psiV.data(), d2psiV.size());
+    Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV);
+  }
   const int WorkingIndex = iat - FirstIndex;
   assert(WorkingIndex >= 0 && WorkingIndex < LastIndex - FirstIndex);
   const auto& confgList = *ciConfigList;
@@ -692,7 +694,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   MultiDiracDeterminant& det_leader = det_list.getLeader();
   RefVectorWithLeader<SPOSet> phi_list(*det_leader.getPhi());
 
-  ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsForPtclMoveTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateDetsAndGradsForPtclMove_timer);
   int success      = 0;
   int dummy_handle = 0;
   const size_t NumOrbitals(det_leader.NumOrbitals);
@@ -762,7 +764,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
   }
 
   {
-    ScopedTimer local_timer(det_leader.evalOrb1Timer);
+    ScopedTimer local_timer(det_leader.evalOrbVGL_timer);
     for (size_t iw = 0; iw < nw; iw++)
     {
       MultiDiracDeterminant& det = (det_list[iw]);
@@ -1039,7 +1041,7 @@ void MultiDiracDeterminant::mw_evaluateGrads(const RefVectorWithLeader<MultiDira
   const size_t NumOrbitals(det_leader.NumOrbitals);
   const size_t NumPtcls(det_leader.NumPtcls);
 
-  ScopedTimer local_timer(det_leader.mw_evaluateGradsTimer);
+  ScopedTimer local_timer(det_leader.mw_evaluateGrads_timer);
 
   RefVector<OffloadMatrix<ValueType>> dpsiMinv_list, psiMinv_list;
   RefVector<OffloadMatrix<GradType>> dpsiM_list;
