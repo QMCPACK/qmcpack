@@ -34,10 +34,9 @@ class MultiDiracDeterminant : public WaveFunctionComponent
 public:
   bool Optimizable;
   void registerTimers();
-  NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer,
-      &table2ratios_timer, &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
-  NewTimer &ExtraStuffTimer, &mw_buildDotProductTimer,
-      &mw_buildDotProductGradTimer;
+  NewTimer &UpdateTimer, &RatioTimer, &mw_ratioTimer, &inverseTimer, &buildTable_timer, &table2ratios_timer,
+      &evalWTimer, &evalOrbTimer, &evalOrb1Timer;
+  NewTimer &ExtraStuffTimer, &calculateRatios_timer, &calculateGradRatios_timer;
   NewTimer &mw_evaluateDetsForPtclMoveTimer, &mw_evaluateDetsAndGradsForPtclMoveTimer, &mw_evaluateGradsTimer;
   NewTimer &offload_timer, &mw_updateRatiosTimer, &mw_detRatioColTimer, &mw_evaluateDetsOffloadTimer,
       &mw_evaluateDetsAndGradsOffloadTimer, &offloadevaluateGradsTimer, &mw_inverseUpdateTimer, &transferH2D_timer,
@@ -315,15 +314,15 @@ private:
    *@param ratio_list returned computed ratios
    */
   void mw_buildTableMatrix_calculateRatios_impl(int nw,
-                                                  int ref,
-                                                  const OffloadVector<ValueType>& det0_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                                  const OffloadVector<int>& data,
-                                                  const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                                  const OffloadVector<RealType>& sign,
-                                                  const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
-                                                  const RefVector<OffloadVector<ValueType>>& ratios_list);
+                                                int ref,
+                                                const OffloadVector<ValueType>& det0_list,
+                                                const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                                const RefVector<OffloadMatrix<ValueType>>& psi_list,
+                                                const OffloadVector<int>& data,
+                                                const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                                const OffloadVector<RealType>& sign,
+                                                const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
+                                                const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
@@ -337,37 +336,37 @@ private:
    *@param sign (Shared by all determinants)
    */
   void buildTableMatrix_calculateRatios_impl(int ref,
-                                               ValueType det0,
-                                               ValueType* restrict ratios,
-                                               const OffloadMatrix<ValueType>& psiinv,
-                                               const OffloadMatrix<ValueType>& psi,
-                                               OffloadMatrix<ValueType>& table_matrix,
-                                               const OffloadVector<int>& data,
-                                               const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                               const OffloadVector<RealType>& sign);
+                                             ValueType det0,
+                                             ValueType* restrict ratios,
+                                             const OffloadMatrix<ValueType>& psiinv,
+                                             const OffloadMatrix<ValueType>& psi,
+                                             OffloadMatrix<ValueType>& table_matrix,
+                                             const OffloadVector<int>& data,
+                                             const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                             const OffloadVector<RealType>& sign);
 
   /** compute the ratio of the excited determinants to the reference determinant
    * @param ratios the output.
    */
   void buildTableMatrix_calculateRatios(int ref,
-                                          const OffloadMatrix<ValueType>& psiinv,
-                                          const OffloadMatrix<ValueType>& psi,
-                                          const OffloadVector<int>& data,
-                                          const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                          const OffloadVector<RealType>& sign,
-                                          OffloadMatrix<ValueType>& table_matrix,
-                                          OffloadVector<ValueType>& ratios);
+                                        const OffloadMatrix<ValueType>& psiinv,
+                                        const OffloadMatrix<ValueType>& psi,
+                                        const OffloadVector<int>& data,
+                                        const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                        const OffloadVector<RealType>& sign,
+                                        OffloadMatrix<ValueType>& table_matrix,
+                                        OffloadVector<ValueType>& ratios);
 
   void mw_buildTableMatrix_calculateRatios(int nw,
-                                             int ref,
-                                             const OffloadVector<ValueType>& det0_list,
-                                             const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
-                                             const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                             const OffloadVector<int>& data,
-                                             const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                             const OffloadVector<RealType>& sign,
-                                             const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
-                                             const RefVector<OffloadVector<ValueType>>& ratios_list);
+                                           int ref,
+                                           const OffloadVector<ValueType>& det0_list,
+                                           const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                           const RefVector<OffloadMatrix<ValueType>>& psi_list,
+                                           const OffloadVector<int>& data,
+                                           const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                           const OffloadVector<RealType>& sign,
+                                           const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
+                                           const RefVector<OffloadVector<ValueType>>& ratios_list);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param ref ID of the reference determinant
@@ -382,17 +381,17 @@ private:
    *@param iat atom ID 
    *@param grads returned computed gradients
    */
-  void buildTableMatrix_calculateRatiosGrads(int ref,
-                                               const OffloadMatrix<ValueType>& psiinv,
-                                               const OffloadMatrix<ValueType>& psi,
-                                               const OffloadVector<int>& data,
-                                               const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                               const OffloadVector<RealType>& sign,
-                                               const ValueType& det0_grad,
-                                               OffloadMatrix<ValueType>& table_matrix,
-                                               int dx,
-                                               int iat,
-                                               Matrix<GradType>& grads);
+  void buildTableMatrix_calculateGradRatios(int ref,
+                                            const OffloadMatrix<ValueType>& psiinv,
+                                            const OffloadMatrix<ValueType>& psi,
+                                            const OffloadVector<int>& data,
+                                            const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                            const OffloadVector<RealType>& sign,
+                                            const ValueType& det0_grad,
+                                            OffloadMatrix<ValueType>& table_matrix,
+                                            int dx,
+                                            int iat,
+                                            Matrix<GradType>& grads);
 
   /** Function to calculate the ratio of the gradients of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
@@ -409,20 +408,20 @@ private:
    *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratios_list returned computed list of gradients
    */
-  void mw_buildTableMatrix_calculateRatiosGrads(int nw,
-                                                  int ref,
-                                                  int iat,
-                                                  int dx,
-                                                  int getNumDets,
-                                                  const OffloadVector<ValueType>& det0_grad_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& psi_list,
-                                                  const OffloadVector<int>& data,
-                                                  const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
-                                                  const OffloadVector<RealType>& sign,
-                                                  const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
-                                                  const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
-                                                  UnpinnedOffloadMatrix<ValueType>& mw_grads);
+  void mw_buildTableMatrix_calculateGradRatios(int nw,
+                                               int ref,
+                                               int iat,
+                                               int dx,
+                                               int getNumDets,
+                                               const OffloadVector<ValueType>& det0_grad_list,
+                                               const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
+                                               const RefVector<OffloadMatrix<ValueType>>& psi_list,
+                                               const OffloadVector<int>& data,
+                                               const VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>& pairs,
+                                               const OffloadVector<RealType>& sign,
+                                               const RefVector<OffloadVector<ValueType>>& WorkSpace_list,
+                                               const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
+                                               UnpinnedOffloadMatrix<ValueType>& mw_grads);
 
   void buildTableMatrix_calculateRatiosValueMatrixOneParticle(
       int ref,

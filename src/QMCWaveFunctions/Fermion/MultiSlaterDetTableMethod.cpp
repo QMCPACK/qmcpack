@@ -25,13 +25,9 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      bool use_pre_computing)
     : WaveFunctionComponent("MultiSlaterDetTableMethod"),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      MWRatioTimer(*timer_manager.createTimer(ClassName + "::mwratio")),
-      OffloadRatioTimer(*timer_manager.createTimer(ClassName + "::offloadRatio")),
-      OffloadGradTimer(*timer_manager.createTimer(ClassName + "::offloadGrad")),
+      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
-      MWEvalGradTimer(*timer_manager.createTimer(ClassName + "::mwevalGrad")),
       RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
-      MWRatioGradTimer(*timer_manager.createTimer(ClassName + "::mwratioGrad")),
       PrepareGroupTimer(*timer_manager.createTimer(ClassName + "::prepareGroup")),
       UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
       AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
@@ -237,7 +233,6 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
 
   RefVectorWithLeader<MultiDiracDeterminant> det_list(*det_leader.Dets[det_id]);
   det_list.reserve(WFC_list.size());
-  ScopedTimer local_timer(det_leader.MWEvalGradTimer);
   for (int iw = 0; iw < WFC_list.size(); iw++)
   {
     auto& det = WFC_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
@@ -267,7 +262,7 @@ void MultiSlaterDetTableMethod::mw_evalGrad_impl(const RefVectorWithLeader<WaveF
   auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
   {
-    ScopedTimer local_timer(det_leader.OffloadGradTimer);
+    ScopedTimer local_timer(det_leader.offload_timer);
     PRAGMA_OFFLOAD("omp target teams distribute map(from: psi_list_ptr[:nw]) \
                     map(from: grad_now_list_ptr[:3 * nw]) \
                     map(always, to: det_value_ptr_list_ptr[:nw]) \
@@ -413,6 +408,9 @@ void MultiSlaterDetTableMethod::mw_evalGrad(const RefVectorWithLeader<WaveFuncti
     return;
   }
 
+  auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
+  ScopedTimer local_timer(det_leader.EvalGradTimer);
+
   const int nw = WFC_list.size();
 
   std::vector<PsiValueType> psi_list(nw, 0);
@@ -474,7 +472,7 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
   auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
   const int nw     = WFC_list.size();
 
-  ScopedTimer local_timer(det_leader.MWRatioGradTimer);
+  ScopedTimer local_timer(det_leader.RatioGradTimer);
   std::vector<PsiValueType> psi_list(nw, 0);
   std::vector<GradType> dummy;
   dummy.resize(nw);
@@ -561,13 +559,13 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
     return;
   }
 
-  const int det_id = getDetID(iat);
 
-  const int nw     = WFC_list.size();
   auto& det_leader = WFC_list.getCastedLeader<MultiSlaterDetTableMethod>();
-  const int ndets  = det_leader.Dets[det_id]->getNumDets();
+  ScopedTimer local_timer(det_leader.RatioTimer);
 
-  ScopedTimer local_timer(det_leader.MWRatioTimer);
+  const int det_id = getDetID(iat);
+  const int nw     = WFC_list.size();
+  const int ndets  = det_leader.Dets[det_id]->getNumDets();
 
   RefVectorWithLeader<MultiDiracDeterminant> det_list(*det_leader.Dets[det_id]);
   det_list.reserve(WFC_list.size());
@@ -593,20 +591,21 @@ void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunct
   auto* psi_list_ptr           = psi_list.data();
   auto* C_otherDs_ptr_list_ptr = det_leader.mw_res_->C_otherDs_ptr_list.data();
   auto* det_value_ptr_list_ptr = det_value_ptr_list.data();
-  OffloadRatioTimer.start();
-  PRAGMA_OFFLOAD("omp target teams distribute map(always,from: psi_list_ptr[:nw]) \
-          map(always, to: det_value_ptr_list_ptr[:nw])")
-  for (size_t iw = 0; iw < nw; iw++)
   {
-    PsiValueType psi_local(0);
-    PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
-    for (size_t i = 0; i < ndets; i++)
+    ScopedTimer local_timer(det_leader.offload_timer);
+    PRAGMA_OFFLOAD("omp target teams distribute map(always,from: psi_list_ptr[:nw]) \
+          map(always, to: det_value_ptr_list_ptr[:nw])")
+    for (size_t iw = 0; iw < nw; iw++)
     {
-      psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
+      PsiValueType psi_local(0);
+      PRAGMA_OFFLOAD("omp parallel for reduction(+ : psi_local)")
+      for (size_t i = 0; i < ndets; i++)
+      {
+        psi_local += det_value_ptr_list_ptr[iw][i] * C_otherDs_ptr_list_ptr[iw][i];
+      }
+      psi_list_ptr[iw] = psi_local;
     }
-    psi_list_ptr[iw] = psi_local;
   }
-  OffloadRatioTimer.stop();
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -1077,7 +1076,6 @@ void MultiSlaterDetTableMethod::registerTimers()
 {
   RatioTimer.reset();
   EvalGradTimer.reset();
-  MWEvalGradTimer.reset();
   RatioGradTimer.reset();
   PrepareGroupTimer.reset();
   UpdateTimer.reset();

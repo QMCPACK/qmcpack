@@ -67,8 +67,8 @@ class MultiSlaterDetTableMethod : public WaveFunctionComponent
 {
 public:
   void registerTimers();
-  NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
-  NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
+  NewTimer &RatioTimer, &offload_timer;
+  NewTimer &EvalGradTimer, &RatioGradTimer;
   NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
 
   template<typename DT>
