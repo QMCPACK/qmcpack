@@ -35,8 +35,6 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
                                           const std::vector<size_t>& C2nodes_unsorted,
                                           std::vector<size_t>& C2nodes_sorted)
 {
-  ReferenceDeterminant = ref_det_id;
-
   auto& ref                        = configlist_unsorted[ref_det_id];
   auto& configlist_sorted          = *ciConfigList;
   auto& data                       = *detData;
@@ -463,7 +461,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       NumPtcls(s.NumPtcls),
       LastIndex(s.LastIndex),
       ciConfigList(s.ciConfigList),
-      ReferenceDeterminant(s.ReferenceDeterminant),
       is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
@@ -508,7 +505,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       FirstIndex(first),
       NumPtcls(nel),
       LastIndex(first + nel),
-      ReferenceDeterminant(0),
       is_spinor_(spinor)
 {
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;

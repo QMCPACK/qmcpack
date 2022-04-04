@@ -446,10 +446,8 @@ private:
   const int LastIndex;
   ///use shared_ptr
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
-  // the reference determinant never changes, so there is no need to store it.
-  // if its value is zero, then use a data from backup, but always use this one
-  // by default
-  int ReferenceDeterminant;
+  /// all the unique determinants are sorted, the id of the reference det id is always 0
+  static constexpr int ReferenceDeterminant = 0;
   // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
   const bool is_spinor_;
 
