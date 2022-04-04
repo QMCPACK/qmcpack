@@ -181,7 +181,7 @@ public:
    * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
    * ciConfigList shouldn't change during a simulation after it is sorted here
    *
-   * @param ref_det_id id of the reference determinant
+   * @param ref_det_id id of the reference determinant before sorting
    * @param configlist_unsorted config list to be loaded.
    * @param C2nodes_unsorted mapping from overall det index to unique det (configlist_unsorted) index
    * @param C2nodes_sorted mapping from overall det index to unique det (ciConfigList) index
