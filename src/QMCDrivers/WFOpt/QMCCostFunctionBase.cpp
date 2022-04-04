@@ -130,7 +130,8 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   //reset the wave function
   resetPsi();
   //evaluate new local energies
-  NumWalkersEff = correlatedSampling(needGrad);
+  EffectiveWeight effective_weight = correlatedSampling(needGrad);
+  IsValid = isEffectiveWeightValid(effective_weight);
   return computedCost();
 }
 
@@ -154,8 +155,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   curVar     = SumValue[SUM_ESQ_BARE] * wgtinv - curAvg * curAvg;
   curVar_abs = SumValue[SUM_ABSE_WGT] / SumValue[SUM_WGT];
   // app_log() << "curVar     = " << curVar
-  //     << "   curAvg     = " << curAvg
-  //     << "   NumWalkersEff     = " << NumWalkersEff << std::endl;
+  //     << "   curAvg     = " << curAvg << std::endl;
   // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << std::endl;
   // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << std::endl;
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
@@ -171,21 +171,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
     CostValue += w_en * curAvg_w;
   if (std::abs(w_w) > small)
     CostValue += w_w * curVar;
-  //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-  // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << std::endl;
-  IsValid = true;
-  if (NumWalkersEff < NumSamples * MinNumWalkers)
-  //    if (NumWalkersEff < MinNumWalkers)
-  {
-    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
-            << std::endl
-            << "  Number of effective walkers (samples) / total number of samples = "
-            << (1.0 * NumWalkersEff) / NumSamples << std::endl
-            << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
-            << "  If this message appears frequently. You might have to be cautious. " << std::endl
-            << "  Find info about parameter \"minwalkers\" in the user manual!");
-    IsValid = false;
-  }
   return CostValue;
 }
 
@@ -206,8 +191,8 @@ void QMCCostFunctionBase::Report()
     if (msg_stream)
     {
       msg_stream->precision(8);
-      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
-                  << NumWalkersEff << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
+      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue
+                  << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
                   << std::setw(16) << curVar << std::setw(16) << curVar_abs << std::endl;
       *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i = 0; i < OptVariables.size(); i++)
@@ -1049,6 +1034,20 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   }
 }
 
+bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weight) const
+{
+  app_log() << "Effective weight of all the samples measured by correlated sampling is "
+          << effective_weight << std::endl;
+  if (effective_weight < MinNumWalkers)
+  {
+    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = " << MinNumWalkers << std::endl
+            << "  If this message appears frequently. You might have to be cautious. " << std::endl
+            << "  Find info about parameter \"minwalkers\" in the user manual!");
+    return false;
+  }
+
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.
