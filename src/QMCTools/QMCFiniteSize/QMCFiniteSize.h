@@ -6,7 +6,6 @@
 #include "Particle/ParticleSetPool.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "einspline/bspline_structs.h"
-#include "einspline/nubspline_structs.h"
 
 namespace qmcplusplus
 {
@@ -20,30 +19,30 @@ namespace qmcplusplus
 class QMCFiniteSize : public QMCAppBase, QMCTraits
 {
 public:
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
-  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType mRealType;
-  typedef SkParserBase::Grid_t Grid_t;
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::FullPrecRealType FullPrecRealType;
-  typedef QMCTraits::PosType PosType;
+  using LRHandlerType    = LRCoulombSingleton::LRHandlerType;
+  using GridType         = LRCoulombSingleton::GridType;
+  using RadFunctorType   = LRCoulombSingleton::RadFunctorType;
+  using mRealType        = LRHandlerType::mRealType;
+  using Grid_t           = SkParserBase::Grid_t;
+  using RealType         = QMCTraits::RealType;
+  using FullPrecRealType = QMCTraits::FullPrecRealType;
+  using PosType          = QMCTraits::PosType;
   QMCFiniteSize();
   QMCFiniteSize(SkParserBase* skparser_i);
   ~QMCFiniteSize(){};
 
 
   inline void setSkParser(SkParserBase* skparser_i) { skparser = skparser_i; };
-  bool validateXML();
-  bool execute();
+  bool validateXML() override;
+  bool execute() override;
 
   void build_spherical_grid(IndexType mtheta, IndexType mphi);
   void getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem);
   UBspline_3d_d* getSkSpline(vector<RealType> sk, RealType limit = 1.0);
   RealType sphericalAvgSk(UBspline_3d_d* spline, RealType k);
 
-  RealType integrate_spline(NUBspline_1d_d* spline, RealType a, RealType b, IndexType N);
-  NUBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
+  RealType integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N);
+  UBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
 
   void initialize();
   void calcPotentialCorrection();
@@ -62,7 +61,7 @@ private:
   vector<PosType> sphericalgrid;
   GridType* myGrid;
   std::unique_ptr<LRHandlerType> AA;
-  RadFunctorType* rVs;
+  std::unique_ptr<RadFunctorType> rVs;
   bool processPWH(xmlNodePtr cur);
   void wfnPut(xmlNodePtr cur);
   void initBreakup();

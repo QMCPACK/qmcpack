@@ -31,21 +31,20 @@ namespace qmcplusplus
 // PBC case
 TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.LR_dim_cutoff = 40;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.LR_dim_cutoff = 40;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -58,13 +57,11 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -125,20 +122,18 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 // test SR and LR pieces separately
 TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.LR_dim_cutoff = 40;
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.LR_dim_cutoff = 40;
-  Lattice.reset();
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -150,12 +145,11 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -169,7 +163,6 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
-  elec.Lattice               = Lattice;
   elec.createSK();
 
   // The call to resetGroups is needed transfer the SpeciesSet
@@ -228,20 +221,18 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
 // 3 H atoms randomly distributed in a box
 TEST_CASE("fccz h3", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.LR_dim_cutoff = 40;
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.LR_dim_cutoff = 40;
-  Lattice.reset();
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(3);
+  ions.create({3});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -256,11 +247,10 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -274,7 +264,6 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   int massIdx                = tspecies.addAttribute("mass");
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
-  elec.Lattice               = Lattice;
   elec.createSK();
 
   // The call to resetGroups is needed transfer the SpeciesSet

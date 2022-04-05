@@ -37,7 +37,7 @@ namespace qmcplusplus
 class FakeUpdate : public QMCUpdateBase
 {
 public:
-  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
       : QMCUpdateBase(w, psi, h, rg)
   {}
 
@@ -48,9 +48,10 @@ TEST_CASE("QMCUpdate", "[drivers]")
 {
   Communicate* c = OHMMS::Controller;
 
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  MCWalkerConfiguration elec(simulation_cell);
   elec.setName("e");
-  elec.create(1);
+  elec.create({1});
   elec.createWalkers(1);
 
   SpeciesSet& tspecies         = elec.getSpeciesSet();

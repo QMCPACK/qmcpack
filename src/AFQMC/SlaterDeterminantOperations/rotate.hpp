@@ -614,7 +614,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
  *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] L[i][k][n]
  *       - In collinear case, two separate calls are made for each spin channel.
  *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] L[i][k][n]   // [si] == [s][i] combined spinor index
- *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
+ *       - In this case, to preserve matrix dimensions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank(MultiArray2DA&& Aai,
@@ -661,7 +661,7 @@ void getLank(MultiArray2DA&& Aai,
  *   - Closed/Collinear:  L[a][n][k] = sum_i A[a][i] conj(L[k][i][n])
  *       - In collinear case, two separate calls are made for each spin channel.
  *   - Non-collinear: L[a][n][sk] = sum_i A[a][si] conj(L[k][i][n])   // [si] == [s][i] combined spinor index
- *       - In this case, to preserve matrix dimenions, [s][k] --> [sk] is kept as a single index.
+ *       - In this case, to preserve matrix dimensions, [s][k] --> [sk] is kept as a single index.
  */
 template<class MultiArray2DA, class MultiArray3DB, class MultiArray3DC, class MultiArray2D>
 void getLank_from_Lkin(MultiArray2DA&& Aai,

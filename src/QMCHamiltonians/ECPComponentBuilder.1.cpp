@@ -21,9 +21,9 @@ namespace qmcplusplus
 {
 void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
 {
-  mGridType* grid_semilocal = 0;
-  RealType rmax             = pp_nonloc->Rmax;
-  cur                       = cur->children;
+  std::unique_ptr<mGridType> grid_semilocal;
+  RealType rmax = pp_nonloc->Rmax;
+  cur           = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)cur->name);
@@ -35,7 +35,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
     else if (cname == "vps")
     {
       //should be able to overwrite rmax
-      int l           = angMon[XMLAttrString{cur, "l"}];
+      int l           = angMon[getXMLAttributeValue(cur, "l")];
       Lmax            = std::max(l, Lmax);
       xmlNodePtr cur1 = cur->children;
       while (cur1 != NULL)
@@ -43,7 +43,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
         std::string cname1((const char*)cur1->name);
         if (cname1 == "basisGroup")
         {
-          pp_nonloc->add(l, createVrWithBasisGroup(cur1, grid_semilocal));
+          pp_nonloc->add(l, createVrWithBasisGroup(cur1, grid_semilocal.get()));
         }
         //else if(cname1 == "data")
         //{
@@ -62,7 +62,7 @@ void ECPComponentBuilder::addSemiLocal(xmlNodePtr cur)
 ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid)
 {
   //todo rcut should be reset if necessary
-  typedef GaussianTimesRN<RealType> InFuncType;
+  using InFuncType = GaussianTimesRN<RealType>;
   InFuncType a;
   a.putBasisGroup(cur);
   bool ignore        = true;
@@ -78,12 +78,12 @@ ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithBasis
   app_log() << "  calculated cutoff for " << eps << " = " << rout << std::endl;
   int ng = agrid->size();
   //all ways reset grid. Ye Luo
-  GridType* agrid_new;
+  std::unique_ptr<GridType> agrid_new;
   //if(agrid->GridTag != LINEAR_1DGRID)// || rout > agrid->rmax())
   {
     RealType ri = 0.0;
     RealType rf = std::max(rout, agrid->rmax());
-    agrid_new   = new LinearGrid<RealType>;
+    agrid_new   = std::make_unique<LinearGrid<RealType>>();
     agrid_new->set(ri, rf, ng);
     app_log() << "  Reset the grid for SemiLocal component to a LinearGrid. " << std::endl;
   }
@@ -93,7 +93,7 @@ ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithBasis
     v[ig] = a.f((*agrid_new)[ig]);
   }
   v[ng - 1]                = 0.0;
-  RadialPotentialType* app = new RadialPotentialType(agrid_new, v);
+  RadialPotentialType* app = new RadialPotentialType(std::move(agrid_new), v);
   app->spline();
   return app;
 }
@@ -111,8 +111,9 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     return; //something is wrong
 
   std::string vFormat("V");
-  const XMLAttrString v_str(cur, "format");
-  if (!v_str.empty()) vFormat = v_str;
+  const std::string v_str(getXMLAttributeValue(cur, "format"));
+  if (!v_str.empty())
+    vFormat = v_str;
 
   int vPowerCorrection = 1;
   if (vFormat == "r*V")
@@ -124,9 +125,9 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
   {
     app_log() << "  Local pseudopotential format = V" << std::endl;
   }
-  typedef GaussianTimesRN<RealType> InFuncType;
-  GridType* grid_local      = 0;
-  mGridType* grid_local_inp = 0;
+  using InFuncType = GaussianTimesRN<RealType>;
+  std::unique_ptr<GridType> grid_local;
+  std::unique_ptr<mGridType> grid_local_inp;
   InFuncType vr;
   bool bareCoulomb = true;
   cur              = cur->children;
@@ -144,22 +145,22 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
     }
     else if (cname == "data")
     {
-      pp_loc = std::unique_ptr<RadialPotentialType>(createVrWithData(cur, grid_local_inp, vPowerCorrection));
+      pp_loc = std::unique_ptr<RadialPotentialType>(createVrWithData(cur, grid_local_inp.get(), vPowerCorrection));
       app_log() << "  Local pseduopotential in a <data/>" << std::endl;
       return;
     }
     cur = cur->next;
   }
-  if (grid_local_inp == 0)
+  if (grid_local_inp == nullptr)
   {
-    if (grid_global == 0)
+    if (grid_global == nullptr)
       myComm->barrier_and_abort("ECPComponentBuilder::buildLocal Missing grid information. ");
-    grid_local = new LinearGrid<RealType>;
+    grid_local = std::make_unique<LinearGrid<RealType>>();
     grid_local->set(grid_global->rmin(), grid_global->rmax(), grid_global->size());
   }
   else
   {
-    grid_local = new LinearGrid<RealType>;
+    grid_local = std::make_unique<LinearGrid<RealType>>();
     grid_local->set(grid_local_inp->rmin(), grid_local_inp->rmax(), grid_local_inp->size());
   }
   if (grid_local->GridTag == CUSTOM_1DGRID)
@@ -174,7 +175,7 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       v.resize(3);
       for (int ig = 0; ig < 3; ig++)
         v[ig] = 1.0;
-      pp_loc = std::make_unique<RadialPotentialType>(grid_local, v);
+      pp_loc = std::make_unique<RadialPotentialType>(std::move(grid_local), v);
       pp_loc->spline(0, 0.0, 2, 0.0);
     }
     else
@@ -207,13 +208,13 @@ void ECPComponentBuilder::buildLocal(xmlNodePtr cur)
       }
       v[0]      = 2.0 * v[1] - v[2];
       v[ng - 1] = 1.0;
-      pp_loc    = std::make_unique<RadialPotentialType>(grid_local, v);
+      pp_loc    = std::make_unique<RadialPotentialType>(std::move(grid_local), v);
       pp_loc->spline(); //use the fixed conditions
     }
   }
 }
 
-ECPComponentBuilder::mGridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, bool useLinear)
+std::unique_ptr<ECPComponentBuilder::mGridType> ECPComponentBuilder::createGrid(xmlNodePtr cur, bool useLinear)
 {
   mRealType ri     = 1e-6;
   mRealType rf     = 100.0;
@@ -237,10 +238,10 @@ ECPComponentBuilder::mGridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, 
   radAttrib.add(ascale, "scale");
   radAttrib.add(astep, "step");
   radAttrib.put(cur);
-  std::map<std::string, mGridType*>::iterator git(grid_inp.find(gridID));
+  auto git = grid_inp.find(gridID);
   if (git != grid_inp.end())
   {
-    return (*git).second; //use the same grid
+    return (*git).second->makeClone(); //use the same grid
   }
   //overwrite the grid type to linear starting at 0.0
   if (useLinear)
@@ -248,13 +249,13 @@ ECPComponentBuilder::mGridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, 
     gridType = "linear";
     ri       = 0.0;
   }
-  mGridType* agrid = 0;
+  std::unique_ptr<mGridType> agrid;
   if (gridType == "log")
   {
     if (ascale > 0.0)
     {
       app_log() << "   Log grid scale=" << ascale << " step=" << astep << " npts=" << npts << std::endl;
-      agrid = new LogGridZero<mRealType>;
+      agrid = std::make_unique<LogGridZero<mRealType>>();
       agrid->set(astep, ascale, npts);
     }
     else
@@ -263,13 +264,13 @@ ECPComponentBuilder::mGridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, 
       {
         ri = std::numeric_limits<mRealType>::epsilon();
       }
-      agrid = new LogGrid<mRealType>;
+      agrid = std::make_unique<LogGrid<mRealType>>();
       agrid->set(ri, rf, npts);
     }
   }
   else if (gridType == "linear")
   {
-    agrid = new LinearGrid<mRealType>;
+    agrid = std::make_unique<LinearGrid<mRealType>>();
     if (astep > 0.0)
     {
       npts = static_cast<int>((rf - ri) / astep) + 1;
@@ -288,7 +289,7 @@ ECPComponentBuilder::mGridType* ECPComponentBuilder::createGrid(xmlNodePtr cur, 
       {
         std::vector<double> gIn(npts);
         putContent(gIn, cur1);
-        agrid = new NumericalGrid<mRealType>(gIn);
+        agrid = std::make_unique<NumericalGrid<mRealType>>(gIn);
         app_log() << "   Numerical grid npts = " << gIn.size() << std::endl;
       }
       cur1 = cur1->next;
@@ -302,7 +303,7 @@ ECPComponentBuilder::RadialPotentialType* ECPComponentBuilder::createVrWithData(
                                                                                 mGridType* agrid,
                                                                                 int rCorrection)
 {
-  return 0;
+  return nullptr;
   //  RealType rcIn = agrid->rmax();
   //  //use the maximum value of the grid
   //  if(RcutMax<0) RcutMax=rcIn;

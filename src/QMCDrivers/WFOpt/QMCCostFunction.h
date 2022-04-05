@@ -35,7 +35,7 @@ public:
   QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunction();
+  ~QMCCostFunction() override;
 
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations() override;
@@ -60,7 +60,7 @@ protected:
   std::vector<Matrix<Return_rt>*> HDerivRecords;
   Return_rt CSWeight;
 
-  Return_rt correlatedSampling(bool needGrad = true) override;
+  EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
 #ifdef HAVE_LMY_ENGINE
   int total_samples();

@@ -3,12 +3,14 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Christos Kartsaklis, kartsaklisc@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +45,7 @@ void phase_factor_kernel (T *kPoints, int *makeTwoCopies,
   volatile __shared__ T out_shared[2*BS+1];
   __shared__ T *phi_in_ptr[BS], *phi_out_ptr[BS];
   int tid = threadIdx.x;
-  assert(warpSize == 32);
+  assert(warpSize == 32 || warpSize == 64);
 #pragma unroll
   for (int i=0; i<3; i++)
   {

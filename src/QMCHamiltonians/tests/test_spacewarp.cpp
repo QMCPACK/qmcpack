@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "QMCHamiltonians/SpaceWarpTransformation.h"
 //#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
@@ -44,26 +43,24 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   bool okay = doc.parse("Na2.structure.xml");
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
 
-  ParticleSet ions;
-  XMLParticleParser parse_ions(ions, tmat);
+  const SimulationCell simulation_cell;
+
+  ParticleSet ions(simulation_cell);
+  XMLParticleParser parse_ions(ions);
   OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
   REQUIRE(particleset_ion.size() == 1);
-  parse_ions.put(particleset_ion[0]);
+  parse_ions.readXML(particleset_ion[0]);
 
   REQUIRE(ions.groups() == 1);
   REQUIRE(ions.R.size() == 2);
   ions.update();
 
-  ParticleSet elec;
-  XMLParticleParser parse_elec(elec, tmat);
+  ParticleSet elec(simulation_cell);
+  XMLParticleParser parse_elec(elec);
   OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
   REQUIRE(particleset_elec.size() == 1);
-  parse_elec.put(particleset_elec[0]);
+  parse_elec.readXML(particleset_elec[0]);
 
   REQUIRE(elec.groups() == 2);
   REQUIRE(elec.R.size() == 2);
@@ -74,7 +71,7 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   //Now build the wavefunction.  This will be needed to test \Nabla_i E_L and \Nabla_i logPsi contributions.
   //For now, just take them from a reference calculation.
 
-  using Force_t = ParticleSet::ParticlePos_t;
+  using Force_t = ParticleSet::ParticlePos;
   Force_t dE_L;
   Force_t el_contribution;
   Force_t psi_contribution;

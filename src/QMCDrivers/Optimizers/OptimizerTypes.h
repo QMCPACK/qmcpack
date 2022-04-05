@@ -23,7 +23,8 @@ enum class OptimizerType
   ONESHIFTONLY,
   ADAPTIVE,
   DESCENT,
-  HYBRID
+  HYBRID,
+  GRADIENT_TEST
 };
 
 const std::map<std::string, OptimizerType> OptimizerNames = {{"quartic", OptimizerType::QUARTIC},
@@ -32,7 +33,8 @@ const std::map<std::string, OptimizerType> OptimizerNames = {{"quartic", Optimiz
                                                              {"OneShiftOnly", OptimizerType::ONESHIFTONLY},
                                                              {"adaptive", OptimizerType::ADAPTIVE},
                                                              {"descent", OptimizerType::DESCENT},
-                                                             {"hybrid", OptimizerType::HYBRID}};
+                                                             {"hybrid", OptimizerType::HYBRID},
+                                                             {"gradient_test", OptimizerType::GRADIENT_TEST}};
 
 } // namespace qmcplusplus
 #endif

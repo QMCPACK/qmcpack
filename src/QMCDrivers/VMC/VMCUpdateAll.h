@@ -25,11 +25,11 @@ class VMCUpdateAll : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
 
-  ~VMCUpdateAll();
+  ~VMCUpdateAll() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   /// Copy Constructor (disabled)

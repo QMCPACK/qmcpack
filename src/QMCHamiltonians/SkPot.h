@@ -29,19 +29,19 @@ class SkPot : public OperatorBase
 public:
   SkPot(ParticleSet& elns);
 
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   inline void FillFk()
   {
     for (int ki = 0; ki < NumK; ki++)
     {
-      RealType k = dot(sourcePtcl->SK->KLists.kpts_cart[ki], sourcePtcl->SK->KLists.kpts_cart[ki]);
+      RealType k = dot(sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki], sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki]);
       k          = std::sqrt(k) - K_0;
       Fk[ki]     = OneOverN * V_0 * std::exp(-k * k);
       //         app_log()<<ki<<": "<<Fk[ki] << std::endl;

@@ -43,7 +43,7 @@ struct PowerOfN<N, 0>
  *
  * @tparam T real data type
  * @tparam D physical dimension
- * @tparm SC supercell type
+ * @tparam SC supercell type
  *
  * Default method for any dimension with OPEN boundary condition.
  * \htmlonly

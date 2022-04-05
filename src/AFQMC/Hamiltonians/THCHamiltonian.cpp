@@ -136,14 +136,14 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   //   - cPua       {nmu,nel_},{gnmu,nel_},{nmu0,0}
   //
   size_t nel_ = PsiT[0].size(0) + ((type == CLOSED) ? 0 : (PsiT[1].size(0)));
-  shmSPVMatrix rotMuv({rotnmu, grotnmu}, shared_allocator<SPValueType>{distNode});
-  shmSPVMatrix rotPiu({size_t(NMO), grotnmu}, shared_allocator<SPValueType>{distNode});
+  shmSPVMatrix rotMuv({static_cast<shmSPVMatrix::size_type>(rotnmu), static_cast<shmSPVMatrix::size_type>(grotnmu)}, shared_allocator<SPValueType>{distNode});
+  shmSPVMatrix rotPiu({NMO, static_cast<shmSPVMatrix::size_type>(grotnmu)}, shared_allocator<SPValueType>{distNode});
   std::vector<shmSPCMatrix> rotcPua;
   rotcPua.reserve(ndet);
   for (int i = 0; i < ndet; i++)
-    rotcPua.emplace_back(shmSPCMatrix({grotnmu, nel_}, shared_allocator<SPComplexType>{distNode}));
-  shmSPVMatrix Piu({size_t(NMO), nmu}, shared_allocator<SPValueType>{distNode});
-  shmSPVMatrix Luv({nmu, gnmu}, shared_allocator<SPValueType>{distNode});
+    rotcPua.emplace_back(shmSPCMatrix({static_cast<shmSPCMatrix::size_type>(grotnmu), static_cast<shmSPCMatrix::size_type>(nel_)}, shared_allocator<SPComplexType>{distNode}));
+  shmSPVMatrix Piu({NMO, static_cast<shmSPVMatrix::size_type>(nmu)}, shared_allocator<SPValueType>{distNode});
+  shmSPVMatrix Luv({static_cast<shmSPVMatrix::size_type>(nmu), static_cast<shmSPVMatrix::size_type>(gnmu)}, shared_allocator<SPValueType>{distNode});
   // right now only 1 reader. Use hyperslabs and parallel io later
   // read Half transformed first
   if (distNode.root())
@@ -202,8 +202,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     // that doesn't so much temporary space!!!
     boost::multi::array<SPValueType, 2> v0_({NMO, NMO});
     // TOO MUCH MEMORY, FIX FIX FIX!!!
-    shmSPVMatrix Piu__({size_t(NMO), gnmu}, shared_allocator<SPValueType>{TG.Node()});
-    shmSPVMatrix Luv__({gnmu, gnmu}, shared_allocator<SPValueType>{TG.Node()});
+    shmSPVMatrix Piu__({NMO, static_cast<shmSPVMatrix::size_type>(gnmu)}, shared_allocator<SPValueType>{TG.Node()});
+    shmSPVMatrix Luv__({static_cast<shmSPVMatrix::size_type>(gnmu), static_cast<shmSPVMatrix::size_type>(gnmu)}, shared_allocator<SPValueType>{TG.Node()});
     if (TG.Node().root())
     {
       if (!dump.readEntry(Luv__, "Luv"))
@@ -227,8 +227,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     size_t c0, cN, nc;
     std::tie(c0, cN) = FairDivideBoundary(size_t(TG.Global().rank()), gnmu, size_t(TG.Global().size()));
     nc               = cN - c0;
-    boost::multi::array<SPValueType, 2> Tuv({gnmu, nc});
-    boost::multi::array<SPValueType, 2> Muv({gnmu, nc});
+    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
+    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
@@ -244,7 +244,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     auto itT = Tuv.origin();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
-    boost::multi::array<SPValueType, 2> T_({Tuv.size(1), size_t(NMO)});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(Tuv.size(1)), NMO});
     ma::product(T(Tuv), H(Piu__), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu__({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
@@ -278,8 +278,8 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     size_t c0, cN, nc;
     std::tie(c0, cN) = FairDivideBoundary(size_t(TG.Global().rank()), gnmu, size_t(TG.Global().size()));
     nc               = cN - c0;
-    boost::multi::array<SPValueType, 2> Tuv({gnmu, nc});
-    boost::multi::array<SPValueType, 2> Muv({gnmu, nc});
+    boost::multi::array<SPValueType, 2> Tuv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
+    boost::multi::array<SPValueType, 2> Muv({static_cast<boost::multi::size_t>(gnmu), static_cast<boost::multi::size_t>(nc)});
 
     // Muv = Luv * H(Luv)
     // This can benefit from 2D split of work
@@ -295,7 +295,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     auto itT = Tuv.origin();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
-    boost::multi::array<SPValueType, 2> T_({Tuv.size(1), size_t(NMO)});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(Tuv.size(1)), NMO});
     ma::product(T(Tuv), H(Piu), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
@@ -326,7 +326,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   std::vector<shmSPCMatrix> cPua;
   cPua.reserve(ndet);
   for (int i = 0; i < ndet; i++)
-    cPua.emplace_back(shmSPCMatrix({nmu, nel_}, shared_allocator<SPComplexType>{distNode}));
+    cPua.emplace_back(shmSPCMatrix({static_cast<shmSPCMatrix::size_type>(nmu), static_cast<shmSPCMatrix::size_type>(nel_)}, shared_allocator<SPComplexType>{distNode}));
   if (distNode.root())
   {
     // simple
@@ -348,7 +348,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     }
     else
     {
-      boost::multi::array<SPComplexType, 2> A({PsiT[0].size(1), PsiT[0].size(0)});
+      boost::multi::array<SPComplexType, 2> A({static_cast<boost::multi::size_t>(PsiT[0].size(1)), static_cast<boost::multi::size_t>(PsiT[0].size(0))});
       for (int i = 0; i < ndet; i++)
       {
         ma::Matrix2MA('T', PsiT[i], A);

@@ -2,9 +2,9 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
-// File developed by:
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@ namespace qmcplusplus
 template<class T, typename Alloc = std::allocator<T>>
 class ParticleAttrib : public Vector<T, Alloc>, public OhmmsObject
 {
-  typedef Vector<T, Alloc> __my_base;
+  using __my_base = Vector<T, Alloc>;
 
 public:
   /// The unit type
@@ -45,6 +45,9 @@ public:
   explicit inline ParticleAttrib(T* ref, size_t n) : __my_base(ref, n), InUnit(PosUnit::Cartesian) {}
 
   ParticleAttrib(const ParticleAttrib& rhs) = default;
+
+  ParticleAttrib(std::initializer_list<T> ts) : __my_base(ts), InUnit(PosUnit::Cartesian){};
+
   inline ParticleAttrib& operator=(const ParticleAttrib& rhs) = default;
 
   /** assignment operator to enable PETE */
@@ -60,7 +63,7 @@ public:
   inline PosUnit getUnit() const { return InUnit; }
   //@}
 
-  OhmmsObject* makeClone() const { return new ParticleAttrib<T, Alloc>(*this); }
+  OhmmsObject* makeClone() const override { return new ParticleAttrib<T, Alloc>(*this); }
 
   /** Specialized to write the unit
    *\return true, if the attribute is relative to a unit
@@ -68,7 +71,7 @@ public:
    * Ad hoc get function to tell users if this attribute is absolute or relative value.
    * E.g., is Cartesian unit vs Lattice unit.
    */
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << InUnit;
     return true;
@@ -76,17 +79,17 @@ public:
 
   /** Specialized to read the unit
    */
-  bool put(std::istream& is)
+  bool put(std::istream& is) override
   {
     is >> InUnit;
     return true;
   }
 
   /*@warning not fully implemented.*/
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
   ///reset member data
-  void reset() {}
+  void reset() override {}
 };
 
 template<class T, unsigned D>

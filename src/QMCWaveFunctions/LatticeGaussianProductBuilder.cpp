@@ -18,11 +18,11 @@
 
 namespace qmcplusplus
 {
-LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets)
+LatticeGaussianProductBuilder::LatticeGaussianProductBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets)
     : WaveFunctionComponentBuilder(comm, p), ptclPool(psets)
 {}
 
-WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> LatticeGaussianProductBuilder::buildComponent(xmlNodePtr cur)
 {
   ParticleSet& p = targetPtcl;
   // initialize widths to zero; if no user input, then abort
@@ -36,13 +36,14 @@ WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr 
   {
     app_warning() << "  LatticeGaussianProductBuilder::put does not have name " << std::endl;
   }
-  std::map<std::string, ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
+
+  auto pa_it(ptclPool.find(sourceOpt));
   if (pa_it == ptclPool.end())
   {
-    app_error() << "Could not file source ParticleSet " << sourceOpt << " for ion wave function.\n";
+    app_error() << "Could not find source ParticleSet " << sourceOpt << " for ion wave function.\n";
   }
-  ParticleSet* sourcePtcl = (*pa_it).second;
-  LatticeGaussianProduct* orb         = new LatticeGaussianProduct(*sourcePtcl, targetPtcl);
+  auto& sourcePtcl = *pa_it->second;
+  auto orb         = std::make_unique<LatticeGaussianProduct>(sourcePtcl, targetPtcl);
   orb->ParticleAlpha.resize(targetPtcl.getTotalNum());
   orb->ParticleCenter.resize(targetPtcl.getTotalNum());
   int num_nonzero = 0;
@@ -60,13 +61,13 @@ WaveFunctionComponent* LatticeGaussianProductBuilder::buildComponent(xmlNodePtr 
       orb->ParticleAlpha[iat]  = 0.0;
     }
   }
-  if (num_nonzero != sourcePtcl->getTotalNum())
+  if (num_nonzero != sourcePtcl.getTotalNum())
   {
     app_error() << "  The number of nonzero widths should be the same as the number of\n"
                 << "  centers for the ionwf.\n";
     abort();
   }
-  assert(num_nonzero == sourcePtcl->getTotalNum());
+  assert(num_nonzero == sourcePtcl.getTotalNum());
   return orb;
 }
 

@@ -71,19 +71,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
-  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(NLPP_algo, "algorithm", {"batched", "non-batched"});
   pAttrib.add(use_DLA, "DLA", {"no", "yes"});
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
-  pAttrib.add(physicalSO, "physicalSO", {"no", "yes"});
+  pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
   pAttrib.put(cur);
-
-  if (NLPP_algo.empty())
-#ifdef ENABLE_OFFLOAD
-    NLPP_algo = "batched";
-#else
-    NLPP_algo = omp_get_nested() ? "batched" : "non-batched";
-#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")
@@ -98,12 +91,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
 
   ///create LocalECPotential
-  bool usePBC = !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
+  bool usePBC = !(IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
 
 
   if (hasLocalPot)
   {
-    if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
+    if (IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
       std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);
@@ -353,7 +346,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     RealType rmax(0.0);
     app_log() << "  ECPotential for " << species << std::endl;
     std::unique_ptr<NonLocalECPComponent> mynnloc;
-    typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
+    using CubicSplineFuncType = OneDimCubicSpline<RealType>;
     for (int ij = 0; ij < npotentials; ij++)
     {
       int angmom, npoints;
@@ -363,11 +356,11 @@ void ECPotentialBuilder::useSimpleTableFormat()
       if (angmom < 0)
       //local potential, input is rescale by -r/z
       {
-        RealType zinv   = -1.0 / Species(icharge, ig);
-        int ng          = npoints - 1;
-        RealType rf     = 5.0;
-        ng              = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
-        GridType* agrid = new LinearGrid<RealType>;
+        RealType zinv = -1.0 / Species(icharge, ig);
+        int ng        = npoints - 1;
+        RealType rf   = 5.0;
+        ng            = static_cast<int>(rf * 100) + 1; //use 1e-2 resolution
+        auto agrid    = std::make_unique<LinearGrid<RealType>>();
         agrid->set(0, rf, ng);
         std::vector<RealType> pp_temp(ng);
         pp_temp[0] = 0.0;
@@ -377,7 +370,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
           pp_temp[j] = r * zinv * inFunc.splint(r);
         }
         pp_temp[ng - 1] = 1.0;
-        auto app        = std::make_unique<RadialPotentialType>(agrid, pp_temp);
+        auto app        = std::make_unique<RadialPotentialType>(std::move(agrid), pp_temp);
         app->spline();
         localPot[ig] = std::move(app);
         app_log() << "    LocalECP l=" << angmom << std::endl;
@@ -389,9 +382,9 @@ void ECPotentialBuilder::useSimpleTableFormat()
         hasNonLocalPot = true; //will create NonLocalECPotential
         if (!mynnloc)
           mynnloc = std::make_unique<NonLocalECPComponent>();
-        RealType rf     = inFunc.rmax();
-        GridType* agrid = new LinearGrid<RealType>;
-        int ng          = static_cast<int>(rf * 100) + 1;
+        RealType rf = inFunc.rmax();
+        auto agrid  = std::make_unique<LinearGrid<RealType>>();
+        int ng      = static_cast<int>(rf * 100) + 1;
         agrid->set(0.0, rf, ng);
         app_log() << "    NonLocalECP l=" << angmom << " rmax = " << rf << std::endl;
         app_log() << "      Linear grid=[0," << rf << "] npts=" << ng << std::endl;
@@ -402,7 +395,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
         {
           pp_temp[j] = inFunc.splint((*agrid)[j]);
         }
-        RadialPotentialType* app = new RadialPotentialType(agrid, pp_temp);
+        auto app = new RadialPotentialType(std::move(agrid), pp_temp);
         app->spline();
         mynnloc->add(angmom, app);
         lmax = std::max(lmax, angmom);

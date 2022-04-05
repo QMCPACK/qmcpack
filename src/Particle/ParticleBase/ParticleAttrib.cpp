@@ -36,7 +36,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>>::Expression_t
     operator-(const ParticleAttrib<T1>& l)
 {
-  typedef UnaryNode<OpUnaryMinus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpUnaryMinus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l)));
 }
 
@@ -44,7 +44,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryPlus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>>::Expression_t
     operator+(const ParticleAttrib<T1>& l)
 {
-  typedef UnaryNode<OpUnaryPlus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpUnaryPlus, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l)));
 }
 
@@ -52,7 +52,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpBitwiseNot, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>>::Expression_t
     operator~(const ParticleAttrib<T1>& l)
 {
-  typedef UnaryNode<OpBitwiseNot, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpBitwiseNot, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l)));
 }
 
@@ -60,7 +60,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpIdentity, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>>::Expression_t
     PETE_identity(const ParticleAttrib<T1>& l)
 {
-  typedef UnaryNode<OpIdentity, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpIdentity, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l)));
 }
 
@@ -68,7 +68,7 @@ template<class T1, class T2>
 inline typename MakeReturn<UnaryNode<OpCast<T1>, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>>::Expression_t
     peteCast(const T1&, const ParticleAttrib<T2>& l)
 {
-  typedef UnaryNode<OpCast<T1>, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpCast<T1>, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T2>>::make(l)));
 }
 
@@ -336,7 +336,7 @@ inline typename MakeReturn<
     BinaryNode<OpAdd, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator+(const ParticleAttrib<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpAdd, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpAdd, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -367,7 +367,7 @@ inline typename MakeReturn<
     BinaryNode<OpMod, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator%(const ParticleAttrib<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpMod, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMod, typename CreateLeaf<ParticleAttrib<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<ParticleAttrib<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -409,7 +409,7 @@ inline typename MakeReturn<
     BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>>::Expression_t
     operator+(const T1& l, const ParticleAttrib<T2>& r)
 {
-  typedef BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<ParticleAttrib<T2>>::make(r)));
 }
 
@@ -440,7 +440,7 @@ inline typename MakeReturn<
     BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>>::Expression_t
     operator%(const T1& l, const ParticleAttrib<T2>& r)
 {
-  typedef BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<ParticleAttrib<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<ParticleAttrib<T2>>::make(r)));
 }
 
@@ -499,7 +499,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryMinus, typename CreateLeaf<Expression<T1>>::Leaf_t>>::Expression_t
     operator-(const Expression<T1>& l)
 {
-  typedef UnaryNode<OpUnaryMinus, typename CreateLeaf<Expression<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpUnaryMinus, typename CreateLeaf<Expression<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l)));
 }
 
@@ -507,7 +507,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpUnaryPlus, typename CreateLeaf<Expression<T1>>::Leaf_t>>::Expression_t operator+(
     const Expression<T1>& l)
 {
-  typedef UnaryNode<OpUnaryPlus, typename CreateLeaf<Expression<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpUnaryPlus, typename CreateLeaf<Expression<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l)));
 }
 
@@ -515,7 +515,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpBitwiseNot, typename CreateLeaf<Expression<T1>>::Leaf_t>>::Expression_t
     operator~(const Expression<T1>& l)
 {
-  typedef UnaryNode<OpBitwiseNot, typename CreateLeaf<Expression<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpBitwiseNot, typename CreateLeaf<Expression<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l)));
 }
 
@@ -523,7 +523,7 @@ template<class T1>
 inline typename MakeReturn<UnaryNode<OpIdentity, typename CreateLeaf<Expression<T1>>::Leaf_t>>::Expression_t
     PETE_identity(const Expression<T1>& l)
 {
-  typedef UnaryNode<OpIdentity, typename CreateLeaf<Expression<T1>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpIdentity, typename CreateLeaf<Expression<T1>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l)));
 }
 
@@ -532,7 +532,7 @@ inline typename MakeReturn<UnaryNode<OpCast<T1>, typename CreateLeaf<Expression<
     const T1&,
     const Expression<T2>& l)
 {
-  typedef UnaryNode<OpCast<T1>, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = UnaryNode<OpCast<T1>, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T2>>::make(l)));
 }
 
@@ -623,7 +623,7 @@ inline typename MakeReturn<
     BinaryNode<OpAdd, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator+(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpAdd, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpAdd, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -632,7 +632,7 @@ inline typename MakeReturn<
     BinaryNode<OpSubtract, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator-(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpSubtract, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpSubtract, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -641,7 +641,7 @@ inline typename MakeReturn<
     BinaryNode<OpMultiply, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator*(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpMultiply, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMultiply, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -650,7 +650,7 @@ inline typename MakeReturn<
     BinaryNode<OpMod, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator%(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpMod, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMod, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -660,7 +660,7 @@ inline typename MakeReturn<
     Expression_t
     operator&(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpBitwiseAnd, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseAnd, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -669,7 +669,7 @@ inline typename MakeReturn<
     BinaryNode<OpBitwiseOr, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>>::Expression_t
     operator|(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpBitwiseOr, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseOr, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -679,7 +679,7 @@ inline typename MakeReturn<
     Expression_t
     operator^(const Expression<T1>& l, const T2& r)
 {
-  typedef BinaryNode<OpBitwiseXor, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseXor, typename CreateLeaf<Expression<T1>>::Leaf_t, typename CreateLeaf<T2>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<Expression<T1>>::make(l), CreateLeaf<T2>::make(r)));
 }
 
@@ -688,7 +688,7 @@ inline typename MakeReturn<
     BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>>::Expression_t
     operator+(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpAdd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -697,7 +697,7 @@ inline typename MakeReturn<
     BinaryNode<OpSubtract, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>>::Expression_t
     operator-(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpSubtract, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpSubtract, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -706,7 +706,7 @@ inline typename MakeReturn<
     BinaryNode<OpMultiply, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>>::Expression_t
     operator*(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpMultiply, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMultiply, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -715,7 +715,7 @@ inline typename MakeReturn<
     BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>>::Expression_t
     operator%(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpMod, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -725,7 +725,7 @@ inline typename MakeReturn<
     Expression_t
     operator&(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpBitwiseAnd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseAnd, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -734,7 +734,7 @@ inline typename MakeReturn<
     BinaryNode<OpBitwiseOr, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>>::Expression_t
     operator|(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpBitwiseOr, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseOr, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 
@@ -744,7 +744,7 @@ inline typename MakeReturn<
     Expression_t
     operator^(const T1& l, const Expression<T2>& r)
 {
-  typedef BinaryNode<OpBitwiseXor, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t> Tree_t;
+  using Tree_t = BinaryNode<OpBitwiseXor, typename CreateLeaf<T1>::Leaf_t, typename CreateLeaf<Expression<T2>>::Leaf_t>;
   return MakeReturn<Tree_t>::make(Tree_t(CreateLeaf<T1>::make(l), CreateLeaf<Expression<T2>>::make(r)));
 }
 #ifdef PETE_ALLOW_SCALAR_SHIFT
@@ -768,7 +768,7 @@ inline typename MakeReturn<TrinaryNode<FnWhere,
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& assign(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -776,7 +776,7 @@ inline ParticleAttrib<T1>& assign(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator+=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpAddAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -784,7 +784,7 @@ inline ParticleAttrib<T1>& operator+=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator-=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpSubtractAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -792,7 +792,7 @@ inline ParticleAttrib<T1>& operator-=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator*=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpMultiplyAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -800,7 +800,7 @@ inline ParticleAttrib<T1>& operator*=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator%=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpModAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -808,7 +808,7 @@ inline ParticleAttrib<T1>& operator%=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator|=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpBitwiseOrAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -816,7 +816,7 @@ inline ParticleAttrib<T1>& operator|=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator&=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpBitwiseAndAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -824,7 +824,7 @@ inline ParticleAttrib<T1>& operator&=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T1, class RHS>
 inline ParticleAttrib<T1>& operator^=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 {
-  typedef typename CreateLeaf<RHS>::Leaf_t Leaf_t;
+  using Leaf_t = typename CreateLeaf<RHS>::Leaf_t;
   evaluate(lhs, OpBitwiseXorAssign(), MakeReturn<Leaf_t>::make(CreateLeaf<RHS>::make(rhs)));
   return lhs;
 }
@@ -839,7 +839,7 @@ inline ParticleAttrib<T1>& operator^=(ParticleAttrib<T1>& lhs, const RHS& rhs)
 template<class T>
 struct CreateLeaf<ParticleAttrib<T>>
 {
-  typedef Reference<ParticleAttrib<T>> Leaf_t;
+  using Leaf_t = Reference<ParticleAttrib<T>>;
   inline static Leaf_t make(const ParticleAttrib<T>& a) { return Leaf_t(a); }
 };
 
@@ -862,7 +862,7 @@ private:
 template<class T>
 struct LeafFunctor<Scalar<T>, SizeLeafPA>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Scalar<T>&, const SizeLeafPA&)
   {
     // Scalars always conform.
@@ -873,7 +873,7 @@ struct LeafFunctor<Scalar<T>, SizeLeafPA>
 template<class T>
 struct LeafFunctor<ParticleAttrib<T>, SizeLeafPA>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const ParticleAttrib<T>& v, const SizeLeafPA& s) { return s(v.size()); }
 };
 
@@ -885,7 +885,7 @@ struct LeafFunctor<ParticleAttrib<T>, SizeLeafPA>
 template<class T>
 struct LeafFunctor<ParticleAttrib<T>, EvalLeaf1>
 {
-  typedef T Type_t;
+  using Type_t = T;
   inline static Type_t apply(const ParticleAttrib<T>& vec, const EvalLeaf1& f) { return vec[f.val1()]; }
 };
 

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "SpeciesKineticEnergy.h"
-#include "QMCHamiltonians/BareKineticEnergy.h" // laplaician() defined here
+#include "BareKineticHelper.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -53,23 +53,23 @@ bool SpeciesKineticEnergy::put(xmlNodePtr cur)
 
   if (hdf5_out)
   { // add this estimator to stat.h5
-    UpdateMode.set(COLLECTABLE, 1);
+    update_mode_.set(COLLECTABLE, 1);
   }
   return true;
 }
 
 bool SpeciesKineticEnergy::get(std::ostream& os) const
 { // class description
-  os << "SpeciesKineticEnergy: " << myName;
+  os << "SpeciesKineticEnergy: " << name_;
   return true;
 }
 
 void SpeciesKineticEnergy::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.size();
+  my_index_ = plist.size();
   for (int ispec = 0; ispec < num_species; ispec++)
   { // make columns named "$myName_u", "$myName_d" etc.
-    plist.add(myName + "_" + species_names[ispec]);
+    plist.add(name_ + "_" + species_names[ispec]);
   }
   if (hdf5_out)
   { // make room in h5 file and save its index
@@ -84,7 +84,7 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h
   if (hdf5_out)
   {
     std::vector<int> ndim(1, num_species);
-    h5desc.emplace_back(myName);
+    h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, h5_index);
     h5o.open(gid);
@@ -93,13 +93,13 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h
 
 void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
 { // slots in plist must be allocated by addObservables() first
-  copy(species_kinetic.begin(), species_kinetic.end(), plist.begin() + myIndex);
+  copy(species_kinetic.begin(), species_kinetic.end(), plist.begin() + my_index_);
 }
 
 SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
 {
   std::fill(species_kinetic.begin(), species_kinetic.end(), 0.0);
-  RealType wgt = tWalker->Weight;
+  RealType wgt = t_walker_->Weight;
 
   for (int iat = 0; iat < P.getTotalNum(); iat++)
   {
@@ -112,8 +112,8 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
     species_kinetic[ispec] += my_kinetic;
   }
 
-  Value = 0.0; // Value is no longer used
-  return Value;
+  value_ = 0.0; // Value is no longer used
+  return value_;
 }
 
 std::unique_ptr<OperatorBase> SpeciesKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

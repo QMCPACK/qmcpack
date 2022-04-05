@@ -23,7 +23,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/PhaseFactors.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 #ifdef HAVE_MKL
 #include <mkl_vml.h>
 #endif
@@ -583,6 +583,7 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda(multi_UBspline_3d_z_cuda* spli
 // Vectorized evaluation routines using GPU //
 //////////////////////////////////////////////
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
                                             int iat,
@@ -680,7 +681,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 }
 
 
-#ifdef QMC_COMPLEX
+#else
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
                                             int iat,
@@ -701,54 +702,6 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
   abort();
 }
 #endif
-
-
-template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
-                                            std::vector<PosType>& newpos,
-                                            gpu::device_vector<CTS::RealType*>& phi)
-{
-  //  app_log() << "Start EinsplineSet CUDA evaluation\n";
-  int N                       = newpos.size();
-  CTS::RealType plus_minus[2] = {1.0, -1.0};
-  if (cudapos.size() < N)
-  {
-    hostPos.resize(N);
-    cudapos.resize(N, 1.0, split_splines);
-    hostSign.resize(N);
-    cudaSign.resize(N, 1.0, split_splines);
-  }
-  for (int iw = 0; iw < N; iw++)
-  {
-    PosType r = newpos[iw];
-    PosType ru(PrimLattice.toUnit(r));
-    int image[OHMMS_DIM];
-    for (int i = 0; i < OHMMS_DIM; i++)
-    {
-      RealType img = std::floor(ru[i]);
-      ru[i] -= img;
-      image[i] = (int)img;
-    }
-    int sign = 0;
-    for (int i = 0; i < OHMMS_DIM; i++)
-      sign += HalfG[i] * image[i];
-    hostSign[iw] = plus_minus[sign & 1];
-    hostPos[iw]  = ru;
-  }
-  cudapos  = hostPos;
-  cudaSign = hostSign;
-  if (split_splines)
-  {
-    eval_multi_multi_UBspline_3d_cuda(CudaMultiSpline, (CTS::RealType*)(cudapos.data()), cudaSign.data(), phi.data(), N,
-                                      spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
-  }
-  else
-  {
-    eval_multi_multi_UBspline_3d_cuda(CudaMultiSpline, (CTS::RealType*)(cudapos.data()), cudaSign.data(), phi.data(),
-                                      N);
-  }
-  //app_log() << "End EinsplineSet CUDA evaluation\n";
-}
 
 
 template<typename T>
@@ -896,6 +849,55 @@ void EinsplineSetExtended<T>::resize_cuda(int numWalkers)
       hostkPoints_reduced; // make sure the last copy is synchronous so when we return from this function everything's finished
 }
 
+#if !defined(QMC_COMPLEX)
+template<>
+void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
+                                            std::vector<PosType>& newpos,
+                                            gpu::device_vector<CTS::RealType*>& phi)
+{
+  //  app_log() << "Start EinsplineSet CUDA evaluation\n";
+  int N                       = newpos.size();
+  CTS::RealType plus_minus[2] = {1.0, -1.0};
+  if (cudapos.size() < N)
+  {
+    hostPos.resize(N);
+    cudapos.resize(N, 1.0, split_splines);
+    hostSign.resize(N);
+    cudaSign.resize(N, 1.0, split_splines);
+  }
+  for (int iw = 0; iw < N; iw++)
+  {
+    PosType r = newpos[iw];
+    PosType ru(PrimLattice.toUnit(r));
+    int image[OHMMS_DIM];
+    for (int i = 0; i < OHMMS_DIM; i++)
+    {
+      RealType img = std::floor(ru[i]);
+      ru[i] -= img;
+      image[i] = (int)img;
+    }
+    int sign = 0;
+    for (int i = 0; i < OHMMS_DIM; i++)
+      sign += HalfG[i] * image[i];
+    hostSign[iw] = plus_minus[sign & 1];
+    hostPos[iw]  = ru;
+  }
+  cudapos  = hostPos;
+  cudaSign = hostSign;
+  if (split_splines)
+  {
+    eval_multi_multi_UBspline_3d_cuda(CudaMultiSpline, (CTS::RealType*)(cudapos.data()), cudaSign.data(), phi.data(), N,
+                                      spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+  }
+  else
+  {
+    eval_multi_multi_UBspline_3d_cuda(CudaMultiSpline, (CTS::RealType*)(cudapos.data()), cudaSign.data(), phi.data(),
+                                      N);
+  }
+  //app_log() << "End EinsplineSet CUDA evaluation\n";
+}
+
+
 template<>
 void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
                                                           std::vector<PosType>& newpos,
@@ -946,8 +948,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
                       walkers.size());
 }
 
-
-#ifdef QMC_COMPLEX
+#else
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
                                             std::vector<PosType>& newpos,
@@ -970,6 +971,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 #endif
 
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
                                             std::vector<PosType>& newpos,
@@ -1183,7 +1185,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 }
 
 
-#ifdef QMC_COMPLEX
+#else
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<Walker_t*>& walkers,
                                             std::vector<PosType>& newpos,
@@ -1346,6 +1348,7 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<Walker_t*>
 #endif
 
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetExtended<double>::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -1389,15 +1392,6 @@ void EinsplineSetExtended<double>::evaluate(std::vector<PosType>& pos, gpu::devi
                                       phi.data(), N);
   }
 }
-
-template<>
-void EinsplineSetExtended<double>::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi)
-{
-  app_error() << "EinsplineSetExtended<std::complex<double> >::evaluate at " << __LINE__ << " in file " << __FILE__
-              << " not yet implemented.\n";
-  abort();
-}
-
 
 template<>
 void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& pos,
@@ -1447,11 +1441,20 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& 
                       (CTS::RealType**)CudaValuePointers.data(), phi.data(), CudaMultiSpline->num_splines, N);
 }
 
+#else
+
+template<>
+void EinsplineSetExtended<double>::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi)
+{
+  app_error() << "EinsplineSetExtended<std::complex<double> >::evaluate at " << __LINE__ << " in file " << __FILE__
+              << " not yet implemented.\n";
+  abort();
+}
+
 template<>
 void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& pos,
                                                           gpu::device_vector<CTS::ComplexType*>& phi)
 {
-#ifdef QMC_COMPLEX
   int N = pos.size();
   if (CudaValuePointers.size() < N)
     resize_cuda(N);
@@ -1492,8 +1495,8 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& 
   // Now, add on phases
   apply_phase_factors((CTS::RealType*)CudakPoints.data(), (CTS::RealType*)cudaphasepos.data(), CudaValuePointers.data(),
                       phi.data(), CudaMultiSpline->num_splines, N);
-// AT debug:
-/*  if(gpu::rank==1)
+  // AT debug:
+  /*  if(gpu::rank==1)
   {
     int M = CudaMultiSpline->num_splines;
     CTS::ValueType phi_orig[N*M], phi_new[N*M];
@@ -1514,12 +1517,8 @@ void EinsplineSetExtended<std::complex<double>>::evaluate(std::vector<PosType>& 
       }
   }
   abort();*/
-#else
-  app_error() << "EinsplineSetExtended<std::complex<double> >::evaluate at " << __LINE__ << " in file " << __FILE__
-              << " not yet implemented.\n";
-  abort();
-#endif
 }
+#endif
 
 
 ////////////////////////////////
@@ -1675,6 +1674,7 @@ void EinsplineSetHybrid<std::complex<double>>::resize_cuda(int numwalkers)
 
 
 // Vectorized evaluation functions
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
                                           int iat,
@@ -1684,18 +1684,6 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
               << " gpu::device_vector<CTS::RealType*> &phi) not implemented.\n";
   abort();
 }
-
-
-template<>
-void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
-                                          int iat,
-                                          gpu::device_vector<CTS::ComplexType*>& phi)
-{
-  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
-              << " gpu::device_vector<CTS::ComplexType*> &phi) not implemented.\n";
-  abort();
-}
-
 
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
@@ -1705,6 +1693,17 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
               << " (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
               << " gpu::device_vector<CTS::RealType*> &phi) not implemented.\n";
+  abort();
+}
+
+#else
+template<>
+void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
+                                          int iat,
+                                          gpu::device_vector<CTS::ComplexType*>& phi)
+{
+  app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+              << " gpu::device_vector<CTS::ComplexType*> &phi) not implemented.\n";
   abort();
 }
 
@@ -1718,8 +1717,10 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
               << "   gpu::device_vector<CTS::ComplexType*> &phi) not implemented.\n";
   abort();
 }
+#endif
 
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
                                           std::vector<PosType>& newpos,
@@ -1784,8 +1785,8 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
   for (int iw = 0; iw < newpos.size(); iw++)
     if (false && HybridJobs_CPU[iw] == ATOMIC_POLY_JOB)
     {
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       HybridData<CTS::RealType>& d = HybridData_CPU[iw];
       AtomicOrbital<double>& atom  = AtomicOrbitals[d.ion];
       atom.evaluate(newpos[iw], CPUvals, CPUgrad, CPUlapl);
@@ -1826,8 +1827,8 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
     else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
     {
       std::cerr << "HalfG = " << HalfG << std::endl;
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       PosType ru(PrimLattice.toUnit(newpos[iw]));
       PosType img;
       int sign = 0;
@@ -1837,13 +1838,13 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
         ru[i] -= img[i];
         sign += HalfG[i] * (int)img[i];
       }
-      EinsplineMultiEval(MultiSpline, ru, CPUvals, CPUgrad, StorageHessVector);
+      EinsplineMultiEval(MultiSpline, ru, CPUvals, CPUgrad, storage_hess_vector_);
       cudaMemcpy(&vals_CPU[0], phi_CPU[iw], NumOrbitals * sizeof(float), cudaMemcpyDeviceToHost);
       cudaMemcpy(&GL_CPU[0], grad_lapl_CPU[iw], 4 * row_stride * sizeof(float), cudaMemcpyDeviceToHost);
       for (int j = 0; j < NumOrbitals; j++)
       {
         CPUgrad[j] = dot(PrimLattice.G, CPUgrad[j]);
-        CPUlapl[j] = trace(StorageHessVector[j], GGt);
+        CPUlapl[j] = trace(storage_hess_vector_[j], GGt);
         if (sign & 1)
         {
           CPUvals[j] *= -1.0;
@@ -2017,6 +2018,7 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
   // }
 }
 
+#else
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
                                           std::vector<PosType>& newpos,
@@ -2025,13 +2027,15 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<Walker_t*>& walkers,
                                           int row_stride)
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
-              << "(std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
+              << "(std::vector<std::unique_ptr<Walker_t<>> &walkers, std::vector<PosType> &newpos, \n"
               << " gpu::device_vector<CTS::ComplexType*> &phi,\n"
               << " gpu::device_vector<CTS::ComplexType*> &grad_lapl, int row_stride)\n"
               << "     is not yet implemented.\n";
   abort();
 }
+#endif
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi)
 {
@@ -2061,7 +2065,7 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<PosType>& pos, gpu::device
                                       (CTS::RealType*)CudakPoints_reduced.data(), CudaMultiSpline, Linv_cuda.data(),
                                       phi.data(), NumOrbitals, pos.size());
 }
-
+#else
 template<>
 void EinsplineSetHybrid<double>::evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi)
 {
@@ -2070,28 +2074,19 @@ void EinsplineSetHybrid<double>::evaluate(std::vector<PosType>& pos, gpu::device
               << "     is not yet implemented.\n";
   abort();
 }
+#endif
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
                                                         int iat,
                                                         gpu::device_vector<CTS::RealType*>& phi)
 {
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> "
+                 "&walkers, int iat,\n"
               << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
               << "not yet implemented.\n";
 }
-
-
-template<>
-void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
-                                                        int iat,
-                                                        gpu::device_vector<CTS::ComplexType*>& phi)
-{
-  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
-              << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
-              << "not yet implemented.\n";
-}
-
 
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
@@ -2101,6 +2096,18 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
   app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> &walkers, "
                  "std::vector<PosType> &newpos,\n"
               << "			                            gpu::device_vector<CTS::RealType*> &phi)\n"
+              << "not yet implemented.\n";
+}
+
+#else
+template<>
+void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
+                                                        int iat,
+                                                        gpu::device_vector<CTS::ComplexType*>& phi)
+{
+  app_error() << "EinsplineSetHybrid<std::complex<double> >::evaluate (std::vector<Walker_t*> "
+                 "&walkers, int iat,\n"
+              << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
               << "not yet implemented.\n";
 }
 
@@ -2114,7 +2121,10 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
               << "			                            gpu::device_vector<CTS::ComplexType*> &phi)\n"
               << "not yet implemented.\n";
 }
+#endif
 
+
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
                                                         std::vector<PosType>& newpos,
@@ -2158,8 +2168,8 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
   // int M = MakeTwoCopies.size();
-  // // ComplexValueVector_t CPUzvals(M), CPUzlapl(M);
-  // // ComplexGradVector_t CPUzgrad(M);
+  // // ComplexValueVector CPUzvals(M), CPUzlapl(M);
+  // // ComplexGradVector CPUzgrad(M);
   // for (int iw=0; iw<newpos.size(); iw++) {
   //   if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
   // 	num3D++;
@@ -2207,15 +2217,15 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
     {
       //if (HybridJobs_CPU[iw] != BSPLINE_3D_JOB && std::abs(rhats_CPU[3*iw+2]) < 1.0e-6) {
       int M = MakeTwoCopies.size();
-      ComplexValueVector_t CPUzvals(M), CPUzlapl(M);
-      ComplexGradVector_t CPUzgrad(M);
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ComplexValueVector CPUzvals(M), CPUzlapl(M);
+      ComplexGradVector CPUzgrad(M);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       HybridData<CTS::RealType>& d              = HybridData_CPU[iw];
       AtomicOrbital<std::complex<double>>& atom = AtomicOrbitals[d.ion];
       atom.evaluate(newpos[iw], CPUzvals, CPUzgrad, CPUzlapl);
       int index = 0;
-      for (int i = 0; i < StorageValueVector.size(); i++)
+      for (int i = 0; i < storage_value_vector_.size(); i++)
       {
         CPUvals[index] = CPUzvals[i].real();
         CPUlapl[index] = CPUzlapl[i].real();
@@ -2267,18 +2277,18 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
     }
     else if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
     {
-      ComplexValueVector_t CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
-      ComplexGradVector_t CPUzgrad(NumOrbitals);
-      ValueVector_t CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
-      GradVector_t CPUgrad(NumOrbitals);
+      ComplexValueVector CPUzvals(NumOrbitals), CPUzlapl(NumOrbitals);
+      ComplexGradVector CPUzgrad(NumOrbitals);
+      ValueVector CPUvals(NumOrbitals), CPUlapl(NumOrbitals);
+      GradVector CPUgrad(NumOrbitals);
       PosType ru(PrimLattice.toUnit(newpos[iw]));
       for (int i = 0; i < 3; i++)
         ru[i] -= std::floor(ru[i]);
-      EinsplineMultiEval(MultiSpline, ru, CPUzvals, CPUzgrad, StorageHessVector);
+      EinsplineMultiEval(MultiSpline, ru, CPUzvals, CPUzgrad, storage_hess_vector_);
       for (int j = 0; j < MakeTwoCopies.size(); j++)
       {
         CPUzgrad[j] = dot(PrimLattice.G, CPUzgrad[j]);
-        CPUzlapl[j] = trace(StorageHessVector[j], GGt);
+        CPUzlapl[j] = trace(storage_hess_vector_[j], GGt);
       }
       // Add e^-ikr phase to B-spline orbitals
       std::complex<double> eye(0.0, 1.0);
@@ -2392,6 +2402,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
 #endif
 }
 
+#else
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& walkers,
                                                         std::vector<PosType>& newpos,
@@ -2407,7 +2418,9 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<Walker_t*>& 
               << "not yet implemented.\n";
   abort();
 }
+#endif
 
+#if !defined(QMC_COMPLEX)
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& pos,
                                                         gpu::device_vector<CTS::RealType*>& phi)
@@ -2443,7 +2456,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& po
   // gpu::host_vector<HybridJobType> HybridJobs_CPU(HybridJobs_GPU.size());
   // HybridJobs_CPU = HybridJobs_GPU;
   // int M = CudaMakeTwoCopies.size();
-  // ComplexValueVector_t CPUzvals(M);
+  // ComplexValueVector CPUzvals(M);
   // for (int iw=0; iw<pos.size(); iw++)
   //   if (HybridJobs_CPU[iw] == BSPLINE_3D_JOB)
   // 	cerr << "Error:  used BSPLINE_3D for PP eval.  Walker = "
@@ -2474,6 +2487,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& po
   //////////////////////////
 }
 
+#else
 template<>
 void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& pos,
                                                         gpu::device_vector<CTS::ComplexType*>& phi)
@@ -2482,6 +2496,7 @@ void EinsplineSetHybrid<std::complex<double>>::evaluate(std::vector<PosType>& po
               << "(std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi)\n"
               << "not yet implemented.\n";
 }
+#endif
 
 template<>
 void EinsplineSetExtended<double>::finalizeConstruction()

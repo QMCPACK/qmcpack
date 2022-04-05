@@ -15,7 +15,6 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -29,59 +28,49 @@ namespace qmcplusplus
 {
 TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(1.0);
-  Lattice.reset();
-
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   //  ions.Lattice.LR_dim_cutoff=40;
 
-  SpeciesSet& ion_species           = ions.getSpeciesSet();
-  int pIdx                          = ion_species.addSpecies("H");
-  int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
-  ions.Lattice                      = Lattice;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
+  ions.update();
 
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
 
-  SpeciesSet& tspecies           = elec.getSpeciesSet();
-  int upIdx                      = tspecies.addSpecies("u");
-  int chargeIdx                  = tspecies.addAttribute("charge");
-  int massIdx                    = tspecies.addAttribute("mass");
-  int MembersizeIdx              = tspecies.addAttribute("membersize");
-  tspecies(MembersizeIdx, upIdx) = 1;
-  tspecies(chargeIdx, upIdx)     = -1;
-  tspecies(massIdx, upIdx)       = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
+  elec.resetGroups();
   elec.createSK();
-
   elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
@@ -90,14 +79,14 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Self energy plus Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0523598776 * 2)); //not validated
 
   double val_ei = cab.evaluate(elec);
   REQUIRE(val_ei == Approx(-0.008302 + 0.0523598776 * 2)); //Not validated
 
-  CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);
-  CoulombPBCAA caa_ion  = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa_elec(elec, true, false, false);
+  CoulombPBCAA caa_ion(ions, false, false, false);
   double val_ee         = caa_elec.evaluate(elec);
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;
@@ -112,20 +101,17 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
 TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
-
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -134,19 +120,16 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   ions.R[1][2] = 1.88972614;
 
 
-  SpeciesSet& ion_species           = ions.getSpeciesSet();
-  int pIdx                          = ion_species.addSpecies("H");
-  int pChargeIdx                    = ion_species.addAttribute("charge");
-  int pMembersizeIdx                = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx)     = 1;
-  ion_species(pMembersizeIdx, pIdx) = 2;
-  ions.Lattice                      = Lattice;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
+  ions.update();
 
 
-  elec.Lattice = Lattice;
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -155,23 +138,18 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   elec.R[1][2] = 0.0;
 
 
-  SpeciesSet& tspecies           = elec.getSpeciesSet();
-  int upIdx                      = tspecies.addSpecies("u");
-  int chargeIdx                  = tspecies.addAttribute("charge");
-  int massIdx                    = tspecies.addAttribute("mass");
-  int MembersizeIdx              = tspecies.addAttribute("membersize");
-  tspecies(MembersizeIdx, upIdx) = 1;
-  tspecies(chargeIdx, upIdx)     = -1;
-  tspecies(massIdx, upIdx)       = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
-  elec.createSK();
-
-  elec.addTable(ions);
   elec.resetGroups();
+  elec.createSK();
+  elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
@@ -179,7 +157,7 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   CoulombPBCAB cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
+  double consts = cab.evalConsts(elec);
   REQUIRE(consts == Approx(0.0277076538 * 4)); //not validated
 
 
@@ -187,8 +165,8 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   REQUIRE(val_ei == Approx(-2.223413 + 0.0277076538 * 4)); //Not validated
 
 
-  CoulombPBCAA caa_elec = CoulombPBCAA(elec, false);
-  CoulombPBCAA caa_ion  = CoulombPBCAA(ions, false);
+  CoulombPBCAA caa_elec(elec, false, false, false);
+  CoulombPBCAA caa_ion(ions, false, false, false);
   double val_ee         = caa_elec.evaluate(elec);
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;

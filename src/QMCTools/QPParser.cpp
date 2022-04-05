@@ -29,7 +29,6 @@ QPParser::QPParser()
   readtype     = 0;
   NFZC         = 0;
   numAO        = 0;
-  FixValence   = true;
 }
 
 QPParser::QPParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
@@ -43,7 +42,6 @@ QPParser::QPParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
   readtype       = 0;
   NFZC           = 0;
   numAO          = 0;
-  FixValence     = true;
 }
 
 void QPParser::parse(const std::string& fname)

@@ -18,10 +18,10 @@
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-//#if defined(ENABLE_OPENMP)
+
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-//#endif
+
 //#include "QMCDrivers/VMC/VMCSingle.h"
 //#include "QMCDrivers/QMCCostFunctionSingle.h"
 #include "QMCHamiltonians/HamiltonianPool.h"
@@ -95,7 +95,7 @@ void QMCLinearOptimize::start()
     ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
-    optTarget->setRng(vmcEngine->getRng());
+    optTarget->setRng(vmcEngine->getRngRefs());
     optTarget->checkConfigurations();
     // check recomputed variance against VMC
     auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
@@ -139,7 +139,7 @@ void QMCLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineO
     ScopedTimer local(initialize_timer_);
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
-    optTarget->setRng(vmcEngine->getRng());
+    optTarget->setRng(vmcEngine->getRngRefs());
     optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
                                           MinMethod); // computes derivative ratios and pass into engine
     app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;

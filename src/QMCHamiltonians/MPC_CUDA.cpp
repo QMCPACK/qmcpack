@@ -42,8 +42,8 @@ void MPC_CUDA::initBreakup()
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
     {
-      LHost[3 * i + j]    = PtclRef->Lattice.a(j)[i];
-      LinvHost[3 * i + j] = PtclRef->Lattice.b(i)[j];
+      LHost[3 * i + j]    = PtclRef->getLattice().a(j)[i];
+      LinvHost[3 * i + j] = PtclRef->getLattice().b(i)[j];
     }
   L    = LHost;
   Linv = LinvHost;
@@ -63,9 +63,9 @@ std::unique_ptr<OperatorBase> MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunc
 void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
   init_Acuda();
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  const int nw                    = walkers.size();
-  const int N                     = NParticles;
+  auto& walkers = W.WalkerList;
+  const int nw  = walkers.size();
+  const int N   = NParticles;
   if (SumGPU.size() < nw)
   {
     SumGPU.resize(nw, 1.25);
@@ -130,8 +130,8 @@ void MPC_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalE
 
   for (int iw = 0; iw < nw; iw++)
   {
-    double e                                                    = esum[iw] + SumHost[iw] + Vconst;
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = e;
+    double e                                                      = esum[iw] + SumHost[iw] + Vconst;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = e;
     LocalEnergy[iw] += e;
   }
 }

@@ -35,7 +35,7 @@ class IOVarASCII;
 //     ArraySectionInfo<T5>::rank + ArraySectionInfo<T6>::rank + ArraySectionInfo<T7>::rank +
 //     ArraySectionInfo<T8>::rank + ArraySectionInfo<T9>::rank + ArraySectionInfo<T10>::rank;
 
-//     typedef IOVarASCII<T,rank> SliceType;
+//     using SliceType = IOVarASCII<T,rank>;
 //   };
 
 template<typename T,
@@ -59,8 +59,8 @@ public:
        SliceCheck<T4>::isSlice + SliceCheck<T5>::isSlice + SliceCheck<T6>::isSlice + SliceCheck<T7>::isSlice +
        SliceCheck<T8>::isSlice + SliceCheck<T9>::isSlice + SliceCheck<T10>::isSlice);
 
-  typedef IOVarASCII<T, rank> SliceType;
-  typedef Array<T, rank> T_slice;
+  using SliceType = IOVarASCII<T, rank>;
+  using T_slice   = Array<T, rank>;
 };
 
 template<typename T, int RANK>
@@ -91,22 +91,23 @@ public:
                                                                                                   T9 s9,
                                                                                                   T10 s10);
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  void Print(std::ofstream& out);
+  void Print(std::ofstream& out) override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(Array<T, RANK>& val);
   template<class TT>
-  bool VarRead(Array<TT, 1>& val){
-  	assert(0);
-	return false;
+  bool VarRead(Array<TT, 1>& val)
+  {
+    assert(0);
+    return false;
   }
- 
+
   template<typename T0,
            typename T1,
            typename T2,
@@ -184,12 +185,12 @@ class IOVarASCII<double, 0> : public IOVarBase
 public:
   double Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(double& val)
   {
@@ -212,12 +213,12 @@ class IOVarASCII<int, 0> : public IOVarBase
 public:
   int Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(int& val)
   {
@@ -240,12 +241,12 @@ class IOVarASCII<std::string, 0> : public IOVarBase
 public:
   std::string Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(std::string& val);
   bool VarWrite(std::string val);
@@ -264,12 +265,12 @@ class IOVarASCII<bool, 0> : public IOVarBase
 public:
   bool Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(bool& val)
   {
@@ -293,12 +294,12 @@ class IOVarASCII<std::complex<double>, 0> : public IOVarBase
 public:
   std::complex<double> Value;
 
-  int GetRank();
-  IODataType GetType();
-  IOFileType GetFileType();
+  int GetRank() override;
+  IODataType GetType() override;
+  IOFileType GetFileType() override;
 
-  int GetExtent(int dim);
-  void Resize(int n);
+  int GetExtent(int dim) override;
+  void Resize(int n) override;
 
   bool VarRead(std::complex<double>& val)
   {
@@ -345,10 +346,10 @@ inline int IOVarASCII<T, RANK>::GetExtent(int dim)
 template<typename T, int RANK>
 inline void IOVarASCII<T, RANK>::Resize(int n)
 {
-//  TinyVector<int, RANK> 
-  auto dims = ArrayValue.shape();
+  //  TinyVector<int, RANK>
+  auto dims         = ArrayValue.shape();
   std::get<0>(dims) = n;
-//  dims[0]                    = n;
+  //  dims[0]                    = n;
   ArrayValue.resizeAndPreserve(dims);
 }
 
@@ -450,7 +451,7 @@ template<typename T0,
 typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType IOVarASCII<T, RANK>::
     Slice(T0 s0, T1 s1, T2 s2, T3 s3, T4 s4, T5 s5, T6 s6, T7 s7, T8 s8, T9 s9, T10 s10)
 {
-  typedef typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType newSliceType;
+  using newSliceType = typename ASCIISliceMaker<T, RANK, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>::SliceType;
   newSliceType newVar(Name);
   newVar.ArrayValue.reference(ArrayValue(s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10));
   return newVar;

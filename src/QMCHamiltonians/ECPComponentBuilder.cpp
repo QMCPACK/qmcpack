@@ -36,8 +36,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
       AtomicNumber(0),
       Zeff(0),
       RcutMax(-1),
-      Species(aname),
-      grid_global(0)
+      Species(aname)
 {
   angMon["s"] = 0;
   angMon["p"] = 1;
@@ -61,7 +60,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
-  const XMLAttrString cutoff_str(cur, "cutoff");
+  const std::string cutoff_str(getXMLAttributeValue(cur, "cutoff"));
   if (!cutoff_str.empty())
     RcutMax = std::stod(cutoff_str);
 
@@ -173,8 +172,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "header")
     {
-      Zeff         = std::stoi(XMLAttrString{cur, "zval"});
-      AtomicNumber = std::stoi(XMLAttrString{cur, "atomic-number"});
+      Zeff         = std::stoi(getXMLAttributeValue(cur, "zval"));
+      AtomicNumber = std::stoi(getXMLAttributeValue(cur, "atomic-number"));
     }
     else if (cname == "grid")
     {

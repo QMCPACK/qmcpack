@@ -44,14 +44,14 @@
 //Returns: (E(N=infty)-E(N)) for the given simulation cell.
 
 using namespace qmcplusplus;
-typedef QMCTraits::RealType RealType;
-typedef QMCTraits::PosType PosType;
-typedef SkParserBase::Grid_t Grid_t;
+using RealType = QMCTraits::RealType;
+using PosType  = QMCTraits::PosType;
+using Grid_t   = SkParserBase::Grid_t;
 
 int main(int argc, char** argv)
 {
   OHMMS::Controller->initialize(argc, argv);
-  Random.init(0, 1, -1);
+  Random.init(-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right, std::ios::adjustfield);
   std::cout.precision(12);
@@ -60,6 +60,8 @@ int main(int argc, char** argv)
 
   bool show_usage = false;
   bool show_warn  = false;
+  std::string skname;
+  std::string skfile;
   /* For a successful execution of the code, atleast 3 arguments will need to be
    * provided along with the executable. Therefore, print usage information if
    * argc is less than 4.
@@ -80,7 +82,7 @@ int main(int argc, char** argv)
       if (a == "--ascii")
       {
         skparser = std::make_unique<SkParserASCII>();
-        skparser->parse(anxt);
+        skfile   = anxt;
         if (skf_found)
           show_warn = true;
         skf_found = true;
@@ -88,7 +90,7 @@ int main(int argc, char** argv)
       else if (a == "--scalardat")
       {
         skparser = std::make_unique<SkParserScalarDat>();
-        skparser->parse(anxt);
+        skfile   = anxt;
         if (skf_found)
           show_warn = true;
         skf_found = true;
@@ -96,10 +98,14 @@ int main(int argc, char** argv)
       else if (a == "--hdf5")
       {
         skparser = std::make_unique<SkParserHDF5>();
-        skparser->parse(anxt);
+        skfile   = anxt;
         if (skf_found)
           show_warn = true;
         skf_found = true;
+      }
+      else if (a == "--skname")
+      {
+        skname = anxt;
       }
       else
       {
@@ -112,16 +118,33 @@ int main(int argc, char** argv)
 
   if (show_usage)
   {
-    std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE]\n";
+    std::cout << "Usage:  qmcfinitesize [main.xml] --[skformat] [SK_FILE] --[optional_arg] [option]\n";
+    std::cout << "  [main.xml]\n";
+    std::cout << "    input file to qmcpack corresponding that calculated S(k) data. ";
     std::cout << "  [skformat]\n";
-    std::cout << "    --ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
-    std::cout << "    --scalardat:  File containing skall elements with energy.pl output format.\n";
-    std::cout << "    --hdf5:       stat.h5 file containing skall data.\n";
+    std::cout << "    ascii:      S(k) given in kx ky kz sk sk_err format.  Header necessary.\n";
+    std::cout << "    scalardat:  File containing skall elements with energy.pl output format.\n";
+    std::cout << "    hdf5:       stat.h5 file containing skall data.\n";
+    std::cout << "  [SK_FILE]\n";
+    std::cout << "    filename containing the S(k) data\n";
+    std::cout << "  [optional_args]\n";
+    std::cout << "    --skname:     in the stat.h5, the S(k) group name. Set to \"name\" defined in qmcpack input file "
+                 "where SkAll estimator was specified\n";
+    std::cout << "  [option]\n";
+    std::cout << "    option corresonding to the optional_arg\n";
+    std::cout << "---------------------------\n";
+    std::cout << "Examples:\n";
+    std::cout << "  qmcfinitesize qmc.in.xml --hdf5 qmc.g000.s000.stat.h5 --skname SkAll\n";
+    std::cout << "  qmcfinitesize qmc.in.xml --ascii processed_sk.dat\n";
     return 0;
   }
 
   if (show_warn)
     std::cout << "WARNING:  multiple skformats were provided. All but the last will be ignored.\n\n";
+
+  if (!skname.empty())
+    skparser->setName(skname);
+  skparser->parse(skfile);
 
   if (skparser == NULL)
   {

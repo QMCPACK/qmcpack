@@ -8,24 +8,23 @@
 _© Alfredo A. Correa, 2018-2021_
 
 `Multi` provides multidimensional array access to contiguous or regularly contiguous memory (or ranges).
-It shares the goals of [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html), 
+It shares the goals of [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html),
 although the code is completely independent and the syntax has slight differences or has been extended.
-`Multi` and `Boost.MultiArray` types can be used interchangeably for the most part, they differ in the semantics of reference and value types. 
+`Multi` and `Boost.MultiArray` types can be used interchangeably for the most part, they differ in the semantics of reference and value types.
 
 Multi aims to simplify the semantics of Boost.MultiArray and make it more compatible with the Standard (STL) Algorithms and special memory.
-It requires C++14. 
+It requires C++14.
 
 Some features:
 
 * Arbitrary pointer types (minimal requirements)
-* Simplified implementation (~1200 lines)
+* Simplified implementation (~4000 lines)
 * Fast access of subarrays (view) types
 * Value semantics of multi-dimensional array container
 * Better semantics of subarray (view) types
 * Interoperability with other libraries, STL, ranges, 
 
 (Do not confuse this library with Boost.MultiArray or Boost.MultiIndex.)
-
 
 ## Contents
 [[_TOC_]]
@@ -55,7 +54,7 @@ make -j
 make test -j
 ```
 
-The code is developed on `clang` (10.0), `gcc` (9.3) and `nvcc` 11 compilers, and [tested regularly ](https://gitlab.com/correaa/boost-multi/pipelines) with clang 9.0, NVCC 10.1, Intel (19.1), and PGI(nvc++) 20.7 compilers.
+The code is developed on `clang` (10.0), `gcc` (9.3) and `nvcc` 11 compilers, and [tested regularly ](https://gitlab.com/correaa/boost-multi/pipelines) with clang 9.0, NVCC 10.1, Intel (19.1), and PGI(nvc++ 20.7-21.3) compilers.
 For detailed compilation instructions of test see the Continuous Integration (CI) definition file https://gitlab.com/correaa/boost-multi/-/blob/master/.gitlab-ci.yml
 
 ## Types
@@ -124,13 +123,13 @@ We create a static C-array of `double`s, and refer to it via a bidimensional arr
 ```cpp
 	#include "../array_ref.hpp"
 	#include "../array.hpp"
-	
+
 	#include<algorithm> // for sort
 	#include<iostream> // for print
-	
+
 	namespace multi = boost::multi;
 	using std::cout; using std::cerr;
-	
+
 	int main(){
 		double d2D[4][5] = {
 			{150, 16, 17, 18, 19},
@@ -252,45 +251,55 @@ Accessing arrays by iterators (`begin`/`end`) enables the use of many iterator b
 
 `cbegin/cend(A)` (or equivalently `A.cbegin/cend()`) gives read-only iterators.
 
-For example in three dimensional array,
+For example in a three dimensional array,
 
-	(cbegin(A)+1)->operator[](1).begin()[0] = 342.4; //error, read-only
-	(begin(A)+1)->operator[](1).begin()[0] = 342.4; // assigns to A[1][1][0]
-	assert( (begin(A)+1)->operator[](1).begin()[0] == 342.4 );
+```cpp
+	(cbegin(A)+1)->operator[](1).begin()[0] = 342.4;  // error, read-only
+	( begin(A)+1)->operator[](1).begin()[0] = 342.4;  // assigns to A[1][1][0]
+	assert( ( begin(A)+1)->operator[](1).begin()[0] == 342.4 );
+```
 
 As an example, this function allows printing arrays of arbitrary dimension into a linear comma-separated form.
 
 ```cpp
 void print(double const& d){cout<<d;};
 template<class MultiArray> 
-void print(MultiArray const& ma){
+void print(MultiArray const& ma) {
 	cout<<"{";
-	if(not ma.empty()){
+	if(not ma.empty()) {
 		print(*cbegin(ma));
-		std::for_each(cbegin(ma)+1, cend(ma), [](auto&& e){cout<<","; print(e);});
+		std::for_each(cbegin(ma)+1, cend(ma), [](auto&& e) {cout<<","; print(e);});
 	}
 	cout<<"}";
 }
 ...
 print(A);
 ```
+> ```
 > {{{1.2,1.1},{2.4,1}},{{11.2,3},{34.4,4}},{{15.2,99},{32.4,2}}}
+> ```
 
 
 Except for those corresponding to the one-dimensional case, derreferencing iterators generally produce proxy-reference objects. 
 Therefore this is not allowed:
 
-    auto row = *begin(A); // compile error 
+```cpp
+auto row = *begin(A); // compile error
+```
 
 This because `row` doesn't have the expected value semantics, and didn't produce any data copy.
 However this express the intention better
 
-    decltype(A)::value_type row = *begin(A); // there is a real copy.
+```cpp
+decltype(A)::value_type row = *begin(A); // there is a real copy.
+```
 
 In my experience, however, this produces a more consistent idiom to hold references without copying elements.
 
-    auto const& crow = *cbegin(A); // same as decltype(A)::const_reference crow = *cbegin(A);
-    auto&&       row = * begin(A); // same as decltype(A)::      reference  row = * begin(A);
+```cpp
+auto const& crow = *cbegin(A); // same as decltype(A)::const_reference crow = *cbegin(A);
+auto&&       row = * begin(A); // same as decltype(A)::      reference  row = * begin(A);
+```
 
 ## Indexing
 
@@ -311,23 +320,23 @@ this example code implements Gauss Jordan Elimination without pivoting:
 
 ```cpp
 template<class Matrix, class Vector>
-auto gj_solve(Matrix&& A, Vector&& y)->decltype(y[0]/=A[0][0], y){
-	std::ptrdiff_t Asize = size(A); 
-	for(std::ptrdiff_t r = 0; r != Asize; ++r){
+auto gj_solve(Matrix&& A, Vector&& y) -> decltype(y[0]/=A[0][0], y) {
+	std::ptrdiff_t Asize = size(A);
+	for(std::ptrdiff_t r = 0; r != Asize; ++r) {
 		auto&& Ar = A[r];
 		auto&& Arr = Ar[r];
-		for(std::ptrdiff_t c = r + 1; c != Asize; ++c) Ar[c] /= Arr;
+		for(std::ptrdiff_t c = r + 1; c != Asize; ++c) {Ar[c] /= Arr;}
 		auto const yr = (y[r] /= Arr);
-		for(std::ptrdiff_t r2 = r + 1; r2 != Asize; ++r2){
+		for(std::ptrdiff_t r2 = r + 1; r2 != Asize; ++r2) {
 			auto&& Ar2 = A[r2];
-			auto const& Ar2r = Ar2[r]; // auto&& Ar = A[r];
-			for(std::ptrdiff_t c = r + 1; c != Asize; ++c) Ar2[c] -= Ar2r*Ar[c];
+			auto const& Ar2r = Ar2[r];  // auto&& Ar = A[r];
+			for(std::ptrdiff_t c = r + 1; c != Asize; ++c) {Ar2[c] -= Ar2r*Ar[c];}
 			y[r2] -= Ar2r*yr;
 		}
 	}
-	for(std::ptrdiff_t r = Asize - 1; r > 0; --r){
+	for(std::ptrdiff_t r = Asize - 1; r > 0; --r) {
 		auto const& yr = y[r];
-		for(std::ptrdiff_t r2 = r-1; r2 >=0; --r2) y[r2] -= yr*A[r2][r];
+		for(std::ptrdiff_t r2 = r-1; r2 >=0; --r2) {y[r2] -= yr*A[r2][r];}
 	}
 	return y;
 }
@@ -394,26 +403,28 @@ Other notations are available, but when in doubt the `rotated/strided/sliced/rot
 Blocks (slices) in multidimensions can be obtained but pure index notation using `.operator()`:
 
 ```cpp
-multi::array<double, 2> A({6, 7}); // 6x7 array
-A({1, 4}, {2, 4}) // 3x2 array, containing indices 1 to 4 in the first dimension and 2 to 4 in the second dimension.
+multi::array<double, 2> A({6, 7});  // 6x7 array
+A({1, 4}, {2, 4})  // 3x2 array, containing indices 1 to 4 in the first dimension and 2 to 4 in the second dimension.
 ```
 
 ## Concept Requirements
 
-The design tries to impose the minimum possible requirements over the used referred types.
+The design tries to impose the minimum possible requirements over the  types that parameterize the arrays.
+Array operations assume that the contained type (element type) are regular (i.e. different element represent disjoint entities that behave like values).
 Pointer-like random access types can be used as substitutes of built-in pointers.
+Therefore pointers to special memory (fancy-pointers) are supported.
 
 ```cpp
-namespace minimal{
-    template<class T> class ptr{ // minimalistic pointer
-    	T* impl_;
-    	T& operator*() const{return *impl_;}
-    	auto operator+(std::ptrdiff_t n) const{return ptr{impl_ + n};}
-    //	operator[], operator+=, etc are optional but not necessary
-    };
+namespace minimal {
+	template<class T> class ptr {  // minimalistic pointer
+		T* impl_;
+		T& operator*() const{return *impl_;}
+		auto operator+(std::ptrdiff_t n) const {return ptr{impl_ + n};}
+	//	operator[], operator+=, etc are optional but not necessary
+	};
 }
 
-int main(){
+int main() {
 	double* buffer = new double[100];
 	multi::array_ref<double, 2, minimal::ptr<double> > CC(minimal::ptr<double>{buffer}, {10, 10});
 	CC[2]; // requires operator+ 
@@ -501,7 +512,138 @@ int main(){
 The fundamental goal of the library is that the arrays and iterators can be used with STL algorithms out-of-the-box with a reasonable efficiency.
 The most dramatic example of this is that `std::sort` works with array as it is shown in a previous example.
 
-Along with STL itself, the library tries to interact with other existing C++ libraries.
+Along with STL itself, the library tries to interact with other existing quality C++ libraries described below.
+
+## Serialization
+
+The capability of serializing arrays is important to save/load data to/from disk and also to communicate values via streams or networks (including MPI).
+The C++ language does not give any facilities for serialization and unfortunately the standard library doesn't either.
+
+However there are a few libraries that offer a certain common protocol for serialization,
+such as [Boost.Serialization](https://www.boost.org/doc/libs/1_76_0/libs/serialization/doc/index.html) and [Cereal](https://uscilab.github.io/cereal/).
+The Multi library is compatible with both of them, and yet it doesn't depend on any of them.
+The user can choose one or the other, or none if serialization is not needed.
+The generic protocol is such that variables are (de)serialized using the (`>>`)`<<` operator with the archive; operator `&` can be used to have single code for both.
+Serialization can be binary (efficient) or text-based (human readable).
+
+Here it is a small implementation of save and load functions for array to JSON format with Cereal.
+The example can be easily adapted to other formats or libries (XML with Boost.Serialization are commented on the right).
+
+```cpp
+#include <multi/array.hpp>  // our library
+#include<fstream>  // saving to files in example
+#include <cereal/archives/json.hpp>                // #include <boost/archive/xml_iarchive.hpp>
+                                                   // #include <boost/archive/xml_oarchive.hpp>
+// for serialization of array elements (in this case strings)
+#include <cereal/types/string.hpp>                 // #include <boost/serialization/string.hpp>
+using input_archive  = cereal::JSONInputArchive ;  // boost::archive::xml_iarchive;
+using output_archive = cereal::JSONOutputArchive;  // boost::archive::xml_oarchive;
+using cereal::make_nvp;                            // boost::serialization::make_nvp;
+
+namespace multi = boost::multi;
+
+template<class Element, multi::dimensionality_type D, class IStream> 
+auto array_load(IStream&& is) {
+	multi::array<Element, D> value;
+	input_archive{is} >> make_nvp("value", value);
+	return value;
+}
+
+template<class Element, multi::dimensionality_type D, class OStream>
+void array_save(OStream&& os, multi::array<Element, D> const& value) {
+	output_archive{os} << make_nvp("value", value);
+}
+
+int main() {
+	multi::array<std::string, 2> const A = {{"w", "x"}, {"y", "z"}};
+	array_save(std::ofstream{"file.string2D.json"}, A);  // use std::cout to print serialization to the screen
+
+	auto const B = array_load<std::string, 2>(std::ifstream{"file.string2D.json"});
+	assert(A == B);
+}
+```
+
+These templated functions work for any dimension and element type (as long as the element type is serializable in itself; all basic types are serializable by default).
+However note that it is responsibility of the user to make sure that data is serialized and deserialized into the same type and also assuming the same format.
+This is because the underlying serialization library only do minimal consistency checks for efficiency reasons and doesn't try to second guess file formats or contained types.
+Serialization is a relatively low level feature for which efficiency and economy of bytes is priority.
+Cryptic errors and crashes can occur if serialization libraries, file formats or C++ types are mixed between writes and reads.
+On top of serialization checks can be added by the user before and after loading a file.
+
+References to subarrays can also be serialized, however, in such case size information is not saved.
+The reason is that references to subarrays cannot be resized in their number of elements if there is size mismatch during deserialization.
+
+The output JSON file of the previous example looks like this.
+(The XML would have a similar structure.)
+
+```json
+{
+    "value": {
+        "cereal_class_version": 0,
+        "extensions": {
+            "cereal_class_version": 0,
+            "extension": {
+                "cereal_class_version": 0,
+                "first": 0,
+                "last": 2
+            },
+            "extension": {
+                "first": 0,
+                "last": 2
+            }
+        },
+        "elements": {
+            "cereal_class_version": 0,
+            "item": "w",
+            "item": "x",
+            "item": "y",
+            "item": "z"
+        }
+    }
+}
+```
+
+Large datasets tend to be serialized slowly for archives with heavy formatting.
+Here it is a comparison of speeds when (de)serializing a 134 MB 4-dimensional array of with random `double`s.
+
+| Archive format (Library)     | file size     | speed (read - write)           | time (read - write)   |
+| ---------------------------- | ------------- | ------------------------------ |-----------------------|
+| JSON (Cereal)                | 684 MB        |    3.9 MB/sec -    8.4 MB/sec  |  32.1 sec - 15.1  sec |
+| XML (Cereal)                 | 612 MB        |    2.  MB/sec -    4.  MB/sec  |  56   sec  - 28   sec |
+| XML (Boost)                  | 662 MB        |   11.  MB/sec -   13.  MB/sec  |  11   sec  -  9   sec |
+| YAML ([custom archive)](https://gitlab.com/correaa/boost-archive-yml)             | 702 MB        |   10.  MB/sec -    4.4 MB/sec  |  12   sec  - 28   sec |
+| Portable Binary (Cereal)     | 134 MB        |  130.  MB/sec -  121.  MB/sec  |  9.7  sec  - 10.6 sec |
+| Text (Boost)                 | 411 MB        |   15.  MB/sec -   16.  MB/sec  |  8.2  sec  - 7.6  sec |
+| Binary (Cereal)              | 134 MB        |  134.4 MB/sec -  126.  MB/sec  |  0.9  sec  -  0.9 sec |
+| Binary (Boost)               | 134 MB        | 5200.  MB/sec - 1600.  MB/sec  |  0.02 sec -   0.1 sec |
+| gzip-XML (Cereal)            | 191 MB        |    2.  MB/sec -    4.  MB/sec  | 61    sec  - 32   sec |
+| gzip-XML (Boost)             | 207 MB        |    8.  MB/sec -    8.  MB/sec  | 16.1  sec  - 15.9 sec |
+
+## (Polymorphic) Memory Resources
+
+The library is compatible with C++17's polymorphic memory resources (PMR) which allows using preallocated buffers. 
+This enables the use of stack memory or in order to reduce the number of allocations.
+For example, this code ends up with `buffer` containing the string `"aaaabbbbbb  "`.
+
+```cpp
+#include <memory_resource>  // polymorphic memory resource, monotonic buffer, needs C++17
+int main(){
+	char buffer[13] = "____________"; // a small buffer on the stack
+	std::pmr::monotonic_buffer_resource pool{std::data(buffer), std::size(buffer)}; // or multi::memory::monotonic<char*>
+
+	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> A({2, 2}, 'a', &pool); // or multi::memory::monotonic_allocator<double>
+	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> B({3, 2}, 'b', &pool);
+	assert( buffer == std::string{"aaaabbbbbb__"} );
+}
+```
+
+Besides PMR, the library comes with its own customized (non-polymorphic) memory resources if, for any reason, the standard PMRs are not sufficiently general.
+The headers to include are:
+
+```cpp
+#include<multi/memory/monotonic.hpp> // multi::memory::monotonic<char*> : no memory reclaim
+#include<multi/memory/stack.hpp>     // multi::memory::stack<char*>     : FIFO memory reclaim
+```
 
 ## Range v3
 
@@ -578,32 +720,7 @@ int main(){
 ## TotalView
 
 TotalView visual debugger (commercial) can display arrays in human-readable form (for simple types, like `double` or `std::complex`).
-To use it, simply `#include "multi/adaptors/totalview.hpp"` and link to the TotalView libraries, compile and run the code with the debugger.
-
-## Memory Resources
-
-The library is compatible with C++17's polymorphic memory resources which allows using preallocated buffers. 
-This enables the use of stack memory or in order to reduce the number of allocations.
-For example, this code ends up with `buffer` containing the string `"aaaabbbbbb  "`.
-
-```cpp
-#include<pmr>
-int main(){
-	char buffer[13] = "____________"; // a small buffer on the stack
-	std::pmr::monotonic_buffer_resource pool{std::data(buffer), std::size(buffer)}; // or multi::memory::monotonic<char*>
-
-	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> A({2, 2}, 'a', &pool); // or multi::memory::monotonic_allocator<double>
-	multi::array<char, 2, std::pmr::polymorphic_allocator<char>> B({3, 2}, 'b', &pool);
-}
-```
-
-The library comes with its own customized (non-polymorphic) memory resources if, for any reason, the standard PMRs are not sufficiently general.
-The headers to include are:
-
-```cpp
-#include<multi/memory/monotonic.hpp> // multi::memory::monotonic<char*> : no memory reclaim
-#include<multi/memory/stack.hpp>     // multi::memory::stack<char*>     : FIFO memory reclaim
-```
+To use it, simply `#include "multi/adaptors/totalview.hpp"` and link to the TotalView libraries, compile and run the code with the TotalView debugger.
 
 # Technical points
 

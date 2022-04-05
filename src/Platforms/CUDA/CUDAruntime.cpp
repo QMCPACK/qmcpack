@@ -10,9 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <cstddef>
-#include <cuda_runtime_api.h>
-#include "cudaError.h"
+#include "CUDAruntime.hpp"
 
 size_t getCUDAdeviceFreeMem()
 {

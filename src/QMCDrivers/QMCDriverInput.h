@@ -14,7 +14,8 @@
 
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCDrivers/InputTypes.hpp"
+#include "InputTypes.hpp"
+#include "DriverDebugChecks.h"
 
 namespace qmcplusplus
 {
@@ -33,12 +34,13 @@ public:
   QMCDriverInput()                      = default;
   QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
-  QMCDriverInput(QMCDriverInput&&);
-  QMCDriverInput& operator=(QMCDriverInput&&);
+  QMCDriverInput(QMCDriverInput&&) noexcept;
+  QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
 
 protected:
-
   bool scoped_profiling_ = false;
+  /// determine additional checks for debugging purpose
+  DriverDebugChecks debug_checks_ = DriverDebugChecks::ALL_OFF;
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -63,12 +65,13 @@ protected:
   IndexType requested_samples_ = 0;
   IndexType sub_steps_         = 1;
   // max unnecessary in this context
-  IndexType max_blocks_               = 1;
-  IndexType max_steps_                = 1;
-  IndexType warmup_steps_             = 0;
-  IndexType steps_between_samples_    = 1;
-  IndexType samples_per_thread_       = 0;
-  RealType tau_                       = 0.1;
+  IndexType max_blocks_            = 1;
+  IndexType max_steps_             = 1;
+  IndexType warmup_steps_          = 0;
+  IndexType steps_between_samples_ = 1;
+  IndexType samples_per_thread_    = 0;
+  RealType tau_                    = 0.1;
+  RealType spin_mass_              = 1.0;
   // call recompute at the end of each block in the full/mixed precision case.
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
@@ -111,6 +114,7 @@ public:
   IndexType get_steps_between_samples() const { return steps_between_samples_; }
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
   RealType get_tau() const { return tau_; }
+  RealType get_spin_mass() const { return spin_mass_; }
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
   input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
@@ -121,6 +125,7 @@ public:
 
   const std::string& get_qmc_method() const { return qmc_method_; }
   const std::string& get_update_mode() const { return update_mode_; }
+  DriverDebugChecks get_debug_checks() const { return debug_checks_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
   bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
 
@@ -129,8 +134,8 @@ public:
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) = default;
-inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
+inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus
 

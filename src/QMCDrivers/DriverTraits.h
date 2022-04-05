@@ -11,14 +11,11 @@ enum class QMCRunType
   CSVMC,
   DMC,      /**< DMC type: dmc, dmc-ptcl*/
   RMC,      /**< RMC type: rmc, rmc-ptcl */
-  OPTIMIZE, /*!< Optimization */
   VMC_OPT,  /*!< Optimization with vmc blocks */
   LINEAR_OPTIMIZE,
-  CS_LINEAR_OPTIMIZE,
   WF_TEST,
   VMC_BATCH,
   DMC_BATCH,
-  OPTIMIZE_BATCH,
   LINEAR_OPTIMIZE_BATCH
 };
 

@@ -173,15 +173,34 @@ associated with individual walkers and cannot be shared. This part of memory gro
 Running on GPU machines
 -----------------------
 
-The GPU version for the NVIDIA CUDA platform is fully incorporated into
-the main source code. Commonly used functionalities for
+The GPU version is fully incorporated into the main source code.
+
+QMCPACK supports running on multi-GPU node architectures via MPI.
+Each MPI rank gets assigned a primary GPU based on the list of GPUs visible to it and its rank id
+in the smallest MPI communicator, usually the node local communicator, enclosing that list of GPUs.
+When there are more GPUs than the MPI ranks, excessive GPUs will be left idle.
+Please avoid this scenario in production runs.
+When there are more MPI ranks than GPUs, the primary GPU will be assigned in the following way.
+Performance portable implementation assigns GPUs to equal amount of blocks of MPI ranks.
+MPI ranks within a block are assigned the same GPU as their primary GPU.
+Legacy implementation assigns GPUs to MPI ranks in a round-robin order.
+It is guaranteed that MPI ranks are distributed among GPUs as evenly as possbile.
+Currently, for medium to large runs, 1 MPI task should be used per GPU per node.
+For very smaller system sizes, use of multiple MPI tasks per GPU might yield improved performance.
+
+Performance portable implementation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Works on any GPUs with OpenMP offload support including NVIDIA, AMD and Intel GPUs.
+Using batched drivers is required.
+
+Legacy implementation
+~~~~~~~~~~~~~~~~~~~~~
+Works on NVIDIA and AMD GPUs. Commonly used functionalities for
 solid-state and molecular systems using B-spline single-particle
 orbitals are supported. Use of Gaussian basis sets, three-body
 Jastrow functions, and many observables are not yet supported. A detailed description of the GPU
 implementation can be found in :cite:`EslerKimCeperleyShulenburger2012`.
 
-The current GPU implementation assumes one MPI process per GPU. To use
-nodes with multiple GPUs, use multiple MPI processes per node.
 Vectorization is achieved over walkers, that is, all walkers are
 propagated in parallel. In each GPU kernel, loops over electrons,
 atomic cores, or orbitals are further vectorized to exploit an

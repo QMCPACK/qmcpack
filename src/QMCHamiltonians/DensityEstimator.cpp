@@ -19,23 +19,23 @@
 #include "DensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 
 namespace qmcplusplus
 {
-typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-typedef LRCoulombSingleton::GridType GridType;
-typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
+using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
-  UpdateMode.set(COLLECTABLE, 1);
-  Periodic = (elns.Lattice.SuperCellEnum != SUPERCELL_OPEN);
+  update_mode_.set(COLLECTABLE, 1);
+  Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
   for (int dim = 0; dim < OHMMS_DIM; ++dim)
   {
-    density_max[dim] = elns.Lattice.Length[dim];
-    ScaleFactor[dim] = 1.0 / elns.Lattice.Length[dim];
+    density_max[dim] = elns.getLattice().Length[dim];
+    ScaleFactor[dim] = 1.0 / elns.getLattice().Length[dim];
   }
 }
 
@@ -43,13 +43,13 @@ void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
-  RealType wgt = tWalker->Weight;
+  RealType wgt = t_walker_->Weight;
   if (Periodic)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
     {
       PosType ru;
-      ru    = P.Lattice.toUnit(P.R[iat]);
+      ru    = P.getLattice().toUnit(P.R[iat]);
       int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
       int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
       int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
@@ -93,7 +93,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
       for (int iat = 0; iat < N; iat++)
       {
         PosType ru;
-        ru = W.Lattice.toUnit(w.R[iat]);
+        ru = W.getLattice().toUnit(w.R[iat]);
         // for (int dim=0; dim<OHMMS_DIM; dim++)
         // {
         //   ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
@@ -110,7 +110,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
 void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   //current index
-  myIndex = collectables.current();
+  my_index_ = collectables.current();
   std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
   //potentialIndex=collectables.current();
@@ -124,9 +124,9 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  h5desc.emplace_back(myName);
+  h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
-  h5o.set_dimensions(ng, myIndex);
+  h5o.set_dimensions(ng, my_index_);
   h5o.open(gid);
 }
 
@@ -172,7 +172,7 @@ bool DensityEstimator::put(xmlNodePtr cur)
 
 bool DensityEstimator::get(std::ostream& os) const
 {
-  os << myName << " bin =" << Delta << " bohrs " << std::endl;
+  os << name_ << " bin =" << Delta << " bohrs " << std::endl;
   return true;
 }
 

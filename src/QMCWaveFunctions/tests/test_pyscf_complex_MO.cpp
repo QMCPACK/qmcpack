@@ -42,43 +42,43 @@ void test_C_diamond()
     bool okay = doc.parse("C_diamond-twist-third.structure.xml");
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
-    Tensor<int, 3> tmat;
-    tmat(0, 0) = 1;
-    tmat(1, 1) = 1;
-    tmat(2, 2) = 1;
 
-    ParticleSet ions;
-    XMLParticleParser parse_ions(ions, tmat);
+    ParticleSet::ParticleLayout lattice;
+    // BCC H
+    lattice.R(0, 0) = 3.37316115;
+    lattice.R(0, 1) = 3.37316115;
+    lattice.R(0, 2) = 0.0;
+    lattice.R(1, 0) = 0.0;
+    lattice.R(1, 1) = 3.37316115;
+    lattice.R(1, 2) = 3.37316115;
+    lattice.R(2, 0) = 3.37316115;
+    lattice.R(2, 1) = 0.0;
+    lattice.R(2, 2) = 3.37316115;
+    lattice.reset();
+
+    const SimulationCell simulation_cell(lattice);
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
+    XMLParticleParser parse_ions(ions);
     OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
     REQUIRE(particleset_ion.size() == 1);
-    parse_ions.put(particleset_ion[0]);
+    parse_ions.readXML(particleset_ion[0]);
 
     REQUIRE(ions.groups() == 1);
     REQUIRE(ions.R.size() == 2);
     ions.update();
 
-    ParticleSet elec;
-    XMLParticleParser parse_elec(elec, tmat);
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
+    XMLParticleParser parse_elec(elec);
     OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
     REQUIRE(particleset_elec.size() == 1);
-    parse_elec.put(particleset_elec[0]);
+    parse_elec.readXML(particleset_elec[0]);
 
     REQUIRE(elec.groups() == 2);
     REQUIRE(elec.R.size() == 8);
 
     elec.R = 0.0;
-
-    // BCC H
-    elec.Lattice.R(0, 0) = 3.37316115;
-    elec.Lattice.R(0, 1) = 3.37316115;
-    elec.Lattice.R(0, 2) = 0.0;
-    elec.Lattice.R(1, 0) = 0.0;
-    elec.Lattice.R(1, 1) = 3.37316115;
-    elec.Lattice.R(1, 2) = 3.37316115;
-    elec.Lattice.R(2, 0) = 3.37316115;
-    elec.Lattice.R(2, 1) = 0.0;
-    elec.Lattice.R(2, 2) = 3.37316115;
-    elec.Lattice.reset();
 
     elec.addTable(ions);
     elec.update();
@@ -89,22 +89,22 @@ void test_C_diamond()
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-    particle_set_map["e"]    = &elec;
-    particle_set_map["ion0"] = &ions;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
     SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
-    REQUIRE(bb != NULL);
+    const auto sposet_builder_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb                      = *sposet_builder_ptr;
 
     OhmmsXPathObject slater_base("//sposet", doc2.getXPathContext());
-    SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(26);
 
     // BEGIN generated C++ input from Carbon1x1x1-tw1_gen_mos.py (pyscf version 1.6.2) on 2019-11-19 15:08:42.652893

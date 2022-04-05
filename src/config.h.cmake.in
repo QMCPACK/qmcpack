@@ -32,9 +32,6 @@
 /* define PRINT_DEBUG */
 #cmakedefine PRINT_DEBUG @PRINT_DEBUG@
 
-/* Enable OpenMP parallelization. */
-#cmakedefine ENABLE_OPENMP @ENABLE_OPENMP@
-
 /* Enable OpenMP offload. */
 #cmakedefine ENABLE_OFFLOAD @ENABLE_OFFLOAD@
 
@@ -52,6 +49,12 @@
 #else
   #define PRAGMA_OMP_TASKLOOP(x) _Pragma("omp taskgroup")
 #endif
+
+/* Manage memory allocations via vendor APIs and associate them with the OpenMP runtime */
+#cmakedefine QMC_OFFLOAD_MEM_ASSOCIATED @QMC_OFFLOAD_MEM_ASSOCIATED@
+
+/* Workaround offload bug when branching happens in parallel */
+#cmakedefine QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL @QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL@
 
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
@@ -99,16 +102,16 @@
 /* Find ESSL library */
 #cmakedefine HAVE_ESSL @HAVE_ESSL@
 
-/* Find acml library */
-#cmakedefine HAVE_ACML @HAVE_ACML@
-
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
+
+/* Using translation of CUDA to HIP for GPU execution */
+#cmakedefine QMC_CUDA2HIP @QMC_CUDA2HIP@
 
 /* Using CUDA for GPU execution, next generation */
 #cmakedefine ENABLE_CUDA @ENABLE_CUDA@
 
-/* Using boost::stacktrace */ 
+/* Using boost::stacktrace */
 #cmakedefine ENABLE_STACKTRACE @ENABLE_STACKTRACE@
 
 /* Setting base precision for CUDA kernels */

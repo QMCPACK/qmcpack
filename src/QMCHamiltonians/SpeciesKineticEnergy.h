@@ -12,7 +12,6 @@
 #ifndef QMCPLUSPLUS_SPECIESKINETICENERGY_H
 #define QMCPLUSPLUS_SPECIESKINETICENERGY_H
 
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 
 namespace qmcplusplus
@@ -29,22 +28,22 @@ class SpeciesKineticEnergy : public OperatorBase
 public:
   SpeciesKineticEnergy(ParticleSet& P);
 
-  bool put(xmlNodePtr cur);         // read input xml node, required
-  bool get(std::ostream& os) const; // class description, required
+  bool put(xmlNodePtr cur) override;         // read input xml node, required
+  bool get(std::ostream& os) const override; // class description, required
 
-  Return_t evaluate(ParticleSet& P);
+  Return_t evaluate(ParticleSet& P) override;
 
   // pure virtual functions require overrider
-  void resetTargetParticleSet(ParticleSet& P) {}                                          // required
+  void resetTargetParticleSet(ParticleSet& P) override {}                                 // required
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final; // required
 
   // allocate multiple columns in scalar.dat
-  void addObservables(PropertySetType& plist, BufferType& collectables);
+  void addObservables(PropertySetType& plist, BufferType& collectables) override;
   // fill multiple columns in scalar.dat
-  void setObservables(PropertySetType& plist);
+  void setObservables(PropertySetType& plist) override;
 
   // allow h5 output
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
 
 private:
   ParticleSet& tpset; // reference to target particle set

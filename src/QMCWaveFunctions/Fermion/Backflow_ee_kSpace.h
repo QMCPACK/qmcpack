@@ -25,13 +25,13 @@ namespace qmcplusplus
 {
 class Backflow_ee_kSpace : public BackflowFunctionBase
 {
-  typedef QMCTraits::ComplexType ComplexType;
+  using ComplexType = QMCTraits::ComplexType;
   ///typedef for real values
-  //typedef optimize::VariableSet::real_type real_type;
+  //using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
-  typedef optimize::VariableSet opt_variables_type;
+  using opt_variables_type = optimize::VariableSet;
   ///typedef for name-value lists
-  typedef optimize::VariableSet::variable_map_type variable_map_type;
+  using variable_map_type = optimize::VariableSet::variable_map_type;
 
 public:
   //number of groups of the target particleset
@@ -66,7 +66,7 @@ public:
   {
     NumKShells = yk.size();
     Fk         = yk;
-    NumKVecs   = P.SK->KLists.kshell[NumKShells + 1];
+    NumKVecs   = P.getSimulationCell().getKLists().kshell[NumKShells + 1];
     Rhok.resize(NumKVecs);
     if (Optimize)
       numParams = NumKShells;
@@ -74,11 +74,9 @@ public:
 
   void resize(int NT) { NumTargets = NT; }
 
-  ~Backflow_ee_kSpace(){};
-
-  BackflowFunctionBase* makeClone(ParticleSet& tqp) const
+  std::unique_ptr<BackflowFunctionBase> makeClone(ParticleSet& tqp) const override
   {
-    Backflow_ee_kSpace* clone = new Backflow_ee_kSpace(CenterSys, tqp);
+    auto clone = std::make_unique<Backflow_ee_kSpace>(CenterSys, tqp);
     clone->resize(NumTargets);
     //       clone->uniqueRadFun.resize(uniqueRadFun.size());
     //       clone->RadFun.resize(RadFun.size());
@@ -118,7 +116,7 @@ public:
     */
   }
 
-  void registerData(WFBufferType& buf)
+  void registerData(WFBufferType& buf) override
   {
     /*
           FirstOfU = &(UIJ(0,0)[0]);
@@ -133,39 +131,40 @@ public:
     */
   }
 
-  void reportStatus(std::ostream& os) { myVars.print(os); }
+  void reportStatus(std::ostream& os) override { myVars.print(os); }
 
-  void resetParameters(const opt_variables_type& active)
+  void resetParameters(const opt_variables_type& active) override
   {
     if (Optimize)
     {
       for (int i = 0; i < Fk.size(); ++i)
       {
         int loc = myVars.where(i);
-        if (loc >= 0) {
+        if (loc >= 0)
+        {
           myVars[i] = active[loc];
-          Fk[i] = std::real(myVars[i]);
+          Fk[i]     = std::real(myVars[i]);
           //Fk[i] = myVars[i] = active[loc];
         }
       }
     }
   }
 
-  void checkInVariables(opt_variables_type& active)
+  void checkInVariables(opt_variables_type& active) override
   {
     if (Optimize)
       active.insertFrom(myVars);
   }
 
-  void checkOutVariables(const opt_variables_type& active)
+  void checkOutVariables(const opt_variables_type& active) override
   {
     if (Optimize)
       myVars.getIndex(active);
   }
 
-  inline bool isOptimizable() { return Optimize; }
+  inline bool isOptimizable() override { return Optimize; }
 
-  inline int indexOffset()
+  inline int indexOffset() override
   {
     if (Optimize)
       return myVars.where(0);
@@ -173,7 +172,7 @@ public:
       return 0;
   }
 
-  inline void acceptMove(int iat, int UpdateMode)
+  inline void acceptMove(int iat, int UpdateMode) override
   {
     int num;
     switch (UpdateMode)
@@ -246,7 +245,7 @@ public:
     //      BIJ_temp=0.0;
   }
 
-  inline void restore(int iat, int UpdateType)
+  inline void restore(int iat, int UpdateType) override
   {
     //      UIJ_temp=0.0;
     //      AIJ_temp=0.0;
@@ -255,37 +254,13 @@ public:
 
   /** calculate quasi-particle coordinates only
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP) override
   {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("Backflow_ee_kSpace::evaluate");
-#else
-    //memcopy if necessary but this is not so critcal
-    copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
-    for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    std::vector<int>& kshell(P.SK->KLists.kshell);
-    for (int iel = 0; iel < NumTargets; iel++)
-    {
-      const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
-      const ComplexType* restrict rhok_ptr(Rhok.data());
-      int ki = 0;
-      for (int ks = 0; ks < NumKShells; ks++)
-      {
-        // don't understand factor of 2, ask Markus!!!
-        RealType pre = 2.0 * Fk[ks];
-        for (; ki < kshell[ks + 1]; ki++, eikr_ptr++, rhok_ptr++)
-        {
-          RealType ii = ((*eikr_ptr).real() * (*rhok_ptr).imag() - (*eikr_ptr).imag() * (*rhok_ptr).real());
-          QP.R[iel] -= pre * Kcart[ki] * ii;
-        }
-      }
-    }
-#endif
+    throw std::runtime_error("Backflow_ee_kSpace::evaluate not implemented. There was an implementation with"
+                             " complex-valued storage that may be resurrected using real-valued storage.");
   }
 
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector_t& Bmat, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradVector& Bmat, HessMatrix& Amat)
   {
     APP_ABORT("This shouldn't be called: Backflow_ee_kSpace::evaluate(Bmat)");
   }
@@ -293,115 +268,68 @@ public:
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    */
-  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix_t& Bmat_full, HessMatrix_t& Amat)
+  inline void evaluate(const ParticleSet& P, ParticleSet& QP, GradMatrix& Bmat_full, HessMatrix& Amat) override
   {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    APP_ABORT("Backflow_ee_kSpace::evaluate");
-#else
-    //memcopy if necessary but this is not so critcal
-    copy(P.SK->rhok[0], P.SK->rhok[0] + NumKVecs, Rhok.data());
-    for (int spec1 = 1; spec1 < NumGroups; spec1++)
-      accumulate_elements(P.SK->rhok[spec1], P.SK->rhok[spec1] + NumKVecs, Rhok.data());
-    const KContainer::VContainer_t& Kcart(P.SK->KLists.kpts_cart);
-    std::vector<int>& kshell(P.SK->KLists.kshell);
-    GradType fact;
-    HessType kakb;
-    for (int iel = 0; iel < NumTargets; iel++)
-    {
-      const ComplexType* restrict eikr_ptr(P.SK->eikr[iel]);
-      const ComplexType* restrict rhok_ptr(Rhok.data());
-      const RealType* restrict ksq_ptr(P.SK->KLists.ksq.data());
-      int ki = 0;
-      for (int ks = 0; ks < NumKShells; ks++, ksq_ptr++)
-      {
-        // don't understand factor of 2, ask Markus!!!
-        RealType pre = 2.0 * Fk[ks];
-        RealType k2  = *ksq_ptr;
-        for (; ki < kshell[ks + 1]; ki++, eikr_ptr++, rhok_ptr++)
-        {
-          RealType rr = ((*eikr_ptr).real() * (*rhok_ptr).real() + (*eikr_ptr).imag() * (*rhok_ptr).imag());
-          RealType ii = ((*eikr_ptr).real() * (*rhok_ptr).imag() - (*eikr_ptr).imag() * (*rhok_ptr).real());
-          // quasiparticle
-          QP.R[iel] -= pre * Kcart[ki] * ii;
-          // B matrix
-          convert(k2 * pre * Kcart[ki], fact);
-          convert(pre * outerProduct(Kcart[ki], Kcart[ki]), kakb);
-          Bmat_full(iel, iel) += fact * (ii - 1.0);
-          // I can use symmetry to do only i<j, and then symmetrize
-          // A matrix
-          Amat(iel, iel) += kakb * (rr - 1.0);
-          // I can use symmetry to do only i<j, and then symmetrize
-          for (int j = 0; j < iel; j++)
-          {
-            ComplexType& eikrj = P.SK->eikr[j][ki];
-            Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
-            Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
-          }
-          for (int j = iel + 1; j < NumTargets; j++)
-          {
-            ComplexType& eikrj = P.SK->eikr[j][ki];
-            Bmat_full(iel, j) += fact * ((*eikr_ptr).real() * (eikrj).imag() - (*eikr_ptr).imag() * (eikrj).real());
-            Amat(iel, j) -= kakb * ((*eikr_ptr).real() * (eikrj).real() + (*eikr_ptr).imag() * (eikrj).imag());
-          }
-        }
-      }
-    }
-#endif
+    throw std::runtime_error("Backflow_ee_kSpace::evaluate not implemented. There was an implementation with"
+                             " complex-valued storage that may be resurrected using real-valued storage.");
   }
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, ParticleSet::ParticlePos_t& newQP, const std::vector<int>& index) {}
+  inline void evaluatePbyP(const ParticleSet& P,
+                           ParticleSet::ParticlePos& newQP,
+                           const std::vector<int>& index) override
+  {}
 
   /** calculate quasi-particle coordinates after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP) {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
-                           HessMatrix_t& Amat)
+                           HessMatrix& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
-  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos_t& newQP, HessMatrix_t& Amat) {}
+  inline void evaluatePbyP(const ParticleSet& P, int iat, ParticleSet::ParticlePos& newQP, HessMatrix& Amat) override {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
-                           ParticleSet::ParticlePos_t& newQP,
+                           ParticleSet::ParticlePos& newQP,
                            const std::vector<int>& index,
-                           GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat)
+                           GradMatrix& Bmat,
+                           HessMatrix& Amat) override
   {}
 
   /** calculate quasi-particle coordinates and Amat after pbyp move
    */
   inline void evaluatePbyP(const ParticleSet& P,
                            int iat,
-                           ParticleSet::ParticlePos_t& newQP,
-                           GradMatrix_t& Bmat,
-                           HessMatrix_t& Amat)
+                           ParticleSet::ParticlePos& newQP,
+                           GradMatrix& Bmat,
+                           HessMatrix& Amat) override
   {}
 
   /** calculate only Bmat
    *  This is used in pbyp moves, in updateBuffer()
    */
-  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix_t& Bmat_full) {}
+  inline void evaluateBmatOnly(const ParticleSet& P, GradMatrix& Bmat_full) override {}
 
   /** calculate quasi-particle coordinates, Bmat and Amat
    *  calculate derivatives wrt to variational parameters
    */
   inline void evaluateWithDerivatives(const ParticleSet& P,
                                       ParticleSet& QP,
-                                      GradMatrix_t& Bmat_full,
-                                      HessMatrix_t& Amat,
-                                      GradMatrix_t& Cmat,
-                                      GradMatrix_t& Ymat,
-                                      HessArray_t& Xmat)
+                                      GradMatrix& Bmat_full,
+                                      HessMatrix& Amat,
+                                      GradMatrix& Cmat,
+                                      GradMatrix& Ymat,
+                                      HessArray& Xmat) override
   {}
 };
 

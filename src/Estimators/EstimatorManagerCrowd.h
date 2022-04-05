@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -16,7 +16,7 @@
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/EstimatorManagerNew.h"
@@ -40,10 +40,10 @@ class CollectablesEstimator;
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType = EstimatorManagerNew::RealType;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType      = EstimatorManagerNew::RealType;
   using EstimatorType = EstimatorManagerNew::EstimatorType;
-  
+
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
    *
    *  This coupling should be removed.
@@ -63,9 +63,19 @@ public:
 
   void stopBlock();
 
-  void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets);
+  /** Accumulate over all scalar estimators and operator estimators over all walkers in crowd.
+   *  Not all estimators make use of all these arguments
+   *  \param[in]     walkers         walkers in crowd
+   *  \param[in]     psets           walker particle sets
+   *  \param[in]     wfns            walker wavefunctions
+   *  \param[inout]  rng             crowd scope RandomGenerator
+   */ 
+  void accumulate(const RefVector<MCPWalker>& walkers,
+                  const RefVector<ParticleSet>& psets,
+                  const RefVector<TrialWaveFunction>& wfns,
+                  RandomGenerator& rng);
 
-  RefVector<EstimatorType> get_scalar_estimators() { return convertPtrToRefVector(scalar_estimators_); }
+  RefVector<EstimatorType> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
 
   RealType get_block_num_samples() const { return block_num_samples_; }
@@ -78,7 +88,7 @@ private:
   RealType block_weight_;
 
   ///estimators of simple scalars
-  std::vector<EstimatorType*> scalar_estimators_;
+  std::vector<std::unique_ptr<EstimatorType>> scalar_estimators_;
 
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 };

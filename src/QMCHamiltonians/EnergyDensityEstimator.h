@@ -25,22 +25,22 @@ namespace qmcplusplus
 class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
 {
 public:
-  typedef ReferencePoints::Point Point;
-  typedef std::map<std::string, ParticleSet*> PSPool;
+  using Point  = ReferencePoints::Point;
+  using PSPool = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
-  EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE);
-  ~EnergyDensityEstimator();
+  EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE);
+  ~EnergyDensityEstimator() override;
 
-  void resetTargetParticleSet(ParticleSet& P);
-  Return_t evaluate(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
+  Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
   bool put(xmlNodePtr cur, ParticleSet& P);
-  bool get(std::ostream& os) const;
+  bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   void write_description(std::ostream& os);
@@ -54,7 +54,7 @@ private:
   xmlNodePtr input_xml;
   //system information
   std::string defKE;
-  PSPool& psetpool;
+  const PSPool& psetpool;
   ParticleSet* Pdynamic;
   ParticleSet* Pstatic;
   ParticleSet* get_particleset(std::string& psname);
@@ -83,7 +83,7 @@ private:
   //  contains the Energy information of particles
   std::vector<SpaceGrid*> spacegrids;
   //particle positions
-  ParticlePos_t R;
+  ParticlePos R;
   //number of samples accumulated
   int nsamples;
 
@@ -91,7 +91,7 @@ private:
   //ParticleSet should carry Zptcl so it doesn't have
   // to be computed everywhere from species
   std::vector<RealType> Zptcl;
-  ParticlePos_t Rptcl;
+  ParticlePos Rptcl;
   void set_ptcl(void);
   void unset_ptcl(void);
 
@@ -100,12 +100,12 @@ private:
   CombinedTraceSample<TraceReal>* Vd_trace;
   CombinedTraceSample<TraceReal>* Vs_trace;
 
-  virtual void get_required_traces(TraceManager& tm);
+  void getRequiredTraces(TraceManager& tm) override;
 
-  virtual void contribute_scalar_quantities() {}
-  virtual void checkout_scalar_quantities(TraceManager& tm) {}
-  virtual void collect_scalar_quantities() {}
-  virtual void delete_scalar_quantities() {}
+  void contributeScalarQuantities() override {}
+  void checkoutScalarQuantities(TraceManager& tm) override {}
+  void collectScalarQuantities() override {}
+  void deleteScalarQuantities() override {}
 };
 
 

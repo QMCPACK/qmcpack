@@ -14,6 +14,7 @@
 
 #include "SPOSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
+#include <Message/UniformCommunicateError.h>
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
@@ -21,8 +22,8 @@
 
 namespace qmcplusplus
 {
-SPOSetBuilder::SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm)
-    : MPIObjectBase(comm), legacy(true), SPO_type_name(SPO_type_name_in)
+SPOSetBuilder::SPOSetBuilder(const std::string& type_name, Communicate* comm)
+    : MPIObjectBase(comm), legacy(true), type_name_(type_name)
 {
   reserve_states();
 }
@@ -33,23 +34,24 @@ void SPOSetBuilder::reserve_states(int nsets)
   int sets_needed = nsets - states.size();
   if (sets_needed > 0)
     for (int s = 0; s < sets_needed; ++s)
-      states.push_back(new SPOSetInfo());
+      states.push_back(std::make_unique<SPOSetInfo>());
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
-  APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
+  myComm->barrier_and_abort("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
   return 0;
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
   std::string optimize("no");
 
   OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "id");
   attrib.add(spo_object_name, "name");
   attrib.add(optimize, "optimize");
   attrib.put(cur);
@@ -57,12 +59,12 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   app_summary() << std::endl;
   app_summary() << "     Single particle orbitals (SPO)" << std::endl;
   app_summary() << "     ------------------------------" << std::endl;
-  app_summary() << "      Name: " << spo_object_name << "   Type: " << SPO_type_name
+  app_summary() << "      Name: " << spo_object_name << "   Type: " << type_name_
                 << "   Builder class name: " << ClassName << std::endl;
   app_summary() << std::endl;
 
   if (spo_object_name.empty())
-    app_warning() << "SPOSet object name not given in the input!" << std::endl;
+    myComm->barrier_and_abort("SPOSet object \"name\" attribute not given in the input!");
 
   // read specialized sposet construction requests
   //   and translate them into a set of orbital indices
@@ -70,14 +72,22 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   // process general sposet construction requests
   //   and preserve legacy interface
-  SPOSet* sposet = 0;
-  if (legacy && input_info.legacy_request)
-    sposet = createSPOSetFromXML(cur);
-  else
-    sposet = createSPOSet(cur, input_info);
+  std::unique_ptr<SPOSet> sposet;
+
+  try
+  {
+    if (legacy && input_info.legacy_request)
+      sposet = createSPOSetFromXML(cur);
+    else
+      sposet = createSPOSet(cur, input_info);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
 
   if (!sposet)
-    APP_ABORT("SPOSetBuilder::createSPOSet sposet creation failed");
+    myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
 
   if (optimize == "rotation" || optimize == "yes")
   {
@@ -86,8 +96,9 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     abort();
 #else
     // create sposet with rotation
-    auto* rot_spo   = new RotatedSPOs(sposet);
-    xmlNodePtr tcur = cur->xmlChildrenNode;
+    auto& sposet_ref = *sposet;
+    auto rot_spo     = std::make_unique<RotatedSPOs>(std::move(sposet));
+    xmlNodePtr tcur  = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
       std::string cname((const char*)(tcur->name));
@@ -100,16 +111,16 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     }
 
     // pass sposet name and rename sposet before rotation
-    if (!sposet->getName().empty())
+    if (!sposet_ref.getName().empty())
     {
-      rot_spo->setName(sposet->getName());
-      sposet->setName(sposet->getName() + "_before_rotation");
+      rot_spo->setName(sposet_ref.getName());
+      sposet_ref.setName(sposet_ref.getName() + "_before_rotation");
     }
-    if (sposet->getName().empty())
-      sposet->setName(spo_object_name + "_before_rotation");
+    if (sposet_ref.getName().empty())
+      sposet_ref.setName(spo_object_name + "_before_rotation");
 
     // overwrite sposet
-    sposet = rot_spo;
+    sposet = std::move(rot_spo);
 #endif
   }
 
@@ -122,9 +133,6 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
                   << "   object name: " << sposet->getName() << std::endl;
 
   sposet->checkObject();
-  // builder owns created sposets
-  sposets.push_back(sposet);
-
   return sposet;
 }
 

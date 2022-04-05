@@ -66,36 +66,32 @@ unsigned parsewords(const char* inbuf, std::vector<std::string>& slist, const st
   std::string token = "=, \t\n\"";
   token.append(extra_tokens);
 
-  char* tmpstr = new char[strlen(inbuf) + 1];
-  strcpy(tmpstr, inbuf);
-  slist.erase(slist.begin(), slist.end());
+  std::string tmpstr(inbuf);
+  slist.clear();
   int num      = 0;
-  char* tokenp = strtok(tmpstr, token.c_str());
+  char* tokenp = strtok(tmpstr.data(), token.c_str());
   while (tokenp && tokenp[0] != '#')
   {
     num++;
     slist.push_back(std::string(tokenp));
-    tokenp = strtok(0, token.c_str());
+    tokenp = strtok(nullptr, token.c_str());
   }
-  delete[] tmpstr;
   return num;
 }
 
 unsigned parsewords(const char* inbuf, std::list<std::string>& slist)
 {
   const char* token = "=, \t\n";
-  char* tmpstr      = new char[strlen(inbuf) + 1];
-  strcpy(tmpstr, inbuf);
-  slist.erase(slist.begin(), slist.end());
-  int num      = 0;
-  char* tokenp = strtok(tmpstr, token);
+  std::string tmpstr(inbuf);
+  slist.clear();
+  unsigned num = 0;
+  char* tokenp = strtok(tmpstr.data(), token);
   while (tokenp && tokenp[0] != '#')
   {
     num++;
     slist.push_back(std::string(tokenp));
-    tokenp = strtok(0, token);
+    tokenp = strtok(nullptr, token);
   }
-  delete[] tmpstr;
   return num;
 }
 
@@ -155,13 +151,13 @@ int getwordsWithMergedNumbers(std::vector<std::string>& slist,
 void readXmol(std::istream& fxmol, double* data, int numvar)
 {
   std::vector<std::string> slist;
-  int argc       = getwords(slist, fxmol);
+  getwords(slist, fxmol);
   unsigned natom = atoi(slist.front().c_str());
-  argc           = getwords(slist, fxmol);
+  getwords(slist, fxmol);
   int ii         = 0;
   for (int i = 0; i < natom; i++)
   {
-    argc = getwords(slist, fxmol);
+    getwords(slist, fxmol);
     for (int ivar = 1; ivar <= numvar; ivar++)
     {
       data[ii++] = atof(slist[ivar].c_str());
@@ -248,18 +244,16 @@ int getwords(std::vector<std::string>& slist, std::istream& fpos, const char* te
 unsigned parseXwords(char* inbuf, std::vector<std::string>& slist)
 {
   const char* token = "=, <>\"\t\n";
-  char* tmpstr      = new char[strlen(inbuf) + 1];
-  strcpy(tmpstr, inbuf);
-  slist.erase(slist.begin(), slist.end());
-  int num      = 0;
-  char* tokenp = strtok(tmpstr, token);
+  std::string tmpstr(inbuf);
+  slist.clear();
+  unsigned num = 0;
+  char* tokenp = strtok(tmpstr.data(), token);
   while (tokenp && tokenp[0] != '#')
   {
     num++;
     slist.push_back(std::string(tokenp));
-    tokenp = strtok(0, token);
+    tokenp = strtok(nullptr, token);
   }
-  delete[] tmpstr;
   return num;
 }
 

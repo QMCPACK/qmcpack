@@ -23,15 +23,13 @@
 #include <vector>
 #include "Numerics/HDFSTLAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
 bool EinsplineSetBuilder::ReadOrbitalInfo(bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "ReadOrbitalInfo");
   // Handle failed file open gracefully by temporarily replacing error handler
   H5E_auto2_t old_efunc;
   void* old_efunc_data;
@@ -259,7 +257,6 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands:complex");
   bool root = myComm->rank()==0;
   //bcastwith other stuff
   myComm->bcast(NumDistinctOrbitals);
@@ -268,13 +265,13 @@ EinsplineSetBuilder::ReadBands
   int N = NumDistinctOrbitals;
   orbitalSet->kPoints.resize(N);
   orbitalSet->MakeTwoCopies.resize(N);
-  orbitalSet->StorageValueVector.resize(N);
+  orbitalSet->storage_value_vector_.resize(N);
   orbitalSet->BlendValueVector.resize(N);
-  orbitalSet->StorageLaplVector.resize(N);
+  orbitalSet->storage_lapl_vector_.resize(N);
   orbitalSet->BlendLaplVector.resize(N);
-  orbitalSet->StorageGradVector.resize(N);
+  orbitalSet->storage_grad_vector_.resize(N);
   orbitalSet->BlendGradVector.resize(N);
-  orbitalSet->StorageHessVector.resize(N);
+  orbitalSet->storage_hess_vector_.resize(N);
   orbitalSet->phase.resize(N);
   orbitalSet->eikr.resize(N);
   orbitalSet->NumValenceOrbs = NumValenceOrbs;
@@ -509,7 +506,6 @@ void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<double>* orbitalSet)
 {
-  update_token(__FILE__,__LINE__,"ReadBands:double");
   std::vector<BandInfo>& SortBands(*FullBands[spin]);
   bool root = myComm->rank()==0;
   // bcast other stuff
@@ -519,13 +515,13 @@ EinsplineSetBuilder::ReadBands
   int N = NumDistinctOrbitals;
   orbitalSet->kPoints.resize(N);
   orbitalSet->MakeTwoCopies.resize(N);
-  orbitalSet->StorageValueVector.resize(N);
+  orbitalSet->storage_value_vector_.resize(N);
   orbitalSet->BlendValueVector.resize(N);
-  orbitalSet->StorageLaplVector.resize(N);
+  orbitalSet->storage_lapl_vector_.resize(N);
   orbitalSet->BlendLaplVector.resize(N);
-  orbitalSet->StorageGradVector.resize(N);
+  orbitalSet->storage_grad_vector_.resize(N);
   orbitalSet->BlendGradVector.resize(N);
-  orbitalSet->StorageHessVector.resize(N);
+  orbitalSet->storage_hess_vector_.resize(N);
   orbitalSet->phase.resize(N);
   orbitalSet->eikr.resize(N);
   orbitalSet->NumValenceOrbs = NumValenceOrbs;

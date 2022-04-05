@@ -1,10 +1,12 @@
 #ifdef COMPILATION// -*-indent-tabs-mode: t; c-basic-offset: 4; tab-width: 4;-*-
 $CXX $0 -o $0x -lcudart -lcufft `pkg-config --libs fftw3` -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2020
+// © Alfredo A. Correa 2020-2021
 
 #ifndef MULTI_ADAPTORS_CUFFTW_HPP
 #define MULTI_ADAPTORS_CUFFTW_HPP
+
+#include "../config/MARK.hpp"
 
 #include "../adaptors/../utility.hpp"
 #include "../adaptors/../array.hpp"
@@ -72,11 +74,23 @@ constexpr sign backward{CUFFT_INVERSE};
 static_assert(forward != none and none != backward and backward != forward, "!");
 
 class plan{
+
 	using complex_type = cufftDoubleComplex;
 	complex_type const* idata_     = nullptr;
 	complex_type*       odata_     = nullptr;
 	int                 direction_ = 0;
 	cufftHandle h_;
+
+public:
+	template<multi::dimensionality_type D>
+	static 
+	std::map<std::tuple<std::array<int, D>, std::array<int, D>, int, int, std::array<int, D>, int, int, int>, cufftHandle>&
+	cache(){
+		static std::map<std::tuple<std::array<int, D>, std::array<int, D>, int, int, std::array<int, D>, int, int, int>, cufftHandle> cache_;
+		return cache_;
+	}
+
+private:
 	plan() = default;
 	plan(plan const&) = delete;
 	plan(plan&& other) : 
@@ -110,7 +124,7 @@ class plan{
 		//	case CUFFT_NOT_SUPPORTED  : throw std::runtime_error{"CUFFT_NOT_SUPPORTED"};
 			default                   : throw std::runtime_error{"cufftExecZ2Z unknown error"};
 		}
-	//	if(cudaDeviceSynchronize() != cudaSuccess) throw std::runtime_error{"Cuda error: Failed to synchronize"};
+		cudaDeviceSynchronize();
 	}
 	void swap(plan& other){ 
 		using std::swap;
@@ -134,7 +148,10 @@ public:
 	}
 	template<class I, class O>
 	void execute_dft(I&& i, O&& o) const{execute_dft(std::forward<I>(i), std::forward<O>(o), direction_);}
-	~plan(){if(h_) cufftDestroy(h_);}
+	~plan() noexcept{
+		MULTI_MARK_SCOPE("cufft plan dtor");
+	//	if(h_) cufftDestroy(h_);
+	}
 	using size_type = int;
 	using ssize_type = int;
 
@@ -147,11 +164,12 @@ public:
 		odata_{const_cast<complex_type*>(reinterpret_cast<complex_type*      >(raw_pointer_cast(base(o))))},
 		direction_{s}
 	{
+		MULTI_MARK_SCOPE("cufft plan ctor");
+
 		assert( I::dimensionality < 4 );
 		assert( CUFFT_FORWARD == s or CUFFT_INVERSE == s or s == 0 );
 		assert( sizes(i) == sizes(o) );
 
-//		using std::experimental::apply;// using std::experimental::make_array;
 		auto ion      = std::apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (i));
 		auto istrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(i));
 		auto ostrides = std::apply([](auto... t){return std::array<ssize_type, D>{static_cast<ssize_type>(t)...};}, strides(o));
@@ -182,42 +200,51 @@ public:
 		idata_ =                           reinterpret_cast<complex_type const*>(raw_pointer_cast(base(i))) ;
 		odata_ = const_cast<complex_type*>(reinterpret_cast<complex_type*      >(raw_pointer_cast(base(o))));
 
-		switch(::cufftPlanMany(
-			/*cufftHandle *plan*/ &h_, 
-			/*int rank*/          ion.size(), 
-			/*int *n*/            ion.data(), //	/*NX*/      last - first,
-			/*int *inembed*/      inembed.data(),
-			/*int istride*/       istride, 
-			/*int idist*/         1, //stride(first), 
-			/*int *onembed*/      onembed.data(), 
-			/*int ostride*/       ostride, 
-			/*int odist*/         1, //stride(d_first), 
-			/*cufftType type*/    CUFFT_Z2Z, 
-			/*int batch*/         1 //BATCH
-		)){
-			case CUFFT_SUCCESS        : break;// "cuFFT successfully executed the FFT plan."
-			case CUFFT_ALLOC_FAILED   : throw std::runtime_error{"CUFFT failed to allocate GPU memory."};
-			case CUFFT_INVALID_VALUE  : throw std::runtime_error{"At least one of the parameters idata, odata, and direction is not valid."};
-			case CUFFT_INTERNAL_ERROR : throw std::runtime_error{"Used for all internal driver errors."};
-			case CUFFT_SETUP_FAILED   : throw std::runtime_error{"The cuFFT library failed to initialize."};
-			case CUFFT_INVALID_SIZE   : throw std::runtime_error{"The user specifies an unsupported FFT size."};
-			default                   : throw std::runtime_error{"cufftPlanMany unknown error"};
+		auto it = cache<D>().find(std::make_tuple(ion, inembed, istride, 1, onembed, ostride, 1, 1));
+		if(it != cache<D>().end()){
+			h_ = it->second;
+		}else{
+			switch(::cufftPlanMany(
+				/*cufftHandle *plan*/ &h_, 
+				/*int rank*/          ion.size(), 
+				/*int *n*/            ion.data(), //	/*NX*/      last - first,
+				/*int *inembed*/      inembed.data(),
+				/*int istride*/       istride, 
+				/*int idist*/         1, //stride(first), 
+				/*int *onembed*/      onembed.data(), 
+				/*int ostride*/       ostride, 
+				/*int odist*/         1, //stride(d_first), 
+				/*cufftType type*/    CUFFT_Z2Z, 
+				/*int batch*/         1 //BATCH
+			)){
+				case CUFFT_SUCCESS        : break;// "cuFFT successfully executed the FFT plan."
+				case CUFFT_ALLOC_FAILED   : throw std::runtime_error{"CUFFT failed to allocate GPU memory."};
+				case CUFFT_INVALID_VALUE  : throw std::runtime_error{"At least one of the parameters idata, odata, and direction is not valid."};
+				case CUFFT_INTERNAL_ERROR : throw std::runtime_error{"Used for all internal driver errors."};
+				case CUFFT_SETUP_FAILED   : throw std::runtime_error{"The cuFFT library failed to initialize."};
+				case CUFFT_INVALID_SIZE   : throw std::runtime_error{"The user specifies an unsupported FFT size."};
+				default                   : throw std::runtime_error{"cufftPlanMany unknown error"};
+			}
+			cache<D>().insert(std::make_pair(std::make_tuple(ion, inembed, istride, 1, onembed, ostride, 1, 1), h_));
 		}
+		assert(h_);
 	}
 #ifndef __INTEL_COMPILER
 	template<class It1, class It2, dimensionality_type D = decltype(*It1{})::dimensionality>
 	static auto many(It1 first, It1 last, It2 d_first, int sign = 0, unsigned = 0)
 	->std::decay_t<decltype(const_cast<complex_type*>(reinterpret_cast<complex_type*>(raw_pointer_cast(base(d_first)))), std::declval<plan>())>
 #else
-	template<class It1, class It2, 
-		dimensionality_type D = decltype(*It1{})::dimensionality, 
+	template<class It1, class It2, dimensionality_type D = decltype(*It1{})::dimensionality, 
 		typename TT = decltype(const_cast<complex_type*>(reinterpret_cast<complex_type*>(It2{}.base().raw_pointer_cast())))
 	>
 	static auto many(It1 first, It1 last, It2 d_first, int sign = 0, unsigned = 0)
 #endif
 	{
+		MULTI_MARK_SCOPE("cufft plan many factory");
+
 		assert( CUFFT_FORWARD == sign or CUFFT_INVERSE == sign or sign == 0 );
-		assert(sizes(*first)==sizes(*d_first));
+		assert( sizes(*first) == sizes(*d_first) );
+
 		auto ion      = std::apply([](auto... t){return std::array< size_type, D>{static_cast< size_type>(t)...};}, sizes  (*  first));
 
 		assert(strides(*first) == strides(*last));
@@ -237,7 +264,7 @@ public:
 		int istride = istrides.back();
 		auto inembed = istrides; inembed.fill(0);
 		int ostride = ostrides.back();
-		auto onembed = ostrides; onembed.fill(0);	
+		auto onembed = ostrides; onembed.fill(0);
 		for(std::size_t i = 1; i != onembed.size(); ++i){
 			assert(ostrides[i-1] >= ostrides[i]); // otherwise ordering is incompatible
 			assert(ostrides[i-1]%ostrides[i]==0);
@@ -251,38 +278,45 @@ public:
 		ret.idata_ =                           reinterpret_cast<complex_type const*>(  first.base().raw_pointer_cast()) ;
 		ret.odata_ = const_cast<complex_type*>(reinterpret_cast<complex_type*      >(d_first.base().raw_pointer_cast()));
 
-		switch(::cufftPlanMany(
-			/*cufftHandle *plan*/ &ret.h_, 
-			/*int rank*/          ion.size(), 
-			/*int *n*/            ion.data(), //	/*NX*/      last - first,
-			/*int *inembed*/      inembed.data(),
-			/*int istride*/       istride, 
-			/*int idist*/         stride(first), 
-			/*int *onembed*/      onembed.data(), 
-			/*int ostride*/       ostride, 
-			/*int odist*/         stride(d_first), 
-			/*cufftType type*/    CUFFT_Z2Z, 
-			/*int batch*/         last - first //BATCH
-		)){
-			case CUFFT_SUCCESS        : break;// "cuFFT successfully executed the FFT plan."
-		//	case CUFFT_INVALID_PLAN   : throw std::runtime_error{"The plan parameter is not a valid handle."};
-			case CUFFT_ALLOC_FAILED   : throw std::runtime_error{"CUFFT failed to allocate GPU memory."};
-		//	case CUFFT_INVALID_TYPE   : throw std::runtime_error{"The user requests an unsupported type."};
-			case CUFFT_INVALID_VALUE  : throw std::runtime_error{"At least one of the parameters idata, odata, and direction is not valid."};
-			case CUFFT_INTERNAL_ERROR : throw std::runtime_error{"Used for all internal driver errors."};
-		//	case CUFFT_EXEC_FAILED    : throw std::runtime_error{"CUFFT failed to execute an FFT on the GPU."};
-			case CUFFT_SETUP_FAILED   : throw std::runtime_error{"The cuFFT library failed to initialize."};
-			case CUFFT_INVALID_SIZE   : throw std::runtime_error{"The user specifies an unsupported FFT size."};
-		//	case CUFFT_UNALIGNED_DATA : throw std::runtime_error{"Unaligned data."};
-		//	case CUFFT_INCOMPLETE_PARAMETER_LIST: throw std::runtime_error{"Incomplete parameter list."};
-		//	case CUFFT_INVALID_DEVICE : throw std::runtime_error{"Invalid device."};
-		//	case CUFFT_PARSE_ERROR    : throw std::runtime_error{"Parse error."};
-		//	case CUFFT_NO_WORKSPACE   : throw std::runtime_error{"No workspace."};
-		//	case CUFFT_NOT_IMPLEMENTED: throw std::runtime_error{"Not implemented."};
-		//	case CUFFT_LICENSE_ERROR  : throw std::runtime_error{"License error."};
-		//	case CUFFT_NOT_SUPPORTED  : throw std::runtime_error{"CUFFT_NOT_SUPPORTED"};
-			default                   : throw std::runtime_error{"cufftPlanMany unknown error"};
+		auto it = cache<D>().find(std::make_tuple(ion, inembed, istride, stride(first), onembed, ostride, stride(d_first), last - first));
+		if(it != cache<D>().end()){
+			ret.h_ = it->second;
+		}else{
+			switch(::cufftPlanMany(
+				/*cufftHandle *plan*/ &ret.h_, 
+				/*int rank*/          ion.size(), 
+				/*int *n*/            ion.data(), //	/*NX*/      last - first,
+				/*int *inembed*/      inembed.data(),
+				/*int istride*/       istride, 
+				/*int idist*/         stride(first), 
+				/*int *onembed*/      onembed.data(), 
+				/*int ostride*/       ostride, 
+				/*int odist*/         stride(d_first), 
+				/*cufftType type*/    CUFFT_Z2Z, 
+				/*int batch*/         last - first //BATCH
+			)){
+				case CUFFT_SUCCESS        : break;// "cuFFT successfully executed the FFT plan."
+			//	case CUFFT_INVALID_PLAN   : throw std::runtime_error{"The plan parameter is not a valid handle."};
+				case CUFFT_ALLOC_FAILED   : throw std::runtime_error{"CUFFT failed to allocate GPU memory."};
+			//	case CUFFT_INVALID_TYPE   : throw std::runtime_error{"The user requests an unsupported type."};
+				case CUFFT_INVALID_VALUE  : throw std::runtime_error{"At least one of the parameters idata, odata, and direction is not valid."};
+				case CUFFT_INTERNAL_ERROR : throw std::runtime_error{"Used for all internal driver errors."};
+			//	case CUFFT_EXEC_FAILED    : throw std::runtime_error{"CUFFT failed to execute an FFT on the GPU."};
+				case CUFFT_SETUP_FAILED   : throw std::runtime_error{"The cuFFT library failed to initialize."};
+				case CUFFT_INVALID_SIZE   : throw std::runtime_error{"The user specifies an unsupported FFT size."};
+			//	case CUFFT_UNALIGNED_DATA : throw std::runtime_error{"Unaligned data."};
+			//	case CUFFT_INCOMPLETE_PARAMETER_LIST: throw std::runtime_error{"Incomplete parameter list."};
+			//	case CUFFT_INVALID_DEVICE : throw std::runtime_error{"Invalid device."};
+			//	case CUFFT_PARSE_ERROR    : throw std::runtime_error{"Parse error."};
+			//	case CUFFT_NO_WORKSPACE   : throw std::runtime_error{"No workspace."};
+			//	case CUFFT_NOT_IMPLEMENTED: throw std::runtime_error{"Not implemented."};
+			//	case CUFFT_LICENSE_ERROR  : throw std::runtime_error{"License error."};
+			//	case CUFFT_NOT_SUPPORTED  : throw std::runtime_error{"CUFFT_NOT_SUPPORTED"};
+				default                   : throw std::runtime_error{"cufftPlanMany unknown error"};
+			}
+			cache<D>().insert(std::make_pair(std::make_tuple(ion, inembed, istride, stride(first), onembed, ostride, stride(d_first), last - first), ret.h_));
 		}
+		assert(ret.h_);
 		return ret;
 	}
 };
@@ -300,6 +334,7 @@ R dft(In const& i, int s){
 	static_assert(std::is_trivially_default_constructible<typename In::element_type>{}, "!");
 	R ret(extensions(i), get_allocator(i));
 	cufft::dft(i, ret, s);
+	if(cudaDeviceSynchronize() != cudaSuccess) throw std::runtime_error{"Cuda error: Failed to synchronize"};
 	return ret;
 }
 
@@ -364,12 +399,14 @@ auto dft(std::array<bool, D> which, In const& i, Out&& o, int s)
 				if( d_min!=0 ){
 					std::rotate(which.begin(), which.begin()+d_min, which.end());
 					dft(which, i<<d_min, o<<d_min, s);
-				}else
-				{
+				}else{
 					if(base(i) == base(o) and i.layout() != o.layout()){
 						auto const tmp = +i;
 						for(auto idx : extension(i)) cufft::dft(tail, tmp[idx], o[idx], s);
-					}else for(auto idx : extension(i)) cufft::dft(tail, i[idx], o[idx], s);
+					}else for(auto idx : extension(i)){
+						MULTI_MARK_SCOPE("cufft inner loop");
+						cufft::dft(tail, i[idx], o[idx], s);
+					}
 				}
 			}
 		}
@@ -386,7 +423,7 @@ dft(which, i, typename In::decay_type(extensions(i), get_allocator(i)), sign);}
 template<typename In,  std::size_t D = In::dimensionality>
 auto dft(std::array<bool, D> which, In&& i, int sign)
 ->decltype(dft(which, i, i, sign), std::forward<In>(i)){
-	return dft(which, i, i, sign), std::forward<In>(i);}	
+	return dft(which, i, i, sign), std::forward<In>(i);}
 
 //template<typename... A> auto            dft_forward(A&&... a)
 //->decltype(cufft::dft(std::forward<A>(a)..., cufft::forward)){
@@ -426,314 +463,5 @@ auto dft_backward(A const& a)
 
 }}
 
-
-#if not __INCLUDE_LEVEL__ // TEST BELOW
-
-#define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuFFT adaptor"
-#define BOOST_TEST_DYN_LINK
-#include<boost/test/unit_test.hpp>
-
-#include <boost/timer/timer.hpp>
-
-#include "../adaptors/cuda.hpp"
-#include "../adaptors/fftw.hpp"
-#include "../adaptors/cufft.hpp"
-
-//#include "../adaptors/fft.hpp"
-
-#include<complex>
-#include<thrust/complex.h>
-#include "../complex.hpp"
-
-#include<cuda_runtime.h> // cudaDeviceSynchronize
-
-#include<iostream>
-
-namespace multi = boost::multi;
-using complex = std::complex<double>;
-namespace utf = boost::unit_test;
-
-
-template <class T>
-__attribute__((always_inline)) inline void DoNotOptimize(const T &value) {
-	asm volatile("" : "+m"(const_cast<T &>(value)));
-}
-
-struct watch : private std::chrono::high_resolution_clock{
-	std::string label_; time_point  start_;
-	watch(std::string label ="") : label_{label}, start_{}{
-		cudaDeviceSynchronize();
-		start_ = now();
-	}
-	~watch(){
-		cudaDeviceSynchronize();
-		auto const count = std::chrono::duration<double>(now() - start_).count();
-		std::cerr<< label_<<": "<< count <<" sec"<<std::endl;
-	}
-};
-
-constexpr complex I{0, 1};
-
-#if 1
-
-BOOST_AUTO_TEST_CASE(cufft_2D, *boost::unit_test::tolerance(0.0001)){
-
-	multi::array<complex, 2> const in_cpu = {
-		{ 1. + 2.*I, 9. - 1.*I, 2. + 4.*I},
-		{ 3. + 3.*I, 7. - 4.*I, 1. + 9.*I},
-		{ 4. + 1.*I, 5. + 3.*I, 2. + 4.*I},
-		{ 3. - 1.*I, 8. + 7.*I, 2. + 1.*I},
-		{ 31. - 1.*I, 18. + 7.*I, 2. + 10.*I}
-	};
-	multi::array<complex, 2> fw_cpu(extensions(in_cpu));
-	multi::fftw::dft(in_cpu, fw_cpu, multi::fftw::forward);
-
-	multi::cuda::array<complex, 2> const in_gpu = in_cpu;
-	multi::cuda::array<complex, 2> fw_gpu(extensions(in_gpu));
-	multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
-
-	BOOST_TEST( imag(static_cast<complex>(fw_gpu[3][2]) - fw_cpu[3][2]) == 0. );
-
-	auto fw2_gpu = multi::cufft::dft(in_gpu, multi::cufft::forward);
-	BOOST_TEST( imag(static_cast<complex>(fw2_gpu[3][1]) - fw_cpu[3][1]) == 0. );
-
-	multi::cuda::managed::array<complex, 2> const in_mng = in_cpu;
-	multi::cuda::managed::array<complex, 2> fw_mng(extensions(in_gpu));
-	multi::cufft::dft(in_mng, fw_mng, multi::cufft::forward);
-
-	BOOST_TEST( imag(fw_mng[3][2] - fw_cpu[3][2]) == 0. );
-
-	auto fw2_mng = multi::fftw::dft(in_mng, multi::fftw::forward);
-	BOOST_TEST( imag(fw2_mng[3][1] - fw_cpu[3][1]) == 0. );
-
-}
-
-BOOST_AUTO_TEST_CASE(cufft_3D_timing, *boost::unit_test::tolerance(0.0001)){
-
-	auto x = std::make_tuple(300, 300, 300);
-	{
-		multi::array<complex, 3> const in_cpu(x, 10.); 
-		BOOST_ASSERT( in_cpu.num_elements()*sizeof(complex) < 2e9 );
-		multi::array<complex, 3> fw_cpu(extensions(in_cpu), 99.);
-		{
-		//	boost::timer::auto_cpu_timer t;  // 1.041691s wall, 1.030000s user + 0.000000s system = 1.030000s CPU (98.9%)
-			multi::fftw::dft(in_cpu, fw_cpu, multi::fftw::forward);
-			BOOST_TEST( fw_cpu[8][9][10] != 99. );
-		}
-	}
-	{
-		multi::cuda::array<complex, 3> const in_gpu(x, 10.); 
-		multi::cuda::array<complex, 3> fw_gpu(extensions(in_gpu), 99.);
-		{
-		//	boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
-			multi::cufft::dft(in_gpu, fw_gpu, multi::fftw::forward);
-
-			BOOST_TEST( static_cast<complex>(fw_gpu[8][9][10]) != 99. );
-		}
-	}
-	{
-		multi::cuda::managed::array<complex, 3> const in_gpu(x, 10.); 
-		multi::cuda::managed::array<complex, 3> fw_gpu(extensions(in_gpu), 99.);
-		{
-		//	boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
-			multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
-		//	BOOST_TEST( fw_gpu[8][9][10].operator complex() != 99. );
-		}
-		{
-		//	boost::timer::auto_cpu_timer t; //  0.208237s wall, 0.200000s user + 0.010000s system = 0.210000s CPU (100.8%)
-			multi::cufft::dft(in_gpu, fw_gpu, multi::cufft::forward);
-		//	BOOST_TEST( fw_gpu[8][9][10].operator complex() != 99. );
-		}
-	}
-}
-
-BOOST_AUTO_TEST_CASE(cufft_combinations, *utf::tolerance(0.00001)){
-
-	auto const in = []{
-		multi::array<complex, 4> ret({32, 90, 98, 96});
-		std::generate(ret.data_elements(), ret.data_elements() + ret.num_elements(), 
-			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
-		);
-		return ret;
-	}();
-	std::clog<<"memory size "<< in.num_elements()*sizeof(complex)/1e6 <<" MB\n";
-
-	multi::cuda::array<complex, 4> const in_gpu = in;
-	multi::cuda::managed::array<complex, 4> const in_mng = in;
-
-	using std::clog;
-	for(auto c : std::vector<std::array<bool, 4>>{
-		{false, true , true , true }, 
-		{false, true , true , false}, 
-		{true , false, false, false}, 
-		{true , true , false, false},
-		{false, false, true , false},
-		{false, false, false, false},
-	}){
-		std::clog<<"case "; copy(begin(c), end(c), std::ostream_iterator<bool>{std::clog,", "}); std::clog<<std::endl;
-		multi::array<complex, 4> out = in;
-		multi::array<complex, 4> in_rw = in;
-		[&, _ = watch{"cpu_opl "}]{
-			multi::fftw::dft_forward(c, in, out);
-		}();
-		[&, _ = watch{"cpu_ipl "}]{
-			multi::fftw::dft(c, in_rw, multi::fftw::forward);
-			BOOST_TEST( abs( static_cast<multi::complex<double>>(in_rw[5][4][3][1]) - multi::complex<double>(out[5][4][3][1]) ) == 0. );			
-		}();
-		{
-			multi::array<complex, 4> in_rw2 = in;
-			[&, _ = watch{"cpu_mov "}]{
-				multi::array<complex, 4> const out_mov = multi::fftw::dft_forward(c, std::move(in_rw2));
-			//	what(out_mov);
-				BOOST_TEST( abs( static_cast<multi::complex<double>>(out_mov[5][4][3][1]) - multi::complex<double>(out[5][4][3][1]) ) == 0. );			
-				BOOST_REQUIRE( is_empty(in_rw2) );
-				BOOST_REQUIRE( extensions(out_mov) == extensions(in) );
-			}();
-		}
-
-
-		[&, _ = watch{"cpu_new "}]{
-			auto const out_cpy = multi::fftw::dft_forward(c, in);
-			BOOST_TEST( abs( static_cast<multi::complex<double>>(out_cpy[5][4][3][1]) - multi::complex<double>(out[5][4][3][1]) ) == 0. );
-		}();
-		multi::cuda::array<complex, 4> out_gpu(extensions(in_gpu));
-		[&, _ = watch{"gpu_opl "}]{
-			multi::cufft::dft(c, in_gpu   , out_gpu, multi::cufft::forward);
-			BOOST_TEST( abs( static_cast<complex>(out_gpu[5][4][3][1]) - out[5][4][3][1] ) == 0. );
-		}();
-		{
-			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
-			[&, _ = watch{"gpu_ipl "}]{
-				multi::cufft::dft(c, in_rw_gpu, multi::cufft::forward);
-				BOOST_TEST( abs( static_cast<complex>(in_rw_gpu[5][4][3][1]) - out[5][4][3][1] ) == 0. );
-			}();
-		}
-		{
-			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
-			[&, _ = watch{"gpu_mov "}]{
-				multi::cuda::array<complex, 4> const out_mov = multi::cufft::dft_forward(c, std::move(in_rw_gpu));
-			//	BOOST_REQUIRE( in_rw_gpu.empty() );
-			//	BOOST_TEST( abs( static_cast<complex>(out_mov[5][4][3][1]) - out[5][4][3][1] ) == 0. );
-			}();
-		}
-		{
-			multi::cuda::array<complex, 4> in_rw_gpu = in_gpu;
-			[&, _ = watch{"gpu_mov "}]{
-				multi::cuda::array<complex, 4> out_mov = std::move(in_rw_gpu);
-				multi::cufft::dft(c, out_mov, multi::cufft::forward);
-			//	BOOST_REQUIRE( in_rw_gpu.empty() );
-			//	BOOST_TEST( abs( static_cast<complex>(out_mov[5][4][3][1]) - out[5][4][3][1] ) == 0. );
-			}();
-		}
-		cudaDeviceSynchronize();
-		[&, _ = watch{"gpu_new "}]{
-			multi::cuda::array<complex, 4> const out_cpy = multi::cufft::dft(c, in_gpu, multi::cufft::forward);
-		}();
-		multi::cuda::managed::array<complex, 4> out_mng(extensions(in_mng));
-		[&, _ = watch{"mng_cld "}]{
-			multi::cufft::dft(c, in_mng, out_mng, multi::cufft::forward);
-			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
-		}();
-		[&, _ = watch{"mng_hot "}]{
-			multi::cufft::dft(c, in_mng   , out_mng, multi::cufft::forward);
-			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
-		}();
-		[&, _ = watch{"mng_new "}]{
-			auto const out_mng = multi::cufft::dft(c, in_mng, multi::cufft::forward);
-			BOOST_TEST( abs( out_mng[5][4][3][1] - out[5][4][3][1] ) == 0. );
-		}();
-	}
-	std::clog<<std::endl;
-
-}
-
-BOOST_AUTO_TEST_CASE(cufft_many_3D, *utf::tolerance(0.00001) ){
-
-	auto const in_cpu = []{
-		multi::array<complex, 4> ret({45, 18, 32, 16});
-		std::generate(
-			ret.data_elements(), ret.data_elements() + ret.num_elements(), 
-			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
-		);
-		return ret;
-	}();
-
-	multi::cuda::array<complex, 4> const in = in_cpu;
-	multi::cuda::array<complex, 4>       out(extensions(in));
-
-#if 0
-	multi::cufft::many_dft(begin(unrotated(in)), end(unrotated(in)), begin(unrotated(out)), +1);
-
-	multi::array<complex, 4> out_cpu(extensions(in));
-	multi::fft::many_dft(begin(unrotated(in_cpu)), end(unrotated(in_cpu)), begin(unrotated(out_cpu)), +1);
-
-	BOOST_TEST( imag( static_cast<complex>(out[5][4][3][2]) - out_cpu[5][4][3][2]) == 0. );
-#endif
-}
-
-#if 0
-
-BOOST_AUTO_TEST_CASE(cufft_4D, *utf::tolerance(0.00001)){
-	auto const in = []{
-		multi::array<complex, 3> ret({10, 10, 10});
-		std::generate(ret.data_elements(), ret.data_elements() + ret.num_elements(), 
-			[](){return complex{std::rand()*1./RAND_MAX, std::rand()*1./RAND_MAX};}
-		);
-		return ret;
-	}();
-
-	multi::array<complex, 3> out(extensions(in));
-//	multi::fftw::dft({true, false, true}, in, out, multi::fftw::forward);
-	multi::fft::many_dft(begin(in<<1), end(in<<1), begin(out<<1), multi::fftw::forward);
-
-	multi::cuda::array<complex, 3> in_gpu = in;
-	multi::cuda::array<complex, 3> out_gpu(extensions(in));
-
-//	multi::cufft::dft({true, false, true}, in_gpu, out_gpu, multi::fft::forward);//multi::cufft::forward);	
-	multi::cufft::many_dft(begin(in_gpu<<1), end(in_gpu<<1), begin(out_gpu<<1), multi::fftw::forward);
-	BOOST_TEST( imag( static_cast<complex>(out_gpu[5][4][3]) - out[5][4][3]) == 0. );	
-}
-
-
-
-//BOOST_AUTO_TEST_CASE(cu
-
-#if 0
-BOOST_AUTO_TEST_CASE(cufft_4D){
-	auto const in = []{
-		multi::array<complex, 3> ret({10, 10, 10});
-		ret[2][3][4] = 99.;
-		return ret;
-	}();
-	multi::array<complex, 3> out(extensions(in));
-
-	multi::fftw::dft({true, true, false}, in, out, multi::fftw::forward);
-	
-//	auto fwd = multi::fftw::dft({true, true, true, true}, in, out, multi::fftw::forward);
-//	BOOST_REQUIRE(in[2][3][4][5] == 99.);
-	std::cout << out[9][1][2] << std::endl;
-	for(auto i = 0; i != out.num_elements(); ++i) std:cout << (out.data_elements()[i]) <<' ';
-
-#if 0
-	multi::cuda::array<complex, 3> in_gpu = in;//[]{
-//		multi::cuda::array<complex, 4> ret({10, 10, 10, 10});
-//		ret[2][3][4][5] = 99.;
-//		return ret;
-//	}();
-	multi::cuda::array<complex, 3> out_gpu(extensions(in));
-	multi::cufft::dft({true, true, false}, in_gpu, out_gpu, multi::cufft::forward);
-
-	std::cout << out_gpu[5][4][3].operator complex() << std::endl;
-
-//	multi::cufft::dft({true, true, true, true}, in_gpu, out_gpu, multi::cufft::forward);
-//	multi::cufft::dft({true, true, true, true}, in_gpu, out_gpu, multi::cufft::forward);
-#endif
-
-}
-#endif
-#endif
-#endif
-
-#endif
 #endif
 

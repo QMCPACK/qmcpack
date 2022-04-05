@@ -20,44 +20,50 @@ namespace qmcplusplus
 class ConstantOrbital : public WaveFunctionComponent
 {
 public:
-  virtual void checkInVariables(opt_variables_type& active) override {}
-  virtual void checkOutVariables(const opt_variables_type& active) override {}
-  virtual void resetParameters(const opt_variables_type& active) override {}
-  virtual void reportStatus(std::ostream& os) override {}
+  void checkInVariables(opt_variables_type& active) override {}
+  void checkOutVariables(const opt_variables_type& active) override {}
+  void resetParameters(const opt_variables_type& active) override {}
+  void reportStatus(std::ostream& os) override {}
 
   PsiValueType FakeGradRatio;
 
   ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
 
-  virtual LogValueType evaluateLog(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L) override
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     G = 0.0;
     L = 0.0;
     return 0.0;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
+  void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
-  virtual void restore(int iat) override {}
+  void restore(int iat) override {}
 
-  virtual PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
+  PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
 
-  virtual GradType evalGrad(ParticleSet& P, int iat) override { return GradType(0.0); }
+  GradType evalGrad(ParticleSet& P, int iat) override { return GradType(0.0); }
 
-  virtual PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
+  PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return FakeGradRatio; }
 
-  virtual void registerData(ParticleSet& P, WFBufferType& buf) override {}
+  void registerData(ParticleSet& P, WFBufferType& buf) override {}
 
-  virtual LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
+  LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override { return 0.0; }
+
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
+
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override
   {
-    return 0.0;
+    return std::make_unique<ConstantOrbital>();
   }
 
-  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
-
-  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tpq) const override { return new ConstantOrbital(); }
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
 };
 
 

@@ -1,3 +1,15 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
+//
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//
+// File created by:
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "delayed_update.h"
 #include <cstdio>
 #include <unistd.h>
@@ -5,9 +17,17 @@
 #include <vector>
 #include <iostream>
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cuComplex.h>
+#else
+#include <hipblas.h>
+#include <hip/hip_complex.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#include "Platforms/ROCm/hipBLAS.hpp"
+#endif
 #include <thrust/complex.h>
 
 #define BLOCKSIZE 256

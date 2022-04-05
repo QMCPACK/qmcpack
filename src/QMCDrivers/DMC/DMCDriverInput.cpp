@@ -40,10 +40,10 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.put(node);
 
   if (reconfig_str == "yes")
-    throw std::runtime_error(
-        "Reconfiguration is currently broken and gives incorrect results. Set reconfiguration=\"no\" or remove the "
-        "reconfiguration option from the DMC input section. To run performance tests, please set reconfiguration to "
-        "\"runwhileincorrect\" instead of \"yes\" to restore consistent behaviour.");
+    throw std::runtime_error("Reconfiguration is currently broken and gives incorrect results. Use dynamic "
+                             "population control by setting reconfiguration=\"no\" or removing the reconfiguration "
+                             "option from the DMC input section. If accessing the broken reconfiguration code path "
+                             "is still desired, set reconfiguration to \"runwhileincorrect\" instead of \"yes\".");
   reconfiguration_ = (reconfig_str == "yes");
 
   if (NonLocalMove == "yes" || NonLocalMove == "v0")

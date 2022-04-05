@@ -153,15 +153,14 @@ template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>
 class OneDimCubicSpline : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
 public:
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
-  typedef typename base_type::value_type value_type;
-  typedef typename base_type::point_type point_type;
-  typedef typename base_type::data_type data_type;
-  typedef typename base_type::grid_type grid_type;
+  using base_type  = OneDimGridFunctor<Td, Tg, CTd, CTg>;
+  using value_type = typename base_type::value_type;
+  using point_type = typename base_type::point_type;
+  using data_type  = typename base_type::data_type;
+  using grid_type  = typename base_type::grid_type;
 
   using base_type::d2Y;
   using base_type::dY;
-  using base_type::GridManager;
   using base_type::m_grid;
   using base_type::m_Y;
   using base_type::Y;
@@ -181,20 +180,20 @@ public:
   //  base_type(rhs), m_Y2(rhs.m_Y2)
   //  { }
 
-  OneDimCubicSpline(grid_type* gt = 0) : base_type(gt) {}
+  OneDimCubicSpline(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : base_type(std::move(gt)) {}
 
   template<class VV>
-  OneDimCubicSpline(grid_type* gt, const VV& nv) : base_type(gt), first_deriv(0.0), last_deriv(0.0)
+  OneDimCubicSpline(std::unique_ptr<grid_type> gt, const VV& nv)
+      : base_type(std::move(gt)), first_deriv(0.0), last_deriv(0.0)
   {
     m_Y.resize(nv.size());
     m_Y2.resize(nv.size());
     copy(nv.begin(), nv.end(), m_Y.data());
   }
 
-  OneDimCubicSpline<Td, Tg, CTd, CTg>* makeClone() const { return new OneDimCubicSpline<Td, Tg, CTd, CTg>(*this); }
+  OneDimCubicSpline* makeClone() const { return new OneDimCubicSpline(*this); }
 
-  OneDimCubicSpline<Td, Tg, CTd, CTg>(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
-      : OneDimGridFunctor<Td, Tg, CTd, CTg>(a)
+  OneDimCubicSpline(const OneDimCubicSpline& a) : base_type(a)
   {
     m_Y2.resize(a.m_Y2.size());
     m_Y2        = a.m_Y2;
@@ -204,32 +203,6 @@ public:
     first_deriv = a.first_deriv;
     last_deriv  = a.last_deriv;
   }
-
-  const OneDimCubicSpline<Td, Tg, CTd, CTg>& operator=(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
-  {
-    shallow_copy(a);
-    return *this;
-  }
-
-  void shallow_copy(const OneDimCubicSpline<Td, Tg, CTd, CTg>& a)
-  {
-    this->GridManager = a.GridManager;
-    this->OwnGrid     = false;
-    m_grid            = a.m_grid;
-    m_Y.resize(a.m_Y.size());
-    m_Y2.resize(a.m_Y2.size());
-    m_Y         = a.m_Y;
-    m_Y2        = a.m_Y2;
-    ConstValue  = a.ConstValue;
-    r_min       = a.r_min;
-    r_max       = a.r_max;
-    first_deriv = a.first_deriv;
-    last_deriv  = a.last_deriv;
-  }
-
-  //void setgrid(point_type r) {
-  //  m_grid->locate(r);
-  //}
 
   inline value_type splint(point_type r) const override
   {

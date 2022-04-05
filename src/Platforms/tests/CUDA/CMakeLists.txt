@@ -9,30 +9,18 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(SRC_DIR CUDA)
+set(UTEST_EXE test_${SRC_DIR})
+set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+if(NOT QMC_CUDA2HIP)
+  add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+else()
+  hip_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
+endif()
+target_link_libraries(cuda_device_value_test_kernels PUBLIC platform_runtime)
 
-SET(SRC_DIR CUDA)
-SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
+add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
+target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)
 
-CUDA_ADD_LIBRARY(cuda_device_value_test_kernels test_device_value_kernels.cu)
-TARGET_LINK_LIBRARIES(cuda_device_value_test_kernels PUBLIC platform_device)
-
-ADD_EXECUTABLE(${UTEST_EXE} test_CUDAallocator.cpp)
-TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_device containers catch_main)
-IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE}  platform_omptarget)
-ENDIF()
-
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-
-SET(UTEST_EXE test_DeviceValue)
-SET(UTEST_NAME deterministic-unit_${UTEST_EXE})
-ADD_EXECUTABLE(${UTEST_EXE} test_DeviceValue.cpp )
-TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_device cuda_device_value_test_kernels catch_main qmcutil)
-IF(USE_OBJECT_TARGET)
-  TARGET_LINK_LIBRARIES(${UTEST_EXE} platform_omptarget)
-ENDIF()
-TARGET_INCLUDE_DIRECTORIES(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
-ADD_UNIT_TEST(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

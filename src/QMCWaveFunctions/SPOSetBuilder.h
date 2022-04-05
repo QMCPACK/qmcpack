@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_BUILDER_H
 #define QMCPLUSPLUS_SPOSET_BUILDER_H
 
+#include <memory>
 #include <vector>
 #include <string>
 #include "Message/MPIObjectBase.h"
@@ -46,20 +47,17 @@ namespace qmcplusplus
 class SPOSetBuilder : public QMCTraits, public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, SPOSet*> SPOPool_t;
-  typedef std::vector<int> indices_t;
-  typedef std::vector<RealType> energies_t;
+  using SPOPool_t  = std::map<std::string, SPOSet*>;
+  using indices_t  = std::vector<int>;
+  using energies_t = std::vector<RealType>;
 
   /// whether implementation conforms only to legacy standard
   bool legacy;
 
   /// state info of all possible states available in the basis
-  std::vector<SPOSetInfo*> states;
+  std::vector<std::unique_ptr<SPOSetInfo>> states;
 
-  /// list of all sposets created by this builder
-  std::vector<SPOSet*> sposets;
-
-  SPOSetBuilder(const std::string& SPO_type_name_in, Communicate* comm);
+  SPOSetBuilder(const std::string& type_name, Communicate* comm);
   virtual ~SPOSetBuilder() {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
@@ -72,17 +70,19 @@ public:
   inline void clear_states(int index = 0) { states[index]->clear(); }
 
   /// create an sposet from xml and save the resulting SPOSet
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur);
+
+  const std::string& getTypeName() const { return type_name_; }
 
 protected:
   /// create an sposet from xml (legacy)
-  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur) = 0;
+  virtual std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) = 0;
 
   /// create an sposet from a general xml request
-  virtual SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
+  virtual std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /// type name of the SPO objects built by this builder.
-  const std::string SPO_type_name;
+  const std::string type_name_;
 };
 
 } // namespace qmcplusplus

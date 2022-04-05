@@ -15,23 +15,23 @@
 #include "CPU/Blasf.h"
 #include "CPU/BlasThreadingEnv.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "type_traits/scalar_traits.h"
-#include "Message/OpenMP.h"
+#include "type_traits/complex_help.hpp"
+#include "Concurrency/OpenMP.h"
 #include "CPU/SIMD/simd.hpp"
 
 namespace qmcplusplus
 {
+/** wrappers around xgetrf lapack routines 
+ *  \param[in] n      rows
+ *  \param[in] m      cols
+ *  \param[inout] a   matrix contains LU matrix after call
+ *  \param[in] lda    leading dimension of a
+ *  \param[out] piv   pivot vector
+ */
 inline int Xgetrf(int n, int m, float* restrict a, int lda, int* restrict piv)
 {
   int status;
   sgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
-inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
-{
-  int status;
-  sgetri(n, a, lda, piv, work, lwork, status);
   return status;
 }
 
@@ -42,7 +42,28 @@ inline int Xgetrf(int n, int m, std::complex<float>* restrict a, int lda, int* r
   return status;
 }
 
+inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
+{
+  int status;
+  dgetrf(n, m, a, lda, piv, status);
+  return status;
+}
+
+inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
+{
+  int status;
+  zgetrf(n, m, a, lda, piv, status);
+  return status;
+}
+
 /** inversion of a float matrix after lu factorization*/
+inline int Xgetri(int n, float* restrict a, int lda, int* restrict piv, float* restrict work, int& lwork)
+{
+  int status;
+  sgetri(n, a, lda, piv, work, lwork, status);
+  return status;
+}
+
 inline int Xgetri(int n,
                   std::complex<float>* restrict a,
                   int lda,
@@ -55,24 +76,10 @@ inline int Xgetri(int n,
   return status;
 }
 
-inline int Xgetrf(int n, int m, double* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  dgetrf(n, m, a, lda, piv, status);
-  return status;
-}
-
 inline int Xgetri(int n, double* restrict a, int lda, int* restrict piv, double* restrict work, int& lwork)
 {
   int status;
   dgetri(n, a, lda, piv, work, lwork, status);
-  return status;
-}
-
-inline int Xgetrf(int n, int m, std::complex<double>* restrict a, int lda, int* restrict piv)
-{
-  int status;
-  zgetrf(n, m, a, lda, piv, status);
   return status;
 }
 
@@ -103,7 +110,7 @@ inline void computeLogDet(const T* restrict diag, int n, const int* restrict piv
 template<typename T_FP>
 class DiracMatrix
 {
-  typedef typename scalar_traits<T_FP>::real_type real_type_fp;
+  using Real_FP = RealAlias<T_FP>;
   aligned_vector<T_FP> m_work;
   aligned_vector<int> m_pivot;
   int Lwork;
@@ -118,7 +125,7 @@ class DiracMatrix
     m_pivot.resize(lda);
     Lwork = -1;
     T_FP tmp;
-    real_type_fp lw;
+    Real_FP lw;
     int status = Xgetri(lda, invMat_ptr, lda, m_pivot.data(), &tmp, Lwork);
     if (status != 0)
     {
@@ -126,8 +133,8 @@ class DiracMatrix
       msg << "Xgetri failed with error " << status << std::endl;
       throw std::runtime_error(msg.str());
     }
-        
-    convert(tmp, lw);
+
+    lw    = std::real(tmp);
     Lwork = static_cast<int>(lw);
     m_work.resize(Lwork);
     LU_diag.resize(lda);
@@ -172,9 +179,14 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
-                                                                            Matrix<TMAT>& invMat,
+  template<typename TMAT,
+           typename ALLOC1,
+           typename ALLOC2,
+           typename TREAL,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC1>::is_host_accessible>,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC2>::is_host_accessible>>
+  inline std::enable_if_t<std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT, ALLOC1>& amat,
+                                                                            Matrix<TMAT, ALLOC2>& invMat,
                                                                             std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();
@@ -188,9 +200,14 @@ public:
    * @tparam TMAT matrix value type
    * @tparam TREAL real type
    */
-  template<typename TMAT, typename TREAL>
-  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT>& amat,
-                                                                             Matrix<TMAT>& invMat,
+  template<typename TMAT,
+           typename ALLOC1,
+           typename ALLOC2,
+           typename TREAL,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC1>::is_host_accessible>,
+           typename = std::enable_if_t<qmc_allocator_traits<ALLOC2>::is_host_accessible>>
+  inline std::enable_if_t<!std::is_same<T_FP, TMAT>::value> invert_transpose(const Matrix<TMAT, ALLOC1>& amat,
+                                                                             Matrix<TMAT, ALLOC2>& invMat,
                                                                              std::complex<TREAL>& LogDet)
   {
     const int n   = invMat.rows();

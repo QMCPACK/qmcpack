@@ -32,9 +32,14 @@ namespace qmcplusplus
 class NonLocalECPComponent : public QMCTraits
 {
 private:
-  typedef std::vector<PosType> SpherGridType;
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using SpherGridType       = std::vector<PosType>;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
+
+  /** For fast derivative evaluation
+   */
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradMatrix  = SPOSet::GradMatrix;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax;
@@ -61,7 +66,7 @@ private:
   ///weight of the spherical grid
   std::vector<RealType> sgridweight_m;
   ///Working arrays
-  std::vector<ValueType> wvec, Amat, dAmat;
+  std::vector<ValueType> wvec;
 
   //Position delta for virtual moves.
   std::vector<PosType> deltaV;
@@ -70,7 +75,7 @@ private:
   //Array for P'_l[cos(theta)]
   std::vector<RealType> dlpol;
   //Array for v_l(r).
-  std::vector<ValueType> vrad;
+  std::vector<RealType> vrad;
   //Array for (2l+1)*v'_l(r)/r.
   std::vector<RealType> dvrad;
   //$\Psi(...q...)/\Psi(...r...)$ for all quadrature points q.
@@ -93,12 +98,12 @@ private:
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
-  ParticleSet::ParticleGradient_t dG;
-  ParticleSet::ParticleLaplacian_t dL;
+  ParticleSet::ParticleGradient dG;
+  ParticleSet::ParticleLaplacian dL;
   /// First index is knot, second is electron
   Matrix<PosType> Gnew;
   ///The gradient of the wave function w.r.t. the ion position
-  ParticleSet::ParticleGradient_t Gion;
+  ParticleSet::ParticleGradient Gion;
 
   ///virtual particle set: delayed initialization
   VirtualParticleSet* VP;
@@ -130,9 +135,9 @@ public:
 
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(RandomGenerator_t& myRNG);
+  void randomize_grid(RandomGenerator& myRNG);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
 
   /** contribute local non-local move data
    * @param iel reference electron id.
@@ -226,7 +231,7 @@ public:
                                  RealType r,
                                  const PosType& dr,
                                  PosType& force_iat,
-                                 ParticleSet::ParticlePos_t& pulay_terms);
+                                 ParticleSet::ParticlePos& pulay_terms);
 
   // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
   RealType evaluateValueAndDerivatives(ParticleSet& P,
@@ -239,9 +244,56 @@ public:
                                        const std::vector<ValueType>& dlogpsi,
                                        std::vector<ValueType>& dhpsioverpsi);
 
+  /** 
+   * @brief Evaluate contribution to B of election iel and ion iat.  Filippi scheme for computing fast derivatives.
+   *        Sum over ions and electrons occurs at the NonLocalECPotential level.  
+
+   * @param[in] P, target particle set (electrons)
+   * @param[in] iat, ion ID
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in] iel, electron ID
+   * @param[in] r, distance between iat and iel. 
+   * @param[in] dr, displacement vector between iat and iel. 
+   * @param[in,out] B. Adds the contribution of iel and iat to the B matrix. Dimensions:  [group][particle][orb] 
+   * @return Void
+   */
+  void evaluateOneBodyOpMatrixContribution(ParticleSet& P,
+                                           const int iat,
+                                           const TWFFastDerivWrapper& psi,
+                                           const int iel,
+                                           const RealType r,
+                                           const PosType& dr,
+                                           std::vector<ValueMatrix>& B);
+
+  /** 
+   * @brief Evaluate contribution to dB/dR of election iel and ion iat.  Filippi scheme for computing fast derivatives.
+   *        Sum over ions and electrons occurs at the NonLocalECPotential level.  
+
+   * @param[in] P, target particle set (electrons)
+   * @param[in] source, ion particle set
+   * @param[in] iat, ion ID
+   * @param[in] iat_src, this is the ion ID w.r.t. which the ion derivatives are taken.  NOT ALWAYS EQUAL TO IAT
+   * @param[in] psi, Trial Wavefunction wrapper for fast derivatives.
+   * @param[in] iel, electron ID
+   * @param[in] r, distance between iat and iel. 
+   * @param[in] dr, displacement vector between iat and iel. 
+   * @param[in,out] dB. Adds the contribution of iel and iat to the dB/dR_iat_src matrix. Dimension [xyz_component][group][particle][orb]   
+   * @return Void
+   */
+  void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
+                                             const ParticleSet& source,
+                                             const int iat,
+                                             const int iat_src,
+                                             const TWFFastDerivWrapper& psi,
+                                             const int iel,
+                                             const RealType r,
+                                             const PosType& dr,
+                                             std::vector<std::vector<ValueMatrix>>& dB);
+
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);
+  void deleteVirtualParticle();
 
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }

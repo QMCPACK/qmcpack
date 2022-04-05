@@ -26,39 +26,35 @@ class CompositeSPOSet : public SPOSet
 {
 public:
   ///component SPOSets
-  std::vector<SPOSet*> components;
+  std::vector<std::unique_ptr<SPOSet>> components;
   ///temporary storage for values
-  std::vector<ValueVector_t*> component_values;
+  std::vector<ValueVector> component_values;
   ///temporary storage for gradients
-  std::vector<GradVector_t*> component_gradients;
+  std::vector<GradVector> component_gradients;
   ///temporary storage for laplacians
-  std::vector<ValueVector_t*> component_laplacians;
+  std::vector<ValueVector> component_laplacians;
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
   CompositeSPOSet();
-  ~CompositeSPOSet();
+  CompositeSPOSet(const CompositeSPOSet& other);
+  ~CompositeSPOSet() override;
 
   ///add a sposet component to this composite sposet
-  void add(SPOSet* component);
+  void add(std::unique_ptr<SPOSet> component);
 
   ///print out component info
   void report();
 
   //SPOSet interface methods
   ///size is determined by component sposets and nothing else
-  inline void setOrbitalSetSize(int norbs) {}
+  inline void setOrbitalSetSize(int norbs) override {}
 
-  SPOSet* makeClone() const;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
-  /** add sposet clones from another Composite SPOSet
-     *   should only be used in makeClone functions following shallow copy
-     */
-  void clone_from(const CompositeSPOSet& master);
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi);
-
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   ///unimplemented functions call this to abort
   inline void not_implemented(const std::string& method)
@@ -68,37 +64,41 @@ public:
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables);
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector_t& psi);
+  void resetParameters(const opt_variables_type& optVariables) override;
+#ifdef QMC_CUDA
+  void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi) override;
+#endif
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& ddlogdet,
-                            GGGMatrix_t& dddlogdet);
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& ddlogdet,
+                            GGGMatrix& dddlogdet) override;
 };
 
 struct CompositeSPOSetBuilder : public SPOSetBuilder
 {
-  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory) : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory) {}
+  CompositeSPOSetBuilder(Communicate* comm, const SPOSetBuilderFactory& factory)
+      : SPOSetBuilder("Composite", comm), sposet_builder_factory_(factory)
+  {}
 
   //SPOSetBuilder interface
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 
-  SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input);
+  std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input) override;
 
   /// reference to the sposet_builder_factory
   const SPOSetBuilderFactory& sposet_builder_factory_;

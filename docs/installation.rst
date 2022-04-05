@@ -29,8 +29,8 @@ are given in the referenced sections.
 
 #. Run the cmake configure step and build with make
    (:ref:`cmake` and :ref:`cmakequick`). Examples for common systems are given in :ref:`installexamples`. To activate workflow
-   tests for Quantum ESPRESSO or PYSCF, be sure to specify QE_BIN or ensure that the python modules are available when cmake is
-   run.
+   tests for Quantum ESPRESSO, RMG, or PYSCF, be sure to specify QE_BIN, RMG_BIN, or ensure that the python modules are
+   available when cmake is run.
 
 #. Run the tests to verify QMCPACK
    (:ref:`testing`).
@@ -111,7 +111,7 @@ newer versions are faster; see :ref:`buildperformance` for performance suggestio
 unsupported and untested by the developers although they may still work.
 
 -  C/C++ compilers such as GNU, Clang, Intel, and IBM XL. C++ compilers
-   are required to support the C++ 14 standard. Use of recent (“current
+   are required to support the C++ 17 standard. Use of recent (“current
    year version”) compilers is strongly encouraged.
 
 -  An MPI library such as OpenMPI (http://open-mpi.org) or a
@@ -143,7 +143,7 @@ Many of the utilities provided with QMCPACK require Python (v3). The numpy
 and matplotlib libraries are required for full functionality.
 
 
-C++ 14 standard library
+C++ 17 standard library
 -----------------------
 
 The C++ standard consists of language features—which are implemented in
@@ -151,15 +151,15 @@ the compiler—and library features—which are implemented in the standard
 library. GCC includes its own standard library and headers, but many
 compilers do not and instead reuse those from an existing GCC install.
 Depending on setup and installation, some of these compilers might not
-default to using a GCC with C++ 14 headers (e.g., GCC 4.8 is common as a
+default to using a GCC with C++ 17 headers (e.g., GCC 4.8 is common as a
 base system compiler, but its standard library only supports C++ 11).
 
-The symptom of having header files that do not support the C++ 14
+The symptom of having header files that do not support the C++ 17
 standard is usually compile errors involving standard include header
 files. Look for the GCC library version, which should be present in the
-path to the include file in the error message, and ensure that it is 5.0
+path to the include file in the error message, and ensure that it is 8.1
 or greater. To avoid these errors occurring at compile time, QMCPACK
-tests for a C++ 14 standard library during configuration and will halt
+tests for a C++ 17 standard library during configuration and will halt
 with an error if one is not found.
 
 At sites that use modules, it is often sufficient to simply load a newer
@@ -168,14 +168,14 @@ GCC.
 Intel compiler
 ~~~~~~~~~~~~~~
 
-The Intel compiler version must be 19 or newer due to use of C++14 and bugs and limitations in earlier versions.
+The Intel compiler version must be 19 or newer due to use of C++17 and bugs and limitations in earlier versions.
 
 If a newer GCC is needed, the ``-cxxlib`` option can be used to point to a different
 GCC installation. (Alternately, the ``-gcc-name`` or ``-gxx-name`` options can be used.) Be sure to
 pass this flag to the C compiler in addition to the C++ compiler. This
 is necessary because CMake extracts some library paths from the C
 compiler, and those paths usually also contain to the C++ library. The
-symptom of this problem is C++ 14 standard library functions not found
+symptom of this problem is C++ 17 standard library functions not found
 at link time.
 
 .. _cmake:
@@ -186,8 +186,7 @@ Building with CMake
 The build system for QMCPACK is based on CMake. It will autoconfigure
 based on the detected compilers and libraries. The most recent version
 of CMake has the best detection for the greatest variety of systems. The
-minimum required version of CMake is 3.6, which is the oldest version to
-support correct application of C++ 14 flags for the Intel compiler. Most
+minimum required version of CMake is 3.15.0. Most
 computer installations have a sufficiently recent CMake, though it might
 not be the default.
 
@@ -277,6 +276,8 @@ precedent over the environment and default variables.  To set them,
 add -D FLAG=VALUE to the configure line between the CMake command and
 the path to the source directory.
 
+.. highlight:: none
+
 - Key QMCPACK build options
 
   ::
@@ -290,7 +291,7 @@ the path to the source directory.
                           particularly for large electron counts.
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
     ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                           to avoid potential slowdown in tiny systems.
@@ -326,17 +327,16 @@ the path to the source directory.
 
   ::
 
-    QE_BIN                    Location of Quantum ESPRESSO binaries including pw2qmcpack.x
-    QMC_DATA                  Specify data directory for QMCPACK performance and integration tests
-    QMC_INCLUDE               Add extra include paths
-    QMC_EXTRA_LIBS            Add extra link libraries
-    QMC_BUILD_STATIC          ON/OFF(default). Add -static flags to build
-    QMC_SYMLINK_TEST_FILES    Set to zero to require test files to be copied. Avoids space
-                              saving default use of symbolic links for test files. Useful
-                              if the build is on a separate filesystem from the source, as
-                              required on some HPC systems.
-    QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                              including details of which tests are enabled.
+    QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
+    RMG_BIN                Location of RMG binary (rmg-cpu)
+    QMC_DATA               Specify data directory for QMCPACK performance and integration tests
+    QMC_INCLUDE            Add extra include paths
+    QMC_EXTRA_LIBS         Add extra link libraries
+    QMC_BUILD_STATIC       ON/OFF(default). Add -static flags to build
+    QMC_SYMLINK_TEST_FILES Set to zero to require test files to be copied. Avoids space
+                           saving default use of symbolic links for test files. Useful
+                           if the build is on a separate filesystem from the source, as
+                           required on some HPC systems.
 
 - BLAS/LAPACK related
 
@@ -345,6 +345,13 @@ the path to the source directory.
     BLA_VENDOR          If set, checks only the specified vendor, if not set checks all the possibilities.
                         See full list at https://cmake.org/cmake/help/latest/module/FindLAPACK.html
     MKL_ROOT            Path to MKL libraries. Only necessary when auto-detection fails or overriding is desired.
+
+- Scalar and vector math functions
+
+  ::
+
+    QMC_MATH_VENDOR     Select a vendor optimized library for scalar and vector math functions.
+                        Providers are GENERIC INTEL_VML IBM_MASS AMD_LIBM
 
 - libxml2 related
 
@@ -413,13 +420,7 @@ to be reached. The following compilers have been verified:
   ::
 
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
-    OFFLOAD_ARCH for the target architecture if not using the compiler default.
-
-- IBM XL 16.1. Support NVIDIA GPUs.
-  
-  ::
-
-    -D ENABLE_OFFLOAD=ON
+    OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
 
 - AMD AOMP Clang 11.8. Support AMD GPUs.
   
@@ -433,11 +434,11 @@ to be reached. The following compilers have been verified:
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
 
-- HPE Cray 11. Support NVIDIA and AMD GPUs.
+- HPE Cray 11. It is derived from Clang and supports NVIDIA and AMD GPUs.
   
   ::
   
-    -D ENABLE_OFFLOAD=ON
+    -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
 Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
@@ -445,7 +446,7 @@ For example, using Clang 11 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CUDA_ARCH=sm_70 -D CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CMAKE_CUDA_HOST_COMPILER=`which gcc`
 
 
 Installation from CMake
@@ -566,7 +567,6 @@ than usually needed for comprehensiveness:
 
   export CXX=mpic++
   export CC=mpicc
-  export ACML_HOME=/opt/acml-5.3.1/gfortran64
   export HDF5_ROOT=/opt/hdf5
   export BOOST_ROOT=/opt/boost
 
@@ -578,7 +578,6 @@ than usually needed for comprehensiveness:
     -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
     -D FFTW_INCLUDE_DIRS=/usr/include                 \
     -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-    -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
     -D QMC_DATA=/projects/QMCPACK/qmc-data            \
     ..
 
@@ -764,27 +763,27 @@ dependencies. Some of the tests will be skipped if not all are available.
 
 ::
 
-  sudo port install gcc10
-  sudo port select gcc mp-gcc10
-  sudo port install openmpi-devel-gcc10
-  sudo port select --set mpi openmpi-devel-gcc10-fortran
-
-  sudo port install fftw-3 +gcc10
+  sudo port install gcc11
+  sudo port select gcc mp-gcc11
+  sudo port install openmpi-gcc11
+  sudo port select --set mpi openmpi-gcc11-fortran
+  
+  sudo port install fftw-3 +gcc11
   sudo port install libxml2
   sudo port install cmake
-  sudo port install boost +gcc10
-  sudo port install hdf5 +gcc10
-
-  sudo port install python38
-  sudo port select --set python python38
-  sudo port select --set python3 python38
-  sudo port install py38-numpy +gcc10
-  sudo port select --set cython cython38
-  sudo port install py38-scipy +gcc10
-  sudo port install py38-h5py +gcc10
-  sudo port install py38-pandas
-  sudo port install py38-lxml
-  sudo port install py38-matplotlib  #For graphical plots with qmca
+  sudo port install boost +gcc11
+  sudo port install hdf5 +gcc11
+  
+  sudo port install python310
+  sudo port select --set python python310
+  sudo port select --set python3 python310
+  sudo port install py310-numpy +gcc11
+  sudo port select --set cython cython310
+  sudo port install py310-scipy +gcc11
+  sudo port install py310-h5py +gcc11
+  sudo port install py310-pandas
+  sudo port install py310-lxml
+  sudo port install py310-matplotlib  #For graphical plots with qmca
 
 QMCPACK build:
 
@@ -792,7 +791,7 @@ QMCPACK build:
 
   cd build
   cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpiCXX ..
-  make -j 6 # Adjust for available core count
+  make -j 4 # Adjust for available core count
   ls -l bin/qmcpack
 
 Run the deterministic tests:
@@ -801,8 +800,7 @@ Run the deterministic tests:
 
   ctest -R deterministic
 
-This recipe was verified on October 26, 2020, on a Mac running OS X 10.15.7
-"Catalina" with macports 2.6.3.
+This recipe was verified on February 28, 2022, on a Mac running OS X 11.6.4 "Big Sur".
 
 Installing on Mac OS X using Homebrew (brew)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1089,7 +1087,7 @@ of:
   not catch the most recent compiler-CUDA conflicts.
 
 * The Intel compiler must find a recent and compatible GCC
-  compiler in its path or one must be explicity set with the
+  compiler in its path or one must be explicitly set with the
   ``-gcc-name`` and ``-gxx-name`` flags in your ``compilers.yaml``.
 
 * Cross-compilation is non-intuitive. If the host OS and target OS are the same,
@@ -1133,7 +1131,7 @@ to add one:
 
   your-laptop> spack compiler add <path-to-compiler>
 
-The Intel ("classic") compiler and other commerical compilers may
+The Intel ("classic") compiler and other commercial compilers may
 require extra environment variables to work properly. If you have an
 module environment set-up by your system administrators, it is
 recommended that you set the module name in
@@ -1355,7 +1353,7 @@ parameter otherwise, it will default to ``cuda_arch=61``.
 
 Due to limitations in the Spack CUDA package, if your compiler and
 CUDA combination conflict, you will need to set a
-specific verison of CUDA that is compatible with your compiler on the
+specific version of CUDA that is compatible with your compiler on the
 command line. For example,
 
 ::
@@ -1365,7 +1363,7 @@ command line. For example,
 Loading QMCPACK into your environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you already have modules set-up in your enviroment, the Spack
+If you already have modules set-up in your environment, the Spack
 modules will be detected automatically. Otherwise, Spack will not
 automatically find the additional packages. A few additional steps are
 needed.  Please see the main Spack documentation for additional details: https://spack.readthedocs.io/en/latest/module_file_support.html.
@@ -1393,7 +1391,7 @@ Installing QMCPACK with Spack on Linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
-Ubuntu, etc.) using GCC, Clang, PGI, and Intel compilers.
+Ubuntu, etc.) using GCC, Clang, NVHPC, and Intel compilers.
 
 Installing QMCPACK with Spack on Mac OS X
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1449,7 +1447,7 @@ is non-intuitive for Spack newcomers:
   your-laptop> spack install quantum-espresso+qmcpack~patch~mpi~scalapack@6.7%gcc hdf5=serial
 
 QE Spack package is well tested with GCC and Intel compilers, but will not work
-with the PGI compiler or in a cross-compile environment.
+with the NVHPC compiler or in a cross-compile environment.
 
 Reporting Bugs
 ~~~~~~~~~~~~~~
@@ -1845,7 +1843,7 @@ To build the fastest version of QMCPACK we recommend the following:
   system. Substantial gains have been made optimizing C++ in recent
   years.
 
-- Use a vendor-optimized BLAS library such as Intel MKL and AMD ACML. Although
+- Use a vendor-optimized BLAS library such as Intel MKL and AMD AOCL. Although
   QMC does not make extensive use of linear algebra, it is used in the
   VMC wavefunction optimizer to apply the orbital coefficients in local basis
   calculations and in the Slater determinant update.

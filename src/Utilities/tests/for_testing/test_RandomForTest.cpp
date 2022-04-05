@@ -11,9 +11,6 @@
 
 #include "catch.hpp"
 #include "RandomForTest.cpp"
-#include "../StlPrettyPrint.hpp"
-#include <iostream>
-#include <string>
 
 /** \file
  */
@@ -26,7 +23,7 @@ struct RngReferenceVector;
 template<>
 struct RngReferenceVector<double>
 {
-  std::vector<double> vec{0.120758, 0.301789, 0.853906, 0.297716, 0.377862};
+  std::vector<double> vec{0.6121701794, 0.1207577838, 0.1690697568, 0.3017894523, 0.4360590181};
 };
 
 template<>
@@ -38,7 +35,7 @@ struct RngReferenceVector<float>
 template<>
 struct RngReferenceVector<std::complex<double>>
 {
-std::vector<std::complex<double>> vec{{0.120758, 0.301789}, {0.853906, 0.297716}};
+std::vector<std::complex<double>> vec{{0.6121701794, 0.1207577838}, {0.1690697568, 0.3017894523}};
 };
 
 template<>
@@ -220,7 +217,7 @@ TEST_CASE("RandomForTest_call_operator", "[utilities][for_testing]")
 {
   testing::RandomForTest<double> rng_for_test;
   double test = rng_for_test();
-  CHECK(test == Approx(0.120758));
+  CHECK(test == Approx(0.6121701794));
 }
 
 

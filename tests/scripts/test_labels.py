@@ -138,7 +138,6 @@ def create_label_sets():
         'short-bccH_1x1x1_ae-dmc-all_sdj',
         'short-bccH_1x1x1_ae-vmc-all-nodrift_sdj',
         'short-C2_pp-msdj_vmc',
-        'short-C2_pp-msdj-traditional_vmc',
         'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
         'short-diamondC_2x1x1_pp-dmc-reconf_sdj',
         'short-H4-opt-adaptive',
@@ -579,11 +578,7 @@ except:
 
 # make a ctest list of the labels
 try:
-    ctest_labels = ''
-    for label in labels:
-        ctest_labels += label+';'
-    #end for
-    ctest_labels = ctest_labels.rstrip(';')
+    ctest_labels = ';'.join(labels)
 except:
     error()
 #end try

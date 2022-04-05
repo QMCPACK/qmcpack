@@ -38,10 +38,10 @@ public:
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 
-  void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator* rng) override { myRNG = rng; }
 
 protected:
-  RandomGenerator_t* myRNG;
+  RandomGenerator* myRNG;
   std::vector<SOECPComponent*> PP;
   std::vector<std::unique_ptr<SOECPComponent>> PPset;
   ParticleSet& IonConfig;

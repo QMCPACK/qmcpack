@@ -192,7 +192,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
 
   Walker_t& wRef(*(good_w.empty() ? bad_w[0] : good_w[0]));
-  std::vector<Walker_t*> newW;
+  std::vector<std::unique_ptr<Walker_t>> newW;
   std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
@@ -235,8 +235,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     if (plus[ic] == MyContext)
     {
       // always send the last good walker
-      Walker_t*& awalker = good_w[ncopy_pairs.back().second];
-
+      auto& awalker = good_w[ncopy_pairs.back().second];
       // count the possible copies in one send
       int nsentcopy = 0;
 
@@ -272,15 +271,15 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       else
       {
         ncopy_pairs.pop_back();
-        bad_w.push_back(awalker);
+        bad_w.push_back(std::make_unique<Walker_t>(*awalker));
       }
     }
     if (minus[ic] == MyContext)
     {
-      Walker_t* awalker(nullptr);
+      std::unique_ptr<Walker_t> awalker;
       if (!bad_w.empty())
       {
-        awalker = bad_w.back();
+        awalker = std::move(bad_w.back());
         bad_w.pop_back();
       }
 
@@ -296,7 +295,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 #endif
 
       // save the new walker
-      newW.push_back(awalker);
+      if (awalker)
+      {
+        newW.push_back(std::make_unique<Walker_t>(*awalker));
+      }
+      else
+      {
+        newW.push_back(nullptr);
+      }
       ncopy_newW.push_back(nsentcopy);
       // update cursor
       ic += nsentcopy;
@@ -312,8 +318,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // pack data and send
-      Walker_t*& awalker = good_w[jobit->walkerID];
-      size_t byteSize    = awalker->byteSize();
+      auto& awalker   = good_w[jobit->walkerID];
+      size_t byteSize = awalker->byteSize();
       if (!awalker->SendInProgress)
       {
         awalker->updateBuffer();
@@ -344,9 +350,9 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     for (auto jobit = job_list.begin(); jobit != job_list.end(); jobit++)
     {
       // recv and unpack data
-      Walker_t*& awalker = newW[jobit->walkerID];
+      auto& awalker = newW[jobit->walkerID];
       if (!awalker)
-        awalker = new Walker_t(wRef);
+        awalker = std::make_unique<Walker_t>(wRef);
       size_t byteSize = awalker->byteSize();
       if (use_nonblocking)
         requests.push_back(myComm->comm.ireceive_n(awalker->DataSet.data(), byteSize, jobit->target));
@@ -382,18 +388,18 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   //save the number of walkers sent
   NumWalkersSent = nsend;
   // rebuild good_w and ncopy_w
-  std::vector<Walker_t*> good_w_temp(good_w);
+  std::vector<std::unique_ptr<Walker_t>> good_w_temp(std::move(good_w));
   good_w.resize(ncopy_pairs.size());
   ncopy_w.resize(ncopy_pairs.size());
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
   {
-    good_w[iw]  = good_w_temp[ncopy_pairs[iw].second];
+    good_w[iw]  = std::move(good_w_temp[ncopy_pairs[iw].second]);
     ncopy_w[iw] = ncopy_pairs[iw].first;
   }
   //add walkers from other rank
   if (newW.size())
   {
-    good_w.insert(good_w.end(), newW.begin(), newW.end());
+    good_w.insert(good_w.end(), std::make_move_iterator(newW.begin()), std::make_move_iterator(newW.end()));
     ncopy_w.insert(ncopy_w.end(), ncopy_newW.begin(), ncopy_newW.end());
   }
 

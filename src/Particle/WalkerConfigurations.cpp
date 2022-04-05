@@ -35,8 +35,7 @@ void WalkerConfigurations::createWalkers(int n, size_t numPtcls)
   {
     while (n)
     {
-      Walker_t* awalker = new Walker_t(numPtcls);
-      WalkerList.push_back(awalker);
+      WalkerList.push_back(std::make_unique<Walker_t>(numPtcls));
       --n;
     }
   }
@@ -47,7 +46,7 @@ void WalkerConfigurations::createWalkers(int n, size_t numPtcls)
       int iw = WalkerList.size(); //copy from the back
       for (int i = 0; i < n; ++i)
       {
-        WalkerList.push_back(new Walker_t(*WalkerList[--iw]));
+        WalkerList.push_back(std::make_unique<Walker_t>(*WalkerList[--iw]));
       }
     }
     else
@@ -57,12 +56,12 @@ void WalkerConfigurations::createWalkers(int n, size_t numPtcls)
       for (int iw = 0; iw < nw0; ++iw)
       {
         for (int ic = 0; ic < nc; ++ic)
-          WalkerList.push_back(new Walker_t(*WalkerList[iw]));
+          WalkerList.push_back(std::make_unique<Walker_t>(*WalkerList[iw]));
       }
       n -= nc * nw0;
       while (n > 0)
       {
-        WalkerList.push_back(new Walker_t(*WalkerList[--nw0]));
+        WalkerList.push_back(std::make_unique<Walker_t>(*WalkerList[--nw0]));
         --n;
       }
     }
@@ -80,13 +79,6 @@ void WalkerConfigurations::resize(int numWalkers, size_t numPtcls)
     int nw = -dn;
     if (nw < WalkerList.size())
     {
-      iterator it = WalkerList.begin();
-      while (nw)
-      {
-        delete *it;
-        ++it;
-        --nw;
-      }
       WalkerList.erase(WalkerList.begin(), WalkerList.begin() - dn);
     }
   }
@@ -95,11 +87,6 @@ void WalkerConfigurations::resize(int numWalkers, size_t numPtcls)
 ///returns the next valid iterator
 WalkerConfigurations::iterator WalkerConfigurations::destroyWalkers(iterator first, iterator last)
 {
-  iterator it = first;
-  while (it != last)
-  {
-    delete *it++;
-  }
   return WalkerList.erase(first, last);
 }
 
@@ -108,7 +95,7 @@ void WalkerConfigurations::createWalkers(iterator first, iterator last)
   destroyWalkers(WalkerList.begin(), WalkerList.end());
   while (first != last)
   {
-    WalkerList.push_back(new Walker_t(**first));
+    WalkerList.push_back(std::make_unique<Walker_t>(**first));
     ++first;
   }
 }
@@ -122,10 +109,6 @@ void WalkerConfigurations::destroyWalkers(int nw)
   }
   nw     = WalkerList.size() - nw;
   int iw = nw;
-  while (iw < WalkerList.size())
-  {
-    delete WalkerList[iw++];
-  }
   WalkerList.erase(WalkerList.begin() + nw, WalkerList.end());
 }
 
@@ -152,6 +135,15 @@ void WalkerConfigurations::reset()
     (*it)->Weight       = 1.0;
     (*it)->Multiplicity = 1.0;
     ++it;
+  }
+}
+
+void WalkerConfigurations::putConfigurations(Walker_t::RealType* target) const
+{
+  for (const auto& walker : WalkerList)
+  {
+    std::copy(get_first_address(walker->R), get_last_address(walker->R), target);
+    target += get_last_address(walker->R) - get_first_address(walker->R);
   }
 }
 

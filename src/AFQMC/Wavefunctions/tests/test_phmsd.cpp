@@ -16,7 +16,7 @@
 #include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
@@ -244,7 +244,7 @@ void test_phmsd(boost::mpi3::communicator& world)
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
-    RandomGenerator_t rng;
+    RandomGenerator rng;
     WalkerSet wset(TG, doc3.getRoot(), InfoMap["info0"], &rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
     REQUIRE(initial_guess.size(0) == 2);

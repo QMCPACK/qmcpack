@@ -21,30 +21,30 @@
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
 {
-typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-typedef LRCoulombSingleton::GridType GridType;
-typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
+using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 class DensityEstimator : public OperatorBase
 {
 public:
   DensityEstimator(ParticleSet& elns);
   int potentialIndex;
-  void resetTargetParticleSet(ParticleSet& P);
+  void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P);
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  Return_t evaluate(ParticleSet& P) override;
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   void addObservables(PropertySetType& plist) {}
-  void addObservables(PropertySetType& plist, BufferType& olist);
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
-  void setObservables(PropertySetType& plist);
-  void setParticlePropertyList(PropertySetType& plist, int offset);
-  bool put(xmlNodePtr cur);
-  bool get(std::ostream& os) const;
+  void addObservables(PropertySetType& plist, BufferType& olist) override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void setObservables(PropertySetType& plist) override;
+  void setParticlePropertyList(PropertySetType& plist, int offset) override;
+  bool put(xmlNodePtr cur) override;
+  bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-  inline int getGridIndex(int i, int j, int k) const { return myIndex + k + NumGrids[2] * (j + NumGrids[1] * i); }
+  inline int getGridIndex(int i, int j, int k) const { return my_index_ + k + NumGrids[2] * (j + NumGrids[1] * i); }
 
   inline int getGridIndexPotential(int i, int j, int k) const
   {

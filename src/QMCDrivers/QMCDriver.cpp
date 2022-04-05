@@ -24,7 +24,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "hdf/HDFVersion.h"
 #include "Utilities/qmc_common.h"
 #include <limits>
@@ -34,7 +34,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
@@ -49,14 +49,12 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
-      Estimators(0),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
       W(w),
       Psi(psi),
       H(h),
-      wOut(0),
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(enable_profiling)
 {
@@ -162,7 +160,6 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
 
 QMCDriver::~QMCDriver()
 {
-  delete_iter(Rng.begin(), Rng.end());
   if (DriftModifier)
     delete DriftModifier;
 }
@@ -209,10 +206,10 @@ void QMCDriver::process(xmlNodePtr cur)
   put(cur);
   //create and initialize estimator
   Estimators = branchEngine->getEstimatorManager();
-  if (Estimators == 0)
+  if (Estimators == nullptr)
   {
-    Estimators = new EstimatorManagerBase(myComm);
-    branchEngine->setEstimatorManager(Estimators);
+    branchEngine->setEstimatorManager(std::make_unique<EstimatorManagerBase>(myComm));
+    Estimators = branchEngine->getEstimatorManager();
     branchEngine->read(h5FileRoot);
   }
   if (DriftModifier == 0)
@@ -228,8 +225,8 @@ void QMCDriver::process(xmlNodePtr cur)
 #endif
   branchEngine->put(cur);
   Estimators->put(H, cur);
-  if (wOut == 0)
-    wOut = new HDFWalkerOutput(W, RootName, myComm);
+  if (!wOut)
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -270,7 +267,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();
@@ -339,8 +336,6 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 {
   if (DumpConfig && dumpwalkers)
     wOut->dump(W, block);
-  delete wOut;
-  wOut           = 0;
   nTargetWalkers = W.getActiveWalkers();
   MyCounter++;
   infoSummary.flush();
@@ -559,7 +554,7 @@ xmlNodePtr QMCDriver::getQMCNode()
     std::string cname((const char*)(cur->name));
     if (cname == "parameter")
     {
-      const XMLAttrString name(cur, "name");
+      const std::string name(getXMLAttributeValue(cur, "name"));
       if (name == "current")
         current_ptr = cur;
     }

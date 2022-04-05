@@ -27,7 +27,7 @@ LCAOSpinorBuilder::LCAOSpinorBuilder(ParticleSet& els, ParticleSet& ions, Commun
     myComm->barrier_and_abort("LCAOSpinorBuilder only works with href");
 }
 
-SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
   std::string spo_name(""), optimize("no");
@@ -55,9 +55,8 @@ SPOSet* LCAOSpinorBuilder::createSPOSetFromXML(xmlNodePtr cur)
   loadMO(*upspo, *dnspo, cur);
 
   //create spinor and register up/dn
-  SpinorSet* spinor_set = new SpinorSet();
+  auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(upspo), std::move(dnspo));
-
   return spinor_set;
 }
 
@@ -135,9 +134,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
     std::string setname;
     Matrix<RealType> upReal;
     Matrix<RealType> upImag;
-    setname = "/KPTS_0/eigenset_0";
+    setname = "/Super_Twist/eigenset_0";
     readRealMatrixFromH5(hin, setname, upReal);
-    setname = "/KPTS_0/eigenset_0_imag";
+    setname = "/Super_Twist/eigenset_0_imag";
     readRealMatrixFromH5(hin, setname, upImag);
 
     assert(upReal.rows() == upImag.rows());
@@ -154,9 +153,9 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 
     Matrix<RealType> dnReal;
     Matrix<RealType> dnImag;
-    setname = "/KPTS_0/eigenset_1";
+    setname = "/Super_Twist/eigenset_1";
     readRealMatrixFromH5(hin, setname, dnReal);
-    setname = "/KPTS_0/eigenset_1_imag";
+    setname = "/Super_Twist/eigenset_1_imag";
     readRealMatrixFromH5(hin, setname, dnImag);
 
     assert(dnReal.rows() == dnImag.rows());

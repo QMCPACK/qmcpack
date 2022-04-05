@@ -9,14 +9,20 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
+set(CUDA_RT_SRCS CUDAfill.cpp CUDAallocator.cpp CUDAruntime.cpp)
+set(CUDA_LA_SRCS cuBLAS_missing_functions.cu)
 
-SET(CUDA_SRCS
-  cuBLAS_missing_functions.cu
-  CUDAfill.cpp
-  CUDAallocator.cpp
-  CUDAruntime.cpp
-)
+if(NOT QMC_CUDA2HIP)
+  add_library(platform_cuda_runtime ${CUDA_RT_SRCS})
+  target_link_libraries(platform_cuda_runtime PUBLIC CUDA::cudart)
+  add_library(platform_cuda_LA ${CUDA_LA_SRCS})
+  target_link_libraries(platform_cuda_LA PUBLIC CUDA::cublas CUDA::cusolver)
+else()
+  hip_add_library(platform_cuda_runtime ${CUDA_RT_SRCS})
+  target_link_libraries(platform_cuda_runtime PUBLIC platform_rocm_runtime)
+  hip_add_library(platform_cuda_LA ${CUDA_LA_SRCS})
+  target_link_libraries(platform_cuda_LA PRIVATE qmc_external_thrust)
+  target_link_libraries(platform_cuda_LA PUBLIC platform_rocm_LA)
+endif()
 
-CUDA_ADD_LIBRARY(platform_cuda ${CUDA_SRCS})
-CUDA_ADD_CUBLAS_TO_TARGET(platform_cuda)
-TARGET_LINK_LIBRARIES(platform_cuda PRIVATE ${CUDA_LIBRARIES} ${CUDA_cusolver_LIBRARY})
+target_link_libraries(platform_cuda_LA PUBLIC platform_cuda_runtime)

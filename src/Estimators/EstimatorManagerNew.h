@@ -16,7 +16,7 @@
 
 #include "Configuration.h"
 #include "Utilities/Timer.h"
-#include "Utilities/PooledData.h"
+#include "Pools/PooledData.h"
 #include "Message/Communicate.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "OperatorEstBase.h"
@@ -46,13 +46,13 @@ class EstimatorManagerNew
 {
 public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
-  typedef QMCTraits::FullPrecRealType RealType;
+  using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
-  using QMCT = QMCTraits;
-  typedef ScalarEstimatorBase EstimatorType;
-  using FPRBuffer = std::vector<FullPrecRealType>;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using QMCT          = QMCTraits;
+  using EstimatorType = ScalarEstimatorBase;
+  using FPRBuffer     = std::vector<FullPrecRealType>;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
   EstimatorManagerNew(Communicate* c);
@@ -75,7 +75,10 @@ public:
   int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H, const ParticleSet& pset, xmlNodePtr cur);
+  bool put(QMCHamiltonian& H,
+           const ParticleSet& pset,
+           const TrialWaveFunction& twf,
+           xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
@@ -141,7 +144,7 @@ private:
    * @param aname name of the estimator
    * @return locator of newestimator
    */
-  int add(EstimatorType* newestimator, const std::string& aname);
+  int add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname);
 
   ///return a pointer to the estimator aname
   EstimatorType* getEstimator(const std::string& a);
@@ -216,7 +219,7 @@ private:
   ///column map
   std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
-  std::vector<EstimatorType*> Estimators;
+  std::vector<std::unique_ptr<EstimatorType>> Estimators;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables

@@ -27,7 +27,6 @@ LCAOHDFParser::LCAOHDFParser()
   MOtype       = "Canonical";
   angular_type = "cartesian";
   readtype     = 0;
-  FixValence   = true;
   NFZC         = 0;
 }
 
@@ -40,7 +39,6 @@ LCAOHDFParser::LCAOHDFParser(int argc, char** argv) : QMCGaussianParserBase(argc
   angular_type   = "cartesian";
   SpinRestricted = true;
   readtype       = 0;
-  FixValence     = true;
   NFZC           = 0;
 }
 
@@ -137,7 +135,7 @@ void LCAOHDFParser::parse(const std::string& fname)
   hin.close();
 
 
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   if (PBC)
   {

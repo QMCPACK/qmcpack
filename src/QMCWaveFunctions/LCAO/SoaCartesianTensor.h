@@ -21,6 +21,7 @@
 #ifndef QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 
+#include <stdexcept>
 #include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
@@ -36,8 +37,8 @@ namespace qmcplusplus
 template<class T>
 struct SoaCartesianTensor
 {
-  typedef T value_type;
-  typedef TinyVector<Tensor<T, 3>, 3> ggg_type;
+  using value_type = T;
+  using ggg_type   = TinyVector<Tensor<T, 3>, 3>;
 
   ///maximum angular momentum
   size_t Lmax;
@@ -105,10 +106,8 @@ template<class T>
 SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
 {
   if (Lmax < 0 || Lmax > 6)
-  {
-    std::cerr << "CartesianTensor can't handle Lmax > 6 or Lmax < 0.\n";
-    APP_ABORT("");
-  }
+    throw std::runtime_error("CartesianTensor can't handle Lmax > 6 or Lmax < 0.\n");
+
   int ntot = 0;
   for (int i = 0; i <= Lmax; i++)
     ntot += (i + 1) * (i + 2) / 2;
@@ -2292,12 +2291,10 @@ void SoaCartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
     break;
 
   default:
-    std::cerr << "CartesianTensor::getABC() - Incorrect index." << std::endl;
-    APP_ABORT("");
+    throw std::runtime_error("CartesianTensor::getABC() - Incorrect index.\n");
     break;
   }
 }
-
 
 } //namespace qmcplusplus
 #endif

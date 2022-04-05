@@ -26,13 +26,13 @@ class OrbitalConstraintsBase;
 class JastrowBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  JastrowBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
+  JastrowBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
   ///particleset pool to get ParticleSet other than the target
-  PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
   ///index for the jastrow type: 1, 2, 3
   int JastrowType;
   /// \xmla{jastrow,name}
@@ -50,15 +50,15 @@ private:
   ///reset the options
   void resetOptions();
   /// build one-body term
-  WaveFunctionComponent* buildOneBody(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildOneBody(xmlNodePtr cur);
   /// build two-body term
-  WaveFunctionComponent* buildTwoBody(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildTwoBody(xmlNodePtr cur);
   /// build electron-electron ion term
-  WaveFunctionComponent* build_eeI(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> build_eeI(xmlNodePtr cur);
   /// build k-Space term
-  WaveFunctionComponent* buildkSpace(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildkSpace(xmlNodePtr cur);
   /// build number-counting term
-  WaveFunctionComponent* buildCounting(xmlNodePtr cur);
+  std::unique_ptr<WaveFunctionComponent> buildCounting(xmlNodePtr cur);
 };
 
 } // namespace qmcplusplus

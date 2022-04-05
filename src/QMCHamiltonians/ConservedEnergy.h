@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_CONSERVEDENERGY_H
 
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef QMC_CUDA
@@ -73,27 +72,27 @@ using WP = WalkerProperties::Indexes;
 struct ConservedEnergy : public OperatorBase
 {
   ConservedEnergy() {}
-  ~ConservedEnergy() {}
+  ~ConservedEnergy() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) {}
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
-  Return_t evaluate(ParticleSet& P)
+  Return_t evaluate(ParticleSet& P) override
   {
     RealType gradsq = Dot(P.G, P.G);
     RealType lap    = Sum(P.L);
 #ifdef QMC_COMPLEX
     RealType gradsq_cc = Dot_CC(P.G, P.G);
-    Value              = lap + gradsq + gradsq_cc;
+    value_             = lap + gradsq + gradsq_cc;
 #else
-    Value = lap + 2 * gradsq;
+    value_ = lap + 2 * gradsq;
 #endif
     return 0.0;
   }
 
   /** Do nothing */
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "ConservedEnergy";
     return true;
@@ -109,10 +108,10 @@ struct ConservedEnergy : public OperatorBase
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
   {
     // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    std::vector<Walker_t*>& walkers = W.WalkerList;
+    auto& walkers = W.WalkerList;
     for (int iw = 0; iw < walkers.size(); iw++)
     {
       Walker_t& w = *(walkers[iw]);
@@ -125,7 +124,7 @@ struct ConservedEnergy : public OperatorBase
 #else
       flux = lap + 2 * gradsq;
 #endif
-      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = flux;
+      w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = flux;
     }
   }
 #endif

@@ -24,9 +24,7 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include <cuda_runtime_api.h>
-#include "config.h"
-#include "cudaError.h"
+#include "CUDAruntime.hpp"
 #include "allocator_traits.hpp"
 #include "CUDAfill.hpp"
 
@@ -37,15 +35,15 @@ extern std::atomic<size_t> CUDAallocator_device_mem_allocated;
 inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allocated; }
 
 /** allocator for CUDA unified memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct CUDAManagedAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
   template<class U>
@@ -55,7 +53,7 @@ struct CUDAManagedAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAManagedAllocator<U> other;
+    using other = CUDAManagedAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -82,7 +80,7 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
 
 
 /** allocator for CUDA device memory
- * @tparm T data type
+ * @tparam T data type
  *
  * using this with something other than Ohmms containers?
  *  -- use caution, write unit tests! --
@@ -94,12 +92,13 @@ bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&
  * They assume there is only one memory space and that the host has access to it.
  */
 template<typename T>
-struct CUDAAllocator
+class CUDAAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+public:
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAAllocator() = default;
   template<class U>
@@ -109,7 +108,7 @@ struct CUDAAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAAllocator<U> other;
+    using other = CUDAAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -152,6 +151,24 @@ struct CUDAAllocator
   template<class U>
   static void destroy(U* p)
   {}
+
+  void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
+  {
+    cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
+                   "cudaMemcpy failed in copyToDevice");
+  }
+
+  void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
+  {
+    cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
+                   "cudaMemcpy failed in copyFromDevice");
+  }
+
+  void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
+  {
+    cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
+                   "cudaMemcpy failed in copyDeviceToDevice");
+  }
 };
 
 template<class T1, class T2>
@@ -171,18 +188,29 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
+  static void updateTo(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
+  {
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
+    copyToDevice(device_ptr, host_ptr, n);
+  }
+
+  static void updateFrom(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
+  {
+    T* device_ptr = alloc.getDevicePtr(host_ptr);
+    copyFromDevice(host_ptr, device_ptr, n);
+  }
 };
 
 /** allocator for CUDA host pinned memory
- * @tparm T data type
+ * @tparam T data type
  */
 template<typename T>
 struct CUDAHostAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAHostAllocator() = default;
   template<class U>
@@ -192,7 +220,7 @@ struct CUDAHostAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAHostAllocator<U> other;
+    using other = CUDAHostAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -216,8 +244,8 @@ bool operator!=(const CUDAHostAllocator<T1>&, const CUDAHostAllocator<T2>&)
 }
 
 /** allocator locks memory pages allocated by ULPHA
- * @tparm T data type
- * @tparm ULPHA host memory allocator using unlocked page
+ * @tparam T data type
+ * @tparam ULPHA host memory allocator using unlocked page
  *
  * ULPHA cannot be CUDAHostAllocator
  */
@@ -237,7 +265,7 @@ struct CUDALockedPageAllocator : public ULPHA
   template<class U, class V>
   struct rebind
   {
-    typedef CUDALockedPageAllocator<U, V> other;
+    using other = CUDALockedPageAllocator<U, V>;
   };
 
   value_type* allocate(std::size_t n)

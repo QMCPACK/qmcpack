@@ -18,12 +18,10 @@
  * @brief Define a LRHandler with two template parameters
  */
 #include "LRCoulombSingleton.h"
-#if OHMMS_DIM == 3
-#include "LongRange/EwaldHandler.h"
+#include "LongRange/LRHandlerTemp.h"
+#include "LongRange/LRHandlerSRCoulomb.h"
+#include "LongRange/EwaldHandlerQuasi2D.h"
 #include "LongRange/EwaldHandler3D.h"
-#elif OHMMS_DIM == 2
-#include "LongRange/TwoDEwaldHandler.h"
-#endif
 #include <numeric>
 namespace qmcplusplus
 {
@@ -39,86 +37,35 @@ LRCoulombSingleton::lr_type LRCoulombSingleton::this_lr_type = ESLER;
  * - Fk(T k, T rc)
  * - Xk(T k, T rc)
  */
-#if OHMMS_DIM == 3
 template<class T = double>
 struct CoulombFunctor
 {
   T NormFactor;
   inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return rinv; }
-  inline T df(T r) { return -1.0 / (r * r); }
-  inline T df2(T r) { return 2.0 / (r * r * r); }
-  inline T Vk(T k) { return NormFactor / (k * k); }
+  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
+  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
+  inline T operator()(T r, T rinv) const { return rinv; }
+  inline T df(T r) const { return -1.0 / (r * r); }
+  inline T Vk(T k) const { return NormFactor / (k * k); }
 
-  inline T Xk_dk(T k) { return 0.0; }
-  inline T Fk(T k, T rc) { return NormFactor / (k * k) * std::cos(k * rc); }
-  inline T Xk(T k, T rc) { return -NormFactor / (k * k) * std::cos(k * rc); }
+  inline T Fk(T k, T rc) const { return NormFactor / (k * k) * std::cos(k * rc); }
+  inline T Xk(T k, T rc) const { return -NormFactor / (k * k) * std::cos(k * rc); }
 
-  inline T dVk_dk(T k) { return -2 * NormFactor / k / k / k; }
-  inline T dFk_dk(T k, T rc) { return -NormFactor / k / k * (2.0 / k * std::cos(k * rc) + rc * std::sin(k * rc)); }
-
-  inline T dXk_dk(T k, T rc) { return NormFactor / k / k * (2.0 / k * std::cos(k * rc) + rc * std::sin(k * rc)); }
+  inline T dVk_dk(T k) const { return -2 * NormFactor / k / k / k; }
 
   inline T integrate_r2(T r) const { return 0.5 * r * r; }
 };
-#elif OHMMS_DIM == 2
-template<class T = double>
-struct CoulombFunctor
-{
-  T NormFactor;
-  inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return rinv; }
-  inline T df(T r) { return -1.0 / (r * r); }
-  inline T df2(T r) { return 2 / (r * r * r); }
-  inline T Fk(T k, T rc) { return NormFactor / k * std::cos(k * rc); }
-  inline T Xk(T k, T rc) { return -NormFactor / k * std::cos(k * rc); }
-
-
-  inline T integrate_r2(T r) const { return 0.5 * r * r; }
-};
-#endif
-
-template<class T = double>
-struct PseudoCoulombFunctor
-{
-  //typedef OneDimCubicSpline<T> RadialFunctorType;
-  typedef OneDimLinearSpline<T> RadialFunctorType;
-  RadialFunctorType& radFunc;
-  T NormFactor;
-  inline PseudoCoulombFunctor(RadialFunctorType& rfunc) : radFunc(rfunc) {}
-  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) { return radFunc.splint(r); }
-  inline T df(T r)
-  {
-    T du, d2u;
-    radFunc.splint(r, du, d2u);
-    return du;
-  }
-  inline T Fk(T k, T rc) { return NormFactor / (k * k) * std::cos(k * rc); }
-  inline T Xk(T k, T rc) { return -NormFactor / (k * k) * std::cos(k * rc); }
-  inline T integrate_r2(T r) const
-  {
-    //fix this to return the integration
-    return 0.5 * r * r;
-  }
-};
-
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandler(ParticleSet& ref)
 {
   if (CoulombHandler == 0)
   {
-#if OHMMS_DIM == 3
-    if (ref.SK->SuperCellEnum == SUPERCELL_SLAB)
+    if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-      CoulombHandler = std::make_unique<EwaldHandler>(ref);
+      CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
     }
-    else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
+    else //if(ref.getLRBox().SuperCellEnum == SUPERCELL_BULK)
     {
       if (this_lr_type == ESLER)
       {
@@ -140,15 +87,11 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
         APP_ABORT("\n  Long range breakup method not recognized.\n");
       }
     }
-//        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
+//        else if(ref.getLRBox().SuperCellEnum == SUPERCELL_SLAB)
 //        {
 //          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-//          CoulombHandler= new EwaldHandler(ref);
+//          CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
 //        }
-#elif OHMMS_DIM == 2
-    app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << std::endl;
-    CoulombHandler = std::make_unique<TwoDEwaldHandler>(ref);
-#endif
     CoulombHandler->initBreakup(ref);
     return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }
@@ -161,9 +104,6 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
-#if OHMMS_DIM != 3
-  APP_ABORT("energy derivative implemented for 3D only");
-#endif
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if (CoulombDerivHandler == 0)
   {
@@ -196,15 +136,19 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivH
 }
 
 template<typename T>
-OneDimCubicSpline<T>* createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(const LRHandlerBase* aLR,
+                                                              T rcut,
+                                                              const LinearGrid<T>* agrid)
 {
-  typedef OneDimCubicSpline<T> func_type;
+  using func_type = OneDimCubicSpline<T>;
+  std::unique_ptr<LinearGrid<T>> agrid_local;
   if (agrid == nullptr)
   {
-    agrid = new LinearGrid<T>;
-    agrid->set(0.0, rcut, 1001);
+    agrid_local = std::make_unique<LinearGrid<T>>();
+    agrid_local->set(0.0, rcut, 1001);
+    agrid = agrid_local.get();
   }
-  int ng = agrid->size();
+  const int ng = agrid->size();
   std::vector<T> v(ng);
   T r = (*agrid)[0];
   //check if the first point is not zero
@@ -214,22 +158,26 @@ OneDimCubicSpline<T>* createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, Linear
     r     = (*agrid)[ig];
     v[ig] = r * aLR->evaluate(r, 1.0 / r);
   }
-  v[0]          = 2.0 * v[1] - v[2];
-  v[ng - 1]     = 0.0;
-  func_type* V0 = new func_type(agrid, v);
-  T deriv       = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
+  v[0]      = 2.0 * v[1] - v[2];
+  v[ng - 1] = 0.0;
+  auto V0   = std::make_unique<func_type>(agrid->makeClone(), v);
+  T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   V0->spline(0, deriv, ng - 1, 0.0);
   return V0;
 }
 
 template<typename T>
-OneDimCubicSpline<T>* createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandlerBase* aLR,
+                                                                   T rcut,
+                                                                   const LinearGrid<T>* agrid)
 {
-  typedef OneDimCubicSpline<T> func_type;
+  using func_type = OneDimCubicSpline<T>;
+  std::unique_ptr<LinearGrid<T>> agrid_local;
   if (agrid == nullptr)
   {
-    agrid = new LinearGrid<T>;
-    agrid->set(0.0, rcut, 1001);
+    agrid_local = std::make_unique<LinearGrid<T>>();
+    agrid_local->set(0.0, rcut, 1001);
+    agrid = agrid_local.get();
   }
   int ng = agrid->size();
   std::vector<T> v(ng);
@@ -247,25 +195,26 @@ OneDimCubicSpline<T>* createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, L
 
     v[ig] = v_val + v_deriv * r;
   }
-  v[0]           = 2.0 * v[1] - v[2];
-  v[ng - 1]      = 0.0;
-  func_type* dV0 = new func_type(agrid, v);
-  T deriv        = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
+  v[0]      = 2.0 * v[1] - v[2];
+  v[ng - 1] = 0.0;
+  auto dV0  = std::make_unique<func_type>(agrid->makeClone(), v);
+  T deriv   = (v[1] - v[0]) / ((*agrid)[1] - (*agrid)[0]);
   dV0->spline(0, deriv, ng - 1, 0.0);
   return dV0;
 }
 
 
-LRCoulombSingleton::RadFunctorType* LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR,
-                                                                           mRealType rcut,
-                                                                           GridType* agrid)
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVs(const LRHandlerType* aLR,
+                                                                                           mRealType rcut,
+                                                                                           const GridType* agrid)
 {
   return createSpline4RbyVs_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }
 
-LRCoulombSingleton::RadFunctorType* LRCoulombSingleton::createSpline4RbyVsDeriv(LRHandlerType* aLR,
-                                                                                mRealType rcut,
-                                                                                GridType* agrid)
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVsDeriv(
+    const LRHandlerType* aLR,
+    mRealType rcut,
+    const GridType* agrid)
 {
   return createSpline4RbyVsDeriv_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }

@@ -19,7 +19,7 @@
 #include "Concurrency/UtilityFunctions.hpp"
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/SetupPools.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -47,7 +47,9 @@ public:
     DMCDriverInput dmc_input_copy(dmcdrv_input);
     return {test_project, std::move(qmc_input_copy), std::move(dmc_input_copy),
             MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool->getParticleSet("e"),
-                         wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()), comm};
+                         wavefunction_pool->getPrimary(),
+                         hamiltonian_pool->getPrimary()),
+            comm};
   }
 
 private:

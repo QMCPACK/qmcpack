@@ -16,8 +16,8 @@
 #ifndef QMCPLUSPLUS_GRID_FUNCTOR_H
 #define QMCPLUSPLUS_GRID_FUNCTOR_H
 
+#include <memory>
 #include "Numerics/OneDimGridBase.h"
-#include "Optimize/VarList.h"
 
 namespace qmcplusplus
 {
@@ -36,71 +36,38 @@ template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>
 struct OneDimGridFunctor
 {
   /// the type of the value on a grid
-  typedef Td value_type;
+  using value_type = Td;
   /// the type of the grid value
-  typedef Tg point_type;
+  using point_type = Tg;
   /// the type of the containers Y, dY and d2Y
-  typedef CTd data_type;
+  using data_type = CTd;
   /// the grid type
-  typedef OneDimGridBase<Tg, CTg> grid_type;
+  using grid_type = OneDimGridBase<Tg, CTg>;
   /// the type of this class
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> this_type;
+  using this_type = OneDimGridFunctor<Td, Tg, CTd, CTg>;
 
   /** constructor
-   *@param gt a radial grid
+   *@param gt a radial grid. The pointer is treated as a reference
    */
-  OneDimGridFunctor(grid_type* gt = 0) : GridManager(true), OwnGrid(false), m_grid(gt)
+  OneDimGridFunctor(std::unique_ptr<grid_type> gt = std::unique_ptr<grid_type>()) : m_grid(std::move(gt))
   {
     if (m_grid)
       resize(m_grid->size());
-    //FirstAddress.resize(3,0);
   }
 
-  /** virtual destructor */
-  inline virtual ~OneDimGridFunctor()
+  OneDimGridFunctor(const OneDimGridFunctor& a)
   {
-    if (OwnGrid && m_grid)
-      delete m_grid;
-  }
-
-  /////copy constructor
-  //OneDimGridFunctor(const this_type& a): GridManager(true), m_grid(a.m_grid){
-  //  if(m_grid) resize(m_grid->size());
-  //  FirstAddress.resize(3,0);
-  //}
-
-
-  OneDimGridFunctor<Td, Tg, CTd, CTg>(const OneDimGridFunctor<Td, Tg, CTd, CTg>& a)
-  {
-    GridManager = a.GridManager;
-    OwnGrid     = true;
-    m_grid      = a.m_grid->makeClone();
-    Y           = a.Y;
-    dY          = a.dY;
-    d2Y         = a.d2Y;
+    if (a.m_grid)
+      m_grid = a.m_grid->makeClone();
+    Y   = a.Y;
+    dY  = a.dY;
+    d2Y = a.d2Y;
     m_Y.resize(a.m_Y.size());
     m_Y      = a.m_Y;
     NumNodes = a.NumNodes;
   }
 
-  /// assignment operator
-  const this_type& operator=(const this_type& a)
-  {
-    //This object does not manage the grid
-    GridManager = false;
-    OwnGrid     = false;
-    m_grid      = a.m_grid;
-    m_Y         = a.m_Y;
-    //m_Y2 = a.m_Y2;
-    return *this;
-  }
-
-  template<class T1>
-  const this_type& operator=(const T1& x)
-  {
-    Y = x;
-    return *this;
-  }
+  virtual ~OneDimGridFunctor() = default;
 
   template<typename TT>
   inline void resetParameters(const TT& active)
@@ -124,8 +91,6 @@ struct OneDimGridFunctor
   inline const grid_type& grid() const { return *m_grid; }
   ///assign a radial grid
   inline grid_type& grid() { return *m_grid; }
-  ///set the status of GridManager
-  inline void setGridManager(bool willmanage) { GridManager = willmanage; }
 
   /**returns a value
    * @param i grid index
@@ -194,14 +159,6 @@ struct OneDimGridFunctor
    */
   inline value_type evaluateAll(point_type r, point_type rinv) { return Y = splint(r, dY, d2Y); }
 
-  /////reset the values: do nothing
-  //virtual void reset() { }
-  /////reset the values from the pool
-  //virtual void resetParameters(VarRegistry<point_type>& vlist)
-  //{
-  //  ///DO NOTHING
-  //}
-
   virtual value_type splint(point_type r, value_type& du, value_type& d2u) const { return 0.0; }
 
   virtual value_type splint(point_type r) const { return 0.0; }
@@ -223,12 +180,8 @@ struct OneDimGridFunctor
     return splint(r, du, d2u);
   }
 
-  ///true, if this object manages the grid
-  bool GridManager;
-  ///true, if owns the grid to clean up
-  bool OwnGrid;
   ///pointer to the radial grid
-  grid_type* m_grid;
+  std::unique_ptr<grid_type> m_grid;
 
   ///store the value of the function
   value_type Y;
@@ -254,11 +207,11 @@ class OneDimConstFunctor : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
 public:
   Td ConstValue;
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
-  typedef typename base_type::value_type value_type;
-  typedef typename base_type::point_type point_type;
-  typedef typename base_type::data_type data_type;
-  typedef typename base_type::grid_type grid_type;
+  using base_type  = OneDimGridFunctor<Td, Tg, CTd, CTg>;
+  using value_type = typename base_type::value_type;
+  using point_type = typename base_type::point_type;
+  using data_type  = typename base_type::data_type;
+  using grid_type  = typename base_type::grid_type;
 
 
   OneDimConstFunctor(grid_type* gt = 0) : base_type(gt), ConstValue(0.0) {}

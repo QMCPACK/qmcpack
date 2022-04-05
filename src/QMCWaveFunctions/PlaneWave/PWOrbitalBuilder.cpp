@@ -28,11 +28,8 @@
 
 namespace qmcplusplus
 {
-PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets)
-    : WaveFunctionComponentBuilder(comm, els),
-      ptclPool(psets),
-      hfileID(-1),
-      rootNode(NULL)
+PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(psets), hfileID(-1), rootNode(NULL)
 {
   myParam = new PWParameterSet(myComm);
 }
@@ -40,9 +37,9 @@ PWOrbitalBuilder::PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPool
 PWOrbitalBuilder::~PWOrbitalBuilder() { delete myParam; }
 
 //All data parsing is handled here, outside storage classes.
-WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
-  WaveFunctionComponent* slater_det = nullptr;
+  std::unique_ptr<WaveFunctionComponent> slater_det;
   //save the parent
   rootNode = cur;
   //
@@ -57,7 +54,6 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   //no file, check the root
   if (hfileID < 0)
     hfileID = getH5(rootNode, "href");
-  bool success = true;
   //Move through the XML tree and read basis information
   cur = cur->children;
   while (cur != NULL)
@@ -65,8 +61,9 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
     std::string cname((const char*)(cur->name));
     if (cname == "basisset")
     {
-      const XMLAttrString a(cur, "ecut");
-      if (!a.empty()) myParam->Ecut = std::stod(a);
+      const std::string a(getXMLAttributeValue(cur, "ecut"));
+      if (!a.empty())
+        myParam->Ecut = std::stod(a);
     }
     else if (cname == "coefficients")
     {
@@ -84,7 +81,7 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
         APP_ABORT("  Cannot create a SlaterDet due to missing h5 file\n");
         OHMMS::Controller->abort();
       }
-      success = createPWBasis(cur);
+      createPWBasis(cur);
       slater_det = putSlaterDet(cur);
     }
     cur = cur->next;
@@ -93,13 +90,12 @@ WaveFunctionComponent* PWOrbitalBuilder::buildComponent(xmlNodePtr cur)
   return slater_det;
 }
 
-WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
 {
   //catch parameters
   myParam->put(cur);
-  typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminant<> Det_t;
-  SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
+
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
   int spin_group = 0;
   cur            = cur->children;
   while (cur != NULL)
@@ -116,38 +112,34 @@ WaveFunctionComponent* PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       aAttrib.put(cur);
       if (ref == "0")
         ref = id;
-      int firstIndex = targetPtcl.first(spin_group);
+      const int firstIndex = targetPtcl.first(spin_group);
+      const int lastIndex  = targetPtcl.last(spin_group);
       std::map<std::string, SPOSetPtr>::iterator lit(spomap.find(ref));
-      Det_t* adet = 0;
       //int spin_group=0;
       if (lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi(createPW(cur, spin_group));
         spomap[ref] = psi.get();
-        adet        = new Det_t(std::move(psi), firstIndex);
+        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
       }
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
         std::unique_ptr<SPOSet> psi((*lit).second->makeClone());
-        adet = new Det_t(std::move(psi), firstIndex);
+        dets.push_back(std::make_unique<DiracDeterminant<>>(std::move(psi), firstIndex, lastIndex));
       }
       app_log() << "    spin=" << spin_group << " id=" << id << " ref=" << ref << std::endl;
-      if (adet)
-      {
-        adet->set(firstIndex, targetPtcl.last(spin_group) - firstIndex);
-        sdet->add(adet, spin_group);
-      }
       spin_group++;
     }
     cur = cur->next;
   }
 
   if (spin_group)
-    return sdet;
+    return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
+  ;
 
-  APP_ABORT(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
+  myComm->barrier_and_abort(" Failed to create a SlaterDet at PWOrbitalBuilder::putSlaterDet ");
   return nullptr;
 }
 
@@ -201,7 +193,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   //return the ecut to be used by the basis set
   RealType real_ecut = myParam->getEcut(ecut);
   //create at least one basis set but do resize the containers
-  int nh5gvecs = myBasisSet->readbasis(hfileID, real_ecut, targetPtcl.Lattice, myParam->pwTag, myParam->pwMultTag);
+  int nh5gvecs = myBasisSet->readbasis(hfileID, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag);
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  twist angle = " << TwistAngle << std::endl;
   app_log() << "  num_bands = " << nbands << std::endl;
@@ -217,7 +209,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   std::vector<int> occBand(nb);
   for (int i = 0; i < nb; i++)
     occBand[i] = i;
-  typedef PWBasis::GIndex_t GIndex_t;
+  using GIndex_t = PWBasis::GIndex_t;
   GIndex_t nG(1);
   bool transform2grid = false;
   cur                 = cur->children;
@@ -268,12 +260,12 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   }
   //std::string tname=myParam->getTwistName();
   std::string tname = "kpoint_0";
-  //hid_t es_grp_id = H5Gopen(hfileID,myParam->eigTag.c_str());
-  //hid_t es_grp_id = H5Gopen(hfileID,"electrons/kpoint_0/spin_0/state_0");
-  hid_t es_grp_id = H5Gopen(hfileID, "electrons");
+  //hid_t es_grp_id = H5Gopen2(hfileID,myParam->eigTag.c_str(), H5P_DEFAULT);
+  //hid_t es_grp_id = H5Gopen2(hfileID,"electrons/kpoint_0/spin_0/state_0", H5P_DEFAULT);
+  hid_t es_grp_id = H5Gopen2(hfileID, "electrons", H5P_DEFAULT);
 
-  //hid_t twist_grp_id = H5Gopen(es_grp_id,tname.c_str());
-  hid_t twist_grp_id = H5Gopen(es_grp_id, "kpoint_0");
+  //hid_t twist_grp_id = H5Gopen2(es_grp_id,tname.c_str(), H5P_DEFAULT);
+  hid_t twist_grp_id = H5Gopen2(es_grp_id, "kpoint_0", H5P_DEFAULT);
   //create a single-particle orbital set
   SPOSetType* psi = new SPOSetType;
   if (transform2grid)
@@ -288,8 +280,8 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   if (myParam->hasComplexData(hfileID)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
-    typedef std::vector<std::complex<RealType>> TempVecType;
-    typedef std::vector<std::complex<double>> TempVecType_DP;
+    using TempVecType    = std::vector<std::complex<RealType>>;
+    using TempVecType_DP = std::vector<std::complex<double>>;
     TempVecType_DP coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<TempVecType_DP> hdfobj_coefs(coefs_DP);
     int ib = 0;
@@ -297,7 +289,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
     {
       std::string bname(myParam->getBandName(occBand[ib], spinIndex));
       app_log() << "  Reading " << tname << "/" << bname << std::endl;
-      hid_t band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      hid_t band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
       hdfobj_coefs.read(band_grp_id, "psi_g");
       TempVecType coefs(coefs_DP.begin(), coefs_DP.end());
       psi->addVector(coefs, ib);
@@ -309,8 +301,8 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   {
     // It appears the coefficients are always stored as complex in the HDF file?
     //app_log() << "  PW coefficients are real." << std::endl;
-    typedef std::vector<std::complex<RealType>> ComplexTempVecType;
-    typedef std::vector<std::complex<double>> ComplexTempVecType_DP;
+    using ComplexTempVecType    = std::vector<std::complex<RealType>>;
+    using ComplexTempVecType_DP = std::vector<std::complex<double>>;
     ComplexTempVecType_DP complex_coefs_DP(myBasisSet->inputmap.size());
     HDFAttribIO<ComplexTempVecType_DP> hdfobj_complex_coefs(complex_coefs_DP);
     int ib = 0;
@@ -318,7 +310,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
     {
       std::string bname(myParam->getBandName(occBand[ib], spinIndex));
       app_log() << "  Reading " << tname << "/" << bname << std::endl;
-      hid_t band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      hid_t band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
       hdfobj_complex_coefs.read(band_grp_id, "psi_g");
       ComplexTempVecType complex_coefs(complex_coefs_DP.begin(), complex_coefs_DP.end());
       psi->addVector(complex_coefs, ib);
@@ -346,61 +338,57 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
   app_log() << " splineTag " << splineTag.str() << std::endl;
   hid_t es_grp_id;
-  status = H5Gget_objinfo(hfileID, splineTag.str().c_str(), 0, NULL);
-  if (status)
+  if (H5Lexists(hfileID, splineTag.str().c_str(), H5P_DEFAULT) != true)
   {
-    es_grp_id = H5Gcreate(hfileID, splineTag.str().c_str(), 0);
+    es_grp_id = H5Gcreate2(hfileID, splineTag.str().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     HDFAttribIO<PWBasis::GIndex_t> t(nG);
     t.write(es_grp_id, "grid");
   }
   else
   {
-    es_grp_id = H5Gopen(hfileID, splineTag.str().c_str());
+    es_grp_id = H5Gopen2(hfileID, splineTag.str().c_str(), H5P_DEFAULT);
   }
   std::string tname = myParam->getTwistName();
   hid_t twist_grp_id;
-  status = H5Gget_objinfo(es_grp_id, tname.c_str(), 0, NULL);
-  if (status)
-    twist_grp_id = H5Gcreate(es_grp_id, tname.c_str(), 0);
+  if (H5Lexists(es_grp_id, tname.c_str(), H5P_DEFAULT) != true)
+    twist_grp_id = H5Gcreate2(es_grp_id, tname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   else
-    twist_grp_id = H5Gopen(es_grp_id, tname.c_str());
+    twist_grp_id = H5Gopen2(es_grp_id, tname.c_str(), H5P_DEFAULT);
   TinyVector<double, OHMMS_DIM> TwistAngle_DP;
   TwistAngle_DP = TwistAngle;
   HDFAttribIO<TinyVector<double, OHMMS_DIM>> hdfobj_twist(TwistAngle_DP);
   hdfobj_twist.write(twist_grp_id, "twist_angle");
-  ParticleSet::ParticleLayout_t& lattice(targetPtcl.Lattice);
+  const ParticleSet::ParticleLayout& lattice(targetPtcl.getLattice());
   RealType dx = 1.0 / static_cast<RealType>(nG[0] - 1);
   RealType dy = 1.0 / static_cast<RealType>(nG[1] - 1);
   RealType dz = 1.0 / static_cast<RealType>(nG[2] - 1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::SingleParticleValue_t, 3> StorageType;
+  using StorageType = Array<ParticleSet::SingleParticleValue, 3>;
   StorageType inData(nG[0], nG[1], nG[2]);
   int ib = 0;
   while (ib < myParam->numBands)
   {
     std::string bname(myParam->getBandName(ib));
-    status = H5Gget_objinfo(twist_grp_id, bname.c_str(), 0, NULL);
     hid_t band_grp_id, spin_grp_id = -1;
-    if (status)
+    if (H5Lexists(twist_grp_id, bname.c_str(), H5P_DEFAULT) != true)
     {
-      band_grp_id = H5Gcreate(twist_grp_id, bname.c_str(), 0);
+      band_grp_id = H5Gcreate2(twist_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
     else
     {
-      band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
     }
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
-      bname  = myParam->getSpinName(spinIndex);
-      status = H5Gget_objinfo(band_grp_id, bname.c_str(), 0, NULL);
-      if (status)
+      bname = myParam->getSpinName(spinIndex);
+      if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
-        spin_grp_id = H5Gcreate(band_grp_id, bname.c_str(), 0);
+        spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else
       {
-        spin_grp_id = H5Gopen(band_grp_id, bname.c_str());
+        spin_grp_id = H5Gopen2(band_grp_id, bname.c_str(), H5P_DEFAULT);
       }
       parent_id = spin_grp_id;
     }
@@ -425,13 +413,13 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::SingleParticleValue_t, 3> StorageType;
+  using StorageType = Array<ParticleSet::SingleParticleValue, 3>;
   std::vector<StorageType*> inData;
   int nb = myParam->numBands;
   for (int ib = 0; ib < nb; ib++)
     inData.push_back(new StorageType(nG[0], nG[1], nG[2]));
-  PosType tAngle = targetPtcl.Lattice.k_cart(TwistAngle);
-  PWOrbitalSet::ValueVector_t phi(nb);
+  PosType tAngle = targetPtcl.getLattice().k_cart(TwistAngle);
+  PWOrbitalSet::ValueVector phi(nb);
   for (int ig = 0; ig < nG[0]; ig++)
   {
     RealType x = ig * dx;
@@ -452,28 +440,26 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   for (int ib = 0; ib < nb; ib++)
   {
     std::string bname(myParam->getBandName(ib));
-    status = H5Gget_objinfo(twist_grp_id, bname.c_str(), 0, NULL);
     hid_t band_grp_id, spin_grp_id = -1;
-    if (status)
+    if (H5Lexists(twist_grp_id, bname.c_str(), H5P_DEFAULT) != true)
     {
-      band_grp_id = H5Gcreate(twist_grp_id, bname.c_str(), 0);
+      band_grp_id = H5Gcreate2(twist_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     }
     else
     {
-      band_grp_id = H5Gopen(twist_grp_id, bname.c_str());
+      band_grp_id = H5Gopen2(twist_grp_id, bname.c_str(), H5P_DEFAULT);
     }
     hid_t parent_id = band_grp_id;
     if (myParam->hasSpin)
     {
-      bname  = myParam->getSpinName(spinIndex);
-      status = H5Gget_objinfo(band_grp_id, bname.c_str(), 0, NULL);
-      if (status)
+      bname = myParam->getSpinName(spinIndex);
+      if (H5Lexists(band_grp_id, bname.c_str(), H5P_DEFAULT) != true)
       {
-        spin_grp_id = H5Gcreate(band_grp_id, bname.c_str(), 0);
+        spin_grp_id = H5Gcreate2(band_grp_id, bname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else
       {
-        spin_grp_id = H5Gopen(band_grp_id, bname.c_str());
+        spin_grp_id = H5Gopen2(band_grp_id, bname.c_str(), H5P_DEFAULT);
       }
       parent_id = spin_grp_id;
     }
@@ -494,8 +480,9 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
 
 hid_t PWOrbitalBuilder::getH5(xmlNodePtr cur, const char* aname)
 {
-  const XMLAttrString a(cur, aname);
-  if (a.empty()) return -1;
+  const std::string a(getXMLAttributeValue(cur, aname));
+  if (a.empty())
+    return -1;
   hid_t h = H5Fopen(a.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   if (h < 0)
   {

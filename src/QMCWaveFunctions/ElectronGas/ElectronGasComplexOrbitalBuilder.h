@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 
 namespace qmcplusplus
@@ -34,12 +34,12 @@ struct EGOSet : public SPOSet
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
-  SPOSet* makeClone() const override { return new EGOSet(*this); }
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<EGOSet>(*this); }
 
   void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override {}
 
-  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi) override
+  inline void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
@@ -57,7 +57,11 @@ struct EGOSet : public SPOSet
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) override
+  inline void evaluateVGL(const ParticleSet& P,
+                          int iat,
+                          ValueVector& psi,
+                          GradVector& dpsi,
+                          ValueVector& d2psi) override
   {
     const PosType& r = P.activeR(iat);
     RealType sinkr, coskr;
@@ -73,25 +77,25 @@ struct EGOSet : public SPOSet
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            ValueMatrix_t& d2logdet) override
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector_t v(logdet[i], OrbitalSetSize);
-      GradVector_t g(dlogdet[i], OrbitalSetSize);
-      ValueVector_t l(d2logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], OrbitalSetSize);
+      GradVector g(dlogdet[i], OrbitalSetSize);
+      ValueVector l(d2logdet[i], OrbitalSetSize);
       evaluateVGL(P, iat, v, g, l);
     }
   }
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ValueMatrix_t& logdet,
-                            GradMatrix_t& dlogdet,
-                            HessMatrix_t& grad_grad_logdet,
-                            GGGMatrix_t& grad_grad_grad_logdet) override
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            HessMatrix& grad_grad_logdet,
+                            GGGMatrix& grad_grad_grad_logdet) override
   {
     APP_ABORT(
         "Incomplete implementation EGOSet::evaluate(P,first,last,lodget,dlodet,grad_grad_logdet,grad_grad_grad_logdet");
@@ -106,10 +110,9 @@ class ElectronGasComplexOrbitalBuilder : public WaveFunctionComponentBuilder
 public:
   ///constructor
   ElectronGasComplexOrbitalBuilder(Communicate* comm, ParticleSet& els);
-  //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 };
 
 /** OrbitalBuilder for Slater determinants of electron-gas
@@ -119,7 +122,7 @@ class ElectronGasSPOBuilder : public SPOSetBuilder
 protected:
   bool has_twist;
   PosType unique_twist;
-  HEGGrid<RealType, OHMMS_DIM> egGrid;
+  HEGGrid<RealType> egGrid;
   xmlNodePtr spo_node;
 
 public:
@@ -129,8 +132,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSet* createSPOSetFromIndices(indices_t& indices);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
+  std::unique_ptr<SPOSet> createSPOSetFromIndices(indices_t& indices);
 };
 } // namespace qmcplusplus
 #endif

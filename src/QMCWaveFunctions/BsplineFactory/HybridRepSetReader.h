@@ -22,7 +22,7 @@
 #include "Numerics/Bessel.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 //#include "QMCHamiltonians/Ylm.h"
 //#define PRINT_RADIAL
@@ -32,8 +32,8 @@ namespace qmcplusplus
 template<typename ST, typename LT>
 struct Gvectors
 {
-  typedef TinyVector<ST, 3> PosType;
-  typedef std::complex<ST> ValueType;
+  using PosType   = TinyVector<ST, 3>;
+  using ValueType = std::complex<ST>;
 
   const LT& Lattice;
   std::vector<PosType> gvecs_cart; //Cartesian.
@@ -89,7 +89,7 @@ struct Gvectors
     const ST& gv_y        = gvecs_cart[ig][1];
     const ST& gv_z        = gvecs_cart[ig][2];
 
-#pragma omp simd aligned(px, py, pz, v_r, v_i: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(px, py, pz, v_r, v_i : QMC_SIMD_ALIGNMENT)
     for (size_t iat = 0; iat < RSoA.size(); iat++)
       qmcplusplus::sincos(px[iat] * gv_x + py[iat] * gv_y + pz[iat] * gv_z, v_i + iat, v_r + iat);
   }
@@ -138,9 +138,10 @@ struct Gvectors
 /** General HybridRepSetReader to handle any unitcell
  */
 template<typename SA>
-struct HybridRepSetReader : public SplineSetReader<SA>
+class HybridRepSetReader : public SplineSetReader<SA>
 {
-  typedef SplineSetReader<SA> BaseReader;
+public:
+  using BaseReader = SplineSetReader<SA>;
 
   using BaseReader::bspline;
   using BaseReader::mybuilder;
@@ -312,7 +313,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
     const int gvec_last  = gvec_groups[gvec_group_comm.getGroupID() + 1];
 
     // prepare Gvecs Ylm(G)
-    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+    using UnitCellType = typename EinsplineSetBuilder::UnitCellType;
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG, gvec_first,
                                          gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
@@ -462,7 +463,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
                   const double* restrict ps_i_ptr = phase_shift_i[ig_local].data();
                   double cG_j_r                   = cG_r * j_lm_G[lm];
                   double cG_j_i                   = cG_i * j_lm_G[lm];
-#pragma omp simd aligned(vals_r, vals_i, ps_r_ptr, ps_i_ptr: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals_r, vals_i, ps_r_ptr, ps_i_ptr : QMC_SIMD_ALIGNMENT)
                   for (size_t idx = 0; idx < natoms; idx++)
                   {
                     const double ps_r = ps_r_ptr[idx];
@@ -481,7 +482,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
                   const double* restrict j_lm_G_ptr = j_lm_G.data();
                   double cG_ps_r = cG_r * phase_shift_r[ig_local][idx] - cG_i * phase_shift_i[ig_local][idx];
                   double cG_ps_i = cG_i * phase_shift_r[ig_local][idx] + cG_r * phase_shift_i[ig_local][idx];
-#pragma omp simd aligned(vals_r, vals_i, j_lm_G_ptr: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(vals_r, vals_i, j_lm_G_ptr : QMC_SIMD_ALIGNMENT)
                   for (size_t lm = 0; lm < lm_tot; lm++)
                   {
                     const double jlm = j_lm_G_ptr[lm];
@@ -534,7 +535,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
         {
           auto& mycenter = centers[mygroup[idx]];
           aligned_vector<double> splineData_r(spline_npoints);
-          UBspline_1d_d* atomic_spline_r;
+          UBspline_1d_d* atomic_spline_r = nullptr;
           for (size_t ip = 0; ip < spline_npoints; ip++)
             splineData_r[ip] = all_vals[idx][ip][lm];
           atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
@@ -547,7 +548,7 @@ struct HybridRepSetReader : public SplineSetReader<SA>
           else
           {
             aligned_vector<double> splineData_i(spline_npoints);
-            UBspline_1d_d* atomic_spline_i;
+            UBspline_1d_d* atomic_spline_i = nullptr;
             for (size_t ip = 0; ip < spline_npoints; ip++)
               splineData_i[ip] = all_vals[idx][ip][lm + lm_tot];
             atomic_spline_i = einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints,

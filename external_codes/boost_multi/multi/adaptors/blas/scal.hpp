@@ -1,8 +1,6 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo A. Correa 2019-2020
-
-#ifndef MULTI_ADAPTORS_BLAS_SCAL_HPP
+#ifndef MULTI_ADAPTORS_BLAS_SCAL_HPP // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
 #define MULTI_ADAPTORS_BLAS_SCAL_HPP
+// © Alfredo A. Correa 2019-2021
 
 #include "../blas/core.hpp"
 
@@ -40,8 +38,8 @@ public:
 
 template<class A> auto scal(A const& a){return scal_range<A>{a};}
 
-}
-}
+} // end namespace multi::blas
+} // end namespace boost
 
 #endif
 

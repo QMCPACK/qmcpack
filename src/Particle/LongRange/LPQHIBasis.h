@@ -37,13 +37,13 @@ private:
   std::vector<mRealType> tvec; //Coefficients
 
   //Helper functions for computing FT of basis functions (used in c(n,k))
-  inline std::complex<mRealType> Eplus(int i, mRealType k, int n);
-  inline std::complex<mRealType> Eminus(int i, mRealType k, int n);
-  inline mRealType Dplus(int i, mRealType k, int n);
-  inline mRealType Dminus(int i, mRealType k, int n);
+  inline std::complex<mRealType> Eplus(int i, mRealType k, int n) const;
+  inline std::complex<mRealType> Eminus(int i, mRealType k, int n) const;
+  inline mRealType Dplus(int i, mRealType k, int n) const;
+  inline mRealType Dminus(int i, mRealType k, int n) const;
 
 public:
-  LPQHIBasis(const LPQHIBasis& b, ParticleLayout_t& ref)
+  LPQHIBasis(const LPQHIBasis& b, const ParticleLayout& ref)
       : LRBasis(ref),
         NumKnots(b.NumKnots),
         delta(b.delta),
@@ -63,8 +63,9 @@ public:
   inline mRealType get_delta() const { return delta; }
   //inline int NumBasisElem() const {return 3*NumKnots;}
   void set_NumKnots(int n); // n >= 2 required
-  void set_rc(mRealType rc);
-  inline mRealType h(int n, mRealType r) const
+  void set_rc(mRealType rc) override;
+
+  inline mRealType h(int n, mRealType r) const override
   {
     int i        = n / 3;
     int alpha    = n - 3 * i;
@@ -86,7 +87,8 @@ public:
       return Sa[0] + x * (Sa[1] + x * (Sa[2] + x * (Sa[3] + x * (Sa[4] + x * Sa[5]))));
     }
   }
-  inline mRealType dh_dr(int n, mRealType r) const
+
+  inline mRealType dh_dr(int n, mRealType r) const override
   {
     int i        = n / 3;
     int alpha    = n - 3 * i;
@@ -109,7 +111,7 @@ public:
     }
   }
   //    inline TinyVector<mRealType,3> getTriplet(int n, mRealType r) const {
-  //      typedef TinyVector<mRealType,3> Return_t;
+  //      using Return_t = TinyVector<mRealType,3>;
   //      int i=n/3;
   //      int alpha = n-3*i;
   //      mRealType ra = delta*(i-1);
@@ -135,10 +137,11 @@ public:
   //      }
   //    }
 
-  mRealType hintr2(int n);
-  mRealType c(int n, mRealType k);
+  mRealType hintr2(int n) const override;
+  mRealType c(int n, mRealType k) const override;
+
   //Constructor...fill S matrix...call correct base-class constructor
-  LPQHIBasis(ParticleLayout_t& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
+  LPQHIBasis(const ParticleLayout& ref) : LRBasis(ref), NumKnots(0), delta(0.0)
   {
     S.resize(3, 6);
     S(0, 0) = 1.0;

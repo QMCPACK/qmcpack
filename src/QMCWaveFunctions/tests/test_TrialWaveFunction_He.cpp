@@ -22,20 +22,19 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
-void setup_He_wavefunction(Communicate* c,
+std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
-                           std::unique_ptr<WaveFunctionFactory>& wff,
-                           WaveFunctionFactory::PtclPoolType& particle_set_map)
+                           const WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
   agroup[0] = 1;
   agroup[1] = 1;
-  elec.setName("e");
   elec.create(agroup);
   elec.R[0][0] = 1.0;
   elec.R[0][1] = 2.0;
@@ -57,10 +56,7 @@ void setup_He_wavefunction(Communicate* c,
   tspecies(e_chargeIdx, downIdx) = -1.0;
   elec.resetGroups();
 
-  particle_set_map["e"] = &elec;
-
-  ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -70,11 +66,10 @@ void setup_He_wavefunction(Communicate* c,
   int chargeIdx               = he_species.addAttribute("charge");
   tspecies(chargeIdx, He_Idx) = 2.0;
   tspecies(massIdx, upIdx)    = 2.0;
-  particle_set_map["ion0"]    = &ions;
 
   elec.addTable(ions);
 
-  wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -111,24 +106,34 @@ void setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff->put(root);
+  auto twf_ptr = wff.buildTWF(root);
 
-  REQUIRE(wff->getTWF() != nullptr);
-  REQUIRE(wff->getTWF()->size() == 2);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 2);
+
+  return twf_ptr;
 }
 
+#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
-  ParticleSet elec;
-  ParticleSet ions;
-  std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
-  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+  ions.setName("ion0");
+  elec.setName("e");
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+
+  auto psi_ptr = setup_He_wavefunction(c, elec, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
 
   ions.update();
   elec.update();
@@ -143,8 +148,18 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   psi.evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
 
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
+
+  elec.createResource(pset_res);
+  psi.createResource(twf_res);
+
   RefVectorWithLeader<TrialWaveFunction> wf_list(psi, {psi});
   RefVectorWithLeader<ParticleSet> p_list(elec, {elec});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
 
   // Test list with one wavefunction
 
@@ -186,25 +201,24 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 }
 
 
-UPtrVector<ParticleSet::ParticleGradient_t> create_particle_gradient(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleGradient> create_particle_gradient(int nelec, int nentry)
 {
-  UPtrVector<ParticleSet::ParticleGradient_t> G_list;
+  UPtrVector<ParticleSet::ParticleGradient> G_list;
   for (int i = 0; i < nentry; i++)
-    G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient_t>(nelec));
+    G_list.emplace_back(std::make_unique<ParticleSet::ParticleGradient>(nelec));
 
   return G_list;
 }
 
-UPtrVector<ParticleSet::ParticleLaplacian_t> create_particle_laplacian(int nelec, int nentry)
+UPtrVector<ParticleSet::ParticleLaplacian> create_particle_laplacian(int nelec, int nentry)
 {
-  UPtrVector<ParticleSet::ParticleLaplacian_t> L_list;
+  UPtrVector<ParticleSet::ParticleLaplacian> L_list;
   for (int i = 0; i < nentry; i++)
-    L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian_t>(nelec));
+    L_list.emplace_back(std::make_unique<ParticleSet::ParticleLaplacian>(nelec));
 
   return L_list;
 }
 
-#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -212,15 +226,21 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
-  ParticleSet elec1;
-  ParticleSet ions;
-  std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  const SimulationCell simulation_cell;
+  auto ions_ptr  = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec1_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec1(*elec1_ptr);
+  ions.setName("ion0");
+  elec1.setName("e");
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec1_ptr->getName(), std::move(elec1_ptr));
+
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+  auto psi_ptr = setup_He_wavefunction(c, elec1, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
   ions.update();
   elec1.update();
 
@@ -234,10 +254,10 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   elec2b.update();
 
   TrialWaveFunction psi2;
-  WaveFunctionComponent* orb1 = psi.getOrbitals()[0]->makeClone(elec2);
-  psi2.addComponent(orb1);
-  WaveFunctionComponent* orb2 = psi.getOrbitals()[1]->makeClone(elec2);
-  psi2.addComponent(orb2);
+  auto orb1 = psi.getOrbitals()[0]->makeClone(elec2);
+  psi2.addComponent(std::move(orb1));
+  auto orb2 = psi.getOrbitals()[1]->makeClone(elec2);
+  psi2.addComponent(std::move(orb2));
 
 
   // Prepare to compare using list with one wavefunction and particleset
@@ -258,6 +278,17 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   auto fixedG_list     = convertUPtrToRefVector(fixedG_list_ptr);
   auto fixedL_list     = convertUPtrToRefVector(fixedL_list_ptr);
 
+  // testing batched interfaces
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection twf_res("test_twf_res");
+
+  elec1b.createResource(pset_res);
+  psi.createResource(twf_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_list);
+
+
   TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, logpsi_fixed_list, logpsi_opt_list, fixedG_list,
                                               fixedL_list);
 
@@ -266,8 +297,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1;
   RealType logpsi_opt_r1;
-  ParticleSet::ParticleGradient_t fixedG1;
-  ParticleSet::ParticleLaplacian_t fixedL1;
+  ParticleSet::ParticleGradient fixedG1;
+  ParticleSet::ParticleLaplacian fixedL1;
   fixedG1.resize(nelec);
   fixedL1.resize(nelec);
 
@@ -301,8 +332,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   wf_list.push_back(psi2);
   p_list.push_back(elec2b);
 
-  ParticleSet::ParticleGradient_t G2;
-  ParticleSet::ParticleLaplacian_t L2;
+  ParticleSet::ParticleGradient G2;
+  ParticleSet::ParticleLaplacian L2;
   G2.resize(nelec);
   L2.resize(nelec);
   fixedG_list.push_back(G2);
@@ -330,8 +361,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r2;
   RealType logpsi_opt_r2;
-  ParticleSet::ParticleGradient_t fixedG2;
-  ParticleSet::ParticleLaplacian_t fixedL2;
+  ParticleSet::ParticleGradient fixedG2;
+  ParticleSet::ParticleLaplacian fixedL2;
   fixedG2.resize(nelec);
   fixedL2.resize(nelec);
 
@@ -390,8 +421,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
 
   // these lists not used if 'recompute' is false
-  RefVector<ParticleSet::ParticleGradient_t> dummyG_list;
-  RefVector<ParticleSet::ParticleLaplacian_t> dummyL_list;
+  RefVector<ParticleSet::ParticleGradient> dummyG_list;
+  RefVector<ParticleSet::ParticleLaplacian> dummyL_list;
 
   std::vector<RealType> logpsi_variable_list(nentry);
   TrialWaveFunction::mw_evaluateDeltaLog(wf_list, p_list, logpsi_variable_list, dummyG_list, dummyL_list, false);

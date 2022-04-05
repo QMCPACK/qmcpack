@@ -16,7 +16,7 @@
 
 
 #include "ForceBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/MatrixOperators.h"
@@ -137,7 +137,7 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
 
 BareForce::BareForce(ParticleSet& ions, ParticleSet& elns) : ForceBase(ions, elns), d_ei_ID(elns.addTable(ions))
 {
-  myName = "HF_Force_Base";
+  name_  = "HF_Force_Base";
   prefix = "HFBase";
 }
 
@@ -151,13 +151,13 @@ std::unique_ptr<OperatorBase> BareForce::makeClone(ParticleSet& qp, TrialWaveFun
 void BareForce::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   addObservablesF(plist);
-  myIndex = FirstForceIndex;
+  my_index_ = FirstForceIndex;
 }
 
 BareForce::Return_t BareForce::evaluate(ParticleSet& P)
 {
   forces                                    = forces_IonIon;
-  const auto& d_ab                          = P.getDistTable(d_ei_ID);
+  const auto& d_ab                          = P.getDistTableAB(d_ei_ID);
   const ParticleSet::Scalar_t* restrict Zat = Ions.Z.first_address();
   const ParticleSet::Scalar_t* restrict Qat = P.Z.first_address();
   //Loop over distinct eln-ion pairs

@@ -33,9 +33,9 @@ namespace qmcplusplus
 class SOECPComponent : public QMCTraits
 {
 private:
-  typedef std::vector<PosType> SpherGridType;
-  typedef OneDimGridBase<RealType> GridType;
-  typedef OneDimCubicSpline<RealType> RadialPotentialType;
+  using SpherGridType       = std::vector<PosType>;
+  using GridType            = OneDimGridBase<RealType>;
+  using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///Non Local part: angular momentum, potential and grid
   int lmax;
@@ -81,9 +81,9 @@ public:
 
   void resize_warrays(int n, int m, int s);
 
-  void randomize_grid(RandomGenerator_t& myRNG);
+  void randomize_grid(RandomGenerator& myRNG);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG);
+  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
 
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);

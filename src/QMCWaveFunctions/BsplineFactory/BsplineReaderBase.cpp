@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
-    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false)
+    : mybuilder(e), MeshSize(0), checkNorm(true), saveSplineCoefs(false), rotate(true)
 {
   myComm = mybuilder->getCommunicator();
 }
@@ -99,7 +99,7 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
   saveSplineCoefs = saveCoefs == "yes";
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
   OhmmsAttributeSet a;
@@ -117,8 +117,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
@@ -126,13 +126,13 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix, 0, ns);
+  vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, ns);
   vals.selectBands(fullband, 0, ns, false);
 
   return create_spline_set(spin, vals);
 }
 
-SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
@@ -142,8 +142,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInp
   if (spo2band[spin].empty())
   {
     spo2band[spin].reserve(fullband.size());
-    if (mybuilder->states[spin] == 0)
-      mybuilder->states[spin] = new SPOSetInfo;
+    if (!mybuilder->states[spin])
+      mybuilder->states[spin] = std::make_unique<SPOSetInfo>();
     mybuilder->clear_states(spin);
     initialize_spo2band(spin, fullband, *mybuilder->states[spin], spo2band[spin]);
   }
@@ -151,8 +151,8 @@ SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInp
   BandInfoGroup vals;
   vals.TwistIndex = fullband[0].TwistIndex;
   vals.GroupID    = 0;
-  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
-                                    input_info.min_index(), input_info.max_index());
+  vals.myName     = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
+                                        input_info.min_index(), input_info.max_index());
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
 
@@ -193,14 +193,14 @@ void BsplineReaderBase::initialize_spo2band(int spin,
   if (comm->rank())
     return;
 
-  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->TwistNum, mybuilder->TileMatrix,
+  std::string aname = make_bandinfo_filename(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix,
                                              comm->getGroupID());
   aname += ".bandinfo.dat";
 
   std::ofstream o(aname.c_str());
   char s[1024];
-  ns = 0;
-  typedef QMCTraits::PosType PosType;
+  ns            = 0;
+  using PosType = QMCTraits::PosType;
   o << "#  Band    State   TwistIndex BandIndex Energy      Kx      Ky      Kz      K1      K2      K3    KmK "
     << std::endl;
   for (int i = 0; i < bigspace.size(); ++i)

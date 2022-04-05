@@ -24,8 +24,9 @@ namespace qmcplusplus
 class PSdispatcher
 {
 public:
-  using Walker_t            = ParticleSet::Walker_t;
-  using SingleParticlePos_t = ParticleSet::SingleParticlePos_t;
+  using Walker_t          = ParticleSet::Walker_t;
+  using SingleParticlePos = ParticleSet::SingleParticlePos;
+  using Scalar_t          = ParticleSet::Scalar_t;
 
   PSdispatcher(bool use_batch);
 
@@ -36,10 +37,10 @@ public:
 
   void flex_update(const RefVectorWithLeader<ParticleSet>& p_list, bool skipSK = false) const;
 
-  void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
-                     int iat,
-                     const std::vector<SingleParticlePos_t>& displs) const;
+  template<CoordsType CT>
+  void flex_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs) const;
 
+  template<CoordsType CT>
   void flex_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               int iat,
                               const std::vector<bool>& isAccepted,

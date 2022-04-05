@@ -12,6 +12,7 @@
 #ifndef QMCPLUSPLUS_MINIMALWAVEFUNCTIONPOOL_H
 #define QMCPLUSPLUS_MINIMALWAVEFUNCTIONPOOL_H
 
+#include "catch.hpp"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
@@ -20,43 +21,39 @@ namespace qmcplusplus
 {
 class MinimalWaveFunctionPool
 {
-  const char* wf_input = R"(
+  static constexpr const char* const wf_input = R"(
 <wavefunction target='e'>
-  <determinantset type='einspline' href='pwscf.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'>
+  <sposet_collection type="bspline" source="ion" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="0.8" twist="0 0 0" precision="double">
+    <sposet name="spo_for_dets" size="4" spindataset="0"/>
+  </sposet_collection>
+  <sposet_collection type="bspline" source="ion" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" gpu="no" meshfactor="0.8" twist="0 0 0" precision="double">
+    <sposet name="spo_ud" size="4" spindataset="0"/>
+    <sposet name="spo_dm" index_min="4" index_max="8" spindataset="0"/>
+  </sposet_collection>
+  <determinantset>
     <slaterdeterminant>
-      <determinant id='updet' size='4'>
-        <occupation mode='ground' spindataset='0'/>
-      </determinant>
-      <determinant id='downdet' size='4'>
-        <occupation mode='ground' spindataset='0'/>
-      </determinant>
+      <determinant sposet='spo_for_dets'/>
+      <determinant sposet='spo_for_dets'/>
     </slaterdeterminant>
   </determinantset>
 </wavefunction>
   )";
 
 public:
-  MinimalWaveFunctionPool() : comm_(nullptr) {}
-
-  WaveFunctionPool operator()(Communicate* comm, ParticleSetPool& particle_pool)
+  static WaveFunctionPool make_diamondC_1x1x1(Communicate* comm, ParticleSetPool& particle_pool)
   {
-    comm_ = comm;
-    WaveFunctionPool wp(particle_pool, comm_);
+    WaveFunctionPool wp(particle_pool, comm);
 
-    Libxml2Document* doc = new Libxml2Document;
-    bool okay            = doc->parseFromString(wf_input);
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(wf_input);
     REQUIRE(okay);
 
-    xmlNodePtr root = doc->getRoot();
+    xmlNodePtr root = doc.getRoot();
 
     wp.put(root);
 
-    delete doc;
     return wp;
   }
-
-private:
-  Communicate* comm_;
 };
 
 } // namespace qmcplusplus

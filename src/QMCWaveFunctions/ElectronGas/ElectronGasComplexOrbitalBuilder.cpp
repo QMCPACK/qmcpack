@@ -17,7 +17,6 @@
 #include "ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -50,7 +49,7 @@ ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(Communicate* 
 {}
 
 
-WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodePtr cur)
 {
   int nc = 0;
   PosType twist(0.0);
@@ -58,38 +57,33 @@ WaveFunctionComponent* ElectronGasComplexOrbitalBuilder::buildComponent(xmlNodeP
   aAttrib.add(nc, "shell");
   aAttrib.add(twist, "twist");
   aAttrib.put(cur);
-  //typedef DiracDeterminant<EGOSet>  Det_t;
-  //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminant<> Det_t;
-  typedef SlaterDet SlaterDeterminant_t;
-  int nat = targetPtcl.getTotalNum();
-  int nup = nat / 2;
-  HEGGrid<RealType, OHMMS_DIM> egGrid(targetPtcl.Lattice);
+  //using Det_t = DiracDeterminant<EGOSet> ;
+  //using SlaterDeterminant_t = SlaterDeterminant<EGOSet>;
+  using Det_t               = DiracDeterminant<>;
+  using SlaterDeterminant_t = SlaterDet;
+  int nat                   = targetPtcl.getTotalNum();
+  int nup                   = nat / 2;
+  HEGGrid<RealType> egGrid(targetPtcl.getLattice());
   if (nc == 0)
     nc = egGrid.getShellIndex(nup);
   egGrid.createGrid(nc, nup, twist);
   targetPtcl.setTwist(twist);
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dets;
   //create up determinant
-  Det_t* updet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
-  updet->set(0, nup);
+  dets.push_back(std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2), 0, nup));
   //create down determinant
-  Det_t* downdet = new Det_t(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2));
-  downdet->set(nup, nup);
+  dets.push_back(std::make_unique<Det_t>(std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2), nup, nup + nup));
   //create a Slater determinant
-  //SlaterDeterminant_t *sdet  = new SlaterDeterminant_t;
-  SlaterDet* sdet = new SlaterDet(targetPtcl);
-  sdet->add(updet, 0);
-  sdet->add(downdet, 1);
-  return sdet;
+  return std::make_unique<SlaterDet>(targetPtcl, std::move(dets));
 }
 
 ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate* comm, xmlNodePtr cur)
-    : SPOSetBuilder("ElectronGas", comm), has_twist(false), unique_twist(-1.0), egGrid(p.Lattice), spo_node(NULL)
+    : SPOSetBuilder("ElectronGas", comm), has_twist(false), unique_twist(-1.0), egGrid(p.getLattice()), spo_node(NULL)
 {
   ClassName = "ElectronGasSPOBuilder";
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc = 0;
@@ -119,16 +113,14 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
     APP_ABORT("ElectronGasSPOBuilder::put");
   }
   egGrid.createGrid(nc, ns, twist);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+std::unique_ptr<SPOSet> ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
-  EGOSet* spo = new EGOSet(egGrid.kpt, egGrid.mk2, egGrid.deg);
-  return spo;
+  return std::make_unique<EGOSet>(egGrid.kpt, egGrid.mk2, egGrid.deg);
 }
 
 

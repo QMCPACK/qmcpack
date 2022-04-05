@@ -21,11 +21,10 @@
 #include <vector>
 #include "Particle/ParticleSet.h"
 #include "Particle/Walker.h"
+#include "Particle/WalkerConfigurations.h"
 
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
-class HDFWalkerOutput;
 struct MCSample;
 
 class SampleStack
@@ -45,8 +44,10 @@ public:
 
   //@{save/load/clear function for optimization
   inline int getNumSamples() const { return current_sample_count_; }
-  ///set the number of max samples
-  void setMaxSamples(int n);
+  ///set the number of max samples per rank.
+  void setMaxSamples(int n, int number_of_ranks = 1);
+  /// Global number of samples is number of samples per rank * number of ranks
+  uint64_t getGlobalNumSamples() const { return global_num_samples_; }
   ///save the position of current walkers
   void saveEnsemble(std::vector<MCSample>& walker_list);
   /// load a single sample from SampleStack
@@ -54,7 +55,6 @@ public:
 
   void appendSample(MCSample&& sample);
 
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}
@@ -67,6 +67,7 @@ private:
   int total_num_;
   int max_samples_;
   int current_sample_count_;
+  uint64_t global_num_samples_;
 
   std::vector<MCSample*> sample_vector_;
 };

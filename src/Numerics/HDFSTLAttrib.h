@@ -25,13 +25,13 @@ namespace qmcplusplus
 template<>
 struct HDFAttribIO<std::vector<int>> : public HDFAttribIOBase
 {
-  typedef std::vector<int> ArrayType_t;
+  using ArrayType_t = std::vector<int>;
   ArrayType_t& ref;
   bool replace;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     if (replace)
     {
@@ -50,7 +50,7 @@ struct HDFAttribIO<std::vector<int>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -70,7 +70,7 @@ struct HDFAttribIO<std::vector<int>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<std::vector<double>> : public HDFAttribIOBase
 {
-  typedef std::vector<double> ArrayType_t;
+  using ArrayType_t = std::vector<double>;
   std::vector<hsize_t> Dim;
   ArrayType_t& ref;
   bool replace;
@@ -97,7 +97,7 @@ struct HDFAttribIO<std::vector<double>> : public HDFAttribIOBase
       Dim[i] = dim[0];
   }
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     //hsize_t dim = ref.size();
     //hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
@@ -117,7 +117,7 @@ struct HDFAttribIO<std::vector<double>> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     hid_t h1        = H5Dopen(grp, name);
     hid_t dataspace = H5Dget_space(h1);
@@ -145,7 +145,7 @@ struct HDFAttribIO<std::vector<std::complex<double>>> : public HDFAttribIOBase
   //NOTE: This specialization assumes each complex number was/will be saved
   // as a pair of doubles. This is checked.
 
-  typedef std::vector<std::complex<double>> ArrayType_t;
+  using ArrayType_t = std::vector<std::complex<double>>;
   std::vector<hsize_t> Dim;
   ArrayType_t& ref;
 
@@ -157,7 +157,7 @@ struct HDFAttribIO<std::vector<std::complex<double>>> : public HDFAttribIOBase
     Dim[1] = 2;
   }
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     //hsize_t dim = ref.size();
     //hid_t dataspace  = H5Screate_simple(1, &dim, NULL);
@@ -168,7 +168,7 @@ struct HDFAttribIO<std::vector<std::complex<double>>> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -210,21 +210,21 @@ struct HDFAttribIO<std::bitset<N>> : public HDFAttribIOBase
   //NOTE: This specialization assumes each complex number was/will be saved
   // as a pair of doubles. This is checked.
 
-  typedef std::bitset<N> ArrayType_t;
+  using ArrayType_t = std::bitset<N>;
   ArrayType_t& ref;
   bool replace;
 
   //Assumes complex stored as a pair of floats/doubles.
   HDFAttribIO<ArrayType_t>(ArrayType_t& a, bool reuse = false) : ref(a), replace(reuse) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     unsigned long c = ref.to_ulong();
     HDFAttribIO<unsigned long> hc(c, replace);
     hc.write(grp, name);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     unsigned long c = ref.to_ulong();
     HDFAttribIO<unsigned long> hc(c);

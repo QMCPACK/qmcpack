@@ -47,9 +47,8 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 
       if (children_MinMethod.empty())
         throw std::runtime_error("MinMethod must be given!\n");
-      XMLAttrString updates_string(cur, "num_updates");
-      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string
-                << std::endl;
+      std::string updates_string(getXMLAttributeValue(cur, "num_updates"));
+      app_log() << "HybridEngine saved MinMethod " << children_MinMethod << " num_updates = " << updates_string << '\n';
       auto iter = OptimizerNames.find(children_MinMethod);
       if (iter == OptimizerNames.end())
         throw std::runtime_error("Unknown MinMethod!\n");

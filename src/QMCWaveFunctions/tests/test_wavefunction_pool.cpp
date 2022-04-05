@@ -69,7 +69,7 @@ void setupParticleSetPool(ParticleSetPool& pp)
   xmlNodePtr root     = doc.getRoot();
   xmlNodePtr sim_cell = xmlFirstElementChild(root);
   // Need to set up simulation cell lattice before reading particle sets
-  pp.putLattice(sim_cell);
+  pp.readSimulationCellXML(sim_cell);
 
   xmlNodePtr part_ion = xmlNextElementSibling(sim_cell);
   pp.put(part_ion);
@@ -106,11 +106,11 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
    </wavefunction> \
   ";
 
-  Libxml2Document* doc = new Libxml2Document;
-  bool okay            = doc->parseFromString(wf_input);
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
   REQUIRE(okay);
 
-  xmlNodePtr root = doc->getRoot();
+  xmlNodePtr root = doc.getRoot();
 
   wp.put(root);
 

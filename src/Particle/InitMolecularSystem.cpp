@@ -22,12 +22,12 @@
 #include "InitMolecularSystem.h"
 #include "Particle/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTable.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
 {
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 
 InitMolecularSystem::InitMolecularSystem(ParticleSetPool& pset, const char* aname)
     : OhmmsElementBase(aname), ptclPool(pset)
@@ -75,7 +75,7 @@ bool InitMolecularSystem::put(xmlNodePtr cur)
 void InitMolecularSystem::initAtom(ParticleSet* ions, ParticleSet* els)
 {
   //3N-dimensional Gaussian
-  ParticleSet::ParticlePos_t chi(els->getTotalNum());
+  ParticleSet::ParticlePos chi(els->getTotalNum());
   makeGaussRandom(chi);
   RealType q = std::sqrt(static_cast<RealType>(els->getTotalNum())) * 0.5;
   int nel(els->getTotalNum()), items(0);
@@ -101,8 +101,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
 
   const int d_ii_ID = ions->addTable(*ions);
   ions->update();
-  const auto& d_ii = ions->getDistTable(d_ii_ID);
-  const ParticleSet::ParticleIndex_t& grID(ions->GroupID);
+  const ParticleSet::ParticleIndex& grID(ions->GroupID);
   SpeciesSet& Species(ions->getSpeciesSet());
   int Centers = ions->getTotalNum();
   std::vector<int> Qtot(Centers), Qcore(Centers), Qval(Centers, 0);
@@ -113,7 +112,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     Qtot[iat] = static_cast<int>(Species(icharge, grID[iat]));
   //cutoff radius (Bohr) this a random choice
   RealType cutoff = 4.0;
-  ParticleSet::ParticlePos_t chi(els->getTotalNum());
+  ParticleSet::ParticlePos chi(els->getTotalNum());
   //makeGaussRandom(chi);
   makeSphereRandom(chi);
   // the upper limit of the electron index with spin up
@@ -125,16 +124,16 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
   int nup_tot = 0, ndown_tot = numUp;
   std::vector<LoneElectron> loneQ;
   RealType rmin = cutoff;
-  ParticleSet::SingleParticlePos_t cm;
+  ParticleSet::SingleParticlePos cm;
 
+  const auto& dist = ions->getDistTableAA(d_ii_ID).getDistances();
   // Step 1. Distribute even Q[iat] of atomic center iat. If Q[iat] is odd, put Q[iat]-1 and save the lone electron.
   for (size_t iat = 0; iat < Centers; iat++)
   {
     cm += ions->R[iat];
-    const auto& dist = d_ii.getDistRow(iat);
     for (size_t jat = iat + 1; jat < Centers; ++jat)
     {
-      rmin = std::min(rmin, dist[jat]);
+      rmin = std::min(rmin, dist[jat][iat]);
     }
     //use 40% of the minimum bond
     RealType sep = rmin * 0.4;
@@ -191,7 +190,7 @@ void InitMolecularSystem::initMolecule(ParticleSet* ions, ParticleSet* els)
     throw std::runtime_error("initMolecule unexpected random number consumption. Please report a bug!");
 
   //put all the electrons in a unit box
-  if (els->Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (els->getLattice().SuperCellEnum != SUPERCELL_OPEN)
   {
     els->R.setUnit(PosUnit::Cartesian);
     els->applyBC(els->R);
@@ -218,7 +217,7 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   TinyVector<RealType, OHMMS_DIM> start(1.0);
   TinyVector<RealType, OHMMS_DIM> end(0.0);
 
-  ParticleSet::ParticlePos_t Ru(ions->getTotalNum());
+  ParticleSet::ParticlePos Ru(ions->getTotalNum());
   Ru.setUnit(PosUnit::Lattice);
   ions->applyBC(ions->R, Ru);
 
@@ -229,12 +228,12 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
   }
 
   TinyVector<RealType, OHMMS_DIM> shift;
-  Tensor<RealType, OHMMS_DIM> newbox(ions->Lattice.R);
+  Tensor<RealType, OHMMS_DIM> newbox(ions->getLattice().R);
 
   RealType buffer = 2.0; //buffer 2 bohr
   for (int idim = 0; idim < OHMMS_DIM; ++idim)
   {
-    //if(ions->Lattice.BoxBConds[idim])
+    //if(ions->getLattice().BoxBConds[idim])
     //{
     //  start[idim]=0.0;
     //  end[idim]=1.0;
@@ -242,21 +241,21 @@ void InitMolecularSystem::initWithVolume(ParticleSet* ions, ParticleSet* els)
     //}
     //else
     {
-      RealType buffer_r = buffer * ions->Lattice.OneOverLength[idim];
+      RealType buffer_r = buffer * ions->getLattice().OneOverLength[idim];
       start[idim]       = std::max((RealType)0.0, (start[idim] - buffer_r));
       end[idim]         = std::min((RealType)1.0, (end[idim] + buffer_r));
-      shift[idim]       = start[idim] * ions->Lattice.Length[idim];
+      shift[idim]       = start[idim] * ions->getLattice().Length[idim];
       if (std::abs(end[idim] = start[idim]) < buffer)
       { //handle singular case
         start[idim] = std::max(0.0, start[idim] - buffer_r / 2.0);
         end[idim]   = std::min(1.0, end[idim] + buffer_r / 2.0);
       }
 
-      newbox(idim, idim) = (end[idim] - start[idim]) * ions->Lattice.Length[idim];
+      newbox(idim, idim) = (end[idim] - start[idim]) * ions->getLattice().Length[idim];
     }
   }
 
-  ParticleSet::ParticleLayout_t slattice(ions->Lattice);
+  ParticleSet::ParticleLayout slattice(ions->getLattice());
   slattice.set(newbox);
 
   app_log() << "  InitMolecularSystem::initWithVolume " << std::endl;

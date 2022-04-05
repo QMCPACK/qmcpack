@@ -60,7 +60,7 @@ public:
   using Walker_t         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///container type of Walkers
-  using WalkerList_t = std::vector<Walker_t*>;
+  using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
   using iterator = WalkerList_t::iterator;
   ///const_iterator of Walker container
@@ -167,7 +167,7 @@ public:
    *
    * Provide std::vector::push_back interface
    */
-  inline void push_back(Walker_t* awalker) { WalkerList.push_back(awalker); }
+  inline void push_back(std::unique_ptr<Walker_t> awalker) { WalkerList.push_back(std::move(awalker)); }
 
   /** delete the last Walker_t*
    *
@@ -175,17 +175,19 @@ public:
    */
   inline void pop_back()
   {
-    delete WalkerList.back();
     WalkerList.pop_back();
   }
 
-  inline Walker_t* operator[](int i) { return WalkerList[i]; }
+  inline Walker_t* operator[](int i) { return WalkerList[i].get(); }
 
-  inline const Walker_t* operator[](int i) const { return WalkerList[i]; }
+  inline const Walker_t* operator[](int i) const { return WalkerList[i].get(); }
 
   /** reset the Walkers
    */
   void reset();
+
+  ///save the particle positions of all the walkers into target
+  void putConfigurations(Walker_t::RealType* target) const;
 
 protected:
   ///number of walkers on a node

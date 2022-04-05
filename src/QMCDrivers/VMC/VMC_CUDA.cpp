@@ -15,12 +15,11 @@
 
 
 #include "VMC_CUDA.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
@@ -60,8 +59,8 @@ bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid
 {
   for (int iw = 0; iw < newpos.size(); iw++)
   {
-    PosType red = W.Lattice.toUnit(newpos[iw]);
-    valid[iw]   = W.Lattice.isValid(red);
+    PosType red = W.getLattice().toUnit(newpos[iw]);
+    valid[iw]   = W.getLattice().isValid(red);
   }
   return true;
 }

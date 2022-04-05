@@ -18,7 +18,7 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Optimize/VariableSet.h"
+#include "VariableSet.h"
 #include <libxml/tree.h>
 #include <vector>
 
@@ -26,10 +26,10 @@ namespace qmcplusplus
 {
 class DescentEngine
 {
-  typedef qmcplusplus::QMCTraits::FullPrecValueType FullPrecValueType;
-  typedef qmcplusplus::QMCTraits::ValueType ValueType;
-  typedef qmcplusplus::QMCTraits::RealType RealType;
-  typedef qmcplusplus::QMCTraits::FullPrecRealType FullPrecRealType;
+  using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
+  using ValueType         = qmcplusplus::QMCTraits::ValueType;
+  using RealType          = qmcplusplus::QMCTraits::RealType;
+  using FullPrecRealType  = qmcplusplus::QMCTraits::FullPrecRealType;
 
 private:
   ///Vector for local energy parameter derivatives

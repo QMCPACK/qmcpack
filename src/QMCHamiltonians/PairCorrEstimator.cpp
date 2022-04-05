@@ -15,7 +15,7 @@
 
 
 #include "PairCorrEstimator.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
 #include <set>
@@ -23,9 +23,12 @@
 namespace qmcplusplus
 {
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
-    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
+    : Dmax(10.),
+      Delta(0.5),
+      num_species(2),
+      d_aa_ID_(elns.addTable(elns, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP))
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   num_species = elns.groups();
   n_vec.resize(num_species, 0);
   for (int i = 0; i < num_species; i++)
@@ -33,10 +36,10 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   N_e = elns.getTotalNum();
 
   // use the simulation cell radius if any direction is periodic
-  if (elns.Lattice.SuperCellEnum)
+  if (elns.getLattice().SuperCellEnum)
   {
-    Dmax   = elns.Lattice.WignerSeitzRadius;
-    Volume = elns.Lattice.Volume;
+    Dmax   = elns.getLattice().WignerSeitzRadius;
+    Volume = elns.getLattice().Volume;
   }
   else // Open BC's
     Volume = 1.0;
@@ -62,8 +65,8 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   std::vector<std::string> slist, dlist;
   const int ntables = elns.getNumDistTables();
   for (int k = 0; k < ntables; ++k)
-    if (elns.getName() != elns.getDistTable(k).origin().getName())
-      dlist.push_back(elns.getDistTable(k).origin().getName());
+    if (elns.getName() != elns.getDistTable(k).get_origin().getName())
+      dlist.push_back(elns.getDistTable(k).get_origin().getName());
   parsewords(sources.c_str(), slist);
   std::set<int> others_sorted;
   for (int i = 0; i < slist.size(); ++i)
@@ -85,10 +88,10 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   int toff = gof_r_prefix.size();
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& t(elns.getDistTable(other_ids[k]));
+    const DistanceTable& t(elns.getDistTable(other_ids[k]));
     app_log() << "  GOFR for " << t.getName() << " starts at " << toff << std::endl;
     other_offsets[k] = toff;
-    const SpeciesSet& species(t.origin().getSpeciesSet());
+    const SpeciesSet& species(t.get_origin().getSpeciesSet());
     int ng = species.size();
     for (int i = 0; i < ng; ++i)
     {
@@ -102,10 +105,19 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
 
 void PairCorrEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
+// The value should match the index to norm_factor in set_norm_factor
+int PairCorrEstimator::gen_pair_id(const int ig, const int jg, const int ns)
+{
+  if (jg < ig)
+    return ns * (ns - 1) / 2 - (ns - jg) * (ns - jg - 1) / 2 + ig;
+  else
+    return ns * (ns - 1) / 2 - (ns - ig) * (ns - ig - 1) / 2 + jg;
+}
+
 PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 {
   BufferType& collectables(P.Collectables);
-  const DistanceTableData& dii(P.getDistTable(d_aa_ID_));
+  const auto& dii(P.getDistTableAA(d_aa_ID_));
   for (int iat = 1; iat < dii.centers(); ++iat)
   {
     const auto& dist = dii.getDistRow(iat);
@@ -117,15 +129,15 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
       {
         const int loc     = static_cast<int>(DeltaInv * r);
         const int jg      = P.GroupID[j];
-        const int pair_id = ig * (ig + 1) / 2 + jg;
-        collectables[pair_id * NumBins + loc + myIndex] += norm_factor(pair_id + 1, loc);
+        const int pair_id = gen_pair_id(ig, jg, num_species);
+        collectables[pair_id * NumBins + loc + my_index_] += norm_factor(pair_id + 1, loc);
       }
     }
   }
   for (int k = 0; k < other_ids.size(); ++k)
   {
-    const DistanceTableData& d1(P.getDistTable(other_ids[k]));
-    const ParticleSet::ParticleIndex_t& gid(d1.origin().GroupID);
+    const auto& d1(P.getDistTableAB(other_ids[k]));
+    const ParticleSet::ParticleIndex& gid(d1.get_origin().GroupID);
     int koff        = other_offsets[k];
     RealType overNI = 1.0 / d1.centers();
     for (int iat = 0; iat < d1.targets(); ++iat)
@@ -138,7 +150,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
         {
           int toff = (gid[j] + koff) * NumBins;
           int loc  = static_cast<int>(DeltaInv * r);
-          collectables[toff + loc + myIndex] += norm_factor(0, loc) * overNI;
+          collectables[toff + loc + my_index_] += norm_factor(0, loc) * overNI;
         }
       }
     }
@@ -149,7 +161,7 @@ PairCorrEstimator::Return_t PairCorrEstimator::evaluate(ParticleSet& P)
 void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const
 {
   std::vector<int> onedim(1, NumBins);
-  int offset = myIndex;
+  int offset = my_index_;
   for (int i = 0; i < gof_r_prefix.size(); ++i)
   {
     h5list.emplace_back(gof_r_prefix[i]);
@@ -168,7 +180,7 @@ void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5li
 
 void PairCorrEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   std::vector<RealType> g(gof_r_prefix.size() * NumBins, 0);
   collectables.add(g.begin(), g.end());
   ////only while debugging
@@ -225,7 +237,7 @@ bool PairCorrEstimator::put(xmlNodePtr cur)
 // Sets the normalization, or norm_factor, for each channel and bin
 void PairCorrEstimator::set_norm_factor()
 {
-  /* 
+  /*
      Number of species-pair-specific gofr's to compute
      E.g. "uu", "dd", "ud", & etc.
      Note the addition +1 bin, which is for the total gofr of the system
@@ -234,7 +246,7 @@ void PairCorrEstimator::set_norm_factor()
   const RealType n_channels = num_species * (num_species - 1) / 2 + num_species + 1;
   norm_factor.resize(n_channels, NumBins);
 
-  /* 
+  /*
      Compute the normalization V/Npairs/Nid, with
      V the volume of the system
      Npairs the number of (unique) pairs of particles of given types
@@ -286,7 +298,7 @@ void PairCorrEstimator::set_norm_factor()
     {
 	std::cout << std::setw(4) << j;
 	std::cout << std::setw(8) << std::setprecision(4) << j*Delta;
-	for( int i=0; i<norm_factor.size1(); i++ ) 
+	for( int i=0; i<norm_factor.size1(); i++ )
 	  {
 	    std::cout << "  " << std::setw(10) << std::setprecision(4) << norm_factor(i,j);
 	  }
@@ -312,7 +324,7 @@ void PairCorrEstimator::report()
 
 bool PairCorrEstimator::get(std::ostream& os) const
 {
-  os << myName << " dmax=" << Dmax << std::endl;
+  os << name_ << " dmax=" << Dmax << std::endl;
   return true;
 }
 
@@ -327,7 +339,7 @@ void PairCorrEstimator::resize(int nbins)
   NumBins = nbins;
   norm_factor.resize((num_species * num_species - num_species) / 2 + num_species + 1, NumBins);
   RealType r  = Delta * 0.5;
-  RealType pf = Volume * DeltaInv / (4 * 3.14159265);
+  RealType pf = Volume * DeltaInv / (4 * M_PI);
   for (int i = 0; i < NumBins; ++i, r += Delta)
   {
     RealType rm2      = pf / r / r;

@@ -20,11 +20,11 @@ class DMCUpdateAllWithRejection : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  DMCUpdateAllWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  DMCUpdateAllWithRejection(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
   ///destructor
-  ~DMCUpdateAllWithRejection();
+  ~DMCUpdateAllWithRejection() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
   /// Copy Constructor (disabled)
   DMCUpdateAllWithRejection(const DMCUpdateAllWithRejection&) = delete;
@@ -36,11 +36,11 @@ class DMCUpdateAllWithKill : public QMCUpdateBase
 {
 public:
   /// Constructor.
-  DMCUpdateAllWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  DMCUpdateAllWithKill(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
   ///destructor
-  ~DMCUpdateAllWithKill();
+  ~DMCUpdateAllWithKill() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
   /// Copy Constructor (disabled)
   DMCUpdateAllWithKill(const DMCUpdateAllWithKill&) = delete;

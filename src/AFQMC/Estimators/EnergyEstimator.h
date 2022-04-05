@@ -52,18 +52,18 @@ public:
 
   ~EnergyEstimator() {}
 
-  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) {}
+  void accumulate_step(WalkerSet& wlks, std::vector<ComplexType>& curData) override {}
 
-  void accumulate_block(WalkerSet& wset)
+  void accumulate_block(WalkerSet& wset) override
   {
     ScopedTimer local_timer(AFQMCTimers[energy_timer]);
     size_t nwalk = wset.size();
     if (eloc.size(0) != nwalk || eloc.size(1) != 3)
-      eloc.reextent({nwalk, 3});
+      eloc.reextent({static_cast<boost::multi::size_t>(nwalk), 3});
     if (ovlp.size(0) != nwalk)
-      ovlp.reextent(iextensions<1u>{nwalk});
+      ovlp.reextent(iextensions<1u>(nwalk));
     if (wprop.size(0) != 4 || wprop.size(1) != nwalk)
-      wprop.reextent({4, nwalk});
+      wprop.reextent({4, static_cast<boost::multi::size_t>(nwalk)});
 
     ComplexType dum, et;
     wfn0.Energy(wset, eloc, ovlp);
@@ -101,7 +101,7 @@ public:
     }
   }
 
-  void tags(std::ofstream& out)
+  void tags(std::ofstream& out) override
   {
     if (TG.Global().root())
     {
@@ -117,7 +117,7 @@ public:
     }
   }
 
-  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset)
+  void print(std::ofstream& out, hdf_archive& dump, WalkerSet& wset) override
   {
     if (TG.Global().root())
     {

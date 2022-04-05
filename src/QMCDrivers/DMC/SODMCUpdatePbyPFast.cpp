@@ -19,7 +19,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 //#define TEST_INNERBRANCH
 
@@ -39,7 +39,7 @@ TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP:
 SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
-                                                                   RandomGenerator_t& rg)
+                                                                   RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, SODMCTimerNames, timer_level_medium);
@@ -66,7 +66,6 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   {
     ScopedTimer local_timer(myTimers[SODMC_movePbyP]);
     for (int ig = 0; ig < W.groups(); ++ig) //loop over species
@@ -111,8 +110,8 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, dr);
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
-          dr                     = W.R[iat] - W.activePos - dr;
-          ds                     = W.spins[iat] - W.activeSpinVal - ds;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
+          ds                     = W.spins[iat] - W.getActiveSpinVal() - ds;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           logGb += -spinMass * oneover2tau * ds * ds;
           RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
@@ -125,7 +124,6 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
             rr_accepted += rr;
-            gf_acc *= prob; //accumulate the ratio
           }
           else
           {
@@ -148,7 +146,8 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
       ScopedTimer local_timer(myTimers[SODMC_buffer]);
       thisWalker.Age = 0;
       logpsi         = Psi.updateBuffer(W, w_buffer, recompute);
-      assert(checkLogAndGL(W, Psi));
+      if (debug_checks_ & DriverDebugChecks::CHECKGL_AFTER_MOVES)
+        checkLogAndGL(W, Psi, "checkGL_after_moves");
       W.saveWalker(thisWalker);
     }
     {
@@ -175,8 +174,7 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
     H.rejectedMove(W, thisWalker);
     thisWalker.Weight = wtmp;
     ++nAllRejected;
-    enew   = eold; //copy back old energy
-    gf_acc = 1.0;
+    enew = eold; //copy back old energy
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)

@@ -16,7 +16,7 @@
 #ifndef TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"
@@ -39,13 +39,13 @@ private:
   // Mostly QMCTraits here
   using JBase = J2OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType      = typename JBase::RealType;
-  using ValueType     = typename JBase::ValueType;
-  using GradType      = typename JBase::GradType;
-  using PosType       = typename JBase::PosType;
-  using GradMatrix_t  = typename JBase::GradMatrix_t;
-  using ValueMatrix_t = typename JBase::ValueMatrix_t;
-  using RealMatrix_t  = typename JBase::RealMatrix_t;
+  using RealType     = typename JBase::RealType;
+  using ValueType    = typename JBase::ValueType;
+  using GradType     = typename JBase::GradType;
+  using PosType      = typename JBase::PosType;
+  using GradMatrix   = typename JBase::GradMatrix;
+  using ValueMatrix  = typename JBase::ValueMatrix;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
@@ -72,17 +72,21 @@ private:
   gpu::device_vector<CTS::RealType> NL_rMaxGPU, NL_QuadPointsGPU, NL_RatiosGPU;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
-  void freeGPUmem();
-  void checkInVariables(opt_variables_type& active);
+  void freeGPUmem() override;
+  void checkInVariables(opt_variables_type& active) override;
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
-  void addFunc(int ia, int ib, FT* j);
-  void recompute(MCWalkerConfiguration& W, bool firstTime);
+  void addFunc(int ia, int ib, std::unique_ptr<FT> j);
+  void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
-  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
+  void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;
+  void update(MCWalkerConfiguration* W,
+              std::vector<Walker_t*>& walkers,
+              int iat,
+              std::vector<bool>* acc,
+              int k) override;
+  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override
   {
     /* This function doesn't really need to return the ratio */
   }
@@ -91,24 +95,24 @@ public:
              int iat,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl);
+             std::vector<ValueType>& lapl) override;
   void calcRatio(MCWalkerConfiguration& W,
                  int iat,
                  std::vector<ValueType>& psi_ratios,
                  std::vector<GradType>& grad,
-                 std::vector<ValueType>& lapl);
+                 std::vector<ValueType>& lapl) override;
   void addRatio(MCWalkerConfiguration& W,
                 int iat,
                 int k,
                 std::vector<ValueType>& psi_ratios,
                 std::vector<GradType>& grad,
-                std::vector<ValueType>& lapl);
+                std::vector<ValueType>& lapl) override;
   void ratio(std::vector<Walker_t*>& walkers,
              std::vector<int>& iatList,
              std::vector<PosType>& rNew,
              std::vector<ValueType>& psi_ratios,
              std::vector<GradType>& grad,
-             std::vector<ValueType>& lapl)
+             std::vector<ValueType>& lapl) override
   {
     /* This function doesn't really need to return the ratio */
   }
@@ -120,7 +124,7 @@ public:
                      int iat,
                      int k,
                      int kd,
-                     int nw)
+                     int nw) override
   {
     /* The two-body jastrow depends on the accepted positions of other electrons,
        hence needs to be calculated every time here */
@@ -132,15 +136,15 @@ public:
     }
   }
 
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl);
+  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
+  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios);
+                std::vector<ValueType>& psi_ratios) override;
 
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active) override;
 
   // Evaluates the derivatives of log psi and laplacian log psi w.r.t.
   // the parameters for optimization.  First index of the ValueMatrix is
@@ -148,7 +152,7 @@ public:
   void evaluateDerivatives(MCWalkerConfiguration& W,
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dlapl_over_psi);
+                           RealMatrix_t& dlapl_over_psi) override;
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
@@ -171,7 +175,7 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC = pset.Lattice.SuperCellEnum;
+    UsePBC = pset.getLattice().SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;
     int nsp = this->NumGroups = pset.groups();
     GPUSplines.resize(nsp * nsp, 0);
@@ -181,8 +185,8 @@ public:
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.getLattice().b(j)[i];
         }
       // for (int i=0; i<OHMMS_DIM; i++)
       // 	for (int j=0; j<OHMMS_DIM; j++) {

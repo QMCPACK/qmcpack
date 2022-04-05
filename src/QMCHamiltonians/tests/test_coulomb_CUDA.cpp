@@ -16,7 +16,6 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Particle/ParticleSetPool.h"
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
 
@@ -33,20 +32,17 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(1.0);
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(1.0);
-  Lattice.reset();
-
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -55,13 +51,11 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
+  ions.update();
 
-
-  elec.Lattice = Lattice;
   elec.setName("elec");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 0.5;
   elec.R[0][2] = 0.0;
@@ -78,40 +72,33 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
   elec.addTable(ions);
   elec.update();
 
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
-
   CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
-  REQUIRE(consts == Approx(0.0));
+  double consts = cab.evalConsts(elec);
+  CHECK(consts == Approx(2 * 0.0506238028));
 
   double val = cab.evaluate(elec);
   //cout << "CUDA val = " << val << std::endl;
-  REQUIRE(val == Approx(-0.005314032183)); // not validated
+  CHECK(val == Approx(-0.005314032183 + 2 * 0.0506238028)); // not validated
 }
 
 TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 {
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
-  Communicate* c;
-  c = OHMMS::Controller;
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
-  //ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -123,13 +110,11 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   int pIdx                      = ion_species.addSpecies("H");
   int pChargeIdx                = ion_species.addAttribute("charge");
   ion_species(pChargeIdx, pIdx) = 1;
-  ions.Lattice                  = Lattice;
   ions.createSK();
+  ions.update();
 
-
-  elec.Lattice = Lattice;
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
@@ -155,18 +140,15 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   elec.copyWalkersToGPU();
   elec.updateLists_GPU();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-
-
   CoulombPBCAB_CUDA cab(ions, elec);
 
   // Background charge term
-  double consts = cab.evalConsts();
-  REQUIRE(consts == Approx(0.0));
+  double consts = cab.evalConsts(elec);
+  CHECK(consts == Approx(0.0267892759 * 4));
 
   double val = cab.evaluate(elec);
   //cout << "CUDA BCC H val = " << val << std::endl;
-  REQUIRE(val == Approx(-2.219665062)); // not validated
+  CHECK(val == Approx(-2.219665062 + 0.0267892759 * 4)); // not validated
 
   // actual code path use addEnergy
   std::vector<double> local_energy(1);
@@ -176,7 +158,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
   // not validated, which means it is just copied from the QMCPACK output, and has not been
   // computed independently.  It should be the same as results of the call to 'evaluate' above,
   //  which use the CPU code path.
-  REQUIRE(local_energy[0] == Approx(-2.219665062));
+  CHECK(local_energy[0] == Approx(-2.219665062 + 0.0267892759 * 4));
 }
 
 TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
@@ -184,25 +166,20 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   LRCoulombSingleton::CoulombHandler = 0;
   LRCoulombSingleton::this_lr_type   = LRCoulombSingleton::ESLER;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(3.77945227);
+  lattice.reset();
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(3.77945227);
-  Lattice.reset();
-
-
-  //ParticleSet ions;
-  MCWalkerConfiguration ions;
+  const SimulationCell simulation_cell(lattice);
+  MCWalkerConfiguration ions(simulation_cell);
   //ParticleSet elec;
 
   ions.setName("ion");
-  ions.Lattice = Lattice;
   std::vector<int> agroup(1);
   agroup[0] = 2;
   ions.create(agroup);
-  //ions.create(2);
+  //ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -211,13 +188,10 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
   ions.R[1][2] = 1.88972614;
   ions.createWalkers(1);
 
-  SpeciesSet& ion_species              = ions.getSpeciesSet();
-  int pIdx                             = ion_species.addSpecies("H");
-  int pChargeIdx                       = ion_species.addAttribute("charge");
-  int pIonMembersizeIdx                = ion_species.addAttribute("membersize");
-  ion_species(pChargeIdx, pIdx)        = 1;
-  ion_species(pIonMembersizeIdx, pIdx) = 2;
-  ions.Lattice                         = Lattice;
+  SpeciesSet& ion_species       = ions.getSpeciesSet();
+  int pIdx                      = ion_species.addSpecies("H");
+  int pChargeIdx                = ion_species.addAttribute("charge");
+  ion_species(pChargeIdx, pIdx) = 1;
   ions.createSK();
   ions.update();
 
@@ -231,17 +205,17 @@ TEST_CASE("Coulomb PBC A-A CUDA BCC H", "[hamiltonian][CUDA]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.6752294515)); // not validated
+  CHECK(consts == Approx(-1.6752294515)); // not validated
 
   double val = caa.evaluate(ions);
   //cout << "CUDA BCC A-A ion H val = " << val << std::endl;
-  REQUIRE(val == Approx(-0.9628996199)); // not validated
+  CHECK(val == Approx(-0.9628996199)); // not validated
 
   // actual code path uses addEnergy
   std::vector<double> local_energy(1);
   caa.addEnergy(ions, local_energy);
   //cout << "addEnergy = " << local_energy[0] << std::endl;
-  REQUIRE(local_energy[0] == Approx(-0.9628996199)); // not validated
+  CHECK(local_energy[0] == Approx(-0.9628996199)); // not validated
 }
 
 

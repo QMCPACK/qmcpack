@@ -17,61 +17,49 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
+
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/TimerManager.h"
-#include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
 {
+class BackflowTransformation;
+
 /** class to handle determinants with backflow
  */
 class DiracDeterminantWithBackflow : public DiracDeterminantBase
 {
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::HessMatrix_t HessMatrix_t;
-  typedef SPOSet::HessVector_t HessVector_t;
-  typedef SPOSet::HessType HessType;
-  typedef SPOSet::GGGType GGGType;
-  typedef SPOSet::GGGVector_t GGGVector_t;
-  typedef SPOSet::GGGMatrix_t GGGMatrix_t;
-  typedef SPOSet::HessArray_t HessArray_t;
-  //typedef Array<GradType,3>       GradArray_t;
-  //typedef Array<PosType,3>        PosArray_t;
+  using IndexVector = SPOSet::IndexVector;
+  using ValueVector = SPOSet::ValueVector;
+  using ValueMatrix = SPOSet::ValueMatrix;
+  using GradVector  = SPOSet::GradVector;
+  using GradMatrix  = SPOSet::GradMatrix;
+  using HessMatrix  = SPOSet::HessMatrix;
+  using HessVector  = SPOSet::HessVector;
+  using HessType    = SPOSet::HessType;
+  using GGGType     = SPOSet::GGGType;
+  using GGGVector   = SPOSet::GGGVector;
+  using GGGMatrix   = SPOSet::GGGMatrix;
+  using HessArray   = SPOSet::HessArray;
+  //using GradArray_t = Array<GradType,3>      ;
+  //using PosArray_t = Array<PosType,3>       ;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet& ptcl, std::shared_ptr<SPOSet>&& spos, BackflowTransformation* BF, int first = 0);
+  DiracDeterminantWithBackflow(std::unique_ptr<SPOSet>&& spos, BackflowTransformation& BF, int first, int last);
 
   ///default destructor
-  ~DiracDeterminantWithBackflow();
+  ~DiracDeterminantWithBackflow() override;
 
   // copy constructor and assign operator disabled
-  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s) = delete;
+  DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s)            = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
-
-  /** set the index of the first particle in the determinant and reset the size of the determinant
-   *@param first index of first particle
-   *@param nel number of particles in the determinant
-   *@param delay dummy argument
-   */
-  void set(int first, int nel, int delay = 1) final
-  {
-    FirstIndex = first;
-    resize(nel, nel);
-  }
-
-  ///set BF pointers
-  void setBF(BackflowTransformation* bf) override { BFTrans = bf; }
 
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
@@ -83,8 +71,8 @@ public:
                            const opt_variables_type& active,
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
-                           ParticleSet::ParticleGradient_t* G0,
-                           ParticleSet::ParticleLaplacian_t* L0,
+                           ParticleSet::ParticleGradient* G0,
+                           ParticleSet::ParticleLaplacian* L0,
                            int k);
 
   void evaluateDerivatives(ParticleSet& P,
@@ -93,9 +81,6 @@ public:
                            Matrix<RealType>& dlogpsi,
                            Array<GradType, OHMMS_DIM>& dG,
                            Matrix<RealType>& dL) override;
-
-  ///reset the size: with the number of particles and number of orbtials
-  void resize(int nel, int morb);
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -118,8 +103,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& source,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override;
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override;
 
   /** move was accepted, update the real container
    */
@@ -129,7 +114,9 @@ public:
    */
   void restore(int iat) override;
 
-  LogValueType evaluateLog(const ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override;
+  LogValueType evaluateLog(const ParticleSet& P,
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   /** cloning function
    * @param tqp target particleset
@@ -138,7 +125,25 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(std::shared_ptr<SPOSet>&& spo) const override;
+  std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::unique_ptr<SPOSet>&& spo,
+                                                               BackflowTransformation& BF) const;
+  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
+  {
+    throw std::runtime_error("makeCopy spo should not be called.");
+    return nullptr;
+  }
+
+  void testDerivFjj(ParticleSet& P, int pa);
+  void testGGG(ParticleSet& P);
+  void testGG(ParticleSet& P);
+  void testDerivLi(ParticleSet& P, int pa);
+  void testL(ParticleSet& P);
+
+  BackflowTransformation& BFTrans_;
+
+private:
+  ///reset the size: with the number of particles and number of orbtials
+  void resize(int nel, int morb);
 
   inline ValueType rcdot(TinyVector<RealType, OHMMS_DIM>& lhs, TinyVector<ValueType, OHMMS_DIM>& rhs)
   {
@@ -147,6 +152,7 @@ public:
       ret += lhs[i] * rhs[i];
     return ret;
   };
+
 #ifdef QMC_COMPLEX
   inline ValueType rcdot(TinyVector<ValueType, OHMMS_DIM>& lhs, TinyVector<RealType, OHMMS_DIM>& rhs)
   {
@@ -156,69 +162,63 @@ public:
     return ret;
   };
 #endif
+
   ///total number of particles. Ye: used to track first time allocation but I still feel it very strange.
   int NP;
   int NumParticles;
-  GradMatrix_t dFa;
-  HessMatrix_t grad_grad_psiM;
-  HessVector_t grad_gradV;
-  HessMatrix_t grad_grad_psiM_temp;
-  GGGMatrix_t grad_grad_grad_psiM;
-  BackflowTransformation* BFTrans;
-  ParticleSet::ParticleGradient_t Gtemp;
+  GradMatrix dFa;
+  HessMatrix grad_grad_psiM;
+  HessVector grad_gradV;
+  HessMatrix grad_grad_psiM_temp;
+  GGGMatrix grad_grad_grad_psiM;
+  ParticleSet::ParticleGradient Gtemp;
   ValueType La1, La2, La3;
-  HessMatrix_t Ajk_sum, Qmat;
-  GradMatrix_t Fmat;
-  GradVector_t Fmatdiag;
-  GradVector_t Fmatdiag_temp;
+  HessMatrix Ajk_sum, Qmat;
+  GradMatrix Fmat;
+  GradVector Fmatdiag;
+  GradVector Fmatdiag_temp;
 
   /////Current determinant value
   //ValueType CurrentDet;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
+  ValueMatrix psiM, psiM_temp;
 
   /// temporary container for testing
-  ValueMatrix_t psiMinv;
+  ValueMatrix psiMinv;
 
   /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t dpsiM, dpsiM_temp;
+  GradMatrix dpsiM, dpsiM_temp;
 
   /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
+  ValueVector psiV;
+  GradVector dpsiV;
+  ValueVector d2psiV;
 
   PsiValueType curRatio;
-  ParticleSet::SingleParticleValue_t* FirstAddressOfG;
-  ParticleSet::SingleParticleValue_t* LastAddressOfG;
+  ParticleSet::SingleParticleValue* FirstAddressOfG;
+  ParticleSet::SingleParticleValue* LastAddressOfG;
   ValueType* FirstAddressOfdV;
   ValueType* LastAddressOfdV;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
 
-  ValueMatrix_t psiMinv_temp;
+  ValueMatrix psiMinv_temp;
   ValueType* FirstAddressOfGGG;
   ValueType* LastAddressOfGGG;
   ValueType* FirstAddressOfFm;
   ValueType* LastAddressOfFm;
 
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
+  ParticleSet::ParticleGradient myG, myG_temp;
+  ParticleSet::ParticleLaplacian myL, myL_temp;
 
-  void testDerivFjj(ParticleSet& P, int pa);
-  void testGGG(ParticleSet& P);
-  void testGG(ParticleSet& P);
-  void testDerivLi(ParticleSet& P, int pa);
-  void testL(ParticleSet& P);
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
 
-
-  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
-  void evaluate_SPO(ValueMatrix_t& logdet,
-                    GradMatrix_t& dlogdet,
-                    HessMatrix_t& grad_grad_logdet,
-                    GGGMatrix_t& grad_grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix& logdet, GradMatrix& dlogdet, HessMatrix& grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix& logdet,
+                    GradMatrix& dlogdet,
+                    HessMatrix& grad_grad_logdet,
+                    GGGMatrix& grad_grad_grad_logdet);
 };
 
 

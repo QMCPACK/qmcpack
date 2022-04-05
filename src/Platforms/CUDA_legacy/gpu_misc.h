@@ -3,10 +3,12 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,11 +19,17 @@
 
 #include <cstdlib>
 #include <cstdio>
-
-#include <cuda_runtime_api.h>
 #include <vector>
 
+#include "config.h"
+#ifndef QMC_CUDA2HIP
+#include <cuda_runtime_api.h>
 #include <cublas_v2.h>
+#else
+#include <hip/hip_runtime.h>
+#include <hipblas.h>
+#include "Platforms/ROCm/cuda2hip.h"
+#endif
 
 namespace gpu
 {

@@ -28,8 +28,8 @@ CoulombPotentialAA_CUDA::CoulombPotentialAA_CUDA(ParticleSet& s, bool quantum)
 
 void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (SumGPU.size() < nw)
     SumGPU.resize(nw);
   // Evaluate sum on GPU
@@ -37,7 +37,7 @@ void CoulombPotentialAA_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }
@@ -81,8 +81,8 @@ CoulombPotentialAB_CUDA::CoulombPotentialAB_CUDA(ParticleSet& s, ParticleSet& t)
 
 void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  std::vector<Walker_t*>& walkers = W.WalkerList;
-  int nw                          = walkers.size();
+  auto& walkers = W.WalkerList;
+  int nw        = walkers.size();
   if (SumGPU.size() < nw)
     SumGPU.resize(nw);
   // Evaluate sum on GPU
@@ -90,7 +90,7 @@ void CoulombPotentialAB_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<Re
   SumHost = SumGPU;
   for (int iw = 0; iw < walkers.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = SumHost[iw];
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = SumHost[iw];
     LocalEnergy[iw] += SumHost[iw];
   }
 }

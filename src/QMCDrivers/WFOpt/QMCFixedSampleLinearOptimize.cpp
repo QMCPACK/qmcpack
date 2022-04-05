@@ -186,8 +186,8 @@ QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
 {
-  for (int i = 0; i < optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl * optdir[i];
+  for (int i = 0; i < optparam.size(); i++)
+    optTarget->Params(i) = optparam[i] + dl * optdir[i];
   QMCLinearOptimize::RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
@@ -249,7 +249,7 @@ bool QMCFixedSampleLinearOptimize::run()
     bestParameters[i] = currentParameters[i] = std::real(optTarget->Params(i));
   //   proposed direction and new parameters
   optdir.resize(numParams, 0);
-  optparm.resize(numParams, 0);
+  optparam.resize(numParams, 0);
 
   while (Total_iterations < Max_iterations)
   {
@@ -317,10 +317,9 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      RealType lowestEV(0);
       eigenvalue_timer_.start();
-      lowestEV = getLowestEigenvector(Right, currentParameterDirections);
-      Lambda   = getNonLinearRescale(currentParameterDirections, S);
+      getLowestEigenvector(Right, currentParameterDirections);
+      Lambda = getNonLinearRescale(currentParameterDirections, S);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -350,7 +349,7 @@ bool QMCFixedSampleLinearOptimize::run()
       else
       {
         for (int i = 0; i < numParams; i++)
-          optparm[i] = currentParameters[i];
+          optparam[i] = currentParameters[i];
         for (int i = 0; i < numParams; i++)
           optdir[i] = currentParameterDirections[i + 1];
         TOL              = param_tol / bigVec;
@@ -382,7 +381,7 @@ bool QMCFixedSampleLinearOptimize::run()
         else
         {
           for (int i = 0; i < numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+            optTarget->Params(i) = optparam[i] + Lambda * optdir[i];
           app_log() << "  Good Step. Largest LM parameter change:" << biggestParameterChange << std::endl;
         }
       }
@@ -473,7 +472,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
-  m_param.add(OutputMatrices, "output_matrices");
+  m_param.add(OutputMatrices, "output_matrices_csv");
   m_param.add(FreezeParameters, "freeze_parameters");
 
   oAttrib.put(q);
@@ -515,11 +514,11 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
                                                  bool useGPU)
 {
   m_param.put(opt_xml);
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
 
-  tolower(block_lmStr);
-  block_lm = (block_lmStr == "yes");
+  block_lmStr = lowerCase(block_lmStr);
+  block_lm    = (block_lmStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
@@ -546,7 +545,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
       current_optimizer_type_ != OptimizerType::DESCENT)
     myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
-#ifdef ENABLE_OPENMP
+#ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
@@ -886,7 +885,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
         std::swap(prdMat(i, j), prdMat(j, i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
     Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
@@ -1297,7 +1296,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
   Lambda = getNonLinearRescale(parameterDirections, ovlMat);

@@ -23,7 +23,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 //#define TEST_INNERBRANCH
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
@@ -36,7 +36,7 @@ using WP = WalkerProperties::Indexes;
 DMCUpdatePbyPL2::DMCUpdatePbyPL2(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg)
+                                 RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);
@@ -64,7 +64,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
   FullPrecRealType enew(eold);
   RealType rr_proposed = 0.0;
   RealType rr_accepted = 0.0;
-  RealType gf_acc      = 1.0;
   mPosType K;
   mTensorType D;
   mTensorType Dchol;
@@ -176,7 +175,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, drtmp);
           dr                     = drtmp; // upcast for mixed precision
-          dr                     = W.R[iat] - W.activePos - dr;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           RealType prob          = std::norm(ratio) * std::exp(logGb - logGf);
           bool is_accepted       = false;
@@ -188,7 +187,6 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
             ++nAcceptTemp;
             Psi.acceptMove(W, iat, true);
             rr_accepted += rr;
-            gf_acc *= prob; //accumulate the ratio
           }
           else
           {
@@ -237,8 +235,7 @@ void DMCUpdatePbyPL2::advanceWalker(Walker_t& thisWalker, bool recompute)
     H.rejectedMove(W, thisWalker);
     thisWalker.Weight = wtmp;
     ++nAllRejected;
-    enew   = eold; //copy back old energy
-    gf_acc = 1.0;
+    enew = eold; //copy back old energy
     thisWalker.Weight *= branchEngine->branchWeight(enew, eold);
   }
 #if !defined(REMOVE_TRACEMANAGER)

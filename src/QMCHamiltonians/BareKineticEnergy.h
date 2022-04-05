@@ -16,68 +16,11 @@
 
 #ifndef QMCPLUSPLUS_BAREKINETICENERGY_H
 #define QMCPLUSPLUS_BAREKINETICENERGY_H
-#include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
+
 #include "QMCHamiltonians/OperatorBase.h"
-#include "ParticleBase/ParticleAttribOps.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCDrivers/WalkerProperties.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
-#include "type_traits/scalar_traits.h"
 
 namespace qmcplusplus
 {
-using WP = WalkerProperties::Indexes;
-
-/** compute real(laplacian)
- */
-template<typename T, unsigned D>
-inline T laplacian(const TinyVector<T, D>& g, T l)
-{
-  return dot(g, g) + l;
-}
-
-/** specialization of laplacian with complex g & l
- */
-template<typename T, unsigned D>
-inline T laplacian(const TinyVector<std::complex<T>, D>& g, const std::complex<T>& l)
-{
-  return l.real() + OTCDot<T, T, D>::apply(g, g);
-}
-
-/** Convenience function to compute \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
- * @param g OHMMS_DIM dimensional vector for \f$\nabla_i \ln \Psi_T\f$ .  
- * @param l A number, representing \f$\nabla^2_i \ln \Psi_T\f$ .
- * @param gg OHMMS_DIM dimensional vector containing \f$\nabla_i \partial \ln \Psi_T\f$ . 
- * @param gl A number, representing \f$\nabla^2_i \partial \ln \Psi_T\f$
- * @param ideriv A number, representing \f$\partial \ln \Psi_T\f$
- *
- * @return A number corresponding to \f$\Re( \nabla^2_i \partial \Psi_T/\Psi_T)\f$
- */
-
-template<typename T, unsigned D>
-inline T dlaplacian(const TinyVector<T, D>& g, const T l, const TinyVector<T, D>& gg, const T gl, const T ideriv)
-{
-  return gl + l * ideriv + 2.0 * dot(g, gg) + dot(g, g) * ideriv;
-}
-
-template<typename T, unsigned D>
-inline T dlaplacian(const TinyVector<std::complex<T>, D>& g,
-                    const std::complex<T> l,
-                    const TinyVector<std::complex<T>, D>& gg,
-                    const std::complex<T> gl,
-                    const std::complex<T> ideriv)
-{
-  std::complex<T> l_times_ideriv                = l * ideriv;
-  TinyVector<std::complex<T>, D> g_times_ideriv = g * ideriv;
-
-  return gl.real() + l_times_ideriv.real() + 2.0 * OTCDot<T, T, D>::apply(g, gg) +
-      OTCDot<T, T, D>::apply(g, g_times_ideriv);
-}
-
-
 /** @ingroup hamiltonian
   @brief Evaluate the kinetic energy with a single mass
 
@@ -94,30 +37,20 @@ inline T dlaplacian(const TinyVector<std::complex<T>, D>& g,
  -\frac{1}{2}(\nabla\ln \Psi({\bf R}))^2
  \f}
  */
-
-
-inline std::string int2string(const int& i)
+class BareKineticEnergy : public OperatorBase
 {
-  std::stringstream ss;
-  ss << i;
-  return ss.str();
-}
-
-
-template<typename T>
-struct BareKineticEnergy : public OperatorBase
-{
+public:
   ///true, if all the species have the same mass
   bool SameMass;
   ///mass of the particle
-  T M;
+  FullPrecRealType M;
   ///\f$ 1/(2 m^*) \f$
-  T OneOver2M;
+  FullPrecRealType OneOver2M;
   ///MinusOver2M[i] = \f$ -1/2m[i]\f$ for the ith species
-  std::vector<T> MinusOver2M;
+  std::vector<FullPrecRealType> MinusOver2M;
 
-  ParticleSet::ParticleGradient_t Gtmp;
-  ParticleSet::ParticleLaplacian_t Ltmp;
+  ParticleSet::ParticleGradient Gtmp;
+  ParticleSet::ParticleLaplacian Ltmp;
 
   ///single particle trace samples
   bool streaming_kinetic;
@@ -131,117 +64,25 @@ struct BareKineticEnergy : public OperatorBase
 #endif
   ParticleSet& Ps;
 
-  /** constructor
-   *
-   * Kinetic operators need to be re-evaluated during optimization.
-   */
-  BareKineticEnergy(RealType m = 1.0) : SameMass(true), M(m), OneOver2M(0.5 / m)
-  {
-    set_energy_domain(kinetic);
-    set_quantum_domain(quantum);
-    streaming_kinetic      = false;
-    streaming_kinetic_comp = false;
-    streaming_momentum     = false;
-    UpdateMode.set(OPTIMIZABLE, 1);
-  }
-
   /** constructor with particleset
    * @param target particleset
    *
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p) : Ps(p)
-  {
-    set_energy_domain(kinetic);
-    one_body_quantum_domain(p);
-    streaming_kinetic      = false;
-    streaming_kinetic_comp = false;
-    streaming_momentum     = false;
-    UpdateMode.set(OPTIMIZABLE, 1);
-    SpeciesSet& tspecies(p.getSpeciesSet());
-    MinusOver2M.resize(tspecies.size());
-    int massind = tspecies.addAttribute("mass");
-    SameMass    = true;
-    M           = tspecies(massind, 0);
-    OneOver2M   = 0.5 / M;
-    for (int i = 0; i < tspecies.size(); ++i)
-    {
-      SameMass &= (std::abs(tspecies(massind, i) - M) < 1e-6);
-      MinusOver2M[i] = -1.0 / (2.0 * tspecies(massind, i));
-    }
-  }
+  BareKineticEnergy(ParticleSet& p);
   ///destructor
-  ~BareKineticEnergy() {}
+  ~BareKineticEnergy() override;
 
-  void resetTargetParticleSet(ParticleSet& P) {}
-
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities()
-  {
-    request.contribute_array(myName);
-    request.contribute_array(myName + "_complex");
-    request.contribute_array("momentum");
-  }
-
-  virtual void checkout_particle_quantities(TraceManager& tm)
-  {
-    streaming_particles = request.streaming_array(myName) || request.streaming_array(myName + "_complex") ||
-        request.streaming_array("momentum");
-    if (streaming_particles)
-    {
-      T_sample      = tm.checkout_real<1>(myName, Ps);
-      T_sample_comp = tm.checkout_complex<1>(myName + "_complex", Ps);
-      p_sample      = tm.checkout_complex<2>("momentum", Ps, DIM);
-    }
-  }
-
-  virtual void delete_particle_quantities()
-  {
-    if (streaming_particles)
-    {
-      delete T_sample;
-      delete T_sample_comp;
-      delete p_sample;
-    }
-  }
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
+  void deleteParticleQuantities() override;
 #endif
 
-
-  inline Return_t evaluate(ParticleSet& P)
-  {
-#if !defined(REMOVE_TRACEMANAGER)
-    if (streaming_particles)
-    {
-      Value = evaluate_sp(P);
-    }
-    else
-#endif
-        if (SameMass)
-    {
-//app_log() << "Here" << std::endl;
-#ifdef QMC_COMPLEX
-      Value = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
-      Value *= -OneOver2M;
-#else
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
-#endif
-    }
-    else
-    {
-      Value = 0.0;
-      for (int i = 0; i < MinusOver2M.size(); ++i)
-      {
-        T x = 0.0;
-        for (int j = P.first(i); j < P.last(i); ++j)
-          x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
-      }
-    }
-    return Value;
-  }
+  Return_t evaluate(ParticleSet& P) override;
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
@@ -260,240 +101,44 @@ struct BareKineticEnergy : public OperatorBase
  * @return Value of kinetic energy operator at electron/ion positions given by P and ions.  The force contributions from
  *          this operator are added into hf_terms and pulay_terms.
  */
-  inline Return_t evaluateWithIonDerivs(ParticleSet& P,
-                                        ParticleSet& ions,
-                                        TrialWaveFunction& psi,
-                                        ParticleSet::ParticlePos_t& hf_terms,
-                                        ParticleSet::ParticlePos_t& pulay_terms)
-  {
-    typedef ParticleSet::ParticlePos_t ParticlePos_t;
-    typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
-    typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;
+  Return_t evaluateWithIonDerivs(ParticleSet& P,
+                                 ParticleSet& ions,
+                                 TrialWaveFunction& psi,
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
-    int Nions = ions.getTotalNum();
-    int Nelec = P.getTotalNum();
+  void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 
-    //These are intermediate arrays for potentially complex math.
-    ParticleLaplacian_t term2_(Nelec);
-    ParticleGradient_t term4_(Nelec);
-
-    //Potentially complex temporary array for \partial \psi/\psi and \nabla^2 \partial \psi / \psi
-    ParticleGradient_t iongradpsi_(Nions), pulaytmp_(Nions);
-    //temporary arrays that will be explicitly real.
-    ParticlePos_t pulaytmpreal_(Nions), iongradpsireal_(Nions);
-
-
-    TinyVector<ParticleGradient_t, OHMMS_DIM> iongrad_grad_;
-    TinyVector<ParticleLaplacian_t, OHMMS_DIM> iongrad_lapl_;
-
-    for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
-    {
-      iongrad_grad_[iondim].resize(Nelec);
-      iongrad_lapl_[iondim].resize(Nelec);
-    }
-
-    iongradpsi_     = 0;
-    iongradpsireal_ = 0;
-    pulaytmpreal_   = 0;
-    pulaytmp_       = 0;
-
-    RealType logpsi_ = psi.evaluateLog(P);
-    for (int iat = 0; iat < Nions; iat++)
-    {
-      //reset the iongrad_X containers.
-      for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
-      {
-        iongrad_grad_[iondim] = 0;
-        iongrad_lapl_[iondim] = 0;
-      }
-      iongradpsi_[iat] = psi.evalGradSource(P, ions, iat, iongrad_grad_, iongrad_lapl_);
-      //conversion from potentially complex to definitely real.
-      convert(iongradpsi_[iat], iongradpsireal_[iat]);
-      if (SameMass)
-      {
-        for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
-        {
-          //These term[24]_ variables exist because I want to do complex math first, and then take the real part at the
-          //end.  Sum() and Dot() perform the needed functions and spit out the real part at the end.
-          term2_                 = P.L * iongradpsi_[iat][iondim];
-          term4_                 = P.G * iongradpsi_[iat][iondim];
-          pulaytmp_[iat][iondim] = -OneOver2M *
-              (Sum(iongrad_lapl_[iondim]) + Sum(term2_) + 2.0 * Dot(iongrad_grad_[iondim], P.G) + Dot(P.G, term4_));
-        }
-      }
-      else
-      {
-        for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
-        {
-          for (int g = 0; g < MinusOver2M.size(); g++)
-          {
-            for (int iel = P.first(g); iel < P.last(g); iel++)
-            {
-              pulaytmp_[iat][iondim] += MinusOver2M[g] *
-                  (dlaplacian(P.G[iel], P.L[iel], iongrad_grad_[iondim][iel], iongrad_lapl_[iondim][iel],
-                              iongradpsi_[iat][iondim]));
-            }
-          }
-        }
-      }
-      //convert to real.
-      convert(pulaytmp_[iat], pulaytmpreal_[iat]);
-    }
-
-    if (SameMass)
-    {
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
-    }
-    else
-    {
-      Value = 0.0;
-      for (int i = 0; i < MinusOver2M.size(); ++i)
-      {
-        T x = 0.0;
-        for (int j = P.first(i); j < P.last(i); ++j)
-          x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
-      }
-    }
-    pulaytmpreal_ -= Value * iongradpsireal_;
-
-
-    pulay_terms += pulaytmpreal_;
-    return Value;
-  }
-
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         const ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  inline Return_t evaluate_sp(ParticleSet& P)
-  {
-    Array<RealType, 1>& T_samp                    = *T_sample;
-    Array<std::complex<RealType>, 1>& T_samp_comp = *T_sample_comp;
-    Array<std::complex<RealType>, 2>& p_samp      = *p_sample;
-    std::complex<RealType> t1                     = 0.0;
-    const RealType clambda(-OneOver2M);
-    Value = 0.0;
-    if (SameMass)
-    {
-      for (int i = 0; i < P.getTotalNum(); i++)
-      {
-        t1             = P.L[i] + dot(P.G[i], P.G[i]);
-        t1             = clambda * t1;
-        T_samp(i)      = real(t1);
-        T_samp_comp(i) = t1;
-        for (int d = 0; d < DIM; ++d)
-          p_samp(i, d) = P.G[i][d];
-        Value += real(t1);
-      }
-    }
-    else
-    {
-      for (int s = 0; s < MinusOver2M.size(); ++s)
-      {
-        T mlambda = MinusOver2M[s];
-        for (int i = P.first(s); i < P.last(s); ++i)
-        {
-          //t1 = mlambda*( P.L[i] + dot(P.G[i],P.G[i]) );
-          t1 = P.L[i] + dot(P.G[i], P.G[i]);
-          t1 *= mlambda;
-          T_samp(i)      = real(t1);
-          T_samp_comp(i) = t1;
-          for (int d = 0; d < DIM; ++d)
-            p_samp(i, d) = P.G[i][d];
-          Value += real(t1);
-        }
-      }
-    }
-#if defined(TRACE_CHECK)
-    RealType Vnow = Value;
-    RealType Vsum = T_samp.sum();
-    RealType Vold = evaluate_orig(P);
-    if (std::abs(Vsum - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "accumtest: BareKineticEnergy::evaluate()" << std::endl;
-      app_log() << "accumtest:   tot:" << Vnow << std::endl;
-      app_log() << "accumtest:   sum:" << Vsum << std::endl;
-      APP_ABORT("Trace check failed");
-    }
-    if (std::abs(Vold - Vnow) > TraceManager::trace_tol)
-    {
-      app_log() << "versiontest: BareKineticEnergy::evaluate()" << std::endl;
-      app_log() << "versiontest:   orig:" << Vold << std::endl;
-      app_log() << "versiontest:    mod:" << Vnow << std::endl;
-      APP_ABORT("Trace check failed");
-    }
-#endif
-    return Value;
-  }
-
+  Return_t evaluate_sp(ParticleSet& P);
 #endif
 
-  inline Return_t evaluate_orig(ParticleSet& P)
-  {
-    if (SameMass)
-    {
-      Value = Dot(P.G, P.G) + Sum(P.L);
-      Value *= -OneOver2M;
-    }
-    else
-    {
-      Value = 0.0;
-      for (int i = 0; i < MinusOver2M.size(); ++i)
-      {
-        T x = 0.0;
-        for (int j = P.first(i); j < P.last(i); ++j)
-          x += laplacian(P.G[j], P.L[j]);
-        Value += x * MinusOver2M[i];
-      }
-    }
-    return Value;
-  }
+  Return_t evaluate_orig(ParticleSet& P);
 
   /** implements the virtual function.
    *
    * Nothing is done but should check the mass
    */
-  bool put(xmlNodePtr) { return true; }
+  bool put(xmlNodePtr) override;
 
-  bool get(std::ostream& os) const
-  {
-    os << "Kinetic energy";
-    return true;
-  }
+  bool get(std::ostream& os) const override;
 
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final
-  {
-    return std::make_unique<BareKineticEnergy>(*this);
-  }
+  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
 #ifdef QMC_CUDA
   ////////////////////////////////
   // Vectorized version for GPU //
   ////////////////////////////////
   // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-  {
-    std::vector<Walker_t*>& walkers = W.WalkerList;
-    for (int iw = 0; iw < walkers.size(); iw++)
-    {
-      Walker_t& w                                      = *(walkers[iw]);
-      RealType KE                                      = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
-      w.getPropertyBase()[WP::NUMPROPERTIES + myIndex] = KE;
-      LocalEnergy[iw] += KE;
-    }
-  }
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 #endif
-
-  //Not used anymore
-  //void evaluate(WalkerSetRef& W, ValueVectorType& LE) {
-  //  for(int iw=0; iw< W.walkers(); iw++) {
-  //    RealType ke = 0.0;
-  //    for(int iat=0; iat< W.particles(); iat++) {
-  //      ke += dot(W.G(iw,iat),W.G(iw,iat)) + W.L(iw,iat);
-  //    }
-  //    LE[iw] -= M*ke;
-  //  }
-  //}
 };
+
 } // namespace qmcplusplus
 #endif

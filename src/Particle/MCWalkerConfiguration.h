@@ -70,15 +70,15 @@ public:
 
   using Walker_t = WalkerConfigurations::Walker_t;
   ///container type of the Properties of a Walker
-  typedef Walker_t::PropertyContainer_t PropertyContainer_t;
+  using PropertyContainer_t = Walker_t::PropertyContainer_t;
   ///container type of Walkers
-  typedef std::vector<Walker_t*> WalkerList_t;
+  using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
-  typedef WalkerList_t::iterator iterator;
+  using iterator = WalkerList_t::iterator;
   ///const_iterator of Walker container
-  typedef WalkerList_t::const_iterator const_iterator;
+  using const_iterator = WalkerList_t::const_iterator;
 
-  typedef std::vector<Reptile*> ReptileList_t;
+  using ReptileList_t = UPtrVector<Reptile>;
 
   // Data for GPU-acceleration via CUDA
   // These hold a list of pointers to the positions, gradients, and
@@ -118,11 +118,12 @@ public:
 #endif
 
   ///default constructor
-  MCWalkerConfiguration(const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
+  MCWalkerConfiguration(const SimulationCell& simulation_cell,
+                        const DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS);
 
   ///default constructor: copy only ParticleSet
   MCWalkerConfiguration(const MCWalkerConfiguration& mcw);
-
+  ~MCWalkerConfiguration();
   /** create numWalkers Walkers
    *
    * Append Walkers to WalkerList.
@@ -158,16 +159,6 @@ public:
 
   inline void setPolymer(MultiChain* chain) { Polymer = chain; }
 
-  template<typename ForwardIter>
-  inline void putConfigurations(ForwardIter target)
-  {
-    int ds = OHMMS_DIM * TotalNum;
-    for (iterator it = WalkerList.begin(); it != WalkerList.end(); ++it, target += ds)
-    {
-      copy(get_first_address((*it)->R), get_last_address((*it)->R), target);
-    }
-  }
-
   void resetWalkerProperty(int ncopy = 1);
 
   inline bool updatePbyP() const { return ReadyForPbyP; }
@@ -183,20 +174,19 @@ public:
   void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
   void loadSample(ParticleSet& pset, size_t iw) const;
-  /** load SampleStack data to current walkers
-   */
+  /// load SampleStack data to the current list of walker configurations
   void loadEnsemble();
-  //void loadEnsemble(const Walker_t& wcopy);
-  /** load SampleStack from others
-    */
+  /// load the SampleStacks of others to the current list of walker configurations
   void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean = true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
+   *
+   * CAUTION: The current implementation assumes the same amount of active walkers on all the MPI ranks.
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  static bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
 

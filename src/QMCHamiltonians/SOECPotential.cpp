@@ -9,7 +9,7 @@
 // File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "SOECPotential.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -23,8 +23,8 @@ namespace qmcplusplus
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
     : myRNG(nullptr), IonConfig(ions), Psi(psi), Peln(els), ElecNeighborIons(els), IonNeighborElecs(ions)
 {
-  set_energy_domain(potential);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   PP.resize(NumIons, nullptr);
@@ -35,11 +35,11 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
-  Value = 0.0;
+  value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
   for (int jel = 0; jel < P.getTotalNum(); jel++)
@@ -54,12 +54,12 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
       if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
       {
         RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
-        Value += pairpot;
+        value_ += pairpot;
         NeighborIons.push_back(iat);
         IonNeighborElecs.getNeighborList(iat).push_back(jel);
       }
   }
-  return Value;
+  return value_;
 }
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

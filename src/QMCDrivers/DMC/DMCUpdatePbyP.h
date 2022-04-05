@@ -26,11 +26,11 @@ public:
   DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg);
+                                 RandomGenerator& rg);
   ///destructor
-  ~DMCUpdatePbyPWithRejectionFast();
+  ~DMCUpdatePbyPWithRejectionFast() override;
 
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
+  void advanceWalker(Walker_t& thisWalker, bool recompute) override;
 
 private:
   TimerList_t myTimers;

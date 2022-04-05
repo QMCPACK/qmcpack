@@ -29,102 +29,47 @@ WaveFunctionPool::WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, c
   myName    = aname;
 }
 
-WaveFunctionPool::~WaveFunctionPool()
-{
-  DEBUG_MEMORY("WaveFunctionPool::~WaveFunctionPool");
-  PoolType::iterator it(myPool.begin());
-  while (it != myPool.end())
-  {
-    delete (*it).second;
-    ++it;
-  }
-}
+WaveFunctionPool::~WaveFunctionPool() = default;
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra"), tasking;
+  std::string target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(id, "id");
-  pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.add(role, "role");
   pAttrib.put(cur);
 
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
-  // Ye: the overall logic of the "check" is still not clear to me.
-  // The following code path should only be used when there is no cell, ion, electron info provided in the XML input.
-  // As long as any info is provided in the XML file, no need to call createESParticleSet
-  // EinsplineBuilder has code to verify cell and ion position. No need to do here.
-  if (!qp)
-  { //check ESHDF should be used to initialize both target and associated ionic system
-    xmlNodePtr tcur = cur->children;
-    while (tcur != NULL)
-    { //check <determinantset/> or <sposet_builder/> or <sposet_collection/> to extract the ionic and electronic structure
-      std::string cname((const char*)tcur->name);
-      if (cname == WaveFunctionComponentBuilder::detset_tag || cname == "sposet_builder" ||
-          cname == "sposet_collection")
-      {
-        qp = ptcl_pool_.createESParticleSet(tcur, target, qp);
-      }
-      tcur = tcur->next;
-    }
-  }
+  if (qp == nullptr)
+    myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
-  if (qp == 0)
-  {
-    APP_ABORT("WaveFunctionPool::put Target ParticleSet is not found.");
-  }
-
-  std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
-  WaveFunctionFactory* psiFactory = 0;
-  bool isPrimary                  = true;
-  if (pit == myPool.end())
-  {
-    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
-    isPrimary  = (myPool.empty() || role == "primary");
-    myPool[id] = psiFactory;
-  }
-  else
-  {
-    psiFactory = (*pit).second;
-  }
-  bool success = psiFactory->put(cur);
-  if (success && isPrimary)
-  {
-    primary_psi_ = psiFactory->getTWF();
-  }
-  return success;
+  WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
+  auto psi = psiFactory.buildTWF(cur);
+  addFactory(std::move(psi), myPool.empty() || role == "primary");
+  return true;
 }
 
-void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
+void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
 {
-  PoolType::iterator oit(myPool.find(psifac->getName()));
-  if (oit == myPool.end())
-  {
-    app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
-    myPool[psifac->getName()] = psifac;
-  }
-  else
-  {
-    app_warning() << "  " << psifac->getName() << " exists. Ignore addition" << std::endl;
-  }
+  if (myPool.find(psi->getName()) != myPool.end())
+    throw std::runtime_error("  " + psi->getName() + " exists. Cannot be added.");
+
+  app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
+
+  if (primary)
+    primary_psi_ = psi.get();
+  myPool.emplace(psi->getName(), std::move(psi));
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
   if (myPool.empty())
     return NULL;
-  std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
-  if (it == myPool.end())
-  {
+  if (auto it(myPool.find(id)); it == myPool.end())
     return (*myPool.begin()).second->getNode();
-  }
   else
-  {
     return (*it).second->getNode();
-  }
 }
 } // namespace qmcplusplus

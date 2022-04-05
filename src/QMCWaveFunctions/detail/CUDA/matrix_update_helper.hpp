@@ -14,7 +14,13 @@
 #define CUDA_MATRIX_UPDATE_HELPER_H
 
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "ROCm/cuda2hip.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -23,7 +29,7 @@ namespace qmcplusplus
 namespace CUDA
 {
 /** helper function for SM-1 Fahy update
- * substract one in temp
+ * subtract one in temp
  * copy Ainv changed row to rcopy
  * save phi G and L as accept.
  */

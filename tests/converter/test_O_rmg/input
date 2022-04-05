@@ -1,0 +1,72 @@
+# Description of run.
+description="atom_O_pp"
+
+# Expected test energy
+test_energy="-15.87801563"
+test_energy_tolerance = "1.00000000e-06"
+
+#spin_polarization="true"
+
+# Wavefunction grid
+wavefunction_grid="16 16 16"
+potential_grid_refinement = "2"
+
+# number of unoccupied states
+occupations_type = "Fixed"
+#states_count_and_occupation_spin_down = "1 1.0  3 0.3333333333 3 0.0"
+states_count_and_occupation_spin_down = "2 1.0  6 0.0"
+states_count_and_occupation_spin_up = "4 1.0  4 0.0"
+
+preconditioner_threshold = "0.0001"
+
+# Units for bravais_lattice_type and atoms
+#crds_units=
+#"Bohr"
+#"Angstrom"
+
+bravais_lattice_type="Cubic Primitive"
+
+# Lattice constants 
+a_length="20.0"
+b_length="20.0"
+c_length="20.0"
+
+start_mode="LCAO Start"
+#start_mode="Random Start"
+#start_mode="Restart From File"
+
+write_qmcpack_restart = "true"
+
+
+calculation_mode="Quench Electrons"
+#calculation_mode="Relax Structure"
+
+#atomic_orbital_type = "localized"
+
+kohn_sham_solver="davidson"
+subdiag_driver="lapack"
+charge_mixing_type = "Broyden"
+charge_density_mixing = "0.7"
+kohn_sham_mucycles = "3"
+max_scf_steps="1000"
+potential_acceleration_constant_step="1.0"
+write_data_period="10"
+
+# Criterion used to judge SCF convergency 
+#energy_convergence_criterion="1.0e-9"
+#rms_convergence_criterion = "1.0e-10"
+rms_convergence_criterion = "1.0e-9"
+
+atomic_coordinate_type="Absolute"
+
+# List  atomic symbol, coordinates, and movable flag (1 == movable) 
+# symbol and coordinates are required, moveable is optional, default is 1
+atoms = "
+O   10.0   10.0   10.0   1  0.0    
+"
+#exchange_correlation_type="PBE"
+
+pseudopotential=
+"
+O    ./O.BFD.xml
+"

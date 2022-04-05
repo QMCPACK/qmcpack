@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 
 #include <map>
+#include <memory>
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 
@@ -35,11 +36,11 @@ namespace qmcplusplus
 class WaveFunctionComponentBuilder : public MPIObjectBase
 {
 public:
-  typedef WaveFunctionComponent::RealType RealType;
-  typedef WaveFunctionComponent::ValueType ValueType;
-  typedef WaveFunctionComponent::PosType PosType;
-  typedef WaveFunctionComponent::GradType GradType;
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using RealType  = WaveFunctionComponent::RealType;
+  using ValueType = WaveFunctionComponent::ValueType;
+  using PosType   = WaveFunctionComponent::PosType;
+  using GradType  = WaveFunctionComponent::GradType;
+  using PSetMap   = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** \ingroup XMLTags
    *@{
@@ -80,13 +81,11 @@ public:
    *
    * Each builder class builds an object for composing a many-body wavefunction.
    */
-  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p)
-      : MPIObjectBase(comm), targetPtcl(p), myNode(NULL)
-  {}
+  WaveFunctionComponentBuilder(Communicate* comm, ParticleSet& p) : MPIObjectBase(comm), targetPtcl(p), myNode(NULL) {}
 
   virtual ~WaveFunctionComponentBuilder() = default;
   /// process a xml node at cur
-  virtual WaveFunctionComponent* buildComponent(xmlNodePtr cur) = 0;
+  virtual std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) = 0;
 
 protected:
   /// reference to the particle set on which targetPsi is defined

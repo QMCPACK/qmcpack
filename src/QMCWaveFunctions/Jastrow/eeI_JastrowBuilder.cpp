@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -22,6 +22,13 @@
 
 namespace qmcplusplus
 {
+eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
+    : WaveFunctionComponentBuilder(comm, target), sourcePtcl(&source)
+{
+  ClassName = "eeI_JastroBuilder";
+}
+
+
 template<typename J3type>
 bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
 {
@@ -44,8 +51,8 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       rAttrib.add(ee_cusp, "ecusp");
       rAttrib.add(eI_cusp, "icusp");
       rAttrib.put(kids);
-      typedef typename J3type::FuncType FT;
-      FT* functor        = new FT(ee_cusp, eI_cusp);
+      using FT           = typename J3type::FuncType;
+      auto functor       = std::make_unique<FT>(ee_cusp, eI_cusp);
       functor->iSpecies  = iSpecies;
       functor->eSpecies1 = eSpecies1;
       functor->eSpecies2 = eSpecies2;
@@ -70,9 +77,9 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
         APP_ABORT("electron species " + illegal_eSpecies + " requested for Jastrow " + jname +
                   " does not exist in ParticleSet " + targetPtcl.getName());
       functor->put(kids);
-      if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
+      if (sourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN)
       {
-        const RealType WSRadius = sourcePtcl->Lattice.WignerSeitzRadius;
+        const RealType WSRadius = sourcePtcl->getLattice().WignerSeitzRadius;
         if (functor->cutoff_radius > WSRadius)
         {
           if (functor->cutoff_radius - WSRadius > 1e-4)
@@ -99,7 +106,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       {
         APP_ABORT("  eeI Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
       }
-      J3.addFunc(iNum, eNum1, eNum2, functor);
+      J3.addFunc(iNum, eNum1, eNum2, std::move(functor));
     }
     kids = kids->next;
   }
@@ -109,7 +116,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   return true;
 }
 
-WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "put(xmlNodePtr)");
   xmlNodePtr kids = cur->xmlChildrenNode;
@@ -122,14 +129,13 @@ WaveFunctionComponent* eeI_JastrowBuilder::buildComponent(xmlNodePtr cur)
     tAttrib.add(ftype, "function");
     tAttrib.put(cur);
 
-    XMLAttrString input_name(cur, "name");
+    std::string input_name(getXMLAttributeValue(cur, "name"));
     std::string jname = input_name.empty() ? "JeeI_" + ftype : input_name;
-
-    SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
+    SpeciesSet& iSet  = sourcePtcl->getSpeciesSet();
     if (ftype == "polynomial")
     {
-      typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
-      J3Type* J3 = new J3Type(jname, *sourcePtcl, targetPtcl, true);
+      using J3Type = JeeIOrbitalSoA<PolynomialFunctor3D>;
+      auto J3      = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl, true);
       putkids(kids, *J3);
       return J3;
     }

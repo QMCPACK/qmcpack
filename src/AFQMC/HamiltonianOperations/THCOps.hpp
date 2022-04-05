@@ -24,7 +24,7 @@
 #include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "mpi3/shared_communicator.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 #include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
 #include "AFQMC/Numerics/batched_operations.hpp"
@@ -703,11 +703,11 @@ public:
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;
     // memory_needs = X, v, Tuw
-    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // substract other needs
+    Bytes -= size_t(memory_needs * sizeof(SPComplexType)); // subtract other needs
     Bytes /= size_t(nmo_ * nu * sizeof(SPComplexType));
     int nwmax = std::min(nwalk, std::max(1, int(Bytes)));
     memory_needs += nwmax * nmo_ * nu;
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
 
     size_t cnt(0);
@@ -859,7 +859,7 @@ public:
       memory_needs += G.num_elements();
     if (not std::is_same<vType, SPComplexType>::value)
       memory_needs += v.num_elements();
-    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>{memory_needs},
+    ShmArray<SPComplexType, 1> SM_TMats(iextensions<1u>(memory_needs),
                                         shm_buffer_manager.get_generator().template get_allocator<SPComplexType>());
     size_t cnt(0);
     const_sp_pointer Gptr(nullptr);

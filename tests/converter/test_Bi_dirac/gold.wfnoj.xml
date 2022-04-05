@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="gold.orbs.h5">
+      <sposet basisset="LCAOBSet" name="spo-up" size="16">
+        <occupation mode="ground"/>
+        <coefficient size="16" spindataset="0"/>
+      </sposet>
+      <multideterminant optimize="no" spo_0="spo-up">
+        <detlist size="4" type="DETS" nc0="0" ne0="5" nstates="16" cutoff="1e-20" href="gold.orbs.h5"/>
+      </multideterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

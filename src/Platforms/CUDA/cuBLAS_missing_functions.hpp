@@ -14,7 +14,8 @@
 #define QMCPLUSPLUS_CUBLAS_MISSING_FUNCTIONS_H
 
 #include <complex>
-#include <cuda_runtime_api.h>
+#include "config.h"
+#include "CUDAruntime.hpp"
 
 namespace qmcplusplus
 {
@@ -27,8 +28,8 @@ namespace qmcplusplus
  */
 namespace cuBLAS_MFs
 {
-typedef cudaError_t cuBLAS_MFs_status;
-typedef cudaStream_t cuBLAS_MFs_handle;
+using cuBLAS_MFs_status = cudaError_t;
+using cuBLAS_MFs_handle = cudaStream_t;
 
 // BLAS2
 /** Xgemv batched API

@@ -35,18 +35,21 @@ public:
   ScreenedPot V;
   double NewMix;
 
-  AtomType Type();
+  AtomType Type() override;
   /// This function calculates the charge density, hartree and exchange
   /// potentials and places them in pot.
-  void UpdateVHXC();
-  void CalcEnergies(double& kinetic, double& potential, double& hartree, double& XC){assert(0&&"unimplemented");}
-  void Solve();
+  void UpdateVHXC() override;
+  void CalcEnergies(double& kinetic, double& potential, double& hartree, double& XC) override
+  {
+    assert(0 && "unimplemented");
+  }
+  void Solve() override;
   void SolveInit();
   double SolveIter();
-  void Write(IOSectionClass& out);
-  void Read(IOSectionClass& in);
-  void SetGrid(Grid* newGrid);
-  void SetBarePot(Potential* pot);
+  void Write(IOSectionClass& out) override;
+  void Read(IOSectionClass& in) override;
+  void SetGrid(std::shared_ptr<Grid>& newGrid) override;
+  void SetBarePot(Potential* pot) override;
 
   inline double rho(double r) { return ChargeDensity(r); }
 

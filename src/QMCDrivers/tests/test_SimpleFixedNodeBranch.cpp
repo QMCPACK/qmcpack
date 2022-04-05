@@ -38,25 +38,23 @@ public:
   {
     comm_ = comm;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
-
+    emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
   SetupSimpleFixedNodeBranch()
   {
     comm_ = OHMMS::Controller;
     emb_ = std::make_unique<EstimatorManagerBase>(comm_);
-    FakeEstimator* fake_est = new FakeEstimator;
-    emb_->add(fake_est, "fake");
+    emb_->add(std::make_unique<FakeEstimator>(), "fake");
   }
 
   SimpleFixedNodeBranch operator()()
   {
-    mcwc_ = std::make_unique<MCWalkerConfiguration>();
+    const SimulationCell simulation_cell;
+    mcwc_ = std::make_unique<MCWalkerConfiguration>(simulation_cell);
     mcwc_->setName("electrons");
 
-    mcwc_->create(1);
+    mcwc_->create({1});
     mcwc_->R[0][0] = 0.0;
     mcwc_->R[0][1] = 1.0;
     mcwc_->R[0][2] = 2.0;
@@ -72,7 +70,7 @@ public:
 
     SimpleFixedNodeBranch sfnb(tau_, num_global_walkers_);
 
-    sfnb.setEstimatorManager(emb_.get());
+    sfnb.setEstimatorManager(std::move(emb_));
 
     createMyNode(sfnb, valid_dmc_input_sections[valid_dmc_input_dmc_index]);
 

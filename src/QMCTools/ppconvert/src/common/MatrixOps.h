@@ -19,6 +19,8 @@
 #define MATRIX_OPS_H
 #include "Blitz.h"
 
+#include<iostream>  // for std::cerr
+
 void LinearLeastSquares(Array<double, 2>& A, Array<double, 1>& x, Array<double, 1>& b);
 void MatVecProd(Array<double, 2>& A, Array<double, 1>& x, Array<double, 1>& Ax);
 

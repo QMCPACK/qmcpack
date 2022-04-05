@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H
 #define QMCPLUSPLUS_LONGRANGEJASTROW_BREAKUPUTILITY_H
 
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 
 namespace qmcplusplus
 {
@@ -28,7 +28,7 @@ namespace qmcplusplus
  * A Func for LRHandlerTemp.  Four member functions have to be provided
  *
  * - reset(T volume) : reset the normalization factor
- * - operator() (T r, T rinv) : return a value of the original function e.g., 1.0/r
+ * - operator() (T r, T rinv) const : return a value of the original function e.g., 1.0/r
  * - Fk(T k, T rc)
  * - Xk(T k, T rc)
  *
@@ -44,8 +44,8 @@ struct YukawaBreakup
 
   void reset(ParticleSet& ref)
   {
-    NormFactor    = 4.0 * M_PI / ref.Lattice.Volume;
-    T Density     = ref.getTotalNum() / ref.Lattice.Volume;
+    NormFactor    = 4.0 * M_PI / ref.getLattice().Volume;
+    T Density     = ref.getTotalNum() / ref.getLattice().Volume;
     Rs            = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     SqrtRs        = std::sqrt(Rs);
     OneOverSqrtRs = 1.0 / SqrtRs;
@@ -53,7 +53,7 @@ struct YukawaBreakup
 
   void reset(ParticleSet& ref, T rs)
   {
-    NormFactor = 4.0 * M_PI / ref.Lattice.Volume;
+    NormFactor = 4.0 * M_PI / ref.getLattice().Volume;
     //NormFactor*=(rs*rs*rs)/(Rs*Rs*Rs);
     Rs            = rs;
     SqrtRs        = std::sqrt(Rs);
@@ -61,7 +61,7 @@ struct YukawaBreakup
   }
 
 
-  inline T operator()(T r, T rinv)
+  inline T operator()(T r, T rinv) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return SqrtRs - 0.5 * r;
@@ -71,7 +71,7 @@ struct YukawaBreakup
     //return 1.0 / OneOverSqrtRs - 0.5 * r;
   }
 
-  inline T df(T r)
+  inline T df(T r) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return -0.5 + r * OneOverSqrtRs / 3.0;
@@ -82,11 +82,10 @@ struct YukawaBreakup
       return -Rs * rinv * rinv * (1.0 - exponential) + exponential * rinv * SqrtRs;
     }
   }
-  inline T df2(T r) { APP_ABORT("Need to implement df2 in YukawaBreakup"); }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T coskr    = std::cos(k * rc);
     T sinkr    = std::sin(k * rc);
@@ -96,18 +95,18 @@ struct YukawaBreakup
          std::exp(-rc * OneOverSqrtRs) * (coskr - OneOverSqrtRs * sinkr * oneOverK) / (k * k + 1.0 / Rs));
   }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
   /** return RPA value at |k|
     * @param kk |k|^2
     */
-  inline T Uk(T kk) { return NormFactor * Rs / kk; }
+  inline T Uk(T kk) const { return NormFactor * Rs / kk; }
 
   /** return d u(k)/d rs
     *
     * Implement a correct one
     */
-  inline T derivUk(T kk) { return NormFactor / kk; }
+  inline T derivUk(T kk) const { return NormFactor / kk; }
 };
 
 template<class T = double>
@@ -121,10 +120,10 @@ struct DerivRPABreakup
 
   void reset(ParticleSet& ref)
   {
-    //       NormFactor= 4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor= 4.0*M_PI/ref.getLattice().Volume;
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
     NormFactor = 1.0 / ref.getTotalNum();
-    Density    = ref.getTotalNum() / ref.Lattice.Volume;
+    Density    = ref.getTotalNum() / ref.getLattice().Volume;
     Rs         = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     //unpolarized K_f
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
@@ -132,23 +131,23 @@ struct DerivRPABreakup
 
   void reset(ParticleSet& ref, T rs)
   {
-    //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor=4.0*M_PI/ref.getLattice().Volume;
     NormFactor = 1.0 / ref.getTotalNum();
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
     Rs      = rs;
     //unpolarized
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
-  inline T df(T r) { return 0.0; }
+  inline T df(T r) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T y = 0.5 * k / Kf;
     T Sy;
@@ -166,17 +165,17 @@ struct DerivRPABreakup
           (std::pow(1.0 / (Sy * Sy) + 12.0 / (k * k * k * k * Rs * Rs * Rs), 0.5))));
   }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
   /** return RPA value at |k|
   * @param kk |k|^2
   */
-  inline T Uk(T kk) { return NormFactor * Rs / kk; }
+  inline T Uk(T kk) const { return NormFactor * Rs / kk; }
 
   /** return d u(k)/d rs
   *
   * Implement a correct one
   */
-  inline T derivUk(T kk) { return 0.0; }
+  inline T derivUk(T kk) const { return 0.0; }
 };
 
 
@@ -191,10 +190,10 @@ struct RPABreakup
 
   void reset(ParticleSet& ref)
   {
-    //       NormFactor= 4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor= 4.0*M_PI/ref.getLattice().Volume;
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
     NormFactor = 1.0 / ref.getTotalNum();
-    Density    = ref.getTotalNum() / ref.Lattice.Volume;
+    Density    = ref.getTotalNum() / ref.getLattice().Volume;
     Rs         = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     //unpolarized K_f
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
@@ -202,23 +201,23 @@ struct RPABreakup
 
   void reset(ParticleSet& ref, T rs)
   {
-    //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor=4.0*M_PI/ref.getLattice().Volume;
     NormFactor = 1.0 / ref.getTotalNum();
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
     Rs      = rs;
     //unpolarized
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
-  inline T df(T r) { return 0.0; }
+  inline T df(T r) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T y = 0.5 * k / Kf;
     T Sy;
@@ -234,18 +233,18 @@ struct RPABreakup
     return NormFactor * (0.5 * (-1.0 / Sy + std::pow(1.0 / (Sy * Sy) + 12.0 / (k * k * k * k * Rs * Rs * Rs), 0.5)));
   }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
   /** return RPA value at |k|
   * @param kk |k|^2
   */
-  inline T Uk(T kk) { return NormFactor * Rs / kk; }
+  inline T Uk(T kk) const { return NormFactor * Rs / kk; }
 
   /** return d u(k)/d rs
   *
   * Implement a correct one
     */
-  inline T derivUk(T kk) { return 0.0; }
+  inline T derivUk(T kk) const { return 0.0; }
 };
 
 
@@ -266,8 +265,8 @@ struct DerivYukawaBreakup
 
   void reset(ParticleSet& ref)
   {
-    NormFactor            = 4.0 * M_PI / ref.Lattice.Volume;
-    T Density             = ref.getTotalNum() / ref.Lattice.Volume;
+    NormFactor            = 4.0 * M_PI / ref.getLattice().Volume;
+    T Density             = ref.getTotalNum() / ref.getLattice().Volume;
     n2                    = ref.getTotalNum();
     Rs                    = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     SqrtRs                = std::sqrt(Rs);
@@ -275,13 +274,13 @@ struct DerivYukawaBreakup
     OneOverSqrtRs3        = std::pow(OneOverSqrtRs, 3.0);
     OneOverRs             = 1.0 / Rs;
     DerivSecondTaylorTerm = (1.0 / 12.0) * OneOverSqrtRs3;
-    Rc                    = ref.Lattice.LR_rc;
+    Rc                    = ref.getLattice().LR_rc;
   }
 
   void reset(ParticleSet& ref, T rs)
   {
     Rs                    = rs;
-    NormFactor            = 4.0 * M_PI / ref.Lattice.Volume;
+    NormFactor            = 4.0 * M_PI / ref.getLattice().Volume;
     n2                    = ref.getTotalNum();
     SqrtRs                = std::sqrt(Rs);
     OneOverSqrtRs         = 1.0 / SqrtRs;
@@ -291,7 +290,7 @@ struct DerivYukawaBreakup
   }
 
   /** need the df(r)/d(rs) */
-  inline T operator()(T r, T rinv)
+  inline T operator()(T r, T rinv) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return 0.5 * OneOverSqrtRs * (1.0 - r * OneOverSqrtRs);
@@ -302,7 +301,7 @@ struct DerivYukawaBreakup
   }
 
   /** need d(df(r)/d(rs))/dr */
-  inline T df(T r)
+  inline T df(T r) const
   {
     if (r < std::numeric_limits<T>::epsilon())
       return -0.5 * OneOverRs * (1.0 - r * OneOverSqrtRs);
@@ -311,14 +310,13 @@ struct DerivYukawaBreakup
       return -0.5 * OneOverRs * std::exp(-r * OneOverSqrtRs);
     }
   }
-  inline T df2(T r) { APP_ABORT("Need to implement df2 in DerivYukawaBreakup"); }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
   /** integral from kc to infinity */
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T Rc       = rc;
     T coskr    = std::cos(k * Rc);
@@ -344,7 +342,7 @@ struct EPRPABreakup
   void reset(ParticleSet& ref)
   {
     NormFactor = 1.0 / ref.getTotalNum();
-    Density    = ref.getTotalNum() / ref.Lattice.Volume;
+    Density    = ref.getTotalNum() / ref.getLattice().Volume;
     Rs         = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     //unpolarized K_f
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
@@ -352,23 +350,23 @@ struct EPRPABreakup
 
   void reset(ParticleSet& ref, T rs)
   {
-    //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor=4.0*M_PI/ref.getLattice().Volume;
     NormFactor = 1.0 / ref.getTotalNum();
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
     Rs      = rs;
     //unpolarized
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
-  inline T df(T r) { return 0.0; }
+  inline T df(T r) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T y = 0.5 * k / Kf;
     T Sy;
@@ -384,19 +382,20 @@ struct EPRPABreakup
     return -0.5 * NormFactor * val * std::pow(1.0 / (Sy * Sy) + val, -0.5);
   }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
   /** return RPA value at |k|
   * @param kk |k|^2
    */
-  inline T Uk(T kk) { return NormFactor * Rs / kk; }
+  inline T Uk(T kk) const { return NormFactor * Rs / kk; }
 
   /** return d u(k)/d rs
   *
   * Implement a correct one
    */
-  inline T derivUk(T kk) { return 0.0; }
+  inline T derivUk(T kk) const { return 0.0; }
 };
+
 template<class T = double>
 struct derivEPRPABreakup
 {
@@ -409,7 +408,7 @@ struct derivEPRPABreakup
   void reset(ParticleSet& ref)
   {
     NormFactor = 1.0 / ref.getTotalNum();
-    Density    = ref.getTotalNum() / ref.Lattice.Volume;
+    Density    = ref.getTotalNum() / ref.getLattice().Volume;
     Rs         = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     //unpolarized K_f
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
@@ -417,23 +416,23 @@ struct derivEPRPABreakup
 
   void reset(ParticleSet& ref, T rs)
   {
-    //       NormFactor=4.0*M_PI/ref.Lattice.Volume;
+    //       NormFactor=4.0*M_PI/ref.getLattice().Volume;
     NormFactor = 1.0 / ref.getTotalNum();
     //       NormFactor=4.0*M_PI/ref.getTotalNum();
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
     Rs      = rs;
     //unpolarized
     Kf = std::pow(2.25 * M_PI, 1.0 / 3.0) / Rs;
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
-  inline T df(T r) { return 0.0; }
+  inline T df(T r) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T y = 0.5 * k / Kf;
     T Sy;
@@ -449,38 +448,38 @@ struct derivEPRPABreakup
     T uk  = val * std::pow(1.0 / (Sy * Sy) + val, -0.5);
     return -0.5 * NormFactor * (uk / Rs) * (1.0 - 0.5 * val / (1.0 / (Sy * Sy) + val));
   }
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
   /** return RPA value at |k|
   * @param kk |k|^2
    */
-  inline T Uk(T kk) { return NormFactor * Rs / kk; }
+  inline T Uk(T kk) const { return NormFactor * Rs / kk; }
 
   /** return d u(k)/d rs
          *
          * Implement a correct one
    */
-  inline T derivUk(T kk) { return 0.0; }
+  inline T derivUk(T kk) const { return 0.0; }
 };
 
 template<typename T>
 struct ShortRangePartAdapter : OptimizableFunctorBase
 {
-  typedef LRHandlerBase HandlerType;
+  using HandlerType = LRHandlerBase;
 
   explicit ShortRangePartAdapter(HandlerType* inhandler) : Uconst(0), myHandler(inhandler) {}
 
-  OptimizableFunctorBase* makeClone() const { return new ShortRangePartAdapter<T>(*this); }
+  OptimizableFunctorBase* makeClone() const override { return new ShortRangePartAdapter<T>(*this); }
 
-  inline void reset() {}
+  inline void reset() override {}
   inline void setRmax(real_type rm) { Uconst = myHandler->evaluate(rm, 1.0 / rm); }
   inline real_type evaluate(real_type r) { return f(r); }
-  inline real_type f(real_type r) { return myHandler->evaluate(r, 1.0 / r) - Uconst; }
-  inline real_type df(real_type r) { return myHandler->srDf(r, 1.0 / r); }
-  void checkInVariables(opt_variables_type& active) {}
-  void checkOutVariables(const opt_variables_type& active) {}
-  void resetParameters(const opt_variables_type& optVariables) {}
-  bool put(xmlNodePtr cur) { return true; }
+  inline real_type f(real_type r) override { return myHandler->evaluate(r, 1.0 / r) - Uconst; }
+  inline real_type df(real_type r) override { return myHandler->srDf(r, 1.0 / r); }
+  void checkInVariables(opt_variables_type& active) override {}
+  void checkOutVariables(const opt_variables_type& active) override {}
+  void resetParameters(const opt_variables_type& optVariables) override {}
+  bool put(xmlNodePtr cur) override { return true; }
   real_type Uconst;
   HandlerType* myHandler;
 };
@@ -503,11 +502,11 @@ struct RPABFeeBreakup
   // assumes 3D here, fix
   void reset(ParticleSet& ref)
   {
-    volume = ref.Lattice.Volume;
+    volume = ref.getLattice().Volume;
     nspin  = ref.groups();
     for (int i = 0; i < nspin; ++i)
       nppss[i] = ref.last(i) - ref.first(i);
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
     Rs      = std::pow(3.0 / (4.0 * M_PI * Density), 1.0 / 3.0);
     nelec   = ref.getTotalNum();
     hbs2m   = 0.5;
@@ -524,8 +523,8 @@ struct RPABFeeBreakup
   // assumes 3D here, fix
   void reset(ParticleSet& ref, T rs)
   {
-    Density = ref.getTotalNum() / ref.Lattice.Volume;
-    volume  = ref.Lattice.Volume;
+    Density = ref.getTotalNum() / ref.getLattice().Volume;
+    volume  = ref.getLattice().Volume;
     nspin   = ref.groups();
     for (int i = 0; i < nspin; ++i)
       nppss[i] = ref.last(i) - ref.first(i);
@@ -543,13 +542,13 @@ struct RPABFeeBreakup
   }
 
 
-  inline T operator()(T r, T rinv) { return 0.0; }
+  inline T operator()(T r, T rinv) const { return 0.0; }
 
-  inline T df(T r) { return 0.0; }
+  inline T df(T r) const { return 0.0; }
 
-  inline T Fk(T k, T rc) { return -Xk(k, rc); }
+  inline T Fk(T k, T rc) const { return -Xk(k, rc); }
 
-  inline T Xk(T k, T rc)
+  inline T Xk(T k, T rc) const
   {
     T u    = urpa(k) * volume / nelec;
     T eq   = k * k * hbs2m;
@@ -593,20 +592,20 @@ struct RPABFeeBreakup
     return yq / volume;
   }
 
-  inline T integrate_r2(T rc) { return 0.0; }
+  inline T integrate_r2(T rc) const { return 0.0; }
 
   /** return RPA value at |k|
   * @param kk |k|^2
   */
-  inline T Uk(T kk) { return 0.0; }
+  inline T Uk(T kk) const { return 0.0; }
 
   /** return d u(k)/d rs
   *
   * Implement a correct one
     */
-  inline T derivUk(T kk) { return 0.0; }
+  inline T derivUk(T kk) const { return 0.0; }
 
-  T urpa(T q)
+  T urpa(T q) const
   {
     T a = 0.0, vkbare;
     if (q > 0.0)
@@ -618,7 +617,7 @@ struct RPABFeeBreakup
   }
 
   // mmorales: taken from bopimc (originally by M Holzmann)
-  T Dlindhard(T q, T w)
+  T Dlindhard(T q, T w) const
   {
     T xd1, xd2, small = 0.00000001, xdummy, rq1, rq2;
     T res = 0.0;
@@ -678,7 +677,7 @@ struct RPABFeeBreakup
   }
 
   // mmorales: taken from bopimc (originally by M Holzmann)
-  T Dlindhardp(T q, T w)
+  T Dlindhardp(T q, T w) const
   {
     T xd1, xd2, small = 0.00000001, xdummy, rq1, rq2;
     T res = 0.0;

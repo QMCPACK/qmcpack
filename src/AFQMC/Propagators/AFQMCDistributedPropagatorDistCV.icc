@@ -90,7 +90,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   StaticMatrix vrecv_buff(vhs_ext, buffer_manager.get_generator().template get_allocator<ComplexType>());
   SPCMatrix_ref vrecv(sp_pointer(make_device_ptr(vrecv_buff.origin())), vhs_ext);
 
-  { // using scope to control lifetime of StaticArrays, avoiding unnecesary buffer space
+  { // using scope to control lifetime of StaticArrays, avoiding unnecessary buffer space
 
     Static3Tensor globalMFfactor({nnodes, nsteps, nwalk},
                                  buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -146,7 +146,6 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
 
     // are we back propagating?
     int bp_step = wset.getBPPos(), bp_max = wset.NumBackProp();
-    bool realloc(false);
     int xx(0);
     if (bp_step >= 0 && bp_step < bp_max)
     {
@@ -154,8 +153,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       size_t m_(globalnCV * nwalk * nsteps * 2);
       if (bpX.num_elements() < m_)
       {
-        realloc = true;
-        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX     = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -260,7 +258,7 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
-    // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
+    // after the wait, vrecv ( and by extension vHS3D ) has the final vHS for the local walkers
     AFQMCTimers[vHS_comm_overhead_timer].get().start();
     MPI_Wait(&req_vrecv, &st);
     MPI_Wait(&req_vsend, &st);
@@ -505,7 +503,6 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
 
     // are we back propagating?
     int bp_step = wset.getBPPos(), bp_max = wset.NumBackProp();
-    bool realloc(false);
     int xx(0);
     if (bp_step >= 0 && bp_step < bp_max)
     {
@@ -513,8 +510,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       size_t m_(globalnCV * nwalk * nsteps);
       if (bpX.num_elements() < m_)
       {
-        realloc = true;
-        bpX     = mpi3SPCVector(iextensions<1u>{m_}, shared_allocator<SPComplexType>{TG.TG_local()});
+        bpX     = mpi3SPCVector(iextensions<1u>(m_), shared_allocator<SPComplexType>{TG.TG_local()});
         if (TG.TG_local().root())
           fill_n(bpX.origin(), bpX.num_elements(), SPComplexType(0.0));
       }
@@ -631,7 +627,7 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
       AFQMCTimers[vHS_comm_overhead_timer].get().stop();
     }
 
-    // after the wait, vrecv ( and by extention vHS3D ) has the final vHS for the local walkers
+    // after the wait, vrecv ( and by extension vHS3D ) has the final vHS for the local walkers
     AFQMCTimers[vHS_comm_overhead_timer].get().start();
 
     // store fields in walker

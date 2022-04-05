@@ -10,7 +10,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-
 /**@file ExampleHeBuilder.h
  *@brief Example builder for simple He wavefunction.
  */
@@ -28,12 +27,12 @@ namespace qmcplusplus
 class ExampleHeBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  ExampleHeBuilder(Communicate* comm, ParticleSet& p, PtclPoolType& psets);
+  ExampleHeBuilder(Communicate* comm, ParticleSet& p, const PSetMap& psets);
 
-  WaveFunctionComponent* buildComponent(xmlNodePtr cur) override;
+  std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
-  PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
   ParticleSet& els;
 };
 

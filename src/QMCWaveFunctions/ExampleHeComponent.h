@@ -29,8 +29,8 @@ public:
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
       : WaveFunctionComponent("ExampleHeComponent"),
         ions_(ions),
-        my_table_ee_idx_(els.addTable(els)),
-        my_table_ei_idx_(els.addTable(ions)){};
+        my_table_ee_idx_(els.addTable(els, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+        my_table_ei_idx_(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)){};
 
   using OptVariablesType = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
@@ -43,8 +43,8 @@ public:
   void reportStatus(std::ostream& os) override {}
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
 
@@ -68,7 +68,7 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
-  WaveFunctionComponentPtr makeClone(ParticleSet& tpq) const override;
+  std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tpq) const override;
 
   bool put(xmlNodePtr cur);
 

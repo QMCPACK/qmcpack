@@ -114,6 +114,59 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
+.. _batched_drivers:
+
+Batched drivers
+---------------
+
+Under the Exascale Computing Project effort a new set of QMC drivers was developed
+to eliminate the divergence of legacy CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
+The divergence came from the the fact that the CPU code path favors executing all the compute tasks within a step
+for one walker and then advance walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
+In this way, walkers are not synchronized with each other and maximal throughout can be achieved on CPU.
+The GPU code path favors executing the same compute task over all the walkers together to maximize GPU throughput.
+This compute dispatch pattern minimizes the overhead of dispatching computation and host-device data transfer.
+However, the legacy GPU code path only leverages the OpenMP main host thread for handling
+all the interaction between the host and GPUs and limit the kernel dispatch capability.
+In brief, the CPU code path handles computation with a walker batch size of one and many batches
+while the GPU code path uses only one batch containing all the walkers.
+The new drivers that implement this flexible batching scheme are called "batched drivers".
+
+The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
+A crowd is a subset of the walkers that are operated on as as single batch.
+Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
+Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
+In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
+Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
+in a way that is not feasible with the legacy GPU implementation.
+
+For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
+
+.. _transition_guide:
+
+Transition from classic drivers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
+There are notable changes in the driver input section when moving from classic drivers to batched drivers:
+
+  - ``walkers`` is not supported in any batched driver inputs.
+    Instead, ``walkers_per_rank`` and ``total_walkers`` specify the population at the start of a driver run.
+
+  - ``crowds`` can added in batched drivers to specify the number of crowds.
+
+  - If a classic driver input section contains ``walkers`` equals 1, the same effect can be achieved by
+    omitting the specification of ``walkers_per_rank``, ``total_walkers`` or ``crowds`` in batched drivers.
+
+  - The ``walkers_per_rank``, ``total_walkers`` or ``crowds`` parameters are optional.
+    See driver-specific parameter additional information below about default values.
+
+  - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is likely needed to maximize GPU throughput,
+    just like tuning ``walkers`` in the classic drivers.
+
+  - Only particle-by-particle move is supported. No all-particle move support.
+
 .. _vmc:
 
 Variational Monte Carlo
@@ -152,6 +205,8 @@ Variational Monte Carlo
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 Additional information:
@@ -195,7 +250,7 @@ Additional information:
   acceptance ratio should be close to 50% for an efficient
   simulation.
 
-- ``samples`` Seperate from conventional energy and other
+- ``samples`` Separate from conventional energy and other
   property measurements, samples refers to storing whole electron
   configurations in memory ("walker samples") as would be needed by subsequent
   wavefunction optimization or DMC steps. *A standard VMC run to
@@ -229,6 +284,8 @@ Additional information:
 - ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
 An example VMC section for a simple VMC run:
 
 ::
@@ -261,6 +318,8 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
+
+.. _vmc_batch:
 
 ``vmc_batch`` driver (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -296,6 +355,11 @@ The following is an example of VMC section storing configurations (walker sample
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
 
 Additional information:
 
@@ -348,6 +412,11 @@ Additional information:
   from scratch: =1 by default when using mixed precision. =0 (no
   recompute) by default when not using mixed precision. Recomputing
   introduces a performance penalty dependent on system size.
+
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
+- ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 An example VMC section for a simple ``vmc_batch`` run:
 
@@ -837,7 +906,7 @@ Parameters for descent are shown in the table below.
   +---------------------+--------------+--------------------------------+-------------+-----------------------------------------------------------------+
 
 
-These descent algortihms have been extended to the optimization of the same excited state functional as the adaptive LM. :cite:`Otis2020`
+These descent algorithms have been extended to the optimization of the same excited state functional as the adaptive LM. :cite:`Otis2020`
 This also allows the hybrid optimizer discussed below to be applied to excited states.
 The relevant parameters are the same as for targeting excited states with the adaptive optimizer above.
 
@@ -1143,6 +1212,26 @@ the values found in the \*.sXXX.opt.h5 file. Be careful to keep the pair
 of optimized CI coefficients and Jastrow coefficients together to avoid
 inconsistencies.
 
+Output of intermediate values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the following parameters to the linear optimizers to output intermediate values such as the overlap and Hamiltonian matrices.
+
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | **Name**                | **Datatype** | **Values**  | **Default** | **Description**                                  |
+  +=========================+==============+=============+=============+==================================================+
+  | ``output_matrices_csv`` | text         | yes, no     | no          |  Output linear method matrices to CSV files      |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``output_matrices_hdf`` | text         | yes, no     | no          |  Output linear method matrices to HDF file       |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``freeze_parameters``   | text         | yes, no     | no          |  Do not update parameters between iterations     |
+  +-------------------------+--------------+-------------+-------------+--------------------------------------------------+
+
+  The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
+
+  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
+
+
 .. _dmc:
 
 Diffusion Monte Carlo
@@ -1184,6 +1273,8 @@ parameters:
   | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``spinMass``                   | real         | :math:`> 0`             | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
 
 .. centered:: Table 9 Main DMC input parameters.
@@ -1276,6 +1367,7 @@ Additional information:
    of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}` where 
    :math:`\tau` is the normal spatial timestep and :math:`\mu_s` is the value of the spin mass. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
 -  ``energyUpdateInterval``: The default is to update the trial energy
    at every step. Otherwise the trial energy is updated every
@@ -1475,6 +1567,8 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
     <parameter name="timestep">0.005</parameter>
   </qmc>
 
+.. _dmc_batch:
+
 ``dmc_batch`` driver (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1517,6 +1611,11 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
   | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
   +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
+  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
@@ -1530,6 +1629,11 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
   and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
   ``walkers_per_rank`` times the number MPI ranks.
+
+- ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
+
+- ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
+  of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver

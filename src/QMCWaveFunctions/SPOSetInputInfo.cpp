@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-typedef QMCTraits::RealType RealType;
+using RealType = QMCTraits::RealType;
 
 const int inone          = std::numeric_limits<int>::min();
 const RealType rnone     = std::numeric_limits<RealType>::max();
@@ -261,7 +261,7 @@ void SPOSetInputInfo::report(const std::string& pad)
 }
 
 
-SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const std::vector<SPOSetInfo*>& states_vec)
+SPOSetInputInfo::indices_t& SPOSetInputInfo::get_indices(const std::vector<std::unique_ptr<SPOSetInfo>>& states_vec)
 {
   if (!all_indices_computed)
   {

@@ -33,25 +33,25 @@ namespace qmcplusplus
 class QMCCostFunctionCUDA : public QMCCostFunctionBase, public CloneManager
 {
 public:
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
 
   ///Constructor.
   QMCCostFunctionCUDA(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
-  ~QMCCostFunctionCUDA();
+  ~QMCCostFunctionCUDA() override;
 
-  void getConfigurations(const std::string& aroot);
-  void checkConfigurations();
-  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0);
-  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right);
+  void getConfigurations(const std::string& aroot) override;
+  void checkConfigurations() override;
+  void GradCost(std::vector<Return_rt>& PGradient, const std::vector<Return_rt>& PM, Return_rt FiniteDiff = 0) override;
+  Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override;
 
 protected:
   using CTS = CUDAGlobalTypes;
   Matrix<Return_rt> Records;
-  typedef TrialWaveFunction::RealMatrix_t RealMatrix_t;
-  typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
-  typedef TrialWaveFunction::GradMatrix_t GradMatrix_t;
+  using RealMatrix_t = TrialWaveFunction::RealMatrix_t;
+  using ValueMatrix  = TrialWaveFunction::ValueMatrix;
+  using GradMatrix   = TrialWaveFunction::GradMatrix;
 
   ///Hamiltonians that depend on the optimization: KE
   HamiltonianRef H_KE;
@@ -60,16 +60,16 @@ protected:
   std::vector<std::vector<Return_rt>> TempDerivRecords;
   std::vector<std::vector<Return_rt>> TempHDerivRecords;
   RealMatrix_t LogPsi_Derivs, LocE_Derivs;
-  ValueMatrix_t d2logPsi_opt, d2logPsi_fixed;
-  GradMatrix_t dlogPsi_opt, dlogPsi_fixed;
+  ValueMatrix d2logPsi_opt, d2logPsi_fixed;
+  GradMatrix dlogPsi_opt, dlogPsi_fixed;
 
   std::vector<Matrix<Return_rt>*> RecordsOnNode;
   std::vector<Matrix<Return_rt>*> DerivRecords;
   std::vector<Matrix<Return_rt>*> HDerivRecords;
 
   Return_rt CSWeight;
-  void resetPsi(bool final_reset = false);
-  Return_rt correlatedSampling(bool needDerivs);
+  void resetPsi(bool final_reset = false) override;
+  EffectiveWeight correlatedSampling(bool needDerivs) override;
 };
 } // namespace qmcplusplus
 #endif

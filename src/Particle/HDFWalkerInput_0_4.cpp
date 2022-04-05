@@ -13,7 +13,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Particle/MCWalkerConfiguration.h"
 #include "HDFWalkerInput_0_4.h"
 #include "hdf/hdf_archive.h"
 #include "mpi/mpi_datatype.h"
@@ -22,8 +21,11 @@
 
 namespace qmcplusplus
 {
-HDFWalkerInput_0_4::HDFWalkerInput_0_4(MCWalkerConfiguration& W, Communicate* c, const HDFVersion& v)
-    : targetW(W), myComm(c), cur_version(0, 4)
+HDFWalkerInput_0_4::HDFWalkerInput_0_4(WalkerConfigurations& wc_list,
+                                       size_t num_ptcls,
+                                       Communicate* c,
+                                       const HDFVersion& v)
+    : wc_list_(wc_list), num_ptcls_(num_ptcls), myComm(c), cur_version(0, 4)
 {
   i_info.version = v;
 }
@@ -147,9 +149,9 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
     return false;
   }
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
   Buffer_t posin;
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   posin.resize(dims[0] * dims[1] * dims[2]);
   hin.readSlabReshaped(posin, dims, hdf::walkers);
 
@@ -166,32 +168,17 @@ bool HDFWalkerInput_0_4::read_hdf5(std::string h5name)
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
   nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
   {
-    int nitems    = targetW.getTotalNum() * OHMMS_DIM;
-    int curWalker = targetW.getActiveWalkers();
-    targetW.createWalkers(nw_in);
+    const int nitems    = num_ptcls_ * OHMMS_DIM;
+    const int curWalker = wc_list_.getActiveWalkers();
+    wc_list_.createWalkers(nw_in, num_ptcls_);
     Buffer_t::iterator it(posin.begin() + woffsets[myComm->rank()] * nitems);
     for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
     {
-      copy(it, it + nitems, get_first_address(targetW[iw]->R));
+      copy(it, it + nitems, get_first_address(wc_list_[iw]->R));
       it += nitems;
     }
   }
 
-  //{
-  //  char fname[128];
-  //  sprintf(fname,"%s.p%03d.xyz",FileName.c_str(),myComm->rank());
-  //  std::ofstream fout(fname);
-  //  MCWalkerConfiguration::iterator it = targetW.begin();
-  //  int iw=0;
-  //  while(it != targetW.end())
-  //  {
-  //    fout << iw << std::endl;
-  //    MCWalkerConfiguration::Walker_t& thisWalker(**it);
-  //    for(int iat=0; iat<targetW.getTotalNum(); ++iat)
-  //      fout << thisWalker.R[iat] << std::endl;
-  //    ++it; ++iw;
-  //  }
-  //}
   return true;
 }
 
@@ -229,21 +216,21 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
     return false;
   }
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
 
-  int np1 = myComm->size() + 1;
+  const int np1 = myComm->size() + 1;
   std::vector<int> counts(myComm->size()), woffsets(np1, 0);
   FairDivideLow(nw_in, myComm->size(), woffsets);
 
-  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
-  int nitems = targetW.getTotalNum() * OHMMS_DIM;
+  const int nitems = num_ptcls_ * OHMMS_DIM;
   for (int i = 0; i < woffsets.size(); ++i)
     woffsets[i] *= nitems;
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
 
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
   Buffer_t posin(nw_in * nitems), posout(counts[myComm->rank()]);
 
   if (myComm->rank() == 0)
@@ -256,12 +243,12 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(std::string h5name)
 
   mpi::scatterv(*myComm, posin, posout, counts, woffsets);
 
-  int curWalker = targetW.getActiveWalkers();
-  targetW.createWalkers(nw_loc);
+  const int curWalker = wc_list_.getActiveWalkers();
+  wc_list_.createWalkers(nw_loc, num_ptcls_);
   Buffer_t::iterator it(posout.begin());
   for (int i = 0, iw = curWalker; i < nw_loc; ++i, ++iw)
   {
-    copy(it, it + nitems, get_first_address(targetW[iw]->R));
+    copy(it, it + nitems, get_first_address(wc_list_[iw]->R));
     it += nitems;
   }
   return true;
@@ -325,9 +312,9 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
   int found_group = hin.is_group(hdf::main_state);
   hin.push(hdf::main_state);
 
-  typedef std::vector<QMCTraits::RealType> Buffer_t;
+  using Buffer_t = std::vector<QMCTraits::RealType>;
   Buffer_t posin;
-  std::array<size_t, 3> dims{nw_in, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<size_t, 3> dims{nw_in, num_ptcls_, OHMMS_DIM};
 
   if (woffsets.size() != myComm->size() + 1)
   {
@@ -335,9 +322,9 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
     FairDivideLow(nw_in, myComm->size(), woffsets);
   }
 
-  size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
+  const size_t nw_loc = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
 
-  std::array<size_t, 3> counts{nw_loc, targetW.getTotalNum(), OHMMS_DIM};
+  std::array<size_t, 3> counts{nw_loc, num_ptcls_, OHMMS_DIM};
   std::array<size_t, 3> offsets{static_cast<size_t>(woffsets[myComm->rank()]), 0, 0};
   posin.resize(nw_loc * dims[1] * dims[2]);
 
@@ -347,13 +334,13 @@ bool HDFWalkerInput_0_4::read_phdf5(std::string h5name)
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
   nw_in = woffsets[myComm->rank() + 1] - woffsets[myComm->rank()];
   {
-    int nitems    = targetW.getTotalNum() * OHMMS_DIM;
-    int curWalker = targetW.getActiveWalkers();
-    targetW.createWalkers(nw_in);
+    const int nitems    = num_ptcls_ * OHMMS_DIM;
+    const int curWalker = wc_list_.getActiveWalkers();
+    wc_list_.createWalkers(nw_in, num_ptcls_);
     Buffer_t::iterator it(posin.begin());
     for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
     {
-      copy(it, it + nitems, get_first_address(targetW[iw]->R));
+      copy(it, it + nitems, get_first_address(wc_list_[iw]->R));
       it += nitems;
     }
   }

@@ -21,6 +21,7 @@
 #include "Message/Communicate.h"
 #include "PWRealOrbitalSet.h"
 #include "Numerics/MatrixOperators.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -30,10 +31,10 @@ PWRealOrbitalSet::~PWRealOrbitalSet()
     delete myBasisSet;
 }
 
-SPOSet* PWRealOrbitalSet::makeClone() const
+std::unique_ptr<SPOSet> PWRealOrbitalSet::makeClone() const
 {
-  PWRealOrbitalSet* myclone = new PWRealOrbitalSet(*this);
-  myclone->myBasisSet       = new PWBasis(*myBasisSet);
+  auto myclone        = std::make_unique<PWRealOrbitalSet>(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
   return myclone;
 }
 
@@ -92,7 +93,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb
   }
 }
 
-void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC, myBasisSet->Zv, tempPsi.data());
@@ -102,9 +103,9 @@ void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_
 
 void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
                                    int iat,
-                                   ValueVector_t& psi,
-                                   GradVector_t& dpsi,
-                                   ValueVector_t& d2psi)
+                                   ValueVector& psi,
+                                   GradVector& dpsi,
+                                   ValueVector& d2psi)
 {
   myBasisSet->evaluateAll(P, iat);
   MatrixOperators::product(CC, myBasisSet->Z, Temp);
@@ -128,9 +129,9 @@ void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
 void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                             int first,
                                             int last,
-                                            ValueMatrix_t& logdet,
-                                            GradMatrix_t& dlogdet,
-                                            ValueMatrix_t& d2logdet)
+                                            ValueMatrix& logdet,
+                                            GradMatrix& dlogdet,
+                                            ValueMatrix& d2logdet)
 {
   for (int iat = first, i = 0; iat < last; iat++, i++)
   {
@@ -139,8 +140,8 @@ void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
     const ComplexType* restrict tptr = Temp.data();
     for (int j = 0; j < OrbitalSetSize; j++, tptr += PW_MAXINDEX)
     {
-      convert(tptr[PW_VALUE], logdet(i, j));
-      convert(tptr[PW_LAP], d2logdet(i, j));
+      convertToReal(tptr[PW_VALUE], logdet(i, j));
+      convertToReal(tptr[PW_LAP], d2logdet(i, j));
 #if OHMMS_DIM == 3
       dlogdet(i, j) = GradType(tptr[PW_GRADX].real(), tptr[PW_GRADY].real(), tptr[PW_GRADZ].real());
 #elif OHMMS_DIM == 2

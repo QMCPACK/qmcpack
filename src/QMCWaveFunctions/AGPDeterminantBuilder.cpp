@@ -16,15 +16,14 @@
 /**@file
  *@brief definition of three-body jastrow of Geminal functions
  */
-#include "QMCWaveFunctions/AGPDeterminant.h"
 #include "AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
-AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
+AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PSetMap& pset)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset)
 {}
 
 template<class BasisBuilderT>
@@ -35,16 +34,16 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   cur                                            = cur->xmlChildrenNode;
   while (cur != NULL)
   {
-    std::string cname((const char*)(cur->name));
+    std::string cname(castXMLCharToChar(cur->name));
     if (cname == "coefficient" || cname == "coefficients")
     {
-      if (agpDet == 0)
+      if (agpDet == nullptr)
       {
         int nup = targetPtcl.first(1), ndown = 0;
         if (targetPtcl.groups() > 1)
           ndown = targetPtcl.first(2) - nup;
         basisSet->resize(nup + ndown);
-        agpDet = new AGPDeterminant(basisSet);
+        agpDet = std::make_unique<AGPDeterminant>(basisSet);
         agpDet->resize(nup, ndown);
       }
       int offset      = 1;
@@ -93,17 +92,17 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   return true;
 }
 
-WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
+std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
 {
   if (agpDet)
   {
     APP_ABORT("  AGPDeterminantBuilder::put exits. AGPDeterminant has been already created.\n");
-    return nullptr;
+    return std::unique_ptr<AGPDeterminant>();
   }
   app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << std::endl;
   xmlNodePtr curRoot = cur;
   bool success       = true;
-  std::string cname, tname;
+  std::string tname;
   xmlNodePtr cPtr = NULL;
   xmlNodePtr uPtr = NULL;
   OhmmsAttributeSet oAttrib;
@@ -113,8 +112,8 @@ WaveFunctionComponent* AGPDeterminantBuilder::buildComponent(xmlNodePtr cur)
   cur = cur->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
-if (cname.find("coeff") < cname.size())
+    std::string cname(getNodeName(cur));
+    if (cname.find("coeff") < cname.size())
     {
       cPtr = cur;
     }
@@ -132,9 +131,9 @@ if (cname.find("coeff") < cname.size())
     APP_ABORT(err_msg.str());
     return nullptr;
   }
-  if (mySPOSetBuilderFactory == 0)
+  if (!mySPOSetBuilderFactory)
   {
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
+    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
   // mmorales: this needs to be fixed after changes to BasisSetfactory
@@ -144,7 +143,7 @@ if (cname.find("coeff") < cname.size())
   if (targetPtcl.groups() > 1)
     ndown = targetPtcl.first(2) - nup;
   myBasisSet->resize(nup + ndown);
-  agpDet = new AGPDeterminant(myBasisSet);
+  agpDet = std::make_unique<AGPDeterminant>(myBasisSet);
   agpDet->resize(nup, ndown);
   //set Lambda: possible to move to AGPDeterminant
   int offset      = 1;
@@ -182,7 +181,7 @@ if (cname.find("coeff") < cname.size())
     app_log() << agpDet->LambdaUP << std::endl;
   }
   if (agpDet)
-    return agpDet;
+    return std::move(agpDet);
 
   APP_ABORT("failed to create an AGP determinant!\n");
   return nullptr;

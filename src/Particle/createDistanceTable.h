@@ -15,11 +15,10 @@
 #define QMCPLUSPLUS_DISTANCETABLE_H
 
 #include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
 
 namespace qmcplusplus
 {
-/** Class to manage multiple DistanceTableData objects.
+/** Class to manage multiple DistanceTable objects.
  *
  * \date  2008-09-19
  * static data members are removed. DistanceTable::add functions
@@ -31,43 +30,43 @@ namespace qmcplusplus
  * DistanceTable in an application and the data are shared by many objects.
  * Note that static data members and functions are used
  * (based on singleton and factory patterns).
- *\todo DistanceTable should work as a factory, as well, to instantiate DistanceTableData
+ *\todo DistanceTable should work as a factory, as well, to instantiate DistanceTable
  * subject to different boundary conditions.
  * Lattice/CrystalLattice.h and Lattice/CrystalLattice.cpp can be owned by DistanceTable
  * to generically control the crystalline structure.
  */
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTableAA(ParticleSet& s, std::ostream& description);
-DistanceTableData* createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAA(ParticleSet& s, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAAOMPTarget(ParticleSet& s, std::ostream& description);
 
-inline DistanceTableData* createDistanceTable(ParticleSet& s, std::ostream& description)
+inline std::unique_ptr<DistanceTable> createDistanceTable(ParticleSet& s, std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
-#if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
     return createDistanceTableAAOMPTarget(s, description);
   else
-#endif
     return createDistanceTableAA(s, description);
 }
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
-DistanceTableData* createDistanceTableABOMPTarget(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableAB(const ParticleSet& s, ParticleSet& t, std::ostream& description);
+std::unique_ptr<DistanceTable> createDistanceTableABOMPTarget(const ParticleSet& s,
+                                                              ParticleSet& t,
+                                                              std::ostream& description);
 
-inline DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, std::ostream& description)
+inline std::unique_ptr<DistanceTable> createDistanceTable(const ParticleSet& s,
+                                                          ParticleSet& t,
+                                                          std::ostream& description)
 {
   // during P-by-P move, the cost of single particle evaluation of distance tables
   // is determined by the number of source particles.
   // Thus the implementation selection is determined by the source particle set.
-#if defined(ENABLE_OFFLOAD)
   if (s.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD)
     return createDistanceTableABOMPTarget(s, t, description);
   else
-#endif
     return createDistanceTableAB(s, t, description);
 }
 

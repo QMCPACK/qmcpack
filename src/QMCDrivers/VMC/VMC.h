@@ -26,10 +26,10 @@ class VMC : public QMCDriver, public CloneManager
 public:
   /// Constructor.
   VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
-  bool run();
-  bool put(xmlNodePtr cur);
-  QMCRunType getRunType() { return QMCRunType::VMC; }
-  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
+  QMCRunType getRunType() override { return QMCRunType::VMC; }
+  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
 private:
   int prevSteps;
   int prevStepsBetweenSamples;

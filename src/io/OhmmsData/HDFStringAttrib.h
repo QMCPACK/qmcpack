@@ -23,12 +23,12 @@ namespace qmcplusplus
 template<>
 struct HDFAttribIO<std::string> : public HDFAttribIOBase
 {
-  typedef std::string ArrayType_t;
+  using ArrayType_t = std::string;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     hid_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.size());
@@ -40,7 +40,7 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
     H5Dclose(dataset);
   }
 
-  inline void read(hid_t grp, const char* name)
+  inline void read(hid_t grp, const char* name) override
   {
     // Turn off error printing
     H5E_auto2_t func;
@@ -77,18 +77,17 @@ struct HDFAttribIO<std::string> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
 {
-  typedef std::ostringstream Data_t;
+  using Data_t = std::ostringstream;
   Data_t& ref;
 
   HDFAttribIO<Data_t>(Data_t& a) : ref(a) {}
 
-  inline void write(hid_t grp, const char* name)
+  inline void write(hid_t grp, const char* name) override
   {
     herr_t status = H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
-    status        = H5Gget_objinfo(grp, name, 0, NULL);
     hsize_t str80 = H5Tcopy(H5T_C_S1);
     H5Tset_size(str80, ref.str().size());
-    if (status == 0)
+    if (H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t dataset = H5Dopen(grp, name);
       hid_t ret     = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.str().c_str());
@@ -105,7 +104,7 @@ struct HDFAttribIO<std::ostringstream> : public HDFAttribIOBase
     }
   }
 
-  inline void read(hid_t grp, const char* name) {}
+  inline void read(hid_t grp, const char* name) override {}
 };
 } // namespace qmcplusplus
 #endif

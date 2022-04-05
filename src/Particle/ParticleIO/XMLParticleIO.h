@@ -48,7 +48,7 @@ public:
   */
 
   /** add ParticleAttrib<AT>
-   * @tparm AT any element type, int, double, float ...
+   * @tparam AT any element type, int, double, float ...
    */
   template<typename AT>
   int add(ParticleAttrib<AT>& pa)
@@ -79,7 +79,7 @@ public:
   template<typename AT>
   ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>* pa)
   {
-    typedef ParticleAttrib<AT> attrib_type;
+    using attrib_type                                = ParticleAttrib<AT>;
     std::map<std::string, OhmmsObject*>::iterator it = AttribList.find(oname);
     if (it != AttribList.end())
     {
@@ -107,37 +107,32 @@ public:
 
 class XMLParticleParser : public ParticleTags
 {
-  typedef ParticleSet Particle_t;
-  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
-  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t ParticlePos_t;
-  typedef Particle_t::ParticleTensor_t ParticleTensor_t;
+  using Particle_t     = ParticleSet;
+  using ParticleIndex  = Particle_t::ParticleIndex;
+  using ParticleScalar = Particle_t::ParticleScalar;
+  using ParticlePos    = Particle_t::ParticlePos;
+  using ParticleTensor = Particle_t::ParticleTensor;
 
-  bool AssignmentOnly;
   Particle_t& ref_;
   AttribListType ref_AttribList;
-  Tensor<int, OHMMS_DIM>& TileMatrix;
-
-  bool putSpecial(xmlNodePtr cur);
 
   /** read the data of a particle attribute
    *@param cur the xmlnode
-   *@param nat the number of particle attributes to be read
-   *@param nloc the current local count to which nat particle attributes are added.
+   *@param in_offset the location offset to read from XML element node body.
+   *@param copy_size the number of particle attributes to be read
+   *@param out_offset the current local count to which copy_size particle attributes are added.
    */
-  void getPtclAttrib(xmlNodePtr cur, int nat, int nloc);
+  void getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_size, int out_offset);
+
+  void checkGrouping(int nat, const std::vector<int>& nat_group) const;
 
 public:
   /**constructor
    *@param aptcl the particleset to be initialized
-   *@param donotresize if true, only assignment is done
    */
-  XMLParticleParser(Particle_t& aptcl, Tensor<int, OHMMS_DIM>& tmat, bool donotresize = false);
+  XMLParticleParser(Particle_t& aptcl);
 
-  ///reading from a file
-  bool put(const std::string& fname_in, const std::string& fext_in);
-
-  bool put(xmlNodePtr cur);
+  bool readXML(xmlNodePtr cur);
 
   /** reset the properties of a particle set
    */
@@ -146,11 +141,11 @@ public:
 
 class XMLSaveParticle : public ParticleTags, public RecordProperty
 {
-  typedef ParticleSet Particle_t;
-  typedef Particle_t::ParticleIndex_t ParticleIndex_t;
-  typedef Particle_t::ParticleScalar_t ParticleScalar_t;
-  typedef Particle_t::ParticlePos_t ParticlePos_t;
-  typedef Particle_t::ParticleTensor_t ParticleTensor_t;
+  using Particle_t     = ParticleSet;
+  using ParticleIndex  = Particle_t::ParticleIndex;
+  using ParticleScalar = Particle_t::ParticleScalar;
+  using ParticlePos    = Particle_t::ParticlePos;
+  using ParticleTensor = Particle_t::ParticleTensor;
 
   Particle_t& ref_;
   AttribListType ref_AttribList;
@@ -160,15 +155,15 @@ class XMLSaveParticle : public ParticleTags, public RecordProperty
 public:
   XMLSaveParticle(Particle_t& pin);
 
-  ~XMLSaveParticle();
+  ~XMLSaveParticle() override;
 
-  void reset(const char* fileroot, bool append = false);
+  void reset(const char* fileroot, bool append = false) override;
 
-  void report(int iter);
+  void report(int iter) override;
 
-  void finalize() {}
+  void finalize() override {}
 
-  bool put(xmlNodePtr cur);
+  bool put(xmlNodePtr cur) override;
 
   void get(std::ostream& os, int olevel) const;
 

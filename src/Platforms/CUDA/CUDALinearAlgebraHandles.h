@@ -13,9 +13,9 @@
 #define QMCPLUSPLUS_CUDA_LINEAR_ALGEBRA_HANDLES_H
 
 #include "ResourceCollection.h"
-#include <cuda_runtime_api.h>
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
-#include "CUDA/cudaError.h"
+
 namespace qmcplusplus
 {
 struct CUDALinearAlgebraHandles : public Resource

@@ -26,14 +26,14 @@ class RMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef Reptile::ReptileConfig_t ReptileConfig_t;
+  using ParticlePos     = ParticleSet::ParticlePos;
+  using ReptileConfig_t = Reptile::ReptileConfig_t;
 
   RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
-  bool run();
-  bool put(xmlNodePtr cur);
-  //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
-  virtual QMCRunType getRunType() { return QMCRunType::RMC; }
+  bool run() override;
+  bool put(xmlNodePtr cur) override;
+  //inline std::vector<RandomGenerator*>& getRng() { return Rng;}
+  QMCRunType getRunType() override { return QMCRunType::RMC; }
 
 private:
   int prestepsVMC;
@@ -70,7 +70,7 @@ private:
   //This will resize the MCWalkerConfiguration and initialize Reptile list.  It will then reinitialize the MCWC with a list of Reptile coordinates
   void resetReptiles(std::vector<ReptileConfig_t>& reptile_samps, RealType tau);
   //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
-  void resetReptiles(std::vector<ParticlePos_t>& walker_samps, int nbeads, RealType tau);
+  void resetReptiles(std::vector<ParticlePos>& walker_samps, int nbeads, RealType tau);
   ///copy constructor (disabled)
   RMC(const RMC&) = delete;
   /// Copy operator (disabled).

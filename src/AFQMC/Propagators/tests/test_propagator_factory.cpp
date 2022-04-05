@@ -16,7 +16,7 @@
 #include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "hdf/hdf_archive.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/TimerManager.h"
@@ -97,7 +97,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
 
     auto TG   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
       <parameter name=\"walker_type\">closed</parameter>  \
@@ -273,7 +273,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     auto TGprop = TaskGroup_(gTG, std::string("WfnTG"), ngrp, gTG.getTotalCores());
     //int nwalk = 4; // choose prime number to force non-trivial splits in shared routines
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
     qmcplusplus::Timer Time;
 
     const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \

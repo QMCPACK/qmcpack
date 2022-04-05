@@ -17,7 +17,7 @@
 #include "Lattice/ParticleBConds.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -30,7 +30,10 @@ namespace qmcplusplus
 void MPC::resetTargetParticleSet(ParticleSet& ptcl) {}
 
 MPC::MPC(ParticleSet& ptcl, double cutoff)
-    : Ecut(cutoff), d_aa_ID(ptcl.addTable(ptcl)), PtclRef(&ptcl), FirstTime(true)
+    : Ecut(cutoff),
+      d_aa_ID(ptcl.addTable(ptcl, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
+      PtclRef(&ptcl),
+      FirstTime(true)
 {
   initBreakup();
 }
@@ -42,7 +45,7 @@ void MPC::init_gvecs()
   TinyVector<int, OHMMS_DIM> maxIndex(0);
   PosType b[OHMMS_DIM];
   for (int j = 0; j < OHMMS_DIM; j++)
-    b[j] = static_cast<RealType>(2.0 * M_PI) * PtclRef->Lattice.b(j);
+    b[j] = static_cast<RealType>(2.0 * M_PI) * PtclRef->getLattice().b(j);
   int numG1 = PtclRef->Density_G.size();
   int numG2 = PtclRef->DensityReducedGvecs.size();
   assert(PtclRef->Density_G.size() == PtclRef->DensityReducedGvecs.size());
@@ -73,7 +76,7 @@ void MPC::init_gvecs()
 
 void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
 {
-  double L     = PtclRef->Lattice.WignerSeitzRadius;
+  double L     = PtclRef->getLattice().WignerSeitzRadius;
   double Linv  = 1.0 / L;
   double Linv3 = Linv * Linv * Linv;
   // create an FFTW plan
@@ -81,7 +84,7 @@ void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
   Array<std::complex<double>, 3> GBox(N, N, N);
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
-  DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(PtclRef->Lattice);
+  DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(PtclRef->getLattice());
   // Fill the real-space array with f(r)
   double Ninv = 1.0 / (double)N;
   TinyVector<RealType, 3> u, r;
@@ -94,8 +97,8 @@ void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
       for (int iz = 0; iz < N; iz++)
       {
         u[2] = Ninv * iz;
-        r    = PtclRef->Lattice.toCart(u);
-        //DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->Lattice, r);
+        r    = PtclRef->getLattice().toCart(u);
+        //DTD_BConds<double,3,SUPERCELL_BULK>::apply (PtclRef->getLattice(), r);
         //double rmag = std::sqrt(dot(r,r));
         double rmag = std::sqrt(mybc.apply_bc(r));
         if (rmag < L)
@@ -171,8 +174,8 @@ void MPC::init_f_G()
   // fprintf (stderr, "g_G_1N[0]      = %18.14e\n", g_G_N[0]);
   // fprintf (stderr, "g_G_2N[0]      = %18.14e\n", g_G_2N[0]);
   // fprintf (stderr, "g_G_4N[0]      = %18.14e\n", g_G_4N[0]);
-  double volInv = 1.0 / PtclRef->Lattice.Volume;
-  double L      = PtclRef->Lattice.WignerSeitzRadius;
+  double volInv = 1.0 / PtclRef->getLattice().Volume;
+  double L      = PtclRef->getLattice().WignerSeitzRadius;
   TinyVector<double, 2> g0_12(g_0_2N, g_0_4N);
   TinyVector<double, 3> g0_124(g_0_N, g_0_2N, g_0_4N);
   f_0 = extrap(N, g0_124);
@@ -182,7 +185,6 @@ void MPC::init_f_G()
   f_0 += 0.4 * M_PI * L * L * volInv;
   // std::cerr << "f_0 = " << f_0/volInv << std::endl;
   double worst = 0.0, worstLin = 0.0, worstQuad = 0.0;
-  int iworst = 0;
   for (int iG = 0; iG < numG; iG++)
   {
     TinyVector<double, 2> g_12(g_G_2N[iG], g_G_4N[iG]);
@@ -193,7 +195,6 @@ void MPC::init_f_G()
     if (diff > worst)
     {
       worst     = diff;
-      iworst    = iG;
       worstLin  = linearExtrap;
       worstQuad = quadExtrap;
     }
@@ -222,8 +223,8 @@ void MPC::init_spline()
   GBox   = std::complex<double>();
   Vconst = 0.0;
   // Now fill in elements of GBox
-  const RealType vol     = PtclRef->Lattice.Volume;
-  const RealType volInv  = 1.0 / PtclRef->Lattice.Volume;
+  const RealType vol     = PtclRef->getLattice().Volume;
+  const RealType volInv  = 1.0 / PtclRef->getLattice().Volume;
   const RealType halfvol = vol / 2.0;
   for (int iG = 0; iG < Gvecs.size(); iG++)
   {
@@ -275,7 +276,9 @@ void MPC::init_spline()
   bc0.lCode = bc0.rCode = PERIODIC;
   bc1.lCode = bc1.rCode = PERIODIC;
   bc2.lCode = bc2.rCode = PERIODIC;
-  VlongSpline = std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()), destroy_Bspline);
+  VlongSpline =
+      std::shared_ptr<UBspline_3d_d>(create_UBspline_3d_d(grid0, grid1, grid2, bc0, bc1, bc2, splineData.data()),
+                                     destroy_Bspline);
   //     grid0.num = PtclRef->Density_r.size(0);
   //     grid1.num = PtclRef->Density_r.size(1);
   //     grid2.num = PtclRef->Density_r.size(2);
@@ -300,14 +303,14 @@ void MPC::initBreakup()
   init_f_G();
   init_spline();
   // FILE *fout = fopen ("MPC.dat", "w");
-  // double vol = PtclRef->Lattice.Volume;
+  // double vol = PtclRef->getLattice().Volume;
   // PosType r0 (0.0, 0.0, 0.0);
   // PosType r1 (10.26499236, 10.26499236, 10.26499236);
   // int nPoints=1001;
   // for (int i=0; i<nPoints; i++) {
   //   double s = (double)i/(double)(nPoints-1);
   //   PosType r = (1.0-s)*r0 + s*r1;
-  //   PosType u = PtclRef->Lattice.toUnit(r);
+  //   PosType u = PtclRef->getLattice().toUnit(r);
   //   double V, rho(0.0);
   //   eval_UBspline_3d_d (VlongSpline, u[0], u[1], u[2], &V);
   //   // eval_UBspline_3d_d (DensitySpline, u[0], u[1], u[2], &rho);
@@ -327,8 +330,8 @@ std::unique_ptr<OperatorBase> MPC::makeClone(ParticleSet& qp, TrialWaveFunction&
 
 MPC::Return_t MPC::evalSR(ParticleSet& P) const
 {
-  const DistanceTableData& d_aa = P.getDistTable(d_aa_ID);
-  RealType SR                   = 0.0;
+  const auto& d_aa = P.getDistTableAA(d_aa_ID);
+  RealType SR      = 0.0;
   const RealType cone(1);
   for (size_t ipart = 0; ipart < NParticles; ipart++)
   {
@@ -348,8 +351,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
   for (int i = 0; i < NParticles; i++)
   {
     //PosType r = P.R[i];
-    //PosType u = P.Lattice.toUnit(r);
-    PosType u = P.Lattice.toUnit(P.R[i]);
+    //PosType u = P.getLattice().toUnit(r);
+    PosType u = P.getLattice().toUnit(P.R[i]);
     for (int j = 0; j < OHMMS_DIM; j++)
       u[j] -= std::floor(u[j]);
     eval_UBspline_3d_d(VlongSpline.get(), u[0], u[1], u[2], &val);
@@ -361,8 +364,8 @@ MPC::Return_t MPC::evalLR(ParticleSet& P) const
 MPC::Return_t MPC::evaluate(ParticleSet& P)
 {
   //if (FirstTime || P.tag() == PtclRef->tag())
-  Value = evalSR(P) + evalLR(P) + Vconst;
-  return Value;
+  value_ = evalSR(P) + evalLR(P) + Vconst;
+  return value_;
 }
 
 void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)

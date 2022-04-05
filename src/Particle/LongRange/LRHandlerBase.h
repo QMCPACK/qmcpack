@@ -55,43 +55,21 @@ struct LRHandlerBase
   ///Coefficient for strain fit.
   std::vector<mRealType> gstraincoefs;
 
-  virtual mRealType evaluate_vlr_k(mRealType k) = 0;
+  virtual mRealType evaluate_vlr_k(mRealType k) const = 0;
 
 
   //constructor
   explicit LRHandlerBase(mRealType kc) : MaxKshell(0), LR_kc(kc), LR_rc(0), ClassName("LRHandlerBase") {}
 
   // virtual destructor
-  virtual ~LRHandlerBase() {}
+  virtual ~LRHandlerBase() = default;
 
   //return r cutoff
   inline mRealType get_rc() const { return LR_rc; }
   //return k cutoff
   inline mRealType get_kc() const { return LR_kc; }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
-   * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
-   *
-   * Valid for the strictly ordered k and \f$F_{k}\f$.
-   */
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2)
-  {
-    mRealType vk = 0.0;
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++, rk1++, rk2++)
-        u += ((*rk1).real() * (*rk2).real() + (*rk1).imag() * (*rk2).imag());
-      vk += Fk_symm[ks] * u;
-    }
-    return vk;
-  }
-
-  inline mRealType evaluate_w_sk(const std::vector<int>& kshell, const pRealType* restrict sk)
+  inline mRealType evaluate_w_sk(const std::vector<int>& kshell, const pRealType* restrict sk) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
@@ -104,11 +82,18 @@ struct LRHandlerBase
     return vk;
   }
 
+  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
+   * @param kshell degeneracies of the vectors
+   * @param rk1_r/i starting address of \f$\rho^1_{{\bf k}}\f$
+   * @param rk2_r/i starting address of \f$\rho^2_{{\bf k}}\f$
+   *
+   * Valid for the strictly ordered k and \f$F_{k}\f$.
+   */
   inline mRealType evaluate(const std::vector<int>& kshell,
                             const pRealType* restrict rk1_r,
                             const pRealType* restrict rk1_i,
                             const pRealType* restrict rk2_r,
-                            const pRealType* restrict rk2_i)
+                            const pRealType* restrict rk2_i) const
   {
     mRealType vk = 0.0;
     for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
@@ -124,49 +109,12 @@ struct LRHandlerBase
   /** Evaluate the long-range potential with the open BC for the D-1 direction */
   virtual mRealType evaluate_slab(pRealType z,
                                   const std::vector<int>& kshell,
-                                  const pComplexType* restrict eikr_i,
-                                  const pComplexType* restrict eikr_j)
+                                  const pRealType* restrict rk1_r,
+                                  const pRealType* restrict rk1_i,
+                                  const pRealType* restrict rk2_r,
+                                  const pRealType* restrict rk2_i) const
   {
     return 0.0;
-  }
-
-  inline mRealType evaluate(const std::vector<int>& kshell, int iat, const pComplexType* restrict rk2, ParticleSet& P)
-  {
-    mRealType vk = 0.0;
-#if !defined(USE_REAL_STRUCT_FACTOR)
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++, rk2++)
-      {
-        pComplexType eikr = P.SK->eikr(iat, ki);
-        u += eikr.real() * (*rk2).real() + eikr.imag() * (*rk2).imag();
-      }
-      vk += Fk_symm[ks] * u;
-    }
-#endif
-    return vk;
-  }
-
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            int iat,
-                            const pRealType* restrict rk2_r,
-                            const pRealType* restrict rk2_i,
-                            ParticleSet& P)
-  {
-    mRealType vk = 0.0;
-#if defined(USE_REAL_STRUCT_FACTOR)
-    const pRealType* restrict eikr_r = P.SK->eikr_r[iat];
-    const pRealType* restrict eikr_i = P.SK->eikr_i[iat];
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++)
-        u += eikr_r[ki] * (*rk2_r++) + eikr_i[ki] * (*rk2_i++);
-      vk += Fk_symm[ks] * u;
-    }
-#endif
-    return vk;
   }
 
   /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
@@ -181,28 +129,13 @@ struct LRHandlerBase
                            const ParticleSet& B,
                            int specB,
                            std::vector<pRealType>& Zat,
-                           std::vector<TinyVector<pRealType, OHMMS_DIM>>& grad1)
+                           std::vector<TinyVector<pRealType, OHMMS_DIM>>& grad1) const
   {
-#if !defined(USE_REAL_STRUCT_FACTOR)
-    const Matrix<pComplexType>& e2ikrA = A.SK->eikr;
-    const pComplexType* rhokB          = B.SK->rhok[specB];
-    const std::vector<PosType>& kpts   = A.SK->KLists.kpts_cart;
-    for (int ki = 0; ki < Fk.size(); ki++)
-    {
-      PosType k = kpts[ki];
-      for (int iat = 0; iat < Zat.size(); iat++)
-      {
-        grad1[iat] -= Zat[iat] * k * Fkg[ki] *
-            (e2ikrA(iat, ki).real() * rhokB[ki].imag() - e2ikrA(iat, ki).imag() * rhokB[ki].real());
-      }
-    }
-#else
-
-    const Matrix<pRealType>& e2ikrA_r = A.SK->eikr_r;
-    const Matrix<pRealType>& e2ikrA_i = A.SK->eikr_i;
-    const pRealType* rhokB_r          = B.SK->rhok_r[specB];
-    const pRealType* rhokB_i          = B.SK->rhok_i[specB];
-    const std::vector<PosType>& kpts  = A.SK->KLists.kpts_cart;
+    const Matrix<pRealType>& e2ikrA_r = A.getSK().eikr_r;
+    const Matrix<pRealType>& e2ikrA_i = A.getSK().eikr_i;
+    const pRealType* rhokB_r          = B.getSK().rhok_r[specB];
+    const pRealType* rhokB_i          = B.getSK().rhok_i[specB];
+    const std::vector<PosType>& kpts  = A.getSimulationCell().getKLists().kpts_cart;
     for (int ki = 0; ki < Fk.size(); ki++)
     {
       PosType k = kpts[ki];
@@ -211,7 +144,6 @@ struct LRHandlerBase
         grad1[iat] -= Zat[iat] * k * Fkg[ki] * (e2ikrA_r(iat, ki) * rhokB_i[ki] - e2ikrA_i(iat, ki) * rhokB_r[ki]);
       }
     }
-#endif
   }
 
   ///FIX_PRECISION
@@ -219,7 +151,7 @@ struct LRHandlerBase
                                                         const pRealType* rhokA_r,
                                                         const pRealType* rhokA_i,
                                                         const pRealType* rhokB_r,
-                                                        const pRealType* rhokB_i)
+                                                        const pRealType* rhokB_i) const
   {
     SymTensor<pRealType, OHMMS_DIM> stress;
     for (int ki = 0; ki < dFk_dstrain.size(); ki++)
@@ -230,35 +162,22 @@ struct LRHandlerBase
     return stress;
   }
 
-  ///FIX_PRECISION
-  inline SymTensor<pRealType, OHMMS_DIM> evaluateStress(const std::vector<int>& kshell,
-                                                        const pComplexType* rhokA,
-                                                        const pComplexType* rhokB)
-  {
-    SymTensor<pRealType, OHMMS_DIM> stress;
-    for (int ki = 0; ki < dFk_dstrain.size(); ki++)
-    {
-      stress += (rhokA[ki].real() * rhokB[ki].real() + rhokA[ki].imag() * rhokB[ki].imag()) * dFk_dstrain[ki];
-    }
-    return stress;
-  }
-
   /** evaluate \f$ v_{s}(k=0) = \frac{4\pi}{V}\int_0^{r_c} r^2 v_s(r) dr \f$
    */
-  virtual mRealType evaluateSR_k0() { return 0.0; }
+  virtual mRealType evaluateSR_k0() const { return 0.0; }
   /** evaluate \f$ v_s(r=0) \f$ for the self-interaction term
    */
-  virtual mRealType evaluateLR_r0() { return 0.0; }
+  virtual mRealType evaluateLR_r0() const { return 0.0; }
 
   ///These functions return the strain derivatives of all corresponding quantities
   /// in total energy.  See documentation (forthcoming).
-  virtual SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() { return 0; };
-  virtual SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() { return 0; };
-  virtual SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag)
+  virtual SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain() const { return 0; };
+  virtual SymTensor<mRealType, OHMMS_DIM> evaluateSR_k0_dstrain() const { return 0; };
+  virtual SymTensor<mRealType, OHMMS_DIM> evaluateLR_dstrain(TinyVector<pRealType, OHMMS_DIM> k, pRealType kmag) const
   {
     return 0;
   };
-  virtual SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag)
+  virtual SymTensor<mRealType, OHMMS_DIM> evaluateSR_dstrain(TinyVector<pRealType, OHMMS_DIM> r, pRealType rmag) const
   {
     return 0;
   };
@@ -267,18 +186,18 @@ struct LRHandlerBase
   virtual void Breakup(ParticleSet& ref, mRealType rs_in) = 0;
   virtual void resetTargetParticleSet(ParticleSet& ref)   = 0;
 
-  virtual mRealType evaluate(mRealType r, mRealType rinv) = 0;
-  virtual mRealType evaluateLR(mRealType r)               = 0;
-  virtual mRealType srDf(mRealType r, mRealType rinv)     = 0;
+  virtual mRealType evaluate(mRealType r, mRealType rinv) const = 0;
+  virtual mRealType evaluateLR(mRealType r) const               = 0;
+  virtual mRealType srDf(mRealType r, mRealType rinv) const     = 0;
 
-  virtual mRealType lrDf(mRealType r)
+  virtual mRealType lrDf(mRealType r) const
   {
     APP_ABORT("Error: lrDf(r) is not implemented in " + ClassName + "\n");
     return 0.0;
   };
 
   /** make clone */
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) = 0;
+  virtual LRHandlerBase* makeClone(ParticleSet& ref) const = 0;
 
 protected:
   std::string ClassName;
@@ -301,11 +220,11 @@ struct DummyLRHandler : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref) override
   {
-    mRealType norm = 4.0 * M_PI / ref.Lattice.Volume;
+    mRealType norm = 4.0 * M_PI / ref.getLattice().Volume;
     mRealType kcsq = LR_kc * LR_kc;
-    KContainer& KList(ref.SK->KLists);
+    auto& KList(ref.getSimulationCell().getKLists());
     int maxshell = KList.kshell.size() - 1;
-    const KContainer::SContainer_t& kk(KList.ksq);
+    const auto& kk(KList.ksq);
     int ksh = 0, ik = 0;
     while (ksh < maxshell)
     {
@@ -325,13 +244,13 @@ struct DummyLRHandler : public LRHandlerBase
     }
   }
 
-  mRealType evaluate_vlr_k(mRealType k) override { return 0.0; }
-  mRealType evaluate(mRealType r, mRealType rinv) override { return 0.0; }
-  mRealType evaluateLR(mRealType r) override { return 0.0; }
-  mRealType srDf(mRealType r, mRealType rinv) override { return 0.0; }
+  mRealType evaluate_vlr_k(mRealType k) const override { return 0.0; }
+  mRealType evaluate(mRealType r, mRealType rinv) const override { return 0.0; }
+  mRealType evaluateLR(mRealType r) const override { return 0.0; }
+  mRealType srDf(mRealType r, mRealType rinv) const override { return 0.0; }
   void Breakup(ParticleSet& ref, mRealType rs_in) override {}
   void resetTargetParticleSet(ParticleSet& ref) override {}
-  virtual LRHandlerBase* makeClone(ParticleSet& ref) override { return new DummyLRHandler<Func>(LR_kc); }
+  LRHandlerBase* makeClone(ParticleSet& ref) const override { return new DummyLRHandler<Func>(LR_kc); }
 };
 
 } // namespace qmcplusplus

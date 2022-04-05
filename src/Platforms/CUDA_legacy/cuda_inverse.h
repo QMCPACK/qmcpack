@@ -3,10 +3,12 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //		              Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by:  Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -16,7 +18,9 @@
 #define CUDA_INVERSE_H
 
 #include <complex>
+#ifndef QMC_CUDA2HIP
 #include <cublas_v2.h>
+#endif
 
 //////////////////////////////
 // Single / mixed precision //

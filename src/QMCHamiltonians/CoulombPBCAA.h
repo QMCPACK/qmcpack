@@ -19,10 +19,14 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 
 namespace qmcplusplus
 {
+
+template<class T>
+class OneDimCubicSplineLinearGrid;
+
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
@@ -31,25 +35,22 @@ namespace qmcplusplus
  */
 struct CoulombPBCAA : public OperatorBase, public ForceBase
 {
-  typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-  typedef LRCoulombSingleton::GridType GridType;
-  typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
-  typedef LRHandlerType::mRealType mRealType;
+  using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+  using GridType       = LRCoulombSingleton::GridType;
+  using RadFunctorType = LRCoulombSingleton::RadFunctorType;
+  using mRealType      = LRHandlerType::mRealType;
+  using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
-  // using shared_ptr on AA, dAA is a compromise
-  // When ion-ion is_active = false, makeClone calls the copy constructor.
-  // AA, dAA are shared between clones.
-  // When elec-elec is_active = true, makeClone calls the constructor
-  // AA, dAA are not shared between clones and behave more like unique_ptr
-
-  // energy-optimized
+  /// energy-optimized long range handle. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AA;
-  GridType* myGrid;
-  RadFunctorType* rVs;
-  // force-optimized
-  std::shared_ptr<LRHandlerType> dAA;
-  GridType* myGridforce;
-  RadFunctorType* rVsforce;
+  /// energy-optimized short range pair potential
+  std::shared_ptr<const RadFunctorType> rVs;
+  /// the same as rVs but can be used inside OpenMP offload regions
+  std::shared_ptr<const OffloadSpline> rVs_offload;
+  /// force-optimized long range handle
+  std::shared_ptr<const LRHandlerType> dAA;
+  /// force-optimized short range pair potential
+  std::shared_ptr<const RadFunctorType> rVsforce;
 
   bool is_active;
   bool FirstTime;
@@ -61,7 +62,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
+
   std::vector<RealType> Zat, Zspec;
+  std::shared_ptr<Vector<RealType, OffloadPinnedAllocator<RealType>>> Zat_offload;
+
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
 
@@ -82,20 +86,24 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
 
   /** constructor */
-  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
+  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
-  ~CoulombPBCAA();
+  ~CoulombPBCAA() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
+
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
-  void update_source(ParticleSet& s) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
+  void updateSource(ParticleSet& s) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }
@@ -111,13 +119,17 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   void initBreakup(ParticleSet& P);
 
 #if !defined(REMOVE_TRACEMANAGER)
-  virtual void contribute_particle_quantities() override;
-  virtual void checkout_particle_quantities(TraceManager& tm) override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
   Return_t evaluate_sp(ParticleSet& P); //collect
-  virtual void delete_particle_quantities() override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evalSR(ParticleSet& P);
+
+  static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list);
+
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
@@ -140,8 +152,16 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   }
 
 private:
-  // AA table ID
+  /// if true use offload
+  const bool use_offload_;
+  /// AA table ID
   const int d_aa_ID;
+  /// Timer for long range
+  NewTimer& evalLR_timer_;
+  /// Timer for long range
+  NewTimer& evalSR_timer_;
+  /// Timer for offload part
+  NewTimer& offload_timer_;
 };
 
 } // namespace qmcplusplus

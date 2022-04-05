@@ -15,7 +15,7 @@
 #include "EnergyDensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Utilities/string_utils.h"
 #include <string>
@@ -23,17 +23,17 @@
 
 namespace qmcplusplus
 {
-EnergyDensityEstimator::EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE)
+EnergyDensityEstimator::EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE)
     : psetpool(PSP), Pdynamic(0), Pstatic(0), w_trace(0), Td_trace(0), Vd_trace(0), Vs_trace(0)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   defKE      = defaultKE;
   nsamples   = 0;
   ion_points = false;
   nions      = -1;
-  request.request_scalar("weight");
-  request.request_array("Kinetic");
-  request.request_array("LocalPotential");
+  request_.request_scalar("weight");
+  request_.request_array("Kinetic");
+  request_.request_array("LocalPotential");
 }
 
 
@@ -53,11 +53,11 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
 {
   input_xml = cur;
   //initialize simple xml attributes
-  myName = "EnergyDensity";
+  name_ = "EnergyDensity";
   std::string dyn, stat = "";
   ion_points = false;
   OhmmsAttributeSet attrib;
-  attrib.add(myName, "name");
+  attrib.add(name_, "name");
   attrib.add(dyn, "dynamic");
   attrib.add(stat, "static");
   attrib.add(ion_points, "ion_points");
@@ -65,7 +65,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   //collect particle sets
   if (!Pdynamic)
     Pdynamic = get_particleset(dyn);
-  if (Pdynamic->SK)
+  if (Pdynamic->hasSK())
     Pdynamic->turnOnPerParticleSK();
   nparticles = Pdynamic->getTotalNum();
   std::vector<ParticleSet*> Pref;
@@ -77,7 +77,7 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
   else
   {
     Pstatic = get_particleset(stat);
-    if (Pstatic->SK)
+    if (Pstatic->hasSK())
       Pstatic->turnOnPerParticleSK();
     dtable_index = Pdynamic->addTable(*Pstatic);
     Pref.resize(1);
@@ -131,11 +131,10 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
     stop               = stop || !ref_succeeded;
   }
   //initialize grids or other cell partitions
-  bool periodic = Pdynamic->Lattice.SuperCellEnum != SUPERCELL_OPEN;
+  bool periodic = Pdynamic->getLattice().SuperCellEnum != SUPERCELL_OPEN;
   bool grid_succeeded;
   element     = cur->children;
   int nvalues = (int)nEDValues;
-  int i       = 0;
   while (element != NULL)
   {
     std::string name = (const char*)element->name;
@@ -152,7 +151,6 @@ bool EnergyDensityEstimator::put(xmlNodePtr cur)
       else
         grid_succeeded = sg->put(element, ref.points, periodic, false);
       stop = stop || !grid_succeeded;
-      ++i;
     }
     element = element->next;
   }
@@ -181,7 +179,7 @@ void EnergyDensityEstimator::set_ptcl()
   Rptcl.resize(P.R.size());
   for (int i = 0; i < P.R.size(); i++)
     Rptcl[i] = P.R[i];
-  if (P.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  if (P.getLattice().SuperCellEnum != SUPERCELL_OPEN)
     P.applyMinimumImage(Rptcl);
 }
 
@@ -194,16 +192,17 @@ void EnergyDensityEstimator::unset_ptcl()
 
 ParticleSet* EnergyDensityEstimator::get_particleset(std::string& psname)
 {
-  if (psetpool.find(psname) == psetpool.end())
+  auto pit(psetpool.find(psname));
+  if (pit == psetpool.end())
   {
     app_log() << "  ParticleSet " << psname << " does not exist" << std::endl;
     APP_ABORT("EnergyDensityEstimator::put");
   }
-  return psetpool[psname];
+  return pit->second.get();
 }
 
 
-void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
+void EnergyDensityEstimator::getRequiredTraces(TraceManager& tm)
 {
   bool write = omp_get_thread_num() == 0;
   w_trace    = tm.get_real_trace("weight");
@@ -211,7 +210,7 @@ void EnergyDensityEstimator::get_required_traces(TraceManager& tm)
   Vd_trace   = tm.get_real_combined_trace(*Pdynamic, "LocalPotential");
   if (Pstatic)
     Vs_trace = tm.get_real_combined_trace(*Pstatic, "LocalPotential");
-  have_required_traces = true;
+  have_required_traces_ = true;
 }
 
 
@@ -257,13 +256,13 @@ void EnergyDensityEstimator::resetTargetParticleSet(ParticleSet& P)
 
 EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P)
 {
-  if (have_required_traces)
+  if (have_required_traces_)
   {
     Pdynamic = &P;
     //Collect positions from ParticleSets
     int p = 0;
     {
-      const ParticlePos_t& Rs = Pdynamic->R;
+      const ParticlePos& Rs = Pdynamic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];
@@ -272,14 +271,14 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     }
     if (Pstatic && !ion_points)
     {
-      const ParticlePos_t& Rs = Pstatic->R;
+      const ParticlePos& Rs = Pstatic->R;
       for (int i = 0; i < Rs.size(); i++)
       {
         R[p] = Rs[i];
         p++;
       }
     }
-    if (P.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+    if (P.getLattice().SuperCellEnum != SUPERCELL_OPEN)
       P.applyMinimumImage(R);
     //Convert information accumulated in ParticleSets into EnergyDensity quantities
     RealType w = w_trace->sample[0];
@@ -319,7 +318,7 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
         }
     }
     //Accumulate energy density in spacegrids
-    const DistanceTableData& dtab(P.getDistTable(dtable_index));
+    const auto& dtab(P.getDistTableAB(dtable_index));
     fill(particles_outside.begin(), particles_outside.end(), true);
     for (int i = 0; i < spacegrids.size(); i++)
     {
@@ -457,7 +456,7 @@ void EnergyDensityEstimator::write_nonzero_domains(const ParticleSet& P)
 
 void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = collectables.size();
+  my_index_ = collectables.size();
   //allocate space for energy density outside of any spacegrid
   outside_buffer_offset = collectables.size();
   int nvalues           = (int)nEDValues;
@@ -480,7 +479,7 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t g = H5Gcreate(gid, myName.c_str(), 0);
+  hid_t g = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5desc.emplace_back("variables");
   auto& oh = h5desc.back();
   oh.open(g);

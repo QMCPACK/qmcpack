@@ -39,14 +39,12 @@ namespace qmcplusplus
 {
 TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][dmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -75,15 +73,16 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
 
   TrialWaveFunction psi;
-  ConstantOrbital* orb = new ConstantOrbital;
-  psi.addComponent(orb);
+  auto orb_uptr = std::make_unique<ConstantOrbital>();
+  auto orb      = orb_uptr.get();
+  psi.addComponent(std::move(orb_uptr));
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -134,14 +133,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dmc]")
 
 {
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -170,15 +167,14 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
 
   TrialWaveFunction psi;
-  LinearOrbital* orb = new LinearOrbital;
-  psi.addComponent(orb);
+  psi.addComponent(std::make_unique<LinearOrbital>());
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
   elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

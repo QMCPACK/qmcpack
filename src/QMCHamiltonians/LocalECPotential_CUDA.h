@@ -41,7 +41,7 @@ struct LocalECPotential_CUDA : public LocalECPotential
   std::vector<PosType> SortedIons;
   void add(int groupID, std::unique_ptr<RadialPotentialType>&& ppot, RealType zion);
 
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
+  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 

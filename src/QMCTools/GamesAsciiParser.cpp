@@ -35,6 +35,7 @@ GamesAsciiParser::GamesAsciiParser()
   readtype     = 0;
   NFZC         = 0;
   ECP          = false;
+  FixValence   = true;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv) : QMCGaussianParserBase(argc, argv)
@@ -49,6 +50,7 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv) : QMCGaussianParserBas
   SpinRestricted = true;
   readtype       = 0;
   NFZC           = 0;
+  FixValence     = true;
 }
 
 void GamesAsciiParser::parse(const std::string& fname)
@@ -111,7 +113,7 @@ void GamesAsciiParser::parse(const std::string& fname)
   }
   if (numMO2print <= 0)
     numMO2print = numMO;
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   getGeometry(fin);
   fin.seekg(pivot_begin);
@@ -465,7 +467,6 @@ void GamesAsciiParser::getGeometry(std::istream& is)
 
 void GamesAsciiParser::getGaussianCenters(std::istream& is)
 {
-  int ng;
   gBound.resize(NumberOfAtoms + 1);
   std::string aline;
   std::map<std::string, int> basisDataMap;
@@ -522,7 +523,6 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
     if (currentWords[0] == "TOTAL" && currentWords[1] == "NUMBER" && currentWords[2] == "OF" &&
         currentWords[3] == "BASIS")
     {
-      ng = atoi(currentWords.back().c_str());
       break;
     }
     if (currentWords.size() == 1) //found Species

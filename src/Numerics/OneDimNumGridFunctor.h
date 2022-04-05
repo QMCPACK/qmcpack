@@ -26,25 +26,25 @@ namespace qmcplusplus
 template<class T>
 struct OneDimNumGridFunctor
 {
-  typedef NumericalGrid<T> GridType;
-  typedef OneDimCubicSpline<T> FuncType;
+  using GridType = NumericalGrid<T>;
+  using FuncType = OneDimCubicSpline<T>;
 
-  GridType myGrid;
   FuncType myFunc;
 
-  inline OneDimNumGridFunctor() { myFunc.m_grid = &myGrid; }
+  inline OneDimNumGridFunctor() { myFunc.m_grid = std::make_unique<GridType>(); }
 
-  inline T r(int i) const { return myGrid[i]; }
+  inline T r(int i) const { return (*myFunc.m_grid)[i]; }
   inline T operator()(int i) const { return myFunc(i); }
 
-  inline T rmax() const { return myGrid.rmax(); }
+  inline T rmax() const { return myFunc.m_grid->rmax(); }
 
-  inline T rmin() const { return myGrid.rmin(); }
+  inline T rmin() const { return myFunc.m_grid->rmin(); }
 
   inline T splint(T r) { return myFunc.splint(r); }
 
   void put(int npoints, std::istream& fin)
   {
+    auto& myGrid = dynamic_cast<GridType&>(*myFunc.m_grid);
     myGrid.resize(npoints);
     myFunc.resize(npoints);
     for (int j = 0; j < npoints; j++)

@@ -127,26 +127,24 @@ struct h5data_proxy<einspline_engine<ENGT>>
     D = einspline_engine<ENGT>::D
   };
   using value_type = typename einspline_engine<ENGT>::value_type;
-  using Base = h5_space_type<value_type, D + 1>;
+  using Base       = h5_space_type<value_type, D + 1>;
   using Base::dims;
   using Base::get_address;
-  typedef einspline_engine<ENGT> data_type;
+  using data_type = einspline_engine<ENGT>;
 
-  data_type& ref_;
+  inline h5data_proxy(const data_type& a) { dim_traits<D + 1>::setdim(a, dims); }
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dim_traits<D + 1>::setdim(a, dims); }
-
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.spliner)
-      return h5d_read(grp, aname, get_address(ref_.spliner->coefs), xfer_plist);
+    if (ref.spliner)
+      return h5d_read(grp, aname, get_address(ref.spliner->coefs), xfer_plist);
     else
       return false;
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref_.spliner->coefs), xfer_plist);
+    return h5d_write(grp, aname.c_str(), Base::rank, dims, get_address(ref.spliner->coefs), xfer_plist);
   }
 };
 
@@ -259,7 +257,7 @@ struct GridConvert
   template<typename ENGT1, typename ENGT2, typename PT>
   void create(ENGT1*& out, ENGT2* in, PT& lower, PT& upper, int num)
   {
-    typedef typename bspline_engine_traits<ENGT1>::real_type real_type;
+    using real_type = typename bspline_engine_traits<ENGT1>::real_type;
 
     Ugrid agrid[3];
     agrid[0] = in->x_grid;

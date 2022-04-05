@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_BAREPRESSURE_H
 #define QMCPLUSPLUS_BAREPRESSURE_H
 #include "Particle/ParticleSet.h"
-#include "Particle/WalkerSetRef.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -43,18 +42,18 @@ struct Pressure : public OperatorBase
    */
   Pressure(ParticleSet& P)
   {
-    UpdateMode.set(OPTIMIZABLE, 1);
-    pNorm = 1.0 / (P.Lattice.DIM * P.Lattice.Volume);
+    update_mode_.set(OPTIMIZABLE, 1);
+    pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume);
   }
   ///destructor
-  ~Pressure() {}
+  ~Pressure() override {}
 
-  void resetTargetParticleSet(ParticleSet& P) { pNorm = 1.0 / (P.Lattice.DIM * P.Lattice.Volume); }
+  void resetTargetParticleSet(ParticleSet& P) override { pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume); }
 
-  inline Return_t evaluate(ParticleSet& P)
+  inline Return_t evaluate(ParticleSet& P) override
   {
-    Value = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
-    Value *= pNorm;
+    value_ = 2.0 * P.PropertyList[WP::LOCALENERGY] - P.PropertyList[WP::LOCALPOTENTIAL];
+    value_ *= pNorm;
     return 0.0;
   }
 
@@ -63,7 +62,7 @@ struct Pressure : public OperatorBase
    * Nothing is done but should check the mass
    */
 
-  bool put(xmlNodePtr cur) { return true; }
+  bool put(xmlNodePtr cur) override { return true; }
 
   //     bool put(xmlNodePtr cur, ParticleSet& P, QMCHamiltonian* H) {
   //       xmlNodePtr tcur = cur->children;
@@ -123,7 +122,7 @@ struct Pressure : public OperatorBase
   //       return true;
   //     }
 
-  bool get(std::ostream& os) const
+  bool get(std::ostream& os) const override
   {
     os << "Pressure";
     return true;
