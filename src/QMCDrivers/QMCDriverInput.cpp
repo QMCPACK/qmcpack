@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,6 +15,7 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "QMCDriverInput.h"
+#include "QMCDriverInputDelegates.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
@@ -89,7 +90,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     //determine how often to print walkers to hdf5 file
     while (tcur != NULL)
     {
-      std::string cname((const char*)(tcur->name));
+      std::string cname{lowerCase(castXMLCharToChar(tcur->name))};
       if (cname == "record")
       {
         //dump walkers for optimization
@@ -116,6 +117,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       else if (cname == "random")
       {
         reset_random_ = true;
+      }
+      // These complications are due to the need to support bare <esimator> nodes
+      else if (cname == "estimators" || cname == "estimator")
+      {
+	if (estimator_manager_input_)
+	  estimator_manager_input_->readXML(tcur);
+	else
+	  estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, tcur);
       }
       tcur = tcur->next;
     }

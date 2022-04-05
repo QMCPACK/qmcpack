@@ -31,6 +31,7 @@
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "QMCDriverInputDelegates.h"
 
 namespace qmcplusplus
 {
@@ -76,7 +77,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_index]);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node,std::optional<EstimatorManagerInput>(std::nullopt));
   REQUIRE(das.new_run_type == QMCRunType::VMC);
 
   // testing::QMCDriverPools dr_pools(comm);
@@ -111,7 +112,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
     bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::optional<EstimatorManagerInput>(std::nullopt));
     REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
@@ -130,7 +131,7 @@ TEST_CASE("QMCDriverFactory create VMCBatched driver", "[qmcapp]")
     bool okay = doc.parseFromString(valid_vmc_input_sections[valid_vmc_batch_input_vmc_batch_index]);
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::optional<EstimatorManagerInput>(std::nullopt));
     REQUIRE(das.new_run_type == QMCRunType::VMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
@@ -155,7 +156,7 @@ TEST_CASE("QMCDriverFactory create DMC driver", "[qmcapp]")
   bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_index]);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::optional<EstimatorManagerInput>(std::nullopt));
   REQUIRE(das.new_run_type == QMCRunType::DMC);
 
   auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
@@ -175,18 +176,16 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
     bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_input_dmc_batch_index]);
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::optional<EstimatorManagerInput>(std::nullopt));
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
-
     REQUIRE(qmc_driver != nullptr);
     REQUIRE_NOTHROW(dynamic_cast<DMCBatched&>(*qmc_driver));
     REQUIRE_THROWS(dynamic_cast<DMC&>(*qmc_driver));
@@ -201,7 +200,7 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     bool okay = doc.parseFromString(valid_dmc_input_sections[valid_dmc_batch_input_dmc_batch_index]);
     REQUIRE(okay);
     xmlNodePtr node                           = doc.getRoot();
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::optional<EstimatorManagerInput>(std::nullopt));
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);

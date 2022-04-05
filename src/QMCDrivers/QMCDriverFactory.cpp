@@ -41,6 +41,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "QMCDrivers/QMCDriverInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -56,7 +57,7 @@ QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_da
  *  At some point in driver refactoring this should go there and
  *  QMCDriverInput created before the giant switch
  */
-QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur) const
+QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur, std::optional<EstimatorManagerInput> emi) const
 {
   DriverAssemblyState das;
   std::string curName(castXMLCharToChar(cur->name));
@@ -116,6 +117,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
+    das.estimator_manager_input = emi;
     break;
   // Begin to separate driver version = batch input reading from the legacy input parsing
   case DV::LEGACY:

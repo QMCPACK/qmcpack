@@ -17,6 +17,7 @@ namespace qmcplusplus
 {
 class FakeEstimator : public ScalarEstimatorBase
 {
+public:
   void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override {}
 
   void accumulate(const RefVector<MCPWalker>& walkers) override {}
@@ -26,6 +27,9 @@ class FakeEstimator : public ScalarEstimatorBase
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
 
   FakeEstimator* clone() override { return new FakeEstimator; }
+  
+  std::string name_{"fake"};
+  const std::string& get_name() override { return name_; }
 };
 
 } // namespace qmcplusplus

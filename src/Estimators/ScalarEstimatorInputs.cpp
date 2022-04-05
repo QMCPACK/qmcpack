@@ -20,6 +20,10 @@ LocalEnergyInput::LocalEnergyInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(use_hdf5_, "hdf5");
+  setIfInInput(type_, "type");
+  setIfInInput(name_, "name");
+  if (name_.empty())
+    name_ = type_;
 }
 
 CSLocalEnergyInput::CSLocalEnergyInput(xmlNodePtr cur)
@@ -27,6 +31,21 @@ CSLocalEnergyInput::CSLocalEnergyInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(n_psi_, "npsi");
+  setIfInInput(type_, "type");
+  setIfInInput(name_, "name");
+  if (name_.empty())
+    name_ = type_;  
+}
+
+RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)
+{
+  input_section_.readXML(cur);
+  auto setIfInInput = LAMBDA_setIfInInput;
+  setIfInInput(n_psi_, "npsi");
+  setIfInInput(type_, "type");
+  setIfInInput(name_, "name");
+  if (name_.empty())
+    name_ = type_;  
 }
 
 }

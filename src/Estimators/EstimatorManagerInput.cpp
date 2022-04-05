@@ -17,19 +17,35 @@
 
 namespace qmcplusplus
 {
+
 EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
+
+EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNodePtr cur) : EstimatorManagerInput(std::move(emi))
+{
+  readXML(cur);
+}
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
 {
   const std::string error_tag{"EstimatorManager input:"};
-  xmlNodePtr child = cur->xmlChildrenNode;
+  std::string cur_name{lowerCase(castXMLCharToChar(cur->name))};
+  xmlNodePtr child;
+  if(cur_name == "estimators")
+    child = cur->xmlChildrenNode;
+  else
+    child = cur;
   while (child != NULL)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
     if (cname == "estimator")
     {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
-      if (atype == "localenergy")
+      std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
+      if (atype.empty() && ! aname.empty())
+	atype = aname;
+      if (aname.empty() && ! atype.empty())
+	aname = atype;
+      if (atype == "localenergy" || atype == "elocal")
         appendScalarEstimatorInput<LocalEnergyInput>(child);
       else if (atype == "cslocalenergy")
         appendScalarEstimatorInput<CSLocalEnergyInput>(child);
@@ -40,12 +56,21 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
       else
-        throw UniformCommunicateError(error_tag + "unparsable child node, name: " + cname + " type: " + atype +
+        throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
     }
-    else
+    else if(cname!="text") {
+      std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
+      std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
       throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
-    child = child->next;
+    }
+
+    if(cur_name == "estimators")
+      child = child->next;
+    else {
+      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom";
+      break;
+    }
   }
 }
 

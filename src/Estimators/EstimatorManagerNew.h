@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -24,6 +24,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
+#include "EstimatorManagerInput.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -48,31 +49,39 @@ public:
   /// This is to deal with vague expression of precision in legacy code. Don't use in new code.
   using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-
+  
   using QMCT          = QMCTraits;
-  using EstimatorType = ScalarEstimatorBase;
   using FPRBuffer     = std::vector<FullPrecRealType>;
   using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
-  EstimatorManagerNew(Communicate* c);
+  EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
+  /** Batched version constructor.
+   *
+   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset   The electron or equiv. pset
+   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   */
+  EstimatorManagerNew(Communicate* comm,
+		      EstimatorManagerInput&& emi,
+		      const QMCHamiltonian& H,
+		      const ParticleSet& pset,
+		      const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();
 
   ///return the number of ScalarEstimators
-  inline int size() const { return Estimators.size(); }
+  //inline int size() const { return Estimators.size(); }
 
-  /** add a "non" physical operator estimator 
-   *
-   *  this is a dratically reduced version of OperatorBase right now it just supports
-   *  what the SpinDensityNew estimator needs
-   *
-   *  What is actually important is that it has its own locality aware data and
-   *  EstimatorManagerNew doesn't know about or manage that data.
-   */
-  int addEstOperator(OperatorEstBase& op_est);
+  // /** add a "non" physical operator estimator 
+  //  *
+  //  *  What is actually important is that it has its own locality aware data and
+  //  *  EstimatorManagerNew doesn't know about or manage that data.
+  //  */
+  // int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H,
@@ -107,14 +116,18 @@ public:
    */
   void stopBlock(unsigned long accept, unsigned long reject, RealType block_weight);
 
-  /** At end of block collect the scalar estimators for the entire rank
-   *   
-   *  \todo remove assumption of one ScalarEstimator per crowd.
-   *  see how OperatorEstimators are handled
+  /** At end of block collect the main scalar estimators for the entire rank
    *
-   *  Each is currently accumulates on for crowd of 1 or more walkers
+   *  One per crowd over multiple walkers
    */
-  void collectScalarEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+  void collectMainEstimators(const RefVector<ScalarEstimatorBase>& scalar_estimators);
+
+  /** Deals with possible free form scalar estimators
+   *
+   *  \param[in] scalar_ests - vector of each crowds vector of references to their OperatorEstimators.
+   *             Still looking for actual use case.
+   */
+  void collectScalarEstimators(const std::vector<RefVector<ScalarEstimatorBase>>& scalar_ests);
 
   /** Reduces OperatorEstimator data from Crowds to the manager's OperatorEstimator data
    *
@@ -134,20 +147,37 @@ public:
 
   auto& get_AverageCache() { return AverageCache; }
 
+  std::size_t getNumEstimators() { return operator_ests_.size(); }
+  std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 private:
+  EstimatorManagerInput input_;
+
+  /** Construct estimator of type matching the underlying EstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename T, typename... Args>
+  bool createEstimator(T& input, Args&&... args);
+
+  /** Construct scalar estimator of type matching the underlying ScalarEstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename T, typename... Args>
+  bool createScalarEstimator(T& input, Args&&... args);
+  
   /** reset the estimator
    */
   void reset();
 
   /** add an Estimator
-   * @param newestimator New Estimator
-   * @param aname name of the estimator
-   * @return locator of newestimator
+   * @param[in]    estimator New Estimator
+   * @return       index of newestimator
    */
-  int add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname);
+  int addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
-  ///return a pointer to the estimator aname
-  EstimatorType* getEstimator(const std::string& a);
+  void addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
+  
+  // ///return a pointer to the estimator aname
+  // ScalarEstimatorBase* getEstimator(const std::string& a);
 
   /// collect data and write
   void makeBlockAverages(unsigned long accept, unsigned long reject);
@@ -178,8 +208,6 @@ private:
    */
   void zeroOperatorEstimators();
 
-  ///name of the primary estimator name
-  std::string MainEstimatorName;
   ///number of records in a block
   int RecordCount;
   ///index for the block weight PropertyCache(weightInd)
@@ -200,7 +228,7 @@ private:
    *
    * Do not need to clone: owned by the master thread
    */
-  CollectablesEstimator* Collectables;
+  //CollectablesEstimator* Collectables;
   /** accumulator for the energy
    *
    * @todo expand it for all the scalar observables to report the final results
@@ -216,10 +244,12 @@ private:
   RecordNamedProperty<RealType> BlockAverages;
   ///manager of property data
   RecordNamedProperty<RealType> BlockProperties;
-  ///column map
-  std::map<std::string, int> EstimatorMap;
-  ///estimators of simple scalars
-  std::vector<std::unique_ptr<EstimatorType>> Estimators;
+  /// main estimator i.e. some version of a local energy estimator.
+  UPtr<ScalarEstimatorBase> main_estimator_;
+  /** non main scalar estimators collecting simple scalars, are there any?
+   *  with the removal of collectables these don't seem used or needed.
+   */
+  std::vector<UPtr<ScalarEstimatorBase>> scalar_ests_;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
   /** OperatorEst Observables
@@ -230,7 +260,7 @@ private:
    * them.
    */
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
-
+  
   ///block timer
   Timer block_timer_;
 
@@ -241,6 +271,8 @@ private:
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 
+  static constexpr std::string_view error_tag_{"EstimatorManagerNew "};
+  
   friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
 };

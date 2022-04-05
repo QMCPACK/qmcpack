@@ -109,10 +109,11 @@ public:
    */
   void enable_sample_collection();
 
+  VMCDriverInput&& takeVMCDriverInput() { return std::move(vmcdriver_input_); }
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  const VMCDriverInput vmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;

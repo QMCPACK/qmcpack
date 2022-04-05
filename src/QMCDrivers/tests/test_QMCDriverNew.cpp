@@ -19,6 +19,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "QMCDriverInputDelegates.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
@@ -96,6 +97,7 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
   if (Concurrency::maxCapacity<>() != 8)
     throw std::runtime_error("Insufficient threads available to match test input");
 
+  
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
   SampleStack samples;
   WalkerConfigurations walker_confs;

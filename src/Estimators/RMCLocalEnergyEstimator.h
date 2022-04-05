@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -18,7 +18,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/Reptile.h"
 #include "QMCDrivers/WalkerProperties.h"
-
+#include "ScalarEstimatorInputs.h"
 namespace qmcplusplus
 {
 /** Class to accumulate the local energy and components
@@ -34,6 +34,8 @@ class RMCLocalEnergyEstimator : public ScalarEstimatorBase
   int NObs;
   int RMCSpecificTerms;
 
+  // This is just to allow compilation batched version does not support RMC at this time.
+  RMCLocalEnergyInput input_;
 public:
   /** constructor
    * @param h QMCHamiltonian to define the components
@@ -52,7 +54,6 @@ public:
   {
     throw std::runtime_error("RMC not supported by Unified Driver interfaces");
   }
-  /*@{*/
   inline void accumulate(const MCWalkerConfiguration& W,
                          WalkerIterator first,
                          WalkerIterator last,
@@ -144,7 +145,9 @@ public:
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
   RMCLocalEnergyEstimator* clone() override;
-  /*@}*/
+  const std::string& get_name() override { return input_.get_name(); }
+  bool isMainEstimator() override { return true; }
 };
+
 } // namespace qmcplusplus
 #endif

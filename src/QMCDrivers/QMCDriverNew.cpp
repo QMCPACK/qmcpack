@@ -32,6 +32,8 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "QMCDriverInputDelegates.h"
+
 
 namespace qmcplusplus
 {
@@ -60,10 +62,36 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  //create and initialize estimator
-  estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
+  using DV = ProjectData::DriverVersion;
+  switch (project_data_.get_driver_version())
+  {
+  case DV::BATCH: {
+    std::optional<EstimatorManagerInput> could_be_emi{qmcdriver_input_.takeEstimatorManagerInput()};
+    // if(could_be_emi.has_value())
+    // // This estimator manager is valid at construction.
+    //   estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(could_be_emi.value()), population_.get_golden_hamiltonian(),
+    // 					  *population.get_golden_electrons(), population.get_golden_twf());
+    // else {
+    //   EstimatorManagerInput emi;
+    //   estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(emi),population_.get_golden_hamiltonian(),
+    // 					  *population.get_golden_electrons(), population.get_golden_twf());
+    // }
+    estimator_manager_ =
+        std::make_unique<EstimatorManagerNew>(comm,
+                                              (could_be_emi.has_value() ? std::move(could_be_emi.value())
+                                                                        : std::move(EstimatorManagerInput{})),
+                                              population_.get_golden_hamiltonian(), *population.get_golden_electrons(),
+                                              population.get_golden_twf());
+  }
+  break;
+  case DV::LEGACY:
+    // This estimator still requires its put be called later
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), myComm);
+    break;
+  }
 
-  drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
+  drift_modifier_.reset(
+      createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
@@ -134,8 +162,10 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
-  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
-                          population_.get_golden_twf(), cur);
+  using DV = ProjectData::DriverVersion;
+  if (project_data_.get_driver_version() == DV::LEGACY)
+    estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
+                            population_.get_golden_twf(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {
@@ -234,8 +264,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
-void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
-                                    RealType reserve)
+void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 {
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
@@ -462,7 +491,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
  */
 void QMCDriverNew::endBlock()
 {
-  RefVector<ScalarEstimatorBase> all_scalar_estimators;
+  RefVector<ScalarEstimatorBase> main_scalar_estimators;
 
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
@@ -470,13 +499,14 @@ void QMCDriverNew::endBlock()
   unsigned long block_reject = 0;
 
   std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
+  // Seems uneeded see EstimatorManagerNew scalar_ests_ documentation.
+  std::vector<RefVector<ScalarEstimatorBase>> crowd_scalar_estimators;
 
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
-    auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-    all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                 std::make_move_iterator(crowd_sc_est.end()));
+    main_scalar_estimators.push_back(crowd->get_estimator_manager_crowd().get_main_estimator());
+    crowd_scalar_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_scalar_estimators());
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
@@ -491,7 +521,8 @@ void QMCDriverNew::endBlock()
       static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
 #endif
-  estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  estimator_manager_->collectMainEstimators(main_scalar_estimators);
+  estimator_manager_->collectScalarEstimators(crowd_scalar_estimators);
   estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
 
   /// get the average cpu_block time per crowd

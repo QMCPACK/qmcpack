@@ -61,6 +61,7 @@ struct ScalarEstimatorBase
 
   virtual ~ScalarEstimatorBase() {}
 
+  virtual bool isMainEstimator() { return false; }
   ///return average of the
   inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }
   ///return a variance
@@ -162,6 +163,8 @@ struct ScalarEstimatorBase
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
+
+  virtual const std::string& get_name() = 0;
 };
 } // namespace qmcplusplus
 

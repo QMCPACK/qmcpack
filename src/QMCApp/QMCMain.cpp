@@ -38,6 +38,7 @@
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
+#include "QMCDrivers/QMCDriverInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
@@ -466,6 +467,19 @@ bool QMCMain::validateXML()
     {
       hamPool->put(cur);
     }
+    else if (cname == "estimators")
+    {
+      try
+      {
+	if (estimator_manager_input_)
+	  throw UniformCommunicateError("QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+	estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
+      }
+      catch (const UniformCommunicateError& ue)
+      {
+	myComm->barrier_and_abort(ue.what());
+      }
+    }
     else if (cname == "include")
     {
       //file is provided
@@ -595,7 +609,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     QMCDriverFactory driver_factory(myProject);
     try
     {
-      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur, std::optional<EstimatorManagerInput>(std::nullopt));
       qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
       append_run = das.append_run;
     }

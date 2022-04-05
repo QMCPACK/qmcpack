@@ -48,7 +48,7 @@ class LocalEnergyInput;
 class CSLocalEnergyInput;
 using ScalarEstimatorInput  = std::variant<LocalEnergyInput, CSLocalEnergyInput>;
 using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
-
+  
 /** Input type for EstimatorManagerNew
  *  Parses Estimators level of input and and delegates child estimator nodes
  *  to appropriate estimator input class
@@ -57,13 +57,19 @@ using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput()                            = default;
+  EstimatorManagerInput() = default;                           
+  EstimatorManagerInput(const EstimatorManagerInput& emi) = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput& operator=(const EstimatorManagerInput& emi) = default;
+  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNodePtr cur);
   EstimatorManagerInput(xmlNodePtr cur);
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
   ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }
-  /** read <Estimators> node
-   *  Note that this can be done multiple times to combine global and section local estimator inputs.
+
+  /** read <Estimators> node or (<estimators> node for legacy support)
+   *  This can be done multiple times with <estimators> nodes
+   *  or with <estimator> nodes to support deprecated bare <estimator> definitions
    */
   void readXML(xmlNodePtr cur);
 
@@ -76,14 +82,12 @@ private:
   void appendEstimatorInput(Args&&... args)
   {
     estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-    ;
   }
 
   template<typename T, typename... Args>
   void appendScalarEstimatorInput(Args&&... args)
   {
     scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-    ;
   }
 
   friend class testing::EstimatorManagerInputTests;
