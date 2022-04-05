@@ -254,11 +254,11 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
   ParticleSet::ParticleGradient G;
   ParticleSet::ParticleLaplacian L;
 
-  IndexType nelec = P.getTotalNum();
+  const IndexType nelec = P.getTotalNum();
   G.resize(nelec);
   L.resize(nelec);
 
-  IndexType ngroups = P.groups();
+  const IndexType ngroups = P.groups();
   assert(B.size() == ngroups);
   std::vector<ValueMatrix> M;
   std::vector<GradMatrix> grad_M;
@@ -312,8 +312,8 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
                                                           const int iat,
                                                           std::vector<std::vector<ValueMatrix>>& Bforce)
 {
-  IndexType ngroups = P.groups();
-  IndexType nelec   = P.getTotalNum();
+  const IndexType ngroups = P.groups();
+  const IndexType nelec   = P.getTotalNum();
 
   ParticleSet::ParticleGradient Gtmp, G;
   ParticleSet::ParticleLaplacian Ltmp, L;

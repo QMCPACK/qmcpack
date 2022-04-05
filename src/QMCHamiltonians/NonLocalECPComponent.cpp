@@ -610,12 +610,12 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 {
   using ValueVector = SPOSet::ValueVector;
   //Some initial computation to find out the species and row number of electron.
-  IndexType gid        = W.getGroupID(iel);
-  IndexType sid        = psi.getTWFGroupIndex(gid);
-  IndexType firstIndex = W.first(gid);
-  IndexType thisIndex  = iel - firstIndex;
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType firstIndex = W.first(gid);
+  const IndexType thisIndex  = iel - firstIndex;
 
-  IndexType numOrbs = psi.numOrbitals(sid);
+  const IndexType numOrbs = psi.numOrbitals(sid);
   ValueVector phi_row; //phi_0(r), phi_1(r), ...
   ValueVector temp_row;
 
@@ -697,11 +697,11 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
-  IndexType gid        = W.getGroupID(iel);
-  IndexType sid        = psi.getTWFGroupIndex(gid);
-  IndexType thisEIndex = iel - W.first(gid);
-  IndexType numptcls   = W.last(gid) - W.first(gid);
-  IndexType norbs      = psi.numOrbitals(sid);
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType thisEIndex = iel - W.first(gid);
+  const IndexType numptcls   = W.last(gid) - W.first(gid);
+  const IndexType norbs      = psi.numOrbitals(sid);
   SPOSet& spo(*psi.getSPOSet(sid));
 
   RealType pairpot = 0;
