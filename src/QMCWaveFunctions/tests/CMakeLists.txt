@@ -83,6 +83,7 @@ set(SPOSET_SRC
     test_spo_collection_input_MSD_LCAO_h5.cpp
     test_einset.cpp
     test_einset_spinor.cpp
+    test_rotatedspos.cpp
     test_CompositeSPOSet.cpp
     test_hybridrep.cpp
     test_pw.cpp
