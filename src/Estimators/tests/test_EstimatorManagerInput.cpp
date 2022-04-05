@@ -11,15 +11,13 @@
 
 #include "catch.hpp"
 #include "EstimatorManagerInput.h"
-#include "test_EstimatorManagerInput.h"
+#include "EstimatorManagerInputTest.h"
 #include "ScalarEstimatorInputs.h"
 #include "SpinDensityInput.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
-#include "ValidMomentumDistributionInput.h"
-#include "ValidScalarEstimatorInput.h"
 
 namespace qmcplusplus
 {
@@ -43,45 +41,6 @@ public:
   }
   /** @} */
 };
-
-Libxml2Document createEstimatorManagerNewInputXML()
-{
-  const int max_node_recurse = 3;
-  Libxml2Document estimators_doc;
-  estimators_doc.newDoc("Estimators");
-  {
-    using namespace testing::onebodydensitymatrices;
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  for (auto& input_xml : valid_scalar_estimator_input_sections)
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(input_xml);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-
-  return estimators_doc;
-}
 
 } // namespace testing
 
@@ -169,6 +128,22 @@ TEST_CASE("EstimatorManagerInput::moveFromEstimatorInputs", "[estimators]")
   TakesAMovedInput<OneBodyDensityMatricesInput> takes_obdmi(
       std::move(std::get<OneBodyDensityMatricesInput>(emi.get_estimator_inputs().back())));
   emi.get_estimator_inputs().pop_back();
+}
+
+TEST_CASE("EstimatorManagerInput::moveConstructor", "[estimators]")
+{
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi(estimators_doc.getRoot());
+
+  CHECK(emi.get_estimator_inputs().size() == 3);
+  CHECK(emi.get_scalar_estimator_inputs().size() == 2);
+
+  EstimatorManagerInput emi_moved_to(std::move(emi));
+
+  CHECK(emi_moved_to.get_estimator_inputs().size() == 3);
+  CHECK(emi_moved_to.get_scalar_estimator_inputs().size() == 2);
+
 }
 
 

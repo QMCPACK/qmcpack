@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -24,6 +24,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
+#include "EstimatorManagerInput.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -55,24 +56,27 @@ public:
   using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
-  EstimatorManagerNew(Communicate* c);
+  EstimatorManagerNew(Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
+  ///
+  EstimatorManagerNew(Communicate* comm,
+		      EstimatorManagerInput&& emi,
+		      QMCHamiltonian& H,
+		      const ParticleSet& pset,
+		      const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();
 
   ///return the number of ScalarEstimators
   inline int size() const { return Estimators.size(); }
 
-  /** add a "non" physical operator estimator 
-   *
-   *  this is a dratically reduced version of OperatorBase right now it just supports
-   *  what the SpinDensityNew estimator needs
-   *
-   *  What is actually important is that it has its own locality aware data and
-   *  EstimatorManagerNew doesn't know about or manage that data.
-   */
-  int addEstOperator(OperatorEstBase& op_est);
+  // /** add a "non" physical operator estimator 
+  //  *
+  //  *  What is actually important is that it has its own locality aware data and
+  //  *  EstimatorManagerNew doesn't know about or manage that data.
+  //  */
+  // int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
   bool put(QMCHamiltonian& H,
@@ -134,7 +138,23 @@ public:
 
   auto& get_AverageCache() { return AverageCache; }
 
+  std::size_t getNumEstimators() { return operator_ests_.size(); }
+  std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 private:
+  EstimatorManagerInput input_;
+
+  /** Construct estimator of type matching the underlying EstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename T, typename... Args>
+  bool createEstimator(T& input, Args&&... args);
+
+  /** Construct scalar estimator of type matching the underlying ScalarEstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename T, typename... Args>
+  bool createScalarEstimator(T& input, Args&&... args);
+  
   /** reset the estimator
    */
   void reset();
@@ -231,6 +251,8 @@ private:
    */
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 
+  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_ests_;
+  
   ///block timer
   Timer block_timer_;
 
@@ -241,6 +263,8 @@ private:
   void addHeader(std::ostream& o);
   size_t FieldWidth;
 
+  static constexpr std::string_view error_tag_{"EstimatorManagerNew "};
+  
   friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
 };

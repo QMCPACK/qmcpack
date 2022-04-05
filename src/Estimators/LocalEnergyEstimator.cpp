@@ -25,6 +25,14 @@ LocalEnergyEstimator::LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5) : U
   scalars_saved.resize(SizeOfHamiltonians + LE_MAX);
 }
 
+LocalEnergyEstimator::LocalEnergyEstimator(LocalEnergyInput&& input, QMCHamiltonian& h) : UseHDF5(input.get_use_hdf5()), refH(h), input_(input)
+{
+  SizeOfHamiltonians = h.sizeOfObservables();
+  FirstHamiltonian   = h.startIndex();
+  scalars.resize(SizeOfHamiltonians + LE_MAX);
+  scalars_saved.resize(SizeOfHamiltonians + LE_MAX);
+}
+ 
 LocalEnergyEstimator* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
 
 void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid)

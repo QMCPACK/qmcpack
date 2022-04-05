@@ -18,7 +18,14 @@
 #include "Estimators/EstimatorManagerNew.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/tests/EstimatorManagerNewTest.h"
-
+#include "SpinDensityInput.h"
+#include "MomentumDistributionInput.h"
+#include "OneBodyDensityMatricesInput.h"
+#include "ScalarEstimatorInputs.h"
+#include "EstimatorManagerInputTest.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include <stdio.h>
 #include <sstream>
 
@@ -36,6 +43,26 @@ TEST_CASE("EstimatorManagerNew", "[estimators]")
   REQUIRE(embt.testAddGetEstimator());
 }
 
+TEST_CASE("EstimatorManagerNew::constructEstimators", "[estimators]")
+{
+  Communicate* comm = OHMMS::Controller;
+
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi(estimators_doc.getRoot());
+
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto& pset             = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham = *(hamiltonian_pool.getPrimary());
+  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+
+  CHECK(emn.getNumEstimators() == 3);
+  CHECK(emn.getNumScalarEstimators() == 2);
+}
+  
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;

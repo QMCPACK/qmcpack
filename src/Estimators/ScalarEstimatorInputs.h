@@ -9,11 +9,16 @@
 // File refactored from: EstimatorManagerNew.h
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_SCALAR_ESTIMATOR_INPUTS_H
+#define QMCPLUSPLUS_SCALAR_ESTIMATOR_INPUTS_H
+
 #include "InputSection.h"
 
 namespace qmcplusplus
 {
 
+class LocalEnergyEstimator;
+  
 class LocalEnergyInput
 {
   class LocalEnergyInputSection : public InputSection
@@ -27,15 +32,17 @@ class LocalEnergyInput
       strings      = {"type"};
     };
   };
-
 public:
+  using Consumer = LocalEnergyEstimator;
+  LocalEnergyInput() = default;
   LocalEnergyInput(xmlNodePtr cur);
   bool get_use_hdf5() const { return use_hdf5_; }
-
 private:
   LocalEnergyInputSection input_section_;
   bool use_hdf5_ = true;
 };
+
+struct CSEnergyEstimator;
 
 class CSLocalEnergyInput
 {
@@ -50,8 +57,9 @@ class CSLocalEnergyInput
       strings      = {"type"};
     }
   };
-
 public:
+  using Consumer = CSEnergyEstimator;
+  CSLocalEnergyInput() = default;
   CSLocalEnergyInput(xmlNodePtr cur);
   int get_n_psi() const { return n_psi_; }
 
@@ -61,3 +69,5 @@ private:
 };
 
 } // namespace qmcplusplus
+
+#endif

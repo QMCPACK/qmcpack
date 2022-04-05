@@ -23,6 +23,7 @@ set(SRCS
     FakeOperatorEstimator.cpp
     EstimatorManagerBaseTest.cpp
     EstimatorManagerNewTest.cpp
+    EstimatorManagerInputTest.cpp
     test_manager.cpp
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp

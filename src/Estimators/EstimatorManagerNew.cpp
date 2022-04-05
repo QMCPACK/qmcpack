@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -12,6 +12,7 @@
 #include <functional>
 #include <numeric>
 #include <algorithm>
+#include <variant>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -32,6 +33,7 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+#include "type_traits/variant_help.hpp"
 
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
@@ -42,6 +44,98 @@ namespace qmcplusplus
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
     : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
 {}
+
+template<class EstInputType, typename VAR, typename... Args>
+bool EstimatorManagerNew:: createEstimator(VAR& input, Args&&... args)
+{
+  if (has<EstInputType>(input))
+  {
+    operator_ests_.push_back(std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)), std::forward<Args>(args)...));
+    return true;
+  }
+  else
+    return false;
+}
+
+// code is the same as createEstimator except it pushes to scalar_ests. I choose to repeat for clarity.
+template<class EstInputType, typename VAR, typename... Args>
+bool EstimatorManagerNew:: createScalarEstimator(VAR& input, Args&&... args)
+{
+  if (has<EstInputType>(input))
+  {
+    scalar_ests_.push_back(std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)), std::forward<Args>(args)...));
+    return true;
+  }
+  else
+    return false;
+}
+
+using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
+//initialize the name of the primary estimator
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+                                         EstimatorManagerInput&& emi,
+                                         QMCHamiltonian& H,
+                                         const ParticleSet& pset,
+                                         const TrialWaveFunction& twf)
+    : input_(std::move(emi)),
+      MainEstimatorName("LocalEnergy"),
+      RecordCount(0),
+      my_comm_(c),
+      Collectables(0),
+      max4ascii(8),
+      FieldWidth(20)
+{
+  // These lambdas are the code needed to construct estimators from the there input class + whatever
+  // the EstimatorManager just trys them as it goes through the estimator nodes.
+  //
+  // They return the unique pointers owned by EstimatorManagerNew::operator_ests_
+  // If an estimator constructor signature matches a previous estimator it could use the same body.
+  // Because each estimator input is required to have a Consumer type alias that points at its estimator.
+  // auto makeLatticeSpecies = [&](auto&& est_in, auto& lattice, auto& species_set) -> UPtr<OperatorEstBase> {
+  //   return MakeUniqueEstimator(std::move(est_in), lattice, species_set);
+  // };
+
+  // auto makeLatticeSpeciesSPOMapPSet = [&](auto&& est_in, auto& lattice, auto& species_set, const auto& spo_map,
+  //                                         auto& pset_target) -> UPtr<OperatorEstBase> {
+  //   return MakeUniqueEstimator(std::move(est_in), lattice, species_set, spo_map, pset_target);
+  // };
+
+  // auto makeLatticeTotalNumberTwist = [&](auto& est_in, auto total_number, auto twist,
+  //                                        auto& lattice) -> UPtr<OperatorEstBase> {
+  //   return std::make_unique<MomentumDistribution>(est_in, total_number, twist, lattice, DataLocality::crowd);
+  // };
+
+  
+  while( !input_.get_estimator_inputs().empty() )
+  {
+    auto& est_input = input_.get_estimator_inputs().back();
+    if(has<SpinDensityInput>(est_input))
+      createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet());
+    else if(has<MomentumDistributionInput>(est_input))
+      createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(),
+						 pset.getTwist(), pset.getLattice());
+    else if(has<OneBodyDensityMatricesInput>(est_input))
+      createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(),
+							 pset.getSpeciesSet(), twf.getSPOMap(), pset);
+    else
+      throw UniformCommunicateError(std::string(error_tag_) +
+                                    "cannot construct an estimator from estimator input object.");
+    input_.get_estimator_inputs().pop_back();
+  }
+  while( !input_.get_scalar_estimator_inputs().empty() )
+  {
+    auto& scalar_input = input_.get_scalar_estimator_inputs().back();
+    if(has<LocalEnergyInput>(scalar_input))
+      createScalarEstimator<LocalEnergyInput>(scalar_input, H);
+    else if(has<CSLocalEnergyInput>(scalar_input))
+      createScalarEstimator<CSLocalEnergyInput>(scalar_input, H);
+    else
+      throw UniformCommunicateError(std::string(error_tag_) +
+                                    "cannot construct a scalar estimator from scalar estimator input object.");
+    input_.get_scalar_estimator_inputs().pop_back();
+  }
+}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
@@ -330,10 +424,7 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
     return Estimators[(*it).second].get();
 }
 
-bool EstimatorManagerNew::put(QMCHamiltonian& H,
-                              const ParticleSet& pset,
-                              const TrialWaveFunction& twf,
-                              xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;

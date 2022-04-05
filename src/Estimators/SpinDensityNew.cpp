@@ -23,6 +23,10 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
 {
   my_name_ = "SpinDensity";
 
+  data_locality_ = DataLocality::crowd;
+  if (input_.get_save_memory())
+      dl = DataLocality::rank;
+
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
   else
@@ -51,11 +55,7 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
   std::cout << "SpinDensity constructor called\n";
   data_locality_ = dl;
   if (input_.get_cell().explicitly_defined == true)
-    throw std::runtime_error(
-        "SpinDensityNew should not be constructed with both a cell in its input and an lattice input argument.");
-  else if (lattice_.explicitly_defined == false)
-    throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
-
+    lattice_ = input_.get_cell();
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
   data_.resize(getFullDataSize());
   if (input_.get_write_report())

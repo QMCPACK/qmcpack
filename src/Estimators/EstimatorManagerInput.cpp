@@ -17,7 +17,16 @@
 
 namespace qmcplusplus
 {
+
+EstimatorManagerInput::EstimatorManagerInput() {}
+//EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi) {}
+
 EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
+
+EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNodePtr cur) : EstimatorManagerInput(std::move(emi))
+{
+  readXML(cur);
+}
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
 {
