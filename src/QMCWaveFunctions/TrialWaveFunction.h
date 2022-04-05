@@ -173,7 +173,7 @@ public:
 
   /** Initialize a TWF wrapper for fast derivative evaluation
    */
-  void initializeTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf);
+  void initializeTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const;
   /** evalaute the log (internally gradients and laplacian) of the trial wavefunction. gold reference */
   RealType evaluateLog(ParticleSet& P);
 

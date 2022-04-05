@@ -55,9 +55,9 @@ public:
    *  @return void.
    */
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
-  inline void addJastrow(ParticleSet& P, std::unique_ptr<WaveFunctionComponent>& j)
+  inline void addJastrow(ParticleSet& P, const WaveFunctionComponent& j)
   {
-    jastrow_list_.push_back(j->makeClone(P));
+    jastrow_list_.push_back(j.makeClone(P));
   };
 
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
