@@ -793,14 +793,14 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
         //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
         phimat[j][iorb] = jratio * phi[iorb];
         //This is the electron gradient of the above expression.
-        gradphimat[j][iorb] = jratio * (gradphi[iorb] + jegrad * phi[iorb]);
+        gradphimat[j][iorb] = jratio * (gradphi[iorb] + GradType(jegrad) * phi[iorb]);
         laplphimat[j][iorb] = laplphi[iorb]; //this is not used, so not including jastrow contribution.
       }
     }
     for (int iorb = 0; iorb < norbs; iorb++)
     {
       //This is the ion gradient of exp(J(q))/exp(J(r))phi_j(q).
-      iongrad_phimat[j][iorb] = jratio * (iongrad_phi[iorb] + phi[iorb] * (jgrad_quad[j] - jigradref));
+      iongrad_phimat[j][iorb] = jratio * (iongrad_phi[iorb] + phi[iorb] * (GradType(jgrad_quad[j]) - jigradref));
     }
     W.rejectMove(iel);
   }

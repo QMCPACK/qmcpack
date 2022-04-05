@@ -297,10 +297,10 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
     {
       for (int iorb = 0; iorb < norbs; iorb++)
       {
-        gradJdotgradPhi[sid][iel - first][iorb] = 2.0 * dot(G[iel], grad_M[sid][iel - first][iorb]);
-        B[sid][iel - first][iorb] += MinusOver2M[ig] *
+        gradJdotgradPhi[sid][iel - first][iorb] = RealType(2.0) * dot(GradType(G[iel]), grad_M[sid][iel - first][iorb]);
+        B[sid][iel - first][iorb] += RealType(MinusOver2M[ig]) *
             (lapl_M[sid][iel - first][iorb] + gradJdotgradPhi[sid][iel - first][iorb] +
-             (L[iel] + dot(G[iel], G[iel])) * M[sid][iel - first][iorb]);
+             ValueType(L[iel] + dot(G[iel], G[iel])) * M[sid][iel - first][iorb]);
       }
     }
   }
@@ -390,13 +390,13 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       {
         for (int iorb = 0; iorb < norbs; iorb++)
         {
-          Bforce[idim][sid][iel - first][iorb] = MinusOver2M[ig] *
+          Bforce[idim][sid][iel - first][iorb] = RealType(MinusOver2M[ig]) *
               (dlapl[idim][sid][iel - first][iorb] +
-               2.0 *
-                   (dot(G[iel], dgmat[idim][sid][iel - first][iorb]) +
-                    dot(dG[idim][iel], grad_M[sid][iel - first][iorb])) +
-               M[sid][iel - first][iorb] * (dL[idim][iel] + 2.0 * dot(dG[idim][iel], G[iel])) +
-               (L[iel] + dot(G[iel], G[iel])) * dm[idim][sid][iel - first][iorb]);
+               RealType(2.0) *
+                   (dot(GradType(G[iel]), dgmat[idim][sid][iel - first][iorb]) +
+                    dot(GradType(dG[idim][iel]), grad_M[sid][iel - first][iorb])) +
+               M[sid][iel - first][iorb] * ValueType(dL[idim][iel] + 2.0 * dot(dG[idim][iel], G[iel])) +
+               ValueType(L[iel] + dot(G[iel], G[iel])) * dm[idim][sid][iel - first][iorb]);
         }
       }
     }
