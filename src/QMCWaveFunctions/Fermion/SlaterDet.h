@@ -57,7 +57,7 @@ public:
 
   void reportStatus(std::ostream& os) override;
 
-  void registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const override;
+  void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

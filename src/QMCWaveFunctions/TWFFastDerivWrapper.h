@@ -54,7 +54,7 @@ public:
    *  @param[in] spo.  Pointer to SPOSet.  
    *  @return void.
    */
-  void addGroup(ParticleSet& P, const IndexType groupid, SPOSet* spo);
+  void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void addJastrow(ParticleSet& P, std::unique_ptr<WaveFunctionComponent>& j)
   {
     jastrow_list_.push_back(j->makeClone(P));

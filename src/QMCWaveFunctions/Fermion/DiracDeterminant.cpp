@@ -360,7 +360,7 @@ void DiracDeterminant<DU_TYPE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 }
 
 template<typename DU_TYPE>
-void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(ParticleSet& P, TWFFastDerivWrapper& twf) const
+void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
 {
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }
