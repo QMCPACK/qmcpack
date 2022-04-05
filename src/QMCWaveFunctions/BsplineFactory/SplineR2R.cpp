@@ -51,17 +51,15 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
 /* 
   This is called by RotatedSPOs::apply_rotation()...
 
-  The implementation here follows that described in [1,2]
-  in each "rotated" orbital, \psi, is composed of a linear combination
+  The implementation here follows that described in [1,2].
+  Each "rotated" orbital, \psi, is composed of a linear combination
   of SPO's \phi:
 
   \psi_{i} = \psi_i + \sum_{j} \alpha_{i,j}\phi_{j}
   
-  where \alpha is an adjustable parameter, and i runs over the core 
-  (occupied) SPOs, and j runs over all virtual (unoccupied) SPOs.
-  See [2] for an explanation on why core-core and virtual-virtual rotations
-  are not included. This is also what was implemented in the Berkeley branch
-  orbopt scheme. Cf. MultiSlateDeterminantFast.cpp lines 154 - 170. 
+  where \alpha is an adjustable parameter. This is also close to what 
+  was implemented in the Berkeley branch orbopt scheme. 
+  Cf. MultiSlateDeterminantFast.cpp lines 154 - 170. 
   
   Note that this implementation requires that NSPOs > Nelec. In other words,
   if you want to run a orbopt wfn, you must include some virtual orbitals!
@@ -79,7 +77,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
      ~~ Spline stuff ~~
      spl_coefs      = Raw pointer to a hunk o' memory
      BasisSetSize   = Number of spline coefs per orbital
-     OrbitalSetSize = Number of orbitals + possibly some padding
+     OrbitalSetSize = Number of orbitals
      
      Because coefs is a raw pointer, we have to take care to index into it
      with some care. The value of the nth SPO at a point xi, yi, zi
@@ -99,12 +97,12 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
      BasisSetSize x (OrbitalSetSize + padding), with the spline index 
      adjacent in memory.
 
-     However, due to SIMD alignment, Nsplines may be larger than the actual
+     Due to SIMD alignment, Nsplines may be larger than the actual
      number of splined orbitals, which means that in practice rot_mat may 
-     be smaller than OrbitalSetSize. Therefore, we put rot_mat inside "tmpU",
-     a bigger matrix. The padding of the splines is at the end, so if we 
-     put rot_mat at top left corner of tmpU, then we can apply tmpU to the
-     spl_coefs safely regardless of padding.   
+     be smaller than the number of 'columns' in the coefs array. 
+     Therefore, we put rot_mat inside "tmpU". The padding of the splines 
+     is at the end, so if we put rot_mat at top left corner of tmpU, then 
+     we can apply tmpU to the coefs safely regardless of padding.   
 
      Typically, BasisSetSize >> OrbitalSetSize, so the spl_coefs "matrix"
      is very tall and skinny.
