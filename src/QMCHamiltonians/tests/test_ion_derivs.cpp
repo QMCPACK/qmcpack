@@ -775,7 +775,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  //This is already defined in QMCHamiltonian, but keep it here for easy access.
+  //Enum to give human readable indexing into QMCHamiltonian. 
   enum observ_id
   {
     KINETIC = 0,
