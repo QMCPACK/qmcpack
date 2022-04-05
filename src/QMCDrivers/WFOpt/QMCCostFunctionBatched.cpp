@@ -75,7 +75,7 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
-    NumWalkersEff = correlatedSampling(true);
+    EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     //    Return_t curAvg2_w = curAvg_w*curAvg_w;
@@ -164,13 +164,8 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-    IsValid = true;
-    if (NumWalkersEff < MinNumWalkers * NumSamples)
-    {
-      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                         << MinNumWalkers * NumSamples)
-      IsValid = false;
-    }
+
+    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -444,9 +439,9 @@ void QMCCostFunctionBatched::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
+  IsValid = true;
 
   //collect SumValue for computedCost
-  NumWalkersEff           = etemp[1];
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
   SumValue[SUM_E_WGT]     = etemp[0];
@@ -491,7 +486,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   }
 }
 
-QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(bool needGrad)
+QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
@@ -717,13 +712,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::correlatedSampling(boo
   }
   //collect everything
   myComm->allreduce(SumValue);
-  //     for (int i=0; i<SumValue.size(); i++) std::cerr <<SumValue[i]<<"  ";
-  //     std::cerr << std::endl;
-  //     app_log()<<"After purge Energy Variance Weight "
-  //      << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
-  //      << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
-  //      << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << std::endl;
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
+  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * samples_.getGlobalNumSamples());
 }
 
 
@@ -759,7 +748,6 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
   Left  = 0.0;
 
   //     resetPsi();
-  //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   //    RealType H2_avg = 1.0/curAvg2_w;
