@@ -82,7 +82,6 @@ set(SPOSET_SRC
     test_spo_collection_input_MSD_LCAO_h5.cpp
     test_einset.cpp
     test_einset_spinor.cpp
-    test_rotatedspos.cpp
     test_CompositeSPOSet.cpp
     test_hybridrep.cpp
     test_pw.cpp
@@ -109,6 +108,13 @@ set(DETERMINANT_SRC
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
+# @TODO: Remove when rotations work for complex stuff
+if(NOT QMC_COMPLEX)
+  if(NOT ENABLE_CUDA)
+    set(SPOSET_SRC test_rotatedspos.cpp ${SPOSET_SRC})
+  endif()
+endif()
+  
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
   if(NOT QMC_CUDA2HIP)
