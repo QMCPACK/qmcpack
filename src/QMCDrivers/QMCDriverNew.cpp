@@ -32,6 +32,8 @@
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Message/UniformCommunicateError.h"
+#include "QMCDriverInputDelegates.h"
+
 
 namespace qmcplusplus
 {
@@ -60,10 +62,24 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  //create and initialize estimator
-  estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
-
-  drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
+  using DV = ProjectData::DriverVersion;
+  switch(project_data_.get_driver_version())
+  {
+  case DV::BATCH:
+  {
+    EstimatorManagerInput estimator_manager_input{std::move(*(qmcdriver_input_.takeEstimatorManagerInput()))};
+    // This estimator manager is valid at construction.
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(estimator_manager_input), population_.get_golden_hamiltonian(),
+					  *population.get_golden_electrons(), population.get_golden_twf());
+  }
+    break;
+  case DV::LEGACY:
+    // This estimator still requires its put be called later    
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
+    break;
+  }
+  
+  drift_modifier_.reset(createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
@@ -134,8 +150,10 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
-  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
-                          population_.get_golden_twf(), cur);
+  using DV = ProjectData::DriverVersion;
+  if ( project_data_.get_driver_version() == DV::LEGACY )
+    estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
+			    population_.get_golden_twf(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {

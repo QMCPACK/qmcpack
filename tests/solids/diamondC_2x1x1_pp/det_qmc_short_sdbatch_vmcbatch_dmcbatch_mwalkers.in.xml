@@ -86,7 +86,9 @@
    </qmcsystem>
 
    <qmc method="vmc" move="pbyp">
-     <estimator name="LocalEnergy" hdf5="no"/>
+     <estimators>
+       <estimator type="LocalEnergy" hdf5="no"/>
+     </estimators>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
@@ -96,7 +98,9 @@
      <parameter name="usedrift">   no </parameter>
    </qmc>
    <qmc method="vmc" move="pbyp">
-     <estimator name="LocalEnergy" hdf5="no"/>
+     <estimators>
+       <estimator type="LocalEnergy" hdf5="no"/>
+     </estimators>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
      <parameter name="warmupSteps">  3  </parameter>
@@ -106,7 +110,9 @@
      <parameter name="usedrift">   yes </parameter>
    </qmc>
    <qmc method="dmc" move="pbyp" checkpoint="-1">
-     <estimator name="LocalEnergy" hdf5="no"/>
+     <estimators>
+       <estimator type="LocalEnergy" hdf5="no"/>
+     </estimators>
      <parameter name="total_walkers"> 16 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  3 </parameter>

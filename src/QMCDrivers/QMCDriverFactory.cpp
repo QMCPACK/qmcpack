@@ -41,6 +41,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "QMCDrivers/QMCDriverInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -116,6 +117,8 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
     else
       throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
+
+    
     break;
   // Begin to separate driver version = batch input reading from the legacy input parsing
   case DV::LEGACY:

@@ -15,6 +15,7 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "QMCDriverInput.h"
+#include "QMCDriverInputDelegates.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus
@@ -89,7 +90,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     //determine how often to print walkers to hdf5 file
     while (tcur != NULL)
     {
-      std::string cname((const char*)(tcur->name));
+      std::string cname{lowerCase(castXMLCharToChar(tcur->name))};
       if (cname == "record")
       {
         //dump walkers for optimization
@@ -116,6 +117,10 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       else if (cname == "random")
       {
         reset_random_ = true;
+      }
+      else if (cname == "estimators")
+      {
+	estimator_manager_input_ = std::optional<EstimatorManagerInput>(tcur);
       }
       tcur = tcur->next;
     }

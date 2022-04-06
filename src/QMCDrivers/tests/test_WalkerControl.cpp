@@ -20,6 +20,7 @@
 #include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDriverInputDelegates.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Platforms/Host/OutputManager.h"
 

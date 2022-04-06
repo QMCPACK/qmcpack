@@ -18,9 +18,6 @@
 namespace qmcplusplus
 {
 
-EstimatorManagerInput::EstimatorManagerInput() {}
-//EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi) {}
-
 EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
 
 EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNodePtr cur) : EstimatorManagerInput(std::move(emi))
@@ -52,7 +49,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         throw UniformCommunicateError(error_tag + "unparsable child node, name: " + cname + " type: " + atype +
                                       " in Estimators input.");
     }
-    else
+    else if(cname!="text")
       throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
     child = child->next;
   }

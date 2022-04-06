@@ -509,11 +509,11 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
     add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
   }
   //Collectables is special and should not be added to Estimators
-  if (Collectables == 0 && H.sizeOfCollectables())
-  {
-    app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
-    Collectables = new CollectablesEstimator(H);
-  }
+  // if (Collectables == 0 && H.sizeOfCollectables())
+  // {
+  //   app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
+  //   Collectables = new CollectablesEstimator(H);
+  // }
   // Unrecognized estimators are not allowed
   if (!extra_types.empty())
   {

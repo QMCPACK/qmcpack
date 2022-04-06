@@ -57,9 +57,11 @@ using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput();                           
-  EstimatorManagerInput(const EstimatorManagerInput& emi) = delete;
+  EstimatorManagerInput() = default;                           
+  EstimatorManagerInput(const EstimatorManagerInput& emi) = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput& operator=(const EstimatorManagerInput& emi) = default;
+  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi) = default;
   EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNodePtr cur);
   EstimatorManagerInput(xmlNodePtr cur);
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
