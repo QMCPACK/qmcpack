@@ -84,18 +84,6 @@ public:
   // NB: This may be <= number of splined orbs from SplineInst
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
-  // Gives the number of spline coefs for 1 spline
-  int getBasisSetSize() const override
-  {
-    const auto spline_ptr = SplineInst->getSplinePtr();
-    assert(spline_ptr != nullptr);
-    const auto spl_coefs      = spline_ptr->coefs;
-    const auto Nsplines       = spline_ptr->num_splines; // May include padding
-    const auto coefs_tot_size = spline_ptr->coefs_size;
-    const auto BasisSetSize   = coefs_tot_size / Nsplines;
-    return BasisSetSize;
-  }
-
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 
   // Rotates the splines owned by SplineInst

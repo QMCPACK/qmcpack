@@ -127,11 +127,8 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
-  const auto basissetsize   = rot_spo->getBasisSetSize();
   app_log() << "RotatedSPOs::OrbitalSetSize= " << orbitalsetsize << "\n";
-  app_log() << "RotatedSPOs::BasisSetSize= " << basissetsize << "\n";
   REQUIRE(orbitalsetsize == 8);
-  REQUIRE(basissetsize == 79507);
 
   // 2.) Get data for unrotated orbitals. Check that there's no rotation
   rot_spo->buildOptVariables(elec_.R.size());
