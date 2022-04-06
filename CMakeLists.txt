@@ -48,20 +48,57 @@ endif()
 include(CMakeDependentOption)
 option(QMC_MPI "Enable/disable MPI" ON)
 option(QMC_OMP "Enable/disable OpenMP" ON)
-option(QMC_COMPLEX "Build for complex binary" OFF)
-option(QMC_CUDA "Build with GPU support through CUDA" OFF)
-option(
-  ENABLE_CUDA
-  "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
-  OFF)
+
+# GPU programming modlels
+if(NOT QMC_GPU
+   AND (QMC_CUDA
+        OR ENABLE_CUDA
+        OR QMC_CUDA2HIP))
+  message(
+    WARNING
+      "QMC_CUDA or ENABLE_CUDA or QMC_CUDA2HIP is set by user, please use QMC_GPU=CUDA/CUDA_legacy/ROCM/ROCM_legacy")
+endif()
+
+set(VALID_GPU_OPTIONS "no" "CUDA" "CUDA_legacy" "ROCM" "ROCM_legacy")
+set(QMC_GPU
+    "no"
+    CACHE STRING "GPU programming model")
+set_property(CACHE QMC_GPU PROPERTY STRINGS ${VALID_GPU_OPTIONS})
+
+if(NOT QMC_GPU IN_LIST VALID_GPU_OPTIONS)
+  message(FATAL_ERROR "Invalid -DQMC_GPU=${QMC_GPU}, value must be one of ${VALID_GPU_OPTIONS}")
+else()
+  message(STATUS "GPU acceleration option QMC_GPU=${QMC_GPU}")
+  if(QMC_GPU STREQUAL "CUDA")
+    set(ENABLE_CUDA ON)
+    set(QMC_CUDA OFF)
+    set(QMC_CUDA2HIP OFF)
+  elseif(QMC_GPU STREQUAL "CUDA_legacy")
+    set(ENABLE_CUDA OFF)
+    set(QMC_CUDA ON)
+    set(QMC_CUDA2HIP OFF)
+  elseif(QMC_GPU STREQUAL "ROCM")
+    set(ENABLE_CUDA ON)
+    set(QMC_CUDA OFF)
+    set(QMC_CUDA2HIP ON)
+  elseif(QMC_GPU STREQUAL "ROCM_legacy")
+    set(ENABLE_CUDA OFF)
+    set(QMC_CUDA ON)
+    set(QMC_CUDA2HIP ON)
+  endif()
+endif()
+
+option(QMC_CUDA "Build legacy GPU support through CUDA" OFF)
+option(ENABLE_CUDA "Build with the second generation of GPU support through CUDA" OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
 if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
+
 # explicit HIP source codes only exist in AFQMC.
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
-option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+cmake_dependent_option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF "ENABLE_OFFLOAD" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -181,6 +218,7 @@ option(BUILD_AFQMC_WITH_NCCL "Build AFQMC with NCCL library." OFF)
 if(BUILD_AFQMC AND NOT QMC_MPI)
   message(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 endif()
+option(QMC_COMPLEX "Build for complex binary" OFF)
 option(BUILD_FCIQMC "Build with FCIQMC" OFF)
 option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
