@@ -28,19 +28,11 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       input_(std::move(mdi)),
       twist(twist_in),
       Lattice(lattice),
-      M(input_.get<int>("samples")),
-      norm_nofK(1.0 / RealType(M))
+      norm_nofK(1.0 / RealType(mdi.get_samples()))
 {
   psi_ratios.resize(np);
 
-  my_name_ = input_.get<std::string>("name");
-
-  //maximum k-value in the k-grid in cartesian coordinates
-  auto kmax = input_.get<RealType>("kmax");
-  //maximum k-values in the k-grid along the reciprocal cell axis
-  auto kmax0 = input_.get<RealType>("kmax0");
-  auto kmax1 = input_.get<RealType>("kmax1");
-  auto kmax2 = input_.get<RealType>("kmax2");
+  my_name_ = input_.get_name();
 
   //dims of a grid for generating k points (obtained below)
   int kgrid = 0;
@@ -50,10 +42,11 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
     vec_length[i] = 2.0 * M_PI * std::sqrt(dot(Lattice.Gv[i], Lattice.Gv[i]));
-  PosType kmaxs      = {kmax0, kmax1, kmax2};
+  RealType kmax = input_.get_kmax();
+  PosType kmaxs      = {input_.get_kmax0(), input_.get_kmax1(), input_.get_kmax2()};
   RealType sum_kmaxs = kmaxs[0] + kmaxs[1] + kmaxs[2];
   RealType sphere_kmax;
-  bool sphere      = kmax > 0.0 ? true : false;
+  bool sphere      = input_.get_kmax() > 0.0 ? true : false;
   bool directional = sum_kmaxs > 0.0 ? true : false;
   if (!sphere && !directional)
   {
@@ -130,7 +123,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       sums[1] += kcount1[i];
       sums[2] += kcount2[i];
     }
-    app_log() << "    Using all k-space points within cut-offs " << kmax0 << ", " << kmax1 << ", " << kmax2
+    app_log() << "    Using all k-space points within cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1() << ", " << input_.get_kmax2()
               << " for Momentum Distribution." << std::endl;
     app_log() << "    Total number of k-points for Momentum Distribution: " << kPoints.size() << std::endl;
     app_log() << "      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
@@ -150,7 +143,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       sums[2] += kcount2[i];
     }
     app_log() << "    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < " << sphere_kmax << ", and" << std::endl;
-    app_log() << "    within the cut-offs " << kmax0 << ", " << kmax1 << ", " << kmax2 << " for Momentum Distribution."
+    app_log() << "    within the cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1() << ", " << input_.get_kmax2() << " for Momentum Distribution."
               << std::endl;
     app_log() << "    Total number of k-points for Momentum Distribution is " << kPoints.size() << std::endl;
     app_log() << "    The number of k-points within the cut-off region: " << sums[0] * sums[1] * sums[2] << std::endl;
@@ -158,18 +151,19 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
     app_log() << "      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
     app_log() << "      Number of grid points in kmax2 direction: " << sums[2] << std::endl;
   }
-  app_log() << "    Number of samples: " << M << std::endl;
+  app_log() << "    Number of samples: " << input_.get_samples() << std::endl;
   app_log() << "    My twist is: " << twist[0] << "  " << twist[1] << "  " << twist[2] << "\n\n";
 
   // resize arrays
   nofK.resize(kPoints.size());
   kdotp.resize(kPoints.size());
-  vPos.resize(M);
+  auto samples = input_.get_samples();
+  vPos.resize(samples);
   phases.resize(kPoints.size());
-  phases_vPos.resize(M);
-  for (int im = 0; im < M; im++)
+  phases_vPos.resize(samples);
+  for (int im = 0; im < samples; im++)
     phases_vPos[im].resize(kPoints.size());
-  psi_ratios_all.resize(M, psi_ratios.size());
+  psi_ratios_all.resize(samples, psi_ratios.size());
 
   // allocate data storage
   size_t data_size = nofK.size();
@@ -255,8 +249,9 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
     //  (required by all estimators, otherwise inf results)
     walkers_weight_ += weight;
 
+    auto samples = input_.get_samples();
     // compute phase factors
-    for (int s = 0; s < M; ++s)
+    for (int s = 0; s < samples; ++s)
     {
       PosType newpos;
       for (int i = 0; i < OHMMS_DIM; ++i)
@@ -280,7 +275,7 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
       for (int ik = 0; ik < nk; ++ik)
         kdotp[ik] = dot(kPoints[ik], pset.R[i]);
       eval_e2iphi(nk, kdotp.data(), phases.data(0), phases.data(1));
-      for (int s = 0; s < M; ++s)
+      for (int s = 0; s < samples; ++s)
       {
         const ComplexType one_ratio(psi_ratios_all[s][i]);
         const RealType ratio_c                 = one_ratio.real();

@@ -44,7 +44,7 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 
 /**  Perform the correlated sampling algorithm.
  */
-QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
+QMCCostFunctionCUDA::EffectiveWeight QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {
   Return_rt wgt_tot = 0.0;
   int nw            = W.getActiveWalkers();
@@ -165,7 +165,7 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::correlatedSampling(bool need
   //collect everything
   myComm->allreduce(SumValue);
   RealType effective_walkers = SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
+  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * NumSamples);
 }
 
 void QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
@@ -341,9 +341,9 @@ void QMCCostFunctionCUDA::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
+  IsValid = true;
 
   //collect SumValue for computedCost
-  NumWalkersEff           = etemp[1];
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
   SumValue[SUM_E_WGT]     = etemp[0];
@@ -400,7 +400,7 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
       OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
-    NumWalkersEff = correlatedSampling(true);
+    EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     Return_rt curAvg2_w = curAvg_w * curAvg_w;
@@ -483,14 +483,8 @@ void QMCCostFunctionCUDA::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-    IsValid = true;
-    //         if ((CSWeight/wgtinv) < MinNumWalkers)
-    if (NumWalkersEff < MinNumWalkers * NumSamples)
-    {
-      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                         << MinNumWalkers * NumSamples)
-      IsValid = false;
-    }
+
+    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -513,7 +507,6 @@ QMCCostFunctionCUDA::Return_rt QMCCostFunctionCUDA::fillOverlapHamiltonianMatric
   Left  = 0.0;
   //Is this really needed here?
   //resetPsi();
-  //Return_rt NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   RealType H2_avg     = 1.0 / (curAvg_w * curAvg_w);

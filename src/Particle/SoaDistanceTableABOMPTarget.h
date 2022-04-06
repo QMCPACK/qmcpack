@@ -120,7 +120,7 @@ private:
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
       : DTD_BConds<T, D, SC>(source.getLattice()),
-        DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAB(source, target, DTModes::ALL_OFF),
         offload_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),
         evaluate_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::evaluate_") + name_, timer_level_fine)),
         move_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::move_") + name_, timer_level_fine)),
@@ -201,7 +201,7 @@ public:
     assert(distances_[0].data() + num_padded == displacements_[0].data());
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
     const size_t stride_size   = getPerTargetPctlStrideSize();
 
@@ -301,7 +301,7 @@ public:
     }
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr              = mw_r_dr.data();

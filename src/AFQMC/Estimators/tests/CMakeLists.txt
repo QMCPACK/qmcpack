@@ -9,7 +9,6 @@
 #// File created by: Fionn Malone, malone14@llnl.gov, LLNL
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR afqmc_estimators)
 set(UTEST_EXE test_${SRC_DIR})
 

@@ -15,10 +15,6 @@
 
 #include "J2OrbitalSoA.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "BsplineFunctor.h"
-#include "PadeFunctors.h"
-#include "UserFunctor.h"
-#include "FakeFunctor.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
@@ -180,7 +176,7 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
     : WaveFunctionComponent("J2OrbitalSoA", obj_name),
-      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
@@ -738,5 +734,4 @@ template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<FakeFunctor<QMCTraits::RealType>>;
-
 } // namespace qmcplusplus

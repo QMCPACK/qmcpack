@@ -55,7 +55,7 @@ option(
   "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
   OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP)
+if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
 # explicit HIP source codes only exist in AFQMC.
@@ -217,7 +217,9 @@ endif()
 #--------------------------------------------------------------------
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
-  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)")
+  install(
+    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)"
+  )
 endif()
 
 ######################################################################
@@ -383,10 +385,11 @@ cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM comp
                        ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
 
 if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
-  message(WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
-                  "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
-                  "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
-                  "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
+  message(
+    WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
+            "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
+            "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
+            "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
 endif()
 
 #-------------------------------------------------------------------------------------
@@ -424,7 +427,8 @@ if(QMC_MPI)
   if(NOT MPI_FOUND)
     message(
       FATAL_ERROR
-        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=OFF' to cmake.")
+        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=OFF' to cmake."
+    )
   endif(NOT MPI_FOUND)
 
   if(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2")
@@ -486,7 +490,7 @@ endif(QMC_MPI)
 #--------------------------------------------------------------
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
-if (NOT TEST_CXX_COMPILE_MAIN)
+if(NOT TEST_CXX_COMPILE_MAIN)
   unset(TEST_CXX_COMPILE_MAIN CACHE)
   message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
@@ -730,9 +734,11 @@ if(QMC_CUDA OR ENABLE_CUDA)
     enable_language(CUDA)
     find_package(CUDAToolkit REQUIRED)
     if(NOT TARGET CUDA::cublas)
-      message(FATAL_ERROR "Found an incomplete CUDA toolkit installation. "
-                          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
-                          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
+      message(
+        FATAL_ERROR
+          "Found an incomplete CUDA toolkit installation. "
+          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
     endif()
     # Automatically set the default NVCC flags
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
@@ -1056,8 +1062,7 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   if(RMG_FOUND)
     message(STATUS "Found and using RMG (rmg-cpu) at ${RMG_CPU_EXE}")
   else(RMG_FOUND)
-    message(
-      STATUS "Did not find RMG (rmg-cpu). RMG tests will not be run.")
+    message(STATUS "Did not find RMG (rmg-cpu). RMG tests will not be run.")
   endif(RMG_FOUND)
 endif()
 
@@ -1067,7 +1072,9 @@ endif()
 
 file(TIMESTAMP ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py TIMESTAMP_TEST_LABELS)
 if(NOT DEFINED CACHE_TIMESTAMP_TEST_LABELS)
-  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables")
+  set(CACHE_TIMESTAMP_TEST_LABELS
+      ${TIMESTAMP_TEST_LABELS}
+      CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables")
 endif()
 if(NOT ${TIMESTAMP_TEST_LABELS} STREQUAL ${CACHE_TIMESTAMP_TEST_LABELS})
   get_cmake_property(_variableNames VARIABLES)
@@ -1075,7 +1082,9 @@ if(NOT ${TIMESTAMP_TEST_LABELS} STREQUAL ${CACHE_TIMESTAMP_TEST_LABELS})
   foreach(_variableName ${_variableNames})
     unset(${_variableName} CACHE)
   endforeach()
-  set(CACHE_TIMESTAMP_TEST_LABELS ${TIMESTAMP_TEST_LABELS} CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables" FORCE)
+  set(CACHE_TIMESTAMP_TEST_LABELS
+      ${TIMESTAMP_TEST_LABELS}
+      CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables" FORCE)
 endif()
 
 ######################################################################

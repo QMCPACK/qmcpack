@@ -7,7 +7,6 @@
 #// File developed by: Peter Doak, , doakpw@ornl.gov, Oak Ridge National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(TEST_NAME utilities_for_testing)
 set(UTEST_EXE test_${TEST_NAME})
 set(UTEST_NAME deterministic-unit_test_${TEST_NAME})

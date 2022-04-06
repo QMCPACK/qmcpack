@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_qmc_vmcbatch_dmcbatch_mwalkers" series="0"/>
+  <project id="det_qmc_vmcbatch_dmcbatch_mwalkers" series="0">
+         <parameter name="driver_version">batched</parameter>
+  </project>
   <random seed="903"/>
   <include href="C_diamond-twist.structure.xml"/>
   <include href="C_diamond-twist.wfj.xml"/>
@@ -12,7 +14,7 @@
     </pairpot>
   </hamiltonian>
 
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
@@ -22,7 +24,7 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers">    16   </parameter>
      <parameter name="substeps">  2 </parameter>
@@ -32,7 +34,7 @@
      <parameter name="timestep">  0.3 </parameter>
      <parameter name="usedrift">   yes </parameter>
    </qmc>
-   <qmc method="dmc_batch" move="pbyp" checkpoint="-1">
+   <qmc method="dmc" move="pbyp" checkpoint="-1">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="total_walkers"> 16 </parameter>
      <parameter name="reconfiguration">   no </parameter>

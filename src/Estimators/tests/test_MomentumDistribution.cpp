@@ -45,7 +45,6 @@ public:
   {
     MomentumDistribution md2(md);
 
-    CHECK(md2.M == md.M);
     CHECK(md2.twist[0] == Approx(md.twist[0]));
     CHECK(md2.twist[1] == Approx(md.twist[1]));
     CHECK(md2.twist[2] == Approx(md.twist[2]));
@@ -67,10 +66,9 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml);
   if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    throw std::runtime_error("cannot parse MomentumDistributionInput section");
   xmlNodePtr node = doc.getRoot();
-  MomentumDistributionInput mdi;
-  mdi.readXML(node);
+  MomentumDistributionInput mdi(node);
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
@@ -85,7 +83,6 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   // Build from input
   MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
 
-  CHECK(md.M == 5);
   CHECK(md.twist[0] == Approx(0.0));
   CHECK(md.twist[1] == Approx(0.0));
   CHECK(md.twist[2] == Approx(0.0));
@@ -117,10 +114,9 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml);
   if (!okay)
-    throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
+    throw std::runtime_error("cannot parse MomentumDistributionInput section");
   xmlNodePtr node = doc.getRoot();
-  MomentumDistributionInput mdi;
-  mdi.readXML(node);
+  MomentumDistributionInput mdi(node);
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();

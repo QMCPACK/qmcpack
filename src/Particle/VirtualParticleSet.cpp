@@ -48,7 +48,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : Partic
 
   //create distancetables
   for (int i = 0; i < refPS.getNumDistTables(); ++i)
-    if (refPS.getDistTable(i).getModes() & DTModes::NEED_TEMP_DATA_ON_HOST)
+    if (refPS.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
       addTable(refPS.getDistTable(i).get_origin());
     else
       addTable(refPS.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
