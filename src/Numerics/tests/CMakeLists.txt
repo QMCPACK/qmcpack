@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR numerics)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -24,6 +23,7 @@ set(UTEST_SRCS
     test_soa_cartesian_tensor.cpp
     test_transform.cpp
     test_min_oned.cpp
+    test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp)
 
 # Run gen_gto.py to create these files.  They may take a long time to compile.

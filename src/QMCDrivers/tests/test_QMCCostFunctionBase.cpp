@@ -27,7 +27,7 @@ public:
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override { return 0; }
   void getConfigurations(const std::string& aroot) override {}
   void checkConfigurations() override {}
-  Return_rt correlatedSampling(bool needGrad = true) override { return 0; }
+  EffectiveWeight correlatedSampling(bool needGrad = true) override { return 0; }
 
   void callUpdateXmlNodes()
   {

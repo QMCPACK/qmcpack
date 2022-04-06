@@ -115,7 +115,7 @@ std::unique_ptr<WaveFunctionComponent> ElectronGasOrbitalBuilder::buildComponent
   if (UseBackflow)
   {
     app_log() << "Creating Backflow transformation in ElectronGasOrbitalBuilder::put(xmlNodePtr cur).\n";
-    PtclPoolType dummy;
+    PSetMap dummy;
     BackflowBuilder bfbuilder(targetPtcl, dummy);
     auto BFTrans = bfbuilder.buildBackflowTransformation(BFNode);
     std::vector<std::unique_ptr<DiracDeterminantWithBackflow>> dets;

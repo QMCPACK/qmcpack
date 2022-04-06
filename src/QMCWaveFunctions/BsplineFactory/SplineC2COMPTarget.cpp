@@ -230,7 +230,7 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
     pos_scratch[iat * 6 + 5] = ru[2];
   }
 
-  const size_t ChunkSizePerTeam = 128;
+  const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   ratios_private.resize(nVP, NumTeams);
   const auto padded_size = myV.size();
@@ -350,7 +350,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
     }
   }
 
-  const size_t ChunkSizePerTeam = 128;
+  const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   mw_ratios_private.resize(mw_nVP, NumTeams);
   const auto padded_size = myV.size();
@@ -497,7 +497,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
 
-  const size_t ChunkSizePerTeam = 128;
+  const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
   const auto padded_size = myV.size();
@@ -572,7 +572,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
                                                  const RefVector<ValueVector>& d2psi_v_list) const
 {
   const size_t num_pos          = psi_v_list.size();
-  const size_t ChunkSizePerTeam = 128;
+  const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size        = myV.size();
   // for V(1)G(3)H(6) intermediate result
@@ -732,7 +732,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   }
 
   const size_t num_pos          = nwalkers;
-  const size_t ChunkSizePerTeam = 128;
+  const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size        = myV.size();
   // for V(1)G(3)H(6) intermediate result

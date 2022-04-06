@@ -78,7 +78,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   if (pit == ParticleSets.end())
     myComm->barrier_and_abort("Einspline needs the source particleset");
   else
-    SourcePtcl = pit->second;
+    SourcePtcl = pit->second.get();
 
   ///////////////////////////////////////////////
   // Read occupation information from XML file //

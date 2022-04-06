@@ -13,14 +13,16 @@
 
 #include "OrbitalImages.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "Utilities/unit_conversion.h"
 
 
 namespace qmcplusplus
 {
-OrbitalImages::OrbitalImages(ParticleSet& P, PSPool& PSP, Communicate* mpicomm, const WaveFunctionFactory& factory)
-    : psetpool(PSP), wf_factory_(factory)
+OrbitalImages::OrbitalImages(ParticleSet& P,
+                             const PSPool& PSP,
+                             Communicate* mpicomm,
+                             const SPOMap& spomap)
+    : psetpool(PSP), spomap_(spomap)
 {
   //keep the electron particle to get the cell later, if necessary
   Peln = &P;
@@ -54,7 +56,7 @@ OrbitalImages::OrbitalImages(const OrbitalImages& other)
       batch_gradients(other.batch_gradients),
       batch_laplacians(other.batch_laplacians),
       orbital(other.orbital),
-      wf_factory_(other.wf_factory_)
+      spomap_(other.spomap_)
 {
   for (auto& element : other.sposets)
     sposets.push_back(element->makeClone());
@@ -197,11 +199,12 @@ bool OrbitalImages::put(xmlNodePtr cur)
   }
 
   //get the ion particleset
-  if (psetpool.find(ion_psname) == psetpool.end())
+  if (auto pit = psetpool.find(ion_psname); pit == psetpool.end())
   {
     APP_ABORT("OrbitalImages::put  ParticleSet " + ion_psname + " does not exist");
   }
-  Pion = psetpool[ion_psname];
+  else
+    Pion = pit->second.get();
 
   app_log() << "  getting sposets" << std::endl;
 
@@ -210,10 +213,12 @@ bool OrbitalImages::put(xmlNodePtr cur)
     APP_ABORT("OrbitalImages::put  must have at least one sposet");
   for (int i = 0; i < sposet_names.size(); ++i)
   {
-    SPOSet* sposet = wf_factory_.getSPOSet(sposet_names[i]);
-    if (sposet == 0)
-      APP_ABORT("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist");
-    sposets.push_back(sposet->makeClone());
+    auto spo_it = spomap_.find(sposet_names[i]);
+    if (spo_it == spomap_.end())
+      throw std::runtime_error("OrbitalImages::put  sposet " + sposet_names[i] + " does not exist.");
+
+    sposets.push_back(spo_it->second->makeClone());
+    auto& sposet = sposets.back();
     std::vector<int>& sposet_inds = (*sposet_indices)[i];
     if (sposet_inds.size() == 0)
       for (int n = 0; n < sposet->size(); ++n)
@@ -498,9 +503,8 @@ void OrbitalImages::write_orbital_xsf(const std::string& sponame,
 
   //get the cell containing the ion positions
   //  assume the evaluation cell if any boundaries are open
-  ParticleSet& Pc = *Pion;
-  const Lattice_t& Lbox = Peln->getLattice().SuperCellEnum == SUPERCELL_BULK ?
-                         Peln->getLattice() : cell;
+  ParticleSet& Pc       = *Pion;
+  const Lattice_t& Lbox = Peln->getLattice().SuperCellEnum == SUPERCELL_BULK ? Peln->getLattice() : cell;
 
   //open the file
   std::ofstream file;

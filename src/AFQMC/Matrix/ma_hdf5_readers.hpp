@@ -87,7 +87,7 @@ inline void write_distributed_MA(MultiArray& A,
       for (size_t i = 1; i < nnodes_per_TG; i++, it += 4)
       {
         using Mat = boost::multi::array<value_type, 2>;
-        Mat T({*(it + 2), *(it + 3)});
+        Mat T({static_cast<typename Mat::size_type>(*(it + 2)), static_cast<typename Mat::size_type>(*(it + 3))});
         TG.TG_Cores().receive_n(T.origin(), T.num_elements(), i, i);
         hyperslab_proxy<Mat, 2> slab(T, gdim, std::array<size_t, 2>{*(it + 2), *(it + 3)},
                                      std::array<size_t, 2>{*(it), *(it + 1)});
