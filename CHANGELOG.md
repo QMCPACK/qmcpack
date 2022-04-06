@@ -2,7 +2,13 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.14.0] - 2022-04-06
+
+This release focuses on performance improvements to the OpenMP target offload version for GPUs as well as ongoing minor
+improvements. The new GPU implementation rivals the legacy CUDA version for performance for broad range of problems
+while offering more functionality, such as three body Jastrow functions. Developers are very interested in feedback from
+users about the new version and will prioritize developments based on comments received. A new driver\_version switch is
+introduced, currently optional, to disambiguate between the versions and their inputs.
 
 - New global driver\_version switch to select between batched and legacy codes. This will become a required input tag in the next major release series of QMCPACK, but remains optional in 3.x versions [\#3897](https://github.com/QMCPACK/qmcpack/pull/3897)
 - Optimization of block sizes in GPU offload kernels [\#3910](https://github.com/QMCPACK/qmcpack/pull/3910)
