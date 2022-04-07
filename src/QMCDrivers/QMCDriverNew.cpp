@@ -249,15 +249,22 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
+    wOut->dump(population_.getWalkerConfigsRef(), block);
     RandomNumberControl::write(root_name_, myComm);
   }
 }
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
+  bool DumpConfig = qmcdriver_input_.get_dump_config();
+  auto& W         = population_.getWalkerConfigsRef();
 
-  if (qmcdriver_input_.get_dump_config())
+  if (DumpConfig && dumpwalkers)
+    wOut->dump(W, block);
+  infoSummary.flush();
+  infoLog.flush();
+
+  if (DumpConfig)
     RandomNumberControl::write(root_name_, myComm);
 
   return true;
