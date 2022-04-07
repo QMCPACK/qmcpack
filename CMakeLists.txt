@@ -47,30 +47,68 @@ endif()
 #--------------------------------------------------------------------
 include(CMakeDependentOption)
 option(QMC_MPI "Enable/disable MPI" ON)
-option(QMC_OMP "Enable/disable OpenMP" ON)
-option(QMC_COMPLEX "Build for complex binary" OFF)
-option(QMC_CUDA "Build with GPU support through CUDA" OFF)
-option(
-  ENABLE_CUDA
-  "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
-  OFF)
+
+# GPU vendors to programming models
+if(NOT QMC_GPU AND (ENABLE_CUDA OR ENABLE_SYCL))
+  message(WARNING "ENABLE_CUDA or ENABLE_SYCL is set by user, please use QMC_GPU=NVIDIA/AMD/INTEL.")
+endif()
+
+set(VALID_GPU_OPTIONS "no" "NVIDIA" "AMD" "INTEL")
+set(QMC_GPU
+    "no"
+    CACHE STRING "GPU vendor")
+set_property(CACHE QMC_GPU PROPERTY STRINGS ${VALID_GPU_OPTIONS})
+
+if(NOT QMC_GPU IN_LIST VALID_GPU_OPTIONS)
+  message(FATAL_ERROR "Invalid -DQMC_GPU=${QMC_GPU}, value must be one of ${VALID_GPU_OPTIONS}")
+elseif(NOT QMC_GPU STREQUAL "no")
+  message(STATUS "GPU acceleration option QMC_GPU=${QMC_GPU}")
+  if(QMC_GPU STREQUAL "NVIDIA")
+    set(ENABLE_CUDA ON)
+    set(QMC_CUDA2HIP OFF)
+    set(ENABLE_SYCL OFF)
+  elseif(QMC_GPU STREQUAL "AMD")
+    set(ENABLE_CUDA ON)
+    set(QMC_CUDA2HIP ON)
+    set(ENABLE_SYCL OFF)
+  elseif(QMC_GPU STREQUAL "INTEL")
+    set(ENABLE_CUDA OFF)
+    set(QMC_CUDA2HIP OFF)
+    set(ENABLE_SYCL ON)
+  endif()
+  unset(ENABLE_CUDA CACHE)
+  unset(QMC_CUDA2HIP CACHE)
+  unset(ENABLE_SYCL CACHE)
+  message("   Forcing vendor native pragmming model options"
+          " ENABLE_CUDA=${ENABLE_CUDA}, QMC_CUDA2HIP=${QMC_CUDA2HIP}, ENABLE_SYLC=${ENABLE_SYCL}")
+endif()
+
+option(QMC_CUDA "Build legacy GPU support through CUDA" OFF)
+option(ENABLE_CUDA "Build with the second generation of GPU support through CUDA" OFF)
+if(ENABLE_CUDA AND QMC_CUDA)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
+endif(ENABLE_CUDA AND QMC_CUDA)
+
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
+if(QMC_CUDA2HIP AND NOT (QMC_CUDA OR ENABLE_CUDA))
+  message(FATAL_ERROR "QMC_CUDA2HIP requires either QMC_CUDA or ENABLE_CUDA being turned on.")
+endif()
+
+# explicit HIP source codes only exist in AFQMC.
+option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
+
 if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
-# explicit HIP source codes only exist in AFQMC.
-option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
-option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+
+option(QMC_OMP "Enable/disable OpenMP" ON)
+cmake_dependent_option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF "ENABLE_OFFLOAD" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
-
-if(ENABLE_CUDA AND QMC_CUDA)
-  message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
-endif(ENABLE_CUDA AND QMC_CUDA)
 
 if(ENABLE_OFFLOAD AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
@@ -181,6 +219,7 @@ option(BUILD_AFQMC_WITH_NCCL "Build AFQMC with NCCL library." OFF)
 if(BUILD_AFQMC AND NOT QMC_MPI)
   message(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 endif()
+option(QMC_COMPLEX "Build for complex binary" OFF)
 option(BUILD_FCIQMC "Build with FCIQMC" OFF)
 option(QMC_BUILD_STATIC "Link to static libraries" OFF)
 option(ENABLE_TIMERS "Enable internal timers" ON)
