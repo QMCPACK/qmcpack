@@ -76,7 +76,10 @@ elseif(NOT QMC_GPU STREQUAL "no")
     set(QMC_CUDA2HIP OFF)
     set(ENABLE_SYCL ON)
   endif()
-  message("  set vendor native pragmming model options"
+  unset(ENABLE_CUDA CACHE)
+  unset(QMC_CUDA2HIP CACHE)
+  unset(ENABLE_SYCL CACHE)
+  message("   Forcing vendor native pragmming model options"
           " ENABLE_CUDA=${ENABLE_CUDA}, QMC_CUDA2HIP=${QMC_CUDA2HIP}, ENABLE_SYLC=${ENABLE_SYCL}")
 endif()
 
