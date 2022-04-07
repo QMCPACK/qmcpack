@@ -360,7 +360,7 @@ public:
    * @return Void
    */
   inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                        const ParticleSet& source,
+                                                        ParticleSet& source,
                                                         const TWFFastDerivWrapper& psi,
                                                         const int iat,
                                                         std::vector<std::vector<ValueMatrix>>& Bforce)
