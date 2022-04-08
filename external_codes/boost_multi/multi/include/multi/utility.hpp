@@ -12,16 +12,20 @@
 #include<iterator>  // for std::size (in c++17)
 #endif
 
-#include<tuple>  // for tuple<>
+//#include<tuple>  // for tuple<>
 
-namespace boost {
-namespace multi {
+namespace boost::multi {
 
 template<class To, class From, std::enable_if_t<std::is_convertible<From, To>{}, int> = 0>
 constexpr auto implicit_cast(From&& f) -> To {return static_cast<To>(f);}
 
 template<class To, class From, std::enable_if_t<std::is_constructible<To, From>{} and not std::is_convertible<From, To>{}, int> = 0>
 constexpr auto explicit_cast(From&& f) -> To {return static_cast<To>(f);}
+
+template<class T, class Ptr = T*> struct move_ptr : std::move_iterator<Ptr> {
+	using std::move_iterator<Ptr>::move_iterator;
+	explicit operator Ptr() const {return std::move_iterator<Ptr>::base();}
+};
 
 template<class Array, typename Reference = void, typename Element = void>
 struct array_traits;
@@ -54,7 +58,7 @@ template<typename T> struct rank : decltype(rank_aux(std::declval<T>())) {};
 #if not defined(__cpp_lib_nonmember_container_access) or __cpp_lib_nonmember_container_access < 201411
 template<class Container>
 constexpr auto size(Container const& con)
--> std::make_signed_t<decltype(con.size())>{
+-> std::make_signed_t<decltype(con.size())> {
 	return static_cast<std::make_signed_t<decltype(con.size())>>(con.size());}
 #else
 #endif
@@ -214,13 +218,14 @@ constexpr auto sizes(Array const& arr)
 	return arr.sizes(); }
 
 template<class T, typename = std::enable_if_t<not has_sizes<T>{}> >
-inline constexpr auto sizes(T const& /*unused*/) -> std::tuple<> {return {};}
+inline constexpr auto sizes(T const& /*unused*/) -> tuple<> {return {};}
 
 template<class T, std::size_t N>
 constexpr auto sizes(const T(&t)[N]) noexcept {  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 //  using std::size; // this line needs c++17
 	using boost::multi::size;
-	return std::tuple_cat(std::make_tuple(boost::multi::size(t)), sizes(t[0]));
+	return tuple(boost::multi::size(t), sizes(t[0]));
+//  return tuple_cat(make_tuple(boost::multi::size(t)), sizes(t[0]));
 }
 
 template<class T, std::size_t N>
@@ -269,7 +274,7 @@ inline auto has_extensions_aux(...     ) -> std::false_type;
 template<class T> struct has_extensions : decltype(has_extensions_aux(std::declval<T>())) {};
 
 template<class T, std::enable_if_t<has_extensions<T>{}, int> =0>
-NODISCARD("") auto extensions(T const& t)
+[[nodiscard]] auto extensions(T const& t)
 ->std::decay_t<decltype(t.extensions())> {
 	return t.extensions();
 }
@@ -298,7 +303,7 @@ template<dimensionality_type D>
 struct extensions_aux {
 	template<class T>
 	static auto call(T const& t) {
-		return std::tuple_cat(std::make_tuple(t.extension()), extensions<D-1>(t));
+		return tuple_cat(std::make_tuple(t.extension()), extensions<D-1>(t));
 	}
 };
 
@@ -320,7 +325,7 @@ template<class T1, class T2> auto extensions_me(T2 const& t2) {
 template<class T1> struct extension_t_aux {
 	static auto call(T1 const& /*unused*/) {return std::make_tuple();}
 	template<class T2>
-	static auto call(T2 const& t2) {return std::tuple_cat(std::make_tuple(t2.extension()), extensions_me<T1>(*begin(t2)));}
+	static auto call(T2 const& t2) {return tuple_cat(std::make_tuple(t2.extension()), extensions_me<T1>(*begin(t2)));}
 };
 
 template<class T, typename = decltype(std::declval<T const&>().layout())>
@@ -427,7 +432,5 @@ constexpr auto layout(std::array<T, N> const& arr) {
 	return multi::layout_t<multi::array_traits<std::array<T, N>>::dimensionality()>{multi::extensions(arr)};
 }
 
-}  // end namespace multi
-}  // end namespace boost
-
+}  // end namespace boost::multi
 #endif

@@ -2,16 +2,15 @@
 // © Alfredo A. Correa 2018-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi constructors"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 namespace fancy {
 
 template<class T> class ref;
 
-template<class T = void> class ptr{
+template<class T = void> class ptr {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 	static double value;
 
  public:
@@ -20,15 +19,20 @@ template<class T = void> class ptr{
 	using pointer = T*;
 	using reference = ref<T>;
 	using iterator_category = std::random_access_iterator_tag;
+
 	ptr() = default;//ptr(ptr const=default; ptr& operator=(ptr const&)=default;
 	explicit ptr(std::nullptr_t) {}
-	template<class Other> explicit ptr(ptr<Other> const& /*unused*/) {}
+	template<class Other> constexpr explicit ptr(ptr<Other> const& /*other*/) {}
+	constexpr ptr(ptr const& /*other*/) {}  // NOLINT(hicpp-use-equals-default,modernize-use-equals-default)
+
+	// vvv it is important that these two functions are device or device host functions
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-	auto operator*() const -> reference {return reference{&value};}
+	constexpr auto operator*() const -> reference {return reference{};}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-	auto operator+(difference_type /*unused*/) const -> ptr {return *this;}
+	constexpr auto operator+(difference_type /*unused*/) const -> ptr {return *this;}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
-	auto operator+=(difference_type /*unused*/) -> ptr& {return *this;}
+
+	auto operator+=(difference_type /*difference*/) -> ptr& {return *this;}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
 	auto operator++() -> ptr& {return operator+=(1);}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): this class simulates pointer
@@ -46,17 +50,28 @@ template<class T = void> class ptr{
 //	operator double*() const{return &value;}
 	friend auto get_allocator(ptr const& /*self*/){return std::allocator<value_type>{};}
 };
+
 template<> double ptr<double>::value = 42.;
 template<> double ptr<double const>::value = 42.;
 
-template<class T> class ref{
-	T* p_;
-	explicit ref(T* p) : p_{p} {}
+template<class T> class ref {
 	friend class ptr<T>;
-	friend struct ref<T const>;
+	friend class ref<T const>;
+	ref() = default;
 
  public:
-	explicit ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_} {}
+//  explicit ref(ref<std::remove_const_t<T>> const& other) : p_{other.p_} {}
+	~ref() = default;
+	auto operator=(ref const& other) -> ref& = delete;//{
+//		if(this == &other) {return *this;}
+//		*p_ = *other.p_; return *this;
+//	}
+//  ref(ref const&) = delete;
+	constexpr ref(ref const& /*other*/) = delete;
+	constexpr ref(ref&& /*other*/) noexcept {}  // this is needed by nvcc, needs to be a device function for nvcc 11.2 and lower
+
+	auto operator=(ref     && other) noexcept -> ref& = delete;// {*p_ = std::move(*other.p_); return *this;}
+	constexpr operator T const&() const& {return ptr<T>::value;}  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions)
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator): this class simulates a reference
 	auto operator==(ref const& /*other*/) const {return true;}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator): this class simulates a reference
@@ -64,7 +79,7 @@ template<class T> class ref{
 	using decay_t = std::decay_t<T>;
 };
 
-template<class T> struct allocator{
+template<class T> struct allocator {
 	using pointer = ptr<T>;
 	using value_type = T;
 	auto allocate(std::size_t /*size*/) {return pointer{};}
@@ -74,7 +89,7 @@ template<class T> struct allocator{
 	template<class T2> explicit allocator(allocator<T2> const& /*other*/) {}
 	template<class... Args>
 	void construct(pointer /*location*/, Args&&... /*args*/) {}
-	void destroy(pointer /*location*/){}
+	void destroy(pointer /*location*/) {}
 };
 
 // all these are optional, depending on the level of specialization needed
@@ -101,8 +116,7 @@ auto copy_n(ptr<T1> /*first*/, Size /*count*/, ptr<T2> result) {
 //  In boost/multi/adaptors/MyFancyApaptor.hpp if anything, or in user code if it is very specialized
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-namespace boost {
-namespace multi {
+namespace boost::multi {
 
 template<class It, class T>
 auto copy(It first, It last, fancy::ptr<T> dest) {
@@ -129,18 +143,16 @@ auto copy(It/*first*/, It/*last*/, multi::array_iterator<T, 2, fancy::ptr<T>> de
 //	return copy(first, last, dest);
 //}
 
-} // namespace multi
-} // namespace boost
+} // namespace boost::multi
 
 ////////////////////////////////////////////////////////////////////////////////
 // user code
 ////////////////////////////////////////////////////////////////////////////////
 
-//namespace multi = boost::multi;
-
 BOOST_AUTO_TEST_CASE(multi_fancy) {
-//	multi::array<double, 2, fancy::allocator<double>> A({5, 5});
-//	BOOST_REQUIRE( A.size() == 5 );
-//	BOOST_REQUIRE( A[1][1] == A[2][2] );
-}
+	namespace multi = boost::multi;
 
+	multi::array<double, 2, fancy::allocator<double>> A({5, 5});
+	BOOST_REQUIRE( A.size() == 5 );
+	BOOST_REQUIRE( A[1][1] == A[2][2] );
+}

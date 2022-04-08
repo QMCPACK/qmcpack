@@ -5,7 +5,7 @@
 
 (not an official Boost library)
 
-_© Alfredo A. Correa, 2018-2021_
+_© Alfredo A. Correa, 2018-2022_
 
 `Multi` provides multidimensional array access to contiguous or regularly contiguous memory (or ranges).
 It shares the goals of [Boost.MultiArray](https://www.boost.org/doc/libs/1_69_0/libs/multi_array/doc/index.html),
@@ -13,7 +13,7 @@ although the code is completely independent and the syntax has slight difference
 `Multi` and `Boost.MultiArray` types can be used interchangeably for the most part, they differ in the semantics of reference and value types.
 
 Multi aims to simplify the semantics of Boost.MultiArray and make it more compatible with the Standard (STL) Algorithms and special memory.
-It requires C++14.
+It requires, at least, C++17. (It is C++20 ready.)
 
 Some features:
 
@@ -54,8 +54,8 @@ make -j
 make test -j
 ```
 
-The code is developed on `clang` (10.0), `gcc` (9.3) and `nvcc` 11 compilers, and [tested regularly ](https://gitlab.com/correaa/boost-multi/pipelines) with clang 9.0, NVCC 10.1, Intel (19.1), and PGI(nvc++ 20.7-21.3) compilers.
-For detailed compilation instructions of test see the Continuous Integration (CI) definition file https://gitlab.com/correaa/boost-multi/-/blob/master/.gitlab-ci.yml
+The code is developed targetting several compilers: LLVM's `clang` (13.0), GNU's `g++` (11.2), Nvidia's `nvcc` (11.5), `nvc++` (20.7-21.3) and Intel's `icpc` (2021.5.0), `icpx` (2022.0.2).
+For detailed compilation instructions of test please inspect the Continuous Integration (CI) [definition file](https://gitlab.com/correaa/boost-multi/-/blob/master/.gitlab-ci.yml).
 
 ## Types
 
@@ -85,6 +85,7 @@ assert( std::get<1>(A.sizes()) == 3 );
 
 The value of an array can be copied, moved, and compared.
 Copies are equal but independent.
+
 ```cpp
 std::array<double, 2> B = A;
 assert( extensions(B) == extensions(A) );
@@ -147,9 +148,11 @@ Next we print the elements in a way that corresponds to the logical arrangement:
 
 ```cpp
 		...
-		for(auto i : d2D_ref.extension(0)){
-			for(auto j : d2D_ref.extension(1))
+		auto [ix, jx] = d2D_ref.extensions();
+		for(auto i : is) {
+			for(auto j : js) {
 				cout << d2D_ref[i][j] <<' ';
+			}
 			cout <<'\n';
 		}
 		...
@@ -198,7 +201,7 @@ If we want to order the matrix in a per-column basis we need to "view" the matri
 
 ```cpp
 		...
-		std::stable_sort( d2D_ref.begin(1), d2D_ref.end(1) );
+		std::stable_sort( rotated(d2D_ref).begin(), rotated(d2D_ref).end() );
 	}
 ```
 
@@ -245,11 +248,15 @@ multi::array/*<double, 3>*/ const A3 = {
 ## Iteration
 
 Accessing arrays by iterators (`begin`/`end`) enables the use of many iterator based algorithms (see the sort example above).
-`begin/end(A)` (or equivalently `A.begin/end()`) gives iterators that linear and random access in the leading dimension. 
+`begin(A)/end(A)` (or equivalently `A.begin()/A.end()`) gives iterators that linear and random access in the leading dimension.
 
-`A.begin/end(n)` gives access in non-leading nested dimension number `n`. 
+`A.begin()/.end()` gives access to a range of subarrays in leading dimension number.
 
-`cbegin/cend(A)` (or equivalently `A.cbegin/cend()`) gives read-only iterators.
+`cbegin/cend` give constant (read-only access).
+
+Other non-leading dimensions can be obtained by "rotating" indices first.
+
+`A.rotated().begin()/.end()` gives access to a range of subarrays in second dimension number (first dimension is put at the end).
 
 For example in a three dimensional array,
 
@@ -263,7 +270,7 @@ As an example, this function allows printing arrays of arbitrary dimension into 
 
 ```cpp
 void print(double const& d){cout<<d;};
-template<class MultiArray> 
+template<class MultiArray>
 void print(MultiArray const& ma) {
 	cout<<"{";
 	if(not ma.empty()) {

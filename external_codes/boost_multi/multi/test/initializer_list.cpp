@@ -1,13 +1,11 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X $@&&rm $0.$X;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
+// Copyright 2019-2021 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi initializer_list"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 #include<complex>
 
@@ -64,7 +62,7 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_1d) {
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_1d_ctad) {
-	#if defined(__cpp_deduction_guides)
+	#if defined(__cpp_deduction_guides) and not defined(__NVCC__)
 	{
 		multi::static_array const A = {1.2, 3.4, 5.6};
 		BOOST_REQUIRE( size(A) == 3 );
@@ -103,7 +101,7 @@ BOOST_AUTO_TEST_CASE(multi_initialize_from_carray_1d) {
 		BOOST_REQUIRE( A[1] == 2.2 );
 	}
 	{
-#if defined(__cpp_deduction_guides)
+#if defined(__cpp_deduction_guides) and not defined(__NVCC__)
 //		multi::array A = {{1.1, 2.2, 3.3}};
 //		static_assert( decltype(A)::dimensionality == 1 , "!");
 //		BOOST_REQUIRE( size(A)==3 and A[1] == 2.2 );
@@ -115,7 +113,7 @@ BOOST_AUTO_TEST_CASE(multi_initialize_from_carray_1d) {
 		BOOST_REQUIRE(( A == decltype(A){1.1, 2.2, 3.3} ));
 	}
 	 {
-	#if defined(__cpp_deduction_guides)
+	#if defined(__cpp_deduction_guides) and not defined(__NVCC__)
 		std::array a = {1.1, 2.2, 3.3};
 		multi::array<double, 1> const A(begin(a), end(a));
 		assert(( A == decltype(A){1.1, 2.2, 3.3} ));
@@ -272,7 +270,7 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d_string) {
 }
 
 BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d_string_ctad) {
-	#if defined(__cpp_deduction_guides)
+	#if defined(__cpp_deduction_guides) and not defined(__NVCC__)
 	{
 		multi::array A({1., 2., 3.});
 		static_assert( std::is_same<decltype(A)::element_type, double>{}, "!");
@@ -312,4 +310,3 @@ BOOST_AUTO_TEST_CASE(multi_tests_initializer_list_3d_string_ctad) {
 	}
 	#endif
 }
-

@@ -7,7 +7,7 @@
 
 #include<array>
 
-#include "../array_ref.hpp"
+#include "multi/array_ref.hpp"
 
 namespace multi = boost::multi;
 

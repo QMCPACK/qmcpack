@@ -13,8 +13,7 @@
 #include <memory>
 #include <utility>
 
-namespace boost {
-namespace multi {
+namespace boost::multi {
 namespace memory {
 
 template<class Alloc>
@@ -52,7 +51,7 @@ void destroy(Alloc& a, ForwardIt first, ForwardIt last) {
 }
 
 template<class Alloc, class InputIt, class Size, class ForwardIt>
-auto uninitialized_move_n(Alloc& a, InputIt f, Size n, ForwardIt d) -> ForwardIt{
+auto uninitialized_move_n(Alloc& a, InputIt f, Size n, ForwardIt d) -> ForwardIt {
 	ForwardIt c = d;
 //  using std::addressof;
 	try {
@@ -124,7 +123,7 @@ auto destroy_n(Alloc& a, ForwardIt first, Size n) -> ForwardIt {
 	return first;
 }
 
-template<class AA> class is_allocator{
+template<class AA> class is_allocator {
 	template<
 		class A,
 		class P = typename A::pointer, class S = typename A::size_type,
@@ -159,18 +158,18 @@ void recursive_fill(Out f, Out l, T const& value) {
 }
 
 template<dimensionality_type N>
-struct recursive_fill_aux{
+struct recursive_fill_aux {
 	template<class Out, class T>
-	static auto call(Out first, Out last, T const& value){
+	static auto call(Out first, Out last, T const& value) {
 		using std::begin; using std::end;
-		for(; first != last; ++first){
+		for(; first != last; ++first) {
 			recursive_fill<N-1>(begin(*first), end(*first), value);  // (*first).begin() instead of first->begin() to make it work with T[][]
 		}
 	}
 };
 
-template<> struct recursive_fill_aux<1>{
-	template<class O, class T>  static auto call(O f, O l, T const& v){
+template<> struct recursive_fill_aux<1> {
+	template<class O, class T>  static auto call(O f, O l, T const& v) {
 		using std::fill; return fill(f, l, v);
 	}
 };
@@ -198,37 +197,35 @@ template<> struct uninitialized_fill_aux<1>{template<class Alloc, class O, class
 };
 #endif
 
-}  // end namespace multi
-}  // end namespace boost
+}  // end namespace boost::multi
 
-#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
+//#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
-#include<vector>
+//#include<vector>
 
-namespace multi = boost::multi;
+//namespace multi = boost::multi;
 
-template<class T> void what(T&&);
+//template<class T> void what(T&&);
 
-int main() {
-	static_assert(multi::is_allocator<std::allocator<double>>{}, "!");
-	static_assert(not multi::is_allocator<double>{}, "!");
-	static_assert(not multi::is_allocator<std::vector<double>>{}, "!");
+//int main() {
+//	static_assert(multi::is_allocator<std::allocator<double>>{}, "!");
+//	static_assert(not multi::is_allocator<double>{}, "!");
+//	static_assert(not multi::is_allocator<std::vector<double>>{}, "!");
 
-	 {
-		double* p = nullptr;
-		auto a = multi::default_allocator_of(p);
-		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
-	//  what(typename std::iterator_traits<double*>::value_type{});
-	}
-#if 0
-	 {
-		std::vector<double>::iterator it;
-		auto a = multi::default_allocator_of(it);
-	//  what(typename std::iterator_traits<decltype(it)>::value_type{});
-		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
-	}
+//	 {
+//		double* p = nullptr;
+//		auto a = multi::default_allocator_of(p);
+//		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
+//	//  what(typename std::iterator_traits<double*>::value_type{});
+//	}
+//#if 0
+//	 {
+//		std::vector<double>::iterator it;
+//		auto a = multi::default_allocator_of(it);
+//	//  what(typename std::iterator_traits<decltype(it)>::value_type{});
+//		static_assert(std::is_same<decltype(a), std::allocator<double>>{}, "!");
+//	}
+//#endif
+//}
+//#endif
 #endif
-}
-#endif
-#endif
-

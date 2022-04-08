@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 namespace multi = boost::multi;
 
@@ -53,8 +53,8 @@ class particles_soa{
 		// NOLINTNEXTLINE(fuchsia-trailing-return): simulate reference
 		auto operator=(reference&& other) noexcept -> reference& {operator=(other); return *this;}
 
-		auto operator==(reference const& other) {return std::tie(mass, position) == std::tie(other.mass, other.position);}
-		auto operator!=(reference const& other) {return std::tie(mass, position) != std::tie(other.mass, other.position);}
+		auto operator==(reference const& other) const {return std::tie(mass, position) == std::tie(other.mass, other.position);}
+		auto operator!=(reference const& other) const {return std::tie(mass, position) != std::tie(other.mass, other.position);}
 	};
 
 	auto operator()(int i, int j){
