@@ -7,8 +7,7 @@
 #include<memory>
 #include<type_traits> // std::conditional_t
 
-namespace boost{
-namespace multi{
+namespace boost::multi {
 
 template<std::size_t I> struct priority_me : std::conditional_t<I==0, std::true_type, struct priority_me<I-1>>{};
 
@@ -21,7 +20,5 @@ struct pointer_traits/*, typename Pointer::default_allocator_type>*/ : std::poin
 	using default_allocator_type = decltype(dat_aux(priority_me<2>{}, std::declval<Pointer>()));
 };
 
-} // end namespace multi
-} // end namespace boost
+} // end namespace boost::multi
 #endif
-

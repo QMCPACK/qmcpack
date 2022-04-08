@@ -5,15 +5,17 @@
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(array_partitioned_1d) {
 	multi::array<double, 1>	A1 = {0, 1, 2, 3, 4, 5};
 	auto&& A2_ref = A1.partitioned(2);
+
 	static_assert( std::decay<decltype(A2_ref)>::type::rank {} == decltype(A1)::rank {} + 1 , "!");
 	static_assert( std::decay_t<decltype(A2_ref)>::rank_v == decltype(A1)::rank_v +1 , "!");
+
 	BOOST_REQUIRE( size(A2_ref)==2 );
 	BOOST_REQUIRE( size(A2_ref[0])==3 );
 	BOOST_REQUIRE( &A2_ref[1][0] == &A1[3] );

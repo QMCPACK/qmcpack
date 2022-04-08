@@ -7,8 +7,7 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
-//#include "../adaptors/cuda.hpp"
+#include "multi/array.hpp"
 
 #include<complex>
 #include<numeric>
