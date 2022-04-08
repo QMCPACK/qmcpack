@@ -74,7 +74,7 @@ struct Array : base_type{
 	void resize(sizes_type sizes){resizeAndPreserve(sizes);}
 	void resizeAndPreserve(sizes_type sizes){base_type::reextent(sizes);}
 	template<class... Ints>
-	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
+	void resize(Ints... ns){base_type::reextent({ns...});}
 	typename base_type::element_ptr       data()      {return base_type::data_elements();}
 	typename base_type::element_const_ptr data() const{return base_type::data_elements();}
 };
@@ -108,7 +108,7 @@ struct Array<T, 1, base_type> : base_type{
 		return 0;
 	}
 	template<class... Ints>
-	void resize(Ints... ns){base_type::reextent(std::make_tuple(ns...));}
+	void resize(Ints... ns){base_type::reextent({ns...});}
 	friend Array operator*(T const& t, Array const& a){
 		Array ret(a.extensions());
 		std::transform(a.begin(), a.end(), ret.begin(), [&](auto const& e){return t*e;});
