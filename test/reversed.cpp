@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 namespace multi = boost::multi;
 
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(multi_reversed_4d) {
 
 	BOOST_REQUIRE( &A.reversed()[1][2][3][4] == &A[4][3][2][1] );
 
-	BOOST_REQUIRE(( sizes(A.reversed().transposed().flatted().reversed()) == decltype(sizes(A.reversed().transposed().flatted().reversed())){13, 5, 77} ));
+	BOOST_REQUIRE( sizes(A.reversed().transposed().flatted().reversed()) == std::make_tuple(13, 5, 77) );
 
 	BOOST_REQUIRE( &A.reversed().transposed().flatted().reversed()[1][2][ 5] == & A[1][2][0][ 5] );
 	BOOST_REQUIRE( &A.reversed().transposed().flatted().reversed()[1][2][10] == & A[1][2][0][10] );

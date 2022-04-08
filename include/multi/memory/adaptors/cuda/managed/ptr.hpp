@@ -76,7 +76,7 @@ struct ptr<void const, RawPtr> : cuda::ptr<void const, RawPtr> {
 //	explicit operator raw_pointer&()&{return rp_;}
 	friend constexpr bool operator==(ptr const& self, ptr const& o) {return self.rp_ == o.rp_;}
 	friend constexpr bool operator!=(ptr const& self, ptr const& o) {return self.rp_ != o.rp_;}
-
+	friend ptr to_address(ptr const& p) {return p;}
 	void operator*() const = delete;
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 };
@@ -112,13 +112,14 @@ struct ptr<void, RawPtr> : cuda::ptr<void, RawPtr> {
 
 	ptr& operator=(ptr const&) = default;
 
-	friend constexpr bool operator==(ptr const& self, ptr const& other) {return self.rp_==other.rp_;}
-	friend constexpr bool operator!=(ptr const& self, ptr const& other) {return self.rp_!=other.rp_;}
-
+	friend constexpr bool operator==(ptr const& self, ptr const& other){return self.rp_==other.rp_;}
+	friend constexpr bool operator!=(ptr const& self, ptr const& other){return self.rp_!=other.rp_;}
+	operator cuda::ptr<void>(){return {this->rp_};}
 	template<class U> using rebind = ptr<U, typename std::pointer_traits<raw_pointer>::template rebind<U>>;
 
+//	explicit operator bool() const {return this->rp_;}
 	explicit operator raw_pointer&()& {return this->rp_;}
-
+	friend ptr to_address(ptr const& p) {return p;}
 	void operator*() = delete;
 	friend raw_pointer raw_pointer_cast(ptr const& self) {return self.rp_;}
 };
@@ -198,11 +199,10 @@ struct ptr : cuda::ptr<T, RawPtr>{
 	using reference = typename std::pointer_traits<raw_pointer>::element_type&;//ref<element_type>;
 	constexpr reference operator*() const{return *(this->rp_);}
 	constexpr reference operator[](difference_type n){return *((*this)+n);}
+	friend inline ptr to_address(ptr const& p){return p;}
 	constexpr typename ptr::difference_type operator-(ptr const& other) const{return (this->rp_)-other.rp_;}
-
-	       constexpr raw_pointer raw_pointer_cast()   const&       {return this->rp_;} // remove
-	friend constexpr raw_pointer raw_pointer_cast(ptr const& self) {return self.rp_;}
-
+	constexpr raw_pointer raw_pointer_cast() const&{return this->rp_;} // remove
+	friend raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 	friend cuda::ptr<T, RawPtr> cuda_pointer_cast(ptr const& self){return cuda::ptr<T, RawPtr>{self.rp_};}
 //	constexpr operator cuda::ptr<T, RawPtr>() const{return cuda::ptr<T, RawPtr>{this->rp_};}
 	friend constexpr allocator<std::decay_t<T>> get_allocator(ptr const&){return {};} // do not =delete

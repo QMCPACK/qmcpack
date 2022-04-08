@@ -1,10 +1,12 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-// Copyright 2020-2022 Alfredo A. Correa
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
+#endif
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi move"
+#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 #include<vector>
 

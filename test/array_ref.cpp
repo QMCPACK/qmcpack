@@ -1,10 +1,12 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// © Alfredo A. Correa 2019-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi array reference"
+#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
+#include "../array_ref.hpp"
 
 namespace multi = boost::multi;
 
@@ -115,7 +117,7 @@ BOOST_AUTO_TEST_CASE(array_ref_reindexed) {
 
 	BOOST_REQUIRE( &mar.reindexed(1)({1, 5})[1][0] == &mar[0][0] );
 
-	BOOST_REQUIRE(( sizes(mar.stenciled({2, 4})) == decltype(sizes(mar.stenciled({2, 4}))){2, 5} ));
+	BOOST_REQUIRE( sizes(mar.stenciled({2, 4})) == std::make_tuple(2, 5) );
 	BOOST_REQUIRE( &mar.stenciled({2, 4})[2][0] == &mar[2][0] );
 	BOOST_REQUIRE( &mar.stenciled({2, 4}, {1, 3})[2][1] == &mar[2][1] );
 
@@ -274,11 +276,6 @@ BOOST_AUTO_TEST_CASE(array_ref_original_tests_carray) {
 	multi::array_ref<double, 2, double const*> B(&a[0][0], {4, 5});
 	multi::array_ref<double const, 2> C(&a[0][0], {4, 5});
 	multi::array_cref<double, 2> D(&a[0][0], {4, 5});
-
-	BOOST_REQUIRE( &A[1][2] == &B[1][2] );
-	BOOST_REQUIRE( &A[1][2] == &C[1][2] );
-	BOOST_REQUIRE( &A[1][2] == &D[1][2] );
-
 	A[1][1] = 2.;
 
 	double d[4][5] = {{1., 2.}, {2., 3.}};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test legacy type
@@ -308,9 +305,7 @@ BOOST_AUTO_TEST_CASE(array_ref_original_tests_const_carray_string) {
 	BOOST_REQUIRE( num_elements(A) == 24 and A[2][1][1] == "C1b" );
 	auto const& A2 = A.sliced(0, 3).rotated()[1].sliced(0, 2).unrotated();
 	BOOST_REQUIRE( multi::rank<std::decay_t<decltype(A2)>>{} == 2 and num_elements(A2) == 6 );
-
-	using boost::multi::detail::get;
-	BOOST_REQUIRE( get<0>(sizes(A2)) == 3 and get<1>(sizes(A2)) == 2 );
+	BOOST_REQUIRE( std::get<0>(sizes(A2)) == 3 and std::get<1>(sizes(A2)) == 2 );
 
 	auto const& A3 = A({0, 3}, 1, {0, 2});
 	BOOST_REQUIRE( multi::rank<std::decay_t<decltype(A3)>>{} == 2 and num_elements(A3) == 6 );
@@ -319,24 +314,3 @@ BOOST_AUTO_TEST_CASE(array_ref_original_tests_const_carray_string) {
 	BOOST_REQUIRE( A2.rotated().layout()[1][2] == &A2.rotated()[1][2] - A2.rotated().base() );
 }
 
-BOOST_AUTO_TEST_CASE(array_ref_rebuild_2D) {
-	double d2D[4][5] = {{1., 2.}, {2., 3.}};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test legacy type
-	multi::array_ref<double, 2> d2R(&d2D[0][0], {4, 5});
-	auto&& d2B = d2R();
-	auto&& d2B_ref = multi::ref(d2B.begin(), d2B.end());
-
-	BOOST_REQUIRE( d2B.base()   == d2B_ref.base() );
-	BOOST_REQUIRE( d2B.layout() == d2B_ref.layout() );
-	BOOST_REQUIRE( &d2R() == &multi::ref(d2B.begin(), d2B.end()) );
-}
-
-BOOST_AUTO_TEST_CASE(array_ref_rebuild_1D) {
-	double d1D[5] = {1., 2., 3., 4., 5.};  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays): test legacy type
-	multi::array_ref<double, 1> d1R(&d1D[0], {5});
-	auto&& d1B = d1R();
-	auto&& d1B_ref = multi::ref(d1B.begin(), d1B.end());
-
-	BOOST_REQUIRE( d1B.base()   == d1B_ref.base() );
-	BOOST_REQUIRE( d1B.layout() == d1B_ref.layout() );
-	BOOST_REQUIRE( &d1R() == &multi::ref(d1B.begin(), d1B.end()) );
-}

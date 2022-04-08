@@ -1,11 +1,12 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// © Alfredo A. Correa 2019-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi static array cast"
+#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
-#include "multi/config/NO_UNIQUE_ADDRESS.hpp"
+#include "../array.hpp"
+#include "../config/NO_UNIQUE_ADDRESS.hpp"
 
 #include<numeric>
 
@@ -14,7 +15,7 @@ namespace multi = boost::multi;
 template<class It, class F> class involuter;
 
 template<class Ref, class Involution>
-class involuted {
+class involuted{
 	Ref r_;
 	MULTI_NO_UNIQUE_ADDRESS Involution f_;
  public:
@@ -62,7 +63,7 @@ class involuter {
 	// NOLINTNEXTLINE(google-explicit-constructor, hicpp-explicit-conversions): this is needed to make involuter<T> implicitly convertible to involuter<T const>
 	template<class Other> constexpr involuter(involuter<Other, F> const& o) : it_{multi::implicit_cast<It>(o.it_)}, f_{o.f_} {}
 //	auto operator=(involuter const& other) -> involuter& = default;
-	constexpr auto operator*() const {return reference{*it_, f_};}
+	constexpr auto operator*() const{return reference{*it_, f_};}
 	constexpr auto operator==(involuter const& o) const {return it_==o.it_;}
 	constexpr auto operator!=(involuter const& o) const {return it_!=o.it_;}
 	constexpr auto operator+=(typename involuter::difference_type n) -> decltype(auto) {it_+=n; return *this;}
@@ -71,7 +72,6 @@ class involuter {
 	constexpr auto operator-(involuter const& other) const {return it_ - other.it_;}
 	constexpr auto operator->() const {return pointer{&*it_, f_};}
 //	~involuter() = default;
-	constexpr auto operator[](typename involuter::difference_type n) const {return reference{*(it_ + n), f_};}
 };
 
 #if defined(__cpp_deduction_guides)
@@ -148,4 +148,8 @@ BOOST_AUTO_TEST_CASE(static_array_cast) {
 	BOOST_REQUIRE( mA_ref == mA );
 	BOOST_REQUIRE( mA == mA_ref );
 }
+
+	double d = 5.;
+	std::move_iterator<double*> di{&d};
 }
+

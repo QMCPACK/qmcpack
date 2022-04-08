@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array_ref.hpp"
+#include "../array_ref.hpp"
 
 #include <boost/hana/integral_constant.hpp>
 #include <boost/iterator/transform_iterator.hpp>
@@ -28,14 +28,13 @@ struct integral_constant : private hana::integral_constant<Integral, N> {
 		return hana::integral_constant<Integral, N>::value;
 	}
 	integral_constant() = default;
-	constexpr explicit integral_constant(Integral const& i [[maybe_unused]]) {
+	constexpr explicit integral_constant(Integral const& i) {
 		assert(i == N);
 	}
 	constexpr auto operator==(Integral const& o) const {return static_cast<Integral const&>(*this)==o;}
-	constexpr auto operator==(integral_constant const&/*other*/) const {return std::true_type{};}
-
+	constexpr auto operator==(integral_constant const&/*other*/) {return std::true_type{};}
 	template<Integral N2, typename = std::enable_if_t<(N2 != N)> >
-	constexpr auto operator==(integral_constant<Integral, N2> const&/*other*/) const {return std::false_type{};}
+	constexpr auto operator==(integral_constant<Integral, N2> const&/*other*/) {return std::false_type{};}
 	template<Integral N2>
 	friend constexpr auto operator+(integral_constant const&/*a*/, integral_constant<Integral, N2> const&/*b*/) {
 		return integral_constant<Integral, hana::integral_constant<Integral, N>::value + N2>{};
@@ -65,7 +64,7 @@ BOOST_AUTO_TEST_CASE(xml_serialization_index_range) {
 }
 
 BOOST_AUTO_TEST_CASE(multi_range) {
-#if defined(__cpp_deduction_guides) and __cpp_deduction_guides and not defined(__NVCC__)
+#if defined(__cpp_deduction_guides) and __cpp_deduction_guides
 	BOOST_REQUIRE(( multi::range{5, 5}.empty() ));
 #else
 	BOOST_REQUIRE(( multi::range<std::ptrdiff_t>{5, 5}.empty() ));
@@ -90,7 +89,7 @@ BOOST_AUTO_TEST_CASE(multi_range_with_hana_literals) {
 	static_assert(( integral_constant<int, 1234>{} == 1234 ), "!");
 	static_assert(( (integral_constant<int, 1234>{} + integral_constant<int, 1>{})  == 1235 ), "!");
 	static_assert(( (integral_constant<int, 1234>{} + integral_constant<int, 1>{})  == integral_constant<int, 1235>{} ), "!");
-#if defined(__cpp_deduction_guides) and __cpp_deduction_guides and not defined(__NVCC__)
+#if defined(__cpp_deduction_guides) and __cpp_deduction_guides
 	static_assert(( multi::range{integral_constant<int, 0>{}, integral_constant<int, 5>{}}.size() == integral_constant<int, 5>{} ), "!");
 	static_assert(( size(multi::range{integral_constant<int, 0>{}, integral_constant<int, 5>{}}) == integral_constant<int, 5>{} ), "!");
 #endif
@@ -131,3 +130,4 @@ BOOST_AUTO_TEST_CASE(multi_range2) {
 //  }
 //  #endif
 }
+
