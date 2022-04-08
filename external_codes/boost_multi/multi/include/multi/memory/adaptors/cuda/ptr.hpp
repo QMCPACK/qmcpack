@@ -1,6 +1,6 @@
-//#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-//$CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs cudart-11.0` -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
-//#endif
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXXX $CXXFLAGS $0 -o $0.$X `pkg-config --cflags --libs cudart-11.0` -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
+#endif
 
 #ifndef BOOST_MULTI_MEMORY_ADAPTORS_CUDA_PTR_HPP
 #define BOOST_MULTI_MEMORY_ADAPTORS_CUDA_PTR_HPP
@@ -14,8 +14,6 @@
 
 #include<cassert> // debug
 #include<utility> // exchange
-
-#include<thrust/system/cuda/pointer.h>
 
 #ifndef _DISABLE_CUDA_SLOW
 	#ifdef NDEBUG
@@ -44,8 +42,6 @@ struct ptr<void const, RawPtr> {
 	using element_type = void const;
 //	using difference_type = void;//typename std::pointer_traits<impl_t>::difference_type;
 
-	operator ::thrust::cuda::pointer<void const>() const {return ::thrust::cuda::pointer<void const>{rp_};}
-
  protected:
 	using raw_pointer = RawPtr;
 	template<class, class> friend struct managed::ptr;
@@ -65,13 +61,10 @@ struct ptr<void const, RawPtr> {
 	// cppcheck-suppress noExplicitConstructor ; any other pointer can be converted to void const pointer
 	ptr(Other const& o) : rp_{o.rp_} {}
 	ptr& operator=(ptr const&) = default;
-
 	explicit operator bool() const {return rp_;}
-
 	friend constexpr bool operator==(ptr const& s, ptr const& o) {return s.rp_==o.rp_;}
 	friend constexpr bool operator!=(ptr const& s, ptr const& o) {return s.rp_!=o.rp_;}
-
-	friend constexpr raw_pointer to_address(ptr const& self) {return self.rp_;}
+	friend ptr to_address(ptr const& p) {return p;}
 	friend raw_pointer raw_pointer_cast(ptr const& self) {return self.rp_;}
 };
 
@@ -79,8 +72,6 @@ template<class T> class allocator;
 
 template<typename RawPtr>
 struct ptr<void, RawPtr> {
-	operator ::thrust::cuda_cub::pointer<void>() const {return ::thrust::cuda_cub::pointer<void>{rp_};}
-
  protected:
 	using T = void;
 	using raw_pointer = RawPtr;
@@ -121,14 +112,11 @@ struct ptr<void, RawPtr> {
 //	using default_allocator_type = typename cuda::allocator<typename std::iterator_traits<raw_pointer>::value_type>;
 	explicit operator bool() const{return rp_;}
 //	explicit operator raw_pointer&()&{return impl_;}
-
-	friend constexpr raw_pointer to_address(ptr const& p) {return p.rp_;}
+	friend ptr to_address(ptr const& p){return p;}
 };
 
 template<typename T, typename RawPtr>
 struct ptr {
-	operator ::thrust::cuda_cub::pointer<T>() const {return ::thrust::cuda_cub::pointer<T>{rp_};}
-
 	using raw_pointer = RawPtr;
 	using default_allocator_type = typename cuda::allocator<std::decay_t<T>>;
 	raw_pointer rp_ = {};
@@ -150,17 +138,17 @@ struct ptr {
 
 	template<class Other, typename = std::enable_if_t<std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{} >>
 	// cppcheck-suppress noExplicitConstructor ;
-	HD constexpr /*explicit(false)*/ ptr(ptr<Other> const& o) : rp_{static_cast<raw_pointer>(o.rp_)} {}
+	constexpr /*explicit(false)*/ ptr(ptr<Other> const& o) : rp_{static_cast<raw_pointer>(o.rp_)} {}
 	template<class Other, typename = std::enable_if_t<not std::is_convertible<std::decay_t<decltype(std::declval<ptr<Other>>().rp_)>, raw_pointer>{} and not std::is_same<Other, T>{}>, typename = decltype(static_cast<raw_pointer>(std::declval<ptr<Other>>().rp_))>
-	HD constexpr explicit/*(true)*/ ptr(ptr<Other> const& o, void** = 0) : rp_{static_cast<raw_pointer>(o.rp_)} {}
-	HD constexpr explicit           ptr(raw_pointer rp) : rp_{rp} {}
+	constexpr explicit/*(true)*/ ptr(ptr<Other> const& o, void** = 0) : rp_{static_cast<raw_pointer>(o.rp_)} {}
+	constexpr explicit           ptr(raw_pointer rp) : rp_{rp} {}
 
 	template<class TT> friend auto reinterpret_pointer_cast(ptr p)
 	->decltype(ptr<TT>{reinterpret_cast<TT*>(std::declval<raw_pointer>())}){
 		return ptr<TT>{reinterpret_cast<TT*>(p.rp_)};}
 
 	template<class Other, typename = decltype(static_cast<raw_pointer>(std::declval<Other const&>().rp_))>
-	HD constexpr explicit ptr(Other const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
+	constexpr explicit ptr(Other const& o) : rp_{static_cast<raw_pointer>(o.rp_)}{}
 	ptr() = default;
 
 	// cppcheck-suppress noExplicitConstructor ; bug in cppcheck 2.3
@@ -181,22 +169,20 @@ struct ptr {
 
 	using pointer = ptr<T, RawPtr>;
 	using iterator_category = typename std::iterator_traits<raw_pointer>::iterator_category;
-	explicit constexpr operator bool() const {return rp_;}
-	explicit constexpr operator void const*() const {return rp_;}
+	explicit constexpr operator bool() const{return rp_;}
+	explicit constexpr operator void const*() const{return rp_;}
 	template<class TT=T, typename = decltype(static_cast<TT*>(raw_pointer{}))>
-	explicit constexpr operator TT*() const {return static_cast<TT*>(rp_);}
+	explicit constexpr operator TT*() const{return static_cast<TT*>(rp_);}
 	ptr& operator++() {
 		static_assert(not std::is_same<raw_pointer, void*>{}, "!");
 		++rp_;
 		return *this;
 	}
-	ptr& operator--() {--rp_; return *this;}
-
-	ptr  operator++(int) {auto tmp = *this; ++(*this); return tmp;}
-	ptr  operator--(int) {auto tmp = *this; --(*this); return tmp;}
-
-	constexpr ptr& operator+=(difference_type n) {rp_+=n; return *this;}
-	constexpr ptr& operator-=(difference_type n) {rp_-=n; return *this;}
+	ptr& operator--(){--rp_; return *this;}
+	ptr  operator++(int){auto tmp = *this; ++(*this); return tmp;}
+	ptr  operator--(int){auto tmp = *this; --(*this); return tmp;}
+	constexpr ptr& operator+=(difference_type n){rp_+=n; return *this;}
+	constexpr ptr& operator-=(difference_type n){rp_-=n; return *this;}
 
 	constexpr ptr operator+(difference_type n) const {
 	//	static_cast(not std::is_same<raw_pointer, void*>{} , "!");
@@ -206,26 +192,24 @@ struct ptr {
 
 	using reference = ref<element_type>;
 
-	[[deprecated("slow")]] constexpr auto operator*() const {return reference{*this};}
+	constexpr auto operator*() const {return reference{*this};}
 	constexpr auto operator[](difference_type n) const {return reference{*((*this)+n)};}
 
-	constexpr difference_type operator-(ptr const& o) const {return rp_-o.rp_;}
-	operator ptr<void>() {return ptr<void>{rp_};}
-	HD auto get() const {return rp_;}
-
-	friend constexpr raw_pointer to_address(ptr const& p) {return p.rp_;}  // TODO(correaa) consider returning T* , from https://en.cppreference.com/w/cpp/memory/to_address
-	explicit constexpr operator raw_pointer() const {return rp_;}
-	constexpr raw_pointer raw_pointer_cast() const {return this->rp_;}
-	friend constexpr raw_pointer raw_pointer_cast(ptr const& self) {return self.rp_;}
-
+	friend constexpr ptr to_address(ptr const& p){return p;}
+	constexpr difference_type operator-(ptr const& o) const{return rp_-o.rp_;}
+	operator ptr<void>(){return ptr<void>{rp_};}
+	auto get() const{return rp_;}
+	explicit constexpr operator raw_pointer() const{return rp_;}
+	constexpr raw_pointer raw_pointer_cast() const{return this->rp_;}
+	friend constexpr raw_pointer raw_pointer_cast(ptr const& self){return self.rp_;}
 	template<class PM>
 	constexpr auto operator->*(PM&& pm) const
-	->decltype(ref<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{ptr<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{&(rp_->*std::forward<PM>(pm))}}) {
-		return ref<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{ptr<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{&(rp_->*std::forward<PM>(pm))}}; }
+	->decltype(ref<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{ptr<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{&(rp_->*std::forward<PM>(pm))}}){
+		return ref<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{ptr<std::decay_t<decltype(rp_->*std::forward<PM>(pm))>>{&(rp_->*std::forward<PM>(pm))}};}
 
  public:
-	friend allocator<std::decay_t<T>> get_allocator(ptr const&) {return {};}
-	friend allocator<std::decay_t<T>> default_allocator_of(ptr const&) {return {};}
+	friend allocator<std::decay_t<T>> get_allocator(ptr const&){return {};}
+	friend allocator<std::decay_t<T>> default_allocator_of(ptr const&){return {};}
 };
 
 template<class T>
@@ -256,205 +240,31 @@ auto uninitialized_move_n(It first, Size count, boost::multi::iterator<T2, 1, pt
 {	return memcpy2D(base(result), sizeof(T2)*stride(result), base(first), sizeof(T)*stride(first), sizeof(T), count), result + count;}
 
 template<class... T1, class Size, class... T2, class Element = typename std::pointer_traits<ptr<T1...>>::element_type>
-auto uninitialized_move_n(ptr<T1...> first, Size n, ptr<T2...> dest) {
+auto uninitialized_move_n(ptr<T1...> first, Size n, ptr<T2...> dest){
 	assert(( std::is_trivially_constructible<Element, Element>{} ));
 	memcpy(dest, first, n*sizeof(Element));
 	return dest + n;
 }
 
 
-// copy_n
-
+#if 0
 template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
+	class Alloc, class InputIt, class Size, class... T, class ForwardIt = ptr<T...>,
+	typename InputV = typename std::pointer_traits<InputIt>::element_type, 
+	typename ForwardV = typename std::pointer_traits<ForwardIt>::element_type
+//	, typename = std::enable_if_t<std::is_constructible<ForwardV, InputV>{}>
 >
-auto copy_n(
-	boost::multi::array_iterator<T1, D,     Q1*>   first , Size count,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	copy_n(
-		                                                                                first , count,
-		static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first)
-	);
-	return d_first + count;
+ForwardIt alloc_uninitialized_copy_n(Alloc&, InputIt f, Size n, ptr<T...> d){
+	if(std::is_trivially_constructible<ForwardV, InputV>{})
+		return memcpy(d, f, n*sizeof(ForwardV)) + n;
+	else assert(0);
+	return d;
 }
+#endif
 
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
->
-auto copy_n(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first , Size count,
-	boost::multi::array_iterator<T2, D,     Q2*> d_first
-)-> boost::multi::array_iterator<T2, D,     Q2*> {
-	copy_n(
-		static_cast<boost::multi::array_iterator<T1, D, ::thrust::cuda::pointer<Q1>>>(  first), count,
-		                                                                              d_first
-	);
-	return d_first + count;
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
->
-auto copy_n(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first , Size count,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	copy_n(
-		static_cast<boost::multi::array_iterator<T1, D, ::thrust::cuda::pointer<Q1>>>(  first), count,
-		static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first)
-	);
-	return d_first + count;
-}
-
-// copy
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto copy(
-	boost::multi::array_iterator<T1, D,     Q1*>   first,
-	boost::multi::array_iterator<T1, D,     Q1*>   last ,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	copy_n(first, last - first, static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first));
-	return d_first + (last - first);
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto copy(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first,
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   last ,
-	boost::multi::array_iterator<T2, D,     Q2*> d_first
-)-> boost::multi::array_iterator<T2, D,     Q2*> {
-	return copy_n(first, last - first, d_first);
-	return d_first + (last - first);
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto copy(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first,
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   last ,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	return copy_n(first, last - first, d_first);
-	return d_first + (last - first);
-}
-
-// uninitialized_copy_n
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
->
-auto uninitialized_copy_n(
-	boost::multi::array_iterator<T1, D,     Q1*>   first , Size count,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	uninitialized_copy_n(
-		                                                                                first , count,
-		static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first)
-	);
-	return d_first + count;
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
->
-auto uninitialized_copy_n(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first , Size count,
-	boost::multi::array_iterator<T2, D,     Q2*> d_first
-)-> boost::multi::array_iterator<T2, D,     Q2*> {
-	uninitialized_copy_n(
-		static_cast<boost::multi::array_iterator<T1, D, ::thrust::cuda::pointer<Q1>>>(  first), count,
-		                                                                              d_first
-	);
-	return d_first + count;
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class Size,
-	class T2, class Q2
->
-auto uninitialized_copy_n(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first , Size count,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	uninitialized_copy_n(
-		static_cast<boost::multi::array_iterator<T1, D, ::thrust::cuda::pointer<Q1>>>(  first), count,
-		static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first)
-	);
-	return d_first + count;
-}
-
-// uninitalized copy
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto uninitialized_copy(
-	boost::multi::array_iterator<T1, D,     Q1*>   first,
-	boost::multi::array_iterator<T1, D,     Q1*>   last ,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	uninitialized_copy_n(first, last - first, static_cast<boost::multi::array_iterator<T2, D, ::thrust::cuda::pointer<Q2>>>(d_first));
-	return d_first + (last - first);
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto uninitialized_copy(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first,
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   last ,
-	boost::multi::array_iterator<T2, D,     Q2*> d_first
-)-> boost::multi::array_iterator<T2, D,     Q2*> {
+template<class It, class T2, class Q2, typename = std::enable_if_t<std::is_trivially_constructible<T2, typename std::iterator_traits<It>::value_type>{}>>
+auto uninitialized_copy(It first, It last, boost::multi::iterator<T2, 1, ptr<Q2>> d_first){
 	return uninitialized_copy_n(first, last - first, d_first);
-	return d_first + (last - first);
-}
-
-template<
-	multi::dimensionality_type D,
-	class T1, class Q1,
-	class T2, class Q2
->
-auto uninitialized_copy(
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   first,
-	boost::multi::array_iterator<T1, D, ptr<Q1>>   last ,
-	boost::multi::array_iterator<T2, D, ptr<Q2>> d_first
-)-> boost::multi::array_iterator<T2, D, ptr<Q2>> {
-	return uninitialized_copy_n(first, last - first, d_first);
-	return d_first + (last - first);
 }
 
 template<
@@ -472,7 +282,7 @@ ForwardIt alloc_uninitialized_copy_n(Alloc&, InputIt f, Size n, ptr<T...> d){
 }
 
 template<class Alloc, class InputIt, typename Size, class... T, class ForwardIt = ptr<T...>>
-ForwardIt alloc_uninitialized_move_n(Alloc& a, InputIt f, Size n, ptr<T...> d) {
+ForwardIt alloc_uninitialized_move_n(Alloc& a, InputIt f, Size n, ptr<T...> d){
 	return alloc_uninitialized_copy_n(a, f, n, d);
 }
 
@@ -537,7 +347,7 @@ struct ref {
 		}
 		~skeleton_t() /*HD*/{conditional_copyback_if_not(std::is_const<T>{});}
 	};
-	skeleton_t skeleton()&& /*HD*/{return skeleton_t{raw_pointer_cast(pimpl_.rp_)};}
+	skeleton_t skeleton()&& /*HD*/{return {pimpl_.rp_};}
 
  public:
 	constexpr ref(ref&& r) : pimpl_{std::move(r.pimpl_).rp_} {}
@@ -671,6 +481,12 @@ struct ref {
 #endif
 	#endif
 
+
+
+
+
+
+
 #ifndef _MULTI_MEMORY_CUDA_DISABLE_ELEMENT_ACCESS
 	bool operator!=(ref const& other) const&{return not(*this == other);}
 	template<class Other>
@@ -685,6 +501,7 @@ struct ref {
 //	bool operator==(ref const& other) const = delete;
 #endif
 #if 1
+
 
 #if defined(__clang__)
 #if defined(__CUDA__) && defined(__CUDA_ARCH__)
@@ -753,28 +570,12 @@ struct ref {
 	}
 #endif
 #endif
-
-#if __CUDA_ARCH__
-	template<class O, typename = decltype(std::declval<T&>() += std::declval<O&&>())> __device__ ref& operator+=(O&& o) && {*(pimpl_.rp_) += std::forward<O>(o); return std::move(*this);}
-	template<class O, typename = decltype(std::declval<T&>() -= std::declval<O&&>())> __device__ ref& operator-=(O&& o) && {*(pimpl_.rp_) -= std::forward<O>(o); return std::move(*this);}
-#else
-	template<class O, typename = decltype(std::declval<T&>() += std::declval<O&&>())> __host__ SLOW ref&& operator+=(O&& o) && {
-		std::array<char, sizeof(T)> buff;
-		{cudaError_t s = cudaMemcpy(buff.data(), pimpl_.rp_, buff.size(), cudaMemcpyDeviceToHost); assert(s == cudaSuccess); (void)s;}
-		reinterpret_cast<T&>(buff) += std::forward<O>(o);
-		{cudaError_t s = cudaMemcpy(pimpl_.rp_, buff.data(), buff.size(), cudaMemcpyHostToDevice); assert(s == cudaSuccess); (void)s;}
-		return std::move(*this);
-	}
-	template<class O, typename = decltype(std::declval<T&>() -= std::declval<O&&>())> __host__ SLOW ref&& operator-=(O&& o) && {
-		std::array<char, sizeof(T)> buff;
-		{cudaError_t s = cudaMemcpy(buff.data(), pimpl_.rp_, buff.size(), cudaMemcpyDeviceToHost); assert(s == cudaSuccess); (void)s;}
-		reinterpret_cast<T&>(buff) -= std::forward<O>(o);
-		{cudaError_t s = cudaMemcpy(pimpl_.rp_, buff.data(), buff.size(), cudaMemcpyHostToDevice); assert(s == cudaSuccess); (void)s;}
-		return std::move(*this);
-	}
-#endif
-
- private:
+	template<class Other, typename = decltype(std::declval<T&>()+=std::declval<Other&&>())>
+	__host__ __device__
+	ref& operator+=(Other&& o)&&{std::move(*this).skeleton()+=o; return *this;}
+	template<class Other, typename = decltype(std::declval<T&>()-=std::declval<Other&&>())>
+	ref&& operator-=(Other&& o)&&{std::move(*this).skeleton()-=o; return std::move(*this);}
+private:
 	template<class Ref>
 	void swap(Ref&& b) &&{
 		T tmp = std::move(*this);
@@ -783,8 +584,8 @@ struct ref {
 		b = std::move(tmp);
 	END_CUDA_SLOW
 	}
+public:
 
- public:
 	template<class Ref>
 #if __NVCC__
 	__attribute__((deprecated))
@@ -819,33 +620,12 @@ struct ref {
 
 }}}}
 
-namespace thrust {
-template<class T, class P> P raw_pointer_cast(boost::multi::memory::cuda::ptr<T, P> const& p) __host__ __device__ {
+namespace thrust{
+template<class T, class P> P raw_pointer_cast(boost::multi::memory::cuda::ptr<T, P> const& p) __host__ __device__{
 	return p.raw_pointer_cast();
 }
 }
 #undef SLOW
-
-//namespace boost {
-//namespace multi {
-
-//template<
-//	class T1, class Q1,
-//	class Size,
-//	class T2, class P2//, class E2 = typename std::pointer_traits<P2>::element_type //, typename TP2 = decltype(ptr<E2>{std::declval<P2>()})
-//> struct adl_custom_copy<
-//	boost::multi::array_iterator<T1, 1L, Q1*>, boost::multi::array_iterator<T1, 1L, Q1*>,
-//	boost::multi::array_iterator<T2, 1L, P2 >
-//> {
-//	auto copy(
-//		boost::multi::array_iterator<T1, 1L, Q1*>   first , boost::multi::array_iterator<T1, 1L, Q1*> last,
-//		boost::multi::array_iterator<T2, 1L, P2 > d_first
-//	)-> boost::multi::array_iterator<T2, 1L, P2 > {
-//		return copy_n(first, last - first, d_first);
-//	}
-//}
-
-//}}
 
 #if not __INCLUDE_LEVEL__ // def _TEST_MULTI_MEMORY_ADAPTORS_CUDA_PTR
 

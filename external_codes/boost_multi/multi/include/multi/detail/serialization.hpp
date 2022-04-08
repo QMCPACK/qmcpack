@@ -6,8 +6,8 @@
 
 #include<algorithm>  // for_each
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace archive {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
+namespace archive {
 namespace detail {
 
 template<class Ar> struct common_iarchive;
@@ -16,7 +16,7 @@ template<class Ar> struct common_oarchive;
 }  // end namespace detail
 }  // end namespace archive
 
-namespace serialization {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace serialization {
 
 template<class T> class  nvp;            // dependency "in name only"
 template<class T> class  array_wrapper;  // dependency "in name only"
@@ -39,7 +39,7 @@ template<class T> class NameValuePair;  // dependency "in name only", if you get
 
 }  // end namespace cereal
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
 namespace multi {
 
 template<class Archive, class MA, std::enable_if_t<std::is_same<MA, std::decay_t<MA>>{} and (MA::dimensionality > -1) , int> =0>
@@ -123,7 +123,7 @@ struct multi_array;
 
 }  // end namespace boost
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
 namespace serialization {
 
 //template<class Archive, class T, std::size_t D, class A>

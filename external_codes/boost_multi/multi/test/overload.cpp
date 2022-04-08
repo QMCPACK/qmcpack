@@ -7,7 +7,7 @@ $CXX $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 #include<complex>
 

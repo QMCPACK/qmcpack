@@ -7,7 +7,7 @@ $CXX $CXXFLAGS $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 namespace multi = boost::multi;
 
@@ -56,10 +56,10 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr) {
 		BOOST_REQUIRE( &aP->operator[](1)[1] == &a[1][1] );
 
 		multi::array_ptr<double, 2> aP2{&a};
-		BOOST_REQUIRE( aP == aP2 ); BOOST_REQUIRE( not (aP != aP2) );
+		BOOST_REQUIRE( aP == aP2 );
 
 		multi::array_ptr<double, 2> bP{&b};
-		BOOST_REQUIRE( bP != aP ); BOOST_REQUIRE( not (bP == aP) );
+		BOOST_REQUIRE( bP != aP );
 
 		bP = aP;
 		BOOST_REQUIRE( aP == bP );
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(multi_array_ptr) {
 		auto&& aR = *aP;
 		BOOST_REQUIRE( &aR[1][1] == &a[1][1] );
 		BOOST_REQUIRE( aR == *aP );
-		BOOST_REQUIRE( std::equal(aR.begin(), aR.end(), aP->begin(), aP->end()) );
+		BOOST_REQUIRE( aR.equal(aP->begin()) );
 		BOOST_REQUIRE( size(aR) == aP->size() );
 	}
 	{
