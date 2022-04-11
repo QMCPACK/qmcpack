@@ -39,9 +39,8 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   app_log() << "-------------------------------------------------------------" << std::endl;
 
   /*
-    BEGIN Boilerplate stuff to make a simple SPOSet. 
-    Shamelessly copied from test_einset.cpp. 
-   */
+    BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
+  */
 
   Communicate* c = OHMMS::Controller;
 
@@ -113,16 +112,14 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   REQUIRE(spo);
 
   /*
-    END Boilerplate stuff. At t his point we now have
-    a SplineR2R wave function ready for rotation. 
-    What follows is the actual test.
+    END Boilerplate stuff. Now we have a SplineR2R wavefunction 
+    ready for rotation. What follows is the actual test.
   */
 
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
 #if !defined(QMC_CUDA) || !defined(QMC_COMPLEX)
 
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
-  //     NB: we're moving here, so don't use spo itself after this!
   auto rot_spo = std::make_unique<RotatedSPOs>(std::move(spo));
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
@@ -137,7 +134,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   rot_spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
 
-  // This stuff checks that no rotation was applied. See test_einset.cpp
+  // This stuff checks that no rotation was applied. Copied from test_einset.cpp.
   // value
   REQUIRE(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
   REQUIRE(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
@@ -158,10 +155,10 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 	 RotatedSPOs::apply_rotation(params) method. That should do the 
 	 right thing for this particular spline class.
 	 
-	 For 2 electrons in 8 orbs, we expect 2*(8-2) =12 params.
+	 For 2 electrons in 8 orbs, we expect 2*(8-2) = 12 params.
   */
   const auto rot_size = rot_spo->m_act_rot_inds.size();
-  REQUIRE(rot_size == 12); // = Nelec*(Norbs - Nelec) = 2*(8-2) = 2*6 = 12
+  REQUIRE(rot_size == 12); // = Nelec*(Norbs - Nelec) = 2*(8-2) = 12
   std::vector<double> param(rot_size);
   for (auto i = 0; i < rot_size; i++)
   {
@@ -176,7 +173,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   rot_spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_rot, dpsiM_rot, d2psiM_rot);
 
   /* 
-     JPT DEBUG: Ugly but it works: manually encode the unitary transformation.
+     Manually encode the unitary transformation. Ugly, but it works.
      @TODO: Use the total rotation machinery when it's implemented
 
      NB: This is truncated to 5 sig-figs, so there is some slop here as

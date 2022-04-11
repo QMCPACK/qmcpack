@@ -115,7 +115,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   const auto Nsplines       = spline_ptr->num_splines; // May include padding
   const auto coefs_tot_size = spline_ptr->coefs_size;
   const auto BasisSetSize   = coefs_tot_size / Nsplines;
-  const auto TrueNOrbs      = rot_mat.size1(); // == OrbitalSetSize - padding
+  const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
   assert(OrbitalSetSize >= TrueNOrbs);
 
   // Fill top left corner of tmpU with rot_mat

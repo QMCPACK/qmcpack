@@ -111,10 +111,12 @@ set(DETERMINANT_SRC
 # @TODO: Remove when rotations work for complex stuff
 if(NOT QMC_COMPLEX)
   if(NOT ENABLE_CUDA)
-    set(SPOSET_SRC test_rotatedspos.cpp ${SPOSET_SRC})
+    if(NOT QMC_CUDA)
+      set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
+    endif()
   endif()
 endif()
-  
+
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
   if(NOT QMC_CUDA2HIP)
