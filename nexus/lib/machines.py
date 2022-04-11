@@ -3387,7 +3387,7 @@ Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
-Archer2(      5860,   2,   128,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Archer2(      5860,   1,   128,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
