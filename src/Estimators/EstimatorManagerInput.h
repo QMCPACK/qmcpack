@@ -81,14 +81,12 @@ private:
   void appendEstimatorInput(Args&&... args)
   {
     estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-    ;
   }
 
   template<typename T, typename... Args>
   void appendScalarEstimatorInput(Args&&... args)
   {
     scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
-    ;
   }
 
   friend class testing::EstimatorManagerInputTests;

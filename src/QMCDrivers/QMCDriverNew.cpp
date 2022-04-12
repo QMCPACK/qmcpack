@@ -63,23 +63,35 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       setNonLocalMoveHandler_(snlm_handler)
 {
   using DV = ProjectData::DriverVersion;
-  switch(project_data_.get_driver_version())
+  switch (project_data_.get_driver_version())
   {
-  case DV::BATCH:
-  {
-    EstimatorManagerInput estimator_manager_input{std::move(*(qmcdriver_input_.takeEstimatorManagerInput()))};
-    // This estimator manager is valid at construction.
-    estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(estimator_manager_input), population_.get_golden_hamiltonian(),
-					  *population.get_golden_electrons(), population.get_golden_twf());
+  case DV::BATCH: {
+    std::optional<EstimatorManagerInput> could_be_emi{qmcdriver_input_.takeEstimatorManagerInput()};
+    // if(could_be_emi.has_value())
+    // // This estimator manager is valid at construction.
+    //   estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(could_be_emi.value()), population_.get_golden_hamiltonian(),
+    // 					  *population.get_golden_electrons(), population.get_golden_twf());
+    // else {
+    //   EstimatorManagerInput emi;
+    //   estimator_manager_ = std::make_unique<EstimatorManagerNew>(comm, std::move(emi),population_.get_golden_hamiltonian(),
+    // 					  *population.get_golden_electrons(), population.get_golden_twf());
+    // }
+    estimator_manager_ =
+        std::make_unique<EstimatorManagerNew>(comm,
+                                              (could_be_emi.has_value() ? std::move(could_be_emi.value())
+                                                                        : std::move(EstimatorManagerInput{})),
+                                              population_.get_golden_hamiltonian(), *population.get_golden_electrons(),
+                                              population.get_golden_twf());
   }
-    break;
+  break;
   case DV::LEGACY:
-    // This estimator still requires its put be called later    
-      estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), myComm);
+    // This estimator still requires its put be called later
+    estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), myComm);
     break;
   }
-  
-  drift_modifier_.reset(createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
+
+  drift_modifier_.reset(
+      createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
@@ -151,9 +163,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
   using DV = ProjectData::DriverVersion;
-  if ( project_data_.get_driver_version() == DV::LEGACY )
+  if (project_data_.get_driver_version() == DV::LEGACY)
     estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
-			    population_.get_golden_twf(), cur);
+                            population_.get_golden_twf(), cur);
 
   if (dispatchers_.are_walkers_batched())
   {
@@ -252,8 +264,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
-void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
-                                    RealType reserve)
+void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 {
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
