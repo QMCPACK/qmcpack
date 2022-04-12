@@ -140,7 +140,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
 
   /*
     rot_mat is now an anti-hermitian matrix. Now we convert
-    it into a unitary matrix via rot_mat = exp(-kappa). 
+    it into a unitary matrix via rot_mat = exp(-rot_mat). 
     Finally, apply unitary matrix to orbs.
   */
   exponentiate_antisym_matrix(rot_mat);

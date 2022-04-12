@@ -2,13 +2,12 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
-// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Joshua Townsend, jptowns@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 #include "catch.hpp"
 
@@ -34,10 +33,6 @@ namespace qmcplusplus
 */
 TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 {
-  app_log() << "-------------------------------------------------------------" << std::endl;
-  app_log() << "BEGIN RotatedSPOs via SplineR2R" << std::endl;
-  app_log() << "-------------------------------------------------------------" << std::endl;
-
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
@@ -124,7 +119,6 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
-  app_log() << "RotatedSPOs::OrbitalSetSize= " << orbitalsetsize << "\n";
   REQUIRE(orbitalsetsize == 8);
 
   // 2.) Get data for unrotated orbitals. Check that there's no rotation
@@ -293,10 +287,6 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   REQUIRE(std::real(d2psiM_rot[1][0]) == Approx(lap2).epsilon(0.0001));
 
 #endif
-
-  app_log() << "-------------------------------------------------------------" << std::endl;
-  app_log() << "END RotatedSPOs via SplineR2R" << std::endl;
-  app_log() << "-------------------------------------------------------------" << std::endl;
 }
 
 } // namespace qmcplusplus

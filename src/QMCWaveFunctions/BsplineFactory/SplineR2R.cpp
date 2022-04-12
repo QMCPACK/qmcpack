@@ -48,66 +48,31 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-/* 
-  This is called by RotatedSPOs::apply_rotation()...
-
-  The implementation here follows that described in [1,2].
-  Each "rotated" orbital, \psi, is composed of a linear combination
-  of SPO's \phi:
-
-  \psi_{i} = \psi_i + \sum_{j} \alpha_{i,j}\phi_{j}
+/*
+  ~~ Notes for rotation ~~
+  spl_coefs      = Raw pointer of spline coefficients
+  BasisSetSize   = Number of spline coefs per orbital
+  OrbitalSetSize = Number of orbitals (excluding padding)
   
-  where \alpha is an adjustable parameter. This is also close to what 
-  was implemented in the Berkeley branch orbopt scheme. 
-  Cf. MultiSlateDeterminantFast.cpp lines 154 - 170. 
+  spl_coefs has a complicated layout depending on dimensionality of splines. 
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a 
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline 
+  index adjacent in memory. NB: The orbital index is SIMD aligned and
+  therefore may include padding.
+    
+  In other words, due to SIMD alignment, Nsplines may be larger than the 
+  actual number of splined orbitals, which means that in practice rot_mat 
+  may be smaller than the number of 'columns' in the coefs array. 
+  Therefore, we put rot_mat inside "tmpU". The padding of the splines 
+  is at the end, so if we put rot_mat at top left corner of tmpU, then 
+  we can apply tmpU to the coefs safely regardless of padding.   
   
-  Note that this implementation requires that NSPOs > Nelec. In other words,
-  if you want to run a orbopt wfn, you must include some virtual orbitals!
-  
-  Some results (using older Berkeley branch) were published in [3].
-  
-  [1] Filippi & Fahy, JCP 112, (2000)
-  [2] Toulouse & Umrigar, JCP 126, (2007)
-  [3] Townsend et al., PRB 102, (2020)
+  Typically, BasisSetSize >> OrbitalSetSize, so the spl_coefs "matrix"
+  is very tall and skinny.
 */
 template<typename ST>
 void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
-  /* 
-     ~~ Spline stuff ~~
-     spl_coefs      = Raw pointer to a hunk o' memory
-     BasisSetSize   = Number of spline coefs per orbital
-     OrbitalSetSize = Number of orbitals
-     
-     Because coefs is a raw pointer, we have to take care to index into it
-     with some care. The value of the nth SPO at a point xi, yi, zi
-     is given by:
-
-     coefs[offset] = x_stride*xi + y_stride*yi + z_stride*zi + n
-
-     NB: The layout includes padding of the x,y,z, and orbital indices. 
-     In the case of the spatial indices, the padding depends on the 
-     boundary conditions. For 3d PBC's, the padding seems to be 3 
-     (Cf. MultiBspline.hpp). I.e. for a 100x100x100 mesh, the "size" of 
-     the x-,y-, and z-dimensions of the coefs is actually 103x103x103. 
-     The orbital index is padded for SIMD alignment.
-
-     Here, we don't care about the individual x,y,z components. For our
-     purposes, we can think of spl_coefs as pointing to a matrix of size
-     BasisSetSize x (OrbitalSetSize + padding), with the spline index 
-     adjacent in memory.
-
-     Due to SIMD alignment, Nsplines may be larger than the actual
-     number of splined orbitals, which means that in practice rot_mat may 
-     be smaller than the number of 'columns' in the coefs array. 
-     Therefore, we put rot_mat inside "tmpU". The padding of the splines 
-     is at the end, so if we put rot_mat at top left corner of tmpU, then 
-     we can apply tmpU to the coefs safely regardless of padding.   
-
-     Typically, BasisSetSize >> OrbitalSetSize, so the spl_coefs "matrix"
-     is very tall and skinny.
-  */
-
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
   const auto spline_ptr = SplineInst->getSplinePtr();
   assert(spline_ptr != nullptr);

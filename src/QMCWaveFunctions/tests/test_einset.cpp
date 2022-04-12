@@ -223,7 +223,7 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   SPOSet::GradMatrix dpsiM_bare(elec_.R.size(), orbitalsetsize);
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
-  
+
   // value
   REQUIRE(psiM_bare[1][0] == Approx(-0.8886948824));
   REQUIRE(psiM_bare[1][1] == Approx(1.4194120169));
@@ -462,7 +462,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
-  
+
   // for vgl
   SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
