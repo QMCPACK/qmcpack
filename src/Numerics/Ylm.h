@@ -114,16 +114,16 @@ inline void derivYlmSpherical(const int l,
                               std::complex<T>& phi_deriv,
                               const bool conj)
 {
-  T theta     = std::acos(r[0]);
-  T phi       = std::atan2(r[2], r[1]);
-  std::complex<T> emiphi    = std::complex<T>(std::cos(phi), -std::sin(phi));
-  theta_deriv = static_cast<T>(m) / std::tan(theta) * Ylm(l, m, r);
+  T theta                = std::acos(r[0]);
+  T phi                  = std::atan2(r[2], r[1]);
+  std::complex<T> emiphi = std::complex<T>(std::cos(phi), -std::sin(phi));
+  theta_deriv            = static_cast<T>(m) / std::tan(theta) * Ylm(l, m, r);
   theta_deriv += std::sqrt(static_cast<T>((l - m) * (l + m + 1))) * emiphi * Ylm(l, m + 1, r);
   phi_deriv = std::complex<T>(0.0, static_cast<T>(m)) * Ylm(l, m, r);
   if (conj)
   {
     theta_deriv = std::conj(theta_deriv);
-    phi_deriv = std::conj(phi_deriv);
+    phi_deriv   = std::conj(phi_deriv);
   }
 }
 
