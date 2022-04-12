@@ -219,24 +219,25 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 	 rotation matrix...
   */
   const auto orbitalsetsize = spo->getOrbitalSetSize();
+  REQUIRE(orbitalsetsize == 8);
   SPOSet::ValueMatrix psiM_bare(elec_.R.size(), orbitalsetsize);
   SPOSet::GradMatrix dpsiM_bare(elec_.R.size(), orbitalsetsize);
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
 
   // value
-  REQUIRE(psiM_bare[1][0] == Approx(-0.8886948824));
-  REQUIRE(psiM_bare[1][1] == Approx(1.4194120169));
+  CHECK(psiM_bare[1][0] == Approx(-0.8886948824));
+  CHECK(psiM_bare[1][1] == Approx(1.4194120169));
   // grad
-  REQUIRE(dpsiM_bare[1][0][0] == Approx(-0.0000183403));
-  REQUIRE(dpsiM_bare[1][0][1] == Approx(0.1655139178));
-  REQUIRE(dpsiM_bare[1][0][2] == Approx(-0.0000193077));
-  REQUIRE(dpsiM_bare[1][1][0] == Approx(-1.3131694794));
-  REQUIRE(dpsiM_bare[1][1][1] == Approx(-1.1174004078));
-  REQUIRE(dpsiM_bare[1][1][2] == Approx(-0.8462534547));
+  CHECK(dpsiM_bare[1][0][0] == Approx(-0.0000183403));
+  CHECK(dpsiM_bare[1][0][1] == Approx(0.1655139178));
+  CHECK(dpsiM_bare[1][0][2] == Approx(-0.0000193077));
+  CHECK(dpsiM_bare[1][1][0] == Approx(-1.3131694794));
+  CHECK(dpsiM_bare[1][1][1] == Approx(-1.1174004078));
+  CHECK(dpsiM_bare[1][1][2] == Approx(-0.8462534547));
   // lapl
-  REQUIRE(d2psiM_bare[1][0] == Approx(1.3313053846));
-  REQUIRE(d2psiM_bare[1][1] == Approx(-4.712583065));
+  CHECK(d2psiM_bare[1][0] == Approx(1.3313053846));
+  CHECK(d2psiM_bare[1][1] == Approx(-4.712583065));
 
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
   rot_mat[0][0] = 0.99726;
@@ -323,8 +324,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   }
 
   // value
-  REQUIRE(psiM_rot[0][0] == Approx(val1));
-  REQUIRE(psiM_rot[1][0] == Approx(val2));
+  CHECK(psiM_rot[0][0] == Approx(val1));
+  CHECK(psiM_rot[1][0] == Approx(val2));
 
   std::vector<double> grad1(3);
   std::vector<double> grad2(3);
@@ -338,12 +339,12 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   }
 
   // grad
-  REQUIRE(dpsiM_rot[0][0][0] == Approx(grad1[0]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[0][0][1] == Approx(grad1[1]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[0][0][2] == Approx(grad1[2]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][0] == Approx(grad2[0]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][1] == Approx(grad2[1]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][2] == Approx(grad2[2]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][0] == Approx(grad1[0]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][1] == Approx(grad1[1]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][2] == Approx(grad1[2]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][0] == Approx(grad2[0]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][1] == Approx(grad2[1]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][2] == Approx(grad2[2]).epsilon(0.0001));
 
   double lap1 = 0.;
   double lap2 = 0.;
@@ -354,8 +355,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   }
 
   // Lapl
-  REQUIRE(d2psiM_rot[0][0] == Approx(lap1).epsilon(0.0001));
-  REQUIRE(d2psiM_rot[1][0] == Approx(lap2).epsilon(0.0001));
+  CHECK(d2psiM_rot[0][0] == Approx(lap1).epsilon(0.0001));
+  CHECK(d2psiM_rot[1][0] == Approx(lap2).epsilon(0.0001));
 #endif
 
 #if 0

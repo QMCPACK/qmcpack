@@ -130,18 +130,18 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 
   // This stuff checks that no rotation was applied. Copied from test_einset.cpp.
   // value
-  REQUIRE(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
-  REQUIRE(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
+  CHECK(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
+  CHECK(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
   // grad
-  REQUIRE(std::real(dpsiM_bare[1][0][0]) == Approx(-0.0000183403));
-  REQUIRE(std::real(dpsiM_bare[1][0][1]) == Approx(0.1655139178));
-  REQUIRE(std::real(dpsiM_bare[1][0][2]) == Approx(-0.0000193077));
-  REQUIRE(std::real(dpsiM_bare[1][1][0]) == Approx(-1.3131694794));
-  REQUIRE(std::real(dpsiM_bare[1][1][1]) == Approx(-1.1174004078));
-  REQUIRE(std::real(dpsiM_bare[1][1][2]) == Approx(-0.8462534547));
+  CHECK(std::real(dpsiM_bare[1][0][0]) == Approx(-0.0000183403));
+  CHECK(std::real(dpsiM_bare[1][0][1]) == Approx(0.1655139178));
+  CHECK(std::real(dpsiM_bare[1][0][2]) == Approx(-0.0000193077));
+  CHECK(std::real(dpsiM_bare[1][1][0]) == Approx(-1.3131694794));
+  CHECK(std::real(dpsiM_bare[1][1][1]) == Approx(-1.1174004078));
+  CHECK(std::real(dpsiM_bare[1][1][2]) == Approx(-0.8462534547));
   // lapl
-  REQUIRE(std::real(d2psiM_bare[1][0]) == Approx(1.3313053846));
-  REQUIRE(std::real(d2psiM_bare[1][1]) == Approx(-4.712583065));
+  CHECK(std::real(d2psiM_bare[1][0]) == Approx(1.3313053846));
+  CHECK(std::real(d2psiM_bare[1][1]) == Approx(-4.712583065));
 
   /* 
      3.) Apply a rotation to the orbitals
@@ -252,8 +252,8 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   }
 
   // value
-  REQUIRE(std::real(psiM_rot[0][0]) == Approx(val1));
-  REQUIRE(std::real(psiM_rot[1][0]) == Approx(val2));
+  CHECK(std::real(psiM_rot[0][0]) == Approx(val1));
+  CHECK(std::real(psiM_rot[1][0]) == Approx(val2));
 
   std::vector<double> grad1(3);
   std::vector<double> grad2(3);
@@ -267,12 +267,12 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   }
 
   // grad
-  REQUIRE(dpsiM_rot[0][0][0] == Approx(grad1[0]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[0][0][1] == Approx(grad1[1]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[0][0][2] == Approx(grad1[2]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][0] == Approx(grad2[0]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][1] == Approx(grad2[1]).epsilon(0.0001));
-  REQUIRE(dpsiM_rot[1][0][2] == Approx(grad2[2]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][0] == Approx(grad1[0]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][1] == Approx(grad1[1]).epsilon(0.0001));
+  CHECK(dpsiM_rot[0][0][2] == Approx(grad1[2]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][0] == Approx(grad2[0]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][1] == Approx(grad2[1]).epsilon(0.0001));
+  CHECK(dpsiM_rot[1][0][2] == Approx(grad2[2]).epsilon(0.0001));
 
   double lap1 = 0.;
   double lap2 = 0.;
@@ -283,8 +283,8 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   }
 
   // Lapl
-  REQUIRE(std::real(d2psiM_rot[0][0]) == Approx(lap1).epsilon(0.0001));
-  REQUIRE(std::real(d2psiM_rot[1][0]) == Approx(lap2).epsilon(0.0001));
+  CHECK(std::real(d2psiM_rot[0][0]) == Approx(lap1).epsilon(0.0001));
+  CHECK(std::real(d2psiM_rot[1][0]) == Approx(lap2).epsilon(0.0001));
 
 #endif
 }
