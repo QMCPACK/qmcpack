@@ -104,4 +104,54 @@ TEST_CASE("Spherical Harmonics Many", "[numerics]")
   }
 }
 
+TEST_CASE("Derivatives of Spherical Harmonics", "[numerics]")
+{
+  struct Point
+  {
+    double x;
+    double y;
+    double z;
+  };
+
+  struct YlmDerivValue
+  {
+    Point p;
+    int l;
+    int m;
+    double th_re;
+    double th_im;
+    double ph_re;
+    double ph_im;
+  };
+
+  //reference values from sympy
+  //d/dtheta Ylm and d/dphi Ylm
+  const int N      = 4;
+  YlmDerivValue Vals[N] = {
+      {{0.587785, 0, 0.809017}, 1, 0, -0.2871933, 0, 0, 0},
+      {{0.293893, 0.904508, -0.309017}, 2, -1, -0.1931374, 0.5944147, 0.2159339, 0.0701613},
+      {{0.293893, 0.904508, 0.309017}, 3, 2, 0.5610709, -0.4076428, -0.3358066, -0.4621970},
+      {{-0.475528, -0.345492, -0.809017}, 4, -3, 0.2162228, 0.6654590, -0.5867206, 0.1906389},
+  };
+
+  using vec_t = TinyVector<double, 3>;
+  for (int i = 0; i < N; i++)
+  {
+    YlmDerivValue& v = Vals[i];
+    vec_t w;
+    w[0] = v.p.z; // first component appears to be aligned along the z-axis
+    w[1] = v.p.x;
+    w[2] = v.p.y;
+
+    std::complex<double> theta, phi;
+    derivYlmSpherical(v.l, v.m, w, theta, phi, false);
+    //printf("%d %d  expected %g %g %g %g  actual %g %g %g %g\n",v.l,v.m,v.th_re,v.th_im, v.ph_re, v.ph_im, theta.real(), theta.imag(), phi.real(), phi.imag());
+    REQUIRE(std::real(theta) == Approx(v.th_re));
+    REQUIRE(std::imag(theta) == Approx(v.th_im));
+    REQUIRE(std::real(phi) == Approx(v.ph_re));
+    REQUIRE(std::imag(phi) == Approx(v.ph_im));
+  }
+
+}
+
 } // namespace qmcplusplus
