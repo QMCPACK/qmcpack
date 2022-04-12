@@ -398,6 +398,9 @@ the path to the source directory.
 
 See :ref:`Sanitizer-Libraries` for more information.
 
+
+.. _offloadbuild:
+
 Notes for OpenMP target offload to accelerators (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 QMCPACK is currently being updated to support OpenMP target offload and obtain performance

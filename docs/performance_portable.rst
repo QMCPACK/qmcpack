@@ -18,4 +18,10 @@ The new drivers that implement this flexible batching scheme are called "batched
 
 For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
 
-More information about the new drivers is given in the :ref:`Batched Drivers <batched_drivers>` section.
+Links to more information in other sections of the manual:
+
+ - **Build instructions:** :ref:`OpenMP target offload <offloadbuild>` section of the :ref:`obtaininginstalling` chapter.
+
+ - **Supported features:** :ref:`gpufeatures` section of the :ref:`chap:features` chapter.
+
+ - **Driver Inputs:** :ref:`batched_drivers` section of the :ref:`qmcmethods` chapter.
