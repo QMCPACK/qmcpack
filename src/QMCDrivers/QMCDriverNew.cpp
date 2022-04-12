@@ -75,7 +75,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     break;
   case DV::LEGACY:
     // This estimator still requires its put be called later    
-    estimator_manager_ = std::make_unique<EstimatorManagerNew>(myComm);
+      estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), myComm);
     break;
   }
   
@@ -480,7 +480,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
  */
 void QMCDriverNew::endBlock()
 {
-  RefVector<ScalarEstimatorBase> all_scalar_estimators;
+  RefVector<ScalarEstimatorBase> main_scalar_estimators;
 
   FullPrecRealType total_block_weight = 0.0;
   // Collect all the ScalarEstimatorsFrom EMCrowds
@@ -488,13 +488,14 @@ void QMCDriverNew::endBlock()
   unsigned long block_reject = 0;
 
   std::vector<RefVector<OperatorEstBase>> crowd_operator_estimators;
+  // Seems uneeded see EstimatorManagerNew scalar_ests_ documentation.
+  std::vector<RefVector<ScalarEstimatorBase>> crowd_scalar_estimators;
 
   for (const UPtr<Crowd>& crowd : crowds_)
   {
     crowd->stopBlock();
-    auto crowd_sc_est = crowd->get_estimator_manager_crowd().get_scalar_estimators();
-    all_scalar_estimators.insert(all_scalar_estimators.end(), std::make_move_iterator(crowd_sc_est.begin()),
-                                 std::make_move_iterator(crowd_sc_est.end()));
+    main_scalar_estimators.push_back(crowd->get_estimator_manager_crowd().get_main_estimator());
+    crowd_scalar_estimators.emplace_back(crowd->get_estimator_manager_crowd().get_scalar_estimators());
     total_block_weight += crowd->get_estimator_manager_crowd().get_block_weight();
     block_accept += crowd->get_accept();
     block_reject += crowd->get_reject();
@@ -509,7 +510,8 @@ void QMCDriverNew::endBlock()
       static_cast<FullPrecRealType>(block_accept) / static_cast<FullPrecRealType>(block_accept + block_reject);
   std::cerr << "   total_accept_ratio: << " << total_accept_ratio << '\n';
 #endif
-  estimator_manager_->collectScalarEstimators(all_scalar_estimators);
+  estimator_manager_->collectMainEstimators(main_scalar_estimators);
+  estimator_manager_->collectScalarEstimators(crowd_scalar_estimators);
   estimator_manager_->collectOperatorEstimators(crowd_operator_estimators);
 
   /// get the average cpu_block time per crowd

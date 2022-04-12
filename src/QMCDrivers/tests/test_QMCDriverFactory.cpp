@@ -176,7 +176,6 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
@@ -187,7 +186,6 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
-
     REQUIRE(qmc_driver != nullptr);
     REQUIRE_NOTHROW(dynamic_cast<DMCBatched&>(*qmc_driver));
     REQUIRE_THROWS(dynamic_cast<DMC&>(*qmc_driver));

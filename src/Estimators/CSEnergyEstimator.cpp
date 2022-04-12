@@ -27,7 +27,7 @@ namespace qmcplusplus
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
+CSEnergyEstimator::CSEnergyEstimator(const QMCHamiltonian& h, int hcopy)
 {
   int NumObservables = h.sizeOfObservables();
 
@@ -45,7 +45,7 @@ CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
   scalars_saved.resize(scalars.size());
 }
 
-CSEnergyEstimator::CSEnergyEstimator(CSLocalEnergyInput&& input, QMCHamiltonian& h) : input_(input)
+CSEnergyEstimator::CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h) : input_(input)
 {
   int NumObservables = h.sizeOfObservables();
 

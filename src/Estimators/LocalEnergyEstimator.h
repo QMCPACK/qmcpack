@@ -23,6 +23,7 @@
 
 namespace qmcplusplus
 {
+
 /** Class to accumulate the local energy and components
  *
  * Use Walker::Properties to accumulate Hamiltonian-related quantities.
@@ -47,9 +48,9 @@ public:
   /** constructor
    * @param h QMCHamiltonian to define the components
    */
-  LocalEnergyEstimator(QMCHamiltonian& h, bool use_hdf5);
+  LocalEnergyEstimator(const QMCHamiltonian& h, bool use_hdf5);
 
-  LocalEnergyEstimator(LocalEnergyInput&& input, QMCHamiltonian& ham);
+  LocalEnergyEstimator(LocalEnergyInput&& input, const QMCHamiltonian& ham);
   /** accumulation per walker
    * @param awalker current walker
    * @param wgt weight
@@ -86,6 +87,11 @@ public:
     for (MCPWalker& walker : walkers)
       accumulate(walker, 1.0);
   }
+
+  const std::string& get_name() override { return input_.get_name(); }
+
+  bool isMainEstimator() override { return true; }
 };
+
 } // namespace qmcplusplus
 #endif

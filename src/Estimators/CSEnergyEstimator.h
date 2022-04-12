@@ -53,9 +53,9 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */  
-  CSEnergyEstimator(QMCHamiltonian& h, int hcopy = 1);
+  CSEnergyEstimator(const QMCHamiltonian& h, int hcopy = 1);
 
-  CSEnergyEstimator(CSLocalEnergyInput&& input, QMCHamiltonian& h);
+  CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
   
   inline RealType getUmbrellaWeight(int ipsi)
   {
@@ -88,9 +88,11 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   void add2Record(RecordNamedProperty<RealType>& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
   CSEnergyEstimator* clone() override;
-
+  const std::string& get_name() override { return input_.get_name(); }
   void evaluateDiff();
+  bool isMainEstimator() override { return true; }
 };
 
+  
 } // namespace qmcplusplus
 #endif
