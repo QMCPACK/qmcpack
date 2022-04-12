@@ -74,7 +74,7 @@ protected:
   Matrix<Return_rt> DerivRecords_;
   Matrix<Return_rt> HDerivRecords_;
 
-  Return_rt correlatedSampling(bool needGrad = true) override;
+  EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
   SampleStack& samples_;
 

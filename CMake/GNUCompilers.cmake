@@ -14,7 +14,7 @@ if(QMC_OMP)
       message(WARNING "GCC OpenMP offload feature requires 12.0 or higher.")
     endif()
 
-    if (QMC_CUDA2HIP)
+    if(QMC_CUDA2HIP)
       set(OFFLOAD_TARGET_DEFAULT "amdgcn-amdhsa")
     else()
       set(OFFLOAD_TARGET_DEFAULT "nvptx-none")
@@ -28,14 +28,18 @@ if(QMC_OMP)
       set(OFFLOAD_ARCH gfx906)
     endif()
 
-    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "nvptx-none" AND DEFINED CMAKE_CUDA_ARCHITECTURES)
+    if(NOT DEFINED OFFLOAD_ARCH
+       AND OFFLOAD_TARGET MATCHES "nvptx-none"
+       AND DEFINED CMAKE_CUDA_ARCHITECTURES)
       list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
       if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
         set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
       else()
-        message(FATAL_ERROR "GCC does not yet support offload to multiple architectures! "
-                            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
-                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
+        message(
+          FATAL_ERROR
+            "GCC does not yet support offload to multiple architectures! "
+            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
+            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
       endif()
     endif()
 
@@ -47,7 +51,10 @@ if(QMC_OMP)
         set(OPENMP_OFFLOAD_COMPILE_OPTIONS
             "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -foffload-options=${OFFLOAD_TARGET}=\"-misa=${OFFLOAD_ARCH}\"")
       else()
-        message(WARNING "We don't know how to handle OFFLOAD_ARCH=${OFFLOAD_ARCH} for OFFLOAD_TARGET=${OFFLOAD_TARGET}. Got ignored.")
+        message(
+          WARNING
+            "We don't know how to handle OFFLOAD_ARCH=${OFFLOAD_ARCH} for OFFLOAD_TARGET=${OFFLOAD_TARGET}. Got ignored."
+        )
       endif()
     endif()
   else()
@@ -59,8 +66,7 @@ endif(QMC_OMP)
 add_definitions(-Drestrict=__restrict__)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
-set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -22,11 +22,16 @@ namespace testing
 template<typename T>
 class OneBodyDensityMatricesTests;
 }
+
+class OneBodyDensityMatrices;
+  
 /** Native representation for DensityMatrices1B Estimator's inputs
  */
 class OneBodyDensityMatricesInput
 {
 public:
+  using Consumer = OneBodyDensityMatrices;
+  
   enum class Integrator
   {
     UNIFORM_GRID,
@@ -58,11 +63,11 @@ public:
                               {"evaluator-loop", Evaluator::LOOP},
                               {"evaluator-matrix", Evaluator::MATRIX}};
 
-  class OneBodyDensityMatrixInputSection : public InputSection
+  class OneBodyDensityMatricesInputSection : public InputSection
   {
   public:
     /** parse time definition of input parameters */
-    OneBodyDensityMatrixInputSection()
+    OneBodyDensityMatricesInputSection()
     {
       // clang-format off
       section_name  = "OneBodyDensityMatrix";
@@ -83,7 +88,7 @@ public:
       // I'd much rather see the default defined in simple native c++ as below
       // clang-format on
     }
-
+    OneBodyDensityMatricesInputSection(const OneBodyDensityMatricesInputSection&) = default;
     /** do parse time checks of input */
     void checkParticularValidity() override;
     std::any assignAnyEnum(const std::string& name) const override;
@@ -93,10 +98,11 @@ public:
   using Real     = QMCTraits::RealType;
 
   OneBodyDensityMatricesInput() = default;
+  OneBodyDensityMatricesInput(const OneBodyDensityMatricesInput&) = default;
   OneBodyDensityMatricesInput(xmlNodePtr cur);
 
 private:
-  OneBodyDensityMatrixInputSection input_section_;
+  OneBodyDensityMatricesInputSection input_section_;
 
   // Default parameters for OneBodyDensityMatrices
   bool energy_matrix_          = false;

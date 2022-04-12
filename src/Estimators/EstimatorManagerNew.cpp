@@ -389,8 +389,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
       }
       else if (est_type == "MomentumDistribution")
       {
-        MomentumDistributionInput mdi;
-        mdi.readXML(cur);
+        MomentumDistributionInput mdi(cur);
         DataLocality dl = DataLocality::crowd;
         operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
                                                                            pset.getTwist(), pset.getLattice(), dl));
