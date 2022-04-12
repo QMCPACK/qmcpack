@@ -1821,7 +1821,7 @@ def user_examples(label):
     #end if
     for script in einfo['scripts']:
         # run the example script
-        command = './'+script+' --generate_only --sleep=0.01'
+        command = sys.executable+' ./'+script+' --generate_only --sleep=0.01'
         out,err,rc = nexus_testing.execute(command)
     #end for
     os.chdir(cwd)
@@ -2124,7 +2124,7 @@ def regenerate_reference(update=False):
             if not os.path.exists('./'+script):
                 nerror('script file {} does not exist'.format(script),n=2)
             #end if
-            command = './'+script+' --generate_only --sleep=0.1'
+            command =  sys.executable+' ./'+script+' --generate_only --sleep=0.1'
             nlog('executing command: '+command,n=2)
             out,err,rc = execute(command)
             if rc>0:

@@ -16,7 +16,7 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 project(
   qmcpack
-  VERSION 3.13.9
+  VERSION 3.14.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -62,6 +62,7 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -852,6 +853,20 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
+    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 

@@ -148,7 +148,7 @@ For OpenMP GPU offload users, batched drivers are essential to effectively use G
 Transition from classic drivers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Available drivers are ``vmc_batch``, ``dmc_batch`` and ``linear_batch``.
+Available drivers in batched versions are ``vmc``, ``dmc`` and ``linear``.
 There are notable changes in the driver input section when moving from classic drivers to batched drivers:
 
   - ``walkers`` is not supported in any batched driver inputs.
@@ -166,6 +166,8 @@ There are notable changes in the driver input section when moving from classic d
     just like tuning ``walkers`` in the classic drivers.
 
   - Only particle-by-particle move is supported. No all-particle move support.
+
+  - During development the new drivers had separate names (``vmc_batch``, ``dmc_batch``, and ``linear_batch``).  The use of separate names has been replaced by the ``driver_version`` parameter in the ``project`` section.
 
 .. _vmc:
 
@@ -321,8 +323,8 @@ The following is an example of VMC section storing configurations (walker sample
 
 .. _vmc_batch:
 
-``vmc_batch`` driver (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Batched ``vmc`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   parameters:
 
@@ -418,11 +420,11 @@ Additional information:
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
-An example VMC section for a simple ``vmc_batch`` run:
+An example VMC section for a simple batched ``vmc`` run:
 
 ::
 
-  <qmc method="vmc_batch" move="pbyp">
+  <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers_per_rank">    256 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
@@ -1229,7 +1231,7 @@ Use the following parameters to the linear optimizers to output intermediate val
 
   The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
 
-  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
+  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (batched version of ``linear``)
 
 
 .. _dmc:
@@ -1569,8 +1571,8 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
 
 .. _dmc_batch:
 
-``dmc_batch`` driver (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Batched ``dmc`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   parameters:
 
@@ -1636,10 +1638,10 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 .. code-block::
-  :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver
+  :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
   :name: Listing 48b
 
-  <qmc method="dmc_batch" move="pbyp" target="e">
+  <qmc method="dmc" move="pbyp" target="e">
     <parameter name="walkers_per_rank">256</parameter>
     <parameter name="blocks">100</parameter>
     <parameter name="steps">400</parameter>

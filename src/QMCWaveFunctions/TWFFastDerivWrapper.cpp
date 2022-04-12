@@ -11,6 +11,7 @@
 
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "Numerics/DeterminantOperators.h"
+#include "type_traits/ConvertToReal.h"
 #include <iostream>
 namespace qmcplusplus
 {
@@ -51,6 +52,80 @@ void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& m
     tmplmat.resize(nptcls, norbs);
     spos_[i]->evaluate_notranspose(P, first, last, mvec[i], tmpgmat, tmplmat);
   }
+}
+
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowVGL(const ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L) const
+{
+  WaveFunctionComponent::LogValueType logpsi = 0.0;
+  G                                          = 0.0;
+  L                                          = 0.0;
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    logpsi += jastrow_list_[i]->evaluateLog(P, G, L);
+  }
+  RealType rval = std::real(logpsi);
+  return rval;
+}
+
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(ParticleSet& P, const int iel) const
+{
+  //legacy calls are hit and miss with const.  Remove const for index.
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0);
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    r *= jastrow_list_[i]->ratio(P, iel_);
+  }
+
+  RealType ratio_return(1.0);
+  convertToReal(r, ratio_return);
+  return ratio_return;
+}
+
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::calcJastrowRatioGrad(ParticleSet& P,
+                                                                        const int iel,
+                                                                        GradType& grad) const
+{
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0);
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    r *= jastrow_list_[i]->ratioGrad(P, iel_, grad);
+  }
+  RealType ratio_return(1.0);
+  convertToReal(r, ratio_return);
+  return ratio_return;
+}
+
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
+                                                                             ParticleSet& source,
+                                                                             const int iat) const
+{
+  GradType grad_iat = GradType();
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat);
+  return grad_iat;
+}
+
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(
+    ParticleSet& P,
+    ParticleSet& source,
+    const int iat,
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const
+{
+  GradType grad_iat = GradType();
+  for (int dim = 0; dim < OHMMS_DIM; dim++)
+    for (int i = 0; i < grad_grad[0].size(); i++)
+    {
+      grad_grad[dim][i] = GradType();
+      lapl_grad[dim][i] = 0.0;
+    }
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat, grad_grad, lapl_grad);
+  return grad_iat;
 }
 
 void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
@@ -103,6 +178,7 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
                                                   const ParticleSet& source,
                                                   int iat,
                                                   std::vector<std::vector<ValueMatrix>>& dmvec,
+                                                  std::vector<std::vector<GradMatrix>>& dgmat,
                                                   std::vector<std::vector<ValueMatrix>>& dlmat) const
 {
   IndexType ngroups = dmvec[0].size();
@@ -130,6 +206,8 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
         {
           dmvec[idim][i][iptcl][iorb] += grad_phi[iptcl][iorb][idim];
           dlmat[idim][i][iptcl][iorb] += grad_lapl_phi[iptcl][iorb][idim];
+          for (IndexType ielec = 0; ielec < OHMMS_DIM; ielec++)
+            dgmat[idim][i][iptcl][iorb][ielec] += grad_grad_phi[iptcl][iorb](idim, ielec);
         }
   }
 }
