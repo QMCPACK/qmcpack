@@ -62,11 +62,11 @@ ompBLAS_status gemv_impl(ompBLAS_handle& handle,
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(n) is_device_ptr(A, x, y)")
-    for(size_t i = 0; i < n; i++)
+    for (size_t i = 0; i < m; i++)
     {
       T dot_sum(0);
       PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-      for(size_t j = 0; j < m; j++)
+      for (size_t j = 0; j < n; j++)
         dot_sum += x[j] * A[j * lda + i];
       if (beta == T(0))
         y[i] = alpha * dot_sum; // protecting NaN from y
@@ -183,16 +183,16 @@ ompBLAS_status gemv_batched_impl(ompBLAS_handle& handle,
   }
   else
   {
-    if (incx !=1 || incy != 1)
+    if (incx != 1 || incy != 1)
       throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::gemv_batched_impl!");
 
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(batch_count * n) is_device_ptr(A, x, y, alpha, beta)")
-    for(size_t ib = 0; ib < batch_count; ib++)
-      for(size_t i = 0; i < n; i++)
+    for (size_t ib = 0; ib < batch_count; ib++)
+      for (size_t i = 0; i < m; i++)
       {
         T dot_sum(0);
         PRAGMA_OFFLOAD("omp parallel for simd reduction(+: dot_sum)")
-        for(size_t j = 0; j < m; j++)
+        for (size_t j = 0; j < n; j++)
           dot_sum += x[ib][j] * A[ib][j * lda + i];
         if (beta[ib] == T(0))
           y[ib][i] = alpha[ib] * dot_sum; // protecting NaN from y

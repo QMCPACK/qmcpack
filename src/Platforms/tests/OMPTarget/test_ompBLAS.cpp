@@ -53,6 +53,7 @@ void test_gemv(const int M_b, const int N_b, const char trans)
 
   A.updateTo();
   B.updateTo();
+  C.updateTo();
 
   T alpha(1);
   T beta(0);
@@ -190,13 +191,6 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   test_gemv<std::complex<float>>(N, M, 'T');
   test_gemv<std::complex<double>>(N, M, 'T');
 #endif
-  std::cout << "Testing NOTRANS gemv" << std::endl;
-  test_gemv<float>(M, N, 'N');
-  test_gemv<double>(M, N, 'N');
-#if defined(QMC_COMPLEX)
-  test_gemv<std::complex<float>>(N, M, 'N');
-  test_gemv<std::complex<double>>(N, M, 'N');
-#endif
   // Batched Test
   std::cout << "Testing TRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'T', batch_count);
@@ -205,6 +199,23 @@ TEST_CASE("OmpBLAS gemv", "[OMP]")
   test_gemv_batched<std::complex<float>>(N, M, 'T', batch_count);
   test_gemv_batched<std::complex<double>>(N, M, 'T', batch_count);
 #endif
+}
+
+TEST_CASE("OmpBLAS gemv notrans", "[OMP]")
+{
+  const int M           = 137;
+  const int N           = 79;
+  const int batch_count = 23;
+
+  // Non-batched test
+  std::cout << "Testing NOTRANS gemv" << std::endl;
+  test_gemv<float>(M, N, 'N');
+  test_gemv<double>(M, N, 'N');
+#if defined(QMC_COMPLEX)
+  test_gemv<std::complex<float>>(N, M, 'N');
+  test_gemv<std::complex<double>>(N, M, 'N');
+#endif
+  // Batched Test
   std::cout << "Testing NOTRANS gemv_batched" << std::endl;
   test_gemv_batched<float>(M, N, 'N', batch_count);
   test_gemv_batched<double>(M, N, 'N', batch_count);
@@ -222,19 +233,20 @@ void test_ger(const int M, const int N)
 
   ompBLAS::ompBLAS_handle handle;
 
-  mat_t Ah(M, N);    // Input matrix
-  mat_t Ad(M, N);    // Input matrix
-  vec_t x(M);        // Input vector
-  vec_t y(N);        // Input vector
+  mat_t Ah(M, N); // Input matrix
+  mat_t Ad(M, N); // Input matrix
+  vec_t x(M);     // Input vector
+  vec_t y(N);     // Input vector
 
   // Fill data
   for (int i = 0; i < M; i++)
     x[i] = i;
   for (int i = 0; i < N; i++)
-    y[i] = N-i;
+    y[i] = N - i;
 
   for (int j = 0; j < M; j++)
-    for (int i = 0; i < N; i++){
+    for (int i = 0; i < N; i++)
+    {
       Ah[j][i] = i + j * 2;
       Ad[j][i] = i + j * 2;
     }
@@ -299,17 +311,17 @@ void test_ger_batched(const int M, const int N, const int batch_count)
     Ys[batch].resize(N);
     Yptrs[batch] = Ys[batch].device_data();
 
-    Ads[batch].resize(M,N);
+    Ads[batch].resize(M, N);
     Adptrs[batch] = Ads[batch].device_data();
 
-    Ahs[batch].resize(M,N);
+    Ahs[batch].resize(M, N);
     Ahptrs[batch] = Ahs[batch].data();
 
     // Fill data
     for (int i = 0; i < M; i++)
       Xs[batch][i] = i;
     for (int i = 0; i < N; i++)
-      Ys[batch][i] = N-i;
+      Ys[batch][i] = N - i;
 
     for (int j = 0; j < M; j++)
       for (int i = 0; i < N; i++)
@@ -337,14 +349,13 @@ void test_ger_batched(const int M, const int N, const int batch_count)
 
   alpha.updateTo();
 
-  ompBLAS::ger_batched(handle, M, N, alpha.device_data(), Xptrs.device_data(), 1,
-                        Yptrs.device_data(), 1, Adptrs.device_data(), M, batch_count);
+  ompBLAS::ger_batched(handle, M, N, alpha.device_data(), Xptrs.device_data(), 1, Yptrs.device_data(), 1,
+                       Adptrs.device_data(), M, batch_count);
 
   for (int batch = 0; batch < batch_count; batch++)
   {
     Ads[batch].updateFrom();
-    BLAS::ger(M, N, alpha[batch].data(), Xs[batch].data(), 1,
-                Ys[batch].data(), 1, Ahs[batch].data(), M);
+    BLAS::ger(M, N, alpha[batch], Xs[batch].data(), 1, Ys[batch].data(), 1, Ahs[batch].data(), M);
 
     // Check results
     for (int j = 0; j < M; j++)
