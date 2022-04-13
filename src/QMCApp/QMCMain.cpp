@@ -89,7 +89,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -124,19 +124,27 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP)
   app_summary() << "  CPU only build" << std::endl;
-#else
+#else // GPU case
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+#if defined(ENABLE_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
+#endif
+
+#if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
+  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
+#elif defined(QMC_CUDA2HIP) && defined(QMC_CUDA)
+  app_summary() << "  HIP acceleration with legacy CUDA source code build option is enabled" << std::endl;
+#elif defined(ENABLE_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#elif defined(QMC_CUDA)
+  app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_ROCM)
-  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
-#endif
-#endif
+#endif // GPU case end
+
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
                 << timer_manager.get_timer_threshold_string() << std::endl;

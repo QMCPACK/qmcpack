@@ -23,12 +23,13 @@ DeviceManager::DeviceManager(int local_rank, int local_size)
     : default_device_num(-1),
       num_devices(0)
 #if defined(ENABLE_CUDA)
-      ,
-      cuda_dm_(default_device_num, num_devices, local_rank, local_size)
+      , cuda_dm_(default_device_num, num_devices, local_rank, local_size)
 #endif
 #if defined(ENABLE_OFFLOAD)
-      ,
-      omptarget_dm_(default_device_num, num_devices, local_rank, local_size)
+      , omptarget_dm_(default_device_num, num_devices, local_rank, local_size)
+#endif
+#if defined(ENABLE_SYCL)
+      , sycl_dm_(default_device_num, num_devices, local_rank, local_size)
 #endif
 {
   if (num_devices > 0)

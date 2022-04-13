@@ -77,7 +77,7 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vgrad.resize(m);
   wvec.resize(n);
   lpol.resize(l + 1, 1.0);
-  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.  
+  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.
   //This +2 guards against l=0 case.
   dlpol.resize(l + 2, 0.0);
   rrotsgrid_m.resize(n);
@@ -610,12 +610,12 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 {
   using ValueVector = SPOSet::ValueVector;
   //Some initial computation to find out the species and row number of electron.
-  IndexType gid        = W.getGroupID(iel);
-  IndexType sid        = psi.getTWFGroupIndex(gid);
-  IndexType firstIndex = W.first(gid);
-  IndexType thisIndex  = iel - firstIndex;
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType firstIndex = W.first(gid);
+  const IndexType thisIndex  = iel - firstIndex;
 
-  IndexType numOrbs = psi.numOrbitals(sid);
+  const IndexType numOrbs = psi.numOrbitals(sid);
   ValueVector phi_row; //phi_0(r), phi_1(r), ...
   ValueVector temp_row;
 
@@ -637,6 +637,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
   {
     W.makeMove(iel, deltaV[j], false); //Update distance tables.
     psi.getRowM(W, iel, phi_row);
+    RealType jratio = psi.evaluateJastrowRatio(W, iel);
     W.rejectMove(iel);
 
     RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
@@ -645,14 +646,14 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      lpol[l + 1] = Lfactor2[l]*(Lfactor1[l] * zz * lpol[l] - l * lpolprev);
-      lpolprev = lpol[l];
+      lpol[l + 1] = Lfactor2[l] * (Lfactor1[l] * zz * lpol[l] - l * lpolprev);
+      lpolprev    = lpol[l];
     }
 
     ValueType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
     {
-      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * phi_row;
+      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * jratio * phi_row;
       for (int iorb = 0; iorb < numOrbs; iorb++)
         B[sid][thisIndex][iorb] += temp_row[iorb];
     }
@@ -660,7 +661,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
 }
 
 void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
-                                                                 const ParticleSet& ions,
+                                                                 ParticleSet& ions,
                                                                  const int iat,
                                                                  const int iat_src,
                                                                  const TWFFastDerivWrapper& psi,
@@ -696,11 +697,11 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
   }
 
-  IndexType gid        = W.getGroupID(iel);
-  IndexType sid        = psi.getTWFGroupIndex(gid);
-  IndexType thisEIndex = iel - W.first(gid);
-  IndexType numptcls   = W.last(gid) - W.first(gid);
-  IndexType norbs      = psi.numOrbitals(sid);
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType thisEIndex = iel - W.first(gid);
+  const IndexType numptcls   = W.last(gid) - W.first(gid);
+  const IndexType norbs      = psi.numOrbitals(sid);
   SPOSet& spo(*psi.getSPOSet(sid));
 
   RealType pairpot = 0;
@@ -712,6 +713,11 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   GradMatrix gradphimat;
   GradVector gradphi;
   GradMatrix wfgradmat;
+
+  //This stores all ion gradients of the Jastrow, evaluated on all quadrature points.
+  //Has length nknot.
+  ParticleSet::ParticleGradient jgrad_quad;
+  jgrad_quad.resize(nknot);
 
   wfgradmat.resize(nknot, norbs);
 
@@ -743,6 +749,23 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
   glpoly.resize(norbs);
   gwfn.resize(norbs);
 
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+  //This is the ion gradient of J at the original (non quadrature) coordinate.
+  GradType jigradref(0.0);
+
+  jigradref = psi.evaluateJastrowGradSource(W, ions, iat_src);
+
+  //Until we have a more efficient routine, we move to a quadrature point,
+  //update distance tables, compute the ion gradient of J, then move the particle back.
+  //At cost of distance table updates.  Not good, but works.
+  for (int j = 0; j < nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j], false);
+    W.acceptMove(iel);
+    jgrad_quad[j] = psi.evaluateJastrowGradSource(W, ions, iat_src);
+    W.makeMove(iel, -deltaV[j], false);
+    W.acceptMove(iel);
+  }
 
   for (int j = 0; j < nknot; j++)
   {
@@ -750,19 +773,34 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
     W.makeMove(iel, deltaV[j], false);
     iongrad_phi = 0.0;
     spo.evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
-    for (int iorb = 0; iorb < norbs; iorb++)
-      iongrad_phimat[j][iorb] = iongrad_phi[iorb];
-    
+    GradType jegrad(0.0);
+    GradType jigrad(0.0);
+
+    RealType jratio = psi.calcJastrowRatioGrad(W, iel, jegrad);
+    jigrad          = psi.evaluateJastrowGradSource(W, ions, iat_src);
+
+    spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
+
+    //Quick comment on the matrix elements being computed below.
+    //For the no jastrow implementation, phimat, gradphimat, iongrad_phimat were straightforward containers storing phi_j(r_i), grad(phi_j), etc.
+    //Generalizing to jastrows is straightforward if we replace phi_j(q) with exp(J(q))/exp(J(r))*phi(q).  Storing these in the phimat, gradphimat, etc.
+    //data structures allows us to not modify the rather complicated expressions we have already derived.
     if (iat == iat_src)
     {
       ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
-      spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
       for (int iorb = 0; iorb < norbs; iorb++)
       {
-        phimat[j][iorb]     = phi[iorb];
-        gradphimat[j][iorb] = gradphi[iorb];
-        laplphimat[j][iorb] = laplphi[iorb];
+        //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
+        phimat[j][iorb] = jratio * phi[iorb];
+        //This is the electron gradient of the above expression.
+        gradphimat[j][iorb] = jratio * (gradphi[iorb] + GradType(jegrad) * phi[iorb]);
+        laplphimat[j][iorb] = laplphi[iorb]; //this is not used, so not including jastrow contribution.
       }
+    }
+    for (int iorb = 0; iorb < norbs; iorb++)
+    {
+      //This is the ion gradient of exp(J(q))/exp(J(r))phi_j(q).
+      iongrad_phimat[j][iorb] = jratio * (iongrad_phi[iorb] + phi[iorb] * (GradType(jgrad_quad[j]) - jigradref));
     }
     W.rejectMove(iel);
   }
@@ -807,7 +845,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       //direct finite difference calculations.
 
       nlpp_prefactor[j] += sgridweight_m[j] * vrad[l] * lpol[angpp_m[l]];
-
       dvdr_prefactor[j] += sgridweight_m[j] * vgrad[l] * lpol[angpp_m[l]];
       dlpoly_prefactor[j] += sgridweight_m[j] * vrad[l] * dlpol[angpp_m[l]] * cosgrad[j];
     }
@@ -831,9 +868,9 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
         gwfn[iorb] += nlpp_prefactor[j] * (wfgradmat[j][iorb]);
       }
   }
-    for (int idim = 0; idim < OHMMS_DIM; idim++)
-      for (int iorb = 0; iorb < norbs; iorb++)
-        dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int iorb = 0; iorb < norbs; iorb++)
+      dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
 }
 
 ///Randomly rotate sgrid_m

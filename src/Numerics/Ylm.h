@@ -69,7 +69,7 @@ inline T LegendrePlm(int l, int m, T x)
   {
     T Plm2m = pmm;
     T Plm1m = pmp1m;
-    T Pl = 0;
+    T Pl    = 0;
     for (int i = m + 2; i <= l; i++)
     {
       Pl    = (1.0 / static_cast<T>(i - m)) * (x * (2 * i - 1) * Plm1m - (i + m - 1) * Plm2m);
@@ -97,5 +97,35 @@ inline std::complex<T> Ylm(int l, int m, const TinyVector<T, 3>& r)
   prefactor *= LegendrePlm(l, m, costheta);
   return std::complex<T>(prefactor * std::cos(m * phi), prefactor * std::sin(m * phi));
 }
+
+/** calculate the derivative of a Ylm with respect to theta and phi
+ * param[in] l: angular momentum
+ * param[in] m: magnetic quantum number
+ * param[in] r: cartesian position align with [z,x,y]. note: MUST BE UNIT VECTOR to be consistent with Ylm above
+ * param[out] theta_deriv: derivative of Ylm with respect to theta
+ * param[out] phi_deriv: derivative of Ylm with respect to phi
+ * param[in] conj: true if we are taking derivatives of conj(Ylm)
+ */
+template<typename T>
+inline void derivYlmSpherical(const int l,
+                              const int m,
+                              const TinyVector<T, 3>& r,
+                              std::complex<T>& theta_deriv,
+                              std::complex<T>& phi_deriv,
+                              const bool conj)
+{
+  T theta                = std::acos(r[0]);
+  T phi                  = std::atan2(r[2], r[1]);
+  std::complex<T> emiphi = std::complex<T>(std::cos(phi), -std::sin(phi));
+  theta_deriv            = static_cast<T>(m) / std::tan(theta) * Ylm(l, m, r);
+  theta_deriv += std::sqrt(static_cast<T>((l - m) * (l + m + 1))) * emiphi * Ylm(l, m + 1, r);
+  phi_deriv = std::complex<T>(0.0, static_cast<T>(m)) * Ylm(l, m, r);
+  if (conj)
+  {
+    theta_deriv = std::conj(theta_deriv);
+    phi_deriv   = std::conj(phi_deriv);
+  }
+}
+
 } // namespace qmcplusplus
 #endif

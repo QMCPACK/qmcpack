@@ -16,7 +16,7 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 project(
   qmcpack
-  VERSION 3.13.9
+  VERSION 3.14.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -55,13 +55,14 @@ option(
   "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
   OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP)
+if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
 # explicit HIP source codes only exist in AFQMC.
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -360,7 +361,6 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT OFF)
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
@@ -371,26 +371,11 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     # when using OpenMP offload to AMD GPU together with HIP.
     set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
   endif()
-  if(${COMPILER} MATCHES "Clang" AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn")
-    # As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for
-    # ROCM/AOMP compilers when using OpenMP offload to AMD GPU.
-    set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT ON)
-  endif()
 endif()
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
                        ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM compiler offload bug workaround"
-                       ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
-
-if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
-  message(
-    WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
-            "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
-            "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
-            "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
-endif()
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
@@ -852,6 +837,20 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
+    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 
