@@ -53,9 +53,6 @@
 /* Manage memory allocations via vendor APIs and associate them with the OpenMP runtime */
 #cmakedefine QMC_OFFLOAD_MEM_ASSOCIATED @QMC_OFFLOAD_MEM_ASSOCIATED@
 
-/* Workaround offload bug when branching happens in parallel */
-#cmakedefine QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL @QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL@
-
 /* Define to 1 if you have MPI library */
 #cmakedefine HAVE_MPI @HAVE_MPI@
 
