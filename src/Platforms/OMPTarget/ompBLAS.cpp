@@ -455,9 +455,6 @@ ompBLAS_status copy_batched_impl(ompBLAS_handle& handle,
 {
   if (batch_count == 0) return 0;
 
-  //if (incx !=1 || incy != 1)
-  //  throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::copy_batched_impl!");
-
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
   for (size_t ib = 0; ib < batch_count; ib++)
     for (size_t i = 0; i < n; i++)
@@ -523,9 +520,6 @@ ompBLAS_status copy_batched_offset_impl(ompBLAS_handle& handle,
                                         const int       batch_count)
 {
   if (batch_count == 0) return 0;
-
-  //if (incx !=1 || incy != 1)
-  //  throw std::runtime_error("incx !=1 or incy != 1 are not implemented in ompBLAS::copy_batched_impl!");
 
   PRAGMA_OFFLOAD("omp target teams distribute parallel for collapse(2) is_device_ptr(x, y)")
   for (size_t ib = 0; ib < batch_count; ib++)
