@@ -45,7 +45,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND DET_FeCO6_PYSCF_SHORT "kinetic" "205.29692267 0.003") # kinetic energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "eeenergy" "592.73730675 0.001") # e-e energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "totenergy" "-244.72443901 0.001") # total energy
-    list(APPEND DET_FeCO6_PYSCF_SHORT "potential" "-450.02136168 0.001") # potential energy
+    list(APPEND DET_FeCO6_PYSCF_SHORT "potential" "-450.02136168 0.002") # potential energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "ionion" "422.43049005 0.0001") # i-i energy
     list(APPEND DET_FeCO6_PYSCF_SHORT "localecp" "-1542.74871820 0.003") # localECP
     list(APPEND DET_FeCO6_PYSCF_SHORT "nonlocalecp" "77.55955951 0.002") # nonlocalECP
@@ -78,7 +78,7 @@ if(QMC_MIXED_PRECISION)
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "kinetic" "205.29692267 0.003") # kinetic energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "eeenergy" "592.73730675 0.001") # e-e energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "totenergy" "-244.72443644 0.001") # total energy
-    list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "potential" "-450.02136168 0.001") # potential energy
+    list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "potential" "-450.02136168 0.002") # potential energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "ionion" "422.43049027 0.0001") # i-i energy
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "localecp" "-1542.74871820 0.003") # localECP
     list(APPEND DET_FeCO6_PYSCF_SHORT_BATCHED "nonlocalecp" "77.55955951 0.002") # nonlocalECP
