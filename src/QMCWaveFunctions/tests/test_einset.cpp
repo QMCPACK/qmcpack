@@ -205,7 +205,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 #endif
 
-#if !defined(QMC_COMPLEX)
+  // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
+#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
   /* 
      Here we test the low-level spline implementation of applyRotation().
 

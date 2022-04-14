@@ -116,7 +116,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   */
 
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-#if !defined(QMC_CUDA) || !defined(QMC_COMPLEX)
+#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
 
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
   auto rot_spo = std::make_unique<RotatedSPOs>(std::move(spo));
