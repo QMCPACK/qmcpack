@@ -11,6 +11,8 @@
 
 #include "catch.hpp"
 
+#include "type_traits/template_types.hpp"
+#include "type_traits/ConvertToReal.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -33,6 +35,8 @@ namespace qmcplusplus
 */
 TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 {
+  using RealType = QMCTraits::RealType;
+  
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
@@ -153,10 +157,10 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   */
   const auto rot_size = rot_spo->m_act_rot_inds.size();
   REQUIRE(rot_size == 12); // = Nelec*(Norbs - Nelec) = 2*(8-2) = 12
-  std::vector<double> param(rot_size);
+  std::vector<RealType> param(rot_size);
   for (auto i = 0; i < rot_size; i++)
   {
-    param[i] = 0.01 * i;
+    param[i] = 0.01 * static_cast<RealType>(i);
   }
   rot_spo->apply_rotation(param, false); // Expect this to call SplineR2R::applyRotation()
 
