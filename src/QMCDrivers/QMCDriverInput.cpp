@@ -118,9 +118,13 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       {
         reset_random_ = true;
       }
-      else if (cname == "estimators")
+      // These complications are due to the need to support bare <esimator> nodes
+      else if (cname == "estimators" || cname == "estimator")
       {
-	estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, tcur);
+	if (estimator_manager_input_)
+	  estimator_manager_input_->readXML(tcur);
+	else
+	  estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, tcur);
       }
       tcur = tcur->next;
     }

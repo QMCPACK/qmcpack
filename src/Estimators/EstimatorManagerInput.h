@@ -67,8 +67,9 @@ public:
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
   ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }
 
-  /** read <Estimators> node
-   *  Note that this can be done multiple times to combine global and section local estimator inputs.
+  /** read <Estimators> node or (<estimators> node for legacy support)
+   *  This can be done multiple times with <estimators> nodes
+   *  or with <estimator> nodes to support deprecated bare <estimator> definitions
    */
   void readXML(xmlNodePtr cur);
 

@@ -28,7 +28,12 @@ EstimatorManagerInput::EstimatorManagerInput(EstimatorManagerInput&& emi, xmlNod
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
 {
   const std::string error_tag{"EstimatorManager input:"};
-  xmlNodePtr child = cur->xmlChildrenNode;
+  std::string cur_name{lowerCase(castXMLCharToChar(cur->name))};
+  xmlNodePtr child;
+  if(cur_name == "estimators")
+    child = cur->xmlChildrenNode;
+  else
+    child = cur;
   while (child != NULL)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
@@ -59,7 +64,13 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
       throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
     }
-    child = child->next;
+
+    if(cur_name == "estimators")
+      child = child->next;
+    else {
+      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom";
+      break;
+    }
   }
 }
 
