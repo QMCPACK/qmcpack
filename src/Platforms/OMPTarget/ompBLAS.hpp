@@ -229,6 +229,18 @@ ompBLAS_status ger_batched(ompBLAS_handle& handle,
                            const int lda,
                            const int batch_count);
 
+/**
+ * @brief copy device data from x to y
+ *
+ * for b_i in [0,batch_count)
+ *   for i   in [0,n)
+ *     y[b_i][i*incy] = x[b_i][i*incx]
+ *
+ * @param n number of elements to copy for each group in the batch
+ * @param x,y arrays with length `batch_count`; device pointers to start of data to be copied from(x)/to(y)
+ * @param incx,incy storage spacing between elements of x/y to be copied from/to
+ * @param batch_count number of batches to process
+ */
 ompBLAS_status copy_batched(ompBLAS_handle& handle,
                             const int n,
                             const float* const x[],
@@ -261,6 +273,22 @@ ompBLAS_status copy_batched(ompBLAS_handle& handle,
                             const int incy,
                             const int batch_count);
 
+/**
+ * @brief copy device data from x to y with additional offset applied to array of device pointers
+ *
+ * for b_i in [0,batch_count)
+ *   for i   in [0,n)
+ *     y[b_i][y_offset + i*incy] = x[b_i][x_offset + i*incx]
+ *
+ * useful for copying from/to a single row/column of a batch of matrices when a list of device pointers
+ * to the start of the matrices is already available
+ *
+ * @param n number of elements to copy for each group in the batch
+ * @param x,y arrays with length `batch_count`; device pointers to start of data to be copied from(x)/to(y)
+ * @param x_offset,y_offset distance (in number of elements) from pointer given in x/y to location of first element to be copied
+ * @param incx,incy storage spacing between elements of x/y to be copied from/to
+ * @param batch_count number of batches to process
+ */
 ompBLAS_status copy_batched_offset(ompBLAS_handle& handle,
                                    const int n,
                                    const float* const x[],

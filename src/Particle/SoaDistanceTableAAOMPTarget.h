@@ -211,7 +211,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     const auto num_padded        = dt_leader.num_targets_padded_;
     mw_mem.mw_distances_subset.resize(nw * subset_size * num_padded);
 
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_local + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
@@ -295,8 +295,8 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
   void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                const RefVectorWithLeader<ParticleSet>& p_list,
                const std::vector<PosType>& rnew_list,
-               const IndexType iat = 0,
-               bool prepare_old    = true) const override
+               const IndexType iat,
+               bool prepare_old = true) const override
   {
     assert(this == &dt_list.getLeader());
     auto& dt_leader = dt_list.getCastedLeader<SoaDistanceTableAAOMPTarget>();
@@ -320,12 +320,11 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
       auto& coordinates_soa = static_cast<const RealSpacePositionsOMPTarget&>(p_list[iw].getCoordinates());
     }
 
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_targets_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto& coordinates_leader = static_cast<const RealSpacePositionsOMPTarget&>(pset_leader.getCoordinates());
 
-    const auto activePtcl_local  = pset_leader.getActivePtcl();
     const auto num_sources_local = num_targets_;
     const auto num_padded        = num_targets_padded_;
     auto* rsoa_dev_list_ptr      = coordinates_leader.getMultiWalkerRSoADevicePtrs().data();
@@ -355,7 +354,7 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
             PRAGMA_OFFLOAD("omp parallel for")
             for (int iel = first; iel < last; iel++)
               DTD_BConds<T, D, SC>::computeDistancesOffload(pos, source_pos_ptr, num_padded, r_iw_ptr, dr_iw_ptr,
-                                                            num_padded, iel, activePtcl_local);
+                                                            num_padded, iel, iat);
           }
 
           if (prepare_old)

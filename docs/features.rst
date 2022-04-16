@@ -65,7 +65,9 @@ feature that you are interested in, check the remainder of this manual or ask if
 
 -  Highly efficient vectorized CPU code tailored for modern architectures. :cite:`IPCC_SC17`
 
--  GPU (NVIDIA CUDA) implementation (limited functionality - see :ref:`legacygpufeatures`).
+-  OpenMP-offload-based performance portable GPU implementation, see :ref:`gpufeatures`.
+
+-  Legacy GPU (NVIDIA CUDA) implementation (limited functionality - see :ref:`gpufeatures`).
 
 -  Analysis tools for minimal environments (Perl only) through to
    Python-based environments with graphs produced via matplotlib (included with Nexus).
@@ -109,44 +111,72 @@ description of the available features, see  :ref:`afqmc`.
 -  Specialized implementation for solids with k-point symmetry (e.g.
    primitive unit cells with k-points).
 
-.. _legacygpufeatures:
+
+.. _gpufeatures:
 
 Supported GPU features for real space QMC
 -----------------------------------------
 
-The "legacy" GPU implementation for real space QMC uses NVIDIA CUDA and achieves very good speedup on NVIDIA GPUs. However, only a
-very limited subset of features is available. As detailed in :ref:`roadmap`, a new full-featured GPU implementation is currently
-being made that is both high performing and portable to other GPU architectures. The existing implementation supports multiple
-GPUs per node, with MPI tasks assigned in a round-robin order to the GPUs. Currently, for large runs, 1 MPI task should be used
-per GPU per node. For smaller calculations, use of multiple MPI tasks per GPU might yield improved performance.
+There are two GPU implementations in the code base.
+
+  - **Performance portable implementation** (recommended). Implements real space QMC methods
+    using OpenMP offload programming model and accelerated linear algebra libraries.
+    Runs with good performance on NVIDIA and AMD GPUs, and the Intel GPU support is under development.
+    Unlike the "legacy" implementation, it is feature complete
+    and users may mix and match CPU-only and GPU-accelerated features.
+
+  - **Legacy implementation**. Fully based on NVIDIA CUDA. Achieves very good speedup on NVIDIA GPUs.
+    However, only a very limited subset of features is available.
+
+
+QMCPACK supports running on multi-GPU node architectures via MPI.
 
 Supported GPU features:
 
--  VMC, wavefunction optimization, DMC.
+  +--------------------------------+---------------------------+------------------+
+  | **Feature**                    | **Performance portable**  | **Legacy CUDA**  |
+  +================================+===========================+==================+
+  | QMC methods                    | VMC, WFOpt, DMC           | VMC, WFOpt, DMC  |
+  +--------------------------------+---------------------------+------------------+
+  | boundary conditions            | periodic, mixed, open     | periodic, open   |
+  +--------------------------------+---------------------------+------------------+
+  | Complex-valued wavefunction    | supported                 | supported        |
+  +--------------------------------+---------------------------+------------------+
+  | Single-Slater determinants     | accelerated               | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Multi-Slater determinants      | on host now, being ported | not supported    |
+  +--------------------------------+---------------------------+------------------+
+  | 3D B-spline orbitals           | accelerated               | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | LCAO orbitals                  | on host now, being ported | not supported    |
+  +--------------------------------+---------------------------+------------------+
+  | One-body Jastrow factors       | on host                   | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Two-body Jastrow factors       | accelerated               | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Other Jastrow factors          | on host                   | not supported    |
+  +--------------------------------+---------------------------+------------------+
+  | Nonlocal pseudopotentials      | accelerated               | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Coulomb interaction PBC e-i    | on host                   | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Coulomb interaction PBC e-e    | accelerated               | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Coulomb interaction OpenBC     | on host                   | accelerated      |
+  +--------------------------------+---------------------------+------------------+
+  | Model periodic Coulomb (MPC)   | on host                   | accelerated      |
+  +--------------------------------+---------------------------+------------------+
 
--  Periodic and open boundary conditions. Mixed boundary conditions are
-   not supported.
+Additional information:
 
--  Wavefunctions:
+- Performance portable implementation requires using batched QMC drivers.
 
-   #. Single Slater determinants with 3D B-spline orbitals.
-      Twist-averaged boundary conditions and complex wavefunctions are
-      fully supported. Gaussian type orbitals are not supported.
+- Legacy CUDA implementation only supports T-move v0 or no T-move.
 
-   #. Hybrid mixed basis representation in which orbitals are
-      represented as 1D splines times spherical harmonics in spherical
-      regions (muffin tins) around atoms and 3D B-splines in the
-      interstitial region.
-
-   #. One-body and two-body Jastrow functions represented as 1D B-splines.
-      Three-body Jastrow functions are not supported.
-
--  Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction
-   (electron-electron, electron-ion), and model periodic Coulomb (MPC)
-   interaction.
+- In most features, the algorithmic and implementation details differ a lot between these two GPU implementations.
 
 Sharing of spline data across multiple GPUs
--------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Sharing of GPU spline data enables distribution of the data across
 multiple GPUs on a given computational node. For example, on a
@@ -155,6 +185,7 @@ allows use of larger overall spline tables than would fit in the memory
 of individual GPUs and potentially up to the total GPU memory on a node.
 To obtain high performance, large electron counts or a high-performing
 CPU-GPU interconnect is required.
+This feature is only supported in the legacy implementation.
 
 To use this feature, the following needs to be done:
 

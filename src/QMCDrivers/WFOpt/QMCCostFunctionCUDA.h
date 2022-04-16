@@ -69,7 +69,7 @@ protected:
 
   Return_rt CSWeight;
   void resetPsi(bool final_reset = false) override;
-  Return_rt correlatedSampling(bool needDerivs) override;
+  EffectiveWeight correlatedSampling(bool needDerivs) override;
 };
 } // namespace qmcplusplus
 #endif

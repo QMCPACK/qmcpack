@@ -337,7 +337,29 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
-  auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
+  std::string useGPU;
+  OhmmsAttributeSet attr;
+  attr.add(useGPU, "gpu", CPUOMPTargetSelector::candidate_values);
+  attr.put(cur);
+
+  if (useGPU.empty())
+    useGPU = SourcePtcl->getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
+
+  bool use_offload = false;
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
+  {
+    if (SourcePtcl->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
+    {
+      std::ostringstream msg;
+      msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << SourcePtcl->getName()
+          << "\" particleset" << std::endl;
+      myComm->barrier_and_abort(msg.str());
+    }
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
+    use_offload = true;
+  }
+
+  auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl, use_offload);
 
   xmlNodePtr kids = cur->xmlChildrenNode;
 
@@ -479,7 +501,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   SRA->setRmax(Rcut);
   nfunc->initialize(SRA, myGrid);
 
-  auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl);
+  auto J1 = std::make_unique<J1Type>(jname, *SourcePtcl, targetPtcl, false);
 
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   for (int ig = 0; ig < sSet.getTotalNum(); ig++)

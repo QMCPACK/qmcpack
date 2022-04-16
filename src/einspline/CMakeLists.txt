@@ -15,18 +15,10 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-set(SRCS
-    bspline_create.c
-    bspline_data.c
-    multi_bspline_create.c
-    multi_bspline_copy.c)
+set(SRCS bspline_create.c bspline_data.c multi_bspline_create.c multi_bspline_copy.c)
 
-set(SRCS
-    ${SRCS}
-    bspline_eval_d_std.cpp
-    multi_bspline_eval_s_std3.cpp
-    multi_bspline_eval_d_std3.cpp
-    multi_bspline_eval_z_std3.cpp)
+set(SRCS ${SRCS} bspline_eval_d_std.cpp multi_bspline_eval_s_std3.cpp multi_bspline_eval_d_std3.cpp
+         multi_bspline_eval_z_std3.cpp)
 
 if(QMC_CUDA)
   set(SRCS ${SRCS} multi_bspline_create_cuda.cu bspline_create_cuda.cu)

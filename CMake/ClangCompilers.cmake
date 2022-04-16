@@ -16,7 +16,7 @@ if(QMC_OMP)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
   if(ENABLE_OFFLOAD)
-    if (QMC_CUDA2HIP)
+    if(QMC_CUDA2HIP)
       set(OFFLOAD_TARGET_DEFAULT "amdgcn-amd-amdhsa")
     else()
       set(OFFLOAD_TARGET_DEFAULT "nvptx64-nvidia-cuda")
@@ -36,14 +36,18 @@ if(QMC_OMP)
       set(OFFLOAD_ARCH gfx906)
     endif()
 
-    if(NOT DEFINED OFFLOAD_ARCH AND OFFLOAD_TARGET MATCHES "nvptx64" AND DEFINED CMAKE_CUDA_ARCHITECTURES)
+    if(NOT DEFINED OFFLOAD_ARCH
+       AND OFFLOAD_TARGET MATCHES "nvptx64"
+       AND DEFINED CMAKE_CUDA_ARCHITECTURES)
       list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
       if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
         set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
       else()
-        message(FATAL_ERROR "LLVM does not yet support offload to multiple architectures! "
-                            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
-                            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
+        message(
+          FATAL_ERROR
+            "LLVM does not yet support offload to multiple architectures! "
+            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
+            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
       endif()
     endif()
 
@@ -69,7 +73,8 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=vla")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wvla")
 
 # set compiler warnings
-string(APPEND CMAKE_CXX_FLAGS " -Wall -Wno-unused-variable -Wno-overloaded-virtual -Wno-unused-private-field -Wno-unused-local-typedef")
+string(APPEND CMAKE_CXX_FLAGS
+       " -Wall -Wno-unused-variable -Wno-overloaded-virtual -Wno-unused-private-field -Wno-unused-local-typedef")
 
 if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 11.0)
   string(APPEND CMAKE_CXX_FLAGS " -Wsuggest-override")

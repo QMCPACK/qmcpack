@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="det_vmcbatch_noj" series="0"/>
+  <project id="det_vmcbatch_noj" series="0">
+         <parameter name="driver_version">batched</parameter>
+  </project>
   <include href="FeCO6.structure.xml"/>
   <include href="FeCO6.wfnoj.xml"/>
   <random seed="17"/>
@@ -13,7 +15,7 @@
       <pseudo elementType="O" href="O.BFD.xml"/>
     </pairpot>
   </hamiltonian>
-  <qmc method="vmc_batch" move="pbyp">
+  <qmc method="vmc" move="pbyp">
       <parameter name="total_walkers"       >    1              </parameter>
       <parameter name="blocks"              >    3               </parameter>
       <parameter name="steps"               >    3               </parameter>

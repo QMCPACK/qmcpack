@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR afqmc_hamiltonian_operations)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})

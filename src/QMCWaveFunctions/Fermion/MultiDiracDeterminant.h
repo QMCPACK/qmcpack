@@ -183,7 +183,7 @@ public:
    * sort configlist_unsorted by excitation level abd store the results in ciConfigList (class member)
    * ciConfigList shouldn't change during a simulation after it is sorted here
    *
-   * @param ref_det_id id of the reference determinant
+   * @param ref_det_id id of the reference determinant before sorting
    * @param configlist_unsorted config list to be loaded.
    * @param C2nodes_unsorted mapping from overall det index to unique det (configlist_unsorted) index
    * @param C2nodes_sorted mapping from overall det index to unique det (ciConfigList) index
@@ -459,10 +459,8 @@ private:
   const int LastIndex;
   ///use shared_ptr
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
-  // the reference determinant never changes, so there is no need to store it.
-  // if its value is zero, then use a data from backup, but always use this one
-  // by default
-  int ReferenceDeterminant;
+  /// all the unique determinants are sorted, the id of the reference det id is always 0
+  static constexpr int ReferenceDeterminant = 0;
   // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
   const bool is_spinor_;
 

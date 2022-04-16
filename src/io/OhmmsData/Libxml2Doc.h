@@ -18,6 +18,7 @@
 
 #include <libxml/xpath.h>
 #include <string>
+#include <string_view>
 #include "libxmldefs.h"
 
 /** class to handle xmlXPathObject
@@ -81,7 +82,7 @@ struct Libxml2Document
   void newDoc(const std::string& rootName);
 
   bool parse(const std::string& fname);
-  bool parseFromString(const std::string& data);
+  bool parseFromString(const std::string_view data);
 
   inline xmlDocPtr getDocument() { return m_doc; }
   inline xmlNodePtr getRoot() { return m_root; }

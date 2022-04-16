@@ -104,4 +104,60 @@ TEST_CASE("Spherical Harmonics Many", "[numerics]")
   }
 }
 
+TEST_CASE("Derivatives of Spherical Harmonics", "[numerics]")
+{
+  struct Point
+  {
+    double x;
+    double y;
+    double z;
+  };
+
+  struct YlmDerivValue
+  {
+    Point p;
+    int l;
+    int m;
+    double th_re;
+    double th_im;
+    double ph_re;
+    double ph_im;
+  };
+
+  //reference values from sympy
+  //d/dtheta Ylm and d/dphi Ylm
+  const int N      = 10;
+  YlmDerivValue Vals[N] = {
+      {{0.587785, 0, 0.809017}, 1, -1, 0.27951007, 0.0, 0.0, -0.2030763},
+      {{0.587785, 0, 0.809017}, 1, 0, -0.2871933, 0.0, 0.0, 0.0},
+      {{0.951057, 0, 0.309017}, 1, 1, -0.1067635, 0.0, 0.0, -0.3285845},
+      {{0.587785, 0, 0.809017}, 2, -2, 0.3673685, 0.0, 0.0, -0.2669088},
+      {{0.293893, 0.904508, 0.309017}, 2, -1, -0.1931373, 0.5944147, -0.2159338, -0.0701613},
+      {{0.587785, 0, -0.809017}, 2, 0, 0.8998655, 0.0, 0.0, 0.0},
+      {{0.293893, 0.904508, -0.309017}, 2, 1, 0.1931373, 0.5944146, -0.2159339, 0.0701613},
+      {{0.293893, 0.904508, 0.309017}, 2, 2, -0.1836842, 0.1334547, -0.4107311, -0.5653217},
+      {{-0.475528, -0.345492, -0.809017}, 3, -3, -0.1081114, -0.3327295, 0.2417422, -0.0785476},
+      {{-0.475528, -0.345492, 0.809017}, 4, 4, -0.2352762, 0.1709368, -0.1241928, -0.1709382},
+  };
+
+  using vec_t = TinyVector<double, 3>;
+  for (int i = 0; i < N; i++)
+  {
+    YlmDerivValue& v = Vals[i];
+    vec_t w;
+    w[0] = v.p.z; // first component appears to be aligned along the z-axis
+    w[1] = v.p.x;
+    w[2] = v.p.y;
+
+    std::complex<double> theta, phi;
+    derivYlmSpherical(v.l, v.m, w, theta, phi, false);
+    //printf("%d %d  expected %g %g %g %g  actual %g %g %g %g\n",v.l,v.m,v.th_re,v.th_im, v.ph_re, v.ph_im, theta.real(), theta.imag(), phi.real(), phi.imag());
+    REQUIRE(std::real(theta) == Approx(v.th_re));
+    REQUIRE(std::imag(theta) == Approx(v.th_im));
+    REQUIRE(std::real(phi) == Approx(v.ph_re));
+    REQUIRE(std::imag(phi) == Approx(v.ph_im));
+  }
+
+}
+
 } // namespace qmcplusplus
