@@ -48,6 +48,78 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
+/*
+  ~~ Notes for rotation ~~
+  spl_coefs      = Raw pointer of spline coefficients
+  BasisSetSize   = Number of spline coefs per orbital
+  OrbitalSetSize = Number of orbitals (excluding padding)
+  
+  spl_coefs has a complicated layout depending on dimensionality of splines. 
+  Luckily, for our purposes, we can think of spl_coefs as pointing to a 
+  matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline 
+  index adjacent in memory. NB: The orbital index is SIMD aligned and
+  therefore may include padding.
+    
+  In other words, due to SIMD alignment, Nsplines may be larger than the 
+  actual number of splined orbitals, which means that in practice rot_mat 
+  may be smaller than the number of 'columns' in the coefs array. 
+  Therefore, we put rot_mat inside "tmpU". The padding of the splines 
+  is at the end, so if we put rot_mat at top left corner of tmpU, then 
+  we can apply tmpU to the coefs safely regardless of padding.   
+  
+  Typically, BasisSetSize >> OrbitalSetSize, so the spl_coefs "matrix"
+  is very tall and skinny.
+*/
+template<typename ST>
+void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  assert(spline_ptr != nullptr);
+  const auto spl_coefs      = spline_ptr->coefs;
+  const auto Nsplines       = spline_ptr->num_splines; // May include padding
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto BasisSetSize   = coefs_tot_size / Nsplines;
+  const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
+  assert(OrbitalSetSize >= TrueNOrbs);
+
+  // Fill top left corner of tmpU with rot_mat
+  ValueMatrix tmpU;
+  tmpU.resize(Nsplines, Nsplines);
+  std::fill(tmpU.begin(), tmpU.end(), 0.0);
+  for (auto i = 0; i < rot_mat.size1(); i++)
+  {
+    for (auto j = 0; j < rot_mat.size2(); j++)
+    {
+      tmpU[i][j] = rot_mat[i][j];
+    }
+  }
+
+  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
+  for (auto i = 0; i < BasisSetSize; i++)
+  {
+    for (auto j = 0; j < Nsplines; j++)
+    {
+      const auto cur_elem = Nsplines * i + j;
+      auto newval{0.};
+      for (auto k = 0; k < Nsplines; k++)
+      {
+        const auto index = i * Nsplines + k;
+        newval += *(spl_coefs + index) * tmpU[k][j];
+      }
+      *(spl_coefs + cur_elem) = newval;
+    }
+  }
+
+  /*
+    // Here is my attempt to use gemm but it doesn't work...
+    int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
+    int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
+    BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
+  */
+}
+
+
 template<typename ST>
 inline void SplineR2R<ST>::assign_v(int bc_sign, const vContainer_type& myV, ValueVector& psi, int first, int last)
     const
