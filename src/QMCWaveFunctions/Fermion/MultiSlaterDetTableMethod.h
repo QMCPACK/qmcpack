@@ -20,7 +20,8 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "Platforms/PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -65,13 +66,9 @@ struct CSFData
 class MultiSlaterDetTableMethod : public WaveFunctionComponent
 {
 public:
-  void registerTimers();
-  NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
-  NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
+  NewTimer &RatioTimer, &offload_timer;
+  NewTimer &EvalGradTimer, &RatioGradTimer;
   NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
-
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
@@ -114,7 +111,16 @@ public:
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;
 
+  /*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override ;
+*/
   void prepareGroup(ParticleSet& P, int ig) override;
+
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       int ig) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   //evalGrad, but returns the spin gradient as well
@@ -156,6 +162,12 @@ public:
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
+
+  void createResource(ResourceCollection& collection) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
@@ -269,9 +281,6 @@ private:
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
   //std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
   std::vector<OffloadVector<ValueType>> C_otherDs;
-  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-  OffloadVector<const ValueType*> C_otherDs_ptr_list;
-  OffloadVector<const ValueType*> det_value_ptr_list;
 
   ParticleSet::ParticleGradient myG, myG_temp;
   ParticleSet::ParticleLaplacian myL, myL_temp;
@@ -281,6 +290,24 @@ private:
   ParticleSet::ParticleGradient gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
+
+  struct MultiSlaterDetTableMethodMultiWalkerResource : public Resource
+  {
+    MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
+    MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
+        : MultiSlaterDetTableMethodMultiWalkerResource()
+    {}
+
+    Resource* makeClone() const override { return new MultiSlaterDetTableMethodMultiWalkerResource(*this); }
+
+    /// grads of each unique determinants for multiple walkers
+    Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
+    /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+    OffloadVector<const ValueType*> C_otherDs_ptr_list;
+    OffloadVector<const ValueType*> det_value_ptr_list;
+  };
+
+  std::unique_ptr<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_;
 };
 
 } // namespace qmcplusplus
