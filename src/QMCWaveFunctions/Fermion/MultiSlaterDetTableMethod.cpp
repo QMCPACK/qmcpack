@@ -1132,6 +1132,8 @@ void MultiSlaterDetTableMethod::precomputeC_otherDs(const ParticleSet& P, int ig
 void MultiSlaterDetTableMethod::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<MultiSlaterDetTableMethodMultiWalkerResource>());
+  for (auto& det : Dets)
+    det->createResource(collection);
 }
 
 void MultiSlaterDetTableMethod::acquireResource(ResourceCollection& collection,
@@ -1142,6 +1144,11 @@ void MultiSlaterDetTableMethod::acquireResource(ResourceCollection& collection,
   if (!res_ptr)
     throw std::runtime_error("MultiSlaterDetTableMethod::acquireResource dynamic_cast failed");
   wfc_leader.mw_res_.reset(res_ptr);
+  for (int idet = 0; idet < Dets.size(); idet++)
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, idet));
+    Dets[idet]->acquireResource(collection, det_list);
+  }
 }
 
 void MultiSlaterDetTableMethod::releaseResource(ResourceCollection& collection,
@@ -1149,5 +1156,10 @@ void MultiSlaterDetTableMethod::releaseResource(ResourceCollection& collection,
 {
   auto& wfc_leader = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
   collection.takebackResource(std::move(wfc_leader.mw_res_));
+  for (int idet = 0; idet < Dets.size(); idet++)
+  {
+    const auto det_list(extract_DetRef_list(wfc_list, idet));
+    Dets[idet]->releaseResource(collection, det_list);
+  }
 }
 } // namespace qmcplusplus

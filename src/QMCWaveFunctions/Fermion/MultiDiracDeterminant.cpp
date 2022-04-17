@@ -623,6 +623,58 @@ void MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   }
 }
 
+void MultiDiracDeterminant::createResource(ResourceCollection& collection) const
+{
+  collection.addResource(std::make_unique<MultiDiracDetMultiWalkerResource>());
+}
+
+void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
+                                            const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
+{
+  auto& wfc_leader = wfc_list.getCastedLeader<MultiDiracDeterminant>();
+  auto res_ptr     = dynamic_cast<MultiDiracDetMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("MultiDiracDeterminant::acquireResource dynamic_cast failed");
+  wfc_leader.mw_res_.reset(res_ptr);
+
+  const size_t nw = wfc_list.size();
+  wfc_leader.mw_res_->resizeConstants(nw);
+
+  auto& workV1_deviceptr_list       = wfc_leader.mw_res_->workV1_deviceptr_list;
+  auto& workV2_deviceptr_list       = wfc_leader.mw_res_->workV2_deviceptr_list;
+  auto& psiV_temp_deviceptr_list    = wfc_leader.mw_res_->psiV_temp_deviceptr_list;
+  auto& psiMinv_temp_deviceptr_list = wfc_leader.mw_res_->psiMinv_temp_deviceptr_list;
+  auto& dpsiMinv_deviceptr_list     = wfc_leader.mw_res_->dpsiMinv_deviceptr_list;
+
+  workV1_deviceptr_list.resize(nw);
+  workV2_deviceptr_list.resize(nw);
+  psiV_temp_deviceptr_list.resize(nw);
+  psiMinv_temp_deviceptr_list.resize(nw);
+  dpsiMinv_deviceptr_list.resize(nw);
+
+  for (size_t iw = 0; iw < nw; iw++)
+  {
+    auto& det                       = wfc_list.getCastedElement<MultiDiracDeterminant>(iw);
+    psiV_temp_deviceptr_list[iw]    = det.psiV_temp.device_data();
+    psiMinv_temp_deviceptr_list[iw] = det.psiMinv_temp.device_data();
+    dpsiMinv_deviceptr_list[iw]     = det.dpsiMinv.device_data();
+    workV1_deviceptr_list[iw]       = det.workV1.device_data();
+    workV2_deviceptr_list[iw]       = det.workV2.device_data();
+  }
+
+  psiV_temp_deviceptr_list.updateTo();
+  psiMinv_temp_deviceptr_list.updateTo();
+  dpsiMinv_deviceptr_list.updateTo();
+  workV1_deviceptr_list.updateTo();
+  workV2_deviceptr_list.updateTo();
+}
+
+void MultiDiracDeterminant::releaseResource(ResourceCollection& collection,
+                                            const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const
+{
+  auto& wfc_leader = wfc_list.getCastedLeader<MultiDiracDeterminant>();
+  collection.takebackResource(std::move(wfc_leader.mw_res_));
+}
 
 ///reset the size: with the number of particles and number of orbtials
 void MultiDiracDeterminant::resize()

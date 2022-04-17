@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Fermion/SmallMatrixDetCalculator.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
+#include "ResourceCollection.h"
 //#include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
@@ -58,6 +59,43 @@ public:
   using GradMatrix  = SPOSet::GradMatrix;
   using HessMatrix  = SPOSet::HessMatrix;
   using HessType    = SPOSet::HessType;
+
+  struct MultiDiracDetMultiWalkerResource : public Resource
+  {
+    MultiDiracDetMultiWalkerResource() : Resource("MultiDiracDeterminant") {}
+    MultiDiracDetMultiWalkerResource(const MultiDiracDetMultiWalkerResource&) : MultiDiracDetMultiWalkerResource() {}
+
+    Resource* makeClone() const override { return new MultiDiracDetMultiWalkerResource(*this); }
+
+    void resizeConstants(size_t nw)
+    {
+      if (nw > czero_vec.size())
+      {
+        czero_vec.resize(nw);
+        cminus_one_vec.resize(nw);
+        std::fill_n(czero_vec.data(), nw, 0);
+        std::fill_n(cminus_one_vec.data(), nw, -1);
+        czero_vec.updateTo();
+        cminus_one_vec.updateTo();
+      }
+      else
+      {
+        czero_vec.resize(nw);
+        cminus_one_vec.resize(nw);
+      }
+    }
+
+    OffloadVector<ValueType> czero_vec;
+    OffloadVector<ValueType> cminus_one_vec;
+
+    OffloadVector<ValueType*> workV1_deviceptr_list;
+    OffloadVector<ValueType*> workV2_deviceptr_list;
+    OffloadVector<ValueType*> psiV_temp_deviceptr_list;
+    OffloadVector<ValueType*> psiMinv_temp_deviceptr_list;
+    OffloadVector<ValueType*> dpsiMinv_deviceptr_list;
+
+    OffloadVector<ValueType> invCurRatio_list;
+  };
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
   std::vector<std::vector<int>> lookup_tbl;
@@ -140,6 +178,12 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat) override;
+
+  void createResource(ResourceCollection& collection) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list) const;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
@@ -253,13 +297,13 @@ public:
   LogValueType getLogValueRefDet() const { return log_value_ref_det_; }
 
 private:
-  void omp_mw_InverseUpdateByColumn(const int nw,
-                                    const int idx,
-                                    OffloadVector<ValueType>& curRatio_list,
-                                    const RefVector<OffloadVector<ValueType>>& psiV_list,
-                                    RefVector<OffloadVector<ValueType>>& workV1_list,
-                                    RefVector<OffloadVector<ValueType>>& workV2_list,
-                                    RefVector<OffloadMatrix<ValueType>>& psiMinv_list) const;
+  void mw_InverseUpdateByColumn(MultiDiracDetMultiWalkerResource& mw_res,
+                                const int working_index,
+                                const OffloadVector<ValueType>& curRatio_list,
+                                const OffloadVector<ValueType*>& psiV_deviceptr_list,
+                                const OffloadVector<ValueType*>& psiMinv_deviceptr_list,
+                                const size_t psiMinv_rows) const;
+
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param ext_level excitation level
    * @param det_offset offset of the determinant id
@@ -521,6 +565,8 @@ private:
 
   /// for matrices with leading dimensions <= MaxSmallDet, compute determinant with direct expansion.
   static constexpr size_t MaxSmallDet = 5;
+
+  std::unique_ptr<MultiDiracDetMultiWalkerResource> mw_res_;
 };
 
 

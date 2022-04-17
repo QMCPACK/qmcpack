@@ -308,6 +308,19 @@ private:
   };
 
   std::unique_ptr<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_;
+
+  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
+  RefVectorWithLeader<MultiDiracDeterminant> extract_DetRef_list(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      int det_id) const
+  {
+    RefVectorWithLeader<MultiDiracDeterminant> det_list(
+        *wfc_list.getCastedLeader<MultiSlaterDetTableMethod>().Dets[det_id]);
+    det_list.reserve(wfc_list.size());
+    for (WaveFunctionComponent& wfc : wfc_list)
+      det_list.push_back(*static_cast<MultiSlaterDetTableMethod&>(wfc).Dets[det_id]);
+    return det_list;
+  }
 };
 
 } // namespace qmcplusplus
