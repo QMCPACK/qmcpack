@@ -123,11 +123,17 @@ void MultiDiracDeterminant::createDetData(const int ref_det_id,
     sign[i]                           = tmp_sign[det_idx_order[i]];
   }
 
+  auto& refdet_occup_ref(*refdet_occup);
+  refdet_occup_ref.resize(NumPtcls);
+  for (size_t i = 0; i < NumPtcls; i++)
+    refdet_occup_ref[i] = configlist_unsorted[ReferenceDeterminant].occup[i];
+
   {
     ScopedTimer local_timer(transferH2D_timer);
     sign.updateTo();
     pairs.updateTo();
     data.updateTo();
+    refdet_occup_ref.updateTo();
   }
   // update C2nodes for new det ordering
   C2nodes_sorted.resize(C2nodes_unsorted.size());
@@ -536,6 +542,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       NumPtcls(s.NumPtcls),
       LastIndex(s.LastIndex),
       ciConfigList(s.ciConfigList),
+      refdet_occup(s.refdet_occup),
       is_spinor_(s.is_spinor_),
       detData(s.detData),
       uniquePairs(s.uniquePairs),
@@ -588,6 +595,7 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
   (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
 
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
+  refdet_occup                = std::make_shared<OffloadVector<size_t>>();
   detData                     = std::make_shared<OffloadVector<int>>();
   uniquePairs                 = std::make_shared<VectorSoaContainer<int, 2, OffloadPinnedAllocator<int>>>();
   DetSigns                    = std::make_shared<OffloadVector<RealType>>();
@@ -640,17 +648,31 @@ void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
   const size_t nw = wfc_list.size();
   wfc_leader.mw_res_->resizeConstants(nw);
 
-  auto& workV1_deviceptr_list       = wfc_leader.mw_res_->workV1_deviceptr_list;
-  auto& workV2_deviceptr_list       = wfc_leader.mw_res_->workV2_deviceptr_list;
   auto& psiV_temp_deviceptr_list    = wfc_leader.mw_res_->psiV_temp_deviceptr_list;
   auto& psiMinv_temp_deviceptr_list = wfc_leader.mw_res_->psiMinv_temp_deviceptr_list;
   auto& dpsiMinv_deviceptr_list     = wfc_leader.mw_res_->dpsiMinv_deviceptr_list;
+  auto& workV1_deviceptr_list       = wfc_leader.mw_res_->workV1_deviceptr_list;
+  auto& workV2_deviceptr_list       = wfc_leader.mw_res_->workV2_deviceptr_list;
 
-  workV1_deviceptr_list.resize(nw);
-  workV2_deviceptr_list.resize(nw);
+  auto& psiV_deviceptr_list    = wfc_leader.mw_res_->psiV_deviceptr_list;
+  auto& dpsiV_deviceptr_list   = wfc_leader.mw_res_->dpsiV_deviceptr_list;
+  auto& TpsiM_deviceptr_list   = wfc_leader.mw_res_->TpsiM_deviceptr_list;
+  auto& psiM_deviceptr_list    = wfc_leader.mw_res_->psiM_deviceptr_list;
+  auto& psiMinv_deviceptr_list = wfc_leader.mw_res_->psiMinv_deviceptr_list;
+  auto& dpsiM_deviceptr_list   = wfc_leader.mw_res_->dpsiM_deviceptr_list;
+
   psiV_temp_deviceptr_list.resize(nw);
   psiMinv_temp_deviceptr_list.resize(nw);
   dpsiMinv_deviceptr_list.resize(nw);
+  workV1_deviceptr_list.resize(nw);
+  workV2_deviceptr_list.resize(nw);
+
+  psiV_deviceptr_list.resize(nw);
+  dpsiV_deviceptr_list.resize(nw);
+  TpsiM_deviceptr_list.resize(nw);
+  psiM_deviceptr_list.resize(nw);
+  psiMinv_deviceptr_list.resize(nw);
+  dpsiM_deviceptr_list.resize(nw);
 
   for (size_t iw = 0; iw < nw; iw++)
   {
@@ -660,6 +682,13 @@ void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
     dpsiMinv_deviceptr_list[iw]     = det.dpsiMinv.device_data();
     workV1_deviceptr_list[iw]       = det.workV1.device_data();
     workV2_deviceptr_list[iw]       = det.workV2.device_data();
+
+    psiV_deviceptr_list[iw]    = det.psiV.device_data();
+    dpsiV_deviceptr_list[iw]   = det.dpsiV.device_data();
+    TpsiM_deviceptr_list[iw]   = det.TpsiM.device_data();
+    psiM_deviceptr_list[iw]    = det.psiM.device_data();
+    psiMinv_deviceptr_list[iw] = det.psiMinv.device_data();
+    dpsiM_deviceptr_list[iw]   = det.dpsiM.device_data();
   }
 
   psiV_temp_deviceptr_list.updateTo();
@@ -667,6 +696,13 @@ void MultiDiracDeterminant::acquireResource(ResourceCollection& collection,
   dpsiMinv_deviceptr_list.updateTo();
   workV1_deviceptr_list.updateTo();
   workV2_deviceptr_list.updateTo();
+
+  psiV_deviceptr_list.updateTo();
+  dpsiV_deviceptr_list.updateTo();
+  TpsiM_deviceptr_list.updateTo();
+  psiM_deviceptr_list.updateTo();
+  psiMinv_deviceptr_list.updateTo();
+  dpsiM_deviceptr_list.updateTo();
 }
 
 void MultiDiracDeterminant::releaseResource(ResourceCollection& collection,

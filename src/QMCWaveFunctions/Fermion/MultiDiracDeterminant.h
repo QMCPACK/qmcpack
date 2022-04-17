@@ -72,20 +72,25 @@ public:
       if (nw > czero_vec.size())
       {
         czero_vec.resize(nw);
+        cone_vec.resize(nw);
         cminus_one_vec.resize(nw);
         std::fill_n(czero_vec.data(), nw, 0);
+        std::fill_n(cone_vec.data(), nw, 1);
         std::fill_n(cminus_one_vec.data(), nw, -1);
         czero_vec.updateTo();
+        cone_vec.updateTo();
         cminus_one_vec.updateTo();
       }
       else
       {
         czero_vec.resize(nw);
+        cone_vec.resize(nw);
         cminus_one_vec.resize(nw);
       }
     }
 
     OffloadVector<ValueType> czero_vec;
+    OffloadVector<ValueType> cone_vec;
     OffloadVector<ValueType> cminus_one_vec;
 
     OffloadVector<ValueType*> workV1_deviceptr_list;
@@ -94,7 +99,24 @@ public:
     OffloadVector<ValueType*> psiMinv_temp_deviceptr_list;
     OffloadVector<ValueType*> dpsiMinv_deviceptr_list;
 
-    OffloadVector<ValueType> invCurRatio_list;
+    OffloadVector<ValueType*> psiV_deviceptr_list;
+    OffloadVector<GradType*> dpsiV_deviceptr_list;
+    OffloadVector<ValueType*> TpsiM_deviceptr_list;
+    OffloadVector<ValueType*> psiM_deviceptr_list;
+    OffloadVector<ValueType*> psiMinv_deviceptr_list;
+    OffloadVector<GradType*> dpsiM_deviceptr_list;
+
+    // pointer lists used by mw_buildTableMatrix_calculateRatios_impl
+    OffloadVector<ValueType*> psiinv_deviceptr_list;
+    OffloadVector<ValueType*> psi_deviceptr_list;
+    OffloadVector<ValueType*> table_matrix_deviceptr_list;
+    OffloadVector<ValueType*> ratios_deviceptr_list;
+
+    OffloadVector<ValueType> curRatio_list;
+    OffloadVector<ValueType> inv_curRatio_list;
+
+    OffloadVector<ValueType> det0_grad_list;
+    OffloadVector<GradType> ratioGradRef_list;
   };
 
   //lookup table mapping the unique determinants to their element position in C2_node vector
@@ -317,12 +339,12 @@ private:
   void mw_updateRatios_generic(const int ext_level,
                                const size_t det_offset,
                                const size_t data_offset,
-                               const RefVector<OffloadVector<ValueType>>& ratios_list,
                                SmallMatrixDetCalculator<ValueType>& det_calculator,
                                const OffloadVector<int>& data,
                                const OffloadVector<RealType>& sign,
                                const OffloadVector<ValueType>& det0_list,
-                               const RefVector<OffloadMatrix<ValueType>>& table_matrix_list) const;
+                               const RefVector<OffloadMatrix<ValueType>>& table_matrix_list,
+                               const RefVector<OffloadVector<ValueType>>& ratios_list) const;
 
   /** update ratios with respect to the reference deteriminant for a given excitation level
    * @param det_offset offset of the determinant id
@@ -336,11 +358,12 @@ private:
   template<unsigned EXT_LEVEL>
   void mw_updateRatios(const size_t det_offset,
                        const size_t data_offset,
-                       const RefVector<OffloadVector<ValueType>>& ratios_list,
                        const OffloadVector<int>& data,
                        const OffloadVector<RealType>& sign,
                        const OffloadVector<ValueType>& det0_list,
-                       const RefVector<OffloadMatrix<ValueType>>& table_matrix_list) const;
+                       const OffloadVector<ValueType*>& table_matrix_deviceptr_list,
+                       const size_t num_table_matrix_cols,
+                       const OffloadVector<ValueType*>& ratios_deviceptr_list) const;
 
   /** Function to calculate the ratio of the excited determinant to the reference determinant in CustomizedMatrixDet following the paper by Clark et al. JCP 135(24), 244105
    *@param nw Number of walkers in the batch
@@ -354,7 +377,7 @@ private:
    *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratio_list returned computed ratios
    */
-  void mw_buildTableMatrix_calculateRatios_impl(int nw,
+  void mw_buildTableMatrix_calculateRatios_impl(MultiDiracDetMultiWalkerResource& mw_res,
                                                 int ref,
                                                 const OffloadVector<ValueType>& det0_list,
                                                 const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
@@ -398,7 +421,7 @@ private:
                                         OffloadMatrix<ValueType>& table_matrix,
                                         OffloadVector<ValueType>& ratios);
 
-  void mw_buildTableMatrix_calculateRatios(int nw,
+  void mw_buildTableMatrix_calculateRatios(MultiDiracDetMultiWalkerResource& mw_res,
                                            int ref,
                                            const OffloadVector<ValueType>& det0_list,
                                            const RefVector<OffloadMatrix<ValueType>>& psiinv_list,
@@ -449,7 +472,7 @@ private:
    *@param table_matrix_list stores all the dot products between 2 determinants (I,J)
    *@param ratios_list returned computed list of gradients
    */
-  void mw_buildTableMatrix_calculateGradRatios(int nw,
+  void mw_buildTableMatrix_calculateGradRatios(MultiDiracDetMultiWalkerResource& mw_res,
                                                int ref,
                                                int iat,
                                                int dx,
@@ -492,6 +515,8 @@ private:
   std::shared_ptr<std::vector<ci_configuration2>> ciConfigList;
   /// all the unique determinants are sorted, the id of the reference det id is always 0
   static constexpr int ReferenceDeterminant = 0;
+  /// reference determinant occupation
+  std::shared_ptr<OffloadVector<size_t>> refdet_occup;
   // flag to determine if spin arrays need to be resized and used. Set by ParticleSet::is_spinor_ in SlaterDetBuilder
   const bool is_spinor_;
 
