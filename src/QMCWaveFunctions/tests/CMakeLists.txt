@@ -108,6 +108,15 @@ set(DETERMINANT_SRC
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
+# @TODO: Remove when rotations work for complex stuff
+if(NOT QMC_COMPLEX)
+  if(NOT ENABLE_CUDA)
+    if(NOT QMC_CUDA)
+      set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
+    endif()
+  endif()
+endif()
+
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)
   if(NOT QMC_CUDA2HIP)
