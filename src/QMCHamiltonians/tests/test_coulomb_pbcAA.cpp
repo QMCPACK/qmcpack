@@ -236,7 +236,9 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
+  ResourceCollection caa_res("test_caa_res");
   elec.createResource(pset_res);
+  caa.createResource(caa_res);
 
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
@@ -247,6 +249,7 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, psi_clone});
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<OperatorBase> mw_caa_lock(caa_res, caa_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
   caa.mw_evaluate(caa_ref_list, psi_ref_list, p_ref_list);

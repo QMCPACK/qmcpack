@@ -25,6 +25,7 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
+#include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"
 
 namespace qmcplusplus
@@ -77,7 +78,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  std::unique_ptr<SplineOMPTargetMultiWalkerMem<ST, ComplexT>> mw_mem_;
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, ComplexT>> mw_mem_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<ComplexT, OffloadPinnedAllocator<ComplexT>> ratios_private;
@@ -117,22 +118,7 @@ public:
     KeyWord    = "SplineC2C";
   }
 
-  SplineC2COMPTarget(const SplineC2COMPTarget& in)
-      : BsplineSet(in),
-        offload_timer_(in.offload_timer_),
-        PrimLattice(in.PrimLattice),
-        GGt(in.GGt),
-        SplineInst(in.SplineInst),
-        mKK(in.mKK),
-        myKcart(in.myKcart),
-        GGt_offload(in.GGt_offload),
-        PrimLattice_G_offload(in.PrimLattice_G_offload),
-        myV(in.myV),
-        myL(in.myL),
-        myG(in.myG),
-        myH(in.myH),
-        mygH(in.mygH)
-  {}
+  SplineC2COMPTarget(const SplineC2COMPTarget& in) = default;
 
   void createResource(ResourceCollection& collection) const override
   {

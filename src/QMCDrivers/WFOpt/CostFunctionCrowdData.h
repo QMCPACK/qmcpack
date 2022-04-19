@@ -61,6 +61,7 @@ public:
   Return_rt& get_wgt2() { return wgt2_; }
 
   DriverWalkerResourceCollection& getSharedResource() { return driverwalker_resource_collection_; }
+  ResourceCollection& get_h0_res() { return h0_res_; }
 
 private:
   // Temporary vectors for the call to flex_evaluateDeltaLogSetup
@@ -76,6 +77,9 @@ private:
 
   // proivides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
+
+  /// resource collection corresponding to h0
+  ResourceCollection h0_res_;
 
   // Saved RNG state to reset to before correlated sampling
   std::unique_ptr<RandomGenerator> rng_save_ptr_;
