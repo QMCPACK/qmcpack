@@ -126,7 +126,7 @@ TEST_CASE("Derivatives of Spherical Harmonics", "[numerics]")
 
   //reference values from sympy
   //d/dtheta Ylm and d/dphi Ylm
-  const int N      = 10;
+  const int N           = 10;
   YlmDerivValue Vals[N] = {
       {{0.587785, 0, 0.809017}, 1, -1, 0.27951007, 0.0, 0.0, -0.2030763},
       {{0.587785, 0, 0.809017}, 1, 0, -0.2871933, 0.0, 0.0, 0.0},
@@ -157,7 +157,56 @@ TEST_CASE("Derivatives of Spherical Harmonics", "[numerics]")
     REQUIRE(std::real(phi) == Approx(v.ph_re));
     REQUIRE(std::imag(phi) == Approx(v.ph_im));
   }
+}
 
+TEST_CASE("Spherical Harmonics Wrapper", "[numerics]")
+{
+  struct Point
+  {
+    double x;
+    double y;
+    double z;
+  };
+
+  struct YlmValue
+  {
+    Point p;
+    int l;
+    int m;
+    double y_re;
+    double y_im;
+  };
+
+  // Test a small subset of values, same test as Spherical Harmonics except some are scaled to not be unit vectors
+  const int N      = 11;
+  YlmValue Vals[N] = {
+      {{0, 0, 5}, 1, -1, 0, 0},
+      {{2.938925, 0, 4.045085}, 1, -1, 0.203076, 0},
+      {{2.938925, 0, 4.045085}, 1, 0, 0.395288, 0},
+      {{0.951057, 0, 0.309017}, 1, 1, -0.328584, 0},
+      {{0.587785, 0, 0.809017}, 2, -2, 0.133454, 0},
+      {{1.469465, 4.52254, 1.545085}, 2, -1, 0.0701612, -0.215934},
+      {{0.587785, 0, -0.809017}, 2, 0, 0.303888, 0},
+      {{0.293893, 0.904508, -0.309017}, 2, 1, 0.0701612, 0.215934},
+      {{1.469465, 4.52254, 1.545085}, 2, 2, -0.282661, 0.205365},
+      {{-0.475528, -0.345492, -0.809017}, 3, -3, 0.0261823, 0.0805808},
+      {{-2.37764, -1.72746, 4.045085}, 4, 4, -0.0427344, 0.0310484},
+  };
+
+  using vec_t = TinyVector<double, 3>;
+  for (int i = 0; i < N; i++)
+  {
+    YlmValue& v = Vals[i];
+    vec_t w;
+    w[0] = v.p.x;
+    w[1] = v.p.y;
+    w[2] = v.p.z;
+
+    std::complex<double> out = sphericalHarmonic(v.l, v.m, w);
+    //printf("%d %d  expected %g %g   actual %g %g\n",v.l,v.m,v.y_re,v.y_im, out.real(), out.imag());
+    REQUIRE(v.y_re == Approx(out.real()));
+    REQUIRE(v.y_im == Approx(out.imag()));
+  }
 }
 
 } // namespace qmcplusplus

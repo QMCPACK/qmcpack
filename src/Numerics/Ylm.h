@@ -127,5 +127,17 @@ inline void derivYlmSpherical(const int l,
   }
 }
 
+// wrapper for Ylm, which doesn't require a unit vector and is in the normal order (x,y,z)
+template<typename T>
+inline std::complex<T> sphericalHarmonic(const int l, const int m, const TinyVector<T, 3>& r)
+{
+  TinyVector<T, 3> unit;
+  T norm  = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+  unit[0] = r[2] / norm;
+  unit[1] = r[0] / norm;
+  unit[2] = r[1] / norm;
+  return Ylm(l, m, unit);
+}
+
 } // namespace qmcplusplus
 #endif
