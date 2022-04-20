@@ -855,10 +855,10 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
 ::
 
   export CRAYPE_LINK_TYPE=dynamic
-  module load cmake/3.16.2
+  module load cmake/3.20.4
   module unload cray-libsci
   module load cray-hdf5-parallel
-  module load gcc   # Make C++ 14 standard library available to the Intel compiler
+  module load gcc/8.3.0   # Make C++ 14 standard library available to the Intel compiler
   export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
   cmake -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment ..
   make -j 24
