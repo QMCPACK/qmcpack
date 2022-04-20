@@ -91,6 +91,14 @@ struct Quadrature3D
       C        = 27.0 / 840.0;
       break;
     case 7:
+      nk       = 32;
+      symmetry = ICOSA;
+      lexact   = 9;
+      A        = 5.0 / 168.0;
+      B        = 5.0 / 168.0;
+      C        = 27.0 / 840.0;
+      break;
+    case 8:
       nk       = 50;
       symmetry = OCTA;
       lexact   = 11;
