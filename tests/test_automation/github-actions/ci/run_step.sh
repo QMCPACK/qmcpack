@@ -36,6 +36,8 @@ case "$1" in
       
       if [[ "${GH_JOBNAME}" =~ (-AFQMC-Offload-) ]]
       then
+        echo "Set PATH to cuda-11.2 to be associated with the C and C++ compilers"
+        export PATH=/usr/local/cuda-11.2/bin:$PATH
         echo "Set CUDACXX CMake environment variable to nvcc cuda 11.2 location due to a regression bug in 11.6"
         export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
 
@@ -49,7 +51,7 @@ case "$1" in
         # Make current environment variables available to subsequent steps
         echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
       fi
-      
+
     fi 
 
     # Sanitizer
@@ -170,6 +172,9 @@ case "$1" in
         # Make current environment variables available to subsequent steps
         echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
         echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
+
+        # Confirm that cuda 11.2 gets picked up by the compiler
+        /opt/llvm/14.0.1/bin/clang++ -v
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -320,6 +325,8 @@ case "$1" in
     then
       if [[ "${GH_JOBNAME}" =~ (-AFQMC-Offload-) ]]
       then
+        # adding PATH to prevent default /usr/local/cuda to be associated with the compiler
+        export PATH=/usr/local/cuda-11.2/bin:$PATH
         export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
       else
         export LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
