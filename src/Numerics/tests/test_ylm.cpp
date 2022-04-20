@@ -232,7 +232,7 @@ TEST_CASE("Cartesian derivatives of Spherical Harmonics", "[numerics]")
   };
 
   //reference values from sympy
-  //d/dtheta Ylm and d/dphi Ylm
+  // (d/dx, d/dy, d/dz)Ylm
   const int N = 10;
   YlmDerivValue Vals[N] =
       {{{0.587785, 0, 0.809017}, 1, -1, 0.2261289, 0.0, 0.0, -0.3454942, -0.1642922, 0.0},
