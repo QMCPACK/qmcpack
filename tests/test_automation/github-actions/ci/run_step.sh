@@ -33,11 +33,21 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (-CUDA) ]]
     then
-      echo "Set CUDACXX CMake environment variable to nvcc standard location"
-      export CUDACXX=/usr/local/cuda/bin/nvcc
+      if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
+      then
+        # Force CUDA 11.2 to work around apparent bug in at least CUDA 11.3-11.6
+        echo "Set CUDACXX CMake environment variable to nvcc standard location"
+        export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
         
-      # Make current environment variables available to subsequent steps
-      echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+        # Make current environment variables available to subsequent steps
+        echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
+      else
+        echo "Set CUDACXX CMake environment variable to nvcc standard location"
+        export CUDACXX=/usr/local/cuda/bin/nvcc
+        
+        # Make current environment variables available to subsequent steps
+        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV        
+      fi
     fi 
 
     # Sanitizer
