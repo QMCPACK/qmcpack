@@ -80,6 +80,11 @@ inline T LegendrePlm(int l, int m, T x)
   }
 }
 
+/** calculates Ylm
+ * param[in] l angular momentum
+ * param[in] m magnetic quantum number
+ * param[in] r position vector. Note: This must be a unit vector and in the order [z,x,y] to be correct
+ */
 template<typename T>
 inline std::complex<T> Ylm(int l, int m, const TinyVector<T, 3>& r)
 {
@@ -127,7 +132,11 @@ inline void derivYlmSpherical(const int l,
   }
 }
 
-// wrapper for Ylm, which doesn't require a unit vector and is in the normal order (x,y,z)
+/** wrapper for Ylm, which can take any normal position vector as an argument
+ * param[in] l angular momentum
+ * param[in] m magnetic quantum number
+ * param[in] r is a position vector. This does not have to be normalized and is in the standard ordering [x,y,z]
+ */
 template<typename T>
 inline std::complex<T> sphericalHarmonic(const int l, const int m, const TinyVector<T, 3>& r)
 {
@@ -139,7 +148,12 @@ inline std::complex<T> sphericalHarmonic(const int l, const int m, const TinyVec
   return Ylm(l, m, unit);
 }
 
-// get cartesian derivatives of spherical Harmonics. This takes a arbitrary position vector (x,y,z) and returns (d/dx, d/dy, d/dz)Ylm
+/** get cartesian derivatives of spherical Harmonics. This takes a arbitrary position vector (x,y,z) and returns (d/dx, d/dy, d/dz)Ylm
+ * param[in] l angular momentum 
+ * param[in] m magnetic quantum number
+ * param[in] r position vector. This does not have to be normalized and is in the standard ordering [x,y,z]
+ * param[out] grad (d/dx, d/dy, d/dz) of Ylm
+ */
 template<typename T>
 inline void sphericalHarmonicGrad(const int l,
                                   const int m,
