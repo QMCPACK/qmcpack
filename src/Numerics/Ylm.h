@@ -139,5 +139,32 @@ inline std::complex<T> sphericalHarmonic(const int l, const int m, const TinyVec
   return Ylm(l, m, unit);
 }
 
+// get cartesian derivatives of spherical Harmonics. This takes a arbitrary position vector (x,y,z) and returns (d/dx, d/dy, d/dz)Ylm
+template<typename T>
+inline void sphericalHarmonicGrad(const int l,
+                                  const int m,
+                                  const TinyVector<T, 3>& r,
+                                  TinyVector<std::complex<T>, 3>& grad)
+{
+  TinyVector<T, 3> unit;
+  T norm  = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+  unit[0] = r[2] / norm;
+  unit[1] = r[0] / norm;
+  unit[2] = r[1] / norm;
+  std::complex<T> dth, dph;
+  derivYlmSpherical(l, m, unit, dth, dph, false);
+
+  T dth_dx = r[0] * r[2] / (norm * norm * std::sqrt(r[0] * r[0] + r[1] * r[1]));
+  T dph_dx = -r[1] / (r[0] * r[0] + r[1] * r[1]);
+  T dth_dy = r[1] * r[2] / (norm * norm * std::sqrt(r[0] * r[0] + r[1] * r[1]));
+  T dph_dy = r[0] / (r[0] * r[0] + r[1] * r[1]);
+  T dth_dz = -std::sqrt(r[0] * r[0] + r[1] * r[1]) / (norm * norm);
+  T dph_dz = 0;
+
+  grad[0] = dth * dth_dx + dph * dph_dx;
+  grad[1] = dth * dth_dy + dph * dph_dy;
+  grad[2] = dth * dth_dz + dph * dph_dz;
+}
+
 } // namespace qmcplusplus
 #endif
