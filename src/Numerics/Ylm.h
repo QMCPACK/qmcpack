@@ -80,6 +80,11 @@ inline T LegendrePlm(int l, int m, T x)
   }
 }
 
+/** calculates Ylm
+ * param[in] l angular momentum
+ * param[in] m magnetic quantum number
+ * param[in] r position vector. Note: This must be a unit vector and in the order [z,x,y] to be correct
+ */
 template<typename T>
 inline std::complex<T> Ylm(int l, int m, const TinyVector<T, 3>& r)
 {
@@ -125,6 +130,54 @@ inline void derivYlmSpherical(const int l,
     theta_deriv = std::conj(theta_deriv);
     phi_deriv   = std::conj(phi_deriv);
   }
+}
+
+/** wrapper for Ylm, which can take any normal position vector as an argument
+ * param[in] l angular momentum
+ * param[in] m magnetic quantum number
+ * param[in] r is a position vector. This does not have to be normalized and is in the standard ordering [x,y,z]
+ */
+template<typename T>
+inline std::complex<T> sphericalHarmonic(const int l, const int m, const TinyVector<T, 3>& r)
+{
+  TinyVector<T, 3> unit;
+  T norm  = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+  unit[0] = r[2] / norm;
+  unit[1] = r[0] / norm;
+  unit[2] = r[1] / norm;
+  return Ylm(l, m, unit);
+}
+
+/** get cartesian derivatives of spherical Harmonics. This takes a arbitrary position vector (x,y,z) and returns (d/dx, d/dy, d/dz)Ylm
+ * param[in] l angular momentum 
+ * param[in] m magnetic quantum number
+ * param[in] r position vector. This does not have to be normalized and is in the standard ordering [x,y,z]
+ * param[out] grad (d/dx, d/dy, d/dz) of Ylm
+ */
+template<typename T>
+inline void sphericalHarmonicGrad(const int l,
+                                  const int m,
+                                  const TinyVector<T, 3>& r,
+                                  TinyVector<std::complex<T>, 3>& grad)
+{
+  TinyVector<T, 3> unit;
+  T norm  = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+  unit[0] = r[2] / norm;
+  unit[1] = r[0] / norm;
+  unit[2] = r[1] / norm;
+  std::complex<T> dth, dph;
+  derivYlmSpherical(l, m, unit, dth, dph, false);
+
+  T dth_dx = r[0] * r[2] / (norm * norm * std::sqrt(r[0] * r[0] + r[1] * r[1]));
+  T dph_dx = -r[1] / (r[0] * r[0] + r[1] * r[1]);
+  T dth_dy = r[1] * r[2] / (norm * norm * std::sqrt(r[0] * r[0] + r[1] * r[1]));
+  T dph_dy = r[0] / (r[0] * r[0] + r[1] * r[1]);
+  T dth_dz = -std::sqrt(r[0] * r[0] + r[1] * r[1]) / (norm * norm);
+  T dph_dz = 0;
+
+  grad[0] = dth * dth_dx + dph * dph_dx;
+  grad[1] = dth * dth_dy + dph * dph_dy;
+  grad[2] = dth * dth_dz + dph * dph_dz;
 }
 
 } // namespace qmcplusplus
