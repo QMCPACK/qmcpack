@@ -33,11 +33,23 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (-CUDA) ]]
     then
-      echo "Set CUDACXX CMake environment variable to nvcc standard location"
-      export CUDACXX=/usr/local/cuda/bin/nvcc
-        
-      # Make current environment variables available to subsequent steps
-      echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+      
+      if [[ "${GH_JOBNAME}" =~ (-AFQMC-Offload-) ]]
+      then
+        echo "Set CUDACXX CMake environment variable to nvcc cuda 11.2 location due to a regression bug in 11.6"
+        export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
+
+        # Make current environment variables available to subsequent steps
+        echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
+
+      else
+        echo "Set CUDACXX CMake environment variable to nvcc standard location"
+        export CUDACXX=/usr/local/cuda/bin/nvcc
+
+        # Make current environment variables available to subsequent steps
+        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+      fi
+      
     fi 
 
     # Sanitizer
@@ -148,17 +160,16 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang14Dev-MPI-CUDA-AFQMC-Offload"*)
+      *"Clang14-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
-              "with llvm development commit bafb6f3e9cc7, need built-from-source OpenBLAS due to bug in rpm"
+              "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
-              # TODO: upgrade to llvm14 clang14 when available
-        export OMPI_CC=/opt/llvm/bafb6f3e9cc7/bin/clang
-        export OMPI_CXX=/opt/llvm/bafb6f3e9cc7/bin/clang++
+        export OMPI_CC=/opt/llvm/14.0.1/bin/clang
+        export OMPI_CXX=/opt/llvm/14.0.1/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/bafb6f3e9cc7/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/bafb6f3e9cc7/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -307,7 +318,12 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
     then
-       export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH}
+      if [[ "${GH_JOBNAME}" =~ (-AFQMC-Offload-) ]]
+      then
+        export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
+      else
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib:/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+      fi
     fi
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC) ]]
@@ -324,7 +340,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/bafb6f3e9cc7/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
