@@ -41,6 +41,7 @@ case "$1" in
         export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
 
         # Make current environment variables available to subsequent steps
+        echo "PATH=/usr/local/cuda-11.2/bin:$PATH" >> $GITHUB_ENV
         echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
 
       else
