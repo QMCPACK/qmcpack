@@ -14,8 +14,8 @@
  */
 #include <Configuration.h>
 #include <random/random.hpp>
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
-#include "QMCWaveFunctions/LCAO/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
+#include "Numerics/SoaCartesianTensor.h"
 #include "Numerics/SphericalTensor.h"
 #include "Numerics/CartesianTensor.h"
 #include <getopt.h>

@@ -16,8 +16,8 @@
 #include "SoaAtomicBasisSet.h"
 #include "MultiQuinticSpline1D.h"
 #include "MultiFunctorAdapter.h"
-#include "SoaCartesianTensor.h"
-#include "SoaSphericalTensor.h"
+#include "Numerics/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {

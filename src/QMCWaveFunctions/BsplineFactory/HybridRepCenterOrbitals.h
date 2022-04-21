@@ -19,7 +19,7 @@
 
 #include "Particle/DistanceTable.h"
 #include "Particle/VirtualParticleSet.h"
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
 #include "hdf/hdf_archive.h"

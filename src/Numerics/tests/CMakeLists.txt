@@ -32,6 +32,6 @@ set(UTEST_SRCS
 
 add_executable(${UTEST_EXE} ${UTEST_SRCS})
 
-target_link_libraries(${UTEST_EXE} catch_main containers qmcio qmcwfs)
+target_link_libraries(${UTEST_EXE} catch_main containers qmcio qmcnumerics)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
