@@ -41,7 +41,7 @@ case "$1" in
         export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
 
         # Make current environment variables available to subsequent steps
-        echo "PATH=/usr/local/cuda-11.2/bin:$PATH" >> $GITHUB_ENV
+        echo "PATH=$PATH" >> $GITHUB_ENV
         echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
 
       else
@@ -286,6 +286,12 @@ case "$1" in
 
   # Build using ninja (~ 25 minutes on GitHub-hosted runner)
   build)
+    # CUDA toolchain can be used implicitly by the compiler. Double check the location.
+    if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
+    then
+      which nvcc
+    fi
+
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja
     ;;
