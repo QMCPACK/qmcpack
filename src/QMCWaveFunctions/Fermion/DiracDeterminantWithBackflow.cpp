@@ -36,7 +36,6 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSe
 {
   Optimizable  = true;
   is_fermionic = true;
-  registerTimers();
   NumParticles = BFTrans_.QP.getTotalNum();
   NP           = 0;
   resize(NumPtcls, NumPtcls);

@@ -19,6 +19,7 @@
 #include "WaveFunctionFactory.h"
 #include "LCAO/LCAOrbitalSet.h"
 #include "TWFGrads.hpp"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -216,8 +217,19 @@ void test_LiH_msd(const std::string& spo_xml_string,
     displ[0] = {0.1, 0.2, 0.3};
     displ[1] = {-0.2, -0.3, 0.0};
 
+    // testing batched interfaces
+    ResourceCollection pset_res("test_pset_res");
+    ResourceCollection twf_res("test_twf_res");
+
+    elec_.createResource(pset_res);
+    twf.createResource(twf_res);
+
+    // testing batched interfaces
     RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
     RefVectorWithLeader<TrialWaveFunction> wf_ref_list(twf, {twf, *twf_clone});
+
+    ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+    ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
 
     ParticleSet::mw_update(p_ref_list);
     TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
@@ -229,6 +241,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
+
+    TrialWaveFunction::mw_prepareGroup(wf_ref_list, p_ref_list, 0);
 
     TWFGrads<CoordsType::POS> grad_old(2);
 
