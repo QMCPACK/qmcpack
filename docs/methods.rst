@@ -524,15 +524,17 @@ The input parameters are listed in the following table.
 
   parameters:
 
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | **Name**       | **Datatype** | **Values**  | **Default** | **Description**                                  |
-  +================+==============+=============+=============+==================================================+
-  | ``nonlocalpp`` | text         | yes, no     | no          | include non-local PP energy in the cost function |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``minwalkers`` | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``maxWeight``  | real         | :math:`> 1` | 1e6         | Maximum weight allowed in reweighting            |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | **Name**                 | **Datatype** | **Values**  | **Default** | **Description**                                  |
+  +==========================+==============+=============+=============+==================================================+
+  | ``nonlocalpp``           | text         | yes, no     | no          | include non-local PP energy in the cost function |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``use_nonlocalpp_deriv`` | text         | yes, no     | yes         | Add non-local PP energy derivative contribution  |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``minwalkers``           | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``maxWeight``            | real         | :math:`> 1` | 1e6         | Maximum weight allowed in reweighting            |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
 
 Additional information:
 
@@ -543,7 +545,7 @@ Additional information:
   contribution needs to be updated if the cost function consists of local
   energy. Fortunately, nonlocal contribution is chosen small when making a
   PP for small locality error. We can ignore its change and avoid the
-  expensive computational cost. An implementation issue with GPU code is
+  expensive computational cost. An implementation issue with legacy GPU code is
   that a large amount of memory is consumed with this option.
 
 - ``minwalkers`` This is a ``critical`` parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than ``minwalkers``,
