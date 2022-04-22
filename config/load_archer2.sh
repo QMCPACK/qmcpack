@@ -2,7 +2,11 @@
 echo "Loading QMCPACK dependency modules for archer2"
 echo "https://docs.archer2.ac.uk/"
 echo
-module swap PrgEnv-cray PrgEnv-gnu/8.1.0
+#module swap PrgEnv-cray PrgEnv-gnu
+module purge
+module load PrgEnv-gnu
+module load craype-network-ucx
+module load cray-mpich-ucx
 #module load openmpi/4.0.4
 #module load openblas/0.3.12
 #module load netlib-lapack
