@@ -1777,8 +1777,8 @@ for the creation of projectors in UPF can introduce severe errors and inaccuraci
 
 .. _buildqe:
 
-Installing Quantum ESPRESSO with pw2qmcpack
--------------------------------------------
+Installing Quantum ESPRESSO and pw2qmcpack
+------------------------------------------
 
 For trial wavefunctions obtained in a plane-wave basis, we mainly
 support QE. Note that ABINIT and QBox were supported historically
@@ -1840,8 +1840,12 @@ A HDF5 library installation with Fortran support is required.
 
 Quantum ESPRESSO (>7.0)
 ~~~~~~~~~~~~~~~~~~~~~~~
-There is no more need of patching QE. Users may use upstream QE. Full QE CMake documentation can be found at
+Due to incorporation of pw2qmcpack as a plugin, there is no longer any need to patch QE.
+Users may use upstream QE and activate the plugin by specifying ``-DQE_ENABLE_PLUGINS=pw2qmcpack`` at the CMake configure step.
+Full QE CMake documentation can be found at
 https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
+A HDF5 library installation with Fortran support is required.
+
   ::
 
     mkdir build_mpi
@@ -1849,9 +1853,9 @@ https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
     cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
     make -j 16
 
-Post QE installation
-~~~~~~~~~~~~~~~~~~~~
-Testing QE to QMCPACK workflow after building QE and QMCPACK is highly recommended.
+Testing QE after installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Testing the QE to QMCPACK workflow after building QE and QMCPACK is highly recommended.
 See :ref:`integtestqe` and the testing section for more details.
 
 .. _buildperformance:
