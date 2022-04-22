@@ -63,13 +63,20 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
   {
     if (ref.getLattice().ndim == 2)
     {
+      if (this_lr_type == STRICT2D)
+      {
       app_log() << "\n  Creating CoulombHandler with the 2D Ewald Breakup. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandler2D>(ref);
-    }
-    else if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
-    {
+      }
+      else if (this_lr_type == QUASI2D)
+      {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
+      }
+      else
+      {
+        APP_ABORT("\n  2D Long range breakup method not recognized.\n");
+      }
     }
     else //if(ref.getLRBox().SuperCellEnum == SUPERCELL_BULK)
     {
