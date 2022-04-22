@@ -664,7 +664,7 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV = false)
   using TMat     = boost::multi::array<Type, 2>;
   using eigSys   = std::pair<TVec, TMat>;
   assert(A.size(0) == A.size(1));
-  size_t N = A.size(0);
+  typename MultiArray2D::size_type N = A.size(0);
 
   MultiArray2D ExpA({N, N});
   std::fill_n(pointer_dispatch(ExpA.origin()), N * N, Type(0));

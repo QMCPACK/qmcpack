@@ -34,7 +34,7 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
-  W.create(1);
+  W.create({1});
   W.createWalkers(1);
 
   (*W.begin())->Properties(WP::LOCALENERGY) = 1.1;
@@ -56,7 +56,7 @@ TEST_CASE("LocalEnergy", "[estimators]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
-  W.create(1);
+  W.create({1});
   W.createWalkers(1);
 
   (*W.begin())->Properties(WP::LOCALENERGY)    = 1.1;
@@ -81,7 +81,7 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   const SimulationCell simulation_cell;
   MCWalkerConfiguration W(simulation_cell);
   W.setName("electrons");
-  W.create(1);
+  W.create({1});
   W.createWalkers(1);
 
   (*W.begin())->Properties(WP::LOCALENERGY)    = 1.1;

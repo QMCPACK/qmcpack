@@ -29,12 +29,8 @@ SkEstimator::SkEstimator(ParticleSet& source)
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
   Kshell     = source.getSimulationCell().getKLists().kshell;
   MaxKshell  = Kshell.size() - 1;
-#if defined(USE_REAL_STRUCT_FACTOR)
   RhokTot_r.resize(NumK);
   RhokTot_i.resize(NumK);
-#else
-  RhokTot.resize(NumK);
-#endif
   values.resize(NumK);
   Kmag.resize(MaxKshell);
   OneOverDnk.resize(MaxKshell);
@@ -50,7 +46,6 @@ void SkEstimator::resetTargetParticleSet(ParticleSet& P) { sourcePtcl = &P; }
 
 SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
 {
-#if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
   std::copy(P.getSK().rhok_r[0], P.getSK().rhok_r[0] + NumK, RhokTot_r.begin());
   std::copy(P.getSK().rhok_i[0], P.getSK().rhok_i[0] + NumK, RhokTot_i.begin());
@@ -72,24 +67,6 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
     for (int i = 0; iit_r != iit_r_end; ++iit_r, ++iit_i, ++i)
       values[i] = OneOverN * ((*iit_r) * (*iit_r) + (*iit_i) * (*iit_i));
   }
-#else
-  //sum over species
-  std::copy(P.getSK().rhok[0], P.getSK().rhok[0] + NumK, RhokTot.begin());
-  for (int i = 1; i < NumSpecies; ++i)
-    accumulate_elements(P.getSK().rhok[i], P.getSK().rhok[i] + NumK, RhokTot.begin());
-  if (hdf5_out)
-  {
-    Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
-    for (int i = my_index_; iit != iit_end; ++iit, ++i)
-      P.Collectables[i] += OneOverN * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
-  }
-  else
-  {
-    Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
-    for (int i = 0; iit != iit_end; ++iit, ++i)
-      values[i] = OneOverN * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
-  }
-#endif
   return 0.0;
 }
 

@@ -18,7 +18,7 @@
 #include "OhmmsPETE/Tensor.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 #include "Particle/DistanceTable.h"
 #include <ResourceCollection.h>
 #include "MinimalParticlePool.h"
@@ -77,10 +77,10 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -171,10 +171,10 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -262,10 +262,10 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   ParticleSet ions(simulation_cell), electrons(simulation_cell);
 
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -397,10 +397,10 @@ void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 
   // read particle set
   XMLParticleParser parse_electrons(electrons);
-  parse_electrons.put(part1);
+  parse_electrons.readXML(part1);
 
   XMLParticleParser parse_ions(ions);
-  parse_ions.put(part2);
+  parse_ions.readXML(part2);
 
   REQUIRE(electrons.getName() == "e");
   REQUIRE(ions.getName() == "ion0");
@@ -541,7 +541,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 
   // calculate particle distances
   ions.update();
-  const int ee_tid = electrons.addTable(electrons);
+  const int ee_tid = electrons.addTable(electrons, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP);
   // get target particle set's distance table data
   const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
   CHECK(ee_dtable.getName() == "e_e");
@@ -579,9 +579,7 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
 TEST_CASE("distance_pbc_z batched APIs", "[distance_table][xml]")
 {
   test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS);
-#if defined(ENABLE_OFFLOAD)
   test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS_OFFLOAD);
-#endif
 }
 
 void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind test_kind)
@@ -649,9 +647,7 @@ void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinat
 TEST_CASE("distance_pbc_z batched APIs ee NEED_TEMP_DATA_ON_HOST", "[distance_table][xml]")
 {
   test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS);
-#if defined(ENABLE_OFFLOAD)
   test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind::DC_POS_OFFLOAD);
-#endif
 }
 
 TEST_CASE("test_distance_pbc_diamond", "[distance_table][xml]")

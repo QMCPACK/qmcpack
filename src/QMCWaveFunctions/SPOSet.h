@@ -96,9 +96,6 @@ public:
   */
   inline bool hasIonDerivs() const { return ionDerivs; }
 
-  /// return the size of the basis set if there is any
-  virtual int getBasisSetSize() const { return 0; }
-
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
 
@@ -242,6 +239,17 @@ public:
                                 GradVector& dpsi,
                                 ValueVector& d2psi,
                                 ValueVector& dspin);
+
+  /** evaluate the values this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v_list the list of value vector pointers in a walker batch
+   */
+  virtual void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                const RefVector<ValueVector>& psi_v_list) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
@@ -447,6 +455,21 @@ public:
                                   GradMatrix& grad_phi,
                                   HessMatrix& grad_grad_phi,
                                   GradMatrix& grad_lapl_phi);
+
+  /** @brief Returns a row of d/dR_iat phi_j(r) evaluated at position r.  
+   *
+   *  @param[in] P particle set.
+   *  @param[in] iel The electron at which to evaluate phi(r_iel)
+   *  @param[in] source ion particle set.
+   *  @param[in] iat_src ion ID w.r.t. which to take derivative.
+   *  @param[in,out] gradphi Vector of d/dR_iat phi_j(r).
+   *  @return Void
+   */
+  virtual void evaluateGradSourceRow(const ParticleSet& P,
+                                     int iel,
+                                     const ParticleSet& source,
+                                     int iat_src,
+                                     GradVector& gradphi);
 
   /** access the k point related to the given orbital */
   virtual PosType get_k(int orb) { return PosType(); }

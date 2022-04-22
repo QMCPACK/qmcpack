@@ -30,7 +30,7 @@ struct SoaDistanceTableAA : public DTD_BConds<T, D, SC>, public DistanceTableAA
 
   SoaDistanceTableAA(ParticleSet& target)
       : DTD_BConds<T, D, SC>(target.getLattice()),
-        DistanceTableAA(target, DTModes::NEED_TEMP_DATA_ON_HOST),
+        DistanceTableAA(target, DTModes::ALL_OFF),
         num_targets_padded_(getAlignedSize<T>(num_targets_)),
 #if !defined(NDEBUG)
         old_prepared_elec_id_(-1),

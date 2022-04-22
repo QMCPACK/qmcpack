@@ -69,16 +69,13 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 
   // Need 1 electron and 1 proton, somehow
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = 2;
-  ud[1] = 0;
-  elec_.create(ud);
+  elec_.create({2,0});
   elec_.R[0][0] = -0.28;
   elec_.R[0][1] = 0.0225;
   elec_.R[0][2] = -2.709;
@@ -137,7 +134,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   ions_.setName("ion0");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int HIdx                   = ispecies.addSpecies("H");
@@ -185,9 +182,9 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(jas1);
-  auto& twf(*wf_factory.getTWF());
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);

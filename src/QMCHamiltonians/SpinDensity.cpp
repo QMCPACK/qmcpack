@@ -23,11 +23,8 @@ SpinDensity::SpinDensity(ParticleSet& P)
   // get particle information
   SpeciesSet& species = P.getSpeciesSet();
   nspecies            = species.size();
-  int isize           = species.addAttribute("membersize");
-  if (isize == species.numAttributes())
-    APP_ABORT("SpinDensity(P)  Species set does not have the required attribute 'membersize'");
   for (int s = 0; s < nspecies; ++s)
-    species_size.push_back(species(isize, s));
+    species_size.push_back(P.groupsize(s));
   for (int s = 0; s < nspecies; ++s)
     species_name.push_back(species.speciesName[s]);
   reset();

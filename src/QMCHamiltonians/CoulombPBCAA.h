@@ -20,9 +20,14 @@
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "Particle/DistanceTable.h"
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
+
+template<class T>
+class OneDimCubicSplineLinearGrid;
+
 /** @ingroup hamiltonian
  *\brief Calculates the AA Coulomb potential using PBCs
  *
@@ -35,11 +40,14 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   using GridType       = LRCoulombSingleton::GridType;
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
+  using OffloadSpline  = OneDimCubicSplineLinearGrid<LRCoulombSingleton::pRealType>;
 
   /// energy-optimized long range handle. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AA;
   /// energy-optimized short range pair potential
   std::shared_ptr<const RadFunctorType> rVs;
+  /// the same as rVs but can be used inside OpenMP offload regions
+  std::shared_ptr<const OffloadSpline> rVs_offload;
   /// force-optimized long range handle
   std::shared_ptr<const LRHandlerType> dAA;
   /// force-optimized short range pair potential
@@ -55,7 +63,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
   Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
+
   std::vector<RealType> Zat, Zspec;
+  std::shared_ptr<Vector<RealType, OffloadPinnedAllocator<RealType>>> Zat_offload;
+
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
 
@@ -76,13 +87,17 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
 
   /** constructor */
-  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces = false);
+  CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bool use_offload);
 
   ~CoulombPBCAA() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
+
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
@@ -112,6 +127,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 #endif
 
   Return_t evalSR(ParticleSet& P);
+
+  static std::vector<Return_t> mw_evalSR_offload(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list);
+
   Return_t evalLR(ParticleSet& P);
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
@@ -133,13 +152,41 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
       setParticleSetF(plist, offset);
   }
 
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
 private:
-  // AA table ID
+  /// if true use offload
+  const bool use_offload_;
+  /// AA table ID
   const int d_aa_ID;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalLR_timer_;
-  // Timer for long range
+  /// Timer for long range
   NewTimer& evalSR_timer_;
+  /// Timer for offload part
+  NewTimer& offload_timer_;
+
+struct CoulombPBCAAMultiWalkerResource : public Resource
+{
+  CoulombPBCAAMultiWalkerResource() : Resource("CoulombPBCAA") {}
+
+  Resource* makeClone() const override { return new CoulombPBCAAMultiWalkerResource(*this); }
+
+  Vector<CoulombPBCAA::Return_t, OffloadPinnedAllocator<CoulombPBCAA::Return_t>> values_offload;
+};
+
+  /// multiwalker shared resource
+  ResourceHandle<CoulombPBCAAMultiWalkerResource> mw_res_;
 };
 
 } // namespace qmcplusplus

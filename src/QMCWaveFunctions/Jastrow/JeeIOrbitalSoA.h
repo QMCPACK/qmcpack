@@ -129,14 +129,26 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
     }
   }
 
+  /// compute G and L from internally stored data
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const
+  {
+    for (int iat = 0; iat < Nelec; ++iat)
+    {
+      G[iat] += dUat[iat];
+      L[iat] += d2Uat[iat];
+    }
+    return -0.5 * simd::accumulate_n(Uat.data(), Nelec, QTFull::RealType());
+  }
+
+
 public:
   ///alias FuncType
   using FuncType = FT;
 
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
-        ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST)),
-        ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)),
+        ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+        ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Ions(ions)
   {
     if (myName.empty())
@@ -396,7 +408,8 @@ public:
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override
   {
-    return evaluateGL(P, G, L, true);
+    recompute(P);
+    return log_value_ = computeGL(G, L);
   }
 
   PsiValueType ratio(ParticleSet& P, int iat) override
@@ -821,7 +834,7 @@ public:
 
   inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
-    evaluateGL(P, P.G, P.L, false);
+    log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);
     return log_value_;
   }
@@ -839,17 +852,7 @@ public:
                           ParticleSet::ParticleLaplacian& L,
                           bool fromscratch = false) override
   {
-    if (fromscratch)
-      recompute(P);
-    log_value_ = valT(0);
-    for (int iat = 0; iat < Nelec; ++iat)
-    {
-      log_value_ += Uat[iat];
-      G[iat] += dUat[iat];
-      L[iat] += d2Uat[iat];
-    }
-
-    return log_value_ = -log_value_ * 0.5;
+    return log_value_ = computeGL(G, L);
   }
 
   void evaluateDerivatives(ParticleSet& P,

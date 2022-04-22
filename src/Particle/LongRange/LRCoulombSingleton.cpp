@@ -20,12 +20,8 @@
 #include "LRCoulombSingleton.h"
 #include "LongRange/LRHandlerTemp.h"
 #include "LongRange/LRHandlerSRCoulomb.h"
-#if OHMMS_DIM == 3
-#include "LongRange/EwaldHandler.h"
+#include "LongRange/EwaldHandlerQuasi2D.h"
 #include "LongRange/EwaldHandler3D.h"
-#elif OHMMS_DIM == 2
-#include "LongRange/TwoDEwaldHandler.h"
-#endif
 #include <numeric>
 namespace qmcplusplus
 {
@@ -41,7 +37,6 @@ LRCoulombSingleton::lr_type LRCoulombSingleton::this_lr_type = ESLER;
  * - Fk(T k, T rc)
  * - Xk(T k, T rc)
  */
-#if OHMMS_DIM == 3
 template<class T = double>
 struct CoulombFunctor
 {
@@ -60,34 +55,15 @@ struct CoulombFunctor
 
   inline T integrate_r2(T r) const { return 0.5 * r * r; }
 };
-#elif OHMMS_DIM == 2
-template<class T = double>
-struct CoulombFunctor
-{
-  T NormFactor;
-  inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.getLRBox().Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.getLRBox().Volume; }
-  inline T operator()(T r, T rinv) const { return rinv; }
-  inline T df(T r) const { return -1.0 / (r * r); }
-  inline T Fk(T k, T rc) const { return NormFactor / k * std::cos(k * rc); }
-  inline T Xk(T k, T rc) const { return -NormFactor / k * std::cos(k * rc); }
-
-
-  inline T integrate_r2(T r) const { return 0.5 * r * r; }
-};
-#endif
-
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandler(ParticleSet& ref)
 {
   if (CoulombHandler == 0)
   {
-#if OHMMS_DIM == 3
     if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-      CoulombHandler = std::make_unique<EwaldHandler>(ref);
+      CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
     }
     else //if(ref.getLRBox().SuperCellEnum == SUPERCELL_BULK)
     {
@@ -114,12 +90,8 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 //        else if(ref.getLRBox().SuperCellEnum == SUPERCELL_SLAB)
 //        {
 //          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-//          CoulombHandler= new EwaldHandler(ref);
+//          CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
 //        }
-#elif OHMMS_DIM == 2
-    app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << std::endl;
-    CoulombHandler = std::make_unique<TwoDEwaldHandler>(ref);
-#endif
     CoulombHandler->initBreakup(ref);
     return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }
@@ -132,9 +104,6 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
-#if OHMMS_DIM != 3
-  APP_ABORT("energy derivative implemented for 3D only");
-#endif
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if (CoulombDerivHandler == 0)
   {

@@ -51,7 +51,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
-  ions_.create(4);
+  ions_.create({4});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -68,7 +68,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create(2);
+  elec_.create({2});
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -87,12 +87,10 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
-  REQUIRE(spo_ptr);
-  std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
+  std::unique_ptr<SPOSet> spo(twf_ptr->getSPOSet("spo").makeClone());
 
   // for vgl
   SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());

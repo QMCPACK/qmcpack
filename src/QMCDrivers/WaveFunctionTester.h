@@ -89,7 +89,6 @@ private:
   void runDerivCloneTest();
   void runGradSourceTest();
   void runZeroVarianceTest();
-  void runwftricks();
   void runNodePlot();
   void printEloc();
 

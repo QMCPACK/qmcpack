@@ -211,7 +211,7 @@ void DiracParser::parse(const std::string& fname)
     abort();
   }
 
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   getGeometry(fin);
   getGaussianCenters(fin);

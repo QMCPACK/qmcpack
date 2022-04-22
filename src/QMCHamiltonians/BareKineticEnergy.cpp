@@ -20,6 +20,7 @@
 #include "BareKineticHelper.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
@@ -246,6 +247,160 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
   return value_;
 }
 
+void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                const TWFFastDerivWrapper& psi,
+                                                std::vector<ValueMatrix>& B)
+{
+  ParticleSet::ParticleGradient G;
+  ParticleSet::ParticleLaplacian L;
+
+  const IndexType nelec = P.getTotalNum();
+  G.resize(nelec);
+  L.resize(nelec);
+
+  const IndexType ngroups = P.groups();
+  assert(B.size() == ngroups);
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+  std::vector<ValueMatrix> gradJdotgradPhi;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
+    gradJdotgradPhi.push_back(zeromat);
+  }
+
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.evaluateJastrowVGL(P, G, L);
+
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    for (int iel = first; iel < last; iel++)
+    {
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        gradJdotgradPhi[sid][iel - first][iorb] = RealType(2.0) * dot(GradType(G[iel]), grad_M[sid][iel - first][iorb]);
+        B[sid][iel - first][iorb] += RealType(MinusOver2M[ig]) *
+            (lapl_M[sid][iel - first][iorb] + gradJdotgradPhi[sid][iel - first][iorb] +
+             ValueType(L[iel] + dot(G[iel], G[iel])) * M[sid][iel - first][iorb]);
+      }
+    }
+  }
+}
+
+void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                          ParticleSet& source,
+                                                          const TWFFastDerivWrapper& psi,
+                                                          const int iat,
+                                                          std::vector<std::vector<ValueMatrix>>& Bforce)
+{
+  const IndexType ngroups = P.groups();
+  const IndexType nelec   = P.getTotalNum();
+
+  ParticleSet::ParticleGradient Gtmp, G;
+  ParticleSet::ParticleLaplacian Ltmp, L;
+  Gtmp.resize(nelec);
+  G.resize(nelec);
+  Ltmp.resize(nelec);
+  L.resize(nelec);
+
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> dG;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> dL;
+
+  for (int dim = 0; dim < OHMMS_DIM; dim++)
+  {
+    dG[dim] = Gtmp;
+    dL[dim] = Ltmp;
+  }
+
+  assert(Bforce.size() == OHMMS_DIM);
+  assert(Bforce[0].size() == ngroups);
+  std::vector<ValueMatrix> mtmp;
+  for (int ig = 0; ig < ngroups; ig++)
+  {
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+
+    ValueMatrix zeromat;
+    GradMatrix zerogradmat;
+
+    zeromat.resize(nptcls, norbs);
+    zerogradmat.resize(nptcls, norbs);
+
+    mtmp.push_back(zeromat);
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
+  }
+
+
+  std::vector<std::vector<ValueMatrix>> dm, dlapl;
+  std::vector<std::vector<GradMatrix>> dgmat;
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+  dm.push_back(mtmp);
+
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+  dlapl.push_back(mtmp);
+
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.getIonGradIonGradELaplM(P, source, iat, dm, dgmat, dlapl);
+  psi.evaluateJastrowVGL(P, G, L);
+  psi.evaluateJastrowGradSource(P, source, iat, dG, dL);
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int ig = 0; ig < ngroups; ig++)
+    {
+      const IndexType sid    = psi.getTWFGroupIndex(ig);
+      const IndexType norbs  = psi.numOrbitals(sid);
+      const IndexType first  = P.first(ig);
+      const IndexType last   = P.last(ig);
+      const IndexType nptcls = last - first;
+
+      for (int iel = first; iel < last; iel++)
+      {
+        for (int iorb = 0; iorb < norbs; iorb++)
+        {
+          Bforce[idim][sid][iel - first][iorb] = RealType(MinusOver2M[ig]) *
+              (dlapl[idim][sid][iel - first][iorb] +
+               RealType(2.0) *
+                   (dot(GradType(G[iel]), dgmat[idim][sid][iel - first][iorb]) +
+                    dot(GradType(dG[idim][iel]), grad_M[sid][iel - first][iorb])) +
+               M[sid][iel - first][iorb] * ValueType(dL[idim][iel] + 2.0 * dot(dG[idim][iel], G[iel])) +
+               ValueType(L[iel] + dot(G[iel], G[iel])) * dm[idim][sid][iel - first][iorb]);
+        }
+      }
+    }
+}
 
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)

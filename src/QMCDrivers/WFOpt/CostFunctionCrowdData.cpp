@@ -21,7 +21,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              QMCHamiltonian& H,
                                              std::vector<std::string>& H_KE_node_names,
                                              RandomGenerator& Rng)
-    : e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
+    : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
   P.createResource(driverwalker_resource_collection_.pset_res);
   Psi.createResource(driverwalker_resource_collection_.twf_res);
@@ -42,6 +42,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
   QMCHamiltonian H_KE;
   for (const std::string& node_name : H_KE_node_names)
     H_KE.addOperator(H.getHamiltonian(node_name)->makeClone(P, Psi), node_name);
+  H_KE.createResource(h0_res_);
 
   for (int ib = 0; ib < crowd_size; ib++)
   {

@@ -83,6 +83,17 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
+void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+#pragma omp parallel for
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
+}
+
 void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVectorWithLeader<ParticleSet>& P_list,
                                     int iat,
@@ -225,6 +236,15 @@ void SPOSet::evaluateGradSource(const ParticleSet& P,
                                 GradMatrix& grad_lapl_phi)
 {
   throw std::runtime_error("SPOSetBase::evalGradSource is not implemented");
+}
+
+void SPOSet::evaluateGradSourceRow(const ParticleSet& P,
+                                   int iel,
+                                   const ParticleSet& source,
+                                   int iat_src,
+                                   GradVector& gradphi)
+{
+  throw std::runtime_error("SPOSetBase::evalGradSourceRow is not implemented");
 }
 
 void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)

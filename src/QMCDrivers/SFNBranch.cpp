@@ -106,7 +106,7 @@ int SFNBranch::initParam(const MCPopulation& population,
   vParam[SBVP::SIGMA2] = var;
   vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
   /// FIXME, magic number 50
-  setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 50, population.get_num_particles());
+  setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 50, population.get_golden_electrons()->getTotalNum());
 
   int nwtot_now = population.get_num_global_walkers();
   if (iParam[B_TARGETWALKERS] == 0)

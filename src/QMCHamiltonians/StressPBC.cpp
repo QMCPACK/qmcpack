@@ -58,9 +58,7 @@ void StressPBC::initBreakup(ParticleSet& P)
   SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
   int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-  int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
   int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-  int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
   NptclA                = PtclA.getTotalNum();
   NptclB                = P.getTotalNum();
   NumSpeciesA           = tspeciesA.TotalNum;
@@ -75,12 +73,12 @@ void StressPBC::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
     Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
-    NofSpeciesA[spec] = static_cast<int>(tspeciesA(MemberAttribIndxA, spec));
+    NofSpeciesA[spec] = PtclA.groupsize(spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
     Qspec[spec]       = tspeciesB(ChargeAttribIndxB, spec);
-    NofSpeciesB[spec] = static_cast<int>(tspeciesB(MemberAttribIndxB, spec));
+    NofSpeciesB[spec] = P.groupsize(spec);
   }
 
   for (int spec = 0; spec < NumSpeciesA; spec++) {}
@@ -103,16 +101,9 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AB(ParticleSet& 
     SymTensor<RealType, OHMMS_DIM> esum;
     esum = 0.0;
     for (int j = 0; j < NumSpeciesB; j++)
-    {
-#if defined(USE_REAL_STRUCT_FACTOR)
       esum += Qspec[j] *
           AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j],
                              RhoKB.rhok_i[j]);
-#else
-      esum += Qspec[j] * AA->evaluateStress(P.getSimulationCell().getKLists().kshell, RhoKA.rhok[i], RhoKB.rhok[j]);
-
-#endif
-    }
     res += Zspec[i] * esum;
   }
 
@@ -163,7 +154,6 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
   SymTensor<RealType, OHMMS_DIM> stress_aa;
   const StructFact& PtclRhoK(P.getSK());
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
-  int MemberAttribIndx = P.getSpeciesSet().getAttribute("membersize");
 
   std::vector<int> NofSpecies;
   std::vector<int> Zmyspec;
@@ -173,7 +163,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zmyspec[spec]    = P.getSpeciesSet()(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(P.getSpeciesSet()(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
 
   SymTensor<RealType, OHMMS_DIM> temp;
@@ -182,19 +172,14 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evaluateLR_AA(ParticleSet& 
     RealType Z1 = Zmyspec[spec1];
     for (int spec2 = spec1; spec2 < NumSpecies; spec2++)
     {
-#if !defined(USE_REAL_STRUCT_FACTOR)
-      SymTensor<RealType, OHMMS_DIM> temp =
-          AA->evaluateStress(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok[spec1], PtclRhoK.rhok[spec2]);
-#else
       SymTensor<RealType, OHMMS_DIM> temp =
           AA->evaluateStress(P.getSimulationCell().getKLists().kshell, PtclRhoK.rhok_r[spec1], PtclRhoK.rhok_i[spec1],
                              PtclRhoK.rhok_r[spec2], PtclRhoK.rhok_i[spec2]);
-#endif
       if (spec2 == spec1)
         temp *= 0.5;
       stress_aa += Z1 * Zmyspec[spec2] * temp;
     } //spec2
-  }   //spec1
+  } //spec1
 
   return stress_aa;
 }
@@ -236,7 +221,6 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   RealType v1; //single particle energy
 
   int ChargeAttribIndx = P.getSpeciesSet().getAttribute("charge");
-  int MemberAttribIndx = P.getSpeciesSet().getAttribute("membersize");
 
   std::vector<int> NofSpecies;
   std::vector<int> Zmyspec;
@@ -246,7 +230,7 @@ SymTensor<StressPBC::RealType, OHMMS_DIM> StressPBC::evalConsts_AA(ParticleSet& 
   for (int spec = 0; spec < NumSpecies; spec++)
   {
     Zmyspec[spec]    = P.getSpeciesSet()(ChargeAttribIndx, spec);
-    NofSpecies[spec] = static_cast<int>(P.getSpeciesSet()(MemberAttribIndx, spec));
+    NofSpecies[spec] = P.groupsize(spec);
   }
 
   SymTensor<RealType, OHMMS_DIM> vl_r0 = AA->evaluateLR_r0_dstrain();

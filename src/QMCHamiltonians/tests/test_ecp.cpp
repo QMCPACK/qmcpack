@@ -43,16 +43,6 @@ namespace qmcplusplus
 {
 QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
 
-TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
-{
-  // Use the built-in quadrature rule check
-  for (int quadrature_index = 1; quadrature_index < 8; quadrature_index++)
-  {
-    Quadrature3D<QMCTraits::RealType> myRule(quadrature_index, false);
-    REQUIRE(myRule.quad_ok);
-  }
-}
-
 TEST_CASE("ReadFileBuffer_no_file", "[hamiltonian]")
 {
   ReadFileBuffer buf(NULL);
@@ -184,7 +174,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -298,8 +288,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   double logpsi = psi.evaluateLog(elec);
   REQUIRE(logpsi == Approx(5.1497823982));
 
-  auto test_evaluateOne = [&]()
-  {
+  auto test_evaluateOne = [&]() {
     double Value1(0.0);
     //Using SoA distance tables, hence the guard.
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
@@ -329,8 +318,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
-  auto test_evaluateValueAndDerivatives = [&]()
-  {
+  auto test_evaluateValueAndDerivatives = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
@@ -469,7 +457,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ParticleSet& elec(*elec_uptr);
 
   ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -485,7 +473,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   elec.setName("e");
-  elec.create(1);
+  elec.create({1});
   elec.R[0][0]  = 0.138;
   elec.R[0][1]  = -0.24;
   elec.R[0][2]  = 0.216;

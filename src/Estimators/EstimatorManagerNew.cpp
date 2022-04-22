@@ -333,7 +333,6 @@ EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std:
 bool EstimatorManagerNew::put(QMCHamiltonian& H,
                               const ParticleSet& pset,
                               const TrialWaveFunction& twf,
-                              const WaveFunctionFactory& wf_factory,
                               xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
@@ -390,8 +389,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
       }
       else if (est_type == "MomentumDistribution")
       {
-        MomentumDistributionInput mdi;
-        mdi.readXML(cur);
+        MomentumDistributionInput mdi(cur);
         DataLocality dl = DataLocality::crowd;
         operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
                                                                            pset.getTwist(), pset.getLattice(), dl));
@@ -402,7 +400,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
         operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
-                                                                             pset.getSpeciesSet(), wf_factory,
+                                                                             pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
       }
       else

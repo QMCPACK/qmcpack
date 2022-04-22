@@ -11,11 +11,11 @@
 
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "Numerics/DeterminantOperators.h"
+#include "type_traits/ConvertToReal.h"
 #include <iostream>
 namespace qmcplusplus
 {
-
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid)
+TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getTWFGroupIndex(const IndexType gid) const
 {
   IndexType return_group_index(-1);
   for (IndexType i = 0; i < groups_.size(); i++)
@@ -36,7 +36,7 @@ void TWFFastDerivWrapper::addGroup(const ParticleSet& P, const IndexType gid, SP
   }
 }
 
-void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& mvec)
+void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& mvec) const
 {
   IndexType ngroups = spos_.size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -54,10 +54,84 @@ void TWFFastDerivWrapper::getM(const ParticleSet& P, std::vector<ValueMatrix>& m
   }
 }
 
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowVGL(const ParticleSet& P,
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L) const
+{
+  WaveFunctionComponent::LogValueType logpsi = 0.0;
+  G                                          = 0.0;
+  L                                          = 0.0;
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    logpsi += jastrow_list_[i]->evaluateLog(P, G, L);
+  }
+  RealType rval = std::real(logpsi);
+  return rval;
+}
+
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(ParticleSet& P, const int iel) const
+{
+  //legacy calls are hit and miss with const.  Remove const for index.
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0);
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    r *= jastrow_list_[i]->ratio(P, iel_);
+  }
+
+  RealType ratio_return(1.0);
+  convertToReal(r, ratio_return);
+  return ratio_return;
+}
+
+TWFFastDerivWrapper::RealType TWFFastDerivWrapper::calcJastrowRatioGrad(ParticleSet& P,
+                                                                        const int iel,
+                                                                        GradType& grad) const
+{
+  int iel_(iel);
+  WaveFunctionComponent::PsiValueType r(1.0);
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+  {
+    r *= jastrow_list_[i]->ratioGrad(P, iel_, grad);
+  }
+  RealType ratio_return(1.0);
+  convertToReal(r, ratio_return);
+  return ratio_return;
+}
+
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(ParticleSet& P,
+                                                                             ParticleSet& source,
+                                                                             const int iat) const
+{
+  GradType grad_iat = GradType();
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat);
+  return grad_iat;
+}
+
+TWFFastDerivWrapper::GradType TWFFastDerivWrapper::evaluateJastrowGradSource(
+    ParticleSet& P,
+    ParticleSet& source,
+    const int iat,
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) const
+{
+  GradType grad_iat = GradType();
+  for (int dim = 0; dim < OHMMS_DIM; dim++)
+    for (int i = 0; i < grad_grad[0].size(); i++)
+    {
+      grad_grad[dim][i] = GradType();
+      lapl_grad[dim][i] = 0.0;
+    }
+  for (int i = 0; i < jastrow_list_.size(); ++i)
+    grad_iat += jastrow_list_[i]->evalGradSource(P, source, iat, grad_grad, lapl_grad);
+  return grad_iat;
+}
+
 void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
                                          std::vector<ValueMatrix>& mvec,
                                          std::vector<GradMatrix>& gmat,
-                                         std::vector<ValueMatrix>& lmat)
+                                         std::vector<ValueMatrix>& lmat) const
 {
   IndexType ngroups = mvec.size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -74,7 +148,7 @@ void TWFFastDerivWrapper::getEGradELaplM(const ParticleSet& P,
 void TWFFastDerivWrapper::getIonGradM(const ParticleSet& P,
                                       const ParticleSet& source,
                                       const int iat,
-                                      std::vector<std::vector<ValueMatrix>>& dmvec)
+                                      std::vector<std::vector<ValueMatrix>>& dmvec) const
 {
   IndexType ngroups = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -104,7 +178,8 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
                                                   const ParticleSet& source,
                                                   int iat,
                                                   std::vector<std::vector<ValueMatrix>>& dmvec,
-                                                  std::vector<std::vector<ValueMatrix>>& dlmat)
+                                                  std::vector<std::vector<GradMatrix>>& dgmat,
+                                                  std::vector<std::vector<ValueMatrix>>& dlmat) const
 {
   IndexType ngroups = dmvec[0].size();
   for (IndexType i = 0; i < ngroups; i++)
@@ -131,6 +206,8 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
         {
           dmvec[idim][i][iptcl][iorb] += grad_phi[iptcl][iorb][idim];
           dlmat[idim][i][iptcl][iorb] += grad_lapl_phi[iptcl][iorb][idim];
+          for (IndexType ielec = 0; ielec < OHMMS_DIM; ielec++)
+            dgmat[idim][i][iptcl][iorb][ielec] += grad_grad_phi[iptcl][iorb](idim, ielec);
         }
   }
 }
@@ -138,7 +215,7 @@ void TWFFastDerivWrapper::getIonGradIonGradELaplM(const ParticleSet& P,
 TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::computeGSDerivative(const std::vector<ValueMatrix>& Minv,
                                                                         const std::vector<ValueMatrix>& X,
                                                                         const std::vector<ValueMatrix>& dM,
-                                                                        const std::vector<ValueMatrix>& dB)
+                                                                        const std::vector<ValueMatrix>& dB) const
 {
   IndexType nspecies = Minv.size();
   ValueType dval     = 0.0;
@@ -229,7 +306,7 @@ TWFFastDerivWrapper::ValueType TWFFastDerivWrapper::trAB(const std::vector<Value
   return val;
 }
 
-void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice)
+void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::vector<ValueMatrix>& Aslice) const
 {
   IndexType nspecies = A.size();
   Aslice.resize(nspecies);
@@ -244,7 +321,9 @@ void TWFFastDerivWrapper::getGSMatrices(const std::vector<ValueMatrix>& A, std::
 }
 
 
-TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P, const IndexType iel, ValueVector& val)
+TWFFastDerivWrapper::IndexType TWFFastDerivWrapper::getRowM(const ParticleSet& P,
+                                                            const IndexType iel,
+                                                            ValueVector& val) const
 {
   IndexType gid = P.getGroupID(iel);
   IndexType sid = getTWFGroupIndex(gid);

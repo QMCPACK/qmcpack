@@ -31,6 +31,7 @@
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "type_traits/template_types.hpp"
 #include "SimulationCell.h"
+#include "MCCoords.hpp"
 #include "DTModes.h"
 
 namespace qmcplusplus
@@ -41,6 +42,7 @@ class DistanceTableAA;
 class DistanceTableAB;
 class ResourceCollection;
 class StructFact;
+struct SKMultiWalkerMem;
 
 /** Specialized paritlce class for atomistic simulations
  *
@@ -139,10 +141,6 @@ public:
   ///default destructor
   ~ParticleSet() override;
 
-  /** create  particles
-   * @param n number of particles
-   */
-  void create(int n);
   /** create grouped particles
    * @param agroup number of particles per group
    */
@@ -207,6 +205,7 @@ public:
   void createSK();
 
   bool hasSK() const { return bool(structure_factor_); }
+
   /** return Structure Factor
    */
   const StructFact& getSK() const
@@ -240,10 +239,8 @@ public:
   }
 
   inline const DynamicCoordinates& getCoordinates() const { return *coordinates_; }
-  inline void setCoordinates(const ParticlePos& R) { return coordinates_->setAllParticlePos(R); }
 
   void resetGroups();
-
 
   const auto& getSimulationCell() const { return simulation_cell_; }
   const auto& getLattice() const { return simulation_cell_.getLattice(); }
@@ -251,7 +248,6 @@ public:
   const auto& getLRBox() const { return simulation_cell_.getLRBox(); }
 
   inline bool isSameMass() const { return same_mass_; }
-  inline bool isGrouped() const { return is_grouped_; }
   inline bool isSpinor() const { return is_spinor_; }
   inline void setSpinor(bool is_spinor) { is_spinor_ = is_spinor; }
 
@@ -288,15 +284,17 @@ public:
   void makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, const Scalar_t& sdispl);
 
   /// batched version of makeMove
+  template<CoordsType CT>
+  static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, int iat, const MCCoords<CT>& displs);
+
   static void mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           const std::vector<SingleParticlePos>& displs);
 
-  /// batched version of makeMoveWithSpin
-  static void mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                                  int iat,
-                                  const std::vector<SingleParticlePos>& displs,
-                                  const std::vector<Scalar_t>& sdispls);
+  /// batched version makeMove for spin variable only
+  static void mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                              int iat,
+                              const std::vector<Scalar_t>& sdispls);
 
   /** move the iat-th particle to active_pos_
    * @param iat the index of the particle to be moved
@@ -380,11 +378,29 @@ public:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMove(Index_t iat);
+
+  /// batched version of acceptMove and rejectMove fused, templated on CoordsType
+  template<CoordsType CT>
+  static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                   Index_t iat,
+                                   const std::vector<bool>& isAccepted,
+                                   bool forward_mode = true);
+
   /// batched version of acceptMove and rejectMove fused
   static void mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                    Index_t iat,
                                    const std::vector<bool>& isAccepted,
                                    bool forward_mode = true);
+
+  /** batched version  of acceptMove and reject Move fused, but only for spins
+   *
+   * note: should be called BEFORE mw_accept_rejectMove since the active_ptcl_ gets reset to -1
+   * This would cause the assertion that we have the right particle index to fail if done in the 
+   * wrong order
+   */
+  static void mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                       Index_t iat,
+                                       const std::vector<bool>& isAccepted);
 
   void initPropertyList();
   inline int addProperty(const std::string& pname) { return PropertyList.add(pname.c_str()); }
@@ -471,21 +487,6 @@ public:
 
   inline size_t getTotalNum() const { return TotalNum; }
 
-  inline void resize(size_t numPtcl)
-  {
-    TotalNum = numPtcl;
-
-    R.resize(numPtcl);
-    spins.resize(numPtcl);
-    GroupID.resize(numPtcl);
-    G.resize(numPtcl);
-    L.resize(numPtcl);
-    Mass.resize(numPtcl);
-    Z.resize(numPtcl);
-
-    coordinates_->resize(numPtcl);
-  }
-
   inline void clear()
   {
     TotalNum = 0;
@@ -501,29 +502,14 @@ public:
     coordinates_->resize(0);
   }
 
-  inline void assign(const ParticleSet& ptclin)
-  {
-    resize(ptclin.getTotalNum());
-    R.InUnit   = ptclin.R.InUnit;
-    R          = ptclin.R;
-    spins      = ptclin.spins;
-    GroupID    = ptclin.GroupID;
-    is_spinor_ = ptclin.is_spinor_;
-    if (ptclin.SubPtcl.size())
-    {
-      SubPtcl.resize(ptclin.SubPtcl.size());
-      SubPtcl = ptclin.SubPtcl;
-    }
-  }
-
   ///return the number of groups
-  inline int groups() const { return SubPtcl.size() - 1; }
+  inline int groups() const { return group_offsets_->size() - 1; }
 
   ///return the first index of a group i
-  inline int first(int igroup) const { return SubPtcl[igroup]; }
+  inline int first(int igroup) const { return (*group_offsets_)[igroup]; }
 
   ///return the last index of a group i
-  inline int last(int igroup) const { return SubPtcl[igroup + 1]; }
+  inline int last(int igroup) const { return (*group_offsets_)[igroup + 1]; }
 
   ///return the group id of a given particle in the particle set.
   inline int getGroupID(int iat) const
@@ -533,7 +519,7 @@ public:
   }
 
   ///return the size of a group
-  inline int groupsize(int igroup) const { return SubPtcl[igroup + 1] - SubPtcl[igroup]; }
+  inline int groupsize(int igroup) const { return (*group_offsets_)[igroup + 1] - (*group_offsets_)[igroup]; }
 
   ///add attributes to list for IO
   template<typename ATList>
@@ -569,7 +555,12 @@ public:
     AttribList.add(Z);
   }
 
+  inline void setMapStorageToInput(const std::vector<int>& mapping) { map_storage_to_input_ = mapping; }
+  inline const std::vector<int>& get_map_storage_to_input() const { return map_storage_to_input_; }
+
   inline int getNumDistTables() const { return DistTables.size(); }
+
+  inline auto& get_group_offsets() const { return *group_offsets_; }
 
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
@@ -590,8 +581,6 @@ protected:
   /// reference to global simulation cell
   const SimulationCell& simulation_cell_;
 
-  ///true if the particles are grouped
-  bool is_grouped_;
   ///true if the particles have the same mass
   bool same_mass_;
   ///true is a dynamic spin calculation
@@ -608,11 +597,22 @@ protected:
   ///the proposed spin of active_ptcl_ during particle-by-particle moves
   Scalar_t active_spin_val_;
 
+  /** Map storage index to the input index.
+   * If not empty, particles were reordered by groups when being loaded from XML input.
+   * When other input data are affected by reordering, its builder should query this mapping.
+   * map_storage_to_input_[5] = 2 means the index 5(6th) particle in this ParticleSet was read from
+   * the index 2(3th) particle in the XML input
+   */
+  std::vector<int> map_storage_to_input_;
+
   ///SpeciesSet of particles
   SpeciesSet my_species_;
 
   ///Structure factor
   std::unique_ptr<StructFact> structure_factor_;
+
+  ///multi walker structure factor data
+  std::unique_ptr<SKMultiWalkerMem> mw_structure_factor_data_;
 
   /** map to handle distance tables
    *
@@ -637,7 +637,8 @@ protected:
   size_t TotalNum;
 
   ///array to handle a group of distinct particles per species
-  ParticleIndex SubPtcl;
+  std::shared_ptr<Vector<int, OMPallocator<int>>> group_offsets_;
+
   ///internal representation of R. It can be an SoA copy of R
   std::unique_ptr<DynamicCoordinates> coordinates_;
 
@@ -672,6 +673,22 @@ protected:
    * @param iat the electron whose proposed move gets rejected.
    */
   void rejectMoveForwardMode(Index_t iat);
+
+  /// resize internal storage
+  inline void resize(size_t numPtcl)
+  {
+    TotalNum = numPtcl;
+
+    R.resize(numPtcl);
+    spins.resize(numPtcl);
+    GroupID.resize(numPtcl);
+    G.resize(numPtcl);
+    L.resize(numPtcl);
+    Mass.resize(numPtcl);
+    Z.resize(numPtcl);
+
+    coordinates_->resize(numPtcl);
+  }
 };
 
 } // namespace qmcplusplus

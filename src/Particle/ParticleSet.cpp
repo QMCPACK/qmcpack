@@ -27,8 +27,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGeneratorGlobal.h"
-
-//#define PACK_DISTANCETABLES
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -67,13 +66,14 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
     : quantum_domain(classical),
       Properties(0, 0, 1, WP::MAXPROPERTIES),
       simulation_cell_(simulation_cell),
-      is_grouped_(true),
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
+      active_spin_val_(0.0),
       myTwist(0.0),
       ParentName("0"),
       TotalNum(0),
+      group_offsets_(std::make_shared<Vector<int, OMPallocator<int>>>()),
       coordinates_(createDynamicCoordinates(kind))
 {
   initPropertyList();
@@ -83,17 +83,25 @@ ParticleSet::ParticleSet(const SimulationCell& simulation_cell, const DynamicCoo
 ParticleSet::ParticleSet(const ParticleSet& p)
     : Properties(p.Properties),
       simulation_cell_(p.simulation_cell_),
-      is_grouped_(p.is_grouped_),
       same_mass_(true),
       is_spinor_(false),
       active_ptcl_(-1),
+      active_spin_val_(0.0),
       my_species_(p.getSpeciesSet()),
       myTwist(0.0),
       ParentName(p.parentName()),
+      group_offsets_(p.group_offsets_),
       coordinates_(p.coordinates_->makeClone())
 {
   setQuantumDomain(p.quantum_domain);
-  assign(p); //only the base is copied, assumes that other properties are not assignable
+
+  resize(p.getTotalNum());
+  R.InUnit   = p.R.InUnit;
+  R          = p.R;
+  spins      = p.spins;
+  GroupID    = p.GroupID;
+  is_spinor_ = p.is_spinor_;
+
   //need explicit copy:
   Mass = p.Mass;
   Z    = p.Z;
@@ -121,29 +129,21 @@ ParticleSet::ParticleSet(const ParticleSet& p)
 
 ParticleSet::~ParticleSet() = default;
 
-void ParticleSet::create(int numPtcl)
-{
-  resize(numPtcl);
-  SubPtcl.resize(2);
-  SubPtcl[0] = 0;
-  SubPtcl[1] = numPtcl;
-}
-
 void ParticleSet::create(const std::vector<int>& agroup)
 {
-  SubPtcl.resize(agroup.size() + 1);
-  SubPtcl[0] = 0;
+  auto& group_offsets(*group_offsets_);
+  group_offsets.resize(agroup.size() + 1);
+  group_offsets[0] = 0;
   for (int is = 0; is < agroup.size(); is++)
-    SubPtcl[is + 1] = SubPtcl[is] + agroup[is];
-  size_t nsum = SubPtcl[agroup.size()];
+    group_offsets[is + 1] = group_offsets[is] + agroup[is];
+  group_offsets.updateTo();
+  const size_t nsum = group_offsets[agroup.size()];
   resize(nsum);
   TotalNum = nsum;
   int loc  = 0;
   for (int i = 0; i < agroup.size(); i++)
-  {
     for (int j = 0; j < agroup[i]; j++, loc++)
       GroupID[loc] = i;
-  }
 }
 
 void ParticleSet::setQuantumDomain(quantum_domains qdomain)
@@ -156,7 +156,7 @@ void ParticleSet::setQuantumDomain(quantum_domains qdomain)
 
 void ParticleSet::resetGroups()
 {
-  int nspecies = my_species_.getTotalNum();
+  const int nspecies = my_species_.getTotalNum();
   // Usually an empty ParticleSet indicates an error in the input file,
   // but in some cases it is useful.  Allow an empty ParticleSet if it
   // has the special name "empty".
@@ -192,44 +192,13 @@ void ParticleSet::resetGroups()
     app_log() << "  Distinctive masses for each species " << std::endl;
   for (int iat = 0; iat < Mass.size(); iat++)
     Mass[iat] = my_species_(massind, GroupID[iat]);
-  std::vector<int> ng(nspecies, 0);
-  for (int iat = 0; iat < GroupID.size(); iat++)
-  {
-    if (GroupID[iat] < nspecies)
-      ng[GroupID[iat]]++;
-    else
-      throw std::runtime_error("ParticleSet::resetGroups() Failed. GroupID is out of bound.");
-  }
-  // safety check if any group of particles has size 0, instruct users to fix the input.
-  for (int group_id = 0; group_id < nspecies; group_id++)
-    if (ng[group_id] == 0 && getName() != "empty")
-    {
-      std::ostringstream err_msg;
-      err_msg << "ParticleSet::resetGroups() Failed. ParticleSet '" << myName << "' "
-              << "has group '" << my_species_.speciesName[group_id] << "' containing 0 particles. "
-              << "Remove this group from input!" << std::endl;
-      throw std::runtime_error(err_msg.str());
-    }
-  SubPtcl.resize(nspecies + 1);
-  SubPtcl[0] = 0;
-  for (int i = 0; i < nspecies; ++i)
-    SubPtcl[i + 1] = SubPtcl[i] + ng[i];
+
   int membersize = my_species_.addAttribute("membersize");
   for (int ig = 0; ig < nspecies; ++ig)
-    my_species_(membersize, ig) = ng[ig];
-  /** ID map that reflects species group
-   *
-   * IsGrouped=true, if ID==IndirectID
-   */
-  ParticleIndex IndirectID(R.size());
-  int new_id = 0;
-  for (int i = 0; i < nspecies; ++i)
-    for (int iat = 0; iat < GroupID.size(); ++iat)
-      if (GroupID[iat] == i)
-        IndirectID[new_id++] = iat;
-  is_grouped_ = true;
-  for (int iat = 0; iat < IndirectID.size(); ++iat)
-    is_grouped_ &= (IndirectID[iat] == iat);
+    my_species_(membersize, ig) = groupsize(ig);
+
+  for (int iat = 0; iat < GroupID.size(); iat++)
+    assert(GroupID[iat] < nspecies);
 }
 
 void ParticleSet::randomizeFromSource(ParticleSet& src)
@@ -314,13 +283,10 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
 bool ParticleSet::get(std::ostream& os) const
 {
   os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
-  if (SubPtcl.size() > 0)
-    for (int i = 0; i < SubPtcl.size() - 1; i++)
-      os << " " << my_species_.speciesName[i] << "(" << SubPtcl[i + 1] - SubPtcl[i] << ")";
-  os << std::endl;
-  if (!is_grouped_)
-    os << "    Particles are not grouped by species in the input file. Algorithms may not be optimal!" << std::endl;
-  os << std::endl;
+  if (auto& group_offsets(*group_offsets_); group_offsets.size() > 0)
+    for (int i = 0; i < group_offsets.size() - 1; i++)
+      os << " " << my_species_.speciesName[i] << "(" << group_offsets[i + 1] - group_offsets[i] << ")";
+  os << std::endl << std::endl;
 
   const size_t maxParticlesToPrint = 10;
   size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
@@ -411,7 +377,7 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   ScopedTimer update_scope(p_leader.myTimers[PS_update]);
 
   for (ParticleSet& pset : p_list)
-    pset.setCoordinates(pset.R);
+    pset.coordinates_->setAllParticlePos(pset.R);
 
   auto& dts = p_leader.DistTables;
   for (int i = 0; i < dts.size(); ++i)
@@ -442,6 +408,14 @@ void ParticleSet::makeMoveWithSpin(Index_t iat, const SingleParticlePos& displ, 
   active_spin_val_ += sdispl;
 }
 
+template<CoordsType CT>
+void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list, Index_t iat, const MCCoords<CT>& displs)
+{
+  mw_makeMove(p_list, iat, displs.positions);
+  if constexpr (CT == CoordsType::POS_SPIN)
+    mw_makeSpinMove(p_list, iat, displs.spins);
+}
+
 void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
                               Index_t iat,
                               const std::vector<SingleParticlePos>& displs)
@@ -451,25 +425,21 @@ void ParticleSet::mw_makeMove(const RefVectorWithLeader<ParticleSet>& p_list,
 
   for (int iw = 0; iw < p_list.size(); iw++)
   {
-    p_list[iw].active_ptcl_     = iat;
-    p_list[iw].active_pos_      = p_list[iw].R[iat] + displs[iw];
-    p_list[iw].active_spin_val_ = p_list[iw].spins[iat];
+    p_list[iw].active_ptcl_ = iat;
+    p_list[iw].active_pos_  = p_list[iw].R[iat] + displs[iw];
     new_positions.push_back(p_list[iw].active_pos_);
   }
 
   mw_computeNewPosDistTables(p_list, iat, new_positions);
 }
 
-void ParticleSet::mw_makeMoveWithSpin(const RefVectorWithLeader<ParticleSet>& p_list,
-                                      Index_t iat,
-                                      const std::vector<SingleParticlePos>& displs,
-                                      const std::vector<Scalar_t>& sdispls)
+void ParticleSet::mw_makeSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                  Index_t iat,
+                                  const std::vector<Scalar_t>& sdispls)
 {
-  mw_makeMove(p_list, iat, displs);
   for (int iw = 0; iw < p_list.size(); iw++)
-    p_list[iw].active_spin_val_ += sdispls[iw];
+    p_list[iw].active_spin_val_ = p_list[iw].spins[iat] + sdispls[iw];
 }
-
 
 bool ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos& displ)
 {
@@ -744,6 +714,18 @@ void ParticleSet::rejectMoveForwardMode(Index_t iat)
   active_ptcl_ = -1;
 }
 
+template<CoordsType CT>
+void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                       Index_t iat,
+                                       const std::vector<bool>& isAccepted,
+                                       bool forward_mode)
+{
+  if (CT == CoordsType::POS_SPIN)
+    mw_accept_rejectSpinMove(p_list, iat, isAccepted);
+  mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
+}
+
+
 void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p_list,
                                        Index_t iat,
                                        const std::vector<bool>& isAccepted,
@@ -772,10 +754,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
     {
       assert(iat == p_list[iw].active_ptcl_);
       if (isAccepted[iw])
-      {
-        p_list[iw].R[iat]     = p_list[iw].active_pos_;
-        p_list[iw].spins[iat] = p_list[iw].active_spin_val_;
-      }
+        p_list[iw].R[iat] = p_list[iw].active_pos_;
       p_list[iw].active_ptcl_ = -1;
       assert(p_list[iw].R[iat] == p_list[iw].coordinates_->getAllParticlePos()[iat]);
     }
@@ -787,6 +766,18 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
     // disable non-forward mode cases
     if (!forward_mode)
       throw std::runtime_error("BUG calling mw_accept_rejectMove in non-forward mode");
+  }
+}
+
+void ParticleSet::mw_accept_rejectSpinMove(const RefVectorWithLeader<ParticleSet>& p_list,
+                                           Index_t iat,
+                                           const std::vector<bool>& isAccepted)
+{
+  for (int iw = 0; iw < p_list.size(); iw++)
+  {
+    assert(iat == p_list[iw].active_ptcl_);
+    if (isAccepted[iw])
+      p_list[iw].spins[iat] = p_list[iw].active_spin_val_;
   }
 }
 
@@ -815,7 +806,7 @@ void ParticleSet::mw_donePbyP(const RefVectorWithLeader<ParticleSet>& p_list, bo
   if (!skipSK && p_leader.structure_factor_)
   {
     auto sk_list = extractSKRefList(p_list);
-    StructFact::mw_updateAllPart(sk_list, p_list);
+    StructFact::mw_updateAllPart(sk_list, p_list, *p_leader.mw_structure_factor_data_);
   }
 
   auto& dts = p_leader.DistTables;
@@ -972,6 +963,8 @@ void ParticleSet::createResource(ResourceCollection& collection) const
   coordinates_->createResource(collection);
   for (int i = 0; i < DistTables.size(); i++)
     DistTables[i]->createResource(collection);
+  if (structure_factor_)
+    collection.addResource(std::make_unique<SKMultiWalkerMem>());
 }
 
 void ParticleSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -980,6 +973,14 @@ void ParticleSet::acquireResource(ResourceCollection& collection, const RefVecto
   ps_leader.coordinates_->acquireResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->acquireResource(collection, extractDTRefList(p_list, i));
+
+  if (ps_leader.structure_factor_)
+  {
+    auto res_ptr = dynamic_cast<SKMultiWalkerMem*>(collection.lendResource().release());
+    if (!res_ptr)
+      throw std::runtime_error("ParticleSet::acquireResource SKMultiWalkerMem dynamic_cast failed");
+    p_list.getLeader().mw_structure_factor_data_.reset(res_ptr);
+  }
 }
 
 void ParticleSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<ParticleSet>& p_list)
@@ -988,6 +989,9 @@ void ParticleSet::releaseResource(ResourceCollection& collection, const RefVecto
   ps_leader.coordinates_->releaseResource(collection, extractCoordsRefList(p_list));
   for (int i = 0; i < ps_leader.DistTables.size(); i++)
     ps_leader.DistTables[i]->releaseResource(collection, extractDTRefList(p_list, i));
+
+  if (ps_leader.structure_factor_)
+    collection.takebackResource(std::move(p_list.getLeader().mw_structure_factor_data_));
 }
 
 RefVectorWithLeader<DistanceTable> ParticleSet::extractDTRefList(const RefVectorWithLeader<ParticleSet>& p_list, int id)
@@ -1018,4 +1022,19 @@ RefVectorWithLeader<StructFact> ParticleSet::extractSKRefList(const RefVectorWit
   return sk_list;
 }
 
+//explicit instantiations
+template void ParticleSet::mw_makeMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                        Index_t iat,
+                                                        const MCCoords<CoordsType::POS>& displs);
+template void ParticleSet::mw_makeMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                             Index_t iat,
+                                                             const MCCoords<CoordsType::POS_SPIN>& displs);
+template void ParticleSet::mw_accept_rejectMove<CoordsType::POS>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                 Index_t iat,
+                                                                 const std::vector<bool>& isAccepted,
+                                                                 bool forward_mode);
+template void ParticleSet::mw_accept_rejectMove<CoordsType::POS_SPIN>(const RefVectorWithLeader<ParticleSet>& p_list,
+                                                                      Index_t iat,
+                                                                      const std::vector<bool>& isAccepted,
+                                                                      bool forward_mode);
 } // namespace qmcplusplus

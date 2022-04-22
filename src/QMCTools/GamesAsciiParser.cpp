@@ -113,7 +113,7 @@ void GamesAsciiParser::parse(const std::string& fname)
   }
   if (numMO2print <= 0)
     numMO2print = numMO;
-  IonSystem.create(NumberOfAtoms);
+  IonSystem.create({NumberOfAtoms});
   GroupName.resize(NumberOfAtoms);
   getGeometry(fin);
   fin.seekg(pivot_begin);

@@ -26,9 +26,9 @@ class EnergyDensityEstimator : public OperatorBase, public PtclOnLatticeTraits
 {
 public:
   using Point  = ReferencePoints::Point;
-  using PSPool = std::map<std::string, ParticleSet*>;
+  using PSPool = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
-  EnergyDensityEstimator(PSPool& PSP, const std::string& defaultKE);
+  EnergyDensityEstimator(const PSPool& PSP, const std::string& defaultKE);
   ~EnergyDensityEstimator() override;
 
   void resetTargetParticleSet(ParticleSet& P) override;
@@ -54,7 +54,7 @@ private:
   xmlNodePtr input_xml;
   //system information
   std::string defKE;
-  PSPool& psetpool;
+  const PSPool& psetpool;
   ParticleSet* Pdynamic;
   ParticleSet* Pstatic;
   ParticleSet* get_particleset(std::string& psname);

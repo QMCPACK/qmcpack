@@ -25,40 +25,31 @@ MCPopulation::MCPopulation(int num_ranks,
                            WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
-                           WaveFunctionFactory* wf_factory,
                            QMCHamiltonian* hamiltonian)
     : trial_wf_(trial_wf),
       elec_particle_set_(elecs),
       hamiltonian_(hamiltonian),
-      wf_factory_(wf_factory),
       num_ranks_(num_ranks),
       rank_(this_rank),
       walker_configs_ref_(mcwc)
 {
   num_global_walkers_ = mcwc.getGlobalNumWalkers();
   num_local_walkers_  = mcwc.getActiveWalkers();
-  num_particles_      = elecs->getTotalNum();
 
   // MCWalkerConfiguration doesn't give actual number of groups
-  num_groups_ = elecs->groups();
-  particle_group_indexes_.resize(num_groups_);
-  for (int i = 0; i < num_groups_; ++i)
+  const auto num_groups = elecs->groups();
+  ptclgrp_mass_.resize(num_groups);
+  ptclgrp_inv_mass_.resize(num_groups);
+  for (int ig = 0; ig < num_groups; ++ig)
   {
-    particle_group_indexes_[i].first  = elecs->first(i);
-    particle_group_indexes_[i].second = elecs->last(i);
-  }
-  ptclgrp_mass_.resize(num_groups_);
-  for (int ig = 0; ig < num_groups_; ++ig)
-    ptclgrp_mass_[ig] = elecs->Mass[ig];
-  ptclgrp_inv_mass_.resize(num_groups_);
-  for (int ig = 0; ig < num_groups_; ++ig)
+    ptclgrp_mass_[ig] = elecs->Mass[elecs->first(ig)];
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
-  ptcl_inv_mass_.resize(num_particles_);
-  for (int ig = 0; ig < num_groups_; ++ig)
-  {
-    for (int iat = particle_group_indexes_[ig].first; iat < particle_group_indexes_[ig].second; ++iat)
-      ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
   }
+
+  ptcl_inv_mass_.resize(elecs->getTotalNum());
+  for (int ig = 0; ig < num_groups; ++ig)
+    for (int iat = elecs->first(ig); iat < elecs->last(ig); ++iat)
+      ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
 }
 
 MCPopulation::~MCPopulation()
@@ -92,7 +83,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 #pragma omp parallel for
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    walkers_[iw]             = std::make_unique<MCPWalker>(num_particles_);
+    walkers_[iw]             = std::make_unique<MCPWalker>(elec_particle_set_->getTotalNum());
     walkers_[iw]->R          = elec_particle_set_->R;
     walkers_[iw]->spins      = elec_particle_set_->spins;
     walkers_[iw]->Properties = elec_particle_set_->Properties;

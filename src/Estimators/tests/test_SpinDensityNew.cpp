@@ -67,7 +67,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
     {
       psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
       pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
     }
@@ -105,7 +105,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     {
       psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
@@ -214,7 +214,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   {
     psets.emplace_back(simulation_cell);
     ParticleSet& pset = psets.back();
-    pset.create(2);
+    pset.create({2});
     pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }

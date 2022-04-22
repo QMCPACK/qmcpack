@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
+#include <Message/UniformCommunicateError.h>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTable.h"
 
@@ -34,7 +35,7 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& psets, Communicate* comm, xmlNodePtr cur)
+EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur)
     : SPOSetBuilder("spline", comm),
       ParticleSets(psets),
       TargetPtcl(p),
@@ -48,7 +49,7 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PtclPoolType& pse
       NumCoreStates(0),
       MeshFactor(1.0),
       MeshSize(0, 0, 0),
-      TwistNum(0),
+      twist_num_(-1),
       TileFactor(1, 1, 1),
       NumMuffinTins(0),
       LastSpinSet(-1),
@@ -398,101 +399,139 @@ bool EinsplineSetBuilder::TwistPair(PosType a, PosType b)
   return pair;
 }
 
-void EinsplineSetBuilder::AnalyzeTwists2()
+void EinsplineSetBuilder::AnalyzeTwists2(const int twist_num_inp, const TinyVector<double, OHMMS_DIM>& twist_inp)
 {
   Tensor<double, 3> S;
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
       S(i, j) = (double)TileMatrix(i, j);
   std::vector<PosType> superFracs;
-  // This holds to which supercell kpoint each primitive k-point belongs
-  std::vector<int> superIndex;
-  int numPrimTwists = TwistAngles.size();
-  for (int ki = 0; ki < numPrimTwists; ki++)
-  {
-    PosType primTwist  = TwistAngles[ki];
-    PosType superTwist = dot(S, primTwist);
-    PosType kp         = PrimCell.k_cart(primTwist);
-    PosType ks         = SuperCell.k_cart(superTwist);
-    if (dot(ks - kp, ks - kp) > 1.0e-6)
+  std::vector<std::vector<int>> superSets;
+  { // build super twists
+    // This holds to which supercell kpoint each primitive k-point belongs
+    std::vector<int> superIndex;
+    const int numPrimTwists = TwistAngles.size();
+    for (int ki = 0; ki < numPrimTwists; ki++)
     {
-      app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
-      APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
-    }
-    PosType frac = FracPart(superTwist);
-    bool found   = false;
-    for (int j = 0; j < superFracs.size(); j++)
-    {
-      PosType diff = frac - superFracs[j];
-      if (dot(diff, diff) < 1.0e-6)
+      PosType primTwist  = TwistAngles[ki];
+      PosType superTwist = dot(S, primTwist);
+      PosType kp         = PrimCell.k_cart(primTwist);
+      PosType ks         = SuperCell.k_cart(superTwist);
+      if (dot(ks - kp, ks - kp) > 1.0e-6)
       {
-        found = true;
-        superIndex.push_back(j);
+        app_error() << "Primitive and super k-points do not agree.  Error in coding.\n";
+        APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
+      }
+      PosType frac = FracPart(superTwist);
+      bool found   = false;
+      for (int j = 0; j < superFracs.size(); j++)
+      {
+        PosType diff = frac - superFracs[j];
+        if (dot(diff, diff) < 1.0e-6)
+        {
+          found = true;
+          superIndex.push_back(j);
+        }
+      }
+      if (!found)
+      {
+        superIndex.push_back(superFracs.size());
+        superFracs.push_back(frac);
       }
     }
-    if (!found)
+    const int numSuperTwists = superFracs.size();
+    app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
+    // For each supercell twist, create a list of primitive twists which
+    // belong to it.
+    superSets.resize(numSuperTwists);
+    for (int ki = 0; ki < numPrimTwists; ki++)
+      superSets[superIndex[ki]].push_back(ki);
+    app_log() << "number of things" << std::endl;
+    app_log() << TwistSymmetry.size() << std::endl;
+    app_log() << TwistWeight.size() << std::endl;
+    //     for (int ki=0; ki<TwistSymmetry.size(); ki++)
+    //       fprintf (stderr, "%d %d %d\n",ki,TwistSymmetry[ki],TwistWeight[ki]);
+    if (myComm->rank() == 0)
     {
-      superIndex.push_back(superFracs.size());
-      superFracs.push_back(frac);
+      int n_tot_irred(0);
+      for (int si = 0; si < numSuperTwists; si++)
+      {
+        char buf[1000];
+        snprintf(buf, 1000, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n", si, superFracs[si][0], superFracs[si][1],
+                 superFracs[si][2]);
+        app_log() << buf;
+        app_log().flush();
+      }
     }
   }
-  int numSuperTwists = superFracs.size();
-  app_log() << "Found " << numSuperTwists << " distinct supercell twists.\n";
-  // For each supercell twist, create a list of primitive twists which
-  // belong to it.
-  std::vector<std::vector<int>> superSets;
-  superSets.resize(numSuperTwists);
-  for (int ki = 0; ki < numPrimTwists; ki++)
-    superSets[superIndex[ki]].push_back(ki);
-  app_log() << "number of things" << std::endl;
-  app_log() << TwistSymmetry.size() << std::endl;
-  app_log() << TwistWeight.size() << std::endl;
-  //     for (int ki=0; ki<TwistSymmetry.size(); ki++)
-  //       fprintf (stderr, "%d %d %d\n",ki,TwistSymmetry[ki],TwistWeight[ki]);
-  if (myComm->rank() == 0)
-  {
-    int n_tot_irred(0);
-    for (int si = 0; si < numSuperTwists; si++)
+  const int numSuperTwists = superFracs.size();
+
+  { // determine twist_num_
+    std::function find_twist = [&](const TinyVector<double, OHMMS_DIM>& twist) {
+      int twist_num  = -1;
+      PosType gtFrac = FracPart(twist);
+      float eps      = 1e-5;
+      for (int si = 0; si < numSuperTwists; si++)
+      {
+        PosType locDiff = gtFrac - superFracs[si];
+        if (dot(locDiff, locDiff) < eps)
+          twist_num = si;
+      }
+
+      if (twist_num < 0)
+      {
+        char buf[1000];
+        snprintf(buf, 1000,
+                 "AnalyzeTwists2. Input twist [ %9.5f %9.5f %9.5f] not found in the list of super twists above.\n",
+                 twist[0], twist[1], twist[2]);
+        throw UniformCommunicateError(buf);
+      }
+      return twist_num;
+    };
+
+    if (twist_inp[0] > TWIST_NO_INPUT || twist_inp[1] > TWIST_NO_INPUT || twist_inp[2] > TWIST_NO_INPUT)
     {
-      char buf[1000];
-      snprintf(buf, 1000, "Super twist #%d:  [ %9.5f %9.5f %9.5f ]\n", si, superFracs[si][0], superFracs[si][1],
-               superFracs[si][2]);
-      app_log() << buf;
-      app_log().flush();
-      //  	fprintf (stderr, "  Using k-points: ");
-      //  	for (int i=0; i<superSets[si].size(); i++)
-      //  	  fprintf (stderr, " %d", superSets[si][i]);
-      //  	fprintf (stderr, "\n");
+      if (twist_num_inp != TWISTNUM_NO_INPUT)
+        app_warning() << "twist attribute exists. twistnum attribute ignored. "
+                         "To prevent this message, remove twistnum from input."
+                      << std::endl;
+
+      twist_num_ = find_twist(twist_inp);
     }
-    //        fprintf (stderr, "Number in irredicible twist grid: %d \n", n_tot_irred);
-  }
-  if (TwistNum < 0)
-  {
-    PosType gtFrac = FracPart(givenTwist);
-    float eps      = 1e-5;
-    for (int si = 0; si < numSuperTwists; si++)
+    else if (twist_num_inp != TWISTNUM_NO_INPUT)
     {
-      PosType locDiff = gtFrac - superFracs[si];
-      if (dot(locDiff, locDiff) < eps)
-        TwistNum = si;
+      app_warning() << "twist attribute does't exist but twistnum attribute was found. "
+                    << "This is potentially ambiguous. Specifying twist attribute is preferred." << std::endl;
+      if (twist_num_inp < 0 || twist_num_inp >= numSuperTwists)
+      {
+        std::ostringstream msg;
+        msg << "AnalyzeTwists2. twistnum input value " << twist_num_inp << " is outside the acceptable range [0, "
+            << numSuperTwists << ")." << std::endl;
+        throw UniformCommunicateError(msg.str());
+      }
+      twist_num_ = twist_num_inp;
     }
-  }
-  // Check supertwist for this node
-  if (!myComm->rank())
-  {
+    else
+    {
+      app_log() << "twist attribte does't exist. Set Gamma point." << std::endl;
+      twist_num_ = find_twist({0, 0, 0});
+    }
+
+    assert(twist_num_ >= 0 && twist_num_ < numSuperTwists);
+
     char buf[1000];
-    snprintf(buf, 1000, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]\n", TwistNum, superFracs[TwistNum][0],
-             superFracs[TwistNum][1], superFracs[TwistNum][2]);
-    app_log() << buf;
-    app_log().flush();
+    snprintf(buf, 1000, "  Using supercell twist %d:  [ %9.5f %9.5f %9.5f]", twist_num_, superFracs[twist_num_][0],
+             superFracs[twist_num_][1], superFracs[twist_num_][2]);
+    app_log() << buf << std::endl;
   }
-  TargetPtcl.setTwist(superFracs[TwistNum]);
+
+  TargetPtcl.setTwist(superFracs[twist_num_]);
 #ifndef QMC_COMPLEX
   // Check to see if supercell twist is okay to use with real wave
   // functions
   for (int dim = 0; dim < OHMMS_DIM; dim++)
   {
-    double t = 2.0 * superFracs[TwistNum][dim];
+    double t = 2.0 * superFracs[twist_num_][dim];
     if (std::abs(t - round(t)) > MatchingTol * 100)
     {
       app_error() << "Cannot use this super twist with real wavefunctions.\n"
@@ -503,7 +542,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
 #endif
   // Now check to see that each supercell twist has the right twists
   // to tile the primitive cell orbitals.
-  int numTwistsNeeded = std::abs(det(TileMatrix));
+  const int numTwistsNeeded = std::abs(det(TileMatrix));
   for (int si = 0; si < numSuperTwists; si++)
   {
     // First make sure we have enough points
@@ -513,7 +552,7 @@ void EinsplineSetBuilder::AnalyzeTwists2()
       snprintf(buf, 1000, "Super twist %d should own %d k-points, but owns %d.\n", si, numTwistsNeeded,
                static_cast<int>(superSets[si].size()));
       app_error() << buf;
-      if (si == TwistNum)
+      if (si == twist_num_)
       {
         APP_ABORT("EinsplineSetBuilder::AnalyzeTwists2");
       }
@@ -541,17 +580,11 @@ void EinsplineSetBuilder::AnalyzeTwists2()
     }
   }
   app_log().flush();
-  if (TwistNum >= superSets.size())
-  {
-    app_error() << "Trying to use supercell twist " << TwistNum << " when only " << superSets.size() << " sets exist.\n"
-                << "Please select a twist number between 0 and " << superSets.size() - 1 << ".\n";
-    APP_ABORT_TRACE(__FILE__, __LINE__, "Invalid TwistNum");
-  }
   // Finally, record which k-points to include on this group of
-  // processors, which have been assigned supercell twist TwistNum
+  // processors, which have been assigned supercell twist twist_num_
   IncludeTwists.clear();
-  for (int i = 0; i < superSets[TwistNum].size(); i++)
-    IncludeTwists.push_back(superSets[TwistNum][i]);
+  for (int i = 0; i < superSets[twist_num_].size(); i++)
+    IncludeTwists.push_back(superSets[twist_num_][i]);
   // Now, find out which twists are distinct
   DistinctTwists.clear();
 #ifndef QMC_COMPLEX

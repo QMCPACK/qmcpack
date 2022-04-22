@@ -64,7 +64,6 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   dmcdriver_input.readXML(node);
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
 
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
@@ -73,7 +72,6 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::move(dmcdriver_input),
                        MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getPrimary(),
-                                    wavefunction_pool.getWaveFunctionFactory("wavefunction"),
                                     hamiltonian_pool.getPrimary()),
                        comm);
 

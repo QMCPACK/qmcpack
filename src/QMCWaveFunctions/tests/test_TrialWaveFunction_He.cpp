@@ -26,17 +26,15 @@
 
 namespace qmcplusplus
 {
-void setup_He_wavefunction(Communicate* c,
+std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
                            ParticleSet& elec,
                            ParticleSet& ions,
-                           std::unique_ptr<WaveFunctionFactory>& wff,
-                           WaveFunctionFactory::PtclPoolType& particle_set_map)
+                           const WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
   agroup[0] = 1;
   agroup[1] = 1;
-  elec.setName("e");
   elec.create(agroup);
   elec.R[0][0] = 1.0;
   elec.R[0][1] = 2.0;
@@ -58,10 +56,7 @@ void setup_He_wavefunction(Communicate* c,
   tspecies(e_chargeIdx, downIdx) = -1.0;
   elec.resetGroups();
 
-  particle_set_map["e"] = &elec;
-
-  ions.setName("ion0");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -71,11 +66,10 @@ void setup_He_wavefunction(Communicate* c,
   int chargeIdx               = he_species.addAttribute("charge");
   tspecies(chargeIdx, He_Idx) = 2.0;
   tspecies(massIdx, upIdx)    = 2.0;
-  particle_set_map["ion0"]    = &ions;
 
   elec.addTable(ions);
 
-  wff = std::make_unique<WaveFunctionFactory>("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
      <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -112,10 +106,12 @@ void setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  wff->put(root);
+  auto twf_ptr = wff.buildTWF(root);
 
-  REQUIRE(wff->getTWF() != nullptr);
-  REQUIRE(wff->getTWF()->size() == 2);
+  REQUIRE(twf_ptr != nullptr);
+  REQUIRE(twf_ptr->size() == 2);
+
+  return twf_ptr;
 }
 
 #ifndef QMC_CUDA
@@ -125,13 +121,19 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
+
   const SimulationCell simulation_cell;
-  ParticleSet elec(simulation_cell);
-  ParticleSet ions(simulation_cell);
-  std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
-  setup_He_wavefunction(c, elec, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+  ions.setName("ion0");
+  elec.setName("e");
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+
+  auto psi_ptr = setup_He_wavefunction(c, elec, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
 
   ions.update();
   elec.update();
@@ -225,15 +227,20 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
   const SimulationCell simulation_cell;
-  ParticleSet elec1(simulation_cell);
-  ParticleSet ions(simulation_cell);
-  std::unique_ptr<WaveFunctionFactory> wff;
-  WaveFunctionFactory::PtclPoolType particle_set_map;
+  auto ions_ptr  = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec1_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec1(*elec1_ptr);
+  ions.setName("ion0");
+  elec1.setName("e");
+  WaveFunctionFactory::PSetMap particle_set_map;
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  particle_set_map.emplace(elec1_ptr->getName(), std::move(elec1_ptr));
+
   // This He wavefunction has two components
   // The orbitals are fixed and have not optimizable parameters.
   // The Jastrow factor does have an optimizable parameter.
-  setup_He_wavefunction(c, elec1, ions, wff, particle_set_map);
-  TrialWaveFunction& psi(*wff->getTWF());
+  auto psi_ptr = setup_He_wavefunction(c, elec1, ions, particle_set_map);
+  TrialWaveFunction& psi(*psi_ptr);
   ions.update();
   elec1.update();
 

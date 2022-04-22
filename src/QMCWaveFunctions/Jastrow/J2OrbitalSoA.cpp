@@ -15,10 +15,6 @@
 
 #include "J2OrbitalSoA.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "BsplineFunctor.h"
-#include "PadeFunctors.h"
-#include "UserFunctor.h"
-#include "FakeFunctor.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
@@ -140,7 +136,7 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::updateBuffer(ParticleS
                                                                        WFBufferType& buf,
                                                                        bool fromscratch)
 {
-  evaluateGL(P, P.G, P.L, false);
+  log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
   return log_value_;
 }
@@ -180,7 +176,7 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
     : WaveFunctionComponent("J2OrbitalSoA", obj_name),
-      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST)),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
@@ -472,7 +468,20 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const Part
                                                                       ParticleSet::ParticleGradient& G,
                                                                       ParticleSet::ParticleLaplacian& L)
 {
-  return evaluateGL(P, G, L, true);
+  recompute(P);
+  return log_value_ = computeGL(G, L);
+}
+
+template<typename FT>
+typename J2OrbitalSoA<FT>::QTFull::RealType J2OrbitalSoA<FT>::computeGL(ParticleSet::ParticleGradient& G,
+                                                                        ParticleSet::ParticleLaplacian& L) const
+{
+  for (int iat = 0; iat < N; ++iat)
+  {
+    G[iat] += dUat[iat];
+    L[iat] += d2Uat[iat];
+  }
+  return -0.5 * simd::accumulate_n(Uat.data(), N, QTFull::RealType());
 }
 
 template<typename FT>
@@ -481,17 +490,7 @@ WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleS
                                                                  ParticleSet::ParticleLaplacian& L,
                                                                  bool fromscratch)
 {
-  if (fromscratch)
-    recompute(P);
-  log_value_ = valT(0);
-  for (int iat = 0; iat < N; ++iat)
-  {
-    log_value_ += Uat[iat];
-    G[iat] += dUat[iat];
-    L[iat] += d2Uat[iat];
-  }
-
-  return log_value_ = -log_value_ * 0.5;
+  return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
@@ -735,5 +734,4 @@ template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<FakeFunctor<QMCTraits::RealType>>;
-
 } // namespace qmcplusplus

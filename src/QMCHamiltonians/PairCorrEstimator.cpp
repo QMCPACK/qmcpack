@@ -23,7 +23,10 @@
 namespace qmcplusplus
 {
 PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
-    : Dmax(10.), Delta(0.5), num_species(2), d_aa_ID_(elns.addTable(elns))
+    : Dmax(10.),
+      Delta(0.5),
+      num_species(2),
+      d_aa_ID_(elns.addTable(elns, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP))
 {
   update_mode_.set(COLLECTABLE, 1);
   num_species = elns.groups();
