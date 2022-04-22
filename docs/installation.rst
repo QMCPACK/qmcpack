@@ -1844,7 +1844,6 @@ Due to incorporation of pw2qmcpack as a plugin, there is no longer any need to p
 Users may use upstream QE and activate the plugin by specifying ``-DQE_ENABLE_PLUGINS=pw2qmcpack`` at the CMake configure step.
 Full QE CMake documentation can be found at
 https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
-A HDF5 library installation with Fortran support is required.
 
   ::
 
