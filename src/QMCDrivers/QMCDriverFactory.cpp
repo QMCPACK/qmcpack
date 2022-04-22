@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -12,6 +12,7 @@
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -40,12 +41,13 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
 QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_data_(project_data) {}
 
-/** Read the xml specifify the driver for this QMC section
+/** Read the xml defining the driver for this QMC section
  *
  *  Copy elision should result in just a move of the
  *  DriverAssemblyState
@@ -57,9 +59,9 @@ QMCDriverFactory::QMCDriverFactory(const ProjectData& project_data) : project_da
 QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr cur) const
 {
   DriverAssemblyState das;
-  std::string curName((const char*)cur->name);
+  std::string curName(castXMLCharToChar(cur->name));
   std::string update_mode("pbyp");
-  std::string qmc_mode("invalid");
+  std::string qmc_mode;
   std::string multi_tag("no");
   std::string warp_tag("no");
   std::string append_tag("no");
@@ -70,7 +72,8 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   std::string gpu_tag("no");
 #endif
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(qmc_mode, "method");
+  aAttrib.add(qmc_mode, "method",
+              {"", "vmc", "vmc_batch", "dmc", "dmc_batch", "csvmc", "rmc", "linear", "linear_batch", "wftest"});
   aAttrib.add(update_mode, "move");
   aAttrib.add(multi_tag, "multiple");
   aAttrib.add(warp_tag, "warp");
@@ -90,67 +93,63 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   infoSummary.flush();
   infoLog.flush();
 
-  std::string wf_test_name("wftest");
-
+  // Really by position if you don't write <qmc name="xxx",,,>
+  // you can write <vmc ...> so hacky
   if (curName != "qmc")
     qmc_mode = curName;
-  int nchars = qmc_mode.size();
-  if (qmc_mode.find("linear_batch") < nchars)
+
+  const int nchars = qmc_mode.size();
+
+  using DV = ProjectData::DriverVersion;
+  switch (project_data_.get_driver_version())
   {
-    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
-  }
-  else if (qmc_mode.find("linear") < nchars)
-  {
-    das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
-  }
-  else if (qmc_mode.find("opt_batch") < nchars)
-  {
-    APP_ABORT("'opt_batch' driver no longer supported");
-  }
-  else if (qmc_mode.find("opt") < nchars)
-  {
-    APP_ABORT("'opt' driver no longer supported");
-  }
-  else
-  {
-    if (qmc_mode.find("ptcl") < nchars)
-      das.what_to_do[UPDATE_MODE] = 1;
-    if (qmc_mode.find("mul") < nchars)
-      das.what_to_do[MULTIPLE_MODE] = 1;
-    if (qmc_mode.find("warp") < nchars)
-      das.what_to_do[SPACEWARP_MODE] = 1;
-    //       if (qmc_mode.find("rmcPbyP")<nchars)
-    //       {
-    //         das.new_run_type=RMC_PBYP_RUN;
-    //       }
-    //       else
-    if (qmc_mode.find("rmc") < nchars)
-    {
-      das.new_run_type = QMCRunType::RMC;
-    }
-    else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
-    {
+  case DV::BATCH:
+#if defined(QMC_CUDA)
+    throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
+                             "Please use OpenMP offload build.");
+#endif
+    if (qmc_mode.find("vmc") < nchars) // order matters here
       das.new_run_type = QMCRunType::VMC_BATCH;
-    }
-    else if (qmc_mode.find("vmc") < nchars)
-    {
-      das.new_run_type = QMCRunType::VMC;
-    }
-    else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
-    {
+    else if (qmc_mode.find("dmc") < nchars) // order matters here
       das.new_run_type = QMCRunType::DMC_BATCH;
-    }
-    else if (qmc_mode.find("dmc") < nchars)
-    {
-      das.new_run_type = QMCRunType::DMC;
-    }
-    else if (qmc_mode == wf_test_name)
-    {
-      das.new_run_type = QMCRunType::WF_TEST;
-    }
+    else if (qmc_mode.find("linear") < nchars)
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
+    else
+      throw UniformCommunicateError("QMC mode unknown. Valid modes for batched drivers are : vmc, dmc, linear.");
+    break;
+  // Begin to separate driver version = batch input reading from the legacy input parsing
+  case DV::LEGACY:
+#if defined(QMC_CUDA)
+    if (qmc_mode.find("batch") < nchars)
+      throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
+                               "Please use OpenMP offload build.");
+#endif
+    if (qmc_mode.find("linear_batch") < nchars) // order matters here
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
+    else if (qmc_mode.find("linear") < nchars)
+      das.new_run_type = QMCRunType::LINEAR_OPTIMIZE;
     else
     {
-      app_log() << "Unknown qmc method: " << qmc_mode << std::endl;
+      if (qmc_mode.find("ptcl") < nchars)
+        das.what_to_do[UPDATE_MODE] = 1;
+      if (qmc_mode.find("mul") < nchars)
+        das.what_to_do[MULTIPLE_MODE] = 1;
+      if (qmc_mode.find("warp") < nchars)
+        das.what_to_do[SPACEWARP_MODE] = 1;
+      if (qmc_mode.find("rmc") < nchars)
+        das.new_run_type = QMCRunType::RMC;
+      else if (qmc_mode.find("vmc_batch") < nchars) // order matters here
+        das.new_run_type = QMCRunType::VMC_BATCH;
+      else if (qmc_mode.find("vmc") < nchars)
+        das.new_run_type = QMCRunType::VMC;
+      else if (qmc_mode.find("dmc_batch") < nchars) // order matters here
+        das.new_run_type = QMCRunType::DMC_BATCH;
+      else if (qmc_mode.find("dmc") < nchars)
+        das.new_run_type = QMCRunType::DMC;
+      else if (qmc_mode == "wftest")
+        das.new_run_type = QMCRunType::WF_TEST;
+      else
+        throw std::runtime_error("qmc method cannot be empty!");
     }
   }
   return das;
@@ -173,7 +172,6 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   std::queue<QMCHamiltonian*> targetH;      //FIFO
   xmlNodePtr tcur = cur->children;
   std::unique_ptr<QMCDriverInterface> new_driver;
-  auto wf_factory = wavefunction_pool.getWaveFunctionFactory("wavefunction");
   while (tcur != NULL)
   {
     if (xmlStrEqual(tcur->name, (const xmlChar*)"qmcsystem"))
@@ -241,7 +239,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, wf_factory, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 qmc_system.getSampleStack(), comm));
   }
   else if (das.new_run_type == QMCRunType::DMC)
@@ -253,7 +251,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
     new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, wf_factory, primaryH),
+                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 comm));
   }
   else if (das.new_run_type == QMCRunType::RMC)
@@ -275,14 +273,13 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE_BATCH)
   {
 #ifdef MIXED_PRECISION
-    APP_ABORT(
-        "QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. Please use "
-        "full precision build instead.");
+    APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
+              "Please use full precision build instead.");
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
         QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
-                                 MCPopulation(comm->size(), comm->rank(), qmc_system, 
-                                              &qmc_system, primaryPsi, wf_factory, primaryH),
+                                 MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
+                                              primaryH),
                                  qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);

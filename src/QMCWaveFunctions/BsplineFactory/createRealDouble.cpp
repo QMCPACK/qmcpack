@@ -11,6 +11,7 @@
 
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include <PlatformSelector.hpp>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
@@ -29,11 +30,9 @@ std::unique_ptr<BsplineReaderBase> createBsplineRealDouble(EinsplineSetBuilder* 
                                                            const std::string& useGPU)
 {
   app_summary() << "    Using real valued spline SPOs with real double precision storage (R2R)." << std::endl;
-#if defined(ENABLE_OFFLOAD)
-  if (useGPU == "yes")
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
     app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
                   << std::endl;
-#endif
   app_summary() << "    Running on CPU." << std::endl;
 
   std::unique_ptr<BsplineReaderBase> aReader;

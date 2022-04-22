@@ -96,9 +96,6 @@ public:
   */
   inline bool hasIonDerivs() const { return ionDerivs; }
 
-  /// return the size of the basis set if there is any
-  virtual int getBasisSetSize() const { return 0; }
-
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
 
@@ -242,6 +239,17 @@ public:
                                 GradVector& dpsi,
                                 ValueVector& d2psi,
                                 ValueVector& dspin);
+
+  /** evaluate the values this single-particle orbital sets of multiple walkers
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param psi_v_list the list of value vector pointers in a walker batch
+   */
+  virtual void mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
+                                const RefVectorWithLeader<ParticleSet>& P_list,
+                                int iat,
+                                const RefVector<ValueVector>& psi_v_list) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch

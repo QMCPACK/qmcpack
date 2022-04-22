@@ -78,6 +78,9 @@ public:
   ///typedef for the ParticleScalar
   using ParticleScalar = ParticleSet::Scalar_t;
 
+  ///typedef for SPOMap
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
   ///enum to denote energy domain of operators
   enum EnergyDomains
   {
@@ -357,7 +360,7 @@ public:
    * @return Void
    */
   inline virtual void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                        const ParticleSet& source,
+                                                        ParticleSet& source,
                                                         const TWFFastDerivWrapper& psi,
                                                         const int iat,
                                                         std::vector<std::vector<ValueMatrix>>& Bforce)

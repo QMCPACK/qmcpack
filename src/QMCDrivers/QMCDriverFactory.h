@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -10,6 +10,7 @@
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -48,12 +49,23 @@ public:
     QMCRunType new_run_type = QMCRunType::DUMMY;
   };
 
+  /** Application uses this constructor
+   *  param[in] project_data    this is stored as a reference and this state controls later behavior.
+   *                            For both the driver factory i.e. driver verion. And the drivers it creates
+   *                            i.e. the section id and max CPU seconds.
+   */
   QMCDriverFactory(const ProjectData& project_data);
 
   /** default constructor **/
   //QMCDriverFactory() ;
 
-  /** read the current QMC Section */
+  /** read the current QMC Section
+   *  In the application context project data can indicate the input be read in the context of
+   *  the batched driver architecture.
+   *  param[in] cur            qmc section node
+   *  param[in] force_batch    forces input to be evaluated as if project driver type = batched
+   *                           false does not force unbatched!
+   */
   DriverAssemblyState readSection(xmlNodePtr cur) const;
 
   /** create a new QMCDriver

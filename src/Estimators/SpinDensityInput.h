@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -17,6 +17,9 @@
 
 namespace qmcplusplus
 {
+
+class SpinDensityNew;
+
 /** Native representation for Spin Density Estimators inputs
  *
  *  This class servers three purposes all related to properly handling
@@ -33,10 +36,12 @@ public:
   using POLT               = PtclOnLatticeTraits;
   using Lattice            = POLT::ParticleLayout;
   using PosType            = QMCTraits::PosType;
+  using Consumer = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;
 
 public:
-  SpinDensityInput(){};
+  SpinDensityInput(){}
+  SpinDensityInput(xmlNodePtr node);
   void readXML(xmlNodePtr cur);
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }

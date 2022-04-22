@@ -33,13 +33,13 @@ class Backflow_ee;
 
 class BackflowBuilder
 {
-  using RealType     = BackflowFunctionBase::RealType;
-  using HandlerType  = LRHandlerBase;
-  using GridType     = LinearGrid<RealType>;
-  using PtclPoolType = std::map<std::string, ParticleSet*>;
+  using RealType    = BackflowFunctionBase::RealType;
+  using HandlerType = LRHandlerBase;
+  using GridType    = LinearGrid<RealType>;
+  using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
 public:
-  BackflowBuilder(ParticleSet& p, PtclPoolType& pool);
+  BackflowBuilder(ParticleSet& p, const PSetMap& pool);
 
   std::unique_ptr<BackflowTransformation> buildBackflowTransformation(xmlNodePtr cur);
 
@@ -47,7 +47,7 @@ public:
 
 private:
   ParticleSet& targetPtcl;
-  PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
   bool IgnoreSpin;
   RealType Rs;
   RealType Kc;

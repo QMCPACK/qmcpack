@@ -11,6 +11,5 @@
 
 message("Building AFQMC performance executable ")
 
-
 add_executable(qmc-afqmc-performance performance.cpp)
 target_link_libraries(qmc-afqmc-performance afqmc platform_LA)

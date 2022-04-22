@@ -210,7 +210,7 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   ParticleSet elec(simulation_cell, kind);
 
   elec.setName("elec");
-  elec.create({1,2});
+  elec.create({1, 2});
   elec.R[0] = {0.0, 0.0, 0.0};
   elec.R[1] = {0.1, 0.2, 0.3};
   elec.R[2] = {0.3, 0.1, 0.2};
@@ -236,7 +236,9 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
+  ResourceCollection caa_res("test_caa_res");
   elec.createResource(pset_res);
+  caa.createResource(caa_res);
 
   // testing batched interfaces
   RefVectorWithLeader<ParticleSet> p_ref_list(elec, {elec, elec_clone});
@@ -247,6 +249,7 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, psi_clone});
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<OperatorBase> mw_caa_lock(caa_res, caa_ref_list);
 
   ParticleSet::mw_update(p_ref_list);
   caa.mw_evaluate(caa_ref_list, psi_ref_list, p_ref_list);
@@ -261,8 +264,6 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
 TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
 {
   test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS);
-#if defined(ENABLE_OFFLOAD)
   test_CoulombPBCAA_3p(DynamicCoordinateKind::DC_POS_OFFLOAD);
-#endif
 }
 } // namespace qmcplusplus

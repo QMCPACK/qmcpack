@@ -122,7 +122,8 @@ function(
 
   if(NOT QMC_OMP)
     if(${THREADS} GREATER 1)
-      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
+      message(VERBOSE
+              "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
       return()
     endif()
   endif()

@@ -16,14 +16,16 @@
 #include "SoaAtomicBasisSet.h"
 #include "MultiQuinticSpline1D.h"
 #include "MultiFunctorAdapter.h"
-#include "SoaCartesianTensor.h"
-#include "SoaSphericalTensor.h"
+#include "Numerics/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {
 template<class COT, typename ORBT>
 SoaLocalizedBasisSet<COT, ORBT>::SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els)
-    : ions_(ions), myTableIndex(els.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)), SuperTwist(0.0)
+    : ions_(ions),
+      myTableIndex(els.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+      SuperTwist(0.0)
 {
   NumCenters = ions.getTotalNum();
   NumTargets = els.getTotalNum();

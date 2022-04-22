@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR afqmc_wfn_factory)
 set(UTEST_EXE test_${SRC_DIR})
 
@@ -39,8 +38,7 @@ if(NOT QMC_COMPLEX)
   target_link_libraries(${UTEST_EXE} catch_main afqmc)
   set(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
   add_unit_test(
-    ${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>
-    "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
+    ${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
     "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")

@@ -19,6 +19,7 @@
 #include "EwaldRef.h"
 #include "Particle/DistanceTable.h"
 #include "Utilities/ProgressReportEngine.h"
+#include <ResourceCollection.h>
 #include "Numerics/OneDimCubicSplineLinearGrid.h"
 
 namespace qmcplusplus
@@ -205,8 +206,7 @@ void CoulombPBCAA::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     }
   }
   else
-    for (int iw = 0; iw < o_list.size(); iw++)
-      o_list[iw].evaluate(p_list[iw]);
+    OperatorBase::mw_evaluate(o_list, wf_list, p_list);
 }
 
 CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
@@ -506,11 +506,8 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
                                                                     const RefVectorWithLeader<ParticleSet>& p_list)
 {
   const size_t nw = o_list.size();
-  std::vector<Return_t> values(nw);
-  Vector<Return_t, OffloadPinnedAllocator<Return_t>> values_offload(nw);
   auto& p_leader   = p_list.getLeader();
   auto& caa_leader = o_list.getCastedLeader<CoulombPBCAA>();
-
   ScopedTimer local_timer(caa_leader.evalSR_timer_);
 
   RefVectorWithLeader<DistanceTable> dt_list(p_leader.getDistTable(caa_leader.d_aa_ID));
@@ -524,6 +521,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   if (chunk_size == 0)
     throw std::runtime_error("bug dtaa_leader.get_num_particls_stored() == 0");
 
+  auto& values_offload = caa_leader.mw_res_->values_offload;
   const size_t total_num      = p_leader.getTotalNum();
   const size_t total_num_half = (total_num + 1) / 2;
   const size_t num_padded     = getAlignedSize<RealType>(total_num);
@@ -539,9 +537,10 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
   const auto delta_inv   = caa_leader.rVs_offload->get_delta_inv();
   const auto Zat         = caa_leader.Zat_offload->data();
 
-  auto value_ptr = values_offload.data();
-
   {
+    values_offload.resize(nw);
+    std::fill_n(values_offload.data(), nw, 0);
+    auto value_ptr = values_offload.data();
     values_offload.updateTo();
     for (size_t ichunk = 0; ichunk < num_chunks; ichunk++)
     {
@@ -549,7 +548,7 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
       const size_t last            = std::min(first + chunk_size, total_num_half);
       const size_t this_chunk_size = last - first;
 
-      auto* mw_dist = dtaa_leader.mw_evaluate_range(dt_list, p_list, first, last);
+      auto* mw_dist = dtaa_leader.mw_evalDistsInRange(dt_list, p_list, first, last);
 
       ScopedTimer offload_scope(caa_leader.offload_timer_);
 
@@ -576,9 +575,10 @@ std::vector<CoulombPBCAA::Return_t> CoulombPBCAA::mw_evalSR_offload(const RefVec
     }
 
     values_offload.updateFrom();
-    for (int iw = 0; iw < nw; iw++)
-      values[iw] = values_offload[iw];
   }
+  std::vector<Return_t> values(nw);
+  for (int iw = 0; iw < nw; iw++)
+    values[iw] = values_offload[iw];
   return values;
 }
 
@@ -607,6 +607,29 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
     }   //spec1
   }
   return res;
+}
+
+void CoulombPBCAA::createResource(ResourceCollection& collection) const
+{
+  auto new_res = std::make_unique<CoulombPBCAAMultiWalkerResource>();
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void CoulombPBCAA::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  auto res_ptr   = dynamic_cast<CoulombPBCAAMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
+  O_leader.mw_res_.reset(res_ptr);
+}
+
+void CoulombPBCAA::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<CoulombPBCAA>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
 }
 
 std::unique_ptr<OperatorBase> CoulombPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

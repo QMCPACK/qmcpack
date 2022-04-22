@@ -41,7 +41,7 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
   setIfInInput(basis_sets_, "basis");
 }
 
-void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticularValidity()
+void OneBodyDensityMatricesInput::OneBodyDensityMatricesInputSection::checkParticularValidity()
 {
   using namespace estimatorinput;
   const std::string error_tag{"OneBodyDensityMatrices input: "};
@@ -71,7 +71,7 @@ void OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::checkParticu
   }
 }
 
-std::any OneBodyDensityMatricesInput::OneBodyDensityMatrixInputSection::assignAnyEnum(const std::string& name) const
+std::any OneBodyDensityMatricesInput::OneBodyDensityMatricesInputSection::assignAnyEnum(const std::string& name) const
 {
   return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
 }

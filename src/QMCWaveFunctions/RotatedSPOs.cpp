@@ -60,7 +60,6 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
-  const size_t nb  = Phi->getBasisSetSize();
 
   // create active rotations
   m_act_rot_inds = rotations;
@@ -139,8 +138,12 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     rot_mat[p][q] = -x;
   }
 
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat). 
+    Finally, apply unitary matrix to orbs.
+  */
   exponentiate_antisym_matrix(rot_mat);
-
   Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
@@ -361,7 +364,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     myL_J.resize(NP);
     myL_J            = 0.0;
     const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     const RealType* restrict C_p = Coeff.data();
@@ -431,7 +433,6 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   if (recalculate)
   {
     const size_t nmo = Phi->getOrbitalSetSize();
-    const size_t nb  = Phi->getBasisSetSize();
     const size_t nel = P.last(0) - P.first(0);
 
     table_method_evalWF(dlogpsi, nel, nmo, psiCurrent, Coeff, C2node_up, C2node_dn, detValues_up, detValues_dn, M_up,

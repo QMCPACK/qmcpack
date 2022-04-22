@@ -68,6 +68,7 @@ public:
     SUM_INDEX_SIZE
   };
 
+  using EffectiveWeight = QMCTraits::QTFull::RealType;
 
   ///Constructor.
   QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
@@ -202,8 +203,6 @@ protected:
   Return_rt Etarget;
   ///real target energy with the Correlation Factor
   Return_rt EtargetEff;
-  ///effective number of walkers
-  Return_rt NumWalkersEff;
   ///fraction of the number of walkers below which the costfunction becomes invalid
   Return_rt MinNumWalkers;
   ///maximum weight beyond which the weight is set to 1
@@ -307,7 +306,13 @@ protected:
   /// Flag on whether the variational parameter override is output to the new wavefunction
   bool do_override_output;
 
-  virtual Return_rt correlatedSampling(bool needGrad = true) = 0;
+  /** run correlated sampling
+   * return effective walkers (\sum_i w_i)^2/(Nw * \sum_i w^2_i)
+   */
+  virtual EffectiveWeight correlatedSampling(bool needGrad = true) = 0;
+
+  /// check the validity of the effective weight calculated by correlatedSampling
+  bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

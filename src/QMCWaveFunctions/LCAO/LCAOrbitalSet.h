@@ -75,7 +75,7 @@ public:
 
   /** return the size of the basis set
     */
-  int getBasisSetSize() const override { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
+  int getBasisSetSize() const { return (myBasisSet == nullptr) ? 0 : myBasisSet->getBasisSetSize(); }
 
   bool isIdentity() const { return Identity; };
 

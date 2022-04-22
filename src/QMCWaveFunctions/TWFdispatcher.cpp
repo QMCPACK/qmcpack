@@ -84,7 +84,7 @@ void TWFdispatcher::flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& 
   else
   {
     const int num_wf = wf_list.size();
-    grads.resize(num_wf);
+    assert(grads.grads_positions.size() == wf_list.size());
     for (size_t iw = 0; iw < num_wf; iw++)
       if constexpr (CT == CoordsType::POS_SPIN)
         grads.grads_positions[iw] = wf_list[iw].evalGradWithSpin(p_list[iw], iat, grads.grads_spins[iw]);
@@ -107,10 +107,11 @@ void TWFdispatcher::flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFuncti
   {
     const int num_wf = wf_list.size();
     ratios.resize(num_wf);
-    grads.resize(num_wf);
+    assert(wf_list.size() == grads.grads_positions.size());
     for (size_t iw = 0; iw < num_wf; iw++)
       if constexpr (CT == CoordsType::POS_SPIN)
-        ratios[iw] = wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grads.grads_positions[iw], grads.grads_spins[iw]);
+        ratios[iw] =
+            wf_list[iw].calcRatioGradWithSpin(p_list[iw], iat, grads.grads_positions[iw], grads.grads_spins[iw]);
       else
         ratios[iw] = wf_list[iw].calcRatioGrad(p_list[iw], iat, grads.grads_positions[iw]);
   }

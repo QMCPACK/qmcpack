@@ -55,7 +55,7 @@ bool ParameterSet::put(xmlNodePtr cur)
 }
 
 template<class PDT>
-void ParameterSet::add(PDT& aparam, const std::string& aname_in, std::vector<PDT>&& candidate_values, TagStatus status)
+void ParameterSet::add(PDT& aparam, const std::string& aname_in, std::vector<PDT> candidate_values, TagStatus status)
 {
   using namespace qmcplusplus;
   std::string aname(lowerCase(aname_in));
@@ -76,23 +76,23 @@ void ParameterSet::setValue(const std::string& aname_in, PDT aval)
   }
 }
 
-template void ParameterSet::add(std::string&, const std::string&, std::vector<std::string>&&, TagStatus);
-template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>&&, TagStatus);
-template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>&&, TagStatus);
-template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>&&, TagStatus);
-template void ParameterSet::add<float>(float&, const std::string&, std::vector<float>&&, TagStatus);
+template void ParameterSet::add(std::string&, const std::string&, std::vector<std::string>, TagStatus);
+template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>, TagStatus);
+template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>, TagStatus);
+template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>, TagStatus);
+template void ParameterSet::add<float>(float&, const std::string&, std::vector<float>, TagStatus);
 template void ParameterSet::add<std::complex<double>>(std::complex<double>&,
                                                       const std::string&,
-                                                      std::vector<std::complex<double>>&&,
+                                                      std::vector<std::complex<double>>,
                                                       TagStatus);
 template void ParameterSet::add<std::complex<float>>(std::complex<float>&,
                                                      const std::string&,
-                                                     std::vector<std::complex<float>>&&,
+                                                     std::vector<std::complex<float>>,
                                                      TagStatus);
 
 template void ParameterSet::add<qmcplusplus::TinyVector<int, 3u>>(qmcplusplus::TinyVector<int, 3u>&,
                                                                   const std::string&,
-                                                                  std::vector<qmcplusplus::TinyVector<int, 3u>>&&,
+                                                                  std::vector<qmcplusplus::TinyVector<int, 3u>>,
                                                                   TagStatus);
 
 template void ParameterSet::setValue<int>(const std::string& aname_in, int aval);

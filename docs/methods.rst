@@ -114,6 +114,61 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
+.. _batched_drivers:
+
+Batched drivers
+---------------
+
+Under the Exascale Computing Project effort a new set of QMC drivers was developed
+to eliminate the divergence of legacy CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
+The divergence came from the the fact that the CPU code path favors executing all the compute tasks within a step
+for one walker and then advance walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
+In this way, walkers are not synchronized with each other and maximal throughout can be achieved on CPU.
+The GPU code path favors executing the same compute task over all the walkers together to maximize GPU throughput.
+This compute dispatch pattern minimizes the overhead of dispatching computation and host-device data transfer.
+However, the legacy GPU code path only leverages the OpenMP main host thread for handling
+all the interaction between the host and GPUs and limit the kernel dispatch capability.
+In brief, the CPU code path handles computation with a walker batch size of one and many batches
+while the GPU code path uses only one batch containing all the walkers.
+The new drivers that implement this flexible batching scheme are called "batched drivers".
+
+The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
+A crowd is a subset of the walkers that are operated on as as single batch.
+Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
+Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
+In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
+Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
+in a way that is not feasible with the legacy GPU implementation.
+
+For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
+
+.. _transition_guide:
+
+Transition from classic drivers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Available drivers in batched versions are ``vmc``, ``dmc`` and ``linear``.
+There are notable changes in the driver input section when moving from classic drivers to batched drivers:
+
+  - ``walkers`` is not supported in any batched driver inputs.
+    Instead, ``walkers_per_rank`` and ``total_walkers`` specify the population at the start of a driver run.
+
+  - ``crowds`` can added in batched drivers to specify the number of crowds.
+
+  - If a classic driver input section contains ``walkers`` equals 1, the same effect can be achieved by
+    omitting the specification of ``walkers_per_rank``, ``total_walkers`` or ``crowds`` in batched drivers.
+
+  - The ``walkers_per_rank``, ``total_walkers`` or ``crowds`` parameters are optional.
+    See driver-specific parameter additional information below about default values.
+
+  - When running on GPUs, tuning ``walkers_per_rank`` or ``total_walkers`` is likely needed to maximize GPU throughput,
+    just like tuning ``walkers`` in the classic drivers.
+
+  - Only particle-by-particle move is supported. No all-particle move support.
+
+  - During development the new drivers had separate names (``vmc_batch``, ``dmc_batch``, and ``linear_batch``).  The use of separate names has been replaced by the ``driver_version`` parameter in the ``project`` section.
+
 .. _vmc:
 
 Variational Monte Carlo
@@ -266,8 +321,10 @@ The following is an example of VMC section storing configurations (walker sample
      <parameter name="usedrift">   no </parameter>
    </qmc>
 
-``vmc_batch`` driver (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _vmc_batch:
+
+Batched ``vmc`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   parameters:
 
@@ -363,11 +420,11 @@ Additional information:
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
-An example VMC section for a simple ``vmc_batch`` run:
+An example VMC section for a simple batched ``vmc`` run:
 
 ::
 
-  <qmc method="vmc_batch" move="pbyp">
+  <qmc method="vmc" move="pbyp">
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="walkers_per_rank">    256 </parameter>
     <parameter name="warmupSteps">  100 </parameter>
@@ -1174,7 +1231,7 @@ Use the following parameters to the linear optimizers to output intermediate val
 
   The ``output_matrices_csv`` parameter will write to <base name>.ham.s000.scalar.dat and <base name>.ovl.scalar.dat.  One line per iteration of the optimizer loop.  Combined with ``freeze_parameters``, this allows computing error bars on the matrices for use in regression testing.
 
-  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (``linear_batch``)
+  The ``output_matrices_hdf`` parameter will output in HDF format the matrices used in the linear method along with the shifts and the eigenvalue and eigenvector produced by QMCPACK.  The file is named "<base name>.<series number>.linear_matrices.h5".  It only works with the batched optimizer (batched version of ``linear``)
 
 
 .. _dmc:
@@ -1512,8 +1569,10 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
     <parameter name="timestep">0.005</parameter>
   </qmc>
 
-``dmc_batch`` driver (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _dmc_batch:
+
+Batched ``dmc`` driver (experimental)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   parameters:
 
@@ -1579,10 +1638,10 @@ Combining VMC and DMC in a single run (wavefunction optimization can be combined
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
 .. code-block::
-  :caption: The following is an example of a minimal DMC section using the ``dmc_batch`` driver
+  :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
   :name: Listing 48b
 
-  <qmc method="dmc_batch" move="pbyp" target="e">
+  <qmc method="dmc" move="pbyp" target="e">
     <parameter name="walkers_per_rank">256</parameter>
     <parameter name="blocks">100</parameter>
     <parameter name="steps">400</parameter>
