@@ -747,23 +747,23 @@ void test_lcao_spinor_ion_derivs()
       spo = bb.createSPOSet(element);
   });
   REQUIRE(spo);
-  
+
   //reference values from finite difference in lcao_spinor_molecule_test.py
   ValueType dx0(-0.0492983, -0.3192778);
   ValueType dy0(-0.1205071, -0.7804567);
   ValueType dz0(-0.1478950, -0.9578333);
-  ValueType dx1(-0.0676367,  1.0506422);
-  ValueType dy1(-0.0392729,  0.6100503);
-  ValueType dz1(-0.0283638,  0.4405919);
+  ValueType dx1(-0.0676367, 1.0506422);
+  ValueType dy1(-0.0392729, 0.6100503);
+  ValueType dz1(-0.0283638, 0.4405919);
 
   const RealType eps = 1e-4;
   SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
-  CHECK(gradIon[0][0][0] == ComplexApprox(dx0).epsilon(eps)); 
+  CHECK(gradIon[0][0][0] == ComplexApprox(dx0).epsilon(eps));
   CHECK(gradIon[0][0][1] == ComplexApprox(dy0).epsilon(eps));
   CHECK(gradIon[0][0][2] == ComplexApprox(dz0).epsilon(eps));
   spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 1, gradIon);
-  CHECK(gradIon[0][0][0] == ComplexApprox(dx1).epsilon(eps)); 
+  CHECK(gradIon[0][0][0] == ComplexApprox(dx1).epsilon(eps));
   CHECK(gradIon[0][0][1] == ComplexApprox(dy1).epsilon(eps));
   CHECK(gradIon[0][0][2] == ComplexApprox(dz1).epsilon(eps));
 }

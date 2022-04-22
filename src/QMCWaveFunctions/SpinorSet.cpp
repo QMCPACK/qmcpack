@@ -419,9 +419,9 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, V
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
 }
 
-void SpinorSet::evaluateGradSource(const ParticleSet& P, 
+void SpinorSet::evaluateGradSource(const ParticleSet& P,
                                    int first,
-                                   int last, 
+                                   int last,
                                    const ParticleSet& source,
                                    int iat_src,
                                    GradMatrix& gradphi)
@@ -436,8 +436,8 @@ void SpinorSet::evaluateGradSource(const ParticleSet& P,
   for (int iat = 0; iat < nelec; iat++)
   {
     ParticleSet::Scalar_t s = P.activeSpin(iat);
-    RealType coss = std::cos(s);
-    RealType sins = std::sin(s);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
     ValueType eis(coss, sins);
     ValueType emis(coss, -sins);
     for (int imo = 0; imo < OrbitalSetSize; imo++)
