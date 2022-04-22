@@ -76,7 +76,6 @@ if(OHMMS_DIM MATCHES 3)
       ${FERMION_SRCS}
       LCAO/LCAOrbitalSet.cpp
       LCAO/LCAOrbitalBuilder.cpp
-      LCAO/SoaSphericalTensor.cpp
       LCAO/MultiQuinticSpline1D.cpp
       LCAO/AOBasisBuilder.cpp
       LCAO/SoaLocalizedBasisSet.cpp)
