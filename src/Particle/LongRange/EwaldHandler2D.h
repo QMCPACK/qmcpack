@@ -42,17 +42,14 @@ public:
   inline mRealType srDf(mRealType r, mRealType rinv) const override
   {
     throw std::runtime_error("2D Ewald sr derivative not implemented");
-    return 0.0;
   }
   inline mRealType lrDf(mRealType r) const override
   {
     throw std::runtime_error("2D Ewald lr derivative not implemented");
-    return 0.0;
   }
   virtual mRealType evaluate_vlr_k(mRealType k) const override
   {
     throw std::runtime_error("2D Ewald vlr_k not implemented");
-    return 0.0;
   }
   void initBreakup(ParticleSet& ref) override {}
   void Breakup(ParticleSet& ref, mRealType rs_in) override { initBreakup(ref); }
