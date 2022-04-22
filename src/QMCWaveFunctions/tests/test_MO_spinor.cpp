@@ -118,6 +118,20 @@ void test_lcao_spinor()
     CHECK(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
   }
 
+  /** this is a somewhat simple example. We have an ion at the origin
+   * and a gaussian basis function centered on the ion as a orbital.
+   * In this case, the ion derivative is actually just the negative of 
+   * the electron gradient. 
+   */
+  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
+  for (int iat = 0; iat < 1; iat++)
+  {
+    CHECK(gradIon[iat][0][0] == ComplexApprox(-vdx).epsilon(eps));
+    CHECK(gradIon[iat][0][1] == ComplexApprox(-vdy).epsilon(eps));
+    CHECK(gradIon[iat][0][2] == ComplexApprox(-vdz).epsilon(eps));
+  }
+
   int OrbitalSetSize = spo->getOrbitalSetSize();
   //temporary arrays for holding the values of the up and down channels respectively.
   SPOSet::ValueVector psi_work;
@@ -432,6 +446,20 @@ void test_lcao_spinor_excited()
     CHECK(dpsiM[iat][0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsiM[iat][0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
+  }
+
+  /** this is a somewhat simple example. We have an ion at the origin
+   * and a gaussian basis function centered on the ion as a orbital.
+   * In this case, the ion derivative is actually just the negative of 
+   * the electron gradient. 
+   */
+  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
+  for (int iat = 0; iat < 1; iat++)
+  {
+    CHECK(gradIon[iat][0][0] == ComplexApprox(-vdx).epsilon(eps));
+    CHECK(gradIon[iat][0][1] == ComplexApprox(-vdy).epsilon(eps));
+    CHECK(gradIon[iat][0][2] == ComplexApprox(-vdz).epsilon(eps));
   }
 
   //temporary arrays for holding the values of the up and down channels respectively.

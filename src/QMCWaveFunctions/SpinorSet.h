@@ -129,6 +129,22 @@ public:
    */
   void evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi) override;
 
+  /** evaluate the gradients of this single-particle orbital
+   *  for [first,last) target particles with respect to the given source particle
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param iat_src source particle index
+   * @param gradphi gradients
+   *
+   */
+  virtual void evaluateGradSource(const ParticleSet& P,
+                                  int first,
+                                  int last,
+                                  const ParticleSet& source,
+                                  int iat_src,
+                                  GradMatrix& gradphi) override;
+
   std::unique_ptr<SPOSet> makeClone() const override;
 
 private:
