@@ -588,9 +588,25 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
   if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error(
-        "CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an "
-        "implementation with complex-valued storage that may be resurrected using real-valued storage.");
+  {
+    const auto& d_aa(P.getDistTableAA(d_aa_ID));
+    //distance table handles jat<iat
+    for (int iat = 1; iat < NumCenters; ++iat)
+    {
+      mRealType u = 0;
+      const int slab_dir = OHMMS_DIM - 1;
+      const auto& dr = d_aa.getDisplRow(iat);
+      for (int jat = 0; jat < iat; ++jat)
+      {
+        const RealType z = dr[jat][slab_dir];
+        u += Zat[jat] *
+             AA->evaluate_slab(z,
+                               P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat],
+                               PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
+        res += Zat[iat]*u;
+      }
+    }
+  }
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)
