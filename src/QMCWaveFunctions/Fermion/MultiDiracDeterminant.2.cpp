@@ -440,17 +440,13 @@ void MultiDiracDeterminant::mw_evaluateDetsForPtclMove(const RefVectorWithLeader
                     is_device_ptr(psiV_list_devptr, psiMinv_temp_list_devptr)")
     for (size_t iw = 0; iw < nw; iw++)
     {
-      for (size_t i = 0; i < NumPtcls; i++)
-      {
-        const size_t J            = confgListOccup_ptr[i];
-        psiV_temp_list_ptr[iw][i] = psiV_list_devptr[iw][J];
-      }
-
       ValueType c_ratio = 0.0;
       PRAGMA_OFFLOAD("omp parallel for reduction(+ : c_ratio)")
-      for (size_t jc = 0; jc < psiMinv_cols; jc += 1)
+      for (size_t jc = 0; jc < NumPtcls; jc++)
       {
-        size_t ic = jc * psiMinv_cols;
+        const size_t J             = confgListOccup_ptr[jc];
+        psiV_temp_list_ptr[iw][jc] = psiV_list_devptr[iw][J];
+        size_t ic                  = jc * psiMinv_cols;
         c_ratio += (psiMinv_temp_list_devptr[iw] + WorkingIndex)[ic] * psiV_temp_list_ptr[iw][jc];
       }
       curRatio_list_ptr[iw]     = c_ratio;
