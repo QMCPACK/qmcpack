@@ -53,7 +53,6 @@ public:
   {
     Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
-    registerTimers();
   }
 
   ///default destructor
@@ -216,13 +215,6 @@ protected:
       throw std::runtime_error("gradient of zero");
     }
     return true;
-  }
-
-  /// register all the timers
-  void registerTimers()
-  {
-    UpdateTimer.reset();
-    RatioTimer.reset();
   }
 };
 
