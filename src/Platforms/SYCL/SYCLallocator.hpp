@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -26,13 +26,12 @@
 #include <atomic>
 #include <limits>
 #include <CL/sycl.hpp>
+#include "config.h"
 #include "allocator_traits.hpp"
-#include "DeviceManager.h"
+#include "SYCLruntime.hpp"
 
 namespace qmcplusplus
 {
-extern sycl::queue* get_default_queue();
-
 extern std::atomic<size_t> SYCLallocator_device_mem_allocated;
 
 inline size_t getSYCLdeviceMemAllocated() { return SYCLallocator_device_mem_allocated; }
@@ -64,12 +63,10 @@ struct SYCLSharedAllocator
 
   T* allocate(std::size_t n)
   {
-    T* pt= sycl::aligned_alloc_shared<T>(ALIGN, n, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
+    T* pt = sycl::aligned_alloc_shared<T>(ALIGN, n, getSYCLDefaultDeviceDefaultQueue());
     return pt;
   }
-  void deallocate(T* p, std::size_t) { 
-    sycl::free(p, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
-  }
+  void deallocate(T* p, std::size_t) { sycl::free(p, getSYCLDefaultDeviceDefaultQueue()); }
 };
 
 template<class T1, class T2>
@@ -120,14 +117,14 @@ public:
 
   T* allocate(std::size_t n)
   {
-    T* pt=sycl::aligned_alloc_device<T>(ALIGN, n, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
+    T* pt = sycl::aligned_alloc_device<T>(ALIGN, n, getSYCLDefaultDeviceDefaultQueue());
     SYCLallocator_device_mem_allocated += n * sizeof(T);
     return pt;
   }
 
   void deallocate(T* p, std::size_t n)
   {
-    sycl::free(p, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
+    sycl::free(p, getSYCLDefaultDeviceDefaultQueue());
     SYCLallocator_device_mem_allocated -= n * sizeof(T);
   }
 
@@ -161,17 +158,17 @@ public:
 
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
-    DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue().memcpy(device_ptr,host_ptr,n*sizeof(T)).wait();
+    getSYCLDefaultDeviceDefaultQueue().memcpy(device_ptr, host_ptr, n * sizeof(T)).wait();
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
-    DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue().memcpy(host_ptr,device_ptr,n*sizeof(T)).wait();
+    getSYCLDefaultDeviceDefaultQueue().memcpy(host_ptr, device_ptr, n * sizeof(T)).wait();
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
   {
-    DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue().memcpy(to_ptr,from_ptr,n*sizeof(T)).wait();
+    getSYCLDefaultDeviceDefaultQueue().memcpy(to_ptr, from_ptr, n * sizeof(T)).wait();
   }
 };
 
@@ -191,9 +188,10 @@ struct qmc_allocator_traits<qmcplusplus::SYCLAllocator<T>>
 {
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
-  static void fill_n(T* ptr, size_t n, const T& value) { 
+  static void fill_n(T* ptr, size_t n, const T& value)
+  {
     //THINK
-    //qmcplusplus::SYCLfill_n(ptr, n, value); 
+    //qmcplusplus::SYCLfill_n(ptr, n, value);
   }
   static void updateTo(SYCLAllocator<T>& alloc, T* host_ptr, size_t n)
   {
@@ -206,7 +204,6 @@ struct qmc_allocator_traits<qmcplusplus::SYCLAllocator<T>>
     T* device_ptr = alloc.getDevicePtr(host_ptr);
     alloc.copyFromDevice(host_ptr, device_ptr, n);
   }
-
 };
 
 /** allocator for SYCL host pinned memory
@@ -234,13 +231,8 @@ struct SYCLHostAllocator
     typedef SYCLHostAllocator<U> other;
   };
 
-  T* allocate(std::size_t n)
-  {
-    return sycl::aligned_alloc_host<T>(ALIGN, n, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
-  }
-  void deallocate(T* p, std::size_t) { 
-    sycl::free(p, DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue());
-  }
+  T* allocate(std::size_t n) { return sycl::aligned_alloc_host<T>(ALIGN, n, getSYCLDefaultDeviceDefaultQueue()); }
+  void deallocate(T* p, std::size_t) { sycl::free(p, getSYCLDefaultDeviceDefaultQueue()); }
 };
 
 template<class T1, class T2>

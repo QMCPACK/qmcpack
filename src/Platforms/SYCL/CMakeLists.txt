@@ -10,8 +10,9 @@
 #//////////////////////////////////////////////////////////////////////////////////////
 
 
-set(SYCL_RT_SRCS SYCLDeviceManager.cpp SYCLallocator.cpp)
+set(SYCL_RT_SRCS SYCLDeviceManager.cpp SYCLallocator.cpp SYCLruntime.cpp)
 
 add_library(platform_sycl_runtime ${SYCL_RT_SRCS})
+target_include_directories(platform_sycl_runtime PRIVATE "../")
 target_link_libraries(platform_sycl_runtime PUBLIC SYCL::host
                                             PRIVATE platform_host_runtime)

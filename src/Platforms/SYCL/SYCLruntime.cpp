@@ -9,11 +9,14 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-#include <cstddef>
-#include <atomic>
+#include <CL/sycl.hpp>
+#include "DeviceManager.h"
+#include "SYCLruntime.hpp"
 
 namespace qmcplusplus
 {
-std::atomic<size_t> SYCLallocator_device_mem_allocated(0);
+sycl::queue getSYCLDefaultDeviceDefaultQueue()
+{
+  return DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue();
 }
+} // namespace qmcplusplus

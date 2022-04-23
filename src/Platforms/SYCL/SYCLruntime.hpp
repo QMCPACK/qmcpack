@@ -9,11 +9,14 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_SYCL_RUNTIME_H
+#define QMCPLUSPLUS_SYCL_RUNTIME_H
 
-#include <cstddef>
-#include <atomic>
+#include <CL/sycl.hpp>
 
 namespace qmcplusplus
 {
-std::atomic<size_t> SYCLallocator_device_mem_allocated(0);
-}
+sycl::queue getSYCLDefaultDeviceDefaultQueue();
+} // namespace qmcplusplus
+
+#endif
