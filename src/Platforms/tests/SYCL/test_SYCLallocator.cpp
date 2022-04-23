@@ -44,8 +44,7 @@ TEST_CASE("SYCL_host_allocator", "[SYCL]")
 {
   sycl::queue m_queue = getSYCLDefaultDeviceDefaultQueue();
   // SYCLHostAllocator
-  Vector<double, SYCLHostAllocator<double>> vec(1024);
-  vec = 1;
+  Vector<double, SYCLHostAllocator<double>> vec(1024, 1);
 
   {
     double* V = vec.data();
@@ -56,6 +55,7 @@ TEST_CASE("SYCL_host_allocator", "[SYCL]")
   CHECK(vec[77] == 79);
 }
 
+/*
 TEST_CASE("SYCL_shared_allocator", "[SYCL]")
 {
   sycl::queue m_queue = getSYCLDefaultDeviceDefaultQueue();
@@ -69,5 +69,6 @@ TEST_CASE("SYCL_shared_allocator", "[SYCL]")
   CHECK(vec[0] == 1);
   CHECK(vec[77] == 78);
 }
+*/
 
 } // namespace qmcplusplus
