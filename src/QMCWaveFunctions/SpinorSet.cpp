@@ -419,6 +419,32 @@ void SpinorSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, V
   dpsi = eye * (eis * psi_work_up - emis * psi_work_down);
 }
 
+void SpinorSet::evaluateGradSource(const ParticleSet& P,
+                                   int first,
+                                   int last,
+                                   const ParticleSet& source,
+                                   int iat_src,
+                                   GradMatrix& gradphi)
+{
+  IndexType nelec = P.getTotalNum();
+
+  GradMatrix gradphi_up(nelec, OrbitalSetSize);
+  GradMatrix gradphi_dn(nelec, OrbitalSetSize);
+  spo_up->evaluateGradSource(P, first, last, source, iat_src, gradphi_up);
+  spo_dn->evaluateGradSource(P, first, last, source, iat_src, gradphi_dn);
+
+  for (int iat = 0; iat < nelec; iat++)
+  {
+    ParticleSet::Scalar_t s = P.activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+    for (int imo = 0; imo < OrbitalSetSize; imo++)
+      gradphi(iat, imo) = gradphi_up(iat, imo) * eis + gradphi_dn(iat, imo) * emis;
+  }
+}
+
 std::unique_ptr<SPOSet> SpinorSet::makeClone() const
 {
   auto myclone = std::make_unique<SpinorSet>();
