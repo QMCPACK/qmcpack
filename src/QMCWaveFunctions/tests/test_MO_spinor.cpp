@@ -67,13 +67,12 @@ void test_lcao_spinor()
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
-     <basisset transform=\"yes\"/> \
-     <sposet name=\"myspo\" size=\"1\"/> \
-   </sposet_builder> \
-   </tmp> \
-";
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor.h5" source="ion" precision="float"> 
+     <basisset transform="yes"/> 
+     <sposet name="myspo" size="1"/> 
+   </sposet_builder> 
+   </tmp>)XML"; 
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -390,17 +389,16 @@ void test_lcao_spinor_excited()
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
-     <basisset name=\"myset\" transform=\"yes\"/> \
-     <sposet name=\"myspo\" basisset=\"myset\" size=\"1\"> \
-       <occupation mode=\"excited\"> \
-         -1 2 \
-       </occupation> \
-     </sposet> \
-   </sposet_builder> \
-   </tmp> \
-";
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor.h5" source="ion" precision="float"> 
+     <basisset name="myset" transform="yes"/> 
+     <sposet name="myspo" basisset="myset" size="1"> 
+       <occupation mode="excited"> 
+         -1 2 
+       </occupation> 
+     </sposet> 
+   </sposet_builder> 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -721,13 +719,12 @@ void test_lcao_spinor_ion_derivs()
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor_molecule.h5\" source=\"ion\" precision=\"float\"> \
-     <basisset transform=\"yes\"/> \
-     <sposet name=\"myspo\" size=\"1\"/> \
-   </sposet_builder> \
-   </tmp> \
-";
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor_molecule.h5" source="ion" precision="float"> 
+     <basisset transform="yes"/> 
+     <sposet name="myspo" size="1"/> 
+   </sposet_builder> 
+   </tmp>)XML"; 
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -767,7 +764,6 @@ void test_lcao_spinor_ion_derivs()
   CHECK(gradIon[0][0][1] == ComplexApprox(dy1).epsilon(eps));
   CHECK(gradIon[0][0][2] == ComplexApprox(dz1).epsilon(eps));
 }
-
 
 TEST_CASE("ReadMolecularOrbital GTO spinor", "[wavefunction]") { test_lcao_spinor(); }
 TEST_CASE("ReadMolecularOrbital GTO spinor with excited", "[wavefunction]") { test_lcao_spinor_excited(); }
