@@ -23,16 +23,7 @@
 
 #include "PinnedAllocator.h"
 
-#if defined(ENABLE_CUDA) && !defined(ENABLE_OFFLOAD)
-#include "DualAllocator.hpp"
-namespace qmcplusplus
-{
-  template<typename T>
-  using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
-  template<typename T>
-  using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
-}
-#else
+#if defined(ENABLE_OFFLOAD)
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 namespace qmcplusplus
 {
@@ -41,6 +32,27 @@ namespace qmcplusplus
   template<typename T>
   using PinnedDualAllocator = OffloadPinnedAllocator<T>;
 }
+#else
+#include "DualAllocator.hpp"
+#if defined(ENABLE_CUDA)
+namespace qmcplusplus
+{
+  template<typename T>
+  using UnpinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, aligned_allocator<T>>;
+  template<typename T>
+  using PinnedDualAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+}
+#elif defined(ENABLE_SYCL)
+namespace qmcplusplus
+{
+  template<typename T>
+  using UnpinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, aligned_allocator<T>>;
+  template<typename T>
+  using PinnedDualAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
+}
+#else
+#error unhandled platform
+#endif
 #endif
 
 #endif
