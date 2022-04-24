@@ -139,10 +139,9 @@ static std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
       devices[id].device =
           sycl::ext::oneapi::level_zero::make_device(sycl_platform, reinterpret_cast<pi_native_handle>(hDevice));
 
-      const sycl::context sycl_context =
-          sycl::ext::oneapi::level_zero::make_context({devices[id].device},
-                                                      reinterpret_cast<pi_native_handle>(hContext),
-                                                      true /* keep the ownership, no transfer */);
+      devices[id].context = sycl::ext::oneapi::level_zero::make_context({devices[id].device},
+                                                                        reinterpret_cast<pi_native_handle>(hContext),
+                                                                        true /* keep the ownership, no transfer */);
     }
     else if (omp_backend.find("opencl") == 0)
     {
