@@ -67,13 +67,12 @@ void test_lcao_spinor()
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
-     <basisset transform=\"yes\"/> \
-     <sposet name=\"myspo\" size=\"1\"/> \
-   </sposet_builder> \
-   </tmp> \
-";
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor.h5" source="ion" precision="float"> 
+     <basisset transform="yes"/> 
+     <sposet name="myspo" size="1"/> 
+   </sposet_builder> 
+   </tmp>)XML"; 
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -116,6 +115,20 @@ void test_lcao_spinor()
     CHECK(dpsiM[iat][0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsiM[iat][0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
+  }
+
+  /** this is a somewhat simple example. We have an ion at the origin
+   * and a gaussian basis function centered on the ion as a orbital.
+   * In this case, the ion derivative is actually just the negative of 
+   * the electron gradient. 
+   */
+  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
+  for (int iat = 0; iat < 1; iat++)
+  {
+    CHECK(gradIon[iat][0][0] == ComplexApprox(-vdx).epsilon(eps));
+    CHECK(gradIon[iat][0][1] == ComplexApprox(-vdy).epsilon(eps));
+    CHECK(gradIon[iat][0][2] == ComplexApprox(-vdz).epsilon(eps));
   }
 
   int OrbitalSetSize = spo->getOrbitalSetSize();
@@ -376,17 +389,16 @@ void test_lcao_spinor_excited()
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* particles = "<tmp> \
-   <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" href=\"lcao_spinor.h5\" source=\"ion\" precision=\"float\"> \
-     <basisset name=\"myset\" transform=\"yes\"/> \
-     <sposet name=\"myspo\" basisset=\"myset\" size=\"1\"> \
-       <occupation mode=\"excited\"> \
-         -1 2 \
-       </occupation> \
-     </sposet> \
-   </sposet_builder> \
-   </tmp> \
-";
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor.h5" source="ion" precision="float"> 
+     <basisset name="myset" transform="yes"/> 
+     <sposet name="myspo" basisset="myset" size="1"> 
+       <occupation mode="excited"> 
+         -1 2 
+       </occupation> 
+     </sposet> 
+   </sposet_builder> 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -432,6 +444,20 @@ void test_lcao_spinor_excited()
     CHECK(dpsiM[iat][0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsiM[iat][0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psiM[iat][0] == ComplexApprox(vlp).epsilon(eps));
+  }
+
+  /** this is a somewhat simple example. We have an ion at the origin
+   * and a gaussian basis function centered on the ion as a orbital.
+   * In this case, the ion derivative is actually just the negative of 
+   * the electron gradient. 
+   */
+  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
+  for (int iat = 0; iat < 1; iat++)
+  {
+    CHECK(gradIon[iat][0][0] == ComplexApprox(-vdx).epsilon(eps));
+    CHECK(gradIon[iat][0][1] == ComplexApprox(-vdy).epsilon(eps));
+    CHECK(gradIon[iat][0][2] == ComplexApprox(-vdz).epsilon(eps));
   }
 
   //temporary arrays for holding the values of the up and down channels respectively.
@@ -645,8 +671,102 @@ void test_lcao_spinor_excited()
   }
 }
 
+void test_lcao_spinor_ion_derivs()
+{
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+  app_log() << "!!!! LCAO SpinorSet from HDF (ion derivatives) !!!!\n";
+  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+
+  using ValueType = SPOSet::ValueType;
+  using RealType  = SPOSet::RealType;
+  Communicate* c  = OHMMS::Controller;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions_(*ions_uptr);
+  ParticleSet& elec_(*elec_uptr);
+
+  ions_.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({2});
+
+  ions_.R[0][0]        = 0.10000000;
+  ions_.R[0][1]        = 0.20000000;
+  ions_.R[0][2]        = 0.30000000;
+  ions_.R[1][0]        = -0.30000000;
+  ions_.R[1][1]        = -0.20000000;
+  ions_.R[1][2]        = -0.10000000;
+  SpeciesSet& ispecies = ions_.getSpeciesSet();
+  int hIdx             = ispecies.addSpecies("H");
+  ions_.update();
+
+  elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec_.create({1});
+  elec_.R[0][0]  = 0.01;
+  elec_.R[0][1]  = -0.02;
+  elec_.R[0][2]  = 0.03;
+  elec_.spins[0] = 0.6;
+  elec_.setSpinor(true);
+
+  SpeciesSet& tspecies       = elec_.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
+
+
+  elec_.addTable(ions_);
+  elec_.update();
+
+  const char* particles = R"XML(<tmp> 
+   <sposet_builder name="spinorbuilder" type="molecularorbital" href="lcao_spinor_molecule.h5" source="ion" precision="float"> 
+     <basisset transform="yes"/> 
+     <sposet name="myspo" size="1"/> 
+   </sposet_builder> 
+   </tmp>)XML"; 
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr bnode = xmlFirstElementChild(root);
+  SPOSetBuilderFactory fac(c, elec_, ptcl.getPool());
+  const auto spo_builder_ptr = fac.createSPOSetBuilder(bnode);
+  auto& bb                   = *spo_builder_ptr;
+
+  // only pick up the last sposet
+  std::unique_ptr<SPOSet> spo;
+  processChildren(bnode, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+      spo = bb.createSPOSet(element);
+  });
+  REQUIRE(spo);
+
+  //reference values from finite difference in lcao_spinor_molecule_test.py
+  ValueType dx0(-0.0492983, -0.3192778);
+  ValueType dy0(-0.1205071, -0.7804567);
+  ValueType dz0(-0.1478950, -0.9578333);
+  ValueType dx1(-0.0676367, 1.0506422);
+  ValueType dy1(-0.0392729, 0.6100503);
+  ValueType dz1(-0.0283638, 0.4405919);
+
+  const RealType eps = 1e-4;
+  SPOSet::GradMatrix gradIon(elec_.R.size(), spo->getOrbitalSetSize());
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 0, gradIon);
+  CHECK(gradIon[0][0][0] == ComplexApprox(dx0).epsilon(eps));
+  CHECK(gradIon[0][0][1] == ComplexApprox(dy0).epsilon(eps));
+  CHECK(gradIon[0][0][2] == ComplexApprox(dz0).epsilon(eps));
+  spo->evaluateGradSource(elec_, 0, elec_.R.size(), ions_, 1, gradIon);
+  CHECK(gradIon[0][0][0] == ComplexApprox(dx1).epsilon(eps));
+  CHECK(gradIon[0][0][1] == ComplexApprox(dy1).epsilon(eps));
+  CHECK(gradIon[0][0][2] == ComplexApprox(dz1).epsilon(eps));
+}
 
 TEST_CASE("ReadMolecularOrbital GTO spinor", "[wavefunction]") { test_lcao_spinor(); }
 TEST_CASE("ReadMolecularOrbital GTO spinor with excited", "[wavefunction]") { test_lcao_spinor_excited(); }
+TEST_CASE("spinor ion derivatives for molecule", "[wavefunction]") { test_lcao_spinor_ion_derivs(); }
 
 } // namespace qmcplusplus
