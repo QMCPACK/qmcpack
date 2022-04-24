@@ -10,13 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include <CL/sycl.hpp>
-#include "DeviceManager.h"
+#include "SYCLDeviceManager.h"
 #include "SYCLruntime.hpp"
 
 namespace qmcplusplus
 {
-sycl::queue getSYCLDefaultDeviceDefaultQueue()
-{
-  return DeviceManager::getGlobal().getSYCLDM().getDefaultDeviceQueue();
-}
+sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceQueue(); }
 } // namespace qmcplusplus
