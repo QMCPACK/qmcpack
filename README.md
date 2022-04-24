@@ -24,13 +24,14 @@ particular emphasis is placed on code quality and reproducibility.
 
  * C++ 17 and C99 capable compilers. 
  * CMake v3.15.0 or later, build utility, http://www.cmake.org
- * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
+ * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
  * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
+ * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
 over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
