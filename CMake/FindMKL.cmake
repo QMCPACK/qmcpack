@@ -78,3 +78,18 @@ else(HAVE_MKL)
   set(MKL_FOUND FALSE)
   message(STATUS "MKL header files not found")
 endif(HAVE_MKL)
+
+# check for mkl_sycl
+if(HAVE_MKL AND ENABLE_SYCL)
+  find_library(MKL_SYCL mkl_sycl
+    HINTS ${MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
+    PATH_SUFFIXES lib/intel64
+    REQUIRED
+  )
+
+  if(MKL_SYCL)
+    add_library(MKL::sycl INTERFACE IMPORTED)
+    target_include_directories(MKL::sycl INTERFACE "${MKL_INCLUDE}")
+    target_link_libraries(MKL::sycl INTERFACE ${MKL_SYCL})
+  endif()
+endif()

@@ -851,6 +851,9 @@ if(ENABLE_SYCL)
   find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+  if(TARGET MKL::sycl)
+    target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
+  endif()
 endif(ENABLE_SYCL)
 
  #-------------------------------------------------------------------
