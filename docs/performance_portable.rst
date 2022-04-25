@@ -18,10 +18,35 @@ The new drivers that implement this flexible batching scheme are called "batched
 
 For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
 
+
 Links to more information in other sections of the manual:
 
  - **Build instructions:** :ref:`OpenMP target offload <offloadbuild>` section of the :ref:`obtaininginstalling` chapter.
 
  - **Supported features:** :ref:`gpufeatures` section of the :ref:`chap:features` chapter.
 
+ - **Enabling batch drivers** :ref:`driver-version-parameter` section of the :ref:`input-overview` chapter.
+
  - **Driver Inputs:** :ref:`batched_drivers` section of the :ref:`qmcmethods` chapter.
+
+
+Input files for batched drivers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the following changes to update input files to use the batched drivers.
+
+1. Update the project block with the ``driver_version`` parameter. For example:
+
+::
+
+  <project id="vmc" series="0">
+     <parameter name="driver_version">batch</parameter>
+  </project>
+
+See :ref:`driver-version-parameter` for more.
+
+2. Modify the QMC algorithm blocks
+
+The most significant change is the ``walkers`` parameter has been replaced with ``walkers_per_rank`` or ``total_walkers``.
+
+See  :ref:`batched_drivers` for details.
