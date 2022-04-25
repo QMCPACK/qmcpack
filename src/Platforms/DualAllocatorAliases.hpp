@@ -22,17 +22,7 @@
 #define QMCPLUSPLUS_DUAL_ALLOCATOR_ALIASES_HPP
 
 #include "PinnedAllocator.h"
-
-#if defined(ENABLE_OFFLOAD)
-#include "OMPTarget/OffloadAlignedAllocators.hpp"
-namespace qmcplusplus
-{
-  template<typename T>
-  using UnpinnedDualAllocator = OffloadAllocator<T>;
-  template<typename T>
-  using PinnedDualAllocator = OffloadPinnedAllocator<T>;
-}
-#else
+#if (defined(ENABLE_CUDA) || defined(ENABLE_SYCL)) && !defined(ENABLE_OFFLOAD)
 #include "DualAllocator.hpp"
 #if defined(ENABLE_CUDA)
 namespace qmcplusplus
@@ -53,6 +43,16 @@ namespace qmcplusplus
 #else
 #error unhandled platform
 #endif
+
+#else // ENABLE_OFFLOAD or no CUDA or SYCL
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+namespace qmcplusplus
+{
+  template<typename T>
+  using UnpinnedDualAllocator = OffloadAllocator<T>;
+  template<typename T>
+  using PinnedDualAllocator = OffloadPinnedAllocator<T>;
+}
 #endif
 
 #endif
