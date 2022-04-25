@@ -843,8 +843,12 @@ endif(ENABLE_HIP)
 #  set up SYCL compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_SYCL)
-  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
-    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)
