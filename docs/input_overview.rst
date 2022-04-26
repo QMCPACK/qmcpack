@@ -118,6 +118,8 @@ Batched drivers check against ``max_seconds`` and make efforts to stop the execu
 In addition, a file named ``id`` plus ``.STOP``, in this case ``vmc.STOP``, stops QMCPACK execution on the fly cleanly once being found in the working directory.
 
 
+.. _driver-version-parameter:
+
 Driver version
 ~~~~~~~~~~~~~~
 The ``driver_version`` parameter selects between the new performance-portable batched drivers and the previous drivers (now referred to as the 'legacy drivers').
