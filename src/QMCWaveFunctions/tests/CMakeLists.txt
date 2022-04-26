@@ -23,6 +23,7 @@ set(UTEST_HDF_INPUT6 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spino
 set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h5)
 set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multidet.h5)
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
+set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -34,6 +35,7 @@ maybe_symlink(${UTEST_HDF_INPUT6} ${UTEST_DIR}/lcao_spinor.h5)
 maybe_symlink(${UTEST_HDF_INPUT7} ${UTEST_DIR}/LiH.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
+maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
 
 set(FILES_TO_COPY
     he_sto3g.wfj.xml
@@ -107,6 +109,15 @@ set(DETERMINANT_SRC
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
+
+# @TODO: Remove when rotations work for complex stuff
+if(NOT QMC_COMPLEX)
+  if(NOT ENABLE_CUDA)
+    if(NOT QMC_CUDA)
+      set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
+    endif()
+  endif()
+endif()
 
 if(ENABLE_CUDA)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeCUDA.cpp)

@@ -2,6 +2,33 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+- Minimum CUDA version increased to 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957) 
+
+## [3.14.0] - 2022-04-06
+
+This release focuses on performance improvements to the OpenMP target offload version for GPUs as well as ongoing minor
+improvements. The new GPU implementation rivals the legacy CUDA version for performance for broad range of problems
+while offering more functionality, such as three body Jastrow functions. Developers are very interested in feedback from
+users about the new version and will prioritize developments based on comments received. A new driver\_version switch is
+introduced, currently optional, to disambiguate between the versions and their inputs.
+
+- New global driver\_version switch to select between batched and legacy codes. This will become a required input tag in the next major release series of QMCPACK, but remains optional in 3.x versions [\#3897](https://github.com/QMCPACK/qmcpack/pull/3897)
+- Optimization of block sizes in GPU offload kernels [\#3910](https://github.com/QMCPACK/qmcpack/pull/3910)
+- GPU Offload of one-body Jastrow ratio calculation in pseudopotential evaluation [\#3905](https://github.com/QMCPACK/qmcpack/pull/3905) 
+- GPU Offload of some Coulomb potential evaluations [\#3842](https://github.com/QMCPACK/qmcpack/pull/3842)
+- Partial GPU offload of multideterminant evaluation e.g. [\#3892](https://github.com/QMCPACK/qmcpack/pull/3892)
+- Increased performance via more selective distance table computation [\#3846](https://github.com/QMCPACK/qmcpack/pull/3846)
+- Improved performance on AMD GPUs via rocSOLVER integration [\#3756](https://github.com/QMCPACK/qmcpack/issues/3756)
+- HIP build options shown in output [\#3919](https://github.com/QMCPACK/qmcpack/pull/3919)
+- Documentation improvements, particularly relating to installation.
+- Various bug fixes and ongoing cleanup.
+
+### NEXUS
+
+- Nexus: proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
+
 ## [3.13.0] - 2022-02-16
 
 ### Notes

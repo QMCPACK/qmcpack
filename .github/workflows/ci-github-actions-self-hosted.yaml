@@ -120,8 +120,10 @@ jobs:
             GCC8-NoMPI-Legacy-CUDA-Complex-Mixed,
             GCC8-NoMPI-Legacy-CUDA-Real, # full precision
             GCC8-NoMPI-Legacy-CUDA-Complex,
-            Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload requires development llvm14
-            Clang14Dev-MPI-CUDA-AFQMC-Offload-Real,
+            Clang14-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload requires llvm14
+            Clang14-MPI-CUDA-AFQMC-Offload-Real,
+            Clang14-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
+            Clang14-MPI-CUDA-AFQMC-Offload-Complex,
             Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
             Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
             Intel19-MPI-CUDA-AFQMC-Real,

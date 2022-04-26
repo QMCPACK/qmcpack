@@ -16,7 +16,7 @@ cmake_policy(SET CMP0075 NEW)
 ######################################################################
 project(
   qmcpack
-  VERSION 3.13.9
+  VERSION 3.14.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -62,6 +62,7 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -360,7 +361,6 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT OFF)
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
@@ -371,26 +371,11 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     # when using OpenMP offload to AMD GPU together with HIP.
     set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
   endif()
-  if(${COMPILER} MATCHES "Clang" AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn")
-    # As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for
-    # ROCM/AOMP compilers when using OpenMP offload to AMD GPU.
-    set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT ON)
-  endif()
 endif()
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
                        ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM compiler offload bug workaround"
-                       ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
-
-if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
-  message(
-    WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
-            "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
-            "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
-            "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
-endif()
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
@@ -725,14 +710,17 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
-    # a few production machines use CUDA 10 which only supports C++14.
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 14)
+      set(CMAKE_CUDA_STANDARD 17)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
+    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
+    endif()
     enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
         FATAL_ERROR
@@ -809,7 +797,7 @@ if(ENABLE_ROCM)
   set(HIP_ARCH
       "gfx906,gfx908"
       CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
+  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
@@ -852,6 +840,24 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 
