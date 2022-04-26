@@ -71,7 +71,7 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   is very tall and skinny.
 */
 template<typename ST>
-void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat)
 {
   // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
   const auto spline_ptr = SplineInst->getSplinePtr();

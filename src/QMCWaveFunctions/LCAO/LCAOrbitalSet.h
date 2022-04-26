@@ -51,7 +51,7 @@ public:
 
   void storeParamsBeforeRotation() override { C_copy = *C; }
 
-  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+  void applyRotation(const ValueMatrix& rot_mat) override;
 
   void checkInVariables(opt_variables_type& active) override
   {

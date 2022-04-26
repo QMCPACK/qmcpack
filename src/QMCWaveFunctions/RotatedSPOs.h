@@ -30,7 +30,7 @@ public:
   std::vector<std::pair<int, int>> m_act_rot_inds;
 
   //function to perform orbital rotations
-  void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+  void apply_rotation(const std::vector<RealType>& param);
 
   //helper function to apply_rotation
   void exponentiate_antisym_matrix(ValueMatrix& mat);
@@ -175,7 +175,6 @@ public:
     {
       if (myVars.size())
         active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
     }
   }
 
@@ -198,7 +197,7 @@ public:
         int loc  = myVars.where(i);
         param[i] = myVars[i] = active[loc];
       }
-      apply_rotation(param, true);
+      apply_rotation(param);
     }
   }
 

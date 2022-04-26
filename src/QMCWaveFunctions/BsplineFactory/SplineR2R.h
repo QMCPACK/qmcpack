@@ -95,7 +95,7 @@ public:
      [2] Toulouse & Umrigar, JCP 126, (2007)
      [3] Townsend et al., PRB 102, (2020)
   */
-  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+  void applyRotation(const ValueMatrix& rot_mat) override;
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

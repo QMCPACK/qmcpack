@@ -30,7 +30,12 @@ LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
 }
 
 LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
-    : SPOSet(in), myBasisSet(in.myBasisSet->makeClone()), C(in.C), BasisSetSize(in.BasisSetSize), Identity(in.Identity)
+    : SPOSet(in),
+      myBasisSet(in.myBasisSet->makeClone()),
+      C(in.C),
+      BasisSetSize(in.BasisSetSize),
+      C_copy(in.C_copy),
+      Identity(in.Identity)
 {
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
@@ -680,10 +685,11 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
   APP_ABORT("LCAOrbitalSet::evaluateThirdDeriv(P,istart,istop,ggg_logdet) not implemented\n");
 }
 
-void LCAOrbitalSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+void LCAOrbitalSet::applyRotation(const ValueMatrix& rot_mat)
 {
-  if (!use_stored_copy)
-    C_copy = *C;
+  if (C_copy.size() != C->size())
+    throw std::runtime_error("C_copy not set before applyRotation (storeParamsBeforeRotation was not called)");
+
   //gemm is out-of-place
   BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(), BasisSetSize,
              rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);

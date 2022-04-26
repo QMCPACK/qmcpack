@@ -107,7 +107,7 @@ public:
   // store parameters before getting destroyed by rotation.
   virtual void storeParamsBeforeRotation() {}
   // apply rotation to all the orbitals
-  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false)
+  virtual void applyRotation(const ValueMatrix& rot_mat)
   {
     std::ostringstream o;
     o << "SPOSet::applyRotation is not implemented by " << className << std::endl;

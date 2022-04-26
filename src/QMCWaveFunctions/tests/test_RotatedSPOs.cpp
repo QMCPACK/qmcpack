@@ -162,7 +162,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   {
     param[i] = 0.01 * static_cast<RealType>(i);
   }
-  rot_spo->apply_rotation(param, false); // Expect this to call SplineR2R::applyRotation()
+  rot_spo->apply_rotation(param); // Expect this to call SplineR2R::applyRotation()
 
   // 4.) Get data for rotated orbitals.
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);

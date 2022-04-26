@@ -105,7 +105,8 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   std::vector<RealType> param(m_act_rot_inds.size());
   for (int i = 0; i < m_act_rot_inds.size(); i++)
     param[i] = myVars[i];
-  apply_rotation(param, false);
+  Phi->storeParamsBeforeRotation();
+  apply_rotation(param);
 
   if (!Optimizable)
   {
@@ -119,7 +120,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
 #endif
 }
 
-void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
+void RotatedSPOs::apply_rotation(const std::vector<RealType>& param)
 {
   assert(param.size() == m_act_rot_inds.size());
 
@@ -144,7 +145,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
     Finally, apply unitary matrix to orbs.
   */
   exponentiate_antisym_matrix(rot_mat);
-  Phi->applyRotation(rot_mat, use_stored_copy);
+  Phi->applyRotation(rot_mat);
 }
 
 
