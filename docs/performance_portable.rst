@@ -4,7 +4,7 @@ Performance Portable Implementation
 ===================================
 
 The so-called performance portable implementation was developed to present a unified way to run QMC on CPU and GPU
-systems, eliminate the divergence between CPU and GPU code paths that had been introduced in the past, while still
+systems, and eliminate the divergence between CPU and GPU code paths that had been introduced in the past, while still
 maintaining high performance. This required generalizing all the driver inputs to potentially drive larger batches of
 walkers and also eliminating ambiguities in the various input blocks of QMCPACK. Internally many new code paths have
 been created, including new QMC drivers for VMC, DMC, and the wavefunction optimizer. 
@@ -14,16 +14,18 @@ drivers will be deprecated and eventually deleted. The number of changes require
 small, so use of the new performance portable implementation is encouraged, particularly for new projects.
 
 The performance portable implementation load balances the total number of walkers onto MPI tasks, as per the old
-drivers. The new implementation is able to subdivide the walkers of each MPI task into multiple similarly-sized crowds.
-The walkers in each crowd are then updated simultaneously. This structure enables the walkers to be efficiently mapped
-e.g. to CPU threads where even a single walker can be computed efficiently with a single thread. For efficient GPU
-execution, each crowd is first owned by a distinct CPU thread, which in turn executes batched operations over all the
-walkers in its crowd on the GPU. This batching enables efficient GPU execution, while the use of multiple crowds can
-reduce synchronization and allow higher performance to be obtained. For these reasons the new performance portable
-drivers are also referred to as batched drivers, since this is the largest change from the old code.
+drivers. The new implementation is then able to subdivide the walkers of each MPI task into multiple similarly-sized
+crowds. The walkers in each crowd can then be updated simultaneously. This structure enables the walkers to be
+efficiently mapped to both CPUs and GPUs. On CPU systems, they then are mapped to OpenMP threads where a single walker
+can be computed efficiently by even a single thread. On GPU systems, large numbers of GPU threads must be used
+concurrently for high efficiency: Each crowd is first owned by a distinct CPU thread, which in turn executes batched
+operations over all the walkers in its crowd on the GPU. Provided the batches are sufficiently large, this facilitates
+efficient GPU execution, while the use of multiple crowds can reduce synchronization and allow higher performance to be
+obtained. For these reasons the new performance portable drivers are also referred to as batched drivers, since this is
+the largest change from the older code.
 
-The new implementation currently largely uses OpenMP offload for portability, although other technologies are also used
-and the implementation has flexible dispatch to help obtain high performance on every platform.
+The new implementation largely uses OpenMP offload for portability, although other technologies are also used and the
+implementation has flexible dispatch to help obtain high performance on every platform.
 
 This implementation was designed and implemented as part of the Exascale Computing Project, with a view to bringing
 QMCPACK to GPUs from multiple vendors with high-efficiency while creating a more maintainable and easy to contribute to
