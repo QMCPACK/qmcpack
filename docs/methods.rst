@@ -123,7 +123,7 @@ Batched drivers
 The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
 A crowd is a subset of the walkers that are operated on as as single batch.
 Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
-Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+Walkers in different crowds remain fully asynchronous unless operations involving the full population are needed.
 With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
 In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
 Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
