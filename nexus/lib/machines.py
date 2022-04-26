@@ -3227,6 +3227,7 @@ class Andes(Supercomputer):
 
 ## Added 05/04/2022 by A Zen
 class Archer2(Supercomputer):
+    # https://docs.archer2.ac.uk/user-guide/hardware/
 
     name = 'archer2'
     requires_account   = True
@@ -3238,6 +3239,7 @@ class Archer2(Supercomputer):
 
     def post_process_job(self,job):
         job.run_options.add(
+            distribution='--distribution=block:block',
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
             )
@@ -3246,13 +3248,16 @@ class Archer2(Supercomputer):
                 c = '-c {}'.format(job.threads),
                 )
             if 'cpu_bind' not in job.run_options:
-                if job.processes_per_node==self.cores_per_node:
-                    cpu_bind = '--cpu-bind=threads'
-                else:
-                    cpu_bind = '--cpu-bind=cores'
-                #end if
+#               if job.processes_per_node==self.cores_per_node:
+#                   cpu_bind = '--cpu-bind=threads'
+#               else:
+#                   cpu_bind = '--cpu-bind=cores'
+#               #end if
+#               job.run_options.add(
+#                   cpu_bind = cpu_bind
+#                   )
                 job.run_options.add(
-                    cpu_bind = cpu_bind
+                    hint='--hint=nomultithread',
                     )
             #end if
         #end if
@@ -3289,8 +3294,8 @@ class Archer2(Supercomputer):
         c+='#SBATCH --job-name '+str(job.name)+'\n'
         c+='#SBATCH --account='+str(job.account)+'\n'
         c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c += '#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c += '#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
         c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
         c+='#SBATCH -o {0}\n'.format(job.outfile)
         c+='#SBATCH -e {0}\n'.format(job.errfile)
@@ -3387,7 +3392,7 @@ Rhea(          512,   2,     8,  128, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
-Archer2(      5860,   1,   128,  256, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
