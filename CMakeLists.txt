@@ -710,14 +710,17 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
-    # a few production machines use CUDA 10 which only supports C++14.
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 14)
+      set(CMAKE_CUDA_STANDARD 17)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
+    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
+    endif()
     enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
         FATAL_ERROR
@@ -794,7 +797,7 @@ if(ENABLE_ROCM)
   set(HIP_ARCH
       "gfx906,gfx908"
       CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
+  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
@@ -840,8 +843,12 @@ endif(ENABLE_HIP)
 #  set up SYCL compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_SYCL)
-  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
-    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)

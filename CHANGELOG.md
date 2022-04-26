@@ -2,6 +2,10 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+- Minimum CUDA version increased to 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957) 
+
 ## [3.14.0] - 2022-04-06
 
 This release focuses on performance improvements to the OpenMP target offload version for GPUs as well as ongoing minor

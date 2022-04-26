@@ -858,10 +858,10 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
 ::
 
   export CRAYPE_LINK_TYPE=dynamic
-  module load cmake/3.16.2
+  module load cmake/3.20.4
   module unload cray-libsci
   module load cray-hdf5-parallel
-  module load gcc   # Make C++ 14 standard library available to the Intel compiler
+  module load gcc/8.3.0   # Make C++ 14 standard library available to the Intel compiler
   export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
   cmake -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment ..
   make -j 24
@@ -1780,8 +1780,8 @@ for the creation of projectors in UPF can introduce severe errors and inaccuraci
 
 .. _buildqe:
 
-Installing and patching Quantum ESPRESSO
-----------------------------------------
+Installing Quantum ESPRESSO and pw2qmcpack
+------------------------------------------
 
 For trial wavefunctions obtained in a plane-wave basis, we mainly
 support QE. Note that ABINIT and QBox were supported historically
@@ -1791,6 +1791,10 @@ QE stores wavefunctions in a nonstandard internal
 "save" format. To convert these to a conventional HDF5 format file
 we have developed a converter---pw2qmcpack---which is an add-on to the
 QE distribution.
+
+
+Quantum ESPRESSO (<=6.8)
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 To simplify the process of patching QE we have developed
 a script that will automatically download and patch the source
@@ -1824,15 +1828,36 @@ the HDF5 capability enabled in either way:
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
-The tests involving pw.x and pw2qmcpack.x have been integrated into the test suite of QMCPACK.
-By adding ``-D QE_BIN=your_QE_binary_path`` in the CMake command line when building your QMCPACK,
-tests named with the "qe-" prefix will be included in the test set of your build.
-You can test the whole ``pw > pw2qmcpack > qmcpack workflow`` by
+Quantum ESPRESSO (6.7, 6.8 and 7.0)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After patching the QE source code like above, users may use CMake instead of configure to build QE with pw2qmcpack.
+Options needed to enable pw2qmcpack have been set ON by default.
+A HDF5 library installation with Fortran support is required.
 
-::
+  ::
 
-  ctest -R qe
+    mkdir build_mpi
+    cd build_mpi
+    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 ..
+    make -j 16
 
+Quantum ESPRESSO (>7.0)
+~~~~~~~~~~~~~~~~~~~~~~~
+Due to incorporation of pw2qmcpack as a plugin, there is no longer any need to patch QE.
+Users may use upstream QE and activate the plugin by specifying ``-DQE_ENABLE_PLUGINS=pw2qmcpack`` at the CMake configure step.
+Full QE CMake documentation can be found at
+https://gitlab.com/QEF/q-e/-/wikis/Developers/CMake-build-system .
+
+  ::
+
+    mkdir build_mpi
+    cd build_mpi
+    cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_Fortran_COMPILER=mpif90 -DQE_ENABLE_PLUGINS=pw2qmcpack ..
+    make -j 16
+
+Testing QE after installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Testing the QE to QMCPACK workflow after building QE and QMCPACK is highly recommended.
 See :ref:`integtestqe` and the testing section for more details.
 
 .. _buildperformance:
