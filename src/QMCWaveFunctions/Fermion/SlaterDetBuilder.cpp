@@ -295,7 +295,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize", {"no", "yes"});
   sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
-#if defined(ENABLE_OFFLOAD)
+#if defined(ENABLE_OFFLOAD) && !defined(ENABLE_SYCL)
   sdAttrib.add(use_batch, "batch", {"yes", "no"});
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
@@ -440,10 +440,31 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
       else
 #endif
+#if defined(ENABLE_SYCL)
+      if (useGPU == "yes")
       {
+        app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
+        adet = std::make_unique<
+            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+                                                                                          firstIndex, lastIndex,
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
+      }
+      else
+#endif
+      {
+#if defined(ENABLE_SYCL)
+        app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
+        adet = std::make_unique<
+            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+                                                                                          firstIndex, lastIndex,
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
+#else
         app_summary() << "      Running on CPU." << std::endl;
         adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                     matrix_inverter_kind);
+#endif
       }
     }
   }
@@ -538,8 +559,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    // reorder unique determinants for a given spin based on the selected reference determinant
-    dets[grp]->createDetData(C2nodes[grp][refdet_id], list, C2nodes[grp], C2nodes_sorted[grp]);
+    dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
   if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
