@@ -200,8 +200,8 @@ bool QMCFixedSampleLinearOptimize::run()
 {
   if (do_output_matrices_ && !output_matrices_initialized_)
   {
-    numParams = optTarget->getNumParams();
-    int N     = numParams + 1;
+    size_t numParams = optTarget->getNumParams();
+    size_t N         = numParams + 1;
     output_overlap_.init_file(get_root_name(), "ovl", N);
     output_hamiltonian_.init_file(get_root_name(), "ham", N);
     output_matrices_initialized_ = true;
@@ -239,8 +239,8 @@ bool QMCFixedSampleLinearOptimize::run()
   bool Valid(true);
   int Total_iterations(0);
   //size of matrix
-  numParams = optTarget->getNumParams();
-  N         = numParams + 1;
+  size_t numParams = optTarget->getNumParams();
+  size_t N         = numParams + 1;
   //   where we are and where we are pointing
   std::vector<RealType> currentParameterDirections(N, 0);
   std::vector<RealType> currentParameters(numParams, 0);
@@ -825,10 +825,10 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // prepare vectors to hold the parameter updates
   parameterDirections.resize(nshifts);
@@ -921,7 +921,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
@@ -974,7 +974,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -1220,10 +1220,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   start();
 
   // get number of optimizable parameters
-  numParams = optTarget->getNumParams();
+  size_t numParams = optTarget->getNumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  size_t N = numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
   std::vector<RealType> currentParameters(numParams, 0.0);
@@ -1451,7 +1451,7 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
     adaptive_three_shift_run();
 
     app_log() << "Update descent engine parameter values after Blocked LM step" << std::endl;
-    for (int i = 0; i < numParams; i++)
+    for (int i = 0; i < optTarget->getNumParams(); i++)
     {
       ValueType val = optTarget->Params(i);
       descentEngineObj->setParamVal(i, val);

@@ -265,8 +265,6 @@ private:
 
   ///xml node to be dumped
   xmlNodePtr wfNode;
-  ///xml node for optimizer
-  xmlNodePtr optNode;
 
   ParameterSet m_param;
 

@@ -45,12 +45,7 @@ QMCLinearOptimize::QMCLinearOptimize(MCWalkerConfiguration& w,
                                      QMCHamiltonian& h,
                                      Communicate* comm,
                                      const std::string& QMC_driver_type)
-    : QMCDriver(w, psi, h, comm, QMC_driver_type),
-      PartID(0),
-      NumParts(1),
-      wfNode(NULL),
-      optNode(NULL),
-      param_tol(1e-4)
+    : QMCDriver(w, psi, h, comm, QMC_driver_type), wfNode(NULL), param_tol(1e-4)
 {
   IsQMCDriver = false;
   //     //set the optimization flag
@@ -202,9 +197,9 @@ bool QMCLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.put(q);
-  optNode        = q;
-  xmlNodePtr cur = optNode->children;
-  int pid        = OHMMS::Controller->rank();
+  xmlNodePtr optNode = q;
+  xmlNodePtr cur     = optNode->children;
+  int pid            = OHMMS::Controller->rank();
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));

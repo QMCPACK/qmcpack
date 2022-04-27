@@ -61,24 +61,16 @@ public:
   void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
 
   std::vector<RealType> optdir, optparam;
-  ///index to denote the partition id
-  int PartID;
-  ///total number of partitions that will share a set of configuratons
-  int NumParts;
   ///total number of VMC walkers
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
-  ///Dimension of matrix and number of parameters
-  int N, numParams;
   ///vmc engine
   std::unique_ptr<QMCDriver> vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
-  ///xml node for optimizer
-  xmlNodePtr optNode;
 
   RealType param_tol;
 

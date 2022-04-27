@@ -100,7 +100,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       output_matrices_initialized_(false),
       freeze_parameters_(false),
       wfNode(NULL),
-      optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
       W(w)
