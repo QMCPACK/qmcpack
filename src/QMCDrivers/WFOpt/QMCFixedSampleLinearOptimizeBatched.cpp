@@ -423,7 +423,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S);
+      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -1030,7 +1030,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
     getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
@@ -1451,7 +1451,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   if (do_output_matrices_hdf_)
   {

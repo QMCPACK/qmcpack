@@ -171,11 +171,11 @@ struct VariableSet
     }
   }
 
-  inline void getParameterTypeList(std::vector<int>& types)
+  inline void getParameterTypeList(std::vector<int>& types) const
   {
-    std::vector<index_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
+    auto PTit(ParameterType.begin()), PTend(ParameterType.end());
     types.resize(PTend - PTit);
-    std::vector<int>::iterator tit(types.begin());
+    auto tit(types.begin());
     while (PTit != PTend)
       (*tit++) = (*PTit++).second;
   }

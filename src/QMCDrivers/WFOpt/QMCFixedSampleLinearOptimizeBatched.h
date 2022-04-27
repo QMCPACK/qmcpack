@@ -270,6 +270,9 @@ private:
 
   ParameterSet m_param;
 
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+
   ///vmc engine
   std::unique_ptr<VMCBatched> vmcEngine;
 

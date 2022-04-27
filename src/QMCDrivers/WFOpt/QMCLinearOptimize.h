@@ -69,6 +69,8 @@ public:
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine

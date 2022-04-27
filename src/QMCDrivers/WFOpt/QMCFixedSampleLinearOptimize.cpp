@@ -319,7 +319,7 @@ bool QMCFixedSampleLinearOptimize::run()
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       eigenvalue_timer_.start();
       getLowestEigenvector(Right, currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections, S);
+      Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
       eigenvalue_timer_.stop();
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
@@ -888,7 +888,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
     getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat, *optTarget);
 
     // scale the update by the scaling constant
     for (int i = 0; i < numParams; i++)
@@ -1299,7 +1299,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
 
   // scale the update by the scaling constant
   for (int i = 0; i < numParams; i++)

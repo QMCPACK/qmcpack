@@ -124,10 +124,10 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   //     }
 }
 
-void LinearMethod::getNonLinearRange(int& first, int& last) const
+void LinearMethod::getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const
 {
   std::vector<int> types;
-  optTarget->getParameterTypes(types);
+  optTarget.getParameterTypes(types);
   first = 0;
   last  = types.size();
   //assume all non-linear coeffs are together.
@@ -156,10 +156,12 @@ void LinearMethod::getNonLinearRange(int& first, int& last) const
   //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
 }
 
-LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S) const
+LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP,
+                                                     Matrix<Real>& S,
+                                                     const QMCCostFunctionBase& optTarget) const
 {
   int first(0), last(0);
-  getNonLinearRange(first, last);
+  getNonLinearRange(first, last, optTarget);
   if (first == last)
     return 1.0;
   Real rescale(1.0);
