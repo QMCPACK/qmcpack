@@ -173,11 +173,11 @@ struct VariableSet
 
   inline void getParameterTypeList(std::vector<int>& types) const
   {
-    auto PTit(ParameterType.begin()), PTend(ParameterType.end());
-    types.resize(PTend - PTit);
+    auto ptit(ParameterType.begin()), ptend(ParameterType.end());
+    types.resize(ptend - ptit);
     auto tit(types.begin());
-    while (PTit != PTend)
-      (*tit++) = (*PTit++).second;
+    while (ptit != ptend)
+      (*tit++) = (*ptit++).second;
   }
 
 

@@ -30,8 +30,7 @@ inline void LinearFit(std::vector<T>& y, Matrix<T>& A, std::vector<T>& coefs)
   int N = A.size(0);
   int M = A.size(1);
   if (y.size() != N)
-    throw std::runtime_error("Differernt number of rows in basis functions that in data "
-                "points in LinearFit.  Exitting.\n");
+    throw std::runtime_error("Differernt number of rows in basis functions that in data points in LinearFit.");
   // Construct alpha matrix
   Matrix<T> alpha(M, M);
   alpha = 0.0;
