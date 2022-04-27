@@ -9,24 +9,21 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-add_subdirectory(CPU)
 
-if(ENABLE_CUDA)
-  add_subdirectory(CUDA)
-endif()
-
-if(ENABLE_SYCL)
-  add_subdirectory(SYCL)
-endif()
-
-if(ENABLE_OFFLOAD)
-  add_subdirectory(OMPTarget)
-endif(ENABLE_OFFLOAD)
-
-set(UTEST_EXE test_platforms)
+## runtime
+set(UTEST_EXE test_sycl)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
-add_executable(${UTEST_EXE} test_PlatformSelector.cpp)
-target_link_libraries(${UTEST_EXE} platform_runtime catch_main)
+add_executable(${UTEST_EXE} test_SYCLallocator.cpp)
+target_link_libraries(${UTEST_EXE} SYCL::device platform_runtime containers catch_main)
+
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+## gemv/ger
+set(UTEST_EXE test_sycl_blas)
+set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+
+add_executable(${UTEST_EXE} test_syclBLAS.cpp)
+target_link_libraries(${UTEST_EXE} catch_main containers platform_LA)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

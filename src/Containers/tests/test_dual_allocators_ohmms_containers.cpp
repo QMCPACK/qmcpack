@@ -18,6 +18,9 @@
 #if defined(ENABLE_CUDA)
 #include "DualAllocator.hpp"
 #include "CUDA/CUDAallocator.hpp"
+#elif defined(ENABLE_SYCL)
+#include "DualAllocator.hpp"
+#include "SYCL/SYCLallocator.hpp"
 #endif
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
@@ -33,7 +36,10 @@ template<typename T>
 using OffloadPinnedAllocator = OMPallocator<T, PinnedAlignedAllocator<T>>;
 #if defined(ENABLE_CUDA)
 template<typename T>
-using CUDAPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+using VendorDualPinnedAllocator = DualAllocator<T, CUDAAllocator<T>, PinnedAlignedAllocator<T>>;
+#elif defined(ENABLE_SYCL)
+template<typename T>
+using VendorDualPinnedAllocator = DualAllocator<T, SYCLAllocator<T>, PinnedAlignedAllocator<T>>;
 #endif
 
 template<class OPA>
@@ -109,9 +115,9 @@ TEST_CASE("OhmmsMatrix_VectorSoaContainer_View", "[Integration][Allocators]")
 {
   testDualAllocator<OffloadPinnedAllocator<double>>();
   testDualAllocator<OffloadPinnedAllocator<std::complex<double>>>();
-#if defined(ENABLE_CUDA)
-  testDualAllocator<CUDAPinnedAllocator<double>>();
-  testDualAllocator<CUDAPinnedAllocator<std::complex<double>>>();
+#if defined(ENABLE_CUDA) || defined(ENABLE_SYCL)
+  testDualAllocator<VendorDualPinnedAllocator<double>>();
+  testDualAllocator<VendorDualPinnedAllocator<std::complex<double>>>();
 #endif
 }
 } // namespace qmcplusplus
