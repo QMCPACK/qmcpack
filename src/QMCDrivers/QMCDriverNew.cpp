@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -234,8 +235,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
-void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
-                                    RealType reserve)
+void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 {
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
@@ -462,6 +462,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
  */
 void QMCDriverNew::endBlock()
 {
+  ScopedTimer local_timer(timers_.endblock_timer);
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
 
   FullPrecRealType total_block_weight = 0.0;
@@ -568,6 +569,31 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   std::cerr << msg.str();
   if (!success)
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
+}
+
+void QMCDriverNew::measureImbalance(int block) const
+{
+  ScopedTimer local_timer(timers_.imbalance_timer);
+  Timer only_this_barrier;
+  myComm->barrier();
+  std::vector<double> my_barrier_time(1, only_this_barrier.elapsed());
+  std::vector<double> barrier_time_all_ranks(myComm->size(), 0.0);
+  myComm->gather(my_barrier_time, barrier_time_all_ranks, 0);
+  if (!myComm->rank())
+  {
+    auto const count  = static_cast<double>(barrier_time_all_ranks.size());
+    const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
+    const auto min_it = std::min_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
+    app_log() << std::endl
+              << "Block " << block << " imbalance (slow ranks wait less):" << std::endl
+              << "    min wait at " << std::distance(barrier_time_all_ranks.begin(), min_it) << " value = " << *min_it
+              << std::endl
+              << "    max wait at " << std::distance(barrier_time_all_ranks.begin(), max_it) << " value = " << *max_it
+              << std::endl
+              << "    average wait value = "
+              << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count
+              << std::endl;
+  }
 }
 
 } // namespace qmcplusplus

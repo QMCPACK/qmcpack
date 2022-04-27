@@ -103,7 +103,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   const int num_walkers   = crowd.size();
-  auto& pset_leader = walker_elecs.getLeader();
+  auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
@@ -475,6 +475,8 @@ bool DMCBatched::run()
       population_.redistributeWalkers(crowds_);
     }
     print_mem("DMCBatched after a block", app_debug_stream());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance(block);
     endBlock();
     dmc_loop.stop();
 

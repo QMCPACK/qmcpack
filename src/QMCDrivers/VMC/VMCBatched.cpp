@@ -66,7 +66,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.movepbyp_timer.start();
   const int num_walkers   = crowd.size();
-  auto& walker_leader = walker_elecs.getLeader();
+  auto& walker_leader     = walker_elecs.getLeader();
   const int num_particles = walker_leader.getTotalNum();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
@@ -362,6 +362,8 @@ bool VMCBatched::run()
       }
     }
     print_mem("VMCBatched after a block", app_debug_stream());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance(block);
     endBlock();
     vmc_loop.stop();
 

@@ -102,6 +102,9 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
+  /// inject additional barrier and measure load imbalance.
+  void measureImbalance(int block) const;
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
   void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
@@ -325,6 +328,8 @@ protected:
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
     NewTimer& estimators_timer;
+    NewTimer& imbalance_timer;
+    NewTimer& endblock_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
@@ -336,6 +341,8 @@ protected:
           hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
           collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
           estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
+          imbalance_timer(*timer_manager.createTimer(prefix + "Imbalance", timer_level_medium)),
+          endblock_timer(*timer_manager.createTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
           resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
     {}
   };
