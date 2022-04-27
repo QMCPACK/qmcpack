@@ -123,6 +123,8 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
+
   app_summary() << QMCType << " Driver running with" << std::endl
                 << "             total_walkers     = " << awc.global_walkers << std::endl
                 << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
@@ -160,6 +162,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
@@ -219,9 +224,8 @@ void QMCDriverNew::recordBlock(int block)
 {
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
-    timers_.checkpoint_timer.start();
+    ScopedTimer local_timer(timers_.checkpoint_timer);
     RandomNumberControl::write(root_name_, myComm);
-    timers_.checkpoint_timer.stop();
   }
 }
 
@@ -571,7 +575,7 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
 }
 
-void QMCDriverNew::measureImbalance(int block) const
+void QMCDriverNew::measureImbalance(const std::string& tag) const
 {
   ScopedTimer local_timer(timers_.imbalance_timer);
   Timer only_this_barrier;
@@ -585,7 +589,7 @@ void QMCDriverNew::measureImbalance(int block) const
     const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
     const auto min_it = std::min_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
     app_log() << std::endl
-              << "Block " << block << " imbalance (slow ranks wait less):" << std::endl
+              << tag << " imbalance (slow ranks wait less):" << std::endl
               << "    average wait seconds = "
               << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count << std::endl
               << "    min wait at rank " << std::distance(barrier_time_all_ranks.begin(), min_it)

@@ -299,10 +299,12 @@ bool VMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    print_mem("VMCBatched after initialLogEvaluation", app_summary());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("InitialLogEvaluation");
   }
 
-  print_mem("VMCBatched after initialLogEvaluation", app_summary());
-
+  ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
   if (qmcdriver_input_.get_warmup_steps() > 0)
@@ -331,7 +333,12 @@ bool VMCBatched::run()
 
     app_log() << "Warm-up is completed!" << std::endl;
     print_mem("VMCBatched after Warmup", app_log());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("Warmup");
   }
+
+  // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
+  myComm->barrier();
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -363,7 +370,7 @@ bool VMCBatched::run()
     }
     print_mem("VMCBatched after a block", app_debug_stream());
     if (qmcdriver_input_.get_measure_imbalance())
-      measureImbalance(block);
+      measureImbalance("Block " + std::to_string(block));
     endBlock();
     vmc_loop.stop();
 

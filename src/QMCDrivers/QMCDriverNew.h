@@ -103,7 +103,7 @@ public:
 
 protected:
   /// inject additional barrier and measure load imbalance.
-  void measureImbalance(int block) const;
+  void measureImbalance(const std::string& tag) const;
   /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
   void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
@@ -330,6 +330,8 @@ protected:
     NewTimer& estimators_timer;
     NewTimer& imbalance_timer;
     NewTimer& endblock_timer;
+    NewTimer& startup_timer;
+    NewTimer& production_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
@@ -343,6 +345,8 @@ protected:
           estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
           imbalance_timer(*timer_manager.createTimer(prefix + "Imbalance", timer_level_medium)),
           endblock_timer(*timer_manager.createTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
+          startup_timer(*timer_manager.createTimer(prefix + "Startup", timer_level_medium)),
+          production_timer(*timer_manager.createTimer(prefix + "Production", timer_level_medium)),
           resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
     {}
   };

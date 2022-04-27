@@ -428,18 +428,22 @@ bool DMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
-  }
 
-  print_mem("DMCBatched after initialLogEvaluation", app_summary());
-
-  {
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
+
+    print_mem("DMCBatched after initialLogEvaluation", app_summary());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("InitialLogEvaluation");
   }
 
+  // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
+  myComm->barrier();
+
+  ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
@@ -476,7 +480,7 @@ bool DMCBatched::run()
     }
     print_mem("DMCBatched after a block", app_debug_stream());
     if (qmcdriver_input_.get_measure_imbalance())
-      measureImbalance(block);
+      measureImbalance("Block " + std::to_string(block));
     endBlock();
     dmc_loop.stop();
 
