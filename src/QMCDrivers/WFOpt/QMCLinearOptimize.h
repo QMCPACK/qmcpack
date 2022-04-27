@@ -29,15 +29,11 @@
 #include "formic/utils/lmyengine/engine.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #endif
+#include "LinearMethod.h"
 
 
 namespace qmcplusplus
 {
-///forward declaration of a cost function
-class QMCCostFunctionBase;
-class HamiltonianPool;
-
-
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -45,7 +41,7 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCLinearOptimize : public QMCDriver
+class QMCLinearOptimize : public QMCDriver, public LinearMethod
 {
 public:
   ///Constructor.
@@ -73,8 +69,6 @@ public:
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
-  ///target cost function to optimize
-  std::unique_ptr<QMCCostFunctionBase> optTarget;
   ///Dimension of matrix and number of parameters
   int N, numParams;
   ///vmc engine
@@ -95,21 +89,9 @@ public:
 #endif
   ///common operation to finish optimization, used by the derived classes
   void finish();
-  //asymmetric generalized EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
-  //asymmetric EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  void getNonLinearRange(int& first, int& last);
-  bool nonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
-  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
   void generateSamples();
 
   QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
-  NewTimer& generate_samples_timer_;
-  NewTimer& initialize_timer_;
-  NewTimer& eigenvalue_timer_;
-  NewTimer& line_min_timer_;
-  NewTimer& cost_function_timer_;
   Timer t1;
 };
 } // namespace qmcplusplus

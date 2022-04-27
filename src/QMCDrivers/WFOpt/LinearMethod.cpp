@@ -32,7 +32,7 @@ LinearMethod::LinearMethod()
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium))
 {}
 
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev)
+LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -77,7 +77,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, Matrix<Re
   return mappedEigenvalues[0].first;
 }
 
-LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev)
+LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const
 {
   int Nl(ev.size());
   //   Getting the optimal worksize
@@ -124,7 +124,7 @@ LinearMethod::Real LinearMethod::getLowestEigenvector(Matrix<Real>& A, std::vect
   //     }
 }
 
-void LinearMethod::getNonLinearRange(int& first, int& last)
+void LinearMethod::getNonLinearRange(int& first, int& last) const
 {
   std::vector<int> types;
   optTarget->getParameterTypes(types);
@@ -156,7 +156,7 @@ void LinearMethod::getNonLinearRange(int& first, int& last)
   //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
 }
 
-LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S)
+LinearMethod::Real LinearMethod::getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S) const
 {
   int first(0), last(0);
   getNonLinearRange(first, last);

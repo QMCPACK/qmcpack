@@ -36,11 +36,11 @@ public:
   LinearMethod();
 
   //asymmetric generalized EV
-  Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev);
+  Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
   //asymmetric EV
-  Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev);
-  void getNonLinearRange(int& first, int& last);
-  Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S);
+  Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
+  void getNonLinearRange(int& first, int& last) const;
+  Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S) const;
 
   ///target cost function to optimize
   std::unique_ptr<QMCCostFunctionBase> optTarget;
