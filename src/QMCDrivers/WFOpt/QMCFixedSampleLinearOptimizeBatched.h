@@ -30,7 +30,8 @@
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
-#include "QMCDrivers/WFOpt/OutputMatrix.h"
+#include "OutputMatrix.h"
+#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -48,7 +49,7 @@ class QMCCostFunctionBase;
 class GradientTest;
 
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
 {
 public:
   ///Constructor.
@@ -110,13 +111,6 @@ private:
                     const std::vector<RealType>& cv,
                     const std::vector<double>& sh,
                     const RealType ic) const;
-
-  //asymmetric generalized EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
-  //asymmetric EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  void getNonLinearRange(int& first, int& last);
-  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
@@ -267,11 +261,6 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
-  NewTimer& generate_samples_timer_;
-  NewTimer& initialize_timer_;
-  NewTimer& eigenvalue_timer_;
-  NewTimer& line_min_timer_;
-  NewTimer& cost_function_timer_;
   Timer t1;
 
   ///xml node to be dumped
@@ -280,9 +269,6 @@ private:
   xmlNodePtr optNode;
 
   ParameterSet m_param;
-
-  ///target cost function to optimize
-  std::unique_ptr<QMCCostFunctionBase> optTarget;
 
   ///vmc engine
   std::unique_ptr<VMCBatched> vmcEngine;

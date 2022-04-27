@@ -99,12 +99,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       do_output_matrices_hdf_(false),
       output_matrices_initialized_(false),
       freeze_parameters_(false),
-      generate_samples_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
-      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
-      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
       optNode(NULL),
       vmcdriver_input_(vmcdriver_input),
@@ -749,7 +743,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                                qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
 
   bool success = true;
@@ -1617,155 +1611,5 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
   return (optTarget->getReportCounter() > 0);
 }
 #endif
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
-    Matrix<RealType>& A,
-    Matrix<RealType>& B,
-    std::vector<RealType>& ev)
-{
-  int Nl(ev.size());
-  //   Getting the optimal worksize
-  char jl('N');
-  char jr('V');
-  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
-  Matrix<RealType> eigenT(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<RealType> work(1);
-  RealType tt(0);
-  int t(1);
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::ggev(&jl, &jr, &Nl, A.data(), &Nl, B.data(), &Nl, &alphar[0], &alphai[0], &beta[0], &tt, &t, eigenT.data(),
-               &Nl, &work[0], &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
-  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
-  for (int i = 0; i < Nl; i++)
-  {
-    RealType evi(alphar[i] / beta[i]);
-    if (std::abs(evi) < 1e10)
-    {
-      mappedEigenvalues[i].first  = evi;
-      mappedEigenvalues[i].second = i;
-    }
-    else
-    {
-      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
-      mappedEigenvalues[i].second = i;
-    }
-  }
-  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return mappedEigenvalues[0].first;
-}
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getLowestEigenvector(
-    Matrix<RealType>& A,
-    std::vector<RealType>& ev)
-{
-  int Nl(ev.size());
-  //   Getting the optimal worksize
-  RealType zerozero = A(0, 0);
-  char jl('N');
-  char jr('V');
-  std::vector<RealType> alphar(Nl), alphai(Nl), beta(Nl);
-  Matrix<RealType> eigenT(Nl, Nl);
-  Matrix<RealType> eigenD(Nl, Nl);
-  int info;
-  int lwork(-1);
-  std::vector<RealType> work(1);
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
-               &lwork, &info);
-  lwork = int(work[0]);
-  work.resize(lwork);
-
-  LAPACK::geev(&jl, &jr, &Nl, A.data(), &Nl, &alphar[0], &alphai[0], eigenD.data(), &Nl, eigenT.data(), &Nl, &work[0],
-               &lwork, &info);
-  if (info != 0)
-  {
-    APP_ABORT("Invalid Matrix Diagonalization Function!");
-  }
-  std::vector<std::pair<RealType, int>> mappedEigenvalues(Nl);
-  for (int i = 0; i < Nl; i++)
-  {
-    RealType evi(alphar[i]);
-    if ((evi < zerozero) && (evi > (zerozero - 1e2)))
-    {
-      mappedEigenvalues[i].first  = (evi - zerozero + 2.0) * (evi - zerozero + 2.0);
-      mappedEigenvalues[i].second = i;
-    }
-    else
-    {
-      mappedEigenvalues[i].first  = std::numeric_limits<RealType>::max();
-      mappedEigenvalues[i].second = i;
-    }
-  }
-  std::sort(mappedEigenvalues.begin(), mappedEigenvalues.end());
-  //         for (int i=0; i<4; i++) app_log()<<i<<": "<<alphar[mappedEigenvalues[i].second]<< std::endl;
-  for (int i = 0; i < Nl; i++)
-    ev[i] = eigenT(mappedEigenvalues[0].second, i) / eigenT(mappedEigenvalues[0].second, 0);
-  return alphar[mappedEigenvalues[0].second];
-  //     }
-}
-
-void QMCFixedSampleLinearOptimizeBatched::getNonLinearRange(int& first, int& last)
-{
-  std::vector<int> types;
-  optTarget->getParameterTypes(types);
-  first = 0;
-  last  = types.size();
-  //assume all non-linear coeffs are together.
-  if (types[0] == optimize::LINEAR_P)
-  {
-    int i(0);
-    while (i < types.size())
-    {
-      if (types[i] == optimize::LINEAR_P)
-        first = i;
-      i++;
-    }
-    first++;
-  }
-  else
-  {
-    int i(types.size() - 1);
-    while (i >= 0)
-    {
-      if (types[i] == optimize::LINEAR_P)
-        last = i;
-      i--;
-    }
-  }
-  //     returns the number of non-linear parameters.
-  //    app_log()<<"line params: "<<first<<" "<<last<< std::endl;
-}
-
-QMCFixedSampleLinearOptimizeBatched::RealType QMCFixedSampleLinearOptimizeBatched::getNonLinearRescale(
-    std::vector<RealType>& dP,
-    Matrix<RealType>& S)
-{
-  int first(0), last(0);
-  getNonLinearRange(first, last);
-  if (first == last)
-    return 1.0;
-  RealType rescale(1.0);
-  RealType xi(0.5);
-  RealType D(0.0);
-  for (int i = first; i < last; i++)
-    for (int j = first; j < last; j++)
-      D += S(i + 1, j + 1) * dP[i + 1] * dP[j + 1];
-  rescale = (1 - xi) * D / ((1 - xi) + xi * std::sqrt(1 + D));
-  rescale = 1.0 / (1.0 - rescale);
-  //     app_log()<<"rescale: "<<rescale<< std::endl;
-  return rescale;
-}
-
 
 } // namespace qmcplusplus
