@@ -586,13 +586,12 @@ void QMCDriverNew::measureImbalance(int block) const
     const auto min_it = std::min_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
     app_log() << std::endl
               << "Block " << block << " imbalance (slow ranks wait less):" << std::endl
-              << "    min wait at " << std::distance(barrier_time_all_ranks.begin(), min_it) << " value = " << *min_it
-              << std::endl
-              << "    max wait at " << std::distance(barrier_time_all_ranks.begin(), max_it) << " value = " << *max_it
-              << std::endl
-              << "    average wait value = "
-              << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count
-              << std::endl;
+              << "    average wait seconds = "
+              << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count << std::endl
+              << "    min wait at rank " << std::distance(barrier_time_all_ranks.begin(), min_it)
+              << ", seconds = " << *min_it << std::endl
+              << "    max wait at rank " << std::distance(barrier_time_all_ranks.begin(), max_it)
+              << ", seconds = " << *max_it << std::endl;
   }
 }
 
