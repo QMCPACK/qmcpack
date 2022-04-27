@@ -23,7 +23,6 @@
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
-#include "QMCHamiltonians/HamiltonianPool.h"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
 #include <cassert>
@@ -51,11 +50,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
                                                            Communicate* comm)
-    : QMCLinearOptimize(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
+    : QMCDriver(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
-      Max_iterations(1),
       nstabilizers(3),
       stabilizerScale(2.0),
       bigChange(50),
@@ -92,7 +90,14 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       current_optimizer_type_(OptimizerType::NONE),
       do_output_matrices_(false),
       output_matrices_initialized_(false),
-      freeze_parameters_(false)
+      freeze_parameters_(false),
+      Max_iterations(1),
+      generate_samples_timer_(
+          *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
+      initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
+      eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
+      cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium))
 {
   IsQMCDriver = false;
   //set the optimization flag
@@ -188,7 +193,7 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
 {
   for (int i = 0; i < optparam.size(); i++)
     optTarget->Params(i) = optparam[i] + dl * optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  RealType c = optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
   //    if (validFuncVal)
   validFuncVal = optTarget->IsValid;
@@ -1465,5 +1470,135 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
   return (optTarget->getReportCounter() > 0);
 }
 #endif
+
+void QMCFixedSampleLinearOptimize::start()
+{
+  {
+    //generate samples
+    ScopedTimer local(generate_samples_timer_);
+    generateSamples();
+    //store active number of walkers
+    NumOfVMCWalkers = W.getActiveWalkers();
+  }
+
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  //reset the rootname
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "   Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  {
+    //get configuration from the previous run
+    ScopedTimer local(initialize_timer_);
+    Timer t2;
+    optTarget->getConfigurations(h5FileRoot);
+    optTarget->setRng(vmcEngine->getRngRefs());
+    optTarget->checkConfigurations();
+    // check recomputed variance against VMC
+    auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
+    auto sigma2_check = optTarget->getVariance();
+    if (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc)
+      throw std::runtime_error(
+          "Safeguard failure: checkConfigurations variance out of [0.5, 2.0] * reference! Please report this bug.\n");
+    app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
+  }
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+
+#ifdef HAVE_LMY_ENGINE
+void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                                                DescentEngine& descentEngineObj,
+                                                std::string MinMethod)
+{
+  app_log() << "entering engine_start function" << std::endl;
+
+  {
+    //generate samples
+    ScopedTimer local(generate_samples_timer_);
+    generateSamples();
+    //store active number of walkers
+    NumOfVMCWalkers = W.getActiveWalkers();
+  }
+
+  app_log() << "<opt stage=\"setup\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+
+  // reset the root name
+  optTarget->setRootName(RootName);
+  optTarget->setWaveFunctionNode(wfNode);
+  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  {
+    // get configuration from the previous run
+    ScopedTimer local(initialize_timer_);
+    Timer t2;
+    optTarget->getConfigurations(h5FileRoot);
+    optTarget->setRng(vmcEngine->getRngRefs());
+    optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+                                          MinMethod); // computes derivative ratios and pass into engine
+    app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
+  }
+  app_log() << "  </log>" << std::endl;
+  app_log() << "</opt>" << std::endl;
+  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << "  <log>" << std::endl;
+  t1.restart();
+}
+#endif
+
+void QMCFixedSampleLinearOptimize::finish()
+{
+  MyCounter++;
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "  </log>" << std::endl;
+
+  if (optTarget->reportH5)
+    optTarget->reportParametersH5();
+  optTarget->reportParameters();
+
+
+  int nw_removed = W.getActiveWalkers() - NumOfVMCWalkers;
+  app_log() << "   Restore the number of walkers to " << NumOfVMCWalkers << ", removing " << nw_removed << " walkers."
+            << std::endl;
+  if (nw_removed > 0)
+    W.destroyWalkers(nw_removed);
+  else
+    W.createWalkers(-nw_removed);
+  app_log() << "</opt>" << std::endl;
+  app_log() << "</optimization-report>" << std::endl;
+}
+
+void QMCFixedSampleLinearOptimize::generateSamples()
+{
+  app_log() << "<optimization-report>" << std::endl;
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 1);
+  //  vmcEngine->run();
+  //  vmcEngine->setValue("blocks",nBlocks);
+  //  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  //  app_log() << "</vmc>" << std::endl;
+  //}
+  //     if (W.getActiveWalkers()>NumOfVMCWalkers)
+  //     {
+  //         W.destroyWalkers(W.getActiveWalkers()-NumOfVMCWalkers);
+  //         app_log() << "  QMCFixedSampleLinearOptimize::generateSamples removed walkers." << std::endl;
+  //         app_log() << "  Number of Walkers per node " << W.getActiveWalkers() << std::endl;
+  //     }
+  vmcEngine->qmc_driver_mode.set(QMC_OPTIMIZE, 1);
+  vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
+  //vmcEngine->setValue("recordWalkers",1);//set record
+  vmcEngine->setValue("current", 0); //reset CurrentStep
+  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
+  t1.restart();
+  //     W.reset();
+  branchEngine->flush(0);
+  branchEngine->reset();
+  vmcEngine->run();
+  app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
+  app_log() << "</vmc>" << std::endl;
+  h5FileRoot = RootName;
+}
 
 } // namespace qmcplusplus

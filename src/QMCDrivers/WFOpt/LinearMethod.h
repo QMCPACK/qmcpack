@@ -36,20 +36,12 @@ class LinearMethod
   void getNonLinearRange(int& first, int& last, const QMCCostFunctionBase& optTarget) const;
 
 public:
-  LinearMethod();
-
   //asymmetric generalized EV
   Real getLowestEigenvector(Matrix<Real>& A, Matrix<Real>& B, std::vector<Real>& ev) const;
   //asymmetric EV
   Real getLowestEigenvector(Matrix<Real>& A, std::vector<Real>& ev) const;
   // compute a rescale factor. Ye: Where is the method from?
   Real getNonLinearRescale(std::vector<Real>& dP, Matrix<Real>& S, const QMCCostFunctionBase& optTarget) const;
-
-  NewTimer& generate_samples_timer_;
-  NewTimer& initialize_timer_;
-  NewTimer& eigenvalue_timer_;
-  NewTimer& line_min_timer_;
-  NewTimer& cost_function_timer_;
 };
 } // namespace qmcplusplus
 #endif

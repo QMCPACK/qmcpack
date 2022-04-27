@@ -261,6 +261,11 @@ private:
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
 
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
   Timer t1;
 
   ///xml node to be dumped
@@ -276,7 +281,6 @@ private:
 
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
-
 
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.

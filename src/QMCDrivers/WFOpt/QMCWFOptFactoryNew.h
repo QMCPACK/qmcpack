@@ -24,7 +24,6 @@ class QMCHamiltonian;
 class TrialWaveFunction;
 class SampleStack;
 class MCWalkerConfiguration;
-class HamiltonianPool;
 class QMCFixedSampleLinearOptimizeBatched;
 class ProjectData;
 
