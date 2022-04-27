@@ -29,7 +29,7 @@ set(QMCDRIVERS
     QMCDriverInput.cpp
     QMCDriverNew.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
-    WFOpt/QMCLinearOptimize.cpp
+    WFOpt/LinearMethod.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp
