@@ -5,6 +5,7 @@ Notable changes to QMCPACK are documented in this file.
 ## [Unreleased]
 
 - Minimum CUDA version increased to 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957) 
+- Legacy CUDA implementation of wavefunction optimization feature removed [\#3984](https://github.com/QMCPACK/qmcpack/pull/3984)
 
 ## [3.14.0] - 2022-04-06
 
