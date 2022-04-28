@@ -19,16 +19,24 @@ namespace qmcplusplus
 namespace testing
 {
 
-constexpr std::array<std::string_view, 2> valid_scalar_estimator_input_sections{
+constexpr std::array<std::string_view, 4> valid_scalar_estimator_input_sections{
     R"XML(
    <estimator type="LocalEnergy" hdf5="no"/>
-  )XML",
+	)XML",
     R"XML(
    <estimator type="CSLocalEnergy" npsi="2"/>
-  )XML"};
+	)XML",
+    R"XML(
+   <estimator name="CSLocalEnergy" npsi="2"/>
+	)XML",
+    R"XML(
+   <estimator name="eLocal" hdf5="yes"/>
+	)XML"};
 
-constexpr int local_energy_input    = 0;
-constexpr int cs_local_energy_input = 1;
+constexpr int local_energy_input           = 0;
+constexpr int cs_local_energy_input        = 1;
+constexpr int cs_local_energy_input_legacy = 2;
+constexpr int local_energy_input_legacy    = 3;
 
 } // namespace testing
 } // namespace qmcplusplus

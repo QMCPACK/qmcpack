@@ -2,12 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+
+#include "catch.hpp"
 
 #include "EstimatorManagerNewTest.h"
 #include "Estimators/ScalarEstimatorBase.h"
@@ -97,7 +99,7 @@ void EstimatorManagerNewTest::collectScalarEstimators()
   RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
   em.collectScalarEstimators(est_list);
 }
-
+  
 void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
 
 } // namespace testing

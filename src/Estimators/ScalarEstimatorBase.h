@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -61,6 +61,7 @@ struct ScalarEstimatorBase
 
   virtual ~ScalarEstimatorBase() {}
 
+  virtual bool isMainEstimator() { return false; }
   ///return average of the
   inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }
   ///return a variance
@@ -162,6 +163,8 @@ struct ScalarEstimatorBase
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
+
+  virtual const std::string& getSubTypeStr() = 0;
 };
 } // namespace qmcplusplus
 
