@@ -253,6 +253,12 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
     CHECK(Approx(loggb[1]) == -4.165017895878);
     CHECK(Approx(loggb[2]) == -10.457774371057);
   }
+
+  {
+    outputManager.resume();
+    qmcdriver.testMeasureImbalance();
+    outputManager.pause();
+  }
 }
 
 } // namespace qmcplusplus

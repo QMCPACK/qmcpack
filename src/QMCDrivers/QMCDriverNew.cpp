@@ -589,7 +589,7 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
     const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
     const auto min_it = std::min_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
     app_log() << std::endl
-              << tag << " imbalance (slow ranks wait less):" << std::endl
+              << tag << " MPI imbalance measured by an additional barrier (slow ranks wait less):" << std::endl
               << "    average wait seconds = "
               << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count << std::endl
               << "    min wait at rank " << std::distance(barrier_time_all_ranks.begin(), min_it)
