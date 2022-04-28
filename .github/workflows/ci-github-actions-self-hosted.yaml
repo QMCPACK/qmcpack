@@ -9,8 +9,7 @@ jobs:
     if: |
       github.repository_owner == 'QMCPACK' &&
       github.event.issue.pull_request &&
-      ( startsWith(github.event.comment.body, 'Test this please') || 
-        startsWith(github.event.comment.body, 'Start testing in-house') )
+      startsWith(github.event.comment.body, 'Test this please')
 
     runs-on: [self-hosted, Linux, X64, ornl-sulfur-1]
 
@@ -43,7 +42,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -72,7 +71,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -145,7 +144,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -174,7 +173,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -241,7 +240,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -270,7 +269,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -336,7 +335,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -365,7 +364,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}

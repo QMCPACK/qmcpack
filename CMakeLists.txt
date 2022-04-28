@@ -724,8 +724,8 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if(NOT TARGET CUDA::cublas)
       message(
         FATAL_ERROR
-          "Found an incomplete CUDA toolkit installation. "
-          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+          "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
+          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
           "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
     endif()
     # Automatically set the default NVCC flags
@@ -855,6 +855,9 @@ if(ENABLE_SYCL)
   find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+  if(TARGET MKL::sycl)
+    target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
+  endif()
 endif(ENABLE_SYCL)
 
  #-------------------------------------------------------------------
