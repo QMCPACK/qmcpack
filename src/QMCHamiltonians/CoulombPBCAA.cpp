@@ -45,13 +45,13 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
   Quasi2D = LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D;
-  initBreakup(ref);
-
   if (ComputeForces || Quasi2D)
   {
     ref.turnOnPerParticleSK();
     updateSource(ref);
   }
+  initBreakup(ref);
+
   if (!is_active)
   {
     ref.update();
@@ -437,11 +437,41 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 {
   mRealType Consts = 0.0; // constant term
   mRealType v1;           //single particle energy
+  mRealType vl_r0 = AA->evaluateLR_r0(); // short-range Madelung background
+  mRealType vs_k0 = AA->evaluateSR_k0(); // long-range Madelung background
+  if (Quasi2D) // background term has z dependence
+  { // just evaluate the Madelung term
+    for (int ispec=1; ispec<NumSpecies; ispec++)
+      if (Zspec[ispec] != Zspec[0])
+        throw std::runtime_error("Quasi2D assumes same charge");
+    if (report)
+    {
+      app_log() << "    vlr(r->0) = " << vl_r0 << std::endl;
+      app_log() << "   1/V vsr_k0 = " << vs_k0 << std::endl;
+    }
+    // make sure we can ignore the short-range Madelung sum
+    mRealType Rws = Ps.getLattice().WignerSeitzRadius;
+    mRealType rvsr_at_image = Rws*AA->evaluate(Rws, 1.0/Rws);
+    if (rvsr_at_image > 1e-6)
+    {
+      app_log() << rvsr_at_image << std::endl;
+      throw std::runtime_error("Ewald alpha is too small");
+    }
+    // perform long-range Madelung sum
+    const StructFact& PtclRhoK(Ps.getSK());
+    v1 = AA->evaluate_slab(0,
+                           Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0],
+                           PtclRhoK.eikr_i[0], PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
+    if (report)
+      app_log() << "   LR Madelung = " << v1 << std::endl;
+    MC0 = 0.5*(v1 - vl_r0);
+    Consts = NumCenters*MC0;
+  }
+  else // group background term together with Madelung vsr_k0 part
+  {
 #if !defined(REMOVE_TRACEMANAGER)
   V_const = 0.0;
 #endif
-  //v_l(r=0) including correction due to the non-periodic direction
-  mRealType vl_r0 = AA->evaluateLR_r0();
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = -.5 * Zat[ipart] * Zat[ipart] * vl_r0;
@@ -452,8 +482,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Neutraling background term
-  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
   //Compute Madelung constant
   MC0 = 0.0;
   for (int i = 0; i < AA->Fk.size(); i++)
@@ -462,22 +490,15 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = 0.0;
-    if (Quasi2D) // background term has z dependence
-    {
-      for (int jpart = 0; jpart < ipart; jpart++)
-        v1 += -.5 * vs_k0;
-    }
-    else // group background term together with Madelung vsr_k0 part
-    {
     for (int spec = 0; spec < NumSpecies; spec++)
       v1 += NofSpecies[spec] * Zspec[spec];
     v1 *= -.5 * Zat[ipart] * vs_k0;
-    }
 #if !defined(REMOVE_TRACEMANAGER)
     V_const(ipart) += v1;
 #endif
     Consts += v1;
   }
+  } // end if Quasi2D
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
   return Consts;
@@ -601,12 +622,12 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
     const auto& d_aa(P.getDistTableAA(d_aa_ID));
     // need 1/2 \sum_{i,j} v_E(r_i - r_j)
     //distance table handles jat<iat
-    for (int iat = 0; iat < NumCenters; ++iat)
+    for (int iat = 1; iat < NumCenters; ++iat)
     {
       mRealType u = 0;
       const int slab_dir = OHMMS_DIM - 1;
       const auto& dr = d_aa.getDisplRow(iat);
-      for (int jat = 0; jat <= iat; ++jat)
+      for (int jat = 0; jat < iat; ++jat)
       {
         const RealType z = std::abs(dr[jat][slab_dir]);
         u += Zat[jat] *
