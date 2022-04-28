@@ -104,7 +104,7 @@ struct ScalarEstimatorBase
     {
       *first++    = scalars[i].mean();
       *first_sq++ = scalars[i].mean2();
-      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
+      // For mixed precision this is where data goes from Actual QMCT::RealType
       // to the local RealType which is hard coded to QMCTFullPrecRealType.
       // I think it is a bad idea to have RealType to have a changing meaning,
       // I also feel like having the floating point expension needed to write always to

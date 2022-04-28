@@ -715,13 +715,17 @@ if(QMC_CUDA OR ENABLE_CUDA)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
+    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
+    endif()
     enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
         FATAL_ERROR
-          "Found an incomplete CUDA toolkit installation. "
-          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+          "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
+          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
           "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
     endif()
     # Automatically set the default NVCC flags
@@ -839,14 +843,21 @@ endif(ENABLE_HIP)
 #  set up SYCL compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_SYCL)
-  if(NOT (CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND))
-    message(FATAL_ERROR "Only LLVM-based Intel compiler supports SYCL.")
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)
   find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+  if(TARGET MKL::sycl)
+    target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
+  endif()
 endif(ENABLE_SYCL)
 
  #-------------------------------------------------------------------

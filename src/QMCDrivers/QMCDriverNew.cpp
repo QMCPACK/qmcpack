@@ -31,6 +31,7 @@
 #include "Concurrency/Info.hpp"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBuilder.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -122,6 +123,8 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
  */
 void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
 {
+  ScopedTimer local_timer(timers_.startup_timer);
+
   app_summary() << QMCType << " Driver running with" << std::endl
                 << "             total_walkers     = " << awc.global_walkers << std::endl
                 << "             walkers_per_rank  = " << awc.walkers_per_rank << std::endl
@@ -159,6 +162,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   // Once they are created move contexts can be created.
   createRngsStepContexts(crowds_.size());
+
+  if (qmcdriver_input_.get_measure_imbalance())
+    measureImbalance("Startup");
 }
 
 /** QMCDriverNew ignores h5name if you want to read and h5 config you have to explicitly
@@ -218,9 +224,8 @@ void QMCDriverNew::recordBlock(int block)
 {
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
-    timers_.checkpoint_timer.start();
+    ScopedTimer local_timer(timers_.checkpoint_timer);
     RandomNumberControl::write(root_name_, myComm);
-    timers_.checkpoint_timer.stop();
   }
 }
 
@@ -234,8 +239,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   return true;
 }
 
-void QMCDriverNew::makeLocalWalkers(IndexType nwalkers,
-                                    RealType reserve)
+void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
 {
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
@@ -462,6 +466,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
  */
 void QMCDriverNew::endBlock()
 {
+  ScopedTimer local_timer(timers_.endblock_timer);
   RefVector<ScalarEstimatorBase> all_scalar_estimators;
 
   FullPrecRealType total_block_weight = 0.0;
@@ -568,6 +573,30 @@ void QMCDriverNew::checkLogAndGL(Crowd& crowd, const std::string_view location)
   std::cerr << msg.str();
   if (!success)
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
+}
+
+void QMCDriverNew::measureImbalance(const std::string& tag) const
+{
+  ScopedTimer local_timer(timers_.imbalance_timer);
+  Timer only_this_barrier;
+  myComm->barrier();
+  std::vector<double> my_barrier_time(1, only_this_barrier.elapsed());
+  std::vector<double> barrier_time_all_ranks(myComm->size(), 0.0);
+  myComm->gather(my_barrier_time, barrier_time_all_ranks, 0);
+  if (!myComm->rank())
+  {
+    auto const count  = static_cast<double>(barrier_time_all_ranks.size());
+    const auto max_it = std::max_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
+    const auto min_it = std::min_element(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end());
+    app_log() << std::endl
+              << tag << " imbalance (slow ranks wait less):" << std::endl
+              << "    average wait seconds = "
+              << std::accumulate(barrier_time_all_ranks.begin(), barrier_time_all_ranks.end(), 0.0) / count << std::endl
+              << "    min wait at rank " << std::distance(barrier_time_all_ranks.begin(), min_it)
+              << ", seconds = " << *min_it << std::endl
+              << "    max wait at rank " << std::distance(barrier_time_all_ranks.begin(), max_it)
+              << ", seconds = " << *max_it << std::endl;
+  }
 }
 
 } // namespace qmcplusplus

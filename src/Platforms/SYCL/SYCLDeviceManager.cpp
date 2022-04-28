@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <string>
 #include <algorithm>
+#include "config.h"
 #include "OutputManager.h"
 #include "determineDefaultDeviceNum.h"
 #if defined(_OPENMP)
@@ -27,7 +28,6 @@
 
 namespace qmcplusplus
 {
-
 #if defined(_OPENMP)
 /** create SYCL device/contexts from OpenMP owned ones to ensure interoperability.
  * CUDA has the notion of primary context while SYCL requires explicitly sharing context.
@@ -86,9 +86,18 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     else if (default_device_num != sycl_default_device_num)
       throw std::runtime_error("Inconsistent assigned SYCL devices with the previous record!");
 
-    default_device_queue =
-        sycl::queue(visible_devices[sycl_default_device_num].context, visible_devices[sycl_default_device_num].device);
+    default_device_queue = std::make_unique<sycl::queue>(visible_devices[sycl_default_device_num].context,
+                                                         visible_devices[sycl_default_device_num].device);
   }
+}
+
+std::unique_ptr<sycl::queue> SYCLDeviceManager::default_device_queue;
+
+sycl::queue& SYCLDeviceManager::getDefaultDeviceQueue()
+{
+  if (!default_device_queue)
+    throw std::runtime_error("SYCLDeviceManager::getDefaultDeviceQueue() the global instance not initialized.");
+  return *default_device_queue;
 }
 
 #if defined(_OPENMP)
@@ -130,10 +139,9 @@ static std::vector<struct syclDeviceInfo> xomp_get_sycl_devices()
       devices[id].device =
           sycl::ext::oneapi::level_zero::make_device(sycl_platform, reinterpret_cast<pi_native_handle>(hDevice));
 
-      const sycl::context sycl_context =
-          sycl::ext::oneapi::level_zero::make_context({devices[id].device},
-                                                      reinterpret_cast<pi_native_handle>(hContext),
-                                                      true /* keep the ownership, no transfer */);
+      devices[id].context = sycl::ext::oneapi::level_zero::make_context({devices[id].device},
+                                                                        reinterpret_cast<pi_native_handle>(hContext),
+                                                                        true /* keep the ownership, no transfer */);
     }
     else if (omp_backend.find("opencl") == 0)
     {
