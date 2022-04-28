@@ -52,7 +52,9 @@ CSLocalEnergyInput::CSLocalEnergyInput(xmlNodePtr cur)
   setIfInInput(type_, "type");
   setIfInInput(name_, "name");
   if (name_.empty())
-    name_ = type_;  
+    name_ = type_;
+  if (type_.empty())
+    type_ = name_;
 }
 
 RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)
@@ -63,7 +65,9 @@ RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)
   setIfInInput(type_, "type");
   setIfInInput(name_, "name");
   if (name_.empty())
-    name_ = type_;  
+    name_ = type_;
+  if (type_.empty())
+    type_ = name_;
 }
 
 RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)

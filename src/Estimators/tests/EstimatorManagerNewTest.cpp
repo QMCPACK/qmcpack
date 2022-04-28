@@ -41,7 +41,7 @@ bool EstimatorManagerNewTest::testReplaceMainEstimator()
   CHECK(em.main_estimator_->getSubTypeStr() == "fake");	
 
   auto fake_est2 = std::make_unique<FakeEstimator>();
-  fake_est2->name_ = "Fake2";
+  fake_est2->type_ = "Fake2";
 
   em.addMainEstimator(std::move(fake_est2));
 
