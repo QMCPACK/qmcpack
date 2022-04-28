@@ -49,6 +49,21 @@ CSLocalEnergyInput::CSLocalEnergyInput(xmlNodePtr cur)
   readNameTypeLikeLegacy(input_section_, name_, type_);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(n_psi_, "npsi");
+  setIfInInput(type_, "type");
+  setIfInInput(name_, "name");
+  if (name_.empty())
+    name_ = type_;  
+}
+
+RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)
+{
+  input_section_.readXML(cur);
+  auto setIfInInput = LAMBDA_setIfInInput;
+  setIfInInput(n_psi_, "npsi");
+  setIfInInput(type_, "type");
+  setIfInInput(name_, "name");
+  if (name_.empty())
+    name_ = type_;  
 }
 
 RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)

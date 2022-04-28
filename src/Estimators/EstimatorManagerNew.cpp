@@ -38,9 +38,13 @@
 namespace qmcplusplus
 {
 //initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
-{}
+EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham,  Communicate* c)
+    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+{
+  app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+  max4ascii = ham.sizeOfObservables() + 3;
+  addMainEstimator(std::make_unique<LocalEnergyEstimator>(ham, true));  
+}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
@@ -54,6 +58,8 @@ EstimatorManagerNew::~EstimatorManagerNew()
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
  *
+ * The object is still not completely valid.
+ *
  */
 void EstimatorManagerNew::reset()
 {
@@ -63,8 +69,12 @@ void EstimatorManagerNew::reset()
   cpuInd         = BlockProperties.add("BlockCPU");
   acceptRatioInd = BlockProperties.add("AcceptRatio");
   BlockAverages.clear(); //cleaup the records
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->add2Record(BlockAverages);
+  // Side effect of this is that BlockAverages becomes size to number of scalar values tracked by all the
+  // scalar estimators
+  main_estimator_->add2Record(BlockAverages);
+  for (int i = 0; i < scalar_ests_.size(); i++)
+    scalar_ests_[i]->add2Record(BlockAverages);
+  // possibly redundant variable
   max4ascii += BlockAverages.size();
 }
 
@@ -97,6 +107,8 @@ void EstimatorManagerNew::startDriverRun()
   BlockAverages.setValues(0.0);
   AverageCache.resize(BlockAverages.size());
   PropertyCache.resize(BlockProperties.size());
+  // Now Estimatormanager New is actually valid i.e. in the state you would expect after the constructor.
+  // Until the put is dropped this isn't feasible to fix.
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
@@ -119,8 +131,9 @@ void EstimatorManagerNew::startDriverRun()
     fname  = my_comm_->getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
-    for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->registerObservables(h5desc, h_file->getFileID());
+    main_estimator_->registerObservables(h5desc, h_file->getFileID());
+    for (int i = 0; i < scalar_ests_.size(); i++)
+      scalar_ests_[i]->registerObservables(h5desc, h_file->getFileID());
     for (auto& uope : operator_ests_)
       uope->registerOperatorEstimator(h_file->getFileID());
   }
@@ -148,11 +161,27 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   RecordCount++;
 }
 
-void EstimatorManagerNew::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
+void EstimatorManagerNew::collectMainEstimators(const RefVector<ScalarEstimatorBase>& main_estimators)
 {
   AverageCache = 0.0;
-  for (ScalarEstimatorBase& est : estimators)
+  for (ScalarEstimatorBase& est : main_estimators)
     est.addAccumulated(AverageCache.begin());
+}
+
+void EstimatorManagerNew::collectScalarEstimators(const std::vector<RefVector<ScalarEstimatorBase>>& crowd_scalar_ests)
+{
+  assert(crowd_scalar_ests[0].size() == scalar_ests_.size());
+  for (int iop = 0; iop < scalar_ests_.size(); ++iop)
+  {
+    RefVector<ScalarEstimatorBase> this_scalar_est_for_all_crowds;
+    for (int icrowd = 0; icrowd < crowd_scalar_ests.size(); ++icrowd)
+      this_scalar_est_for_all_crowds.emplace_back(crowd_scalar_ests[icrowd][iop]);
+    // There is actually state in each Scalar estimator that tells it what it's "first" index in the AverageCache
+    // is, It's quite unclear to me if that would really work so I'm doing this in anticipation of having to rework that
+    // if we don't drop multiple scalar estimators per crowd all together.
+    for (ScalarEstimatorBase& est : this_scalar_est_for_all_crowds)
+      est.addAccumulated(AverageCache.begin());
+  }
 }
 
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
@@ -316,23 +345,12 @@ void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& va
   var = tmp[2] / tmp[0] - e * e;
 }
 
-EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)
-{
-  std::map<std::string, int>::iterator it = EstimatorMap.find(a);
-  if (it == EstimatorMap.end())
-    return nullptr;
-  else
-    return Estimators[(*it).second].get();
-}
-
-bool EstimatorManagerNew::put(QMCHamiltonian& H,
-                              const ParticleSet& pset,
-                              const TrialWaveFunction& twf,
-                              xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
   cur = cur->children;
+  std::string MainEstimatorName("LocalEnergy");
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
@@ -349,7 +367,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
       if ((est_name == MainEstimatorName) || (est_name == "elocal"))
       {
         max4ascii = H.sizeOfObservables() + 3;
-        add(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"), MainEstimatorName);
+        addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"));
       }
       else if (est_name == "RMC")
       {
@@ -358,7 +376,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         hAttrib.add(nobs, "nobs");
         hAttrib.put(cur);
         max4ascii = nobs * H.sizeOfObservables() + 3;
-        add(std::make_unique<RMCLocalEnergyEstimator>(H, nobs), MainEstimatorName);
+        addMainEstimator(std::make_unique<RMCLocalEnergyEstimator>(H, nobs));
       }
       else if (est_name == "CSLocalEnergy")
       {
@@ -366,7 +384,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
         int nPsi = 1;
         hAttrib.add(nPsi, "nPsi");
         hAttrib.put(cur);
-        add(std::make_unique<CSEnergyEstimator>(H, nPsi), MainEstimatorName);
+        addMainEstimator(std::make_unique<CSEnergyEstimator>(H, nPsi));
         app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
       }
       else if (est_name == "SpinDensityNew")
@@ -406,11 +424,11 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
     }
     cur = cur->next;
   }
-  if (Estimators.empty())
+  if (main_estimator_ == nullptr)
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
-    add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
+    addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
   }
   if (!extra_types.empty())
   {
@@ -425,22 +443,17 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
   return true;
 }
 
-int EstimatorManagerNew::add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname)
+void EstimatorManagerNew::addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)
 {
-  std::map<std::string, int>::iterator it = EstimatorMap.find(aname);
-  int n                                   = Estimators.size();
-  if (it == EstimatorMap.end())
-  {
-    Estimators.push_back(std::move(newestimator));
-    EstimatorMap[aname] = n;
-  }
-  else
-  {
-    n = (*it).second;
-    app_log() << "  EstimatorManagerNew::add replace " << aname << " estimator." << std::endl;
-    Estimators[n] = std::move(newestimator);
-  }
-  return n;
+  if(main_estimator_ != nullptr)
+    app_log() << "  EstimatorManagerNew replaced its main estimator with " << estimator->getSubTypeStr() << " estimator." << std::endl;    
+  main_estimator_ = std::move(estimator);
+}
+
+int EstimatorManagerNew::addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)
+{
+  scalar_ests_.push_back(std::move(estimator));
+  return scalar_ests_.size() - 1;
 }
 
 } // namespace qmcplusplus

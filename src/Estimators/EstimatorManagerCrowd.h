@@ -41,7 +41,6 @@ class EstimatorManagerCrowd
 public:
   using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
   using RealType      = EstimatorManagerNew::RealType;
-  using EstimatorType = EstimatorManagerNew::EstimatorType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
    *
@@ -74,7 +73,8 @@ public:
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng);
 
-  RefVector<EstimatorType> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
+  ScalarEstimatorBase& get_main_estimator() { return *main_estimator_; }
+  RefVector<ScalarEstimatorBase> get_scalar_estimators() { return convertUPtrToRefVector(scalar_estimators_); }
   RefVector<qmcplusplus::OperatorEstBase> get_operator_estimators() { return convertUPtrToRefVector(operator_ests_); }
 
   RealType get_block_num_samples() const { return block_num_samples_; }
@@ -86,8 +86,9 @@ private:
   ///total weight accumulated in a block
   RealType block_weight_;
 
+  UPtr<ScalarEstimatorBase> main_estimator_;
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<EstimatorType>> scalar_estimators_;
+  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_estimators_;
 
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 };

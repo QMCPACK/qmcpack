@@ -56,7 +56,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   CSEnergyEstimator(const QMCHamiltonian& h, int hcopy = 1);
 
   CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
-
+  
   inline RealType getUmbrellaWeight(int ipsi)
   {
     return scalars_saved[ipsi * LE_INDEX + WEIGHT_INDEX].result();
