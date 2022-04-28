@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -29,7 +29,6 @@
 namespace qmcplusplus
 {
 class QMCHamiltonian;
-class CollectablesEstimator;
 class hdf_archive;
 
 namespace testing
@@ -196,11 +195,6 @@ private:
   std::unique_ptr<std::ofstream> DebugArchive;
   ///communicator to handle communication
   Communicate* my_comm_;
-  /** pointer to the CollectablesEstimator
-   *
-   * Do not need to clone: owned by the master thread
-   */
-  CollectablesEstimator* Collectables;
   /** accumulator for the energy
    *
    * @todo expand it for all the scalar observables to report the final results
