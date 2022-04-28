@@ -78,7 +78,7 @@ set(QMCDRIVERS
     CorrelatedSampling/CSUpdateBase.cpp)
 
 if(QMC_CUDA)
-  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp WFOpt/QMCCostFunctionCUDA.cpp)
+  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp)
 endif(QMC_CUDA)
 
 set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp WFOpt/QMCCostFunctionBatched.cpp)
