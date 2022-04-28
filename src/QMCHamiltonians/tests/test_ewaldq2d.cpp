@@ -81,4 +81,43 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D triangular", "[hamiltonian]")
   CHECK(val == Approx(vmad_tri));
 }
 
+TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square", "[hamiltonian]")
+{
+  LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
+  const double vmad_sq_z01 = -2.4846003745840357;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true;
+  lattice.BoxBConds[2] = false; // ppn
+  lattice.ndim = 2;
+  lattice.R.diagonal(1.0);
+  lattice.R[2,2] = 10;
+  lattice.LR_dim_cutoff = 30.0;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell);
+  int npart = 2;
+  elec.setName("e");
+  elec.create({npart});
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.5, 0.5, 0.1};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.createSK();
+  elec.addTable(elec); // !!!! crucial to compute distance table
+  elec.update();
+
+  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+
+  double val = caa.evaluate(elec);
+  CHECK(val/npart == Approx(vmad_sq_z01));
+}
+
 } // qmcplusplus
