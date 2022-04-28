@@ -44,9 +44,10 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
+  Quasi2D = LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D;
   initBreakup(ref);
 
-  if (ComputeForces)
+  if (ComputeForces || Quasi2D)
   {
     ref.turnOnPerParticleSK();
     updateSource(ref);
@@ -461,9 +462,17 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = 0.0;
+    if (Quasi2D) // background term has z dependence
+    {
+      for (int jpart = 0; jpart < ipart; jpart++)
+        v1 += -.5 * vs_k0;
+    }
+    else // group background term together with Madelung vsr_k0 part
+    {
     for (int spec = 0; spec < NumSpecies; spec++)
       v1 += NofSpecies[spec] * Zspec[spec];
     v1 *= -.5 * Zat[ipart] * vs_k0;
+    }
 #if !defined(REMOVE_TRACEMANAGER)
     V_const(ipart) += v1;
 #endif
@@ -587,23 +596,27 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
-  if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
+  if (Quasi2D)
   {
     const auto& d_aa(P.getDistTableAA(d_aa_ID));
+    // need 1/2 \sum_{i,j} v_E(r_i - r_j)
     //distance table handles jat<iat
-    for (int iat = 1; iat < NumCenters; ++iat)
+    for (int iat = 0; iat < NumCenters; ++iat)
     {
       mRealType u = 0;
       const int slab_dir = OHMMS_DIM - 1;
       const auto& dr = d_aa.getDisplRow(iat);
-      for (int jat = 0; jat < iat; ++jat)
+      for (int jat = 0; jat <= iat; ++jat)
       {
-        const RealType z = dr[jat][slab_dir];
+        const RealType z = std::abs(dr[jat][slab_dir]);
         u += Zat[jat] *
              AA->evaluate_slab(z,
                                P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat],
                                PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
-        res += Zat[iat]*u;
+        if (iat == jat)
+          res += Zat[iat]*u/2;
+        else
+          res += Zat[iat]*u;
       }
     }
   }
