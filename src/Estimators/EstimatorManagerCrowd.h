@@ -28,7 +28,6 @@ namespace qmcplusplus
 {
 class MCWalkerConifugration;
 class QMCHamiltonian;
-class CollectablesEstimator;
 
 /** Thread local estimator container/accumulator
  *

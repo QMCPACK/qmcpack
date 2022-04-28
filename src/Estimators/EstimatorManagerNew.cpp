@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -24,7 +24,6 @@
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
-#include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
@@ -40,13 +39,11 @@ namespace qmcplusplus
 {
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
+    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {}
 
 EstimatorManagerNew::~EstimatorManagerNew()
 {
-  if (Collectables)
-    delete Collectables;
 }
 
 /** reset names of the properties
@@ -97,10 +94,8 @@ void EstimatorManagerNew::startDriverRun()
   RecordCount = 0;
   energyAccumulator.clear();
   varAccumulator.clear();
-  int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
-  // \todo Collectables should just have its own data structures not change the EMBS layout.
-  AverageCache.resize(BlockAverages.size() + nc);
+  AverageCache.resize(BlockAverages.size());
   PropertyCache.resize(BlockProperties.size());
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
@@ -417,13 +412,6 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H,
     max4ascii = H.sizeOfObservables() + 3;
     add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
   }
-  //Collectables is special and should not be added to Estimators
-  if (Collectables == 0 && H.sizeOfCollectables())
-  {
-    app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
-    Collectables = new CollectablesEstimator(H);
-  }
-  // Unrecognized estimators are not allowed
   if (!extra_types.empty())
   {
     app_log() << "\nUnrecognized estimators in input:" << std::endl;
