@@ -70,11 +70,18 @@ EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::evaluate_slab(
 
 EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slab_func(mRealType z, mRealType k) const
 {
+  mRealType term1, term2;
+  term1 = std::exp(slab_logf( z, k));
+  term2 = std::exp(slab_logf(-z, k));
+  return term1+term2;
+}
+
+EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slab_logf(mRealType z, mRealType k) const
+{
   mRealType z1 = alpha*z;
   mRealType k1 = k/(2*alpha);
-  mRealType term1 = std::exp(k*z)*erfc(z1+k1);
-  mRealType term2 = std::exp(-k*z)*erfc(-z1+k1);
-  return term1+term2;
+  mRealType log_term = k*z + std::log(erfc(z1+k1));
+  return log_term;
 }
 
 EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slab_vsr_k0(mRealType z) const

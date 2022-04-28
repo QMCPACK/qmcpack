@@ -66,6 +66,7 @@ private:
   ///store |k|
   std::vector<mRealType> kMag;
   mRealType slab_func(mRealType z, mRealType k) const;
+  mRealType slab_logf(mRealType z, mRealType k) const;
   mRealType slab_vsr_k0(mRealType z) const;
 };
 } // qmcplusplus
