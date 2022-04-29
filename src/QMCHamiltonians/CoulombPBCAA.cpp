@@ -48,9 +48,12 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   if (ComputeForces || Quasi2D)
   {
     ref.turnOnPerParticleSK();
-    updateSource(ref);
   }
   initBreakup(ref);
+  if (ComputeForces)
+  {
+    updateSource(ref);
+  }
 
   if (!is_active)
   {
