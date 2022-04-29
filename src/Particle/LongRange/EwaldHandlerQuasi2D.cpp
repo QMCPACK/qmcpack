@@ -37,11 +37,11 @@ void EwaldHandlerQuasi2D::fillFk(const KContainer& KList)
   MaxKshell = KList.kshell.size() - 1;
   Fk_symm.resize(MaxKshell);
 
-  kMag.resize(MaxKshell);
+  kmags.resize(MaxKshell);
   for (int ks = 0, ki = 0; ks < Fk_symm.size(); ks++)
   {
     kmag = std::sqrt(KList.ksq[ki]);
-    kMag[ks] = kmag; // store k magnitutes
+    kmags[ks] = kmag; // store k magnitutes
     uk = knorm/kmag;
     Fk_symm[ks] = uk;
     while (ki < KList.kshell[ks + 1] && ki < Fk.size())
@@ -63,7 +63,7 @@ EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::evaluate_slab(
     mRealType u = 0;
     for (; ki < kshell[ks + 1]; ki++)
       u += (*rk1_r++) * (*rk2_r++) + (*rk1_i++) * (*rk2_i++);
-    vk += u * Fk_symm[ks] * slab_func(zmag, kMag[ks]);
+    vk += u * Fk_symm[ks] * slab_func(zmag, kmags[ks]);
   }
   return vk;
 }
