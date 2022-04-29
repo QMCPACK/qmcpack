@@ -44,8 +44,8 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
-  Quasi2D = LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D;
-  if (ComputeForces || Quasi2D)
+  quasi2d = LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D;
+  if (ComputeForces || quasi2d)
   {
     ref.turnOnPerParticleSK();
   }
@@ -442,11 +442,11 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   mRealType v1;           //single particle energy
   mRealType vl_r0 = AA->evaluateLR_r0(); // short-range Madelung background
   mRealType vs_k0 = AA->evaluateSR_k0(); // long-range Madelung background
-  if (Quasi2D) // background term has z dependence
+  if (quasi2d) // background term has z dependence
   { // just evaluate the Madelung term
     for (int ispec=1; ispec<NumSpecies; ispec++)
       if (Zspec[ispec] != Zspec[0])
-        throw std::runtime_error("Quasi2D assumes same charge");
+        throw std::runtime_error("quasi2d assumes same charge");
     if (report)
     {
       app_log() << "    vlr(r->0) = " << vl_r0 << std::endl;
@@ -501,7 +501,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 #endif
     Consts += v1;
   }
-  } // end if Quasi2D
+  } // end if quasi2d
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
   return Consts;
@@ -620,7 +620,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
-  if (Quasi2D)
+  if (quasi2d)
   {
     const auto& d_aa(P.getDistTableAA(d_aa_ID));
     // need 1/2 \sum_{i,j} v_E(r_i - r_j)
