@@ -55,7 +55,7 @@ constexpr std::array<const char*, 4> valid_vmc_input_sections{
   <qmc method="vmc" move="pbyp">
     <parameter name="crowds">                 1 </parameter>
     <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers_per_rank">        1 </parameter>
+    <parameter name="walkers_per_rank">       1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
     <parameter name="steps">                  1 </parameter>
