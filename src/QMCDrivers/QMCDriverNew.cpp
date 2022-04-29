@@ -466,6 +466,7 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
  */
 void QMCDriverNew::endBlock()
 {
+  ScopedTimer local_timer(timers_.endblock_timer);
   RefVector<ScalarEstimatorBase> main_scalar_estimators;
 
   FullPrecRealType total_block_weight = 0.0;
