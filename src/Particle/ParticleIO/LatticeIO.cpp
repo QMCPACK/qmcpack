@@ -103,12 +103,6 @@ bool LatticeParser::put(xmlNodePtr cur)
       {
         putContent(ref_.VacuumScale, cur);
       }
-      else if (aname == "ndim")
-      {
-        putContent(ref_.ndim, cur);
-        if ((ref_.ndim != 2) and (ref_.ndim != 3))
-          throw std::runtime_error("invalid ndim input");
-      }
       else if (aname == "LR_dim_cutoff")
       {
         putContent(ref_.LR_dim_cutoff, cur);
@@ -125,8 +119,11 @@ bool LatticeParser::put(xmlNodePtr cur)
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
         else if (handler_type == "opt_breakup_original")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
-        else if (handler_type == "ewald2d")
+        else if (handler_type == "ewald_strict2d")
+        {
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
+          ref_.ndim = 2;
+        }
         else if (handler_type == "ewald_quasi2d")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
         else
