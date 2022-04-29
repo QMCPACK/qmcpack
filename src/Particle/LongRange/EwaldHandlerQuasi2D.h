@@ -65,8 +65,10 @@ private:
   mRealType area;
   ///store |k|
   std::vector<mRealType> kmags;
-  mRealType slab_func(mRealType z, mRealType k) const;
-  mRealType slab_logf(mRealType z, mRealType k) const;
+  // f(z, k) = e^{z k} erfc(k/(2\alpha)+\alpha*z)
+  mRealType slabFunc(mRealType z, mRealType k) const;
+  // log( f(z, k) )
+  mRealType slabLogf(mRealType z, mRealType k) const;
   mRealType slab_vsr_k0(mRealType z) const;
 };
 } // qmcplusplus

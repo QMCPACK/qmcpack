@@ -63,20 +63,20 @@ EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::evaluate_slab(
     mRealType u = 0;
     for (; ki < kshell[ks + 1]; ki++)
       u += (*rk1_r++) * (*rk2_r++) + (*rk1_i++) * (*rk2_i++);
-    vk += u * Fk_symm[ks] * slab_func(zmag, kmags[ks]);
+    vk += u * Fk_symm[ks] * slabFunc(zmag, kmags[ks]);
   }
   return vk;
 }
 
-EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slab_func(mRealType z, mRealType k) const
+EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slabFunc(mRealType z, mRealType k) const
 {
   mRealType term1, term2;
-  term1 = std::exp(slab_logf( z, k));
-  term2 = std::exp(slab_logf(-z, k));
+  term1 = std::exp(slabLogf( z, k));
+  term2 = std::exp(slabLogf(-z, k));
   return term1+term2;
 }
 
-EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slab_logf(mRealType z, mRealType k) const
+EwaldHandlerQuasi2D::mRealType EwaldHandlerQuasi2D::slabLogf(mRealType z, mRealType k) const
 {
   mRealType z1 = alpha*z;
   mRealType k1 = k/(2*alpha);
