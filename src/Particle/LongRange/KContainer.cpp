@@ -27,7 +27,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsign
   {
     APP_ABORT("  Illegal cutoff for KContainer");
   }
-  FindApproxMMax(lattice, ndim);
+  findApproxMMax(lattice, ndim);
   BuildKLists(lattice, useSphere);
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
@@ -36,7 +36,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsign
   app_log() << std::endl;
 }
 
-void KContainer::FindApproxMMax(const ParticleLayout& lattice, unsigned ndim)
+void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.

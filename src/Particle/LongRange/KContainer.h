@@ -79,7 +79,7 @@ private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(const ParticleLayout& lattice, unsigned ndim);
+  void findApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
   void BuildKLists(const ParticleLayout& lattice, bool useSphere);
 
