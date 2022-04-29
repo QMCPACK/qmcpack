@@ -10,14 +10,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerCrowd.h"
-#include "Estimators/CollectablesEstimator.h"
 
 namespace qmcplusplus
 {
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 {
   // For now I'm going to try to refactor away the clone pattern only at the manager level.
-  // i.e. not continue into the scalar_estimators and collectables
   for (const auto& est : em.Estimators)
     scalar_estimators_.emplace_back(est->clone());
   for (const auto& upeb : em.operator_ests_)
@@ -50,7 +48,7 @@ void EstimatorManagerCrowd::startBlock(int steps)
 
 void EstimatorManagerCrowd::stopBlock()
 {
-  // the main estimator does it some more inside of here.
+  // the main estimator does more here.
 }
 
 
