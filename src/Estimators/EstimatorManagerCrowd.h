@@ -87,7 +87,7 @@ private:
   RealType block_weight_;
 
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<ScalarEstimatorBase>> scalar_estimators_;
+  std::vector<std::unique_ptr<EstimatorType>> scalar_estimators_;
 
   std::vector<std::unique_ptr<OperatorEstBase>> operator_ests_;
 };

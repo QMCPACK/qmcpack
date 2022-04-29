@@ -54,8 +54,6 @@ EstimatorManagerNew::~EstimatorManagerNew()
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
  *
- * The object is still not completely valid.
- *
  */
 void EstimatorManagerNew::reset()
 {
@@ -99,8 +97,6 @@ void EstimatorManagerNew::startDriverRun()
   BlockAverages.setValues(0.0);
   AverageCache.resize(BlockAverages.size());
   PropertyCache.resize(BlockProperties.size());
-  // Now Estimatormanager New is actually valid i.e. in the state you would expect after the constructor.
-  // Until the put is dropped this isn't feasible to fix.
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
