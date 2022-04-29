@@ -637,11 +637,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
              AA->evaluate_slab(z,
                                P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat],
                                PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
-        if (iat == jat)
-          res += Zat[iat]*u/2;
-        else
-          res += Zat[iat]*u;
       }
+      res += Zat[iat]*u;
     }
   }
   else
