@@ -79,18 +79,22 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
     mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
 
-  //overwrite the non-periodic directon to be zero
-  if (qmc_common.use_ewald)
-  {
-    app_log() << "  Using Ewald sum for the slab " << std::endl;
-    if (lattice.SuperCellEnum == SUPERCELL_SLAB)
-      mmax[2] = 0;
-  }
 
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
-  if (ndim < 3) mmax[2] = 0;
+
+  //overwrite the non-periodic directon to be zero
+  if (lattice.SuperCellEnum == SUPERCELL_SLAB)
+  {
+    app_log() << "  No kspace sum perpendicular to slab " << std::endl;
+    mmax[2] = 0;
+  }
+  if (ndim < 3)
+  {
+    app_log() << "  No kspace sum along z in strict 2D " << std::endl;
+    mmax[2] = 0;
+  }
   if (ndim < 2) mmax[1] = 0;
 }
 
