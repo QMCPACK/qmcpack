@@ -83,6 +83,12 @@ list(APPEND DIAMOND_OPT_SCALARS "localecp" "-7.1979 0.023")
 list(APPEND DIAMOND_OPT_SCALARS "nonlocalecp" "0.61540 0.0068")
 list(APPEND DIAMOND_OPT_SCALARS "samples" "128000 0.0")
 
+if(SUCCESS_STATUS_MP AND SUCCESS_STATUS_CUDA)
+  set(SUCCESS_STATUS_MP_CUDA TRUE)
+else()
+  set(SUCCESS_STATUS_MP_CUDA FALSE)
+endif()
+
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-opt_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -90,16 +96,10 @@ qmc_run_and_check(
   qmc_short_opt.in.xml
   1
   16
-  ${SUCCESS_STATUS_MP}
+  ${SUCCESS_STATUS_MP_CUDA}
   3
   DIAMOND_OPT_SCALARS # VMC
 )
-
-if(SUCCESS_STATUS_MP AND SUCCESS_STATUS_CUDA)
-  set(SUCCESS_STATUS_MP_CUDA TRUE)
-else()
-  set(SUCCESS_STATUS_MP_CUDA FALSE)
-endif()
 
 qmc_run_and_check(
   short-diamondC_1x1x1_pp-optbatch_sdj

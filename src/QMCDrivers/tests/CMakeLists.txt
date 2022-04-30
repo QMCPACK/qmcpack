@@ -69,7 +69,6 @@ if(NOT QMC_CUDA)
 
   set(UTEST_EXE test_new_${SRC_DIR})
   set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
-  set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
   #this is dependent on the directory creation and sym linking of earlier driver tests
 
   set(DRIVER_TEST_SRC
@@ -108,9 +107,8 @@ if(NOT QMC_CUDA)
   if(HAVE_MPI)
     set(UTEST_EXE test_${SRC_DIR}_mpi)
     set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
-    set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
     #this is dependent on the directory creation and sym linking of earlier driver tests
-    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp)
+    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
     add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
     use_fake_rng(${UTEST_EXE})
     target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
