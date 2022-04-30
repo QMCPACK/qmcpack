@@ -45,7 +45,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D triangular", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  const double vmad_tri = -1.1061025865191676;
+  const double vmad_tri = -1.106102587;
   const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -85,7 +85,6 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
-  //const double vmad_sq = -1.95013246;
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
@@ -118,7 +117,9 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square", "[hamiltonian]")
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
-  const double vmad_ref[ntest] = {-2.757903797913396, -2.4846003745840357, -2.019557388069959, -1.95013246};
+  const double vmad_sq = -1.95013246;
+  const double vmad_bc = -2.7579038;
+  const double vmad_ref[ntest] = {vmad_bc, -2.4846003745840357, -2.019557388069959, vmad_sq};
   double val;
   for (int itest=0; itest<ntest; itest++)
   {
@@ -171,7 +172,9 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square 2x2", "[hamiltonian]")
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
-  const double vmad_ref[ntest] = {-2.757903797913396, -2.4846003745840357, -2.019557388069959, -1.95013246};
+  const double vmad_sq = -1.95013246;
+  const double vmad_bc = -2.7579038;
+  const double vmad_ref[ntest] = {vmad_bc, -2.4846003745840357, -2.019557388069959, vmad_sq};
   double val;
   for (int itest=0; itest<ntest; itest++)
   {
@@ -210,9 +213,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle", "[hamiltonian]")
   elec.R[1] = {2./3, 1./3, 0.0};
   // convert to Cartesian coordinates
   for (int i=0;i<npart;i++)
-  {
     elec.R[i] = dot(elec.R[i], lattice.R);
-  }
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -228,7 +229,9 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle", "[hamiltonian]")
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
-  const double vmad_ref[ntest] = {-1.5109642331, -1.4193042644, -1.2005504968, -1.1061025868};
+  const double vmad_hon = -1.510964233;
+  const double vmad_tri = -1.106102587;
+  const double vmad_ref[ntest] = {vmad_hon, -1.4193042644, -1.2005504968, vmad_tri};
   double val;
   for (int itest=0; itest<ntest; itest++)
   {
@@ -298,7 +301,9 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]
   const int ntest = 4;
   TinyVector<double, ntest> zheight = {0, 0.1, 0.5, 3.0};
   zheight *= rs;
-  TinyVector<double, ntest> vmad_ref = {-1.5109642331, -1.4193042644, -1.2005504968, -1.1061025868};
+  const double vmad_hon = -1.510964233;
+  const double vmad_tri = -1.106102587;
+  TinyVector<double, ntest> vmad_ref = {vmad_hon, -1.4193042644, -1.2005504968, vmad_tri};
   vmad_ref /= rs;
   double val;
   for (int itest=0; itest<ntest; itest++)
