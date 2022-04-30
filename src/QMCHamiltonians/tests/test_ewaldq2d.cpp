@@ -239,4 +239,73 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle", "[hamiltonian]")
   }
 }
 
+TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]")
+{
+  LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true;
+  lattice.BoxBConds[2] = false; // ppn
+  lattice.ndim = 2;
+  const double alat = 2*std::sqrt(2.0*M_PI/std::sqrt(3));
+  lattice.R = 0.0;
+  lattice.R(0, 0) = alat;
+  lattice.R(1, 0) = -1.0/2*alat;
+  lattice.R(1, 1) = std::sqrt(3)/2*alat;
+  lattice.R(2, 2) = 2*alat;
+  lattice.LR_dim_cutoff = 30.0;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell);
+  int npart = 8;
+  elec.setName("e");
+  elec.create({npart});
+  // initialize fractional coordinates
+  TinyVector<double, 3> r0 = {0.0, 0.0, 0.0};
+  TinyVector<double, 3> r1 = {2./3, 1./3, 0.0};
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.5, 0.0, 0.0};
+  elec.R[2] = {0.0, 0.5, 0.0};
+  elec.R[3] = {0.5, 0.5, 0.0};
+  elec.R[4] = {0.0, 0.0, 0.0};
+  elec.R[5] = {0.5, 0.0, 0.0};
+  elec.R[6] = {0.0, 0.5, 0.0};
+  elec.R[7] = {0.5, 0.5, 0.0};
+  for (int i=0;i<npart/2;i++)
+    elec.R[i] += r0/2;
+  for (int i=npart/2;i<npart;i++)
+    elec.R[i] += r1/2;
+  // convert to Cartesian coordinates
+  for (int i=0;i<npart;i++)
+  {
+    elec.R[i] = dot(elec.R[i], lattice.R);
+  }
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.createSK();
+  elec.addTable(elec); // !!!! crucial to compute distance table
+
+  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+
+  const int ntest = 4;
+  TinyVector<double, ntest> zheight = {0, 0.1, 0.5, 3.0};
+  const double vmad_ref[ntest] = {-1.5109642331, -1.4193042644, -1.2005504968, -1.1061025868};
+  double val;
+  for (int itest=0; itest<ntest; itest++)
+  {
+    for (int i=npart/2;i<npart;i++)
+      elec.R[i][2] = zheight[itest];
+    elec.update();
+    val = caa.evaluate(elec);
+    CHECK(val/npart == Approx(vmad_ref[itest]));
+  }
+}
+
 } // qmcplusplus
