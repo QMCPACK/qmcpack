@@ -247,7 +247,8 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]
   lattice.BoxBConds = true;
   lattice.BoxBConds[2] = false; // ppn
   lattice.ndim = 2;
-  const double alat = 2*std::sqrt(2.0*M_PI/std::sqrt(3));
+  const double rs = 10;
+  const double alat = rs*2*std::sqrt(2.0*M_PI/std::sqrt(3));
   lattice.R = 0.0;
   lattice.R(0, 0) = alat;
   lattice.R(1, 0) = -1.0/2*alat;
@@ -296,7 +297,9 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]
 
   const int ntest = 4;
   TinyVector<double, ntest> zheight = {0, 0.1, 0.5, 3.0};
-  const double vmad_ref[ntest] = {-1.5109642331, -1.4193042644, -1.2005504968, -1.1061025868};
+  zheight *= rs;
+  TinyVector<double, ntest> vmad_ref = {-1.5109642331, -1.4193042644, -1.2005504968, -1.1061025868};
+  vmad_ref /= rs;
   double val;
   for (int itest=0; itest<ntest; itest++)
   {
