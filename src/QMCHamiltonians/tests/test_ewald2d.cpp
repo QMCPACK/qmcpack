@@ -41,6 +41,49 @@ TEST_CASE("Coulomb PBC A-A Ewald2D square", "[hamiltonian]")
   CHECK(val == Approx(vmad_sq));
 }
 
+TEST_CASE("Coulomb PBC A-A Ewald2D body center", "[hamiltonian]")
+{
+  LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
+  LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
+  const double vmad_bc = -2.7579038;
+
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.ndim = 2;
+  lattice.R = 0.0;
+  lattice.R.diagonal(1.0);
+  lattice.LR_dim_cutoff = 30.0;
+  lattice.reset();
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet elec(simulation_cell);
+  elec.setName("e");
+  const int npart = 2;
+  elec.create({npart});
+  // initialize fractional coordinates
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.5, 0.5, 0.0};
+  // convert to Cartesian coordinates
+  for (int i=0;i<npart;i++)
+    elec.R[i] = dot(elec.R[i], lattice.R);
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
+
+  elec.createSK();
+  elec.addTable(elec); // !!!! crucial with more than 1 particle
+  elec.update();
+
+  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+
+  double val = caa.evaluate(elec);
+  CHECK(val/npart == Approx(vmad_bc));
+}
+
 TEST_CASE("Coulomb PBC A-A Ewald2D triangular", "[hamiltonian]")
 {
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
