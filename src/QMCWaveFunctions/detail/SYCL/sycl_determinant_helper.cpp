@@ -8,7 +8,9 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-#include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
+
+
+#include "sycl_determinant_helper.hpp"
 
 namespace qmcplusplus
 {

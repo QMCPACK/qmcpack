@@ -11,6 +11,10 @@
 #ifndef QMCPLUSPLUS_SYCL_DETERMINANT_HELPER_H
 #define QMCPLUSPLUS_SYCL_DETERMINANT_HELPER_H
 
+#include <complex>
+#include <vector>
+#include <CL/sycl.hpp>
+
 namespace qmcplusplus
 {
 template<typename T, typename TMAT, typename index_t>
