@@ -31,8 +31,8 @@ public:
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                      = default;
-  QMCDriverInput(const QMCDriverInput&) = default;
+  QMCDriverInput()                                 = default;
+  QMCDriverInput(const QMCDriverInput&)            = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&) noexcept;
   QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
@@ -41,6 +41,9 @@ protected:
   bool scoped_profiling_ = false;
   /// determine additional checks for debugging purpose
   DriverDebugChecks debug_checks_ = DriverDebugChecks::ALL_OFF;
+  /// measure load imbalance (add a barrier) before data aggregation (obvious synchronization)
+  bool measure_imbalance_ = false;
+
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -128,13 +131,14 @@ public:
   DriverDebugChecks get_debug_checks() const { return debug_checks_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
   bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
+  bool get_measure_imbalance() const { return measure_imbalance_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept            = default;
 inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus

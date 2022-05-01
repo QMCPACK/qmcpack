@@ -107,7 +107,10 @@ public:
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset = false) = 0;
 
-  inline void getParameterTypes(std::vector<int>& types) { return OptVariablesForPsi.getParameterTypeList(types); }
+  inline void getParameterTypes(std::vector<int>& types) const
+  {
+    return OptVariablesForPsi.getParameterTypeList(types);
+  }
 
   ///dump the current parameters and other report
   void Report() override;
