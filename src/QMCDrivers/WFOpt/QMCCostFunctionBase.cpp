@@ -313,14 +313,14 @@ bool QMCCostFunctionBase::checkParameters()
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
-  std::string computeNLPPderiv("no");
+  std::string computeNLPPderiv;
   std::string output_override_str("no");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
   m_param.add(includeNonlocalH, "nonlocalpp");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv");
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {"yes", "no"});
   m_param.add(w_beta, "beta");
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");

@@ -119,7 +119,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 {
   using ValueType = QMCTraits::ValueType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
@@ -224,7 +223,6 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   using ValueType = QMCTraits::ValueType;
   using RealType  = QMCTraits::RealType;
 
-  OHMMS::Controller->initialize(0, NULL);
   Communicate* c = OHMMS::Controller;
   const SimulationCell simulation_cell;
   auto ions_ptr  = std::make_unique<ParticleSet>(simulation_cell);

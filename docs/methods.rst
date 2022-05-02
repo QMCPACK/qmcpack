@@ -114,34 +114,22 @@ To continue a run, specify the ``mcwalkerset`` element before your VMC/DMC block
 
 In the project id section, make sure that the series number is different from any existing ones to avoid overwriting them.
 
+
 .. _batched_drivers:
 
 Batched drivers
 ---------------
 
-Under the Exascale Computing Project effort a new set of QMC drivers was developed
-to eliminate the divergence of legacy CPU and GPU code paths at the QMC driver level and make the drivers CPU/GPU agnostic.
-The divergence came from the the fact that the CPU code path favors executing all the compute tasks within a step
-for one walker and then advance walker by walker. Multiple CPU threads process their own assigned walkers in parallel.
-In this way, walkers are not synchronized with each other and maximal throughout can be achieved on CPU.
-The GPU code path favors executing the same compute task over all the walkers together to maximize GPU throughput.
-This compute dispatch pattern minimizes the overhead of dispatching computation and host-device data transfer.
-However, the legacy GPU code path only leverages the OpenMP main host thread for handling
-all the interaction between the host and GPUs and limit the kernel dispatch capability.
-In brief, the CPU code path handles computation with a walker batch size of one and many batches
-while the GPU code path uses only one batch containing all the walkers.
-The new drivers that implement this flexible batching scheme are called "batched drivers".
-
 The batched drivers introduce a new concept, "crowd", as a sub-organization of walker population.
 A crowd is a subset of the walkers that are operated on as as single batch.
 Walkers within a crowd operate their computation in lock-step, which helps the GPU efficiency.
-Walkers between crowds remain fully asynchronous unless operations involving the full population are needed.
+Walkers in different crowds remain fully asynchronous unless operations involving the full population are needed.
 With this flexible batching capability the new drivers are capable of delivering maximal performance on given hardware.
 In the new driver design, all the batched API calls may fallback to an existing single walker implementation.
 Consequently, batched drivers allow mixing and matching CPU-only and GPU-accelerated features
 in a way that is not feasible with the legacy GPU implementation.
 
-For OpenMP GPU offload users, batched drivers are essential to effectively use GPUs.
+
 
 .. _transition_guide:
 
@@ -328,39 +316,41 @@ Batched ``vmc`` driver (experimental)
 
   parameters:
 
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                               |
-  +================================+==============+=========================+=============+===============================================+
-  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks    |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds       |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                     |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                  |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run  |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                 |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                                 |
+  +================================+==============+=========================+=============+=================================================+
+  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks      |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                  |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds         |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                       |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                  |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``substeps``                   | integer      | :math:`\geq 0`          | 1           | Number of substeps per step                     |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``usedrift``                   | text         | yes,no                  | yes         | Use the algorithm with drift                    |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run    |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                   |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing)   |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks     |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``measure_imbalance``          | text         | yes,no                  | no          | Measure load imbalance at the end of each block |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
 
 
 Additional information:
@@ -524,15 +514,17 @@ The input parameters are listed in the following table.
 
   parameters:
 
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | **Name**       | **Datatype** | **Values**  | **Default** | **Description**                                  |
-  +================+==============+=============+=============+==================================================+
-  | ``nonlocalpp`` | text         | yes, no     | no          | include non-local PP energy in the cost function |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``minwalkers`` | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``maxWeight``  | real         | :math:`> 1` | 1e6         | Maximum weight allowed in reweighting            |
-  +----------------+--------------+-------------+-------------+--------------------------------------------------+
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | **Name**                 | **Datatype** | **Values**  | **Default** | **Description**                                  |
+  +==========================+==============+=============+=============+==================================================+
+  | ``nonlocalpp``           | text         | yes, no     | no          | include non-local PP energy in the cost function |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``use_nonlocalpp_deriv`` | text         | yes, no     | yes         | Add non-local PP energy derivative contribution  |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``minwalkers``           | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
+  | ``maxWeight``            | real         | :math:`> 1` | 1e6         | Maximum weight allowed in reweighting            |
+  +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
 
 Additional information:
 
@@ -543,7 +535,7 @@ Additional information:
   contribution needs to be updated if the cost function consists of local
   energy. Fortunately, nonlocal contribution is chosen small when making a
   PP for small locality error. We can ignore its change and avoid the
-  expensive computational cost. An implementation issue with GPU code is
+  expensive computational cost. An implementation issue with legacy GPU code is
   that a large amount of memory is consumed with this option.
 
 - ``minwalkers`` This is a ``critical`` parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than ``minwalkers``,
@@ -1576,47 +1568,49 @@ Batched ``dmc`` driver (experimental)
 
   parameters:
 
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                               |
-  +================================+==============+=========================+=============+===============================================+
-  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks    |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds       |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                     |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``branching_cutoff_scheme``    | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                          |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``feedback``                   | double       | :math:`\geq 0`          | 1.0         | Population feedback on the trial energy       |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``sigmaBound``                 | 10           | :math:`\geq 0`          | 10          | Parameter to cutoff large weights             |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``reconfiguration``            | string       | yes/pure/other          | no          | Fixed population technique                    |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``storeconfigs``               | integer      | all values              | 0           | Store configurations                          |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``use_nonblocking``            | string       | yes/no                  | yes         | Using nonblocking send/recv                   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_disable_branching``    | string       | yes/no                  | no          | Disable branching for debugging               |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing) |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks   |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
-  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling              |
-  +--------------------------------+--------------+-------------------------+-------------+-----------------------------------------------+
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | **Name**                       | **Datatype** | **Values**              | **Default** | **Description**                                 |
+  +================================+==============+=========================+=============+=================================================+
+  | ``total_walkers``              | integer      | :math:`> 0`             | 1           | Total number of walkers over all MPI ranks      |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``walkers_per_rank``           | integer      | :math:`> 0`             | 1           | Number of walkers per MPI rank                  |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``crowds``                     | integer      | :math:`> 0`             | dep.        | Number of desynchronized dwalker crowds         |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                       |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                  |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``nonlocalmoves``              | string       | yes, no, v0, v1, v3     | no          | Run with T-moves                                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``branching_cutoff_scheme``    | string       | classic/DRV/ZSGMA/YL    | classic     | Branch cutoff scheme                            |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``blocks_between_recompute``   | integer      | :math:`\geq 0`          | dep.        | Wavefunction recompute frequency                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``feedback``                   | double       | :math:`\geq 0`          | 1.0         | Population feedback on the trial energy         |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``sigmaBound``                 | 10           | :math:`\geq 0`          | 10          | Parameter to cutoff large weights               |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``reconfiguration``            | string       | yes/pure/other          | no          | Fixed population technique                      |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``storeconfigs``               | integer      | all values              | 0           | Store configurations                            |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``use_nonblocking``            | string       | yes/no                  | yes         | Using nonblocking send/recv                     |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``debug_disable_branching``    | string       | yes/no                  | no          | Disable branching for debugging                 |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``crowd_serialize_walkers``    | integer      | yes, no                 | no          | Force use of single walker APIs (for testing)   |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``debug_checks``               | text         | see additional info     | dep.        | Turn on/off additional recompute and checks     |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``spin_mass``                  | real         | :math:`\geq 0`          | 1.0         | Effective mass for spin sampling                |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
+  | ``measure_imbalance``          | text         | yes,no                  | no          | Measure load imbalance at the end of each block |
+  +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
 
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.

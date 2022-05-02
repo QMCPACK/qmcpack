@@ -130,6 +130,11 @@ public:
     void operator()(int num_crowds);
   };
 
+  void testMeasureImbalance()
+  {
+    measureImbalance("Test");
+  }
+
 private:
   ProjectData test_project;
 };
