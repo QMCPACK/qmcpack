@@ -46,7 +46,8 @@ using EstimatorInputs = std::vector<EstimatorInput>;
  */
 class LocalEnergyInput;
 class CSLocalEnergyInput;
-using ScalarEstimatorInput  = std::variant<LocalEnergyInput, CSLocalEnergyInput>;
+class RMCLocalEnergyInput;
+using ScalarEstimatorInput  = std::variant<LocalEnergyInput, CSLocalEnergyInput, RMCLocalEnergyInput>;
 using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 
 /** Input type for EstimatorManagerNew

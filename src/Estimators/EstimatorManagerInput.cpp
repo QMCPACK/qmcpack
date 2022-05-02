@@ -24,7 +24,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
   const std::string error_tag{"EstimatorManager input:"};
   std::string cur_name{lowerCase(castXMLCharToChar(cur->name))};
   xmlNodePtr child;
-  if(cur_name == "estimators")
+  if (cur_name == "estimators")
     child = cur->xmlChildrenNode;
   else
     child = cur;
@@ -35,14 +35,22 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
-      if (atype.empty() && ! aname.empty())
-	atype = aname;
-      if (aname.empty() && ! atype.empty())
-	aname = atype;
+      if (atype.empty() && !aname.empty())
+        atype = aname;
+      if (aname.empty() && !atype.empty())
+        aname = atype;
       if (atype == "localenergy" || atype == "elocal")
         appendScalarEstimatorInput<LocalEnergyInput>(child);
       else if (atype == "cslocalenergy")
+      {
         appendScalarEstimatorInput<CSLocalEnergyInput>(child);
+        app_warning() << "CSLocalEnergyEstimator support is at best experimental with batch drivers";
+      }
+      else if (atype == "rmc")
+      {
+        appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
+        app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers";
+      }
       else if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
       else if (atype == "spindensity")
@@ -53,15 +61,17 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
     }
-    else if(cname!="text") {
+    else if (cname != "text")
+    {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
       throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
     }
 
-    if(cur_name == "estimators")
+    if (cur_name == "estimators")
       child = child->next;
-    else {
+    else
+    {
       app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom";
       break;
     }

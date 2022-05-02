@@ -111,8 +111,8 @@ class RMCLocalEnergyInput
     RMCLocalEnergyInputSection()
     {
       section_name = "RMCLocalEnergy";
-      attributes   = {"name", "npsi", "type"};
-      integers     = {"npsi"};
+      attributes   = {"name", "nobs", "type"};
+      integers     = {"nobs"};
       strings      = {"name", "type"};
     }
   };
@@ -121,15 +121,14 @@ public:
   using Consumer        = RMCLocalEnergyEstimator;
   RMCLocalEnergyInput() = default;
   RMCLocalEnergyInput(xmlNodePtr cur);
-  int get_n_psi() const { return n_psi_; }
+  int get_n_obs() const { return n_obs_; }
   const std::string& get_name() const { return name_; }
   const std::string& get_type() const { return type_; }
-
 private:
   std::string name_;
   std::string type_;
   RMCLocalEnergyInputSection input_section_;
-  int n_psi_ = 1;
+  int n_obs_ = 1;
 };
 
 } // namespace qmcplusplus

@@ -42,13 +42,17 @@ class LocalEnergyEstimator : public ScalarEstimatorBase
   int SizeOfHamiltonians;
   bool UseHDF5;
   const QMCHamiltonian& refH;
-  LocalEnergyInput input_;
+  const LocalEnergyInput input_;
+
 public:
   /** constructor
    * @param h QMCHamiltonian to define the components
    */
   LocalEnergyEstimator(const QMCHamiltonian& h, bool use_hdf5);
-
+  /** Construct from LocalEnergyInput and const reference to hamiltonian.
+   *  \param[in] LocalEnergyInput contains input parameters for LocalEnergyEstimator
+   *  \param[in] is taken as a local reference and used to size scalars data
+   */
   LocalEnergyEstimator(LocalEnergyInput&& input, const QMCHamiltonian& ham);
   /** accumulation per walker
    * @param awalker current walker

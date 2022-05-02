@@ -32,16 +32,21 @@ class RMCLocalEnergyEstimator : public ScalarEstimatorBase
   int SizeOfHamiltonians;
   const QMCHamiltonian& refH;
   int NObs;
-  int RMCSpecificTerms;
+  int RMCSpecificTerms = 8;
 
   // This is just to allow compilation batched version does not support RMC at this time.
-  RMCLocalEnergyInput input_;
+  const RMCLocalEnergyInput input_;
 public:
   /** constructor
    * @param h QMCHamiltonian to define the components
    */
-  RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs = 2);
-
+  RMCLocalEnergyEstimator(QMCHamiltonian& ham, int nobs = 2);
+  /** Construct from LocalEnergyInput and const reference to hamiltonian.
+   *  \param[in] RMCLocalEnergyEstimatorInput contains input parameters for RMCLocalEnergyEstimator
+   *  \param[in] is taken as a local reference and used to size scalars data and to get obs output names
+   */
+  RMCLocalEnergyEstimator(RMCLocalEnergyInput&& input, const QMCHamiltonian& ham);
+  
   /** accumulation per walker
    * @param awalker current walker
    * @param wgt weight
@@ -148,6 +153,9 @@ public:
   const std::string& getSubTypeStr() const override { return input_.get_type(); }
   /// RMCLocalEnergyEstimator is the main estimator type for RMC driver
   bool isMainEstimator() const override { return true; }
+
+private:
+  void resizeBasedOnHamiltonian(const QMCHamiltonian& ham);
 };
 } // namespace qmcplusplus
 #endif

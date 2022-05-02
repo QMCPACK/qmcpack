@@ -48,15 +48,15 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   Matrix<RealType> tmp_data;
   ///name of hamiltonian components
   std::vector<std::string> h_components;
-  CSLocalEnergyInput input_;
+  const CSLocalEnergyInput input_;
   /** constructor
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
-   */  
+   */
   CSEnergyEstimator(const QMCHamiltonian& h, int hcopy = 1);
 
   CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
-  
+
   inline RealType getUmbrellaWeight(int ipsi)
   {
     return scalars_saved[ipsi * LE_INDEX + WEIGHT_INDEX].result();
@@ -90,7 +90,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   CSEnergyEstimator* clone() override;
   const std::string& getSubTypeStr() const override { return input_.get_type(); }
   void evaluateDiff();
-  // CSEnergyEstimator is the main estimator for 
+  // CSEnergyEstimator is the main estimator for
   bool isMainEstimator() const override { return true; }
 };
 

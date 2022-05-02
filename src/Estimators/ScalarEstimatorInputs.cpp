@@ -56,7 +56,7 @@ RMCLocalEnergyInput::RMCLocalEnergyInput(xmlNodePtr cur)
   input_section_.readXML(cur);
   readNameTypeLikeLegacy(input_section_, name_, type_);
   auto setIfInInput = LAMBDA_setIfInInput;
-  setIfInInput(n_psi_, "npsi");
+  setIfInInput(n_obs_, "nobs");
 }
 
 } // namespace qmcplusplus

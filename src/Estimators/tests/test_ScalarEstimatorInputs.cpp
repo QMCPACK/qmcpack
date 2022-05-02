@@ -31,6 +31,7 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
     xmlNodePtr node = doc.getRoot();
     std::string atype(lowerCase(getXMLAttributeValue(node, "type")));
     std::string aname(lowerCase(getXMLAttributeValue(node, "name")));
+    // Since legacy inconsistently used name instead of type attribute to specify scalar estimator type
     if (atype.empty() && ! aname.empty())
       atype = aname;
     if (aname.empty() && ! atype.empty())
@@ -43,6 +44,10 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
     else if (atype == "cslocalenergy") {
       CSLocalEnergyInput cslei(node);
       CHECK(lowerCase(cslei.get_type()) == "cslocalenergy");
+    }
+    else if (atype == "rmc") {
+      RMCLocalEnergyInput rmclei(node);
+      CHECK(lowerCase(rmclei.get_type()) == "rmc");
     }
     else
     {
