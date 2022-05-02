@@ -87,9 +87,9 @@ public:
       accumulate(walker, 1.0);
   }
 
-  const std::string& getSubTypeStr() override { return input_.get_type(); }
-
-  bool isMainEstimator() override { return true; }
+  /// LocalEnergyEstimator is the main estimator for VMC and DMC
+  bool isMainEstimator() const override { return true; }
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
 };
 } // namespace qmcplusplus
 #endif

@@ -61,7 +61,9 @@ struct ScalarEstimatorBase
 
   virtual ~ScalarEstimatorBase() {}
 
-  virtual bool isMainEstimator() { return false; }
+  /// Is this estimator a main estimator i.e. the estimator required for a particular driver.
+  virtual bool isMainEstimator() const { return false; }
+  
   ///return average of the
   inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }
   ///return a variance
@@ -164,7 +166,8 @@ struct ScalarEstimatorBase
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
 
-  virtual const std::string& getSubTypeStr() = 0;
+  /// String representation of the derived type of the ScalarEstimator
+  virtual const std::string& getSubTypeStr() const = 0;
 };
 } // namespace qmcplusplus
 

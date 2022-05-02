@@ -30,7 +30,7 @@ public:
   FakeEstimator* clone() override { return new FakeEstimator; }
   
   std::string type_{"fake"};
-  const std::string& getSubTypeStr() override { return type_; }
+  const std::string& getSubTypeStr() const override { return type_; }
 };
 
 } // namespace qmcplusplus

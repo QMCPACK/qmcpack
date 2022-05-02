@@ -88,9 +88,10 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   void add2Record(RecordNamedProperty<RealType>& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
   CSEnergyEstimator* clone() override;
-  const std::string& getSubTypeStr() override { return input_.get_type(); }
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
   void evaluateDiff();
-  bool isMainEstimator() override { return true; }
+  // CSEnergyEstimator is the main estimator for 
+  bool isMainEstimator() const override { return true; }
 };
 
 } // namespace qmcplusplus
