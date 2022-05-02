@@ -14,11 +14,10 @@
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "SYCL/SYCLruntime.hpp"
 #include "SYCL/SYCLallocator.hpp"
+#include "SYCL/syclBLAS.hpp"
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
 #include "DiracMatrix.h"
-#include "oneapi/mkl/blas.hpp"
 //#define SYCL_BLOCKING
 
 namespace qmcplusplus
@@ -78,7 +77,7 @@ class DelayedUpdateSYCL
   // Ainv prefetch buffer
   Matrix<T> Ainv_buffer;
 
-  sycl::queue *m_queue=nullptr;
+  sycl::queue m_queue;
   sycl::event live_event;
 
   /// reset delay count to 0
@@ -92,7 +91,7 @@ public:
   /// default constructor
   DelayedUpdateSYCL() : delay_count(0)
   {
-    m_queue=get_default_queue();
+      m_queue = getSYCLDefaultDeviceDefaultQueue();
   }
 
   ~DelayedUpdateSYCL()
@@ -139,9 +138,9 @@ public:
   inline void initializeInv(const Matrix<T>& Ainv)
   {
 #ifdef SYCL_BLOCKING
-    m_queue->memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
+    m_queue.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
 #else
-    live_event = m_queue->memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
+    live_event = m_queue.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
 #endif
     clearDelayCount();
   }
@@ -159,10 +158,10 @@ public:
     {
       int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
 #ifdef SYCL_BLOCKING
-      m_queue->memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
+      m_queue.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
                       invRow.size() * (last_row - rowchanged) * sizeof(T)).wait();
 #else
-      live_event = m_queue->memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
+      live_event = m_queue.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
                                    invRow.size() * (last_row - rowchanged) * sizeof(T), live_event);
 #endif
       prefetched_range.setRange(rowchanged, last_row);
@@ -239,56 +238,31 @@ public:
     {
       constexpr T cone(1);
       constexpr T czero(0);
-      constexpr auto trans    = oneapi::mkl::transpose::trans;
-      constexpr auto nontrans = oneapi::mkl::transpose::nontrans;
-
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
 
-#if 0
-      m_queue->memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T)).wait();
+      auto u_ = m_queue.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
+      auto b_ = m_queue.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
 
-      oneapi::mkl::blas::gemm(*m_queue, trans, nontrans, 
-                              delay_count, norb, norb, cone, U_gpu.data(),
-                              norb, Ainv_gpu.data(), norb, czero, temp_gpu.data(), 
-                              lda_Binv).wait();
+      auto g_ = syclBLAS::gemm(m_queue, 'T', 'N',
+                               delay_count, norb, norb, cone, U_gpu.data(),
+                               norb, Ainv_gpu.data(), norb, czero, temp_gpu.data(), 
+                               lda_Binv, {u_} );
 
-      m_queue->memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T)).wait();
-
-      applyW_stageV_sycl(*m_queue, delay_list.data(), delay_count, 
-                         temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data()).wait();
-
-      oneapi::mkl::blas::gemm(*m_queue, nontrans, nontrans, norb, delay_count, delay_count, cone,
-                                   V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb).wait();
-      oneapi::mkl::blas::gemm(*m_queue, nontrans, nontrans, norb, norb, delay_count, -cone,
-                              U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb).wait();
-
-#endif
-
-#if 1
-      auto u_ = m_queue->memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
-      auto b_ = m_queue->memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
-
-      oneapi::mkl::blas::gemm(*m_queue, trans, nontrans, 
-                              delay_count, norb, norb, cone, U_gpu.data(),
-                              norb, Ainv_gpu.data(), norb, czero, temp_gpu.data(), 
-                              lda_Binv, {u_} ).wait();
-
-      u_ = applyW_stageV_sycl(*m_queue, delay_list.data(), delay_count, 
+      u_ = applyW_stageV_sycl(m_queue, {g_}, delay_list.data(), delay_count, 
                               temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data());
 
-      b_ = oneapi::mkl::blas::gemm(*m_queue, nontrans, nontrans, norb, delay_count, delay_count, cone,
-                                   V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb, {b_, u_} );
+      b_ = syclBLAS::gemm(m_queue, 'N', 'N', norb, delay_count, delay_count, cone,
+                          V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb, {b_, u_} );
 
 #ifdef SYCL_BLOCKING
-      oneapi::mkl::blas::gemm(*m_queue, nontrans, nontrans, norb, norb, delay_count, -cone,
-                              U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} ).wait();
+      syclBLAS::gemm(m_queue, 'N', 'N', norb, norb, delay_count, -cone,
+                     U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} ).wait();
 #else
-      live_event = oneapi::mkl::blas::gemm(*m_queue, nontrans, nontrans, norb, norb, delay_count, -cone,
-                                           U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} );
+      live_event = syclBLAS::gemm(m_queue, 'N', 'N', norb, norb, delay_count, -cone,
+                                  U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} );
 #endif
 
-#endif
 
       clearDelayCount();
     }
@@ -297,9 +271,9 @@ public:
     if (transfer_to_host)
     {
 #ifdef SYCL_BLOCKING
-      m_queue->memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T)).wait();
+      m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T)).wait();
 #else
-      m_queue->memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), {live_event}).wait();
+      m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), {live_event}).wait();
 #endif
     }
   }

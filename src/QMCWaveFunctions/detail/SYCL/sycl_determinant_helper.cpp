@@ -51,8 +51,7 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
           });
 }
 
-template<>
-sycl::event applyW_stageV_sycl(sycl::queue& aq,
+template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
@@ -62,8 +61,7 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                float* restrict V_gpu,
                                const float* restrict Ainv);
 
-template<>
-sycl::event applyW_stageV_sycl(sycl::queue& aq,
+template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
@@ -73,8 +71,7 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                double* restrict V_gpu,
                                const double* restrict Ainv);
 
-template<>
-sycl::event applyW_stageV_sycl(sycl::queue& aq,
+template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
@@ -84,8 +81,7 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                std::complex<float>* restrict V_gpu,
                                const std::complex<float>* restrict Ainv);
 
-template<>
-sycl::event applyW_stageV_sycl(sycl::queue& aq,
+template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
