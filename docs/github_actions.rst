@@ -782,6 +782,7 @@ gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex)
 |               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
 |               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
 |               | -DQMC_MPI=0 \                                                                                     |
+|               | -DENABLE_CUDA=ON \                                                                               |
 |               | -DQMC_CUDA2HIP=ON \                                                                               |
 |               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
 |               | -DQMC_COMPLEX=1 \                                                                                 |
