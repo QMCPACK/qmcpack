@@ -11,6 +11,6 @@ module load libxml2
 module load cmake
 module load boost
 module load cray-python
-#module load craype-network-ucx
-#module load cray-mpich-ucx
+module load craype-network-ucx
+module load cray-mpich-ucx
 
