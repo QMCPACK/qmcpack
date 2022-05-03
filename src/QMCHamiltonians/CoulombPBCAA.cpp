@@ -440,8 +440,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 {
   mRealType Consts = 0.0; // constant term
   mRealType v1;           //single particle energy
-  mRealType vl_r0 = AA->evaluateLR_r0(); // short-range Madelung background
-  mRealType vs_k0 = AA->evaluateSR_k0(); // long-range Madelung background
+  mRealType vl_r0 = AA->evaluateLR_r0();
+  mRealType vs_k0 = AA->evaluateSR_k0();
   if (quasi2d) // background term has z dependence
   { // just evaluate the Madelung term
     for (int ispec=1; ispec<NumSpecies; ispec++)
