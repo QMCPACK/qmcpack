@@ -31,6 +31,7 @@ set(SRCS
     test_SpinDensityNew.cpp
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
+    test_ScalarEstimatorInputs.cpp
     )
 
 # OneBodyDensityMatrices are not tested with legacy CUDA
