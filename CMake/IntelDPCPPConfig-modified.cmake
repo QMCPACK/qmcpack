@@ -86,8 +86,16 @@ if( NOT "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang" AND
 endif()
 
 # Assume that CXX Compiler supports SYCL and then test to verify.
-set(SYCL_COMPILER ${CMAKE_CXX_COMPILER})
-
+# Due to MPI wrappers, CMAKE_CXX_COMPILER is not the best guess.
+if("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xIntelLLVM")
+  set(SYCL_COMPILER_GUESS icpx)
+elseif("x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xClang")
+  set(SYCL_COMPILER_GUESS clang++)
+else()
+  set(SYCL_COMPILER_GUESS ${CMAKE_CXX_COMPILER})
+endif()
+# find out the full path.
+find_program(SYCL_COMPILER ${SYCL_COMPILER_GUESS})
 
 # Function to write a test case to verify SYCL features.
 
