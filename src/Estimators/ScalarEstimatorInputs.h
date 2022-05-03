@@ -9,10 +9,37 @@
 // File refactored from: EstimatorManagerNew.h
 //////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef QMCPLUSPLUS_SCALAR_ESTIMATOR_INPUTS_H
+#define QMCPLUSPLUS_SCALAR_ESTIMATOR_INPUTS_H
+
 #include "InputSection.h"
+
+/** \file
+ *  This file contains the input classes for the
+ *  supported "main estimator" classes derived from ScalarEstimatorBase.
+ *
+ *  see: LocalEnergyEstimator.h, CSEnergyEstimator.h, RMCLocalEnergyEstimator.h
+ *
+ *  The legacy input format used the <estimator> name attribute instead of the type attribute
+ *  to indicate the type of the scalar estimators. There would otherwise be no reason to
+ *  retain the name attribute reading or native input variable.
+ *
+ *  The current implementation sets the native type_ or name_ equal in value to
+ *  match if only name or attribute is present in input.  If both are present name is
+ *  ignored and only type is used for type determination.  The name can be set to anything
+ *  as is typical of name attributes in the input but at the moment that name is not
+ *  used in output or anywhere else.
+ *
+ *  EstimatorManagerInput will delegate parsing of scalar estimator inputs to these
+ *  classes based on the type of the estimator as determined by reading the type attribute in the
+ *  raw input. We still fixup the name_ and type_ in the implementation to create input classes
+ *  consistent with the expected "input state."
+ */
 
 namespace qmcplusplus
 {
+
+class LocalEnergyEstimator;
 
 class LocalEnergyInput
 {
@@ -22,20 +49,28 @@ class LocalEnergyInput
     LocalEnergyInputSection()
     {
       section_name = "LocalEnergy";
-      attributes   = {"type", "hdf5"};
+      attributes   = {"name", "type", "hdf5"};
       bools        = {"hdf5"};
-      strings      = {"type"};
+      strings      = {"name", "type"};
     };
   };
 
 public:
+  using Consumer     = LocalEnergyEstimator;
+  LocalEnergyInput() = default;
   LocalEnergyInput(xmlNodePtr cur);
   bool get_use_hdf5() const { return use_hdf5_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
 
 private:
+  std::string name_;
+  std::string type_;
   LocalEnergyInputSection input_section_;
   bool use_hdf5_ = true;
 };
+
+struct CSEnergyEstimator;
 
 class CSLocalEnergyInput
 {
@@ -45,19 +80,57 @@ class CSLocalEnergyInput
     CSLocalEnergyInputSection()
     {
       section_name = "CSLocalEnergy";
-      attributes   = {"npsi", "type"};
+      attributes   = {"name", "npsi", "type"};
       integers     = {"npsi"};
-      strings      = {"type"};
+      strings      = {"name", "type"};
     }
   };
 
 public:
+  using Consumer       = CSEnergyEstimator;
+  CSLocalEnergyInput() = default;
   CSLocalEnergyInput(xmlNodePtr cur);
   int get_n_psi() const { return n_psi_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
 
 private:
+  std::string name_;
+  std::string type_;
   CSLocalEnergyInputSection input_section_;
   int n_psi_ = 1;
 };
 
+class RMCLocalEnergyEstimator;
+
+class RMCLocalEnergyInput
+{
+  class RMCLocalEnergyInputSection : public InputSection
+  {
+  public:
+    RMCLocalEnergyInputSection()
+    {
+      section_name = "RMCLocalEnergy";
+      attributes   = {"name", "nobs", "type"};
+      integers     = {"nobs"};
+      strings      = {"name", "type"};
+    }
+  };
+
+public:
+  using Consumer        = RMCLocalEnergyEstimator;
+  RMCLocalEnergyInput() = default;
+  RMCLocalEnergyInput(xmlNodePtr cur);
+  int get_n_obs() const { return n_obs_; }
+  const std::string& get_name() const { return name_; }
+  const std::string& get_type() const { return type_; }
+private:
+  std::string name_;
+  std::string type_;
+  RMCLocalEnergyInputSection input_section_;
+  int n_obs_ = 1;
+};
+
 } // namespace qmcplusplus
+
+#endif

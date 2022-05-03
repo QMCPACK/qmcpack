@@ -2,12 +2,13 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter Doak, doakpw@ornl.gov,  Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@
 #define QMCPLUSPLUS_CORRELATEDLOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
+#include "ScalarEstimatorInputs.h"
 
 namespace qmcplusplus
 {
@@ -46,11 +48,14 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   Matrix<RealType> tmp_data;
   ///name of hamiltonian components
   std::vector<std::string> h_components;
+  const CSLocalEnergyInput input_;
   /** constructor
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-  CSEnergyEstimator(QMCHamiltonian& h, int hcopy = 1);
+  CSEnergyEstimator(const QMCHamiltonian& h, int hcopy = 1);
+
+  CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
 
   inline RealType getUmbrellaWeight(int ipsi)
   {
@@ -83,8 +88,10 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
   void add2Record(RecordNamedProperty<RealType>& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
   CSEnergyEstimator* clone() override;
-
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
   void evaluateDiff();
+  // CSEnergyEstimator is the main estimator for
+  bool isMainEstimator() const override { return true; }
 };
 
 } // namespace qmcplusplus

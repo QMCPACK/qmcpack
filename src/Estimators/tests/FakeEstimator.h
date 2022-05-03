@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewin@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // Refactored from test_manager.cpp
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,6 +18,7 @@ namespace qmcplusplus
 {
 class FakeEstimator : public ScalarEstimatorBase
 {
+public:
   void accumulate(const MCWalkerConfiguration& W, WalkerIterator first, WalkerIterator last, RealType wgt) override {}
 
   void accumulate(const RefVector<MCPWalker>& walkers) override {}
@@ -26,6 +28,9 @@ class FakeEstimator : public ScalarEstimatorBase
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
 
   FakeEstimator* clone() override { return new FakeEstimator; }
+  
+  std::string type_{"fake"};
+  const std::string& getSubTypeStr() const override { return type_; }
 };
 
 } // namespace qmcplusplus
