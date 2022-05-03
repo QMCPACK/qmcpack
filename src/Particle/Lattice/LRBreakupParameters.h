@@ -31,7 +31,8 @@ public:
   T LR_rc;
   T LR_kc;
   T LR_tol;
-  // number of periodic spatial dimensions
+  ///number of strictly enforced periodic spatial dimensions
+  /// ewald_strict2d sets ndim=2, otherwise ndim=3
   unsigned ndim;
 
   ///default constructor
