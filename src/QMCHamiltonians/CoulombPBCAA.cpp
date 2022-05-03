@@ -30,6 +30,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
+      quasi2d(LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D),
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
@@ -44,7 +45,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
-  quasi2d = LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D;
   if (ComputeForces || quasi2d)
   {
     ref.turnOnPerParticleSK();
