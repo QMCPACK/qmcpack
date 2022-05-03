@@ -42,7 +42,11 @@ using PsiValueType = QMCTraits::QTFull::ValueType;
 #ifdef ENABLE_CUDA
 using DetType = DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>;
 #else
+#ifdef ENABLE_SYCL
+using DetType = DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>;
+#else
 using DetType = DiracDeterminant<>;
+#endif
 #endif
 
 template<typename T1, typename T2>
@@ -151,8 +155,13 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
 
 TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
+#ifdef ENABLE_SYCL
+  test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+#else
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_first<DiracDeterminant<>>(DetMatInvertor::ACCEL);
+#endif
 #ifdef ENABLE_CUDA
   test_DiracDeterminant_first<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
@@ -160,6 +169,7 @@ TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
       DetMatInvertor::ACCEL);
 #endif
 }
+
 //#define DUMP_INFO
 
 template<typename DET>
@@ -290,8 +300,13 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 
 TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
+#ifdef ENABLE_SYCL
+  test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+#else
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_second<DiracDeterminant<>>(DetMatInvertor::ACCEL);
+#endif
 #ifdef ENABLE_CUDA
   test_DiracDeterminant_second<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
@@ -446,8 +461,13 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 
 TEST_CASE("DiracDeterminant_delayed_update", "[wavefunction][fermion]")
 {
+#ifdef ENABLE_SYCL
+  test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(
+      DetMatInvertor::HOST);
+#else
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::HOST);
   test_DiracDeterminant_delayed_update<DiracDeterminant<>>(DetMatInvertor::ACCEL);
+#endif
 #ifdef ENABLE_CUDA
   test_DiracDeterminant_delayed_update<DiracDeterminant<DelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>>(
       DetMatInvertor::HOST);
