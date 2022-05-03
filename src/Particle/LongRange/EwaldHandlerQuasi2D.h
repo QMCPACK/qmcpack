@@ -4,9 +4,12 @@
 //
 // Copyright (c) 2022 QMCPACK developers.
 //
-// File developed by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
+// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
 //
-// File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_EWALD_QUASI2D_HANDLER_H
