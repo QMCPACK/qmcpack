@@ -54,7 +54,7 @@ const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL
 #if defined(ENABLE_CUDA)
 using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
 #elif defined(ENABLE_SYCL)
-using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
+using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL>;
 #else
 using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
 #endif
