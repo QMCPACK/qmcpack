@@ -396,7 +396,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       app_summary() << "      Using walker batching." << std::endl;
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<
@@ -409,7 +409,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #endif
       {
 #if defined(ENABLE_OFFLOAD)
-        if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CPU)
+        if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
         app_summary() << "      Running OpenMP offload code path on GPU. "
 #else
@@ -425,7 +425,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       if (useGPU == "omptarget")
         throw std::runtime_error("No OpenMP offload implementation of single-walker Slater determinant.");
 #if defined(ENABLE_CUDA)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
 #ifdef QMC_CUDA2HIP
         app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
@@ -438,8 +438,18 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
       }
-      else
+#elif defined(ENABLE_SYCL)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
+      {
+        app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
+        adet = std::make_unique<
+            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
+                                                                                          firstIndex, lastIndex,
+                                                                                          delay_rank,
+                                                                                          matrix_inverter_kind);
+      }
 #endif
+      else
       {
         app_summary() << "      Running on CPU." << std::endl;
         adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,

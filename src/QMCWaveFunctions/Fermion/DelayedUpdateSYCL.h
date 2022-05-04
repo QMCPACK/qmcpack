@@ -2,70 +2,63 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
-#define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#ifndef QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
+#define QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
 
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "CUDA/CUDAruntime.hpp"
-#include "CUDA/CUDAallocator.hpp"
-#include "CUDA/cuBLAS.hpp"
-#include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
+#include "SYCL/SYCLallocator.hpp"
+#include "SYCL/syclBLAS.hpp"
+#include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
+#include "DiracMatrix.h"
 #include "PrefetchedRange.h"
-#if defined(QMC_CUDA2HIP)
-#include "rocSolverInverter.hpp"
-#else
-#include "cuSolverInverter.hpp"
-#endif
+//#define SYCL_BLOCKING
 
 namespace qmcplusplus
 {
-/** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
+
+/** implements delayed update on Intel GPU using SYCL
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
 template<typename T, typename T_FP>
-class DelayedUpdateCUDA
+class DelayedUpdateSYCL
 {
   // Data staged during for delayed acceptRows
-  Matrix<T, CUDAHostAllocator<T>> U;
-  Matrix<T, CUDAHostAllocator<T>> Binv;
+  Matrix<T> U;
+  Matrix<T> Binv;
   Matrix<T> V;
   //Matrix<T> tempMat; // for debugging only
-  Matrix<T, CUDAAllocator<T>> temp_gpu;
+  Matrix<T, SYCLAllocator<T>> temp_gpu;
   /// GPU copy of U, V, Binv, Ainv
-  Matrix<T, CUDAAllocator<T>> U_gpu;
-  Matrix<T, CUDAAllocator<T>> V_gpu;
-  Matrix<T, CUDAAllocator<T>> Binv_gpu;
-  Matrix<T, CUDAAllocator<T>> Ainv_gpu;
+  Matrix<T, SYCLAllocator<T>> U_gpu;
+  Matrix<T, SYCLAllocator<T>> V_gpu;
+  Matrix<T, SYCLAllocator<T>> Binv_gpu;
+  Matrix<T, SYCLAllocator<T>> Ainv_gpu;
   // auxiliary arrays for B
   Vector<T> p;
-  Vector<int, CUDAHostAllocator<int>> delay_list;
-  Vector<int, CUDAAllocator<int>> delay_list_gpu;
+  // using host allocator
+  Vector<int, SYCLHostAllocator<int>> delay_list;
   /// current number of delays, increase one for each acceptance, reset to 0 after updating Ainv
   int delay_count;
 
-#if defined(QMC_CUDA2HIP)
-  rocSolverInverter<T_FP> rocsolver_inverter;
-#else
-  cuSolverInverter<T_FP> cusolver_inverter;
-#endif
+  DiracMatrix<T_FP> host_inverter_;
 
   // the range of prefetched_Ainv_rows
   PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
-  Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
+  Matrix<T> Ainv_buffer;
 
-  // CUDA specific variables
-  cublasHandle_t h_cublas;
-  cudaStream_t hstream;
+  sycl::queue m_queue_;
+  sycl::event ainv_event_;
 
   /// reset delay count to 0
   inline void clearDelayCount()
@@ -76,18 +69,9 @@ class DelayedUpdateCUDA
 
 public:
   /// default constructor
-  DelayedUpdateCUDA() : delay_count(0)
-  {
-    cudaErrorCheck(cudaStreamCreate(&hstream), "cudaStreamCreate failed!");
-    cublasErrorCheck(cublasCreate(&h_cublas), "cublasCreate failed!");
-    cublasErrorCheck(cublasSetStream(h_cublas, hstream), "cublasSetStream failed!");
-  }
+  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = getSYCLDefaultDeviceDefaultQueue(); }
 
-  ~DelayedUpdateCUDA()
-  {
-    cublasErrorCheck(cublasDestroy(h_cublas), "cublasDestroy failed!");
-    cudaErrorCheck(cudaStreamDestroy(hstream), "cudaStreamDestroy failed!");
-  }
+  ~DelayedUpdateSYCL() {}
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -108,7 +92,7 @@ public:
     U_gpu.resize(delay, norb);
     V_gpu.resize(delay, norb);
     Binv_gpu.resize(delay, delay);
-    delay_list_gpu.resize(delay);
+    //delay_list_gpu.resize(delay);
     Ainv_gpu.resize(norb, norb);
   }
 
@@ -118,12 +102,8 @@ public:
   template<typename TREAL>
   void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-    clearDelayCount();
-#if defined(QMC_CUDA2HIP)
-    rocsolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#else
-    cusolver_inverter.invert_transpose(logdetT, Ainv, Ainv_gpu, log_value);
-#endif
+    host_inverter_.invert_transpose(logdetT, Ainv, log_value);
+    initializeInv(Ainv);
   }
 
   /** initialize internal objects when Ainv is refreshed
@@ -131,11 +111,9 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-    cudaErrorCheck(cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T), cudaMemcpyHostToDevice,
-                                   hstream),
-                   "cudaMemcpyAsync failed!");
+    // must be blocking due to potential consumption of Ainv_gpu
+    m_queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
     clearDelayCount();
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
   }
 
   inline int getDelayCount() const { return delay_count; }
@@ -149,14 +127,14 @@ public:
   {
     if (!prefetched_range.checkRange(rowchanged))
     {
-      int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
-      cudaErrorCheck(cudaMemcpyAsync(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                                     invRow.size() * (last_row - rowchanged) * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
+      const int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
+      m_queue_
+          .memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged], invRow.size() * (last_row - rowchanged) * sizeof(T),
+                  ainv_event_)
+          .wait();
       prefetched_range.setRange(rowchanged, last_row);
-      cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
     }
+
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
     if (delay_count > 0)
@@ -220,43 +198,38 @@ public:
     {
       constexpr T cone(1);
       constexpr T czero(0);
-      constexpr T cminusone(-1);
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
-      cudaErrorCheck(cudaMemcpyAsync(U_gpu.data(), U.data(), norb * delay_count * sizeof(T), cudaMemcpyHostToDevice,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(),
-                                    norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv),
-                       "cuBLAS::gemm failed!");
-      cudaErrorCheck(cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count * sizeof(int),
-                                     cudaMemcpyHostToDevice, hstream),
-                     "cudaMemcpyAsync failed!");
-      applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(),
-                         Ainv_gpu.data(), hstream);
-      cudaErrorCheck(cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T),
-                                     cudaMemcpyHostToDevice, hstream),
-                     "cudaMemcpyAsync failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone,
-                                    V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
-      cublasErrorCheck(cuBLAS::gemm(h_cublas, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone,
-                                    U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb),
-                       "cuBLAS::gemm failed!");
+
+      auto u_event = m_queue_.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
+      auto b_event = m_queue_.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
+
+      auto temp_event = syclBLAS::gemm(m_queue_, 'T', 'N', delay_count, norb, norb, cone, U_gpu.data(), norb,
+                                       Ainv_gpu.data(), norb, czero, temp_gpu.data(), lda_Binv, {u_event});
+
+      auto temp_v_event = applyW_stageV_sycl(m_queue_, {temp_event}, delay_list.data(), delay_count, temp_gpu.data(),
+                                             norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data());
+
+      u_event = syclBLAS::gemm(m_queue_, 'N', 'N', norb, delay_count, delay_count, cone, V_gpu.data(), norb,
+                               Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb, {temp_v_event, b_event});
+
+#ifdef SYCL_BLOCKING
+      syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv,
+                     cone, Ainv_gpu.data(), norb, {u_event, temp_v_event})
+          .wait();
+#else
+      ainv_event_ = syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb,
+                                   temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {u_event, temp_v_event});
+#endif
+
       clearDelayCount();
     }
 
     // transfer Ainv_gpu to Ainv and wait till completion
     if (transfer_to_host)
-    {
-      cudaErrorCheck(cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), cudaMemcpyDeviceToHost,
-                                     hstream),
-                     "cudaMemcpyAsync failed!");
-      // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
-      //cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
-    }
+      m_queue_.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), ainv_event_).wait();
   }
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#endif // QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
