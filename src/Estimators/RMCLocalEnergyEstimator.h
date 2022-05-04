@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
@@ -18,7 +18,7 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/Reptile.h"
 #include "QMCDrivers/WalkerProperties.h"
-
+#include "ScalarEstimatorInputs.h"
 namespace qmcplusplus
 {
 /** Class to accumulate the local energy and components
@@ -32,14 +32,21 @@ class RMCLocalEnergyEstimator : public ScalarEstimatorBase
   int SizeOfHamiltonians;
   const QMCHamiltonian& refH;
   int NObs;
-  int RMCSpecificTerms;
+  int RMCSpecificTerms = 8;
 
+  // This is just to allow compilation batched version does not support RMC at this time.
+  const RMCLocalEnergyInput input_;
 public:
   /** constructor
    * @param h QMCHamiltonian to define the components
    */
-  RMCLocalEnergyEstimator(QMCHamiltonian& h, int nobs = 2);
-
+  RMCLocalEnergyEstimator(QMCHamiltonian& ham, int nobs = 2);
+  /** Construct from LocalEnergyInput and const reference to hamiltonian.
+   *  \param[in] RMCLocalEnergyEstimatorInput contains input parameters for RMCLocalEnergyEstimator
+   *  \param[in] is taken as a local reference and used to size scalars data and to get obs output names
+   */
+  RMCLocalEnergyEstimator(RMCLocalEnergyInput&& input, const QMCHamiltonian& ham);
+  
   /** accumulation per walker
    * @param awalker current walker
    * @param wgt weight
@@ -52,7 +59,6 @@ public:
   {
     throw std::runtime_error("RMC not supported by Unified Driver interfaces");
   }
-  /*@{*/
   inline void accumulate(const MCWalkerConfiguration& W,
                          WalkerIterator first,
                          WalkerIterator last,
@@ -144,7 +150,12 @@ public:
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
   RMCLocalEnergyEstimator* clone() override;
-  /*@}*/
+  const std::string& getSubTypeStr() const override { return input_.get_type(); }
+  /// RMCLocalEnergyEstimator is the main estimator type for RMC driver
+  bool isMainEstimator() const override { return true; }
+
+private:
+  void resizeBasedOnHamiltonian(const QMCHamiltonian& ham);
 };
 } // namespace qmcplusplus
 #endif

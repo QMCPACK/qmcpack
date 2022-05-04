@@ -66,6 +66,9 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
   }
 
   LocalEnergyOnlyEstimator* clone() override { return new LocalEnergyOnlyEstimator(); }
+
+  const std::string type_str = "LocalEnergyOnlyEstimatorNotSupportedInBatchedVersion";
+  const std::string& getSubTypeStr() const override { return type_str; }
 };
 } // namespace qmcplusplus
 #endif
