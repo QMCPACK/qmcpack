@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
 
-/** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
+/** implements delayed update on Intel GPU using SYCL
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
  */
@@ -56,8 +56,8 @@ class DelayedUpdateSYCL
   // Ainv prefetch buffer
   Matrix<T> Ainv_buffer;
 
-  sycl::queue m_queue;
-  sycl::event live_event;
+  sycl::queue m_queue_;
+  sycl::event ainv_event_;
 
   /// reset delay count to 0
   inline void clearDelayCount()
@@ -68,14 +68,9 @@ class DelayedUpdateSYCL
 
 public:
   /// default constructor
-  DelayedUpdateSYCL() : delay_count(0)
-  {
-      m_queue = getSYCLDefaultDeviceDefaultQueue();
-  }
+  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = getSYCLDefaultDeviceDefaultQueue(); }
 
-  ~DelayedUpdateSYCL()
-  {
-  }
+  ~DelayedUpdateSYCL() {}
 
   /** resize the internal storage
    * @param norb number of electrons/orbitals
@@ -98,7 +93,6 @@ public:
     Binv_gpu.resize(delay, delay);
     //delay_list_gpu.resize(delay);
     Ainv_gpu.resize(norb, norb);
-
   }
 
   /** compute the inverse of the transpose of matrix A and its determinant value in log
@@ -116,11 +110,8 @@ public:
    */
   inline void initializeInv(const Matrix<T>& Ainv)
   {
-#ifdef SYCL_BLOCKING
-    m_queue.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
-#else
-    live_event = m_queue.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T));
-#endif
+    // must be blocking due to potential consumption of Ainv_gpu
+    m_queue_.memcpy(Ainv_gpu.data(), Ainv.data(), Ainv.size() * sizeof(T)).wait();
     clearDelayCount();
   }
 
@@ -135,20 +126,13 @@ public:
   {
     if (!prefetched_range.checkRange(rowchanged))
     {
-      int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
-#ifdef SYCL_BLOCKING
-      m_queue.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                      invRow.size() * (last_row - rowchanged) * sizeof(T)).wait();
-#else
-      live_event = m_queue.memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged],
-                                   invRow.size() * (last_row - rowchanged) * sizeof(T), live_event);
-#endif
+      const int last_row = std::min(rowchanged + Ainv_buffer.rows(), Ainv.rows());
+      m_queue_
+          .memcpy(Ainv_buffer.data(), Ainv_gpu[rowchanged], invRow.size() * (last_row - rowchanged) * sizeof(T),
+                  ainv_event_)
+          .wait();
       prefetched_range.setRange(rowchanged, last_row);
     }
-
-#ifndef SYCL_BLOCKING
-    sycl::event::wait({live_event});
-#endif
 
     // save AinvRow to new_AinvRow
     std::copy_n(Ainv_buffer[prefetched_range.getOffset(rowchanged)], invRow.size(), invRow.data());
@@ -163,7 +147,6 @@ public:
       BLAS::gemv('N', delay_count, delay_count, -cone, Binv.data(), lda_Binv, p.data(), 1, czero, Binv[delay_count], 1);
       BLAS::gemv('N', norb, delay_count, cone, V.data(), norb, Binv[delay_count], 1, cone, invRow.data(), 1);
     }
-
   }
 
   /** accept a move with the update delayed
@@ -176,7 +159,6 @@ public:
   template<typename VVT, typename RATIOT>
   inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const RATIOT ratio_new)
   {
-
     // update Binv from delay_count to delay_count+1
     constexpr T cone(1);
     constexpr T czero(0);
@@ -202,9 +184,7 @@ public:
     delay_count++;
     // update Ainv when maximal delay is reached
     if (delay_count == lda_Binv)
-    {
       updateInvMat(Ainv, false);
-    }
   }
 
   /** update the full Ainv and reset delay_count
@@ -220,43 +200,35 @@ public:
       const int norb     = Ainv.rows();
       const int lda_Binv = Binv.cols();
 
-      auto u_ = m_queue.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
-      auto b_ = m_queue.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
+      auto u_event = m_queue_.memcpy(U_gpu.data(), U.data(), norb * delay_count * sizeof(T));
+      auto b_event = m_queue_.memcpy(Binv_gpu.data(), Binv.data(), lda_Binv * delay_count * sizeof(T));
 
-      auto g_ = syclBLAS::gemm(m_queue, 'T', 'N',
-                               delay_count, norb, norb, cone, U_gpu.data(),
-                               norb, Ainv_gpu.data(), norb, czero, temp_gpu.data(), 
-                               lda_Binv, {u_} );
+      auto temp_event = syclBLAS::gemm(m_queue_, 'T', 'N', delay_count, norb, norb, cone, U_gpu.data(), norb,
+                                       Ainv_gpu.data(), norb, czero, temp_gpu.data(), lda_Binv, {u_event});
 
-      u_ = applyW_stageV_sycl(m_queue, {g_}, delay_list.data(), delay_count, 
-                              temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data());
+      auto temp_v_event = applyW_stageV_sycl(m_queue_, {temp_event}, delay_list.data(), delay_count, temp_gpu.data(),
+                                             norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data());
 
-      b_ = syclBLAS::gemm(m_queue, 'N', 'N', norb, delay_count, delay_count, cone,
-                          V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb, {b_, u_} );
+      u_event = syclBLAS::gemm(m_queue_, 'N', 'N', norb, delay_count, delay_count, cone, V_gpu.data(), norb,
+                               Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb, {temp_v_event, b_event});
 
 #ifdef SYCL_BLOCKING
-      syclBLAS::gemm(m_queue, 'N', 'N', norb, norb, delay_count, -cone,
-                     U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} ).wait();
+      syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv,
+                     cone, Ainv_gpu.data(), norb, {u_event, temp_v_event})
+          .wait();
 #else
-      live_event = syclBLAS::gemm(m_queue, 'N', 'N', norb, norb, delay_count, -cone,
-                                  U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {b_} );
+      ainv_event_ = syclBLAS::gemm(m_queue_, 'N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb,
+                                   temp_gpu.data(), lda_Binv, cone, Ainv_gpu.data(), norb, {u_event, temp_v_event});
 #endif
-
 
       clearDelayCount();
     }
 
     // transfer Ainv_gpu to Ainv and wait till completion
     if (transfer_to_host)
-    {
-#ifdef SYCL_BLOCKING
-      m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T)).wait();
-#else
-      m_queue.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), {live_event}).wait();
-#endif
-    }
+      m_queue_.memcpy(Ainv.data(), Ainv_gpu.data(), Ainv.size() * sizeof(T), ainv_event_).wait();
   }
 };
 } // namespace qmcplusplus
 
-#endif // QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
+#endif // QMCPLUSPLUS_DELAYED_UPDATE_SYCL_H
