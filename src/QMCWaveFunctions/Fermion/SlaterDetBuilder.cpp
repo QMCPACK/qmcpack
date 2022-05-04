@@ -548,8 +548,8 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
-    // reorder unique determinants for a given spin based on the selected reference
-    dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
+    // reorder unique determinants for a given spin based on the selected reference determinant
+    dets[grp]->createDetData(C2nodes[grp][refdet_id], list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
   if (csf_data_ptr && csf_data_ptr->coeffs.size() == 1)
