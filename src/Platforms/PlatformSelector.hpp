@@ -44,6 +44,13 @@ public:
 
 using CPUOMPTargetSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
 
+template<>
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values;
+template<>
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>::candidate_values;
+template<>
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL>::candidate_values;
+
 #if defined(ENABLE_CUDA)
 using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
 #elif defined(ENABLE_SYCL)
