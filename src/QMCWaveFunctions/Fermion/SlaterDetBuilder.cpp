@@ -295,7 +295,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
   sdAttrib.add(delay_rank, "delay_rank");
   sdAttrib.add(optimize, "optimize", {"no", "yes"});
   sdAttrib.add(matrix_inverter, "matrix_inverter", {"gpu", "host"});
-#if defined(ENABLE_OFFLOAD) && !defined(ENABLE_SYCL)
+#if defined(ENABLE_OFFLOAD)
   sdAttrib.add(use_batch, "batch", {"yes", "no"});
 #else
   sdAttrib.add(use_batch, "batch", {"no", "yes"});
@@ -396,7 +396,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       app_summary() << "      Using walker batching." << std::endl;
 
 #if defined(ENABLE_CUDA) && defined(ENABLE_OFFLOAD)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
         app_summary() << "      Running on an NVIDIA GPU via CUDA acceleration and OpenMP offload." << std::endl;
         adet = std::make_unique<DiracDeterminantBatched<
@@ -409,7 +409,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 #endif
       {
 #if defined(ENABLE_OFFLOAD)
-        if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CPU)
+        if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CPU)
           throw std::runtime_error("No pure CPU implementation of walker-batched Slater determinant.");
         app_summary() << "      Running OpenMP offload code path on GPU. "
 #else
@@ -425,7 +425,7 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       if (useGPU == "omptarget")
         throw std::runtime_error("No OpenMP offload implementation of single-walker Slater determinant.");
 #if defined(ENABLE_CUDA)
-      if (CPUOMPTargetCUDASelector::selectPlatform(useGPU) == PlatformKind::CUDA)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::CUDA)
       {
 #ifdef QMC_CUDA2HIP
         app_summary() << "      Running on an AMD GPU via HIP acceleration." << std::endl;
@@ -438,10 +438,8 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
       }
-      else
-#endif
-#if defined(ENABLE_SYCL)
-      if (useGPU == "yes")
+#elif defined(ENABLE_SYCL)
+      else if (CPUOMPTargetVendorSelector::selectPlatform(useGPU) == PlatformKind::SYCL)
       {
         app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
         adet = std::make_unique<
@@ -450,21 +448,12 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
                                                                                           delay_rank,
                                                                                           matrix_inverter_kind);
       }
-      else
 #endif
+      else
       {
-#if defined(ENABLE_SYCL)
-        app_summary() << "      Running on a GPU via SYCL acceleration." << std::endl;
-        adet = std::make_unique<
-            DiracDeterminant<DelayedUpdateSYCL<ValueType, QMCTraits::QTFull::ValueType>>>(std::move(psi_clone),
-                                                                                          firstIndex, lastIndex,
-                                                                                          delay_rank,
-                                                                                          matrix_inverter_kind);
-#else
         app_summary() << "      Running on CPU." << std::endl;
         adet = std::make_unique<DiracDeterminant<>>(std::move(psi_clone), firstIndex, lastIndex, delay_rank,
                                                     matrix_inverter_kind);
-#endif
       }
     }
   }
@@ -559,6 +548,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
                   << grp << ", problems with ci configuration list. \n");
       }
     }
+    // reorder unique determinants for a given spin based on the selected reference
     dets[grp]->createDetData(refdet_id, list, C2nodes[grp], C2nodes_sorted[grp]);
   }
 
