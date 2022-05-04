@@ -29,7 +29,7 @@ set(QMCDRIVERS
     QMCDriverInput.cpp
     QMCDriverNew.cpp
     WFOpt/QMCWFOptFactoryNew.cpp
-    WFOpt/QMCLinearOptimize.cpp
+    WFOpt/LinearMethod.cpp
     WFOpt/QMCFixedSampleLinearOptimize.cpp
     WFOpt/QMCFixedSampleLinearOptimizeBatched.cpp
     WFOpt/OutputMatrix.cpp
@@ -78,7 +78,7 @@ set(QMCDRIVERS
     CorrelatedSampling/CSUpdateBase.cpp)
 
 if(QMC_CUDA)
-  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp WFOpt/QMCCostFunctionCUDA.cpp)
+  set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC_CUDA.cpp DMC/DMC_CUDA.cpp)
 endif(QMC_CUDA)
 
 set(QMCDRIVERS ${QMCDRIVERS} VMC/VMC.cpp VMC/VMCBatched.cpp WFOpt/QMCCostFunction.cpp WFOpt/QMCCostFunctionBatched.cpp)

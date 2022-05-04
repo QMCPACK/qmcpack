@@ -27,6 +27,9 @@
 #if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
+#if defined(ENABLE_SYCL)
+#include "QMCWaveFunctions/Fermion/DelayedUpdateSYCL.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -265,6 +268,9 @@ private:
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
+#if defined(ENABLE_SYCL)
+extern template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

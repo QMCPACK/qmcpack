@@ -15,6 +15,10 @@ if(ENABLE_CUDA)
   add_subdirectory(CUDA)
 endif()
 
+if(ENABLE_SYCL)
+  add_subdirectory(SYCL)
+endif()
+
 if(ENABLE_OFFLOAD)
   add_subdirectory(OMPTarget)
 endif(ENABLE_OFFLOAD)
