@@ -23,12 +23,12 @@ namespace qmcplusplus
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                const std::vector<cl::sycl::event>& dependencies,
-                               const int* restrict delay_list_gpu,
+                               const int* delay_list_gpu,
                                const int delay_count,
-                               T* restrict temp_gpu,
+                               T* temp_gpu,
                                const int numorbs,
                                const int ndelay,
-                               T* restrict V_gpu,
-                               const T* restrict Ainv);
+                               T* V_gpu,
+                               const T* Ainv);
 }
 #endif
