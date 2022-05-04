@@ -1,24 +1,37 @@
 #!/bin/bash
 
-BUILD_MODULES=config/load_archer2.sh
+echo "ARCHER2: Information on hardware and software"
+echo "https://www.archer2.ac.uk/about/hardware.html"
+echo "and documentation:"
+echo "https://docs.archer2.ac.uk"
+echo
 
-#module purge
-#echo "Purging current module set"
-echo "Sourcing file: $BUILD_MODULES to build QMCPACK"
-
-. $BUILD_MODULES
-
+echo "Loading QMCPACK dependency modules for archer2"
+echo
+module restore
+module load PrgEnv-gnu
+module load cray-hdf5-parallel
+module load cray-fftw
+export FFTW_ROOT=$FFTW_DIR/..
+module load libxml2
+module load cmake
+module load boost
+module load cray-python
+echo
+echo "Loaded moduli:"
 module list
 
-echo "Either source $BUILD_MODULES or load these same modules to run QMCPACK"
+echo
+echo "In the running scipt (but not in compilation) also load the following two modules:"
+echo "   module load craype-network-ucx"
+echo "   module load cray-mpich-ucx"
+echo "which improves a lot the scaling efficiency. "
+echo
+echo
 
-#export BLAS_LIBS="-L$OLCF_OPENBLAS_ROOT/lib -lopenblas"
-#export LAPACK_LIBS="$BLAS_LIBS $OLCF_NETLIB_LAPACK_ROOT/lib64/liblapack.a"
 
 declare -A builds=( ["cpu"]="-DBUILD_PPCONVERT=1" \
                     ["complex_cpu"]="-DQMC_COMPLEX=1" \
-#		    ["legacy_gpu"]="-DQMC_CUDA=1 " \
-#		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 " \
 		  )
 
 mkdir bin
@@ -37,6 +50,7 @@ do
           -DBUILD_LMYENGINE_INTERFACE=0 \
           ${builds[$build]} \
           ..
+#          -D LibXml2_ROOT=$LIBXML2_ROOT \
     make -j 20
     if [ $? -eq 0 ]; then
       build_dir=$(pwd)
