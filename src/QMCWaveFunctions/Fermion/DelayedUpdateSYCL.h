@@ -18,32 +18,11 @@
 #include "SYCL/syclBLAS.hpp"
 #include "QMCWaveFunctions/detail/SYCL/sycl_determinant_helper.hpp"
 #include "DiracMatrix.h"
+#include "PrefetchedRange.h"
 //#define SYCL_BLOCKING
 
 namespace qmcplusplus
 {
-/// helper class for the prefetched range of a vector
-class Range
-{
-  // [first, last) rows of Ainv
-  int first, last;
-
-public:
-  Range() : first(0), last(0){};
-  void setRange(int first_in, int last_in)
-  {
-    first = first_in;
-    last  = last_in;
-  }
-  inline void clear() { first = last = 0; };
-  inline int getOffset(int index) const
-  {
-    if (!checkRange(index))
-      throw std::runtime_error("index not in range \n");
-    return index - first;
-  }
-  inline bool checkRange(int index) const { return (index >= first) && (index < last); };
-};
 
 /** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
  * @tparam T base precision for most computation
@@ -73,7 +52,7 @@ class DelayedUpdateSYCL
   DiracMatrix<T_FP> host_inverter_;
 
   // the range of prefetched_Ainv_rows
-  Range prefetched_range;
+  PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
   Matrix<T> Ainv_buffer;
 
