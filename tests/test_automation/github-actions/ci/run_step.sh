@@ -322,6 +322,7 @@ case "$1" in
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
     fi
