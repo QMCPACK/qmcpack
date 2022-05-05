@@ -135,7 +135,8 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     clearDelayCount();
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    // H2D transfer must be synchronized regardless of host memory being pinned or not.
+    cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
 
   inline int getDelayCount() const { return delay_count; }
