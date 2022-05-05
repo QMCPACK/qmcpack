@@ -662,12 +662,8 @@ def generate_physical_system(**kwargs):
         is_str = isinstance(s,str)
         if is_str:
             if os.path.exists(s):
-                if 'elem' in kwargs and 'format' in kwargs:
-                    s = read_structure(s,elem=kwargs['elem'],format=kwargs['format'])
-                elif 'elem' in kwargs:
+                if 'elem' in kwargs:
                     s = read_structure(s,elem=kwargs['elem'])
-                elif 'format' in kwargs:
-                    s = read_structure(s,format=kwargs['format'])
                 else:
                     s = read_structure(s)
                 #end if
@@ -703,7 +699,6 @@ def generate_physical_system(**kwargs):
     del kwargs['net_charge']
     del kwargs['tiled_spin']
     del kwargs['extensive']
-    del kwargs['format']
     if 'particles' in kwargs:
         particles = kwargs['particles']
         del kwargs['particles']
