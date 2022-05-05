@@ -72,6 +72,10 @@ if(ENABLE_OFFLOAD AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
 endif()
 
+if(ENABLE_CUDA AND ENABLE_SYCL)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
+endif(ENABLE_CUDA AND ENABLE_SYCL)
+
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA
    OR QMC_CUDA
