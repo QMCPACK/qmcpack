@@ -9,10 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-if(ENABLE_CUDA)
-  add_subdirectory(CUDA)
-elseif(QMC_CUDA)
-  add_subdirectory(CUDA_legacy)
-elseif(ENABLE_SYCL)
-  add_subdirectory(SYCL)
-endif()
+set(WFSSRCS_SYCL sycl_determinant_helper.cpp)
+
+add_library(qmcwfs_sycl ${WFSSRCS_SYCL})
+target_link_libraries(qmcwfs_sycl PRIVATE platform_LA SYCL::device)

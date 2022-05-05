@@ -38,6 +38,24 @@ sycl::event gemv(sycl::queue& handle,
                  T* const y,
                  const int incy,
                  const std::vector<sycl::event>& events = {});
+
+template<typename T>
+sycl::event gemm(sycl::queue& handle,
+                 const char tA,
+                 const char tB,
+                 const int m,
+                 const int n,
+                 const int k,
+                 const T alpha,
+                 const T* const A,
+                 const int lda,
+                 const T* const B,
+                 const int ldb,
+                 const T beta,
+                 T* const C,
+                 const int ldc,
+                 const std::vector<sycl::event>& events = {});
+
 } // namespace syclBLAS
 
 } // namespace qmcplusplus
