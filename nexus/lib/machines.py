@@ -3240,6 +3240,7 @@ class Archer2(Supercomputer):
     def post_process_job(self,job):
         job.run_options.add(
             distribution='--distribution=block:block',
+            hint='--hint=nomultithread',
             N='-N {}'.format(job.nodes),
             n='-n {}'.format(job.processes),
             )
@@ -3247,7 +3248,7 @@ class Archer2(Supercomputer):
             job.run_options.add(
                 c = '-c {}'.format(job.threads),
                 )
-            if 'cpu_bind' not in job.run_options:
+#           if 'cpu_bind' not in job.run_options:
 #               if job.processes_per_node==self.cores_per_node:
 #                   cpu_bind = '--cpu-bind=threads'
 #               else:
@@ -3256,9 +3257,6 @@ class Archer2(Supercomputer):
 #               job.run_options.add(
 #                   cpu_bind = cpu_bind
 #                   )
-                job.run_options.add(
-                    hint='--hint=nomultithread',
-                    )
             #end if
         #end if
     #end def post_process_job
@@ -3307,8 +3305,8 @@ class Archer2(Supercomputer):
             #c+='#SBATCH --mail-type FAIL\n'
         #end if
         c+='\n'
-        c+='cd $SLURM_SUBMIT_DIR\n'
-        c+='\n'
+        #c+='cd $SLURM_SUBMIT_DIR\n'
+        #c+='\n'
         c+='echo JobID : $SLURM_JOBID \n'
         c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
         c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'

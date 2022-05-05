@@ -1033,6 +1033,12 @@ def test_job_run_command():
         ('andes'          , 'n2_t2'         ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 32 test.x',
         ('andes'          , 'n2_t2_e'       ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 32 test.x',
         ('andes'          , 'n2_t2_p2'      ) : 'srun -N 2 -c 2 --cpu-bind=cores -n 4 test.x',
+        ('archer2'        , 'n1'            ) : 'srun --distribution=block:block --hint=nomultithread -N 1 -n 128 test.x',
+        ('archer2'        , 'n1_p1'         ) : 'srun --distribution=block:block --hint=nomultithread -N 1 -n 1 test.x',
+        ('archer2'        , 'n2'            ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x',
+        ('archer2'        , 'n2_t2'         ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
+        ('archer2'        , 'n2_t2_e'       ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 128 test.x',
+        ('archer2'        , 'n2_t2_p2'      ) : 'srun --distribution=block:block --hint=nomultithread -N 2 -c 2 -n 4 test.x',
         ('attaway'        , 'n1'            ) : 'srun test.x',
         ('attaway'        , 'n1_p1'         ) : 'srun test.x',
         ('attaway'        , 'n2'            ) : 'srun test.x',
@@ -1244,6 +1250,8 @@ def test_job_run_command():
         m = supercomputers[name]
         if m.requires_account:
             acc = 'ABC123'
+            if m.name=='archer2':
+                acc = 'e743'
         else:
             acc = None
         #end if
@@ -1295,6 +1303,8 @@ def test_job_run_command():
         #end if
         if m.requires_account:
             acc = 'ABC123'
+            if m.name=='archer2':
+                acc = 'e743'
         else:
             acc = None
         #end if
@@ -1382,6 +1392,25 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun -N 2 -n 64 test.x''',
+        archer2 = '''#!/bin/bash -x
+#SBATCH --job-name=jobname
+#SBATCH --account=e743
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH --cpus-per-task=1
+#SBATCH -t 01:00:00
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --partition=standard
+#SBATCH --qos=standard
+
+echo JobID : $SLURM_JOBID
+echo Number of nodes requested: $SLURM_JOB_NUM_NODES
+echo List of nodes assigned to the job: $SLURM_NODELIST
+
+export OMP_NUM_THREADS=1
+
+srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x''',
         attaway = '''#!/bin/bash
 #SBATCH -p batch
 #SBATCH --job-name jobname
@@ -1913,6 +1942,8 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
         m = supercomputers[name]
         if m.requires_account:
             acc = 'ABC123'
+            if m.name=='archer2':
+                acc = 'e743'
         else:
             acc = None
         #end if
