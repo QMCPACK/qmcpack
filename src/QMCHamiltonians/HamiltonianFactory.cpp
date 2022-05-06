@@ -33,6 +33,7 @@
 #include "QMCHamiltonians/ForwardWalking.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
+#include "QMCHamiltonians/MagDensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
 #include "QMCHamiltonians/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/GridExternalPotential.h"
@@ -266,6 +267,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         std::unique_ptr<SpinDensity> apot = std::make_unique<SpinDensity>(targetPtcl);
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
+      }
+      else if (potType == "magdensity")
+      {
+          std::unique_ptr<MagDensityEstimator> apot = std::make_unique<MagDensityEstimator>(targetPtcl);
+          apot->put(cur);
+          targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "structurefactor")
       {

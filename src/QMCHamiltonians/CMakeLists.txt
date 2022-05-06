@@ -30,6 +30,7 @@ set(HAMSRCS
     ForwardWalking.cpp
     PairCorrEstimator.cpp
     DensityEstimator.cpp
+    MagDensityEstimator.cpp
     SkPot.cpp
     SkEstimator.cpp
     SkAllEstimator.cpp
