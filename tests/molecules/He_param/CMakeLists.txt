@@ -28,13 +28,13 @@ if(NOT QMC_CUDA)
   # Check the parameter gradient code for the legacy driver
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    He_param_grad_legacy
+    He_param_grad_legacy_driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     PREFIX
-    He_param_grad.param
+    He_param_grad_legacy_driver.param
     INPUT_FILE
-    He_param_grad.xml
+    He_param_grad_legacy_driver.xml
     PROCS
     1
     THREADS

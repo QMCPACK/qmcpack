@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="He_param_grad_legacy" series="0">
+  <project id="He_param_grad_legacy_driver" series="0">
          <parameter name="driver_version">legacy</parameter>
   </project>
 
