@@ -1250,8 +1250,6 @@ def test_job_run_command():
         m = supercomputers[name]
         if m.requires_account:
             acc = 'ABC123'
-            if m.name=='archer2':
-                acc = 'e743'
         else:
             acc = None
         #end if
@@ -1303,8 +1301,6 @@ def test_job_run_command():
         #end if
         if m.requires_account:
             acc = 'ABC123'
-            if m.name=='archer2':
-                acc = 'e743'
         else:
             acc = None
         #end if
@@ -1392,13 +1388,13 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
 srun -N 2 -n 64 test.x''',
-        archer2 = '''#!/bin/bash -x
-#SBATCH --job-name=jobname
-#SBATCH --account=e743
+        archer2 = '''#!/bin/bash
+#SBATCH --job-name jobname
+#SBATCH --account=ABC123
 #SBATCH -N 2
 #SBATCH --ntasks-per-node=128
 #SBATCH --cpus-per-task=1
-#SBATCH -t 01:00:00
+#SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
 #SBATCH --partition=standard
@@ -1408,6 +1404,7 @@ echo JobID : $SLURM_JOBID
 echo Number of nodes requested: $SLURM_JOB_NUM_NODES
 echo List of nodes assigned to the job: $SLURM_NODELIST
 
+export ENV_VAR=1
 export OMP_NUM_THREADS=1
 
 srun --distribution=block:block --hint=nomultithread -N 2 -n 256 test.x''',
@@ -1922,6 +1919,7 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
     def job_files_same(jf1,jf2):
         jf1 = process_job_file(jf1)
         jf2 = process_job_file(jf2)
+        if not object_eq(jf1,jf2): print(f"compare --------------------\n * wj *\n{jf1}\n * ref_wj *\n{jf2}\n")
         return object_eq(jf1,jf2)
     #end def job_files_same
 
@@ -1942,8 +1940,6 @@ runjob --np 32 -p 16 $LOCARGS --verbose=INFO --envs OMP_NUM_THREADS=1 ENV_VAR=1 
         m = supercomputers[name]
         if m.requires_account:
             acc = 'ABC123'
-            if m.name=='archer2':
-                acc = 'e743'
         else:
             acc = None
         #end if

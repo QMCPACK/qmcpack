@@ -3160,10 +3160,6 @@ class Andes(Supercomputer):
     errfile_extension  = '.error'
 
     def post_process_job(self,job):
-        job.run_options.add(
-            N='-N {}'.format(job.nodes),
-            n='-n {}'.format(job.processes),
-            )
         if job.threads>1:
             job.run_options.add(
                 c = '-c {}'.format(job.threads),
@@ -3179,6 +3175,10 @@ class Andes(Supercomputer):
                     )
             #end if
         #end if
+        job.run_options.add(
+            N='-N {}'.format(job.nodes),
+            n='-n {}'.format(job.processes),
+            )
     #end def post_process_job
 
     def write_job_header(self,job):
@@ -3307,11 +3307,9 @@ class Archer2(Supercomputer):
         c+='\n'
         #c+='cd $SLURM_SUBMIT_DIR\n'
         #c+='\n'
-        c+='echo JobID : $SLURM_JOBID \n'
-        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES \n'
-        c+='echo List of nodes assigned to the job: $SLURM_NODELIST \n'
-        c+='\n'
-        c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
+        c+='echo JobID : $SLURM_JOBID\n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES\n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST\n'
         c+='\n'
         return c
     #end def write_job_header
