@@ -1,18 +1,21 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+// Copyright 2021-2022 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi rotate"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
-#include<numeric> // iota
+#include<numeric>  // iota
 
 namespace multi = boost::multi;
 
 BOOST_AUTO_TEST_CASE(multi_rotate_3d) {
 	multi::array<double, 3> A({3, 4, 5});
-	BOOST_REQUIRE(( sizes(A) == decltype(sizes(A)){3, 4, 5} ));
+
+	BOOST_REQUIRE( std::get<0>(sizes(A)) == 3 );
+	BOOST_REQUIRE( std::get<1>(sizes(A)) == 4 );
+	BOOST_REQUIRE( std::get<2>(sizes(A)) == 5 );
 
 	auto&& RA = rotated(A);
 	BOOST_REQUIRE(( sizes(RA) == decltype(sizes(RA)){4, 5, 3} ));
@@ -34,7 +37,7 @@ BOOST_AUTO_TEST_CASE(multi_rotate_4d) {
 	BOOST_REQUIRE(( sizes(unrotd) == decltype(sizes(unrotd)){4, 14, 14, 7} ));
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd[3][0][1][2] );
 
-	auto&& unrotd2 = original.unrotated(2);
+	auto&& unrotd2 = original.unrotated().unrotated();
 	BOOST_REQUIRE(( sizes(unrotd2) == decltype(sizes(unrotd2)){7, 4, 14, 14} ));
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd2[2][3][0][1] );
 }
@@ -42,24 +45,22 @@ BOOST_AUTO_TEST_CASE(multi_rotate_4d) {
 BOOST_AUTO_TEST_CASE(multi_rotate_4d_op) {
 	multi::array<double, 4> original({14, 14, 7, 4});
 
-	auto&& unrotd = (original >> 1);
+	auto&& unrotd = (original.unrotated() );
 	BOOST_REQUIRE(( sizes(unrotd) == decltype(sizes(unrotd)){4, 14, 14, 7} ));
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd[3][0][1][2] );
 
-	auto&& unrotd2 = (original >> 2);
+	auto&& unrotd2 = (original.unrotated().unrotated() );
 	BOOST_REQUIRE(( sizes(unrotd2) == decltype(sizes(unrotd2)){7, 4, 14, 14} ));
 	BOOST_REQUIRE( &original[0][1][2][3] == &unrotd2[2][3][0][1] );
 }
 
 BOOST_AUTO_TEST_CASE(multi_rotate_part1) {
-	std::array<std::array<double, 5>, 4> a = {
-		{
-			{ 0,  1,  2,  3,  4},
-			{ 5,  6,  7,  8,  9},
-			{10, 11, 12, 13, 14},
-			{15, 16, 17, 18, 19}
-		}
-	};
+	std::array<std::array<double, 5>, 4> a = {{
+		{{ 0.,  1.,  2.,  3.,  4.}},
+		{{ 5.,  6.,  7.,  8.,  9.}},
+		{{10., 11., 12., 13., 14.}},
+		{{15., 16., 17., 18., 19.}}
+	}};
 	std::array<std::array<double, 5>, 4> b = {};
 
 	multi::array_ref<double, 2> A(&a[0][0], {4, 5});
@@ -69,8 +70,8 @@ BOOST_AUTO_TEST_CASE(multi_rotate_part1) {
 	BOOST_REQUIRE( B[1][1] == 6  );
 	BOOST_REQUIRE( B[2][1] == 11 );
 	BOOST_REQUIRE( B[1][2] == 7  );
-	BOOST_REQUIRE( (B <<1) == (A <<1) );
-	BOOST_REQUIRE( (B<<1)[2][1] == 7 );
+	BOOST_REQUIRE( (B.rotated() ) == (A.rotated() ) );
+	BOOST_REQUIRE( (B.rotated() )[2][1] == 7 );
 }
 
 BOOST_AUTO_TEST_CASE(multi_rotate) {
@@ -80,15 +81,15 @@ BOOST_AUTO_TEST_CASE(multi_rotate) {
 		{10, 11}
 	};
 	BOOST_REQUIRE(       A[1][0] == 10 );
-	BOOST_REQUIRE( (A <<1)[0][1] == 10 );
-	BOOST_REQUIRE( &     A[1][0] == &(A <<1)[0][1] );
+	BOOST_REQUIRE( (A.rotated())[0][1] == 10 );
+	BOOST_REQUIRE( &     A[1][0] == &(A.rotated() )[0][1] );
 
 	BOOST_REQUIRE( A.transposed()[0][1] == 10 );
 	BOOST_REQUIRE( transposed(A)[0][1] == 10 );
 	BOOST_REQUIRE( (~A)[0][1] == 10 );
 	BOOST_REQUIRE( &A[1][0] == &A.transposed()[0][1] );
 
-	(A<<1)[0][1] = 100;
+	(A.rotated())[0][1] = 100;
 	BOOST_REQUIRE( A[1][0] == 100 );
 }
 {
@@ -102,26 +103,23 @@ BOOST_AUTO_TEST_CASE(multi_rotate) {
 	BOOST_REQUIRE( & A[3][5] == & (~A)[5][3] );
 
 	BOOST_REQUIRE( & ~~A          == & A      );
-	BOOST_REQUIRE( &  (A <<3)     == & A      );
-	BOOST_REQUIRE( &   A          == & (A<<3) );
-	BOOST_REQUIRE( &  (A <<1)     != & A      );
-	BOOST_REQUIRE( &  (A >>1 <<1) == & A      );
+	BOOST_REQUIRE( &  (A.rotated().rotated().rotated() )     == & A       );
+	BOOST_REQUIRE( &   A          == & (A.rotated().rotated().rotated() ) );
+	BOOST_REQUIRE( &  (A.rotated() )     != & A      );
+	BOOST_REQUIRE( &  (A.unrotated().rotated()) == & A      );
 
 	std::iota(A.data_elements(), A.data_elements() + A.num_elements(), 0.1);
 	BOOST_REQUIRE( ~~A == A );
-	BOOST_REQUIRE( (A >>1 <<1) == A );
+	BOOST_REQUIRE( A.unrotated().rotated() == A );
 }
 {
 	multi::array<double, 2> const A = {
 		{00, 01},
 		{10, 11}
 	};
-	BOOST_REQUIRE( (A<<1)[0][1] == 10 );
-	BOOST_REQUIRE( &(A<<1)[1][0] == &A[0][1] );
+	BOOST_REQUIRE(   A.rotated() [0][1] == 10 );
+	BOOST_REQUIRE( &(A.rotated())[1][0] == &A[0][1] );
 	BOOST_REQUIRE( &(~A)[1][0] == &A[0][1] );
-}
-{
-	multi::array<double, 3> const A({3, 5, 7});
 }
 }
 
