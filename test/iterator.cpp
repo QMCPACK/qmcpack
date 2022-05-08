@@ -1,18 +1,17 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo A. Correa 2018-2021
+// © Alfredo A. Correa 2018-2022
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi iterators"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 #include<numeric>
 #include<vector>
 
 namespace multi = boost::multi;
 
-template<class MA> auto take(MA&& ma)->decltype(ma[0]) {return ma[0];}
+template<class MA> auto take(MA&& ma) -> decltype(ma[0]) {return ma[0];}
 
 BOOST_AUTO_TEST_CASE(iterator_1d) {
 	{
@@ -28,7 +27,7 @@ BOOST_AUTO_TEST_CASE(iterator_1d) {
 		multi::array<double, 1>::const_iterator cb2 = begin(A);
 		BOOST_REQUIRE( cb2 == cb );
 	}
-	 {
+	{
 		multi::array<double, 1> A(multi::extensions_t<1>{multi::iextension{100}}, 99.);
 		BOOST_REQUIRE( size(A) == 100 );
 		BOOST_REQUIRE( begin(A) < end(A) );
@@ -45,10 +44,16 @@ BOOST_AUTO_TEST_CASE(iterator_1d) {
 BOOST_AUTO_TEST_CASE(iterator_2d) {
 	{
 		multi::array<double, 2> A({120, 140}, 99.);
-		BOOST_REQUIRE( size(A) == 120 );
-		BOOST_REQUIRE( cbegin(A) < cend(A) );
-		BOOST_REQUIRE( cend(A) - cbegin(A) == size(A) );
-
+		BOOST_REQUIRE(      A.size() == 120 );
+	#if not defined(__circle_build__)  // circle 170 crashes
+		BOOST_REQUIRE( size(A)       == 120 );
+	#endif
+	#if not defined(__circle_build__)  // circle 170 crashes
+		BOOST_REQUIRE( A.cbegin() < A.cend() );
+	#endif
+	#if not defined(__circle_build__)  // circle 170 crashes
+		BOOST_REQUIRE( A.cend() - A.cbegin() == A.size() );
+	#endif
 		using iter = multi::array<double, 2>::iterator;
 		static_assert( std::is_same< iter::element   , double >{}, "!");
 		static_assert( std::is_same< iter::value_type, multi::array<double, 1> >{}, "!");
@@ -61,7 +66,7 @@ BOOST_AUTO_TEST_CASE(iterator_2d) {
 		static_assert( std::is_same< citer::reference, multi::basic_array<double, 1, double const*>>{}, "!");
 		static_assert( std::is_same< citer::element_ptr, double const* >{}, "!");
 	}
-	 {
+	{
 		std::vector<double> v(10000);
 		multi::array_ref<double, 2> A(v.data(), {100, 100});
 		BOOST_REQUIRE(size(A) == 100);
@@ -216,4 +221,3 @@ BOOST_AUTO_TEST_CASE(multi_reverse_iterator_2D) {
 
 	BOOST_TEST( (*rbegin)[1] == 200. );
 }
-
