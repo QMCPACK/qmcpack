@@ -52,12 +52,12 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   auto nwalk = wset.size();
   double LogOverlapFactor(wset.getLogOverlapFactor());
   // resize shm structures if needed
-  if (Ovmsd.shape() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk)))
+  if (Ovmsd.sizes() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk)))
     Ovmsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk});
-  if (Emsd.shape() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk), 3l))
+  if (Emsd.sizes() != std::make_tuple(long(nspins), long(maxn_unique_confg), long(nwalk), 3l))
     Emsd.reextent({nspins, static_cast<boost::multi::size_t>(maxn_unique_confg), nwalk, 3});
   // resize Alpha here, if beta is needed resize below
-  if (GrefA.shape() != std::make_tuple(nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second))
+  if (GrefA.sizes() != std::make_tuple(nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second))
     GrefA.reextent({nwalk, dm_dims(false, Alpha).first, dm_dims(false, Alpha).second});
   if (wgt.size() != nwalk)
     wgt.reextent(iextensions<1u>{nwalk});
@@ -89,11 +89,11 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   if (fast_ph_energy)
   {
     // assume [nwalk][ik] for now. If needed, generalize later
-    if (GrefB.shape() != std::make_tuple(nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second))
+    if (GrefB.sizes() != std::make_tuple(nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second))
       GrefB.reextent({nwalk, dm_dims(false, Beta).first, dm_dims(false, Beta).second});
-    if (QQ0A.shape() != std::make_tuple(nwalk, long(OrbMats[0].size(0)), NAEA))
+    if (QQ0A.sizes() != std::make_tuple(nwalk, long(OrbMats[0].size(0)), NAEA))
       QQ0A.reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats[0].size(0)), NAEA});
-    if (QQ0B.shape() != std::make_tuple(nwalk, long(OrbMats.back().size(0)), NAEB))
+    if (QQ0B.sizes() != std::make_tuple(nwalk, long(OrbMats.back().size(0)), NAEB))
       QQ0B.reextent({nwalk, static_cast<boost::multi::size_t>(OrbMats.back().size(0)), NAEB});
 
     for (int iw = 0, nc = 0; iw < nwalk; iw++)
@@ -136,9 +136,9 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   else
   {
     ComplexType ov0;
-    if (KEright.shape() != std::make_tuple(long(abij.number_of_unique_excitations()[0]), long(nwalk), long(nkev)))
+    if (KEright.sizes() != std::make_tuple(long(abij.number_of_unique_excitations()[0]), long(nwalk), long(nkev)))
       KEright.reextent({static_cast<boost::multi::size_t>(abij.number_of_unique_excitations()[0]), nwalk, static_cast<boost::multi::size_t>(nkev)});
-    if (KEleft.shape() != std::make_tuple(long(nwalk), long(nkev)))
+    if (KEleft.sizes() != std::make_tuple(long(nwalk), long(nkev)))
       KEleft.reextent({nwalk, static_cast<boost::multi::size_t>(nkev)});
     for (int spin = 0; spin < nspins; ++spin)
     {
