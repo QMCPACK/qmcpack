@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -50,7 +50,6 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
   em.PropertyCache[em.weightInd] = block_weight;
   em.PropertyCache[em.cpuInd]    = 1.0;
 
-  //RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
   RefVector<ScalarEstimatorBase> est_lists(makeRefVector<ScalarEstimatorBase>(estimators_));
   em.collectMainEstimators(est_lists);
 

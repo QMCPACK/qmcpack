@@ -130,7 +130,7 @@ private:
   RMCLocalEnergyInputSection input_section_;
   int n_obs_ = 1;
 };
-  
+
 } // namespace qmcplusplus
 
 #endif

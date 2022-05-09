@@ -48,9 +48,9 @@ public:
   using RealType         = QMCTraits::FullPrecRealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
 
-  using QMCT          = QMCTraits;
-  using FPRBuffer     = std::vector<FullPrecRealType>;
-  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using QMCT      = QMCTraits;
+  using FPRBuffer = std::vector<FullPrecRealType>;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   ///default constructor
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
@@ -58,9 +58,6 @@ public:
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
   ///destructor
   ~EstimatorManagerNew();
-
-  ///return the number of ScalarEstimators
-  //inline int size() const { return Estimators.size(); }
 
   /** add a "non" physical operator estimator 
    *
@@ -73,10 +70,7 @@ public:
   int addEstOperator(OperatorEstBase& op_est);
 
   ///process xml tag associated with estimators
-  bool put(QMCHamiltonian& H,
-           const ParticleSet& pset,
-           const TrialWaveFunction& twf,
-           xmlNodePtr cur);
+  bool put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur);
 
   /** Start the manager at the beginning of a driver run().
    * Open files. Setting zeros.
@@ -138,6 +132,7 @@ public:
 
   std::size_t getNumEstimators() { return operator_ests_.size(); }
   std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
+
 private:
   /** Construct estimator of type matching the underlying EstimatorInput type Consumer
    *  and push its its unique_ptr onto operator_ests_
@@ -150,7 +145,7 @@ private:
    */
   template<typename EstInputType, typename T, typename... Args>
   bool createScalarEstimator(T& input, Args&&... args);
-  
+
   /** reset the estimator
    */
   void reset();
@@ -162,7 +157,7 @@ private:
   int addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
 
   void addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator);
-  
+
   // ///return a pointer to the estimator aname
   // ScalarEstimatorBase* getEstimator(const std::string& a);
 
