@@ -1521,7 +1521,7 @@ void QMCFixedSampleLinearOptimize::start()
     // check recomputed variance against VMC
     auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
     auto sigma2_check = optTarget->getVariance();
-    if (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc)
+    if (optTarget->getNumSamples() > 1 && (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc))
       throw std::runtime_error(
           "Safeguard failure: checkConfigurations variance out of [0.5, 2.0] * reference! Please report this bug.\n");
     app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;
