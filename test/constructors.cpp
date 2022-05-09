@@ -1,11 +1,11 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo A. Correa 2019-2021
+// Copyright 2019-2021 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi constructors"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 #include<complex>
 
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(multi_constructors_1d) {
 		BOOST_REQUIRE( size(A)==10 );
 		BOOST_REQUIRE( A[5]== double{} );
 	}
-	#if defined(__cpp_deduction_guides)
+	#if defined(__cpp_deduction_guides) and not defined(__NVCC__) and not defined(__circle_build__)  // circle 170 crashes
 	{
 		multi::array A(multi::extensions_t<1>{{0, 10}}, double{});
 		BOOST_REQUIRE( size(A)==10 );
@@ -71,15 +71,12 @@ BOOST_AUTO_TEST_CASE(multi_constructors_1d) {
 }
 
 BOOST_AUTO_TEST_CASE(multi_constructors_2d_ctad) {
-	#if defined(__cpp_deduction_guides)
-	{
-		multi::array A({10, 20}, double{});
-		BOOST_REQUIRE( size(A)==10 );
-		BOOST_REQUIRE( A[5][6] == double{} );
-	}
-	#endif
+#if defined(__cpp_deduction_guides) and not defined(__NVCC__) and not defined(__circle_build__)  // circle 170 crashes
+	multi::array A({10, 20}, double{});
+	BOOST_REQUIRE( size(A)==10 );
+	BOOST_REQUIRE( A[5][6] == double{} );
+#endif
 }
-
 
 BOOST_AUTO_TEST_CASE(multi_constructors) {
 {//multi::array<double, 1> A({10}); assert(size(A)==1); // warning in clang

@@ -1,30 +1,24 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2021 Alfredo A. Correa
+// Copyright 2018-2022 Alfredo A. Correa
 
-#ifndef BOOST_MULTI_ARRAY_HPP_
-#define BOOST_MULTI_ARRAY_HPP_
+#ifndef MULTI_ARRAY_HPP
+#define MULTI_ARRAY_HPP
 
 #include "./array_ref.hpp"
 #include "./config/NO_UNIQUE_ADDRESS.hpp"
 
 #include "./detail/adl.hpp"
 #include "./detail/memory.hpp"
+#include "./detail/type_traits.hpp"
 
-#include "./memory/allocator.hpp"
+// #include "./memory/allocator.hpp"
 
 #include<algorithm>  // for copy
-#include<memory>  // for allocator_traits
+#include<memory>     // for allocator_traits
+#include<tuple>      // needed by a deprecated function
+#include<utility>    // for move
 
-#if(__cplusplus >= 201703L)
-#if((not defined(__GNUG__)) or __GNUG__ > 8)
-#include<memory_resource>
-#endif
-#endif
-
-#include<utility>  // for move
-
-namespace boost {
-namespace multi {
+namespace boost::multi {
 
 template<class Allocator>
 struct array_allocator {
@@ -32,8 +26,10 @@ struct array_allocator {
 
  private:
 	MULTI_NO_UNIQUE_ADDRESS allocator_type alloc_;
-	using size_type_ = typename std::allocator_traits<allocator_type>::size_type;
-	using pointer_ = typename std::allocator_traits<allocator_type>::pointer;
+
+	using allocator_traits = typename std::allocator_traits<allocator_type>;
+	using size_type_ = typename allocator_traits::size_type;
+	using pointer_   = typename allocator_traits::pointer;
 
  protected:
 	auto alloc()      & -> allocator_type      & {return alloc_;}
@@ -43,42 +39,30 @@ struct array_allocator {
 	explicit array_allocator(allocator_type const& a) : alloc_{a} {}
 
 	auto allocate(size_type_ n) -> pointer_ {
-		return n?std::allocator_traits<allocator_type>::allocate(alloc_, n):nullptr;
+		return n?allocator_traits::allocate(alloc_, n):pointer_{nullptr};
 	}
-	auto allocate(typename std::allocator_traits<allocator_type>::size_type n, typename std::allocator_traits<allocator_type>::const_void_pointer hint)
-	-> typename std::allocator_traits<allocator_type>::pointer {
-		return n?std::allocator_traits<allocator_type>::allocate(alloc_, n, hint):nullptr;
+	auto allocate(size_type_ n, typename allocator_traits::const_void_pointer hint) -> pointer_ {
+		return n?allocator_traits::allocate(alloc_, n, hint):pointer_{nullptr};
 	}
 
-	auto uninitialized_fill_n(typename std::allocator_traits<allocator_type>::pointer base, typename std::allocator_traits<allocator_type>::size_type num_elements, typename std::allocator_traits<allocator_type>::value_type e) {
-		return adl_alloc_uninitialized_fill_n(alloc_, base, num_elements, e);
+	auto uninitialized_fill_n(pointer_ base, size_type_ n, typename allocator_traits::value_type e) {
+		return adl_alloc_uninitialized_fill_n(alloc_, base, n, e);
 	}
-	template<typename It>  // TODO(correaa) : should it be a template?
-	auto uninitialized_copy_n(It first, size_type n, typename std::allocator_traits<allocator_type>::pointer data) {
+	template<typename It>
+	auto uninitialized_copy_n(It first, size_type n, pointer_ data) {
 		return adl_alloc_uninitialized_copy_n(alloc_, first, n, data);
 	}
-	template<typename It>  // TODO(correaa) : should it be a template?
+	template<typename It>
 	auto destroy_n(It first, size_type n) {return adl_alloc_destroy_n(this->alloc(), first, n);}
 
  public:
-	       auto get_allocator()               const&    -> allocator_type {return alloc_;}
-	friend auto get_allocator(array_allocator const& s) -> allocator_type {return s.get_allocator();}
+	constexpr auto get_allocator() const -> allocator_type {return alloc_;}
 };
 
-template<class T, class Ptr = T*> struct move_ptr : std::move_iterator<Ptr>{
-	using std::move_iterator<Ptr>::move_iterator;
-	explicit operator Ptr() const{return std::move_iterator<Ptr>::base();}
-};
-
-// static_array is not a value type because it doesn't define assignment for static_arrays of different extensions
 template<class T, dimensionality_type D, class Alloc = std::allocator<T>>
 struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inheritance used for composition
 : protected array_allocator<Alloc>
-, public array_ref<
-	T, D,
-	typename std::allocator_traits<Alloc>::pointer  // fixes a bug in thrust 1.11
-	/* ^^^ typename std::allocator_traits<typename array_allocator<Alloc>::allocator_type>::pointer*/
->
+, public array_ref<T, D, typename std::allocator_traits<Alloc>::pointer>
 , boost::multi::random_iterable<static_array<T, D, Alloc>> {
  protected:
 	using array_alloc = array_allocator<Alloc>;
@@ -89,13 +73,13 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 //  static_assert( std::is_same<typename std::allocator_traits<Alloc>::pointer, typename static_array::element_ptr>{},
 //  	"allocator pointer type must match array pointer type");
 	using array_alloc::get_allocator;
-	using typename array_allocator<Alloc>::allocator_type;
+	using allocator_type = typename array_allocator<Alloc>::allocator_type;
 //  using allocator_type = typename static_array::allocator_type;
 	using decay_type = array<T, D, Alloc>;
 	using layout_type = typename array_ref<T, D, typename std::allocator_traits<Alloc>::pointer>::layout_type;
 
  protected:
-	using alloc_traits = typename std::allocator_traits<typename static_array::allocator_type>;
+	using alloc_traits = typename std::allocator_traits<allocator_type>;
 	using ref = array_ref<T, D, typename std::allocator_traits<typename std::allocator_traits<Alloc>::template rebind_alloc<T>>::pointer>;
 
 	auto uninitialized_value_construct() {
@@ -108,7 +92,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	}
 
 	auto uninitialized_default_construct() {
-		return uninitialized_default_construct_if(std::is_trivially_default_constructible<typename static_array::element_type>{});
+		return uninitialized_default_construct_if(multi::is_trivially_default_constructible<typename static_array::element_type>{});
 	}
 
 	template<typename It> auto uninitialized_copy_elements(It first) {
@@ -130,33 +114,24 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 
 	using typename ref::size_type;
 	using typename ref::difference_type;
-	explicit static_array(typename static_array::allocator_type const& a) : array_alloc{a} {}
+	explicit static_array(allocator_type const& a) : array_alloc{a} {}
 
  protected:
-	static_array(static_array&& other, typename static_array::allocator_type const& a) noexcept  // 6b
+	static_array(static_array&& other, allocator_type const& a) noexcept          // 6b  TODO(correaa) move from array only
 	: array_alloc{a}  // TODO(correaa) : handle allocation propagation here
 	, ref{other.base_, other.extensions()} {
-		other.ref::layout_t::operator=({});
+		other.layout_mutable() = {};
+	//  other.ref::layout_t::operator=({});
 		other.base_ = nullptr;
 	}
 
 	static_array(static_array&& other) noexcept
-	: static_array(std::move(other), typename static_array::allocator_type{}) {}  // 6b
+	: static_array(std::move(other), allocator_type{}) {}  // 6b
 
  public:
-//  // cppcheck-suppress noExplicitConstructor ; because argument can be well-represented
-//  explicit static_array(
-//      basic_array<typename static_array::element, static_array::dimensionality, multi::move_ptr<typename static_array::element, typename static_array::element_ptr>>&& other
-//  ) noexcept
-//  : static_array(std::move(other), typename static_array::allocator_type{}) {}
-//  // ^^^^ TODO(correaa) : check if it is really necessary
-
-	template<class TT, class... Args> auto operator==(basic_array<TT, D, Args...> const& other) const -> bool {return ref::operator==(other);}
-	template<class TT, class... Args> auto operator!=(basic_array<TT, D, Args...> const& other) const -> bool {return ref::operator!=(other);}
-
 	template<class It, class = typename std::iterator_traits<std::decay_t<It>>::difference_type>  // decltype(std::distance(std::declval<It>(), std::declval<It>()), *std::declval<It>())>
 	// analogous to std::vector::vector (5) https://en.cppreference.com/w/cpp/container/vector/vector
-	static_array(It first, It last, typename static_array::allocator_type const& a)
+	static_array(It first, It last, allocator_type const& a)
 	: array_alloc{a}
 	, ref {
 		array_alloc::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(layout_type {index_extension {adl_distance(first, last)}*multi::extensions(*first)}.num_elements())),
@@ -185,7 +160,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 
 	// vvv TODO(correaa) : check if really necessary
 	template<class TT, class... As>
-	static_array(array_ref<TT, D, As...> const& other, typename static_array::allocator_type const& a)
+	static_array(array_ref<TT, D, As...> const& other, allocator_type const& a)
 	: array_alloc{a}
 	, ref{
 		array_alloc::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(other.num_elements())),
@@ -200,7 +175,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	: static_array(other, allocator_type{}) {}
 	// ^^^ TODO(correaa) : check if really necessary
 
-	static_array(typename static_array::extensions_type x, typename static_array::element const& e, typename static_array::allocator_type const& a)  // 2
+	static_array(typename static_array::extensions_type x, typename static_array::element const& e, allocator_type const& a)  // 2
 	: array_alloc{a}
 	, ref{array_alloc::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(typename static_array::layout_t{x}.num_elements())), x} {
 		array_alloc::uninitialized_fill_n(this->data_elements(), static_cast<typename std::allocator_traits<allocator_type>::size_type>(this->num_elements()), e);
@@ -221,7 +196,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	, ref{array_alloc::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(typename static_array::layout_t{x}.num_elements()), hint), x} {}
 
 	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, typename static_array::value_type>{}>>
-	explicit static_array(typename static_array::index_extension const& e, ValueType const& v, typename static_array::allocator_type const& a)  // 3
+	explicit static_array(typename static_array::index_extension const& e, ValueType const& v, allocator_type const& a)  // 3
 	= delete;
 
 	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, typename static_array::value_type>{}>>
@@ -229,31 +204,31 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	= delete;
 
 // analgous to std::vector::vector ((4)) https://en.cppreference.com/w/cpp/container/vector/vector
-	explicit static_array(typename static_array::extensions_type x, typename static_array::allocator_type const& a)
+	explicit static_array(typename static_array::extensions_type x, allocator_type const& a)
 	: array_alloc{a}
 	, ref{array_alloc::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(typename static_array::layout_t{x}.num_elements())), x} {
 		uninitialized_default_construct();
 	}
 
 	explicit static_array(typename static_array::extensions_type x)
-	: static_array(x, typename static_array::allocator_type{}) {}
+	: static_array(x, allocator_type{}) {}
 
 	template<class TT, class... Args,
 		class = std::enable_if_t<std::is_assignable<typename ref::element_ref, typename multi::basic_array<TT, D, Args...>::element>{}>,
 		class = decltype(adl_copy(std::declval<multi::basic_array<TT, D, Args...> const&>().begin(), std::declval<multi::basic_array<TT, D, Args...> const&>().end(), std::declval<typename static_array::iterator>()))
 	>
-	static_array(multi::basic_array<TT, D, Args...> const& o, typename static_array::allocator_type const& a)
+	static_array(multi::basic_array<TT, D, Args...> const& o, allocator_type const& a)
 	: static_array(o.extensions(), a) {
 		adl_uninitialized_copy(o.begin(), o.end(), this->begin());  // TODO(correaa): call this conditionally on T properties
 	}
 
 	template<class TT, class... Args,
-		class = std::enable_if_t<std::is_assignable<typename ref::element_ref, typename multi::basic_array<TT, D, Args...>::element>{}>,
+	//  class = std::enable_if_t<std::is_assignable<typename ref::element_ref, typename multi::basic_array<TT, D, Args...>::element>{}>,
 		class = decltype(adl_copy(std::declval<multi::basic_array<TT, D, Args...> const&>().begin(), std::declval<multi::basic_array<TT, D, Args...> const&>().end(), std::declval<typename static_array::iterator>()))
 	>
 	// cppcheck-suppress noExplicitConstructor ; because argument can be well-represented  // NOLINTNEXTLINE(runtime/explicit)
 	static_array(multi::basic_array<TT, D, Args...> const& o)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : to allow terse syntax
-	: static_array(o, typename static_array::allocator_type{}) {}
+	: static_array(o, allocator_type{}) {}
 
 	template<class TT, class... Args>
 	explicit static_array(array_ref<TT, D, Args...>&& o)
@@ -274,12 +249,12 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 //  }
 
 	// cppcheck-suppress noExplicitConstructor ; to allow assignment-like construction of nested arrays
-	constexpr static_array(std::initializer_list<typename static_array<T, D>::value_type> mil)
-	: static_array(static_array<T, D>(mil.begin(), mil.end())) {}
+	static_array(std::initializer_list<typename static_array<T, D>::value_type> ilv)
+	: static_array{static_array<T, D>(ilv.begin(), ilv.end())} {}  // construct all with default constructor and copy to special memory at the end
 
 	static_array(
 		std::initializer_list<typename static_array<T, D>::value_type> mil,
-		typename static_array::allocator_type const& a
+		allocator_type const& a
 	) : static_array{static_array<T, D>(mil.begin(), mil.end()), a} {}
 
 	template<class TT, std::size_t N>
@@ -298,7 +273,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	void clear() noexcept {
 		this->destroy();
 		deallocate();
-		layout_t<D>::operator=({});
+		this->layout_mutable() = {};
 	}
 	template<class... Ts>
 	constexpr auto reindex(Ts... a)& -> static_array& {
@@ -317,7 +292,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	~static_array() noexcept {destroy(); deallocate();}
 
 	using element_const_ptr = typename std::pointer_traits<typename static_array::element_ptr>::template rebind<typename static_array::element const>;
-	using element_move_ptr  = std::move_iterator<typename static_array::element_ptr>;
+	using element_move_ptr  = multi::move_ptr<typename static_array::element_ptr>;
 
 	using reference = typename std::conditional<
 		(D > 1),
@@ -341,7 +316,11 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	using       iterator = multi::array_iterator<T, D, typename static_array::element_ptr      >;
 	using const_iterator = multi::array_iterator<T, D, typename static_array::element_const_ptr>;
 
-	friend auto get_allocator(static_array const& self) -> typename static_array::allocator_type {return self.get_allocator();}
+	friend
+	#if not defined(__NVCC__) and not defined(__INTEL_COMPILER)
+	constexpr
+	#endif
+	auto get_allocator(static_array const& s) -> allocator_type {return s.get_allocator();}
 
 	       constexpr auto data_elements()            const& ->                        element_const_ptr {return this->base_;}
 	       constexpr auto data_elements()                 & -> typename static_array::element_ptr       {return this->base_;}
@@ -361,57 +340,57 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 	friend constexpr auto origin(static_array const& s) -> typename static_array::element_const_ptr {return    s.origin();}
 
  private:
-	constexpr auto rotated_aux(dimensionality_type d) const& {
-		typename static_array::layout_t new_layout = *this;
-		new_layout.rotate(d);
+	constexpr auto rotated_aux() const {
+		typename static_array::layout_t new_layout = this->layout();
+		new_layout.rotate();
 		return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
 	}
 
  public:
-	constexpr auto rotated(dimensionality_type d) const& {
-		typename static_array::layout_t new_layout = this->layout();
-		new_layout.rotate(d);
-		return basic_array<T, D, typename static_array::element_const_ptr>{new_layout, this->base_};
-	}
-	constexpr auto rotated(dimensionality_type d)& {
-		typename static_array::layout_t new_layout = this->layout();
-		new_layout.rotate(d);
-		return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
-	}
-	constexpr auto rotated(dimensionality_type d)&& {
-		typename static_array::layout_t new_layout = this->layout();
-		new_layout.rotate(d);
-		return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
-	}
+//  constexpr auto rotated(dimensionality_type d) const& {
+//  	typename static_array::layout_t new_layout = this->layout();
+//  	new_layout.rotate(d);
+//  	return basic_array<T, D, typename static_array::element_const_ptr>{new_layout, this->base_};
+//  }
+//  constexpr auto rotated(dimensionality_type d)& {
+//  	typename static_array::layout_t new_layout = this->layout();
+//  	new_layout.rotate(d);
+//  	return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
+//  }
+//  constexpr auto rotated(dimensionality_type d)&& {
+//  	typename static_array::layout_t new_layout = this->layout();
+//  	new_layout.rotate(d);
+//  	return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
+//  }
 
-	constexpr auto rotated() const& {return std::move(*this).rotated(1);}
-	constexpr auto rotated()      & {return std::move(*this).rotated(1);}
-	constexpr auto rotated()     && {return std::move(*this).rotated(1);}
+	constexpr auto rotated() const& {return std::move(*this).rotated_aux();}
+	constexpr auto rotated()      & {return std::move(*this).rotated_aux();}
+	constexpr auto rotated()     && {return std::move(*this).rotated_aux();}
 
 	friend constexpr auto rotated(static_array&       s) -> decltype(auto) {return s.rotated();}
 	friend constexpr auto rotated(static_array const& s) -> decltype(auto) {return s.rotated();}
 
-	constexpr auto unrotated(dimensionality_type d) const& {
+	constexpr auto unrotated() const& {
 		typename static_array::layout_t new_layout = this->layout();
-		new_layout.unrotate(d);
+		new_layout.unrotate();
 		return basic_array<T, D, typename static_array::element_const_ptr>{new_layout, this->base_};
 	}
-	constexpr auto unrotated(dimensionality_type d)& {
+	constexpr auto unrotated()      & {
 		typename static_array::layout_t new_layout = this->layout();
-		new_layout.unrotate(d);
+		new_layout.unrotate();
 		return basic_array<T, D, typename static_array::element_ptr>{new_layout, this->base_};
 	}
 
-	constexpr auto unrotated() const& {return unrotated(1);}
-	constexpr auto unrotated()      & {return unrotated(1);}
+//  constexpr auto unrotated() const& {return unrotated(1);}
+//  constexpr auto unrotated()      & {return unrotated(1);}
 
 	friend constexpr auto unrotated(static_array      & self) -> decltype(auto) {return self.unrotated();}
 	friend constexpr auto unrotated(static_array const& self) -> decltype(auto) {return self.unrotated();}
 
-	constexpr auto operator<<(dimensionality_type d)       -> decltype(auto) {return   rotated(d);}
-	constexpr auto operator>>(dimensionality_type d)       -> decltype(auto) {return unrotated(d);}
-	constexpr auto operator<<(dimensionality_type d) const -> decltype(auto) {return   rotated(d);}
-	constexpr auto operator>>(dimensionality_type d) const -> decltype(auto) {return unrotated(d);}
+//  constexpr auto operator<<(dimensionality_type d)       -> decltype(auto) {return   rotated(d);}
+//  constexpr auto operator>>(dimensionality_type d)       -> decltype(auto) {return unrotated(d);}
+//  constexpr auto operator<<(dimensionality_type d) const -> decltype(auto) {return   rotated(d);}
+//  constexpr auto operator>>(dimensionality_type d) const -> decltype(auto) {return unrotated(d);}
 
 	template<class TT, class... Args>
 	auto operator=(multi::basic_array<TT, D, Args...> const& other) -> static_array& {
@@ -430,7 +409,7 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 		return *this;
 	}
 	template<class TT, class... As>
-	auto operator=(static_array<TT, D, As...> const& other)& -> static_array& {
+	auto operator=(static_array<TT, D, As...> const& other) & -> static_array& {
 		assert( extensions(other) == static_array::extensions() );
 		adl_copy_n(other.data_elements(), other.num_elements(), this->data_elements());
 		return *this;
@@ -525,12 +504,12 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 	explicit static_array(typename static_array::element const& e)          // 2
 	: static_array(multi::iextensions<0>{}, e) {}
 
-	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, typename static_array::value_type>{}>>
+	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, value_type>{}>>
 	explicit static_array(typename static_array::index_extension const& e, ValueType const& v, allocator_type const& a)  // 3
 	: static_array(e*extensions(v), a) {
 		using std::fill; fill(this->begin(), this->end(), v);
 	}
-	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, typename static_array::value_type>{}>>
+	template<class ValueType, typename = std::enable_if_t<std::is_same<ValueType, value_type>{}>>
 	explicit static_array(typename static_array::index_extension const& e, ValueType const& v)  // 3  // TODO(correaa) : call other constructor (above)
 	: static_array(e*extensions(v)) {
 		using std::fill; fill(this->begin(), this->end(), v);
@@ -568,14 +547,13 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 		uninitialized_copy_(other.data_elements());
 	}
 
-	static_array(static_array const& o) :                                  // 5b
-		array_alloc{o.get_allocator()},
-		ref{static_array::allocate(o.num_elements(), o.data_elements()), {} }
-	 {
+	static_array(static_array const& o)                                    // 5b
+	: array_alloc{o.get_allocator()}
+	, ref{static_array::allocate(o.num_elements(), o.data_elements()), {}} {
 		uninitialized_copy(o.data_elements());
 	}
 
-	static_array(static_array&& o) noexcept :   // it is private because it is a valid operation for derived classes //5b
+	static_array(static_array&& o) noexcept :  // it is private because it is a valid operation for derived classes //5b
 		array_alloc{o.get_allocator()},
 		ref{static_array::allocate(static_cast<typename std::allocator_traits<allocator_type>::size_type>(o.num_elements()), o.data_elements()), o.extensions()} {
 		uninitialized_move(o.data_elements());
@@ -601,7 +579,11 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 	}
 	using element_const_ptr = typename std::pointer_traits<typename static_array::element_ptr>::template rebind<typename static_array::element const>;
 
-	friend auto get_allocator(static_array const& self) -> allocator_type {return self.get_allocator();}
+	friend
+	#if not defined(__NVCC__) and not defined(__INTEL_COMPILER)
+	constexpr
+	#endif
+	auto get_allocator(static_array const& s) -> allocator_type {return s.get_allocator();}
 
 	       constexpr auto base()                 &    -> typename static_array::element_ptr       {return ref::base();}
 	       constexpr auto base()            const&    -> typename static_array::element_const_ptr {return ref::base();}
@@ -623,34 +605,34 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 		return *(this->base_);
 	}
 
-	constexpr auto rotated(dimensionality_type d) const& {
-		typename static_array::layout_t new_layout = *this;
-		new_layout.rotate(d);
-		return basic_array<T, 0, typename static_array::element_const_ptr>{new_layout, this->base_};
-	}
+//  constexpr auto rotated(dimensionality_type d) const& {
+//  	typename static_array::layout_t new_layout = *this;
+//  	new_layout.rotate(d);
+//  	return basic_array<T, 0, typename static_array::element_const_ptr>{new_layout, this->base_};
+//  }
 	constexpr auto rotated() const& {
 		typename static_array::layout_t new_layout = *this;
 		new_layout.rotate();
 		return basic_array<T, 0, typename static_array::element_const_ptr>{new_layout, this->base_};
 	}
 
-	constexpr auto rotated(dimensionality_type d)& {
-		typename static_array::layout_t new_layout = *this;
-		new_layout.rotate(d);
-		return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
-	}
-	constexpr auto rotated()& {
+//  constexpr auto rotated(dimensionality_type d)& {
+//  	typename static_array::layout_t new_layout = *this;
+//  	new_layout.rotate(d);
+//  	return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
+//  }
+	constexpr auto rotated() & {
 		typename static_array::layout_t new_layout = *this;
 		new_layout.rotate();
 		return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
 	}
 
-	constexpr auto rotated(dimensionality_type d)&& {
-		typename static_array::layout_t new_layout = *this;
-		new_layout.rotate(d);
-		return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
-	}
-	constexpr auto rotated()&& {
+//  constexpr auto rotated(dimensionality_type d) && {
+//  	typename static_array::layout_t new_layout = *this;
+//  	new_layout.rotate(d);
+//  	return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
+//  }
+	constexpr auto rotated() && {
 		typename static_array::layout_t new_layout = *this;
 		new_layout.rotate();
 		return basic_array<T, 0, typename static_array::element_ptr>{new_layout, this->base_};
@@ -684,11 +666,11 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 	friend constexpr auto unrotated(static_array      & self) -> decltype(auto) {return self.unrotated();}
 	friend constexpr auto unrotated(static_array const& self) -> decltype(auto) {return self.unrotated();}
 
-	constexpr auto operator<<(dimensionality_type d)       -> decltype(auto) {return   rotated(d);}
-	constexpr auto operator>>(dimensionality_type d)       -> decltype(auto) {return unrotated(d);}
+//  constexpr auto operator<<(dimensionality_type d)       -> decltype(auto) {return   rotated(d);}
+//  constexpr auto operator>>(dimensionality_type d)       -> decltype(auto) {return unrotated(d);}
 
-	constexpr auto operator<<(dimensionality_type d) const -> decltype(auto) {return   rotated(d);}
-	constexpr auto operator>>(dimensionality_type d) const -> decltype(auto) {return unrotated(d);}
+//  constexpr auto operator<<(dimensionality_type d) const -> decltype(auto) {return   rotated(d);}
+//  constexpr auto operator>>(dimensionality_type d) const -> decltype(auto) {return unrotated(d);}
 
 	constexpr auto operator=(static_array const& other) -> static_array& {
 		assert( extensions(other) == static_array::extensions() );  // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay,hicpp-no-array-decay) : allow a constexpr-friendly assert
@@ -715,8 +697,8 @@ struct static_array<T, 0, Alloc>  // NOLINT(fuchsia-multiple-inheritance) : desi
 		return *this;
 	}
 
-	constexpr explicit operator basic_array<typename static_array::value_type, 0, typename static_array::element_const_ptr, typename static_array::layout_t>()& {
-		return this->template static_array_cast<typename static_array::value_type, typename static_array::element_const_ptr>();
+	constexpr explicit operator basic_array<value_type, 0, typename static_array::element_const_ptr, typename static_array::layout_t>()& {
+		return this->template static_array_cast<value_type, typename static_array::element_const_ptr>();
 		  // return static_array_cast<typename static_array::value_type, typename static_array::element_const_ptr>(*this);
 	}
 
@@ -742,7 +724,7 @@ struct array<T, 0, Alloc> : static_array<T, 0, Alloc>{
 };
 
 template<class T, dimensionality_type D, class Alloc>
-struct array : static_array<T, D, Alloc>{
+struct array : static_array<T, D, Alloc> {
 	using static_ = static_array<T, D, Alloc>;
 	static_assert(
 		   std::is_same<typename array::alloc_traits::value_type, T   >{}
@@ -751,9 +733,14 @@ struct array : static_array<T, D, Alloc>{
 
  public:
 	// NOLINTNEXTLINE(runtime/operator)
-	auto operator&()     && -> array      * = delete;  // NOLINT(google-runtime-operator) : delete operator&& defined in base class to avoid taking address of temporary
-	//  auto operator&()      & -> array      *{return this;}
-	//  auto operator&() const& -> array const*{return this;}
+	auto operator&()     && -> array      * = delete;       // NOLINT(google-runtime-operator) : delete operator&& defined in base class to avoid taking address of temporary
+	// NOLINTNEXTLINE(runtime/operator)
+	auto operator&()      & -> array      * {return this;}  // NOLINT(google-runtime-operator) : delete operator&& defined in base class to avoid taking address of temporary
+	// NOLINTNEXTLINE(runtime/operator)
+	auto operator&() const& -> array const* {return this;}  // NOLINT(google-runtime-operator) : delete operator&& defined in base class to avoid taking address of temporary
+
+//  friend auto extensions(array const& s) -> typenameextensions_type {return s.extensions();}
+	friend auto sizes(array const& s) -> typename array::sizes_type {return s.sizes();}
 
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version) {  // NOLINT(fuchsia-default-arguments-declarations) version is used for threshold of big vs small data
@@ -772,19 +759,25 @@ struct array : static_array<T, D, Alloc>{
 	using static_::static_;
 	using typename static_::value_type;
 
+	// cppcheck-suppress noExplicitConstructor ; to allow assignment-like construction of nested arrays
+	array(std::initializer_list<typename static_array<T, D>::value_type> ilv)
+	: static_{static_array<T, D>(ilv.begin(), ilv.end())} {}  // construct all with default constructor and copy to special memory at the end
+
 	array() = default;
 	array(array const&) = default;
+
 	auto reshape(typename array::extensions_type x) & -> array& {
 		typename array::layout_t new_layout{x};
 		assert( new_layout.num_elements() == this->num_elements() );
-		static_cast<typename array::layout_t&>(*this) = new_layout;
+		this->layout_mutable() = new_layout;
 		return *this;
 	}
+
 	auto clear() noexcept -> array& {
 		static_::clear();
 		return *this;
 	}
-	friend auto clear(array& self) noexcept -> array& {return self.clear();}
+	friend auto clear(array& s) noexcept -> array& {return s.clear();}
 
 	friend auto data_elements(array const& self) {return self.data_elements();}
 	friend auto data_elements(array      & self) {return self.data_elements();}
@@ -803,7 +796,11 @@ struct array : static_array<T, D, Alloc>{
 	array(array&& o, typename array::allocator_type const& a) noexcept : static_{std::move(o), a} {}
 	array(array&& o) noexcept : array{std::move(o), o.get_allocator()} {}
 
-	friend auto get_allocator(array const& self) -> typename array::allocator_type {return self.get_allocator();}
+	friend
+	#if not defined(__NVCC__) and not defined(__NVCOMPILER) and not defined(__INTEL_COMPILER)
+	constexpr
+	#endif
+	auto get_allocator(array const& s) -> typename array::allocator_type {return s.get_allocator();}
 
  private:
 	template<class TrueType>
@@ -817,8 +814,8 @@ struct array : static_array<T, D, Alloc>{
 		swap_allocator_if(typename std::allocator_traits<typename array::allocator_type>::propagate_on_container_swap{}, other.alloc());
 		swap(this->base_, other.base_);
 		swap(
-			static_cast<typename array::layout_t&>(*this),
-			static_cast<typename array::layout_t&>(other)
+			this->layout_mutable(),
+			other.layout_mutable()
 		);
 	}
 
@@ -833,10 +830,11 @@ struct array : static_array<T, D, Alloc>{
  public:
 	auto operator=(array&& other) noexcept -> array& {
 		clear();
-		this->base_ = std::exchange(other.base_, nullptr);  // final null assigment shouldn't be necessary?
+	//  this->base_ = std::exchange(other.base_, nullptr);  // final null assigment shouldn't be necessary?
+		this->base_ = other.base_;
 		move_allocator_if(typename std::allocator_traits<typename array::allocator_type>::propagate_on_container_move_assignment{}, std::move(other.alloc()));
 		// this->alloc_ = std::move(other.alloc_);
-		static_cast<typename array::layout_t&>(*this) = std::exchange(static_cast<typename array::layout_t&>(other), {});
+		this->layout_mutable() = std::exchange(other.layout_mutable(), {});
 		return *this;
 	}
 
@@ -855,7 +853,7 @@ struct array : static_array<T, D, Alloc>{
 		} else {
 			clear();
 			copy_allocator_if(typename std::allocator_traits<typename array::allocator_type>::propagate_on_container_copy_assignment{}, other.alloc());
-			static_cast<typename array::layout_t&>(*this) = static_cast<typename array::layout_t const&>(other);
+			this->layout_mutable() = other.layout();
 			array::allocate();
 			array::uninitialized_copy_elements(other.data_elements());
 			// operator=(array{other}); // calls operator=(array&&)
@@ -891,16 +889,16 @@ struct array : static_array<T, D, Alloc>{
 		return *this;
 	}
 
-	auto operator=(basic_array<T, D, multi::move_ptr<typename array::element, typename array::element_ptr>>& other) -> array& {
-		if(other.layout() != this->layout()) {
-			array::operator=(other.template static_array_cast<typename array::element, typename array::element_ptr>());
-			return *this;
-		}
-		if(this->base_ != other.base_) {
-			other.base_ = nullptr;
-		}
-		return *this;
-	}
+//  auto operator=(basic_array<T, D, multi::move_ptr<typename array::element, typename array::element_ptr>>& other) -> array& {
+//  	if(other.layout() != this->layout()) {
+//  		array::operator=(other.template static_array_cast<typename array::element, typename array::element_ptr>());
+//  		return *this;
+//  	}
+//  	if(this->base_ != other.base_) {
+//  		other.base_ = nullptr;
+//  	}
+//  	return *this;
+//  }
 	friend void swap(array& a, array& b) {a.swap(b);}
 	void assign(typename array::extensions_type x, typename array::element const& e) {
 		if(array::extensions() == x) {
@@ -923,14 +921,19 @@ struct array : static_array<T, D, Alloc>{
 		}
 		return *this;
 	}
-	void assign(std::initializer_list<typename array::value_type> il) {assign(il.begin(), il.end());}
+	void assign(std::initializer_list<value_type> il) {assign(il.begin(), il.end());}
 
 	template<class Range> auto assign(Range&& r) &
 	->decltype(assign(adl_begin(r), adl_end(r))) {
 		return assign(adl_begin(r), adl_end(r)); }
 
-	auto operator=(std::initializer_list<typename array::value_type> il) -> array& {
+	auto operator=(std::initializer_list<value_type> il) -> array& {
 		assign(il.begin(), il.end()); return *this;
+	}
+
+	template<class... TTs>
+	[[deprecated]] auto reextent(std::tuple<TTs...> const& other) -> array& {
+		return reextent(std::apply([](auto const&... es) {return typename array::extensions_type(es...);}, other));  // paren is important here ext_type(...) for allow narrowing casts
 	}
 
 	auto reextent(typename array::extensions_type const& x) -> array& {
@@ -960,7 +963,7 @@ struct array : static_array<T, D, Alloc>{
 		this->destroy();
 		this->deallocate();
 		this->base_ = tmp.base();
-		(*this).array::layout_t::operator=(tmp.layout());
+		this->layout_mutable() = tmp.layout();
 #endif
 		return *this;
 	}
@@ -981,19 +984,20 @@ struct array : static_array<T, D, Alloc>{
 		this->destroy();
 		this->deallocate();
 		this->base_ = tmp.base();  // TODO(correaa) : use (and implement) `.move();`
-		(*this).array::layout_t::operator=(tmp.layout());
+		this->layout_mutable() = tmp.layout();
+	//  (*this).array::layout_t::operator=(tmp.layout());
 #endif
 		return *this;
 	}
-	template<class... Ts> constexpr auto reindex(Ts... a)&& -> array&& {array::layout_t::reindex(a...); return std::move(*this);}
-	template<class... Ts> constexpr auto reindex(Ts... a) & -> array & {array::layout_t::reindex(a...); return           *this ;}
+	template<class... Ts> constexpr auto reindex(Ts... a)&& -> array&& {this->layout_mutable().reindex(a...); return std::move(*this);}
+	template<class... Ts> constexpr auto reindex(Ts... a) & -> array & {this->layout_mutable().reindex(a...); return           *this ;}
 
 	~array() = default;
 };
 
 #if defined(__cpp_deduction_guides)
 
-#define IL std::initializer_list
+#define IL std::initializer_list  // NOLINT(cppcoreguidelines-macro-usage) saves a lot of typing TODO(correaa) remove
 
 template<class T> static_array(IL<T>                ) -> static_array<T, 1>;
 template<class T> static_array(IL<IL<T>>            ) -> static_array<T, 2>;
@@ -1023,11 +1027,11 @@ template<class T, class = std::enable_if_t<not is_allocator<T>{}> > array(iexten
 template<dimensionality_type D, class T, class = std::enable_if_t<not is_allocator<T>{}> >
 array(iextensions<D>, T) -> array<T, D>;
 
-template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<1>, T, MR*) -> array<T, 1, A>;
-template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<2>, T, MR*) -> array<T, 2, A>;
-template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<3>, T, MR*) -> array<T, 3, A>;
-template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<4>, T, MR*) -> array<T, 4, A>;
-template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<5>, T, MR*) -> array<T, 5, A>;
+//  template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<1>, T, MR*) -> array<T, 1, A>;
+//  template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<2>, T, MR*) -> array<T, 2, A>;
+//  template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<3>, T, MR*) -> array<T, 3, A>;
+//  template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<4>, T, MR*) -> array<T, 4, A>;
+//  template<class T, class MR, class A = memory::allocator<T, MR>> array(extensions_t<5>, T, MR*) -> array<T, 5, A>;
 
 template<class MatrixRef, class DT = typename MatrixRef::decay_type, class T = typename DT::element, dimensionality_type D = typename DT::rank{}, class Alloc = typename DT::allocator_type>
 array(MatrixRef)->array<T, D, Alloc>;
@@ -1040,30 +1044,24 @@ template <class T, std::size_t N>
 auto decay(const T(&t)[N]) noexcept -> multi::array<typename std::remove_all_extents<T[N]>::type, std::rank<T[N]>{}>{return multi::array_cref<typename std::remove_all_extents<T[N]>::type, std::rank<T[N]>{}>(data_elements(t), extensions(t));}  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 
 template<class T, std::size_t N>
-struct array_traits<T[N], void, void>{  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
+struct array_traits<T[N], void, void> {  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 	using reference = T&;
 	using element = std::remove_all_extents_t<T[N]>;  //  NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : for backwards compatibility
 	using decay_type = multi::array<T, 1>;
 };
 
-}  // end namespace multi
-}  // end namespace boost
+}  // end namespace boost::multi
 
-#if(__cpp_lib_memory_resource >= 201603)
-namespace boost {
-namespace multi {
-namespace pmr {
+#if defined(__cpp_lib_memory_resource) && (__cpp_lib_memory_resource >= 201603)
+namespace boost::multi::pmr {
 
 template <class T, boost::multi::dimensionality_type D>
 using array = boost::multi::array<T, D, std::pmr::polymorphic_allocator<T>>;
 
-}  // end namespace pmr
-}  // end namespace multi
-}  // end namespace boost
+}  // end namespace boost::multi::pmr
 #endif
 
-namespace boost {
-namespace serialization {
+namespace boost::serialization {
 
 template<typename T, boost::multi::dimensionality_type D, class A>
 struct version< boost::multi::array<T, D, A> > {
@@ -1071,7 +1069,6 @@ struct version< boost::multi::array<T, D, A> > {
 	enum { value = type::value };
 };
 
-}  // end namespace serialization
-}  // end namespace boost
+}  // end namespace boost::serialization
 
 #endif

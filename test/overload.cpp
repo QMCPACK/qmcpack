@@ -1,23 +1,17 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
-$CXX $0 -o $0.$X -lboost_unit_test_framework&&$0.$X&&rm $0.$X;exit
-#endif
-// © Alfredo A. Correa 2018-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2018-2022 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi overload resolution"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 #include<complex>
 
 namespace multi = boost::multi;
 
-auto what_is(multi::array<             double , 2> const& /*arr*/);
-auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/);
-
-auto what_is(multi::array<             double , 2> const& /*arr*/){return std::string{"real"}   ;}
-auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/){return std::string{"complex"};}
+inline auto what_is(multi::array<             double , 2> const& /*arr*/){return std::string{"real"}   ;}
+inline auto what_is(multi::array<std::complex<double>, 2> const& /*arr*/){return std::string{"complex"};}
 
 BOOST_AUTO_TEST_CASE(multi_array_range_section) {
 	multi::array<             double , 2> real_A({10, 20});
