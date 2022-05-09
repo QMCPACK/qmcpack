@@ -1,11 +1,10 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo A. Correa 2019-2021
+// Copyright 2019-2021 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi allocators"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 #include<fstream>
 
@@ -50,12 +49,6 @@
 
 namespace multi = boost::multi;
 
-// #include <cereal/archives/json.hpp>
-#include <boost/archive/xml_iarchive.hpp>
-#include <boost/archive/xml_oarchive.hpp>
-// #include <cereal/types/string.hpp>
-#include <boost/serialization/string.hpp>
-
 struct array {
 	using input_archive  = boost::archive::xml_iarchive;  // cereal::JSONInputArchive ;
 	using output_archive = boost::archive::xml_oarchive;  // cereal::JSONOutputArchive;
@@ -63,7 +56,7 @@ struct array {
 	template<class Array, class IStream>
 	static auto load(IStream&& is) -> Array {
 		using boost::serialization::make_nvp;  // cereal::make_nvp;  //
-		Array value;
+		Array value{};
 		input_archive{is} >> make_nvp("value", value);
 		return value;
 	}
@@ -85,7 +78,6 @@ BOOST_AUTO_TEST_CASE(json) {
 }
 
 BOOST_AUTO_TEST_CASE(extensions_serialization) {
-
 	multi::array<double, 2> arr({10, 10});
 	auto const x = arr.extensions();
 	std::stringstream ss;
@@ -144,7 +136,7 @@ BOOST_AUTO_TEST_CASE(array_serialization) {
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		XOArchive xoa{ss};
 		xoa<<      make_nvp("arr", arr);
@@ -177,7 +169,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_string) {
 		}
 	}
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		XOArchive xoa{ss};
 		xoa<<                                   make_nvp("arr", arr);
@@ -188,7 +180,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_string) {
 	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
 	}
 	{
-		multi::array<std::string, 2> arr2;
+		multi::array<std::string, 2> arr2{};
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("arr", arr2);
@@ -201,19 +193,20 @@ BOOST_AUTO_TEST_CASE(array_serialization_string) {
 	}
 }
 
+//#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
 BOOST_AUTO_TEST_CASE(array_serialization_binary) {
 	multi::array<double, 2> arr({10, 10}, 0.);
 	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		BOArchive boa(ss);
 		boa<< arr;
 	}
 	{
-		multi::array<double, 2> arr2;
+		multi::array<double, 2> arr2{};
 		{
 			BIArchive bia{ss};
 			bia>> arr2;
@@ -232,14 +225,14 @@ BOOST_AUTO_TEST_CASE(array_serialization_string_binary) {
 		}
 	}
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		BOArchive boa{ss};
 		boa<< arr;
 	//	boa<< multi::archive_traits<BOArchive>::make_nvp("arr", arr);
 	}
 	{
-		multi::array<std::string, 2> arr2;
+		multi::array<std::string, 2> arr2{};
 		{
 			BIArchive bia{ss};
 			bia>> arr2;
@@ -250,6 +243,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_string_binary) {
 	}
 }
 
+//#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
 BOOST_AUTO_TEST_CASE(vector) {
 	std::vector<double> v(100); std::iota(begin(v), end(v), 10.);
 
@@ -273,7 +267,7 @@ BOOST_AUTO_TEST_CASE(vector) {
 BOOST_AUTO_TEST_CASE(vector_binary) {
 	std::vector<double> v(100); std::iota(begin(v), end(v), 10.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		BOArchive xoa{ss};
 		xoa<< make_nvp("v_data", multi::archive_traits<XOArchive>::make_array(v.data(), v.size()));
@@ -297,7 +291,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D) {
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		XOArchive xoa{ss};
 		xoa<<      make_nvp("arr", arr);
@@ -307,7 +301,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D) {
 	//	xoa<< multi::archive_traits<XOArchive>::make_nvp("arr", arr);
 	}
 	{
-		multi::array<double, 3> arr2;
+		multi::array<double, 3> arr2{};
 		{
 			XIArchive xia{ss};
 			xia>>                                   make_nvp("arr", arr2);
@@ -327,10 +321,10 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_inplace) {
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	XOArchive{ss}<< make_nvp("arr", arr);
 
-	multi::array<double, 3> arr2;
+	multi::array<double, 3> arr2{};
 	XIArchive{ss}>> make_nvp("arr", arr2);
 
 	BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
@@ -345,12 +339,61 @@ BOOST_AUTO_TEST_CASE(array_serialization_2D_inplace_file) {
 		XOArchive{ofs}<< make_nvp("arr", arr);
 	}  // flush the file stream
 
-	multi::array<double, 2> arr2;
+	multi::array<double, 2> arr2{};
 	std::ifstream ifs{"file.xml"};
 	XIArchive{ifs}>> make_nvp("arr", arr2);
 
 	BOOST_REQUIRE( extensions(arr2) == extensions(arr) );
 	BOOST_REQUIRE( arr2 == arr );
+}
+
+#if not defined(__NVCC__)  // some code contained here doesn't compile with nvcc 11.0,11.1 and 11.2
+BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary_lvalue) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.);
+
+	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
+
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+
+	std::stringstream ss{};
+	{
+		BOArchive boa{ss};
+		auto&& arr2 = arr[2];
+		boa& arr2;
+	}
+	{
+		BOOST_REQUIRE( arr[3] != arr[2] );
+		{
+			BIArchive bia{ss};
+			auto&& arr3 = arr[3];
+			bia& arr3;
+		}
+		BOOST_REQUIRE( arr[3] == arr[2] );
+	}
+}
+
+BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml_lvalue) {
+	multi::array<double, 3> arr({10, 10, 10}, 0.);
+
+	BOOST_REQUIRE(( arr.extension() == boost::multi::index_range{0, 10} ));
+
+	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
+
+	std::stringstream ss{};
+	{
+		XOArchive boa{ss};
+		auto&& arr2 = arr[2];
+		boa<< multi::archive_traits<XOArchive>::make_nvp("arr2", arr2);
+	}
+	{
+		BOOST_REQUIRE( arr[3] != arr[2] );
+		{
+			XIArchive bia{ss};
+			auto&& arr3 = arr[3];
+			bia>> multi::archive_traits<XOArchive>::make_nvp("arr2", arr3);
+		}
+		BOOST_REQUIRE( arr[3] == arr[2] );
+	}
 }
 
 BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary) {
@@ -360,7 +403,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_binary) {
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		BOArchive boa{ss};
 		boa& arr[2];
@@ -382,7 +425,7 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml) {
 
 	std::iota(arr.data_elements(), arr.data_elements() + arr.num_elements(), 1000.);
 
-	std::stringstream ss;
+	std::stringstream ss{};
 	{
 		XOArchive boa{ss};
 		boa<< multi::archive_traits<XOArchive>::make_nvp("arr2", arr[2]);
@@ -396,3 +439,4 @@ BOOST_AUTO_TEST_CASE(array_serialization_3D_part_xml) {
 		BOOST_REQUIRE( arr[3] == arr[2] );
 	}
 }
+#endif
