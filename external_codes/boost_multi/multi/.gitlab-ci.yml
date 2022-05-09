@@ -1,35 +1,81 @@
 # -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;-*-
-# © Alfredo A. Correa 2020-2021
+# © Alfredo A. Correa 2020-2022
 
 image: debian:testing
 
 g++-latest:
-  stage: test
+  stage: build
   script:
-    - export CXX="g++"
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
-    - $CXX --version
+    - g++ --version
     - mkdir build && cd build
     - cmake ..
     - cmake --build .
     - ctest --output-on-failure
     - make install
 
-g++-latest-std20:
-  stage: test
+g++-latest-debug:
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_STANDARD=20
+    - cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+g++-9:
+  image: debian:stable-backports
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet g++-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - g++-9 --version
+    - mkdir build && cd build
+    - CXX=g++-9 cmake ..
+    - cmake --build .
+    - ctest --output-on-failure
+    - make install
+
+g++-latest-std20:
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - g++ --version
+    - mkdir build && cd build
+    - cmake .. -DCMAKE_BUILD_TYPE=AggressiveOpt
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+    - make install
+
+g++-std20:
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - g++ --version
+    - mkdir build && cd build
+    - CXX=g++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20
+    - cmake --build . --verbose
+    - ctest --output-on-failure
+
+clang++-std20:
+  stage: build
+  script:
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - clang++ --version
+    - mkdir build && cd build
+    - CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20
     - cmake --build . --verbose
     - ctest --output-on-failure
 
 g++-current-debug:
-  stage: test
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -41,115 +87,53 @@ g++-current-debug:
     - ctest --output-on-failure
 
 g++-current-asan:
-  stage: test
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
-    - CXXFLAGS="-g -O1 -fsanitize=address -fno-omit-frame-pointer" cmake .. -DCMAKE_BUILD_TYPE=Debug
+    - CXXFLAGS="-g -O1 -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer" cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build . --verbose
     - ctest --output-on-failure
 
-g++-current-codecov:
-  stage: test
-  script:
-    - export CXX="g++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev curl gcovr lcov
-    - ln --symbolic --force . ../multi
-    - $CXX --version
-    - mkdir build && cd build
-    - CXXFLAGS="-ftest-coverage -fprofile-arcs --coverage -fno-inline -fno-inline-small-functions -fno-default-inline"   cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXE_LINKER_FLAGS="-lgcov --coverage" -DCMAKE_BUILD_TYPE=Debug
-    - cmake --build . --verbose
-    - ctest --output-on-failure -T Test -T Coverage
-    - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
-    - lcov --directory . --capture --output-file coverage.info
-    - lcov --remove coverage.info '/usr/*' --output-file coverage.info 
-    - lcov --list coverage.info
-  coverage: /^\s*lines:\s*\d+.\d+\%/
-  artifacts:
-    name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
-    expire_in: 2 days
-    reports:
-      cobertura: build/coverage.xml
-
-g++-current-release:
-  stage: test
+g++-current-tsan:
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
     - ln --symbolic --force . ../multi
     - $CXX --version
     - mkdir build && cd build
-    - cmake .. -DCMAKE_BUILD_TYPE=Release
+    - CXXFLAGS="-g -O1 -fsanitize=thread            -fno-sanitize-recover=all -fno-omit-frame-pointer" cmake .. -DCMAKE_BUILD_TYPE=Debug
     - cmake --build . --verbose
     - ctest --output-on-failure
 
-#g++-7-std17:
-#  stage: test
-#  image: vistart/cuda:10.2-ubuntu20.04
+#g++-current-codecov:
+#  stage: build
 #  script:
-#    - export CXX="g++-7"
-#    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
+#    - export CXX="g++"
+#    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev curl gcovr lcov
 #    - ln --symbolic --force . ../multi
 #    - $CXX --version
 #    - mkdir build && cd build
-#    - cmake .. -DCMAKE_CXX_STANDARD=17
-#    - cmake --build .
-#    - ctest --output-on-failure
-
-#g++-8:
-#  stage: test
-#  image: vistart/cuda:10.2-ubuntu20.04
-#  script:
-#    - export CXX="g++-8"
-#    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
-#    - ln --symbolic --force . ../multi
-#    - $CXX --version
-#    - mkdir build && cd build
-#    - cmake ..
-#    - cmake --build .
-#    - ctest --output-on-failure
-
-#g++-9:
-#  stage: test
-#  script:
-#    - export CXX="g++-9"
-#    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
-#    - ln --symbolic --force . ../multi
-#    - $CXX --version
-#    - mkdir build && cd build
-#    - cmake ..
+#    - CXXFLAGS="-ftest-coverage -fprofile-arcs --coverage -fno-inline -fno-inline-small-functions -fno-default-inline" cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXE_LINKER_FLAGS="-lgcov --coverage"
 #    - cmake --build . --verbose
-#    - ctest --output-on-failure
-
-#g++-9-std17:
-#  stage: test
-#  script:
-#    - export CXX="g++-9"
-#    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libblas-dev libfftw3-dev
-#    - ln --symbolic --force . ../multi
-#    - $CXX --version
-#    - mkdir build && cd build
-#    - cmake .. -DCMAKE_CXX_STANDARD=17
-#    - cmake --build . --verbose
-#    - ctest --output-on-failure
-
-#g++-9-openblas:
-#  stage: test
-#  script:
-#    - export CXX="g++-9"
-#    - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libopenblas-dev libfftw3-dev
-#    - ln --symbolic --force . ../multi
-#    - $CXX --version
-#    - mkdir build && cd build
-#    - cmake ..
-#    - cmake --build . --verbose
-#    - ctest --output-on-failure
+#    - ctest --output-on-failure -T Test -T Coverage
+#    - gcovr --xml-pretty --exclude-unreachable-branches --print-summary -o coverage.xml --root ${CI_PROJECT_DIR}
+#    - lcov --directory . --capture --output-file coverage.info
+#    - lcov --remove coverage.info '/usr/*' --output-file coverage.info
+#    - lcov --list coverage.info
+#  coverage: /^\s*lines:\s*\d+.\d+\%/
+#  artifacts:
+#    name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
+#    expire_in: 2 days
+#    reports:
+#      cobertura: build/coverage.xml
 
 g++-openblas:
-  stage: test
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libopenblas-dev libfftw3-dev
@@ -161,7 +145,7 @@ g++-openblas:
     - ctest --output-on-failure
 
 memcheck:
-  stage: test
+  stage: build
   script:
     - export CXX="g++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet $CXX valgrind pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -170,12 +154,11 @@ memcheck:
     - mkdir build && cd build
     - cmake ..
     - cmake --build . --verbose
-    - ctest --overwrite MemoryCheckCommandOptions="--leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=666" -T memcheck --output-on-failure
+    - ctest --overwrite MemoryCheckCommandOptions="-q --tool=memcheck --leak-check=yes --num-callers=51 --trace-children=yes --leak-check=full --track-origins=yes --gen-suppressions=all" -T memcheck --output-on-failure
 
 clang++-9:
   image: debian:stable
-  stage: test
-  image: debian:stable
+  stage: build
   script:
     - export CXX="clang++-9"
     - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -186,23 +169,9 @@ clang++-9:
     - cmake --build . --verbose
     - ctest --output-on-failure
 
-clang++-9-std17:
-  image: debian:stable
-  stage: test
-  image: debian:stable
-  script:
-    - export CXX="clang++-9"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-9 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-    - ln --symbolic --force . ../multi
-    - $CXX --version
-    - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_STANDARD=17
-    - cmake --build . --verbose
-    - ctest --output-on-failure
-
 clang++-9-asan:
   image: debian:stable
-  stage: test
+  stage: build
   image: debian:stable
   script:
     - export CXX="clang++-9"
@@ -217,9 +186,8 @@ clang++-9-asan:
     - export ASAN_OPTIONS="halt_on_error=1 detect_leaks=1"
     - ctest --output-on-failure
 
-# clang 10 and clang 11 have a bug when compiling in c++17 mode
 clang++:
-  stage: test
+  stage: build
   script:
     - export CXX="clang++"
     - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -239,7 +207,7 @@ clang++-tidy:
     - $CXX --version
     - clang-tidy --version
     - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*,-readability-magic-numbers,-modernize-use-nodiscard,-altera-struct-pack-align,-cert-err58-cpp,-cppcoreguidelines-avoid-non-const-global-variables,-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-avoid-magic-numbers,-fuchsia-default-arguments-calls,-fuchsia-trailing-return,-fuchsia-statically-constructed-objects,-fuchsia-overloaded-operator,-hicpp-vararg,-hicpp-no-array-decay,-llvm-header-guard,-llvmlibc-restrict-system-libc-headers,-llvmlibc-implementation-in-namespace,-llvmlibc-callee-namespace,-fuchsia-default-arguments-calls"
+    - cmake .. -DCMAKE_CXX_CLANG_TIDY="clang-tidy"
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
 
@@ -253,24 +221,12 @@ g++-cpplint:
     - $CXX --version
     - cpplint --version
     - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_CPPLINT="cpplint;--filter=-whitespace/tab,-whitespace/parens,-whitespace/operators,-readability/alt_tokens,-build/include_order,-whitespace/line_length,-whitespace/semicolon,-legal/copyright,-whitespace/comments,-readability/nolint"
+    - cmake .. -DCMAKE_CXX_CPPLINT="cpplint;--filter=-whitespace/braces,-whitespace/tab,-whitespace/parens,-whitespace/operators,-readability/alt_tokens,-build/include_order,-whitespace/line_length,-whitespace/semicolon,-legal/copyright,-whitespace/comments,-readability/nolint"
     - cmake --build . --verbose -- --quiet --no-print-directory
-    - cpplint --filter=-whitespace/line_length,-whitespace/parens,-whitespace/tab,-readability/alt_tokens,-readability/nolint,-runtime/references,-build/include_order,-build/header_guar,-legal/copyright ../array.hpp
-
-clang++-std17:
-  stage: test
-  script:
-    - export CXX="clang++"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-    - ln --symbolic --force . ../multi
-    - $CXX --version
-    - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_STANDARD=17
-    - cmake --build . --verbose -- --quiet --no-print-directory
-    - ctest --output-on-failure
+    - cpplint --filter=-whitespace/line_length,-whitespace/parens,-whitespace/tab,-readability/alt_tokens,-readability/nolint,-runtime/references,-build/include_order,-build/header_guar,-legal/copyright ../include/multi/array.hpp
 
 clang++-11:
-  stage: test
+  stage: build
   script:
     - export CXX="clang++-11"
     - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -281,109 +237,24 @@ clang++-11:
     - cmake --build . --verbose -- --quiet --no-print-directory
     - ctest --output-on-failure
 
-clang++-11-gcc9:
-  stage: test
-  image: vistart/cuda:10.2-ubuntu20.04
-  script:
-    - export CXX="clang++-11"
-    - apt-get update 
-    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-    - ln --symbolic --force . ../multi
-    - $CXX -v
-    - mkdir build && cd build
-    - cmake ..
-    - cmake --build . --verbose -- --quiet --no-print-directory
-    - ctest --output-on-failure
-
-clang++-11-std17:
-  stage: test
-  script:
-    - export CXX="clang++-11"
-    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-    - ln --symbolic --force . ../multi
-    - $CXX --version
-    - mkdir build && cd build
-    - cmake .. -DCMAKE_CXX_STANDARD=17
-    - cmake --build . --verbose -- --quiet --no-print-directory
-    - ctest --output-on-failure
-
-#icc:
-#    image: meteocima/dkr-intel
-#    stage: test
-#    script:
-#      - . /opt/intel/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-#      - ln --symbolic --force . ../multi
-#      - $CXX -v
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -- --quiet --no-print-directory
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
-
-#icc-nomkl:
-#    image: meteocima/dkr-intel
-#    stage: test
-#    script:
-#      - export CXX="/opt/intel/bin/icpc"
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-#      - ln --symbolic --force . ../multi
-#      - $CXX -v
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -- --quiet --no-print-directory
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
-#      
-#icc-memcheck:
-#    image: meteocima/dkr-intel
-#    stage: test
-#    script:
-#      - . /opt/intel/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make valgrind libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-#      - ln --symbolic --force . ../multi
-#      - $CXX -v
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DMEMORYCHECK_COMMAND_OPTIONS="--leak-check=full --show-reachable=yes --track-origins=yes --malloc-fill=0xEE --free-fill=0xFF --leak-check-heuristics=none -v --track-fds=yes --error-limit=no --show-below-main=yes --read-var-info=yes --gen-suppressions=all"
-#      - cmake --build . -- --quiet --no-print-directory
-#      - export MKL_VERBOSE=1
-#      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
-
-#icc-std17:
-#    image: meteocima/dkr-intel
-#    stage: test
-#    script:
-#      - . /opt/intel/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-#      - ln --symbolic --force . ../multi
-#      - $CXX -v
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -- --quiet --no-print-directory
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
-
-cuda-10.0:
-    image: vistart/cuda:10.2-ubuntu20.04
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet gcc-8 g++-8 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - g++-8 --version
-      - cd test
-      - mkdir build && cd build
-      - cmake -DENABLE_CUDA=1 -DCMAKE_CUDA_FLAGS="-ccbin=g++-8" ..
-      - cmake --build . --verbose
-      - ctest --output-on-failure
+#clang++-11-gcc9:
+#  stage: build
+#  image: vistart/cuda:10.2-ubuntu20.04
+#  script:
+#    - export CXX="clang++-11"
+#    - apt-get update 
+#    - DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y --quiet gcc-9 clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+#    - ln --symbolic --force . ../multi
+#    - $CXX -v
+#    - mkdir build && cd build
+#    - cmake ..
+#    - cmake --build . --verbose -- --quiet --no-print-directory
+#    - ctest --output-on-failure
 
 cuda-11.0:
+    allow_failure: true
     image: nvidia/cuda:11.0-devel
-    stage: test
+    stage: build
     script:
       - export DEBIAN_FRONTEND=noninteractive
       - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
@@ -394,228 +265,329 @@ cuda-11.0:
       - cmake --build . --verbose
       - ctest --output-on-failure
 
-cuda-11.1:
-    image: nvidia/cuda:11.1-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.0-std17:
-    image: nvidia/cuda:11.0-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.1-std17:
-    image: nvidia/cuda:11.1-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.2-std14:
-    image: nvidia/cuda:11.2.0-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=14 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.2-std17:
-    image: nvidia/cuda:11.2.0-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.3-std17:
-    image: nvidia/cuda:11.3.0-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-cuda-11.4-std17:
-    image: nvidia/cuda:11.4.0-devel
-    stage: test
-    script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
-      - ln --symbolic --force . ../multi
-      - nvcc --version
-      - mkdir build && cd build
-      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
-      - cmake --build . --verbose
-      - ctest --output-on-failure
-
-#cuda-11.5-std17:
-#    image: nvidia/cuda:11.5.0-devel
-#    stage: test
+# image not working
+#cuda-11.1:
+#    image: nvidia/cuda:11.1.0-devel
+#    allow_failure: true
+#    stage: build
 #    script:
 #      - export DEBIAN_FRONTEND=noninteractive
 #      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
 #      - ln --symbolic --force . ../multi
 #      - nvcc --version
 #      - mkdir build && cd build
-#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1
+#      - cmake .. -DENABLE_CUDA=1
 #      - cmake --build . --verbose
 #      - ctest --output-on-failure
 
+cuda-11.2:
+    allow_failure: true
+    image: nvidia/cuda:11.2.0-devel
+    stage: build
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.3:
+    allow_failure: true
+    stage: build
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/x86_64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+      - apt-get update
+      - apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev cuda
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.4:
+    allow_failure: true
+    image: docker pull nvidia/cuda:11.4.2-devel-ubi8
+    stage: build
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+      - ln --symbolic --force . ../multi
+      - nvcc --version
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+#cuda-11.5:
+#    image: nvidia/cuda:11.5.0-devel
+#    stage: build
+#    script:
+#      - export DEBIAN_FRONTEND=noninteractive
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - nvcc --version
+#      - mkdir build && cd build
+#      - cmake .. -DENABLE_CUDA=1
+#      - cmake --build . --verbose
+#      - ctest --output-on-failure
+
+#cuda-11.6:
+#    image: nvidia/cuda:11.6.0-devel
+#    stage: build
+#    script:
+#      - export DEBIAN_FRONTEND=noninteractive
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+#      - ln --symbolic --force . ../multi
+#      - nvcc --version
+#      - mkdir build && cd build
+#      - cmake .. -DENABLE_CUDA=1
+#      - cmake --build . --verbose
+#      - ctest --output-on-failure
+
+cuda-11.5gpuci:
+    allow_failure: true
+    image: gpuci/cuda:11.5.0-devel-ubuntu20.04
+    stage: build
+    script:
+      - export DEBIAN_FRONTEND=noninteractive
+      - apt-get update && apt-get install --no-install-recommends -y --quiet pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+      - nvcc --version
+      - ln --symbolic --force . ../multi
+      - mkdir build && cd build
+      - cmake .. -DENABLE_CUDA=1
+      - cmake --build . --verbose
+      - ctest --output-on-failure
+
+cuda-11.0-sdkhpc:
+    allow_failure: true
+    stage: build
+    script:
+       - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+       - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+       - apt-get update -y
+       - apt-get install --no-install-recommends -y cmake nvhpc-22-3 wget pkg-config make libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev
+       - cmake --version
+       - apt-cache madison nvhpc
+       - /opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.0/bin/nvcc --version
+       - mkdir build && cd build
+       - cmake .. -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.0/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.0 -DCMAKE_CUDA_ARCHITECTURES=61 -DCMAKE_CUDA_FLAGS="-gencode arch=compute_61,code=sm_61"
+       - cmake --build . || make VERBOSE=1
+       - ctest --output-on-failure
+
+cuda-11.6:
+    allow_failure: false
+    stage: build
+    script:
+       - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+       - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+       - apt-get update -y
+       - apt-get install --no-install-recommends -y cmake nvhpc-22-3 wget pkg-config make libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev
+       - cmake --version
+       - apt-cache madison nvhpc
+       - /opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc --version
+       - mkdir build && cd build
+       - cmake .. -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 -DCMAKE_CUDA_ARCHITECTURES=61 -DCMAKE_CUDA_FLAGS="-gencode arch=compute_61,code=sm_61"
+       - cmake --build . || make VERBOSE=1
+       - ctest --output-on-failure
+
 g++-cppcheck:
-  stage: test
-  image: debian:stable
+  stage: build
+  allow_failure: true
+  image: debian:testing
   script:
     - export CXX="g++"
     - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet $CXX pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev liblapack-dev libfftw3-dev cppcheck
     - ln --symbolic --force . ../multi
     - $CXX --version
     - cppcheck --version
-    - find . -name '*.hpp' -exec cppcheck --enable=all --inline-suppr --suppress=unmatchedSuppression --suppress=syntaxError --suppress=missingInclude --suppress=missingIncludeSystem --suppress=preprocessorErrorDirective --suppress=syntaxError --suppress=unusedFunction --suppress=arithOperationsOnVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=unmatchedSuppression:{} -D__align__ -DCUDARTAPI --language=c++ --std=c++17 --error-exitcode=666 -UEXCLUDE_CPPCHECK --verbose --exception-handling {} \;
+    - find . -name '*.hpp' -exec cppcheck --enable=all --inline-suppr --suppress=unmatchedSuppression --suppress=syntaxError --suppress=missingInclude --suppress=missingIncludeSystem --suppress=preprocessorErrorDirective --suppress=syntaxError --suppress=unusedFunction --suppress=arithOperationsOnVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=sizeofDereferencedVoidPointer --suppress=unmatchedSuppression:{} -D__align__ -DCUDARTAPI --language=c++ --std=c++17 --error-exitcode=666 --verbose --exception-handling {} \;
     - mkdir build && cd build
-    - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppressions-list=${PWD}/../.cppcheck-suppressions;--language=c++;--std=c++17;--error-exitcode=666;-UEXCLUDE_CPPCHECK;--verbose;--exception-handling" ..
+    - cmake -DCMAKE_CXX_CPPCHECK="cppcheck;--enable=all;--inline-suppr;--suppress=missingIncludeSystem;--suppressions-list=${PWD}/../.cppcheck-suppressions;--language=c++;--std=c++17;--error-exitcode=666;--verbose;--exception-handling" ..
     - cmake --build . --verbose
     - ctest --output-on-failure
-  allow_failure: true
 
-qmcpack-g++:
-  stage: test
-  script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev
-    - git clone https://github.com/QMCPACK/qmcpack.git
-    - cp -r qmcpack qmcpack.noupdate
-    - cd qmcpack
-    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-    - echo $CI_REPOSITORY_URL
-    - echo $CI_COMMIT_BRANCH
-    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
-    - cd ../qmcpack.noupdate
-    - cd build
-    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
-    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
-    - ctest -R afqmc     --output-on-failure
-    - cd ../../qmcpack
-    - cd build
-    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
-    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
-    - ctest -R afqmc     --output-on-failure
+#nvhpc-22.1:
+#    stage: build
+#    script:
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates curl tree
+#      - curl --output nvhpc-22-1_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-22-1_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - curl --output nvhpc-2022_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-2022_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - apt-get install --no-install-recommends -y --quiet ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - rm -rf ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - apt-get install --no-install-recommends -y --quiet grep cmake libboost-test-dev libboost-serialization-dev libboost-timer-dev make pkg-config libblas-dev liblapack-dev libfftw3-dev
+#      - /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ --version
+#      - strings /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ | grep D
+#      - mkdir build && cd build
+#      - CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ cmake ..
+#      - make VERBOSE=1
+#      - ctest --output-on-failure
 
-qmcpack-cuda-11.2-compileonly:
-    image: nvidia/cuda:11.2.0-devel
-    stage: test
+#nvhpc-22.1-std20:
+#    stage: build
+#    script:
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates curl tree
+#      - curl --output nvhpc-22-1_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-22-1_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - curl --output nvhpc-2022_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-2022_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - apt-get install --no-install-recommends -y --quiet ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - rm -rf ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - apt-get install --no-install-recommends -y --quiet cmake libboost-test-dev libboost-serialization-dev libboost-timer-dev make pkg-config libblas-dev liblapack-dev libfftw3-dev
+#      - mkdir build && cd build
+#      - CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ cmake .. -DCMAKE_CXX_STANDARD=20
+#      - make VERBOSE=1
+#      - ctest --output-on-failure
+
+#nvhpc-22.2:
+#    stage: build
+#    script:
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+#      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+#      - apt-get update -y
+#      - apt-get autoremove
+#      - apt-get install -y nvhpc-22-2
+#      - apt-get install --no-install-recommends -y --quiet ca-certificates curl tree grep cmake libboost-test-dev libboost-serialization-dev libboost-timer-dev make pkg-config libblas-dev liblapack-dev libfftw3-dev
+#      - /opt/nvidia/hpc_sdk/Linux_x86_64/22.2/compilers/bin/nvc++ --version
+#      - mkdir build && cd build
+#      - CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.2/compilers/bin/nvc++ cmake ..
+#      - make VERBOSE=1
+#      - ctest --output-on-failure
+
+nvhpc-22.3:
+    stage: build
     script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev wget
-      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-      - mkdir /opt/cmake
-      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-      - cmake --version
-      - git clone https://github.com/QMCPACK/qmcpack.git
-      - cd qmcpack
-      - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-      - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-      - echo $CI_REPOSITORY_URL
-      - echo $CI_COMMIT_BRANCH
-      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
-      - cd build
-      - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
-      - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-      - ctest -R ppconvert --output-on-failure
+       - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+       - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+       - apt-get update -y
+       - apt-get install --no-install-recommends -y nvhpc-22-3 cmake make libboost-test-dev libboost-serialization-dev
+       - /opt/nvidia/hpc_sdk/Linux_x86_64/22.3/compilers/bin/nvc++ --version
+       - mkdir build && cd build
+       - CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/compilers/bin/nvc++ cmake ..
+       - make VERBOSE=1
+       - ctest --output-on-failure
 
-qmcpack-icpc-runner:
-  stage: test
-  tags:
-    - intel_compiler
-  script:
-    - . /opt/intel/oneapi/setvars.sh
-    - export CXX="icpc"
-    - $CXX --version
-    - cmake --version
-    - git clone https://github.com/QMCPACK/qmcpack.git
-    - cd qmcpack
-    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-    - echo $CI_REPOSITORY_URL
-    - echo $CI_COMMIT_BRANCH
-    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git master
-    - cd build
-    - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
-    - make -j 16 ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates curl tree
+#      - curl --output nvhpc-22-1_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-22-1_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - curl --output nvhpc-2022_22.1_amd64.deb --url https://developer.download.nvidia.com/hpc-sdk/22.1/nvhpc-2022_22.1_amd64.deb --retry 5 --retry-delay 5
+#      - apt-get install --no-install-recommends -y --quiet ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - rm -rf ./nvhpc-22-1_22.1_amd64.deb ./nvhpc-2022_22.1_amd64.deb
+#      - apt-get install --no-install-recommends -y --quiet grep cmake libboost-test-dev libboost-serialization-dev libboost-timer-dev make pkg-config libblas-dev liblapack-dev libfftw3-dev
+#      - /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ --version
+#      - strings /opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ | grep D
+#      - mkdir build && cd build
+#      - CXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.1/compilers/bin/nvc++ cmake ..
+#      - make VERBOSE=1
+#      - ctest --output-on-failure
 
-inq-g++-latest:
-  stage: test
+circle-168:
+  allow_failure: true
+  stage: build
   script:
-    - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config pkg-config cmake make git ca-certificates
-    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
-    - cd inq
-    - cd external_libs/multi
-    - git fetch
-    - git checkout $CI_COMMIT_BRANCH
-    - cd ../..
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet ca-certificates clang g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev tar gzip wget libelf1 grep
+    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+    - cp /usr/include/c++/11/cxxabi.h /usr/include/c++/11/cxxabi.h.bak
+    - sed -z 's/void\n  __cxa_finalize/int\n  __cxa_finalize/g' /usr/include/c++/11/cxxabi.h.bak > /usr/include/c++/11/cxxabi.h
+    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+    - mkdir -p build_168 && cd build_168
+    - wget https://www.circle-lang.org/linux/build_168.tgz --no-verbose
+    - tar -zxvf build_168.tgz
+    - cd ..
+    - ls
+    - ./build_168/circle --version
     - mkdir build && cd build
-    - ../configure --prefix=$HOME
-    - make
-    - make install
+    - CXX=/builds/correaa/boost-multi/build_168/circle cmake .. -DBOOST_LIBRARYDIR=/usr/lib/x86_64-linux-gnu/ -DENABLE_CIRCLE=1
+    - make VERBOSE=1
     - ctest --output-on-failure
 
-inq-cuda-11.4-compileonly:
-    image: nvidia/cuda:11.4.0-devel
-    stage: test
+circle-latest:
+  allow_failure: true
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet ca-certificates clang g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev tar gzip wget libelf1 grep
+    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+    - cp /usr/include/c++/11/cxxabi.h /usr/include/c++/11/cxxabi.h.bak
+    - sed -z 's/void\n  __cxa_finalize/int\n  __cxa_finalize/g' /usr/include/c++/11/cxxabi.h.bak > /usr/include/c++/11/cxxabi.h
+    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+    - mkdir -p build_latest && cd build_latest
+    - wget https://www.circle-lang.org/linux/build_latest.tgz --no-verbose
+    - tar -zxvf build_latest.tgz
+    - cd ..
+    - ls
+    - ./build_latest/circle --version
+    - mkdir build && cd build
+    - CXX=/builds/correaa/boost-multi/build_latest/circle cmake .. -DBOOST_LIBRARYDIR=/usr/lib/x86_64-linux-gnu/ -DENABLE_CIRCLE=1
+    - make VERBOSE=1
+    - ctest --output-on-failure
+
+oneapi-icpc:  # https://github.com/oneapi-src/oneapi-ci/blob/master/.gitlab-ci.yml
+    stage: build
     script:
-      - export DEBIAN_FRONTEND=noninteractive
-      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config pkg-config cmake make git ca-certificates
-      - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
-      - cd inq
-      - cd external_libs/multi
-      - git fetch
-      - git checkout $CI_COMMIT_BRANCH
-      - cd ../..
-      - mkdir build && cd build
-      - /usr/local/cuda/bin/nvcc -V
-      - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
-      - make silicon
+        - apt-get update && apt-get install --no-install-recommends -y --quiet g++ ca-certificates cmake curl libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev liblapack-dev libfftw3-dev make pkg-config
+        - curl --output webimage.sh --url https://registrationcenter-download.intel.com/akdlm/irc_nas/18479/l_HPCKit_p_2022.1.2.117_offline.sh --retry 5 --retry-delay 5
+        - chmod +x webimage.sh
+        - ./webimage.sh -x -f webimage_extracted --log extract.log
+        - rm -rf webimage.sh
+        - ls -1 webimage_extracted/
+        - WEBIMAGE_NAME=$(ls -1 webimage_extracted/)
+        - webimage_extracted/"$WEBIMAGE_NAME"/bootstrapper -s --action install --components=intel.oneapi.lin.dpcpp-cpp-compiler-pro:intel.oneapi.lin.mpi.devel --eula=accept --log-dir=.
+        - rm -rf webimage_extracted
+        - . /opt/intel/oneapi/setvars.sh
+        - ln --symbolic --force . ../multi
+        - export CC=icc; export CXX=icpc;
+        - $CXX -v
+        - mkdir build.icpc && cd build.icpc
+        - cmake .. #cmake --build . -- --quiet --no-print-directory
+        - make VERBOSE=1
+        - ctest --output-on-failure
+
+oneapi-icpx: # https://github.com/oneapi-src/oneapi-ci/blob/master/.gitlab-ci.yml
+    stage: build
+    script:
+        - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates curl
+        - curl --output webimage.sh --url https://registrationcenter-download.intel.com/akdlm/irc_nas/18487/l_BaseKit_p_2022.1.2.146_offline.sh --retry 5 --retry-delay 5
+        - chmod +x webimage.sh
+        - ./webimage.sh -x -f webimage_extracted --log extract.log
+        - rm -rf webimage.sh
+        - ls -1 webimage_extracted/
+        - WEBIMAGE_NAME=$(ls -1 webimage_extracted/)
+        - webimage_extracted/"$WEBIMAGE_NAME"/bootstrapper -s --action install --components=`#intel.oneapi.lin.mkl.devel:`intel.oneapi.lin.dpcpp-cpp-compiler:intel.oneapi.lin.dpl --eula=accept --log-dir=.
+        - rm -rf webimage_extracted
+        - apt-get update && apt-get install --no-install-recommends -y --quiet g++ cmake libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev liblapack-dev libfftw3-dev make pkg-config
+        - . /opt/intel/oneapi/setvars.sh
+        - ln --symbolic --force . ../multi
+        - export CC=icx; export CXX=icpx;
+        - $CXX -v
+        - mkdir build.icpx && cd build.icpx
+        - cmake .. #cmake --build . -- --quiet --no-print-directory
+        - make VERBOSE=1
+        - export MKL_VERBOSE=1
+        - ctest --output-on-failure
+        - cd ..
+
+variables:
+  msbuild: 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin\MSBuild.exe'
+  mscmake: 'C:\Program Files\CMake\bin\cmake.exe'
+
+#build_windows:
+#  stage: build
+#  script:
+#    - choco install --no-progress -y cmake
+#    - choco install --no-progress -y boost-msvc-14.2
+#    - '& "$msbuild" -help'
+#    - '& "$msbuild" -version'
+#    - mkdir build
+#    - cd build
+#    - '& "$mscmake"  --version'
+#    - '& "$mscmake"  ..'
+#    - '& "$mscmake"  --build . --verbose'
+#    - dir
+#  tags:
+#    - shared-windows
+#    - windows
+#    - windows-1809
 
 g++-codecov-runner:
     stage: test
@@ -661,60 +633,285 @@ icpc-runner: # image: intel/oneapi-basekit
       - export MKL_VERBOSE=1
       - ctest --output-on-failure
 
-nvcc-runner: # image: intel/oneapi-basekit
+nvcc-runner:
     stage: test
     tags:
       - intel_compiler
     script:
       - mkdir build && cd build
       - /usr/local/cuda/bin/nvcc --version
-      - CUDACXX=/usr/local/cuda/bin/nvcc CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda cmake .. -DCMAKE_CXX_STANDARD=17
+      - CUDACXX=/usr/local/cuda/bin/nvcc CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_BUILD_TYPE=Release
       - cmake --build . -j 12
-      - ctest -j 12 --output-on-failure
+      - ctest -j 1 --output-on-failure
 
-#oneapi: # WARNING: Failed to pull image with policy "always": failed to register layer: Error processing tar file(exit status 1): write /opt/intel/oneapi/mkl/2021.1-beta08/lib/intel64/libmkl_pgi_thread.a: no space left on device (manager.go:205:310s)
-#    image: intel/oneapi
+nvcc-cuda-runner:
+    stage: test
+    tags:
+      - intel_compiler
+    script:
+      - mkdir build && cd build
+      - /usr/local/cuda/bin/nvcc --version
+      - CUDACXX=/usr/local/cuda/bin/nvcc CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda cmake .. -DCMAKE_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=72 -DCMAKE_CUDA_FLAGS="-gencode arch=compute_72,code=sm_72"
+      - cmake --build . -j 12 || make VERBOSE=1
+      - ctest -j 1 --output-on-failure
+
+qmcpack-g++:
+  stage: test
+  script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cp -r qmcpack qmcpack.noupdate
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - echo $CI_REPOSITORY_URL
+    - echo $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
+    - cd ../qmcpack.noupdate
+    - cd build
+    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+    - cd ../../qmcpack
+    - cd build
+    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+
+qmcpack-clang++:
+  stage: test
+  script:
+    - export DEBIAN_FRONTEND=noninteractive
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y clang libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran pkg-config cmake make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev libomp-dev
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cp -r qmcpack qmcpack.noupdate
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - echo $CI_REPOSITORY_URL
+    - echo $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
+    - cd ../qmcpack.noupdate
+    - cd build
+    - export OMPI_CC=clang
+    - export OMPI_CXX=clang++
+    - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+    - cd ../../qmcpack
+    - cd build
+    - OMPI_CC=clang OMPI_CXX=clang++ cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+
+qmcpack-cuda-11.6-compileonly:
+    allow_failure: true
+    stage: test
+    script:
+      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+      - apt-get update -y
+      - apt-get install --no-install-recommends -y nvhpc-22-3 gfortran g++ git wget  make libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev libxml2-dev make numdiff pkg-config python3 python3-h5py python3-mpi4py python3-numpy python3-scipy
+      - g++ --version
+      - /opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc
+      - wget https://cmake.org/files/v3.22/cmake-3.22.4-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
+      - mkdir /opt/cmake
+      - sh cmake-3.22.4-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+      - cmake --version
+      - git clone https://github.com/QMCPACK/qmcpack.git
+      - cd qmcpack
+      - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+      - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+      - echo $CI_REPOSITORY_URL
+      - echo $CI_COMMIT_BRANCH
+      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
+      - cd build
+      - CUDACXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 ..
+      - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+      - ctest -R ppconvert --output-on-failure
+
+qmcpack-cuda-11.6-gcc9-compileonly:
+    allow_failure: true
+    image: debian:stable-backports
+    stage: test
+    script:
+      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+      - apt-get update -y
+      - apt-get install --no-install-recommends -y nvhpc-22-3 gfortran g++ g++-9 git wget  make libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev libxml2-dev make numdiff pkg-config python3 python3-h5py python3-mpi4py python3-numpy python3-scipy
+      - g++-9 --version
+      - /opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc --version
+      - wget https://cmake.org/files/v3.22/cmake-3.22.4-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
+      - mkdir /opt/cmake
+      - sh cmake-3.22.4-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+      - cmake --version
+      - git clone https://github.com/QMCPACK/qmcpack.git
+      - cd qmcpack
+      - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+      - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+      - echo $CI_REPOSITORY_URL
+      - echo $CI_COMMIT_BRANCH
+      - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git
+      - cd build
+      - CUDACXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 ..
+      - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+      - ctest -R ppconvert --output-on-failure
+
+qmcpack-icpc-runner:
+  stage: test
+  tags:
+    - intel_compiler
+  script:
+    - . /opt/intel/oneapi/setvars.sh
+    - export CXX="icpc"
+    - $CXX --version
+    - cmake --version
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - echo $CI_REPOSITORY_URL
+    - echo $CI_COMMIT_BRANCH
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git master
+    - cd build
+    - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
+    - make -output-sync=recurse -j 16 ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+
+qmcpack-cuda-runner:
+  allow_failure: true
+  stage: test
+  tags:
+    - intel_compiler
+  script:
+    - cmake --version
+    - git clone https://github.com/QMCPACK/qmcpack.git
+    - cp -r qmcpack qmcpack.noupdate
+    - cd qmcpack
+    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
+    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
+    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
+    - cd ../qmcpack.noupdate
+    - cd build
+    - CUDACXX=/usr/local/cuda/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+    - cd ../../qmcpack
+    - cd build
+    - CUDACXX=/usr/local/cuda/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations" ..
+    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - ctest -R ppconvert --output-on-failure
+    - ctest -R afqmc     --output-on-failure
+
+inq-g++-latest:
+  stage: test
+  script:
+    - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config cmake make git ca-certificates
+    - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
+    - cd inq
+    - cd external_libs/multi
+    - git fetch
+    - git checkout $CI_COMMIT_BRANCH
+    - cd ../..
+    - mkdir build && cd build
+    - ../configure --prefix=$HOME --disable-debug
+    - make
+    - make install
+    - ctest --output-on-failure
+
+
+#cuda-11.6:
+#    allow_failure: false
+#    stage: build
+#    script:
+#       - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+#       - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+#       - apt-get update -y
+#       - apt-get install --no-install-recommends -y cmake nvhpc-22-3 wget pkg-config make libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev libfftw3-dev
+#       - cmake --version
+#       - apt-cache madison nvhpc
+#       - /opt/nvidia/hpc_sdk/Linux_x86_64/2022/cuda/bin/nvcc --version
+#       - mkdir build && cd build
+#       - cmake .. -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 -DCMAKE_CUDA_ARCHITECTURES=61 -DCMAKE_CUDA_FLAGS="-gencode arch=compute_61,code=sm_61"
+#       - cmake --build . || make VERBOSE=1
+#       - ctest --output-on-failure
+
+
+inq-cuda-11.6-compileonly:
+    allow_failure: true
+    stage: test
+    script:
+      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+      - apt-get update && apt-get install --no-install-recommends -y --quiet 
+        ca-certificates cmake g++ git gfortran nvhpc-22-3 make libfftw3-dev libblas-dev libboost-serialization-dev libboost-test-dev libboost-timer-dev libboost-filesystem-dev liblapack-dev libopenmpi-dev pkg-config wget
+      - cmake --version
+      - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
+      - cd inq
+      - cd external_libs/multi
+      - git fetch
+      - git checkout $CI_COMMIT_BRANCH
+      - cd ../..
+      - mkdir build && cd build
+      - g++ --version
+      - /opt/nvidia/hpc_sdk/Linux_x86_64/2022/cuda/bin/nvcc --version
+      - CUDACXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 -DCMAKE_CUDA_ARCHITECTURES=70
+      - make silicon
+
+inq-cuda-11.6-gcc9-compileonly:
+    allow_failure: false
+    image: debian:stable-backports
+    stage: test
+    script:
+      - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates
+      - echo 'deb [trusted=yes] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | tee /etc/apt/sources.list.d/nvhpc.list
+      - apt-get update && apt-get install --no-install-recommends -y --quiet 
+        ca-certificates cmake g++ g++-9 git gfortran nvhpc-22-3 make libfftw3-dev libblas-dev libboost-serialization-dev libboost-test-dev libboost-timer-dev libboost-filesystem-dev liblapack-dev libopenmpi-dev pkg-config wget
+      - cmake --version
+      - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
+      - cd inq
+      - cd external_libs/multi
+      - git fetch
+      - git checkout $CI_COMMIT_BRANCH
+      - cd ../..
+      - mkdir build && cd build
+      - g++-9 --version
+      - /opt/nvidia/hpc_sdk/Linux_x86_64/2022/cuda/bin/nvcc --version
+      - CUDACXX=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/hpc_sdk/Linux_x86_64/22.3/cuda/11.6 -DCMAKE_CUDA_ARCHITECTURES=70
+      - make silicon
+
+#inq-cuda-11.4-compileonly:
+#    allow_failure: true
+#    image: nvidia/cuda:11.4.0-devel
 #    stage: test
 #    script:
-#        - . /opt/intel/oneapi/setvars.sh
-#        - export CXX="icpc"
-#        - apt-get update && apt-get install --no-install-recommends -y --quiet cmake make libboost-test-dev libblas-dev liblapack-dev libfftw3-dev
-#        - ln --symbolic --force . ../multi
-#        - $CXX -v
-#        - mkdir build && cd build
-#        - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#        - cmake --build . -- --quiet --no-print-directory
-#        - export MKL_VERBOSE=1
-#        - ctest --output-on-failure
-
-#icpc-memcheck-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
+#      - export DEBIAN_FRONTEND=noninteractive
+#      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config make git ca-certificates wget
+#      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose >/dev/null
+#      - mkdir /opt/cmake
+#      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+#      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+#      - cmake --version
+#      - git clone --recurse-submodules https://gitlab.com/npneq/inq.git
+#      - cd inq
+#      - cd external_libs/multi
+#      - git fetch
+#      - git checkout $CI_COMMIT_BRANCH
+#      - cd ../..
 #      - mkdir build && cd build
-#      - cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - ctest -T memcheck --output-on-failure || (cat Testing/Temporary/MemoryChecker.*.log && exit 0)
+#      - /usr/local/cuda/bin/nvcc -V
+#      - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
+#      - make silicon
 
-#icpc-std17-runner:
-#    stage: test
-#    tags:
-#      - intel_compiler
-#    script:
-#      - . /opt/intel/system_studio_2020/bin/compilervars.sh intel64
-#      - export CXX="icpc"
-#      - $CXX --version
-#      - mkdir build && cd build
-#      - cmake .. -DCMAKE_CXX_STANDARD=17 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
-#      - cmake --build . -j 12
-#      - export MKL_VERBOSE=1
-#      - ctest --output-on-failure
-
-inq-nvcc-ompi:
+inq-nvcc-ompi-runner:
   stage: test
   tags:
     - intel_compiler
@@ -726,77 +923,10 @@ inq-nvcc-ompi:
     - git checkout $CI_COMMIT_BRANCH
     - cd ../..
     - mkdir build && cd build
-    - /usr/local/cuda/bin/nvcc -V
-    - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --disable-debug `#--with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70`
-    - make -j8
+    - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --disable-debug --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70 `#--with-cuda-prefix=/usr/local/cuda`
+    - make -j8 -output-sync=recurse
     - make -j4 install
     - ctest --output-on-failure --timeout 600
     - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
     - rm -rf $PREFIX
-
-#blas&fft:
-#    stage: test
-#    script:
-#      - perl -pi -e 's/main/main\ contrib\ non-free/g' /etc/apt/sources.list
-#      - apt update --quiet
-#      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends -f-assume-yes --quiet libboost-test-dev libboost-timer-dev libtbb-dev libboost-serialization-dev libboost-iostreams-dev librange-v3-dev valgrind
-#      - DEBIAN_FRONTEND=noninteractive apt install --no-install-recommends --assume-yes --quiet clang pkg-config libblas-dev libblas64-dev libfftw3-dev nvidia-cuda-toolkit
-#      - ln --symbolic --force . ../multi
-#      - export CXXX="clang++ -x c++"
-#      - export CXXFLAGS="-Wall -Wextra -Wpedantic -O3 -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas`"
-#      - export CXX="${CXXX} ${CXXFLAGS}"
-#      - $CXX --version
-#      - cd adaptors/blas
-#      - for a in ./*.hpp; do echo $a; $CXX $a || exit; done;
-#      - cd tests
-#      - for a in ./*.cpp; do echo $a; $CXX $a || exit; done;
-#      - cd ..
-#      - cd ../..
-#      - cd adaptors
-#      - sh ./fftw.hpp
-#      - $CXX fft.hpp
-
-#blas&fftGPU-11:
-#    stage: build
-#    tags:
-#      - cuda_gpu
-#    stage: test
-#    script:
-#      - export PATH=/usr/local/cuda-11.0/bin:$PATH #export PATH=/usr/local/cuda/bin:$PATH
-#      - export LD_LIBRARY_PATH=/usr/local/cuda-11.0/lib64:$LD_LIBRARY_PATH
-#      - export CXXX="clang++ -x c++"
-#      - export CXXFLAGS="`#-Wall -Wextra -Wpedantic` -Ofast -Wl,-rpath=/usr/local/cuda/lib64 -L/usr/local/cuda-11.0/lib64 -I/usr/local/cuda-11.0/include -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas` "
-#      - export CXX="${CXXX} ${CXXFLAGS}"
-#      - $CXX --version
-#      - cd adaptors/blas
-#      - for a in ./*.hpp; do echo $a; sh $a || exit; echo "\n"; done;
-#      - cd tests
-#      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
-#      - cd ..
-#      - cd ../..
-#      - cd adaptors
-#      - sh ./fftw.hpp
-#      - sh ./fft.hpp
-
-#blas&fftGPU:
-#    stage: build
-#    tags:
-#      - cuda_gpu
-#    stage: test
-#    script:
-#      - export PATH=/usr/local/cuda/bin:$PATH #export PATH=/usr/local/cuda/bin:$PATH
-#      - export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-#      - export CXXX="clang++ -x c++"
-#      - export CXXFLAGS="`#-Wall -Wextra -Wpedantic` -Ofast -Wl,-rpath=/usr/local/cuda/lib64 -L/usr/local/cuda/lib64 -I/usr/local/cuda/include -lcudart -lfftw3 -lcublas -lcufft -lboost_timer -lboost_unit_test_framework `pkg-config --libs blas` "
-#      - export CXX="${CXXX} ${CXXFLAGS}"
-#      - $CXX --version
-#      - cd adaptors/blas
-#      - for a in ./*.hpp; do echo $a; sh $a || exit; echo "\n"; done;
-#      - cd tests
-#      - for a in ./*.cpp; do echo $a; sh $a || exit; echo "\n"; done;
-#      - cd ..
-#      - cd ../..
-#      - cd adaptors
-#      - sh ./fftw.hpp
-#      - sh ./fft.hpp
 

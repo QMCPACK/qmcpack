@@ -7,7 +7,7 @@
 
 #include<array>
 
-#include "../array_ref.hpp"
+#include "multi/array_ref.hpp"
 
 namespace multi = boost::multi;
 
@@ -41,21 +41,24 @@ template<class T> class ptr : public std::iterator_traits<T*> { // minimalistic 
 
 template<class T> class ptr2 : public std::iterator_traits<T*> { // minimalistic pointer
 	T* impl_;
+
  public:
 	constexpr explicit ptr2(T* impl) : impl_{impl} {}
 	constexpr explicit ptr2(ptr<T> const& p) : impl_{p.impl_} {}
 	template<class U, class = std::enable_if_t<std::is_convertible<U*, T*>{}> >
 	// cppcheck-suppress noExplicitConstructor
 	ptr2(ptr2<U> const& other) : impl_{other.impl_} {} // NOLINT(google-explicit-constructor, hicpp-explicit-conversions): ptr<T> -> ptr<T const>
+
 	using typename std::iterator_traits<T*>::reference;
 	using typename std::iterator_traits<T*>::difference_type;
+
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, fuchsia-trailing-return): operator* used because this class simulates a pointer, trailing return helps
 	constexpr auto operator*() const -> reference {return *impl_;}
 
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
-	constexpr auto operator+(typename ptr2::difference_type n) const {return ptr2{impl_ + n};}
+	constexpr auto operator+(difference_type n) const {return ptr2{impl_ + n};}
 	// NOLINTNEXTLINE(fuchsia-overloaded-operator, cppcoreguidelines-pro-bounds-pointer-arithmetic): operator+ is overloaded to simulate a pointer
-	constexpr auto operator-(typename ptr2::difference_type n) const {return ptr2{impl_ - n};}
+	constexpr auto operator-(difference_type n) const {return ptr2{impl_ - n};}
 
 //	T& operator[](std::ptrdiff_t n) const{return impl_[n];} // optional
 	using default_allocator_type = std::allocator<T>;
