@@ -217,6 +217,18 @@ public:
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
   }
 
+//  template<class MatA, class MatB, class MatC, class TVec>
+  void BatchedMixedDensityMatrix(
+								std::vector<boost::multi::basic_array_ptr<boost::multi::basic_array<std::complex<double>, 2, device::device_pointer<std::complex<double> >, boost::multi::layout_t<2, long int> >, boost::multi::layout_t<2, long int> >, std::allocator<boost::multi::basic_array_ptr<boost::multi::basic_array<std::complex<double>, 2, device::device_pointer<std::complex<double> >, boost::multi::layout_t<2, long int> >, boost::multi::layout_t<2, long int> > > >&,
+								std::vector<boost::multi::basic_array_ptr<boost::multi::basic_array<std::complex<double>, 2, device::device_pointer<std::complex<double> >, boost::multi::layout_t<2, long int> >, boost::multi::layout_t<2, long int> >, std::allocator<boost::multi::basic_array_ptr<boost::multi::basic_array<std::complex<double>, 2, device::device_pointer<std::complex<double> >, boost::multi::layout_t<2, long int> >, boost::multi::layout_t<2, long int> > > >&,
+								boost::multi::array<std::complex<double>, 3, device::device_allocator<std::complex<double> > >&,
+								std::complex<double>&, 
+								boost::multi::array<std::complex<double>, 1, device::device_allocator<std::complex<double> > >&,
+								bool = false, bool = true)
+  {
+    APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
+  }
+
   template<class MatA, class MatB, class MatC, class TVec>
   void BatchedDensityMatrices(const std::vector<MatA>& hermA,
                               std::vector<MatB>& Bi,
