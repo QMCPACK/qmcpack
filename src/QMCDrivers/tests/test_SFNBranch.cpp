@@ -37,13 +37,11 @@ public:
   SetupSFNBranch(Communicate* comm)
   {
     comm_ = comm;
-    emb_  = std::make_unique<EstimatorManagerNew>(comm_);
   }
 
   SetupSFNBranch()
   {
     comm_ = OHMMS::Controller;
-    emb_  = std::make_unique<EstimatorManagerNew>(comm_);
   }
 
   std::unique_ptr<SFNBranch> operator()(ParticleSet& pset,
