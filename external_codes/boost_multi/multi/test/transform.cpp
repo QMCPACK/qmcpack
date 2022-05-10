@@ -1,10 +1,11 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// © Alfredo Correa 2019-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi transformed array"
+#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 //#include<boost/iterator/transform_iterator.hpp> //might need -DBOOST_RESULT_OF_USE_DECLTYPE
 
@@ -34,20 +35,20 @@ class involuted{
 	involuted(involuted&&) noexcept = default;
 	~involuted() = default;
 	involuted(involuted const&) = default;
-	auto operator=(involuted const&)          -> involuted& = default;  // NOLINT(fuchsia-trailing-return): simulate reference
-	auto operator=(involuted&&     ) noexcept -> involuted& = default;  // NOLINT(fuchsia-trailing-return): simulate reference
+	auto operator=(involuted const&) -> involuted& = default; // NOLINT(fuchsia-trailing-return): simulate reference
+	auto operator=(involuted&&     ) noexcept -> involuted& = default; // NOLINT(fuchsia-trailing-return): simulate reference
 #endif
-	auto operator=(decay_type const& other) -> involuted& {  // NOLINT(fuchsia-trailing-return): simulate reference
+	auto operator=(decay_type const& other) -> involuted& { //  NOLINT(fuchsia-trailing-return): simulate reference
 		r_ = Involution{}(other);
 		return *this;
 	}
 	constexpr explicit operator decay_type() const{return Involution{}(r_);}
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
-	constexpr auto operator&()&& {return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_};}  // NOLINT(runtime/operator)
+	constexpr auto operator&()&& {return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_};} // NOLINT(runtime/operator)
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
 	constexpr auto operator&() & {return involuter<Involution, decltype(&std::declval<Ref>())>{Involution{}, &r_};}  // NOLINT(runtime/operator)
 	// NOLINTNEXTLINE(google-runtime-operator): simulated reference
-	constexpr auto operator&() const&{return involuter<Involution, decltype(&std::declval<decay_type const&>())>{Involution{}, &r_};}  // NOLINT(runtime/operator)
+	constexpr auto operator&() const&{return involuter<Involution, decltype(&std::declval<decay_type const&>())>{Involution{}, &r_};} // NOLINT(runtime/operator)
 
 	auto operator==(involuted  const& other) const {return r_ == other.r_;}
 	auto operator!=(involuted  const& other) const {return r_ == other.r_;}
@@ -57,7 +58,7 @@ class involuted{
 };
 
 template<class Involution, class It>
-class involuter {
+class involuter{
 	It it_;
 	template<class, class> friend class involuter;
  public:
@@ -83,10 +84,14 @@ class involuter {
 	constexpr auto operator->() const {return pointer{&*it_};}
 };
 
+//#if defined(__cpp_deduction_guides)
+//template<class T, class F> involuted(F, T&&)->involuted<F, T const>;
+//#endif
+
 template<class Ref> using negated = involuted<std::negate<>, Ref>;
 template<class It>  using negater = involuter<std::negate<>, It >;
 
-class basic_conjugate_t {
+class basic_conjugate_t{
 	template<int N> struct prio : std::conditional_t<N!=0, prio<N-1>, std::true_type>{};
 	template<class T> static auto _(prio<0>/**/, T const& t) DECLRETURN(std::conj(t))
 	template<class T> static auto _(prio<1>/**/, T const& t) DECLRETURN(     conj(t))
@@ -94,15 +99,15 @@ class basic_conjugate_t {
 	template<class T> static auto _(prio<3>/**/, T const& t) DECLRETURN(   t.conj( ))
  public:
 	template<class T> static auto _(T const& t) DECLRETURN(_(prio<3>{}, t))
-};
+} basic_conjugate;
 
 template<class T = void>
-struct conjugate : private basic_conjugate_t {
+struct conjugate : private basic_conjugate_t{
 	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
 };
 
 template<>
-struct conjugate<> : private basic_conjugate_t {
+struct conjugate<> : private basic_conjugate_t{
 	template<class T>
 	constexpr auto operator()(T const& arg) const DECLRETURN(_(arg))
 };
@@ -200,7 +205,7 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 		auto&& mA_ref = A.static_array_cast<double, test::negater<double*>>();
 		BOOST_REQUIRE( mA_ref[1][1] == mA[1][1] );
 	}
-	{
+	 {
 	#if defined(__cpp_deduction_guides)
 		double Z[4][5] {  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : testing legacy types
 			{ 0,  1,  2,  3,  4},
@@ -216,10 +221,10 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 		{
 			using complex = std::complex<double>;
 			multi::array<complex, 2> d2D = {
-				{ { 0., 3.}, { 1., 9.}, { 2., 4.}, { 3., 0.}, { 4., 0.} },
-				{ { 5., 0.}, { 6., 3.}, { 7., 5.}, { 8., 0.}, { 9., 0.} },
-				{ { 1., 4.}, { 9., 1.}, {12., 0.}, {13., 0.}, {14., 0.} },
-				{ {15., 0.}, {16., 0.}, {17., 0.}, {18., 0.}, {19., 0.} }
+				{ {0., 3.}, { 1., 9.}, { 2., 4.},  3.,  4.},
+				{  5.     , { 6., 3.}, { 7., 5.},  8.,  9.},
+				{ {1., 4.}, { 9., 1.},  12.     , 13., 14.},
+				{  15.    ,  16.    ,   17.     , 18., 19.}
 			};
 
 			auto&& d2Dreal = d2D.reinterpret_array_cast<double>();
@@ -231,10 +236,9 @@ BOOST_AUTO_TEST_CASE(transformed_array) {
 			auto&& d2DrealT = rotated(d2D).reinterpret_array_cast<double>();
 			BOOST_REQUIRE( d2DrealT[2][1] == 7. );
 
-			multi::array<double, 2> d2Dreal_copy = d2D.template reinterpret_array_cast<double>();
-			BOOST_REQUIRE( d2Dreal_copy == d2Dreal );
+			multi::array<double, 2> d2real_copy = d2D.template reinterpret_array_cast<double>();//d2Dreal;
 		}
-		{
+		 {
 			using complex = std::complex<double>;
 			constexpr auto const I = complex{0., 1.};
 			multi::array<complex, 2> A = {
