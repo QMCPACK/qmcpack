@@ -2204,5 +2204,32 @@ if(NOT QMC_CUDA)
       0
       SCALAR_VALUES
       DET_DIAMOND_PARAM)
+
+    list(APPEND DET_DIAMOND_PARAM_LEGACY uu_0 1.1546e-08 0.00001)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY uu_1 5.9577e-06 0.00010)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY ud_0 -1.0951e-03 0.00001)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY ud_1 -7.7416e-03 0.00001)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY eC_2 1.8608 0.00002)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY eC_3 4.7107 0.00002)
+
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      deterministic-diamondC_1x1x1_pp-param-grad-legacy-driver
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      PREFIX
+      det_qmc_short_param_grad.param
+      INPUT_FILE
+      det_qmc_param_grad_legacy_driver.xml
+      PROCS
+      1
+      THREADS
+      1
+      SERIES
+      0
+      EQUILIBRATION
+      0
+      SCALAR_VALUES
+      DET_DIAMOND_PARAM_LEGACY)
   endif()
 endif()

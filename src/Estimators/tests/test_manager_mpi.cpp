@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -13,7 +13,7 @@
 #include "Message/Communicate.h"
 
 #include "Platforms/Host/OutputManager.h"
-
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerNew.h"
 #include "Estimators/tests/EstimatorManagerNewTest.h"
 
@@ -50,8 +50,8 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
   em.PropertyCache[em.weightInd] = block_weight;
   em.PropertyCache[em.cpuInd]    = 1.0;
 
-  RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
-  em.collectScalarEstimators(est_list);
+  RefVector<ScalarEstimatorBase> est_lists(makeRefVector<ScalarEstimatorBase>(estimators_));
+  em.collectMainEstimators(est_lists);
 
   unsigned long accepts = 4;
   unsigned long rejects = 1;
@@ -65,9 +65,10 @@ TEST_CASE("EstimatorManagerNew::makeBlockAverages()", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
   int num_ranks  = c->size();
-  testing::EstimatorManagerNewTest embt(c, num_ranks);
+  QMCHamiltonian ham;
+  testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
-  embt.fakeSomeScalarSamples();
+  embt.fakeMainScalarSamples();
   embt.testMakeBlockAverages();
 
   // right now only rank() == 0 gets the actual averages
@@ -88,7 +89,8 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
   int num_ranks  = c->size();
-  testing::EstimatorManagerNewTest embt(c, num_ranks);
+  QMCHamiltonian ham;
+  testing::EstimatorManagerNewTest embt(ham, c, num_ranks);
 
   embt.fakeSomeOperatorEstimatorSamples(c->rank());
   std::vector<QMCTraits::RealType> good_data = embt.generateGoodOperatorData(num_ranks);
@@ -99,8 +101,8 @@ TEST_CASE("EstimatorManagerNew::reduceOperatorestimators()", "[estimators]")
 
   if (c->rank() == 0)
   {
-    auto& test_data          = embt.get_operator_data();
-      
+    auto& test_data = embt.get_operator_data();
+
     QMCTraits::RealType norm = 1.0 / static_cast<QMCTraits::RealType>(num_ranks);
     for (size_t i = 0; i < test_data.size(); ++i)
     {

@@ -30,6 +30,9 @@
 
 namespace qmcplusplus
 {
+
+class GradientTest;
+
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -88,6 +91,11 @@ private:
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of parameter gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -188,6 +196,8 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
+
+  bool doGradientTest;
 
   // Output Hamiltonian and overlap matrices
   bool do_output_matrices_;
