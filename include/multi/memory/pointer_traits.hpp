@@ -7,9 +7,10 @@
 #include<memory>
 #include<type_traits> // std::conditional_t
 
-namespace boost::multi {
+namespace boost{
+namespace multi{
 
-template<std::size_t I> struct priority_me : std::conditional_t<I==0, std::true_type, priority_me<I-1>>{};
+template<std::size_t I> struct priority_me : std::conditional_t<I==0, std::true_type, struct priority_me<I-1>>{};
 
 template<class Pointer>  auto dat_aux(priority_me<0>, Pointer ) -> std::allocator<typename std::iterator_traits<Pointer>::value_type>;
 template<class T>        auto dat_aux(priority_me<1>, T*      ) -> std::allocator<typename std::iterator_traits<T*>::value_type>;
@@ -20,5 +21,7 @@ struct pointer_traits/*, typename Pointer::default_allocator_type>*/ : std::poin
 	using default_allocator_type = decltype(dat_aux(priority_me<2>{}, std::declval<Pointer>()));
 };
 
-} // end namespace boost::multi
+} // end namespace multi
+} // end namespace boost
 #endif
+

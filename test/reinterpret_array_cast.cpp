@@ -7,7 +7,8 @@ $CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
+//#include "../adaptors/cuda.hpp"
 
 #include<complex>
 #include<numeric>
@@ -69,7 +70,7 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_tuple_as_extra_dimension) {
 	}
 
 	 {
-		multi::array<vector3, 2> const A({4, 5}, vector3{{1., 2., 3.}} );
+		multi::array<vector3, 2> const A({4, 5}, vector3{1., 2., 3.});
 
 		BOOST_REQUIRE( dimensionality(A.reinterpret_array_cast<double>(3)) == 3 );
 		BOOST_REQUIRE( A.reinterpret_array_cast<double>(3).num_elements() == A.num_elements()*3 );

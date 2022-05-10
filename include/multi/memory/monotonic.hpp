@@ -14,40 +14,28 @@ $CXX $0 -o $0x&&$0x&&rm $0x;exit
 
 namespace boost {
 namespace multi {
-
-// template<class T> auto raw_pointer_cast(T* p) -> T* {return p;}  // with the meaning of std::to_address
-
 namespace memory {
 
-template<class T>
-T* align_up(T* ptr, std::size_t bytes = alignof(std::max_align_t)) {
-//	return
-//		reinterpret_cast<T*>(
-//			  (reinterpret_cast<std::uintptr_t>(ptr) + (bytes-1))
-//			& ~(bytes-1)
-//		)
-//	;
-	using uintptr_t = std::uint64_t;
-	static_assert( sizeof(uintptr_t) == sizeof(T*), "this function works in 64 bit systems" );
-	return reinterpret_cast<T*>( bytes * ((reinterpret_cast<uintptr_t&>(ptr) + (bytes - 1)) / bytes) );
+template<class Ptr> // TODO test with actual fancy ptr
+Ptr align_up(Ptr p, std::size_t align = alignof(std::max_align_t)) {
+	using multi::to_address;
+	auto p_(to_address(p));
+	static_assert( sizeof(*p_)==1 , "!"); // crash
+	auto q_ = reinterpret_cast<decltype(p_)>(
+		(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
+		& ~(align-1)
+	);
+	return p+std::distance(p_,q_);
 }
 
-template<class Ptr>  // TODO test with actual fancy ptr
-constexpr
-Ptr align_up(Ptr ptr, std::size_t bytes = alignof(std::max_align_t)) {
-	using multi::to_address;
-	auto p_(to_address(ptr));
-////  using multi::raw_pointer_cast;
-////  auto p_{raw_pointer_cast(p)};
-
-	static_assert( sizeof(*p_)==1 , "!"); // crash
-//	auto q_ = reinterpret_cast<decltype(p_)>(
-//		(reinterpret_cast<std::uintptr_t>(p_) + (align-1))
-//		& ~(align-1)
-//	);
-	auto q_ = align_up(p_, bytes);
-	return ptr + std::distance(p_, q_);
-//	return reinterpret_cast<Ptr&>( bytes * ((reinterpret_cast<std::uintptr_t&>(ptr) + (bytes - 1)) / bytes) );  // maybe using uint64_t and static_assert sizeof(void*) == uint64_t
+template<class T>
+T* align_up(T* p, std::size_t align = alignof(std::max_align_t)) {
+	return
+		reinterpret_cast<T*>(
+			  (reinterpret_cast<std::uintptr_t>(p) + (align-1)) 
+			& ~(align-1)
+		)
+	;
 }
 
 template<typename Ptr = byte*, std::size_t Align = alignof(std::max_align_t)>

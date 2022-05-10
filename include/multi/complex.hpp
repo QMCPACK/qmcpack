@@ -9,7 +9,7 @@
 #include<complex>
 #include<utility>  // for forward
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
 namespace multi {
 
 constexpr class adl_conj_t {

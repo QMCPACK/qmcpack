@@ -5,7 +5,7 @@
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 #include<numeric> // iota
 
@@ -104,54 +104,3 @@ BOOST_AUTO_TEST_CASE(subrange_assignment) {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(subrange_ranges_sliced_1D) {
-	multi::array<double, 1> A = {1., 2., 3., 4.};
-	auto&& Ab = A.sliced(1, 3);
-	BOOST_REQUIRE( &Ab[0] == &A[1] );
-
-	auto&& Ab2 = Ab;
-	BOOST_REQUIRE( &Ab2[0] == &A[1] );
-
-//  auto Abb = Ab;  // not allowed
-//	auto Abb = std::move(Ab); (void)Abb;
-
-	auto const& Abc = A.sliced(1, 3);
-	BOOST_REQUIRE( &Abc[0] == &A[1] );
-
-	auto Aba = A.sliced(1, 3);
-	BOOST_REQUIRE( &Aba[0] == &A[1] );
-}
-
-BOOST_AUTO_TEST_CASE(subrange_ranges_sliced) {
-	multi::array<double, 2> A = {
-		{1., 2., 3., 4.},
-		{5., 6., 7., 8.},
-		{9., 0., 1., 2.},
-		{3., 4., 5., 6.}
-	};
-	auto&& Ab = A.sliced(0, 3);
-	BOOST_REQUIRE( &Ab[2][2] == &A[2][2] );
-
-	auto const& Abc = A.sliced(0, 3);
-	BOOST_REQUIRE( &Abc[2][2] == &A[2][2] );
-
-	auto        AB = A.sliced(0, 3);
-	BOOST_REQUIRE( &AB[2][2] == &A[2][2] );
-}
-
-BOOST_AUTO_TEST_CASE(subrange_ranges) {
-	multi::array<double, 2> A = {
-		{1., 2., 3., 4.},
-		{5., 6., 7., 8.},
-		{9., 0., 1., 2.},
-		{3., 4., 5., 6.}
-	};
-	auto&& Ab = A({0, 3}, {0, 3});
-	BOOST_REQUIRE( &Ab[2][2] == &A[2][2] );
-
-	auto const& Abc = A({0, 3}, {0, 3});
-	BOOST_REQUIRE( &Abc[2][2] == &A[2][2] );
-
-	auto AB = A({0, 3}, {0, 3});
-	BOOST_REQUIRE( &AB[2][2] == &A[2][2] );
-}
