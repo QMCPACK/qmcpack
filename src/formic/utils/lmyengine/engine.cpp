@@ -1529,6 +1529,442 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
 }
 
+//Function for setting the size of the derivative ratio histories according to the total number of optimizable parameters and the number of samples per process
+template<typename S>
+void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams,int numSamples)
+{
+
+    le_der_rat_history.reset(numSamples, numParams+1);
+    der_rat_history.reset(numSamples, numParams+1);
+
+}
+
+//Function for storing a sample (local energy and the sets of derivative ratios)
+template<typename S>
+void cqmc::engine::LMYEngine<S>::store_sample(std::vector<double> & der_rat_samp,std::vector<double> & le_der_samp,std::vector<double> & ls_der_samp,double vgs_samp,double lotf_samp,double weight_samp,int sample_count)
+{
+
+
+
+    int my_rank = formic::mpi::rank();
+    for(int i = 0; i < le_der_samp.size();i++)
+    {
+        le_der_rat_history.at(sample_count,i) = le_der_samp[i];
+        der_rat_history.at(sample_count,i) = der_rat_samp[i];
+    }
+
+
+    vgs_history.push_back(vgs_samp);
+    lotf_history.push_back(lotf_samp);
+    weight_history.push_back(weight_samp);
+}
+
+//Function for constructing matrices form stored samples
+//It uses the engine's existing take_sample function, which is where the matrices are actually built
+//This function only passes along the derivative ratios that are stored or a subset of them if parameters are being filtered
+template<typename S>
+void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
+{
+    //Number of samples on a process
+    //int num_samples = der_rat_history.size();
+
+    int num_samples = der_rat_history.rows();
+    int der_vec_len = der_rat_history.cols();
+    int my_rank = formic::mpi::rank();
+
+    if(my_rank == 0)
+    {
+        std::cout << "Inside buildMatricesFromDerivatives, num_samples: " << num_samples << std::endl;
+
+    }
+    for(int i = 0; i < num_samples; i++)
+    {
+        std::vector<double> der_rat_samp;
+        std::vector<double> le_der_samp;
+
+        for(int j = 0;j < der_vec_len;j++)
+        {
+            der_rat_samp.push_back(der_rat_history.at(i,j));
+            le_der_samp.push_back(le_der_rat_history.at(i,j));
+        }
+
+        double vgs = vgs_history[i];
+        double lotf = lotf_history[i];
+        double weight = weight_history[i];
+
+        if(filter_param_)
+        {
+            std::vector<double> reduced_der_rat_samp;
+            std::vector<double> reduced_le_der_samp;
+
+            reduced_der_rat_samp.push_back(der_rat_samp[0]);
+            reduced_le_der_samp.push_back(le_der_samp[0]);
+
+            for(int i = 1; i< der_rat_samp.size();i++)
+            {
+                if(parameterSettings[i-1] == true)
+                {
+
+                    reduced_der_rat_samp.push_back(der_rat_samp[i]);
+                    reduced_le_der_samp.push_back(le_der_samp[i]);
+                }
+            }
+
+
+            //Need to add guiding function or change signature
+            //this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,lotf,weight);
+
+        }
+        else
+         {
+            //this->take_sample(der_rat_samp,le_der_samp,le_der_samp,vgs,lotf,weight);
+            }
+
+
+    }
+    this->sample_finish();
+
+}
+
+//Function for clearing stored samples
+template<typename S>
+void cqmc::engine::LMYEngine<S>::clear_histories()
+{
+    int my_rank = formic::mpi::rank();
+
+        der_rat_history.clear();
+        le_der_rat_history.clear();
+        vgs_history.clear();
+        lotf_history.clear();
+        weight_history.clear();
+        if(my_rank == 0)
+        {
+            std::cout << "Matrices have been built, clearing stored samples for this iteration" << std::endl;
+        }
+
+
+}
+
+template<typename S>
+void cqmc::engine::LMYEngine<S>::copyParameterSettings(std::vector<bool> inputSettings)
+{
+    parameterSettings.clear();
+for(int i = 0; i < inputSettings.size(); i++)
+{
+    parameterSettings.push_back(inputSettings[i]);
+
+}
+}
+
+//Function for changing the parameter number used by the engine
+template<typename S>
+void cqmc::engine::LMYEngine<S>::resetParamNumber(int new_num)
+{
+    
+    int my_rank = formic::mpi::rank();
+
+_num_params=new_num;
+
+_mbuilder.resetParamNumber(new_num);
+
+//formic::VarDeps real_vdeps(new_num, std::vector<double>());
+//_dep_ptr = real_vdeps;
+
+int num_shift = _shift_scale.size();
+  
+  // size vector storing wavefunction update variable correctly
+  int correct_vf_var_size = (new_num+1) * num_shift;
+  if (_vf_var.size() != correct_vf_var_size)
+  {  
+     if(my_rank ==0)
+     {  
+        std::cout << "Should be resizing _vf_var vector for storing updates for different shifts, new size is: " << correct_vf_var_size << std::endl;
+     } 
+    _vf_var.resize(correct_vf_var_size);
+  
+  }
+}
+
+template<typename S>
+void cqmc::engine::LMYEngine<S>::store_blocked_lm_info(int nblock,int nkeps,std::vector<formic::ColVec<double> > & old_updates)
+{
+_nblocks = nblock;
+_nkeps = nkeps;
+
+temp_old_updates = old_updates;
+
+}
+
+//Function for filtering parameters when samples are stored in the engine
+template<typename S>
+void cqmc::engine::LMYEngine<S>::selectParameters()
+{
+int my_rank = formic::mpi::rank();
+
+
+int num_samples = der_rat_history.rows();
+int num_all_params = der_rat_history.cols()-1;
+
+parameterSettings.resize(num_all_params);
+
+int new_param_num = 0;
+
+std::vector<double> grad_mean_list;
+std::vector<double> grad_sigma_list;
+
+std::vector<double> temp_e_list;
+std::vector<double> numerHistory;
+std::vector<double> denomHistory;
+
+
+double numerVal;
+double denomVal;
+
+double numerSigma;
+double denomSigma;
+
+for(int j = 0; j < num_samples; j++)
+{
+    double etmp = le_der_rat_history.at(j,0);
+
+    double vgs = vgs_history[j];
+
+    temp_e_list.push_back(etmp*vgs);
+
+if(!_ground)
+{
+    double numer_val = (_hd_lm_shift - etmp)*vgs;
+    double denom_val = (_hd_lm_shift * _hd_lm_shift - 2 * _hd_lm_shift * etmp + etmp * etmp)*vgs;
+
+    numerHistory.push_back(numer_val);
+    denomHistory.push_back(denom_val);
+
+}
+
+}
+
+//std::vector<double> energy_results = computeSigma_helper(weight_history, temp_e_list, weight_history);
+std::vector<double> energy_results = computeSigma_helper(weight_history, temp_e_list, vgs_history);
+
+double mean_energy = energy_results[0];
+
+if(!_ground)
+{
+    std::vector<double> numerResults = computeSigma_helper(weight_history,numerHistory,vgs_history);
+    std::vector<double> denomResults = computeSigma_helper(weight_history,denomHistory,vgs_history);
+    std::vector<double> targetResults = computeSigma_helper(weight_history,numerHistory,denomHistory);
+
+    numerVal = numerResults[0];
+    denomVal = denomResults[0];
+
+    numerSigma = numerResults[1];
+    denomSigma = denomResults[1];
+
+}
+
+if(my_rank == 0)
+{
+
+std::cout << "Inside selectParameters" << std::endl;
+std::cout << "Energy is: " << mean_energy << std::endl;
+if(!_ground)
+    std::cout<< "Numerator Val: " << numerVal << " Denominator Val: " << denomVal << " Target Val: " << numerVal/denomVal << std::endl;
+}
+for(int i = 1; i< num_all_params+1; i ++)
+{
+
+std::vector<double> param_numer_history;
+std::vector<double> param_denom_history;
+int sample_counter = 0;
+
+
+    for(int j = 0; j < num_samples; j++)
+    {
+        double param_le_der = le_der_rat_history.at(j,i);
+        double param_der_rat = der_rat_history.at(j,i);
+        double vgs = vgs_history[j];
+        double etmp = le_der_rat_history.at(j,0);
+
+        if(_ground)
+        {
+            param_numer_history.push_back(param_le_der*vgs);
+            param_denom_history.push_back(param_der_rat*vgs);
+
+
+
+          }
+        else
+        {
+           double numer_der_term = 2*(_hd_lm_shift*param_der_rat - param_le_der);
+           double denom_der_term = 2*((_hd_lm_shift*param_der_rat - param_le_der)* (_hd_lm_shift - etmp));
+
+            param_numer_history.push_back(numer_der_term);
+            param_denom_history.push_back(denom_der_term);
+
+        }
+
+
+    }
+
+    //After loop over samples, compute average mean and sigma for the parameter derivative
+           double mean_deriv;
+            double deriv_sigma;
+            double ratio;
+        if(_ground)
+        {
+
+            std::vector<double> first_term_results = computeSigma_helper(weight_history, param_numer_history, vgs_history);
+            std::vector<double> second_term_results = computeSigma_helper(weight_history, param_denom_history, vgs_history);
+
+            mean_deriv = first_term_results[0] - mean_energy*second_term_results[0];
+
+            if(my_rank == 0)
+            {
+                //std::cout << "Deriv parts, first_term_results[0]: " << first_term_results[0] << ", mean_energy: " << mean_energy << " ,second_term_results[0]: " << second_term_results[0] << std::endl;
+            }
+
+            deriv_sigma = std::sqrt(first_term_results[1]*first_term_results[1] + second_term_results[1]*second_term_results[1]);
+
+            grad_mean_list.push_back(mean_deriv);
+            grad_sigma_list.push_back(deriv_sigma);
+
+            ratio = mean_deriv/deriv_sigma;
+
+
+
+
+        }
+//Excited State Case
+        else
+        {
+            std::vector<double> results = computeSigma_helper(weight_history, param_numer_history, vgs_history);
+            std::vector<double> secondResults = computeSigma_helper(weight_history, param_denom_history, vgs_history);
+
+
+            double derivNumer = results[0]*denomVal - secondResults[0]*numerVal;
+            double derivDenom = denomVal*denomVal;
+            mean_deriv = derivNumer/derivDenom;
+            //app_log() << "descentDeriv, should match mean: " << descentDeriv << std::endl;
+
+            double numerVar_term1 = results[0]*denomVal*results[0]*denomVal* ( (denomSigma/denomVal)*(denomSigma/denomVal) + (results[1]/results[0])*(results[1]/results[0]) );
+            double numerVar_term2 = secondResults[0]*numerVal*secondResults[0]*numerVal* ( (numerSigma/numerVal)*(numerSigma/numerVal) + (secondResults[1]/secondResults[0])*(secondResults[1]/secondResults[0]) );
+            double numerVar_tot = numerVar_term1 + numerVar_term2;
+
+
+            double total_var = mean_deriv*mean_deriv * ( numerVar_tot/(derivNumer*derivNumer) + (2*denomSigma*denomSigma)/(derivDenom*derivDenom));
+
+             deriv_sigma = std::sqrt(total_var);
+
+            grad_mean_list.push_back(mean_deriv);
+            grad_sigma_list.push_back(deriv_sigma);
+
+
+            ratio = mean_deriv/deriv_sigma;
+        }
+if(my_rank == 0)
+{
+        std::cout << "Mean for Parameter #" << i-1 << " : " << mean_deriv;
+        std::cout << " Sigma for Parameter #" << i-1 << " : " << deriv_sigma;
+        std::cout << " Ratio for Parameter #" << i-1 << " : " << std::abs(ratio);
+        std::cout << " Reciprocal Ratio for Parameter #" << i-1 << " : " << 1/std::abs(ratio) << std::endl;
+}
+
+            if(std::abs(ratio) < ratio_threshold_)
+            {
+               parameterSettings[i-1] = false;
+
+            }
+            else
+            {
+
+                parameterSettings[i-1] = true;
+                new_param_num++;
+              }
+
+
+
+
+}
+
+if(my_rank == 0)
+{
+    std::cout << "Number of Parameters left on: " << new_param_num << std::endl;
+}
+resetParamNumber(new_param_num);
+const formic::VarDeps new_vdeps(new_param_num, std::vector<double>());
+this->var_deps_ptr_update(&new_vdeps);
+
+
+
+}
+
+//Helper function for computing mean derivatives and standard deviation for parameter filtration
+template<typename S>
+std::vector<double> cqmc::engine::LMYEngine<S>::computeSigma_helper(std::vector<double> weights, std::vector<double> numerSamples, std::vector<double> denomSamples)
+{
+double numSamples = weights.size();
+    
+    //std::vector<double> y(7);
+double y[7];
+  y[0] = 0.0;                   // normalization constant
+  y[1] = 0.0;                   // mean of numerator
+  y[2] = 0.0;                   // mean of denominator
+  y[3] = 0.0;                   // mean of the square of the numerator terms
+  y[4] = 0.0;                   // mean of the square of the denominator terms
+  y[5] = 0.0;                   // mean of the product of numerator times denominator
+  y[6] = double(numSamples); // number of samples
+  
+  for (int i = 0; i < numSamples; i++)
+  { 
+    double n      = numerSamples[i];
+    double d      = denomSamples[i];
+    double weight = weights[i];
+    
+    y[0] += weight;
+    y[1] += weight * n;
+    y[2] += d;
+    y[3] += weight * n * n;
+    y[4] += weight * d * d;
+    y[5] += weight * n * d;
+  }
+
+//  my_comm_->allreduce(y);
+    
+    double z[7];
+  formic::mpi::allreduce(&y[0], &z[0], 7, MPI_SUM);
+  
+  double mf = z[1] / z[0]; // mean of numerator
+  double mg = z[2] / z[0]; // mean of denominator
+  double sf = z[3] / z[0]; // mean of the square of the numerator terms
+  double sg = z[4] / z[0]; // mean of the square of the denominator terms
+  double mp = z[5] / z[0]; // mean of the product of numerator times denominator
+  double ns = z[6];        // number of samples
+  
+  //double mf = y[1] / y[0]; // mean of numerator
+  //double mg = y[2] / y[0]; // mean of denominator
+  //double sf = y[3] / y[0]; // mean of the square of the numerator terms
+  //double sg = y[4] / y[0]; // mean of the square of the denominator terms
+  //double mp = y[5] / y[0]; // mean of the product of numerator times denominator
+  //double ns = y[6];        // number of samples
+  
+  double vf = (sf - mf * mf) * ns / (ns - static_cast<double>(1.0));
+  double vg = (sg - mg * mg) * ns / (ns - static_cast<double>(1.0));
+  double cv = (mp - mf * mg) * ns / (ns - static_cast<double>(1.0));
+  
+  double w_sum_   = z[0];
+  double mean     = (mf / mg) / (static_cast<double>(1.0) + (vg / mg / mg - cv / mf / mg) / ns);
+  double variance = (mf * mf / mg / mg) * (vf / mf / mf + vg / mg / mg - static_cast<double>(2.0) * cv / mf / mg);
+  double stdErr   = std::sqrt(variance/z[0]); 
+  //double stdErr   = std::sqrt(variance);
+  
+  std::vector<double> results;
+  results.push_back(mean);
+  results.push_back(stdErr);
+  
+return results;
+
+}
+
 #ifndef QMC_COMPLEX
 template class cqmc::engine::LMYEngine<double>;
 #else

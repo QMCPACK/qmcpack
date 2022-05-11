@@ -94,14 +94,23 @@ private:
   /// \brief [out]flag to well whethet engine has fully initialized
   bool _fully_initialized;
 
+  ///\brief whether to store samples and derivatives to build matrices
+  bool store_samples_;
+
+  ///\brief whether to turn noisy parameters off
+  bool filter_param_;
+
   /// \brief [in]total number of samples 
   int _num_samp;
 
   /// \brief sample count 
   int _samp_count;
 
-  /// \brief number of optimizable parameters
+  /// \brief number of optimizable parameters, may vary from iteration to iteration if parammeters are filtered
   int _num_params;
+
+  /// \brief total number of optimizable parameters, constant over an optimization even with parameter filtering
+  int _total_num_params;
 
   /// \brief [in]maximum number of iteration allowed in the davidson solver
   int _lm_krylov_iter;
@@ -171,6 +180,12 @@ private:
 
   /// \brief [out]target function statistical error
   double _tserr;
+
+  /// \brief threshold for parameter filtration
+  double ratio_threshold_;
+
+  /// \brief whether each parameter is being optimized on the current iteration
+  std::vector<bool> parameterSettings;
 
   /// \brief [in]vector that stores history of local energy
   std::vector<std::vector<S> > _le_list;
@@ -250,6 +265,29 @@ private:
 
   /// \brief [in]output stream
   std::ostream & output;
+
+
+  std::vector<formic::ColVec<double> > temp_old_updates;
+
+  bool before_first_block_sample = true;
+
+  //std::vector<std::vector<double> > der_rat_history;
+
+  formic::Matrix<double> der_rat_history;
+
+  //std::vector<std::vector<double> > le_der_rat_history;
+
+  formic::Matrix<double> le_der_rat_history;
+
+  std::vector<double> vgs_history;
+
+  std::vector<double> lotf_history;
+
+  std::vector<double> weight_history;
+
+  bool prev_descent_;
+
+  bool on_hybrid_ = 0;
 
 public:
   
@@ -352,7 +390,39 @@ public:
                   const int nkeps = 0,
                   const std::vector<formic::ColVec<double> > & old_updates = std::vector<formic::ColVec<double> >(),
                   const bool iterative = false);
-  
+ 
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  Function that Take Sample Data from the Host Code to store in vectors of vectors
+  /// 
+  /// \param[in]  der_rat_samp   <n|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  le_der_samp    <n|H|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  ls_der_samp    <|S^2|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+  /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
+  /// \param[in]  weight_samp    weight for this sample
+  ///
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////
+  void store_sample(std::vector<double> & der_rat_samp,
+                   std::vector<double> & le_der_samp,
+                   std::vector<double> & ls_der_samp,
+                   double vgs_samp,    // trial-to-guiding square ratio
+                   double lotf_samp,   // log of the trial function
+                   double weight_samp,
+                   int sample_count);
+
+
+  void setUpStorage(int numParams,int numSamples);
+
+  /// Selection parameters to leave on
+  void selectParameters();
+
+  std::vector<double> computeSigma_helper(std::vector<double> weights, std::vector<double> numerSamples, std::vector<double> denomSamples);
+
+  /// Plug into existing engine matrix construction, taking samples from stored history
+  void buildMatricesFromDerivatives();
+
+  void clear_histories();
+ 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that Take Sample Data from the Host Code
   /// 
@@ -523,7 +593,54 @@ public:
   
   //function that transfers vectors from descent to the LMBlocker object
   void setHybridBLM_Input(std::vector< std::vector<double> >& from_descent);
-  
+ 
+  bool getPrevStepDescent() {return prev_descent_;}
+
+  void setPrevStepDescent(bool input) {prev_descent_ = input;}
+
+  bool getOnHybrid() {return on_hybrid_;}
+
+  void setOnHybrid(bool input) {on_hybrid_ = input;}
+
+  bool getStoringSamples() {return store_samples_;}
+
+  ///function that returns whether noisy parameters are being turned off
+  bool getParameterFiltering() {return filter_param_;}
+
+/// \brief function that returns whether block linear method is being used
+  bool use_blm() {return _block_lm;}
+
+void setStoringSamples(bool storing) {store_samples_ = storing;}
+
+void setFiltering(bool use_filtering) {filter_param_ = use_filtering;}
+
+void setThreshold(double thres) {ratio_threshold_ = thres;}
+
+double getThreshold() {return ratio_threshold_;}
+
+void copyParameterSettings(std::vector<bool> inputSettings);
+
+bool getParameterSetting(int i) {return parameterSettings[i];}
+
+void resetParamNumber(int new_num);
+
+bool getGround() {return _ground;}
+
+void store_blocked_lm_info(int nblock,int nkeps,std::vector<formic::ColVec<double> > & old_updates);
+
+std::vector<formic::ColVec<double> > get_temp_old_updates() {return  temp_old_updates;}
+
+int get_nblocks() {return _nblocks;}
+int get_nkept() {return _nkeps;}
+
+void completed_first_block_sample() {before_first_block_sample = false;}
+bool get_before_first_block_sample() {return before_first_block_sample;}
+
+int getParamNum() {return _num_params;}
+
+int getTotalParamNum() {return _total_num_params;}
+
+ 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
   /// \brief  harmonic davidson energy calculation function

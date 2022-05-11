@@ -396,9 +396,20 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     //       Return_t ef=0.0;
     Return_rt e2 = 0.0;
 
+     if(EngineObj->getStoringSamples())
+     {
+        int numParams = EngineObj->getTotalParamNum();
+        int numSamples = wRef.numSamples();
+        app_log() << "Sizing matrices on a process for storing samples, total numParams: " << numParams << ", numSamples: " << numSamples << std::endl;
+        EngineObj->setUpStorage(numParams,numSamples);
+     
+     }
 
     for (int iw = 0, iwg = wPerRank[ip]; iw < wRef.numSamples(); ++iw, ++iwg)
     {
+      ValueType ttgsr = 1.0; // ttgsr stands for trial-to-guiding square ratio
+      ValueType  lotf = 1.0; //  lotf stands for log of trial function
+
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -432,7 +443,14 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         if (MinMethod == "adaptive")
         {
           // pass into engine
-          EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+          if(EngineObj->getStoringSamples())
+          {
+            EngineObj->store_sample(der_rat_samp, le_der_samp, le_der_samp,ttgsr, lotf, saved[REWEIGHT],iw);
+          }
+          else
+          {
+            EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
+          }
         }
         else if (MinMethod == "descent")
         {

@@ -119,6 +119,9 @@ namespace cqmc {
         /// \brief flag to tell whether to compute 1rdm 
         bool _compute_rdm;
 
+        /// \brief flag to tell if blocked linear method is being used
+        bool _blm_use;
+
       public:
         
       //////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,6 +221,31 @@ namespace cqmc {
         }
 
       }
+
+void resetParamNumber(int new_num)
+{
+_num_params = new_num;
+int NumThreads = omp_get_max_threads();
+int my_rank = formic::mpi::rank();
+
+  if(!_blm_use)
+  {
+      if(my_rank == 0)
+      {    
+        std::cout << "Changing size of _hmat_temp and _smat_temp inside matrix_builder" << std::endl;
+      }    
+  // size the matrix correctly
+  int ndim = _num_params + 1; 
+  for (int ip = 0; ip < NumThreads; ip++) {
+    _hmat_temp[ip].reset(ndim, ndim, 0.0);
+    _smat_temp[ip].reset(ndim, ndim, 0.0);
+    if ( _ss_build ) 
+      _ssmat_temp[ip].reset(ndim, ndim, 0.0);
+  }
+
+  }
+
+}
 
       /////////////////////////////////////////////////////////////////////////////////////////////
       // \brief build harmonic davidson matrix

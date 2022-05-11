@@ -958,6 +958,19 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 {
+
+  //Set whether LM will use stored samples
+  EngineObj->setStoringSamples(store_samples_);
+
+  //Set whether LM will only update a filtered set of parameters
+  EngineObj->setFiltering(filter_param_);
+
+  if(filter_param_ && !store_samples_)
+      myComm->barrier_and_abort(" Error: Parameter Filtration requires storing the samples.. \n");
+
+  if(filter_param_)
+      EngineObj->setThreshold(ratio_threshold_);
+
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
