@@ -457,8 +457,11 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
     mRealType rvsr_at_image = Rws*AA->evaluate(Rws, 1.0/Rws);
     if (rvsr_at_image > 1e-6)
     {
-      app_log() << rvsr_at_image << std::endl;
-      throw std::runtime_error("Ewald alpha is too small");
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "Ewald alpha = " << rvsr_at_image << " is too small" << std::endl;
+      msg << "Short-range potential r*vsr(r) = " << rvsr_at_image << " at image radius r=" << Rws << std::endl;
+      throw std::runtime_error(msg.str());
     }
     // perform long-range Madelung sum
     const StructFact& PtclRhoK(Ps.getSK());
