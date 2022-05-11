@@ -6,6 +6,20 @@ sudo cpupower frequency-set --governor performance; cmake -DCMAKE_CUDA_COMPILER=
 #include <multi/adaptors/blas/axpy.hpp>
 #include <multi/adaptors/cuda/cublas/context.hpp>
 
+namespace thrust{
+	template<class It> struct iterator_system;
+
+	template<class T, class Pointer>
+	struct iterator_system<boost::multi::array_iterator<T, 1, Pointer>>{
+		using type = typename thrust::iterator_system<Pointer>::type;
+	};
+
+	template<class T, boost::multi::dimensionality_type D, class Pointer>
+	struct iterator_system<boost::multi::array_iterator<T, D, Pointer>>{
+		using type = typename thrust::iterator_system<typename boost::multi::array_iterator<T, D, Pointer>::element_ptr>::type;
+	};
+}
+
 #include <benchmark/benchmark.h>
 
 #include <thrust/system/cuda/memory.h>

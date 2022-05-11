@@ -62,7 +62,7 @@ Dest memcpy(Dest dest, Src src, std::size_t byte_count){
 	return dest;
 }
 
-inline ptr<void> memset(ptr<void> dest, int ch, std::size_t byte_count){
+ptr<void> memset(ptr<void> dest, int ch, std::size_t byte_count){
 	cuda::call<cudaMemset>(static_cast<void*>(dest), ch, byte_count);
 	return dest;
 }
@@ -74,44 +74,46 @@ auto memcpy2D(VoidPDst dst, std::size_t dpitch, VoidPCSrc src, std::size_t spitc
 
 }}}}
 
-//#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
-//#define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA cstring"
-//#define BOOST_TEST_DYN_LINK
-//#include<boost/test/unit_test.hpp>
+#define BOOST_TEST_MODULE "C++ Unit Tests for Multi CUDA cstring"
+#define BOOST_TEST_DYN_LINK
+#include<boost/test/unit_test.hpp>
 
-//#include "../../adaptors/cuda/allocator.hpp"
+#include "../../adaptors/cuda/allocator.hpp"
 
-//#include<boost/timer/timer.hpp>
+#include<boost/timer/timer.hpp>
 
-//#include<numeric>
+#include<numeric>
 
-//namespace multi = boost::multi;
-//namespace cuda = multi::memory::cuda;
+namespace multi = boost::multi;
+namespace cuda = multi::memory::cuda;
 
-//BOOST_AUTO_TEST_CASE(multi_memory_cuda_cstring){
+BOOST_AUTO_TEST_CASE(multi_memory_cuda_cstring){
 
-//	std::size_t const n = 2e9/sizeof(double);
-//	cuda::ptr<double> p = cuda::allocator<double>{}.allocate(n);
-//	{
-//		boost::timer::auto_cpu_timer t;
-//		memset(p, 0, n*sizeof(double));
-//	}
-//	BOOST_REQUIRE( p[n/2]==0 );
-//	CUDA_SLOW ( 
-//		p[n/2] = 99.;
-//	)
-//	cuda::ptr<double> q = cuda::allocator<double>{}.allocate(n);
-//	{
-//		boost::timer::auto_cpu_timer t;
-//		memcpy(q, p, n*sizeof(double));
-//	}
-//	BOOST_REQUIRE( p[n/2] == 99. );
-//	BOOST_REQUIRE( q[n/2] == 99. );
+	std::size_t const n = 2e9/sizeof(double);
+	cuda::ptr<double> p = cuda::allocator<double>{}.allocate(n);
+	{
+		boost::timer::auto_cpu_timer t;
+		memset(p, 0, n*sizeof(double));
+	}
+	BOOST_REQUIRE( p[n/2]==0 );
+	CUDA_SLOW ( 
+		p[n/2] = 99.;
+	)
+	cuda::ptr<double> q = cuda::allocator<double>{}.allocate(n);
+	{
+		boost::timer::auto_cpu_timer t;
+		memcpy(q, p, n*sizeof(double));
+	}
+	BOOST_REQUIRE( p[n/2] == 99. );
+	BOOST_REQUIRE( q[n/2] == 99. );
 
-//	double a = 5.;
-//	BOOST_REQUIRE(a == 5.);
+	double a = 5.;
+	BOOST_REQUIRE(a == 5.);
 
-//}
-//#endif
+}
 #endif
+#endif
+
+

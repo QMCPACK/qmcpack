@@ -1,11 +1,11 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2019-2022 Alfredo A. Correa
+// © Alfredo A. Correa 2019-2021
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi legacy adaptor example"
 #define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 #include<complex>
 #include<iostream>
@@ -45,10 +45,11 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 	BOOST_REQUIRE( dimensionality(out) == dimensionality(in) );
 	BOOST_REQUIRE( sizes(out) == sizes(in) );
 
+	using multi::sizes_as;
+
 	static_assert( sizeof(complex) == sizeof(fake::fftw_complex), "!" );
 	fake::fftw_plan_dft(
-		dimensionality(in),
-		std::apply([](auto... es) {return std::array<int, 2>{{static_cast<int>(es)...}};}, in.sizes()).data(),
+		dimensionality(in), sizes_as<int>(in).data(),
 		reinterpret_cast<fake::fftw_complex*>(const_cast<complex*>(in .data_elements())), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast, cppcoreguidelines-pro-type-const-cast): testing legacy code
 		reinterpret_cast<fake::fftw_complex*>(                     out.data_elements() ), // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast): testing legacy code
 		1, 0
@@ -71,15 +72,15 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 			{ 50,  6,  7,  8,  9}
 		};
 
-//	#if __has_cpp_attribute(no_unique_address) >=201803L and not defined(__NVCC__) and not defined(__PGI)
-//		BOOST_REQUIRE( sizeof(d2D)==sizeof(double*)+7*sizeof(std::size_t) );
-//	#endif
+	#if __has_cpp_attribute(no_unique_address) >=201803 and not defined(__NVCC__) and not defined(__PGI)
+		BOOST_REQUIRE( sizeof(d2D)==sizeof(double*)+6*sizeof(std::size_t) );
+	#endif
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );
 		BOOST_REQUIRE( d2D[3].is_compact() );
 		BOOST_REQUIRE( not rotated(d2D)[2].is_compact() );
 	}
-	{
+	 {
 		multi::array<complex, 2> d2D({5, 3});
 		BOOST_REQUIRE( d2D.is_compact() );
 		BOOST_REQUIRE( rotated(d2D).is_compact() );
@@ -88,7 +89,11 @@ BOOST_AUTO_TEST_CASE(array_legacy_c) {
 	}
 }
 
-inline constexpr auto f2(multi::array_ref<double, 1>&& R) -> double& {return R[2];}
+auto f2(multi::array_ref<double, 1>&& R) -> double&;
+
+auto f2(multi::array_ref<double, 1>&& R) -> double& {
+	return R[2];
+}
 
 BOOST_AUTO_TEST_CASE(array_legacy_c_2) {
 	double A[5] = {150, 16, 17, 18, 19}; //  NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)

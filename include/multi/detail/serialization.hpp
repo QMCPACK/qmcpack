@@ -6,17 +6,17 @@
 
 #include<algorithm>  // for_each
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
-namespace archive {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
+namespace archive {
 namespace detail {
 
-template<class Ar> class common_iarchive;
-template<class Ar> class common_oarchive;
+template<class Ar> struct common_iarchive;
+template<class Ar> struct common_oarchive;
 
 }  // end namespace detail
 }  // end namespace archive
 
-namespace serialization {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace serialization {
 
 template<class T> class  nvp;            // dependency "in name only"
 template<class T> class  array_wrapper;  // dependency "in name only"
@@ -39,7 +39,7 @@ template<class T> class NameValuePair;  // dependency "in name only", if you get
 
 }  // end namespace cereal
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
 namespace multi {
 
 template<class Archive, class MA, std::enable_if_t<std::is_same<MA, std::decay_t<MA>>{} and (MA::dimensionality > -1) , int> =0>
@@ -92,7 +92,7 @@ struct archive_traits<Ar, typename std::enable_if<
 		std::size_t c_;
 		template<class Archive>
 		void serialize(Archive& ar, const unsigned int /*version*/) {
-			for(std::size_t i = 0; i != c_; ++i) {  // NOLINT(altera-unroll-loops) TODO(correaa) consider using an algorithm
+			for(std::size_t i = 0; i != c_; ++i) {
 				auto& item = p_[i];  // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 				ar &                                        make_nvp("item", item);  // "item" is the name used by Boost.Serialization XML make_array
 			//	ar & boost::multi::archive_traits<Archive>::make_nvp("element", element);
@@ -119,11 +119,11 @@ struct archive_traits<Ar, typename std::enable_if<
 namespace boost {
 
 template<class T, std::size_t D, class As>
-class multi_array;
+struct multi_array;
 
 }  // end namespace boost
 
-namespace boost {  // NOLINT(modernize-concat-nested-namespaces) keep c++14 compat
+namespace boost {
 namespace serialization {
 
 //template<class Archive, class T, std::size_t D, class A>
@@ -159,5 +159,50 @@ namespace serialization {
 //		ofs<< ss.str();
 //	}
 //}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif
