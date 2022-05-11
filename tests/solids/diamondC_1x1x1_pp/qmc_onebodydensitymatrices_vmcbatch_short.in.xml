@@ -53,7 +53,7 @@
     </slaterdeterminant>
   </determinantset>
       </wavefunction>
-      <hamiltonian name="h0" type="generic" target="e">
+`      <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
@@ -62,15 +62,17 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
-     <estimator name="LocalEnergy" hdf5="no"/>
-     <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
-       <parameter name="basis"        >  spo_ud spo_dm </parameter>
-       <parameter name="evaluator"    >  matrix        </parameter>
-       <parameter name="scale"        >  1.0           </parameter>
-       <parameter name="integrator"   >  uniform_grid  </parameter>
-       <parameter name="center"       >  0.0 0.0 0.0   </parameter>
-       <parameter name="use_drift"    >  yes           </parameter>
-     </estimator>
+     <estimators>
+       <estimator name="LocalEnergy" hdf5="no"/>
+       <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
+	 <parameter name="basis"        >  spo_ud spo_dm </parameter>
+	 <parameter name="evaluator"    >  matrix        </parameter>
+	 <parameter name="scale"        >  1.0           </parameter>
+	 <parameter name="integrator"   >  uniform_grid  </parameter>
+	 <parameter name="center"       >  0.0 0.0 0.0   </parameter>
+	 <parameter name="use_drift"    >  yes           </parameter>
+       </estimator>
+     </estimators>
      <parameter name="total_walkers">   16 </parameter>
      <parameter name="blocks"              >    200             </parameter>
      <parameter name="steps"               >    8               </parameter>

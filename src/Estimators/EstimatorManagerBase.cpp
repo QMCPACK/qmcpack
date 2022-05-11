@@ -454,7 +454,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
         hAttrib.add(nPsi, "nPsi");
         hAttrib.put(cur);
         add(std::make_unique<CSEnergyEstimator>(H, nPsi), MainEstimatorName);
-        app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+        app_log() << "  Adding a CSEnergyEstimator for the MainEstimator " << std::endl;
       }
       else
         extra.push_back(est_name);

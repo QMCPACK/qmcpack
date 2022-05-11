@@ -40,9 +40,7 @@ public:
   static constexpr int DIM = QMCTraits::DIM;
 
 public:
-  SpinDensityInput(){}
   SpinDensityInput(xmlNodePtr node);
-  void readXML(xmlNodePtr cur);
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }
@@ -68,6 +66,8 @@ public:
   DerivedParameters calculateDerivedParameters(const Lattice& lattice) const;
 
 private:
+  void readXML(xmlNodePtr cur);
+
   ///name of this Estimator
   std::string myName_;
 

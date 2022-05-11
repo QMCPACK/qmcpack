@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -29,6 +29,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
+#include "QMCDriverInputDelegates.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
@@ -64,7 +65,7 @@ TEST_CASE("QMCDriverFactory create VMC_CUDA Driver", "[qmcapp]")
   bool okay = doc.parseFromString(driver_xml);
   REQUIRE(okay);
   xmlNodePtr node                           = doc.getRoot();
-  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node);
+  QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(node, std::nullopt);
   REQUIRE(das.new_run_type == QMCRunType::VMC);
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);

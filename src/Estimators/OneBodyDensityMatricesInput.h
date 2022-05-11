@@ -97,7 +97,6 @@ public:
   using Position = QMCTraits::PosType;
   using Real     = QMCTraits::RealType;
 
-  OneBodyDensityMatricesInput() = default;
   OneBodyDensityMatricesInput(const OneBodyDensityMatricesInput&) = default;
   OneBodyDensityMatricesInput(xmlNodePtr cur);
 

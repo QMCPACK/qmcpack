@@ -16,6 +16,7 @@
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupDMCTest.h"
+#include "QMCDriverInputDelegates.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "Platforms/Host/OutputManager.h"
@@ -69,7 +70,7 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   SampleStack samples;
   WalkerConfigurations walker_confs;
   ProjectData test_project;
-  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::move(dmcdriver_input),
+  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::nullopt, std::move(dmcdriver_input),
                        MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
                                     wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
                        comm);

@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "EstimatorManagerInput.h"
+#include <algorithm>
 #include "ScalarEstimatorInputs.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
@@ -18,6 +19,15 @@
 namespace qmcplusplus
 {
 EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
+
+EstimatorManagerInput::EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil)
+{
+  std::for_each(emil.begin(), emil.end(), [this](const EstimatorManagerInput& emi) {
+    std::copy(emi.estimator_inputs_.begin(), emi.estimator_inputs_.end(), std::back_inserter(estimator_inputs_));
+    std::copy(emi.scalar_estimator_inputs_.begin(), emi.scalar_estimator_inputs_.end(),
+              std::back_inserter(scalar_estimator_inputs_));
+  });
+}
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
 {

@@ -47,7 +47,7 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
     }
     else if (atype == "rmc") {
       RMCLocalEnergyInput rmclei(node);
-      CHECK(lowerCase(rmclei.get_type()) == "rmc");
+      CHECK(lowerCase(rmclei.get_type()) == "rmclocalenergy");
     }
     else
     {

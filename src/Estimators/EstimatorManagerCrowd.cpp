@@ -15,8 +15,6 @@ namespace qmcplusplus
 {
 EstimatorManagerCrowd::EstimatorManagerCrowd(EstimatorManagerNew& em)
 {
-  // For now I'm going to try to refactor away the clone pattern only at the manager level.
-  // i.e. not continue into the scalar_estimators and collectables
   main_estimator_ = UPtr<ScalarEstimatorBase>(em.main_estimator_->clone());
   for (const auto& est : em.scalar_ests_)
     scalar_estimators_.emplace_back(est->clone());

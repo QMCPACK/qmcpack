@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "VMCBatched.h"
+#include "QMCDriverInputDelegates.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
@@ -27,11 +28,18 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
+                       std::optional<EstimatorManagerInput>&& global_emi,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   std::move(global_emi),
+                   std::move(pop),
+                   "VMCBatched::",
+                   comm,
+                   "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)

@@ -46,7 +46,27 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
   CHECK(embt.em.getNumScalarEstimators() == 0);
 }
 
+TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
+{
+  Communicate* comm = OHMMS::Controller;
 
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi(estimators_doc.getRoot());
+
+  
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto& pset             = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham = *(hamiltonian_pool.getPrimary());
+  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+
+  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumScalarEstimators() == 0);
+}
+  
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
