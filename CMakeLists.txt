@@ -1,15 +1,10 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.15.0)
-
-# CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
-# and environment variable in search path.
-# various Find<Package>.cmake modules may not follow this policy
-# CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
-# when doing link check
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0075 NEW)
+cmake_minimum_required(VERSION 3.17.0)
+# Note that cmake_minimum_required affects policy defaults.
+# All policies known to the running version of CMake and introduced in
+# cmake_minimum_required version or earlier will be set to use NEW behavior
 
 ######################################################################
 # QMCPACK project
@@ -76,6 +71,10 @@ endif(ENABLE_CUDA AND QMC_CUDA)
 if(ENABLE_OFFLOAD AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
 endif()
+
+if(ENABLE_CUDA AND ENABLE_SYCL)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
+endif(ENABLE_CUDA AND ENABLE_SYCL)
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA

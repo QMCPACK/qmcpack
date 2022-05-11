@@ -18,6 +18,7 @@
 #include "CUDA/CUDAallocator.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "QMCWaveFunctions/detail/CUDA/delayed_update_helper.h"
+#include "PrefetchedRange.h"
 #if defined(QMC_CUDA2HIP)
 #include "rocSolverInverter.hpp"
 #else
@@ -26,29 +27,6 @@
 
 namespace qmcplusplus
 {
-/// helper class for the prefetched range of a vector
-class Range
-{
-  // [first, last) rows of Ainv
-  int first, last;
-
-public:
-  Range() : first(0), last(0){};
-  void setRange(int first_in, int last_in)
-  {
-    first = first_in;
-    last  = last_in;
-  }
-  inline void clear() { first = last = 0; };
-  inline int getOffset(int index) const
-  {
-    if (!checkRange(index))
-      throw std::runtime_error("index not in range \n");
-    return index - first;
-  }
-  inline bool checkRange(int index) const { return (index >= first) && (index < last); };
-};
-
 /** implements delayed update on NVIDIA GPU using cuBLAS and cusolverDN
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
@@ -81,7 +59,7 @@ class DelayedUpdateCUDA
 #endif
 
   // the range of prefetched_Ainv_rows
-  Range prefetched_range;
+  PrefetchedRange prefetched_range;
   // Ainv prefetch buffer
   Matrix<T, CUDAHostAllocator<T>> Ainv_buffer;
 
@@ -157,7 +135,8 @@ public:
                                    hstream),
                    "cudaMemcpyAsync failed!");
     clearDelayCount();
-    // no need to wait because : For transfers from device memory to pageable host memory, the function will return only once the copy has completed.
+    // H2D transfer must be synchronized regardless of host memory being pinned or not.
+    cudaErrorCheck(cudaStreamSynchronize(hstream), "cudaStreamSynchronize failed!");
   }
 
   inline int getDelayCount() const { return delay_count; }

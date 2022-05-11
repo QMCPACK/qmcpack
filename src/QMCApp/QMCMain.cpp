@@ -89,7 +89,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -124,7 +124,7 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
 #else // GPU case
 #if defined(ENABLE_OFFLOAD)
@@ -142,6 +142,8 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
 #elif defined(QMC_CUDA)
   app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_SYCL)
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
 #endif // GPU case end
 

@@ -231,6 +231,21 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
+      *"ROCm-Clang13-NoMPI-Legacy-CUDA2HIP"*)
+        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+              -DQMC_CUDA=1 \
+              -DQMC_MPI=0 \
+              -DQMC_CUDA2HIP=ON \
+              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC8-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
@@ -322,6 +337,7 @@ case "$1" in
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
     fi

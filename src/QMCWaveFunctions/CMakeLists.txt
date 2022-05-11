@@ -168,6 +168,8 @@ if(ENABLE_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
 elseif(QMC_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda_legacy)
+elseif(ENABLE_SYCL)
+  target_link_libraries(qmcwfs PRIVATE qmcwfs_sycl)
 endif()
 
 if(BUILD_UNIT_TESTS)
