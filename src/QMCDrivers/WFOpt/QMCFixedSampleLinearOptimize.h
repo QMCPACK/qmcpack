@@ -183,6 +183,21 @@ private:
   ///whether to do the third part of block lm
   bool block_third;
 
+  ///whether to filter parameters for the lm
+  bool filter_param_;
+
+  ///whether to filter parameters for the lm
+  std::string filter_paramStr;
+
+  ///threshold for filtering parameters for the lm
+  double ratio_threshold_;
+
+  ///whether to store samples for the lm
+  bool store_samples_;
+
+  ///whether to store samples for the lm
+  std::string store_samplesStr;
+
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run
