@@ -1,10 +1,12 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-// Copyright 2020-2022 Alfredo A. Correa
+#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
+$CXX $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
+#endif
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi move"
+#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "multi/array.hpp"
+#include "../array.hpp"
 
 #include<vector>
 
@@ -84,55 +86,3 @@ BOOST_AUTO_TEST_CASE(multi_array_move_into_vector_move) {
 	BOOST_REQUIRE( Bv[5][1][2] == 99. );
 }
 
-BOOST_AUTO_TEST_CASE(multi_array_move_array) {
-	multi::array<std::vector<double>, 2> A({10, 10}, std::vector<double>(5) );
-	auto B = std::move(A); (void)B;
-	BOOST_REQUIRE( A.   empty() );  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) test deterministic moved from state
-	BOOST_REQUIRE( A.is_empty() );  // NOLINT(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) test deterministic moved from state
-}
-
-BOOST_AUTO_TEST_CASE(multi_array_move_elements) {
-	multi::array<std::vector<double>, 1> A({10}, std::vector<double>(5) );
-
-	std::vector<std::vector<double>> sink(5);
-
-	auto* ptr1 = A[1].data();
-
-	std::copy( A({0, 5}).moved().begin(), A({0, 5}).moved().end(), sink.begin() );
-	BOOST_REQUIRE(     A[1].empty() );
-	BOOST_REQUIRE( not A[5].empty() );
-
-	BOOST_REQUIRE( sink[1].data() == ptr1 );
-}
-
-BOOST_AUTO_TEST_CASE(multi_array_move_elements_range) {
-	multi::array<std::vector<double>, 1> A({10}, std::vector<double>(5) );
-
-	std::vector<std::vector<double>> sink(5);
-
-	auto* ptr1 = A[1].data();
-
-	std::copy( A({0, 5}).moved().elements().begin(), A({0, 5}).moved().elements().end(), sink.begin() );
-	BOOST_REQUIRE(     A[1].empty() );
-	BOOST_REQUIRE( not A[5].empty() );
-
-	BOOST_REQUIRE( sink[1].data() == ptr1 );
-}
-
-BOOST_AUTO_TEST_CASE(multi_array_move_elements_to_array) {
-	multi::array<std::vector<double>, 1> A({10}, std::vector<double>(5, 99.) );
-	BOOST_REQUIRE( A.size() == 10 );
-	multi::array<std::vector<double>, 1> B({ 5}, {}, {});
-
-	auto* ptr1 = A[1].data();
-
-	B().elements() = A({0, 5}).moved().elements();
-
-	BOOST_REQUIRE( B[1].size() == 5 );
-	BOOST_REQUIRE( B[1][4] == 99. );
-
-	BOOST_REQUIRE(     A[1].empty() );
-	BOOST_REQUIRE( not A[5].empty() );
-
-	BOOST_REQUIRE( B[1].data() == ptr1 );
-}
