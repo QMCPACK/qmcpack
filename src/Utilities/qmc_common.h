@@ -33,8 +33,6 @@ struct QMCState
   bool dryrun;
   ///true, print out file
   bool io_node;
-  ///true, use Ewald instead of optimal breakup for the Coulomb
-  bool use_ewald;
   ///init for <qmc/> section
   int qmc_counter;
   ///number of mpi groups
