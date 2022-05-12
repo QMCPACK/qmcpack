@@ -92,7 +92,7 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
   }
   if (ndim < 3)
   {
-    app_log() << "  No kspace sum along z in strict 2D " << std::endl;
+    app_log() << "  No kspace sum along z " << std::endl;
     mmax[2] = 0;
   }
   if (ndim < 2) mmax[1] = 0;
