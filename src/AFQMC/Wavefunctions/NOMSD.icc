@@ -2356,8 +2356,8 @@ inline void NOMSD<devPsiT>::recompute_ci()
     StaticSHMVector shmbuff(iextensions<1u>{nt},
                             shm_buffer_manager.get_generator().template get_allocator<ComplexType>());
 
-    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({ndets, ndets}, TG.Node());
-    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> S({ndets, ndets}, TG.Node());
+    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> H({ndets, ndets}, shared_allocator<ComplexType>(TG.Node()));
+    boost::multi::array<ComplexType, 2, shared_allocator<ComplexType>> S({ndets, ndets}, shared_allocator<ComplexType>(TG.Node()));
     boost::multi::array<ComplexType, 1> energy(iextensions<1u>{2});
     CMatrix Psia({0, 0});
     CMatrix Psib({0, 0});
