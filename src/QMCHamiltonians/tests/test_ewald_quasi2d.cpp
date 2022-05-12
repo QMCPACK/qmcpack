@@ -66,7 +66,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D square", "[hamiltonian]")
   elec.createSK();
   elec.update();
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   double val = caa.evaluate(elec);
   CHECK(val == Approx(vmad_sq));
@@ -107,7 +107,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D triangular", "[hamiltonian]")
   elec.createSK();
   elec.update();
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   double val = caa.evaluate(elec);
   CHECK(val == Approx(vmad_tri));
@@ -145,7 +145,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square", "[hamiltonian]")
   elec.createSK();
   elec.addTable(elec); // !!!! crucial to compute distance table
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
@@ -200,7 +200,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered square 2x2", "[hamiltonian]")
   elec.createSK();
   elec.addTable(elec); // !!!! crucial to compute distance table
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
@@ -257,7 +257,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle", "[hamiltonian]")
   elec.createSK();
   elec.addTable(elec); // !!!! crucial to compute distance table
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   const int ntest = 4;
   const double zheight[ntest] = {0, 0.1, 0.5, 3.0};
@@ -328,7 +328,7 @@ TEST_CASE("Coulomb PBC A-A Ewald Quasi2D staggered triangle 2x2", "[hamiltonian]
   elec.createSK();
   elec.addTable(elec); // !!!! crucial to compute distance table
 
-  CoulombPBCAA caa = CoulombPBCAA(elec, true, false, false);
+  CoulombPBCAA caa(elec, true, false, false);
 
   const int ntest = 4;
   TinyVector<double, ntest> zheight = {0, 0.1, 0.5, 3.0};
