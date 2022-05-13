@@ -10,7 +10,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR drivers)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -21,6 +20,7 @@ set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.p
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
 set(DRIVER_TEST_SRC
+    test_TauParams.cpp
     test_vmc.cpp
     test_dmc.cpp
     test_drift.cpp
@@ -47,7 +47,7 @@ else(QMC_CUDA)
 endif(QMC_CUDA)
 
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
@@ -69,7 +69,6 @@ if(NOT QMC_CUDA)
 
   set(UTEST_EXE test_new_${SRC_DIR})
   set(UTEST_NAME deterministic-unit_test_new_${SRC_DIR})
-  set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
   #this is dependent on the directory creation and sym linking of earlier driver tests
 
   set(DRIVER_TEST_SRC
@@ -86,10 +85,11 @@ if(NOT QMC_CUDA)
       test_SimpleFixedNodeBranch.cpp
       test_SFNBranch.cpp
       test_QMCCostFunctionBatched.cpp
+      test_QMCCostFunctionBase.cpp
       test_WFOptDriverInput.cpp)
   add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
   use_fake_rng(${UTEST_EXE})
-  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+  target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
   if(USE_OBJECT_TARGET)
     target_link_libraries(
       ${UTEST_EXE}
@@ -107,12 +107,11 @@ if(NOT QMC_CUDA)
   if(HAVE_MPI)
     set(UTEST_EXE test_${SRC_DIR}_mpi)
     set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_mpi)
-    set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
     #this is dependent on the directory creation and sym linking of earlier driver tests
-    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp)
+    set(DRIVER_TEST_SRC SetupPools.cpp test_WalkerControl.cpp test_QMCDriverNew.cpp)
     add_executable(${UTEST_EXE} ${DRIVER_TEST_SRC})
     use_fake_rng(${UTEST_EXE})
-    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit qmcfakerng)
+    target_link_libraries(${UTEST_EXE} catch_main qmcdriver_unit)
     if(USE_OBJECT_TARGET)
       target_link_libraries(
         ${UTEST_EXE}

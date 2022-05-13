@@ -61,23 +61,21 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
+  // Need 1 electron and 1 proton, somehow
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = 2;
-  ud[1] = 0;
-  elec_.create(ud);
+  elec_.create({2,0});
   elec_.R[0][0] = -0.28;
   elec_.R[0][1] = 0.0225;
   elec_.R[0][2] = -2.709;
@@ -94,10 +92,6 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   tspecies(massIdx, upIdx)     = 1;
   tspecies(massIdx, downIdx)   = 1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
 
   const char* particles = "<tmp> \
 <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
@@ -130,13 +124,17 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto& simulation_cell(ptcl.getSimulationCell());
+  auto ions_uptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_uptr = std::make_unique<ParticleSet>(simulation_cell);
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
-  ions_.create(1);
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({1});
   ions_.R[0]                 = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies       = ions_.getSpeciesSet();
   int HIdx                   = ispecies.addSpecies("H");
@@ -144,6 +142,7 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   ispecies(ichargeIdx, HIdx) = 1.0;
 
   elec_.setName("e");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({1, 1});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {-0.5, -0.5, -0.5};
@@ -159,11 +158,6 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   tspecies(massIdx, downIdx) = -1.0;
   // Necessary to set mass
   elec_.resetGroups();
-
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
 
   ions_.update();
   elec_.addTable(elec_);
@@ -188,9 +182,9 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(jas1);
-  auto& twf(*wf_factory.getTWF());
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
   twf.prepareGroup(elec_, 0);

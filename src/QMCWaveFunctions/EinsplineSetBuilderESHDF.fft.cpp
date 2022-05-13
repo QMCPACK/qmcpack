@@ -41,7 +41,6 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 
 bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
-  update_token(__FILE__, __LINE__, "ReadOrbitalInfo_ESHDF");
   app_log() << "  Reading orbital file in ESHDF format.\n";
   HDFAttribIO<TinyVector<int, 3>> h_version(Version);
   h_version.read(H5FileID, "/version");
@@ -66,7 +65,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
            SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
   app_log() << buff;
   if (!CheckLattice())
-    APP_ABORT("CheckLattice failed");
+    throw std::runtime_error("CheckLattice failed");
   PrimCell.set(Lattice);
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
@@ -177,9 +176,10 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     AtomicCentersInfo.resize(IonPos.size());
     for (int i = 0; i < IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i] = IonPos[i];
-    int Zind             = SourcePtcl->mySpecies.findAttribute("atomicnumber");
-    const int table_id   = SourcePtcl->addTable(*SourcePtcl);
-    const auto& ii_table = SourcePtcl->getDistTable(table_id);
+    const auto& source_species = SourcePtcl->getSpeciesSet();
+    int Zind                   = source_species.findAttribute("atomicnumber");
+    const int table_id         = SourcePtcl->addTable(*SourcePtcl);
+    const auto& ii_table       = SourcePtcl->getDistTable(table_id);
     SourcePtcl->update(true);
     for (int i = 0; i < IonPos.size(); i++)
     {
@@ -191,13 +191,13 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
         if (Super2Prim[j] == i)
         {
           // set GroupID for each ion in primitive cell
-          if ((Zind < 0) || (SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
+          if ((Zind < 0) || (source_species(Zind, SourcePtcl->GroupID[j]) == IonTypes[i]))
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j
                         << " atomic number not matching: " << IonTypes[i] << " vs "
-                        << SourcePtcl->mySpecies(Zind, SourcePtcl->GroupID[j]) << std::endl;
+                        << source_species(Zind, SourcePtcl->GroupID[j]) << std::endl;
             if (!skipChecks)
               abort();
           }
@@ -213,25 +213,25 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
-    const int inner_cutoff_ind   = SourcePtcl->mySpecies.findAttribute("inner_cutoff");
-    const int cutoff_radius_ind  = SourcePtcl->mySpecies.findAttribute("cutoff_radius");
-    const int spline_radius_ind  = SourcePtcl->mySpecies.findAttribute("spline_radius");
-    const int spline_npoints_ind = SourcePtcl->mySpecies.findAttribute("spline_npoints");
-    const int lmax_ind           = SourcePtcl->mySpecies.findAttribute("lmax");
+    const int inner_cutoff_ind   = source_species.findAttribute("inner_cutoff");
+    const int cutoff_radius_ind  = source_species.findAttribute("cutoff_radius");
+    const int spline_radius_ind  = source_species.findAttribute("spline_radius");
+    const int spline_npoints_ind = source_species.findAttribute("spline_npoints");
+    const int lmax_ind           = source_species.findAttribute("lmax");
 
     for (int center_idx = 0; center_idx < AtomicCentersInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
       if (inner_cutoff_ind >= 0)
-        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
+        AtomicCentersInfo.inner_cutoff[center_idx] = source_species(inner_cutoff_ind, my_GroupID);
       if (cutoff_radius_ind >= 0)
-        AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
+        AtomicCentersInfo.cutoff[center_idx] = source_species(cutoff_radius_ind, my_GroupID);
       if (spline_radius_ind >= 0)
-        AtomicCentersInfo.spline_radius[center_idx] = SourcePtcl->mySpecies(spline_radius_ind, my_GroupID);
+        AtomicCentersInfo.spline_radius[center_idx] = source_species(spline_radius_ind, my_GroupID);
       if (spline_npoints_ind >= 0)
-        AtomicCentersInfo.spline_npoints[center_idx] = SourcePtcl->mySpecies(spline_npoints_ind, my_GroupID);
+        AtomicCentersInfo.spline_npoints[center_idx] = source_species(spline_npoints_ind, my_GroupID);
       if (lmax_ind >= 0)
-        AtomicCentersInfo.lmax[center_idx] = SourcePtcl->mySpecies(lmax_ind, my_GroupID);
+        AtomicCentersInfo.lmax[center_idx] = source_species(lmax_ind, my_GroupID);
     }
   }
   /////////////////////////////////////
@@ -295,15 +295,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
       HDFAttribIO<int> h_Nsym(TwistWeight[ti]);
       h_Nsym.read(H5FileID, nsym_path.str().c_str());
     }
-    // Early versions from wfconv had wrong sign convention for
-    // k-points.  EinsplineSet uses the opposite sign convention
-    // from most DFT codes.
-    if (Version[0] >= 2)
-      for (int dim = 0; dim < OHMMS_DIM; dim++)
-        TwistAngles[ti][dim] *= -1.0;
-    //       snprintf (buff, 1000, "  Found twist angle (%6.3f, %6.3f, %6.3f)\n",
-    //           TwistAngles[ti][0], TwistAngles[ti][1], TwistAngles[ti][2]);
-    //       app_log() << buff;
   }
   if (qmc_common.use_density)
   {
@@ -312,7 +303,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     // the density is available, read it in and save it     //
     // in TargetPtcl.                                       //
     //////////////////////////////////////////////////////////
-    if (TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
+    if (TargetPtcl.getLattice().SuperCellEnum == SUPERCELL_BULK)
     {
       // FIXME:  add support for more than one spin density
       if (!TargetPtcl.Density_G.size())
@@ -419,7 +410,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 
 void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs)
 {
-  update_token(__FILE__, __LINE__, "OccupyBands_ESHDF");
   if (myComm->rank() != 0)
     return;
 
@@ -489,7 +479,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
 
   std::vector<int> gsOcc(maxOrbs);
   int N_gs_orbs = numOrbs;
-  int nocced(0), ntoshift(0);
+  int nocced(0);
   for (int ti = 0; ti < SortBands.size(); ti++)
   {
     if (nocced < N_gs_orbs)
@@ -497,13 +487,11 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       if (SortBands[ti].MakeTwoCopies && (N_gs_orbs - nocced > 1))
       {
         nocced += 2;
-        ntoshift++;
         gsOcc[ti] = 2;
       }
       else if ((SortBands[ti].MakeTwoCopies && (N_gs_orbs - nocced == 1)) || !SortBands[ti].MakeTwoCopies)
       {
         nocced += 1;
-        ntoshift++;
         gsOcc[ti] = 1;
       }
     }
@@ -655,358 +643,4 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   app_log() << "There are " << NumCoreOrbs << " core states and " << NumValenceOrbs << " valence states.\n";
 }
 
-#if 0
-/** TODO: FIXME RotateBands_ESHDF need psi_r */
-void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
-{
-  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:complex");
-  bool root = (myComm->rank()==0);
-  if (root)
-  {
-    rotationMatrix.resize(0);
-    rotatedOrbitals.resize(0);
-    xmlNodePtr kids=XMLRoot->children;
-    while(kids != NULL)
-    {
-      std::string cname((const char*)(kids->name));
-      if(cname == "rotationmatrix")
-        putContent(rotationMatrix,kids);
-      else
-        if(cname=="rotatedorbitals")
-          putContent(rotatedOrbitals,kids);
-      kids=kids->next;
-    }
-    if ((rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size()) && (rotationMatrix.size()!=0))
-    {
-      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<< std::endl;
-    }
-    else
-      if (rotationMatrix.size()>0)
-      {
-        app_log()<<" Rotating between: ";
-        for (int i=0; i<rotatedOrbitals.size(); i++)
-          app_log()<<rotatedOrbitals[i]<<" ";
-        app_log()<< std::endl;
-        app_log()<<" Using the following rotation"<< std::endl;
-        for (int i=0; i<rotatedOrbitals.size(); i++)
-        {
-          for (int j=0; j<rotatedOrbitals.size(); j++)
-            app_log()<<rotationMatrix[rotatedOrbitals.size()*i+j]<<" ";
-          app_log()<< std::endl;
-        }
-      }
-    if ((rotationMatrix.size()>0) && (rotatedOrbitals.size()>0) )
-    {
-      int N = NumDistinctOrbitals;
-      int num(0);
-      for (int iorb=0, indx=0; iorb<N; iorb++)
-      {
-        num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
-        if (num==rotatedOrbitals[indx])
-        {
-          rotatedOrbitals[indx]=iorb;
-          indx++;
-        }
-      }
-      //simple copy file function. make backup.
-      std::string backupName = H5FileName+"_bkup";
-      std::ifstream fin(H5FileName.c_str(), std::ios::in | std::ios::binary);
-      std::ofstream fout(backupName.c_str() , std::ios::in); // open with this mode to check whether file exists
-      //       std::ofstream fout(backupName.c_str(), std::ios::out | std::ios::binary);
-      if (fin.fail())
-      {
-        // reset status flags
-        fin.clear();
-        std::cout << " source file does not exist, try it again"<< std::endl;
-        exit( 0 );
-      }
-      if (!fout.fail())
-      {
-        fout.close();
-        std::cout << " destination file already exists, backup completed"<< std::endl;
-      }
-      else
-      {
-        fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
-        int BUFFER_SIZE = 128;
-        char buffer[BUFFER_SIZE];
-        while (!fin.eof() )
-        {
-          fin.read( buffer, BUFFER_SIZE);
-          if (fin.bad())
-          {
-            std::cout << "Error reading data" << std::endl;
-            exit( 0 );
-          }
-          else
-            fout.write(buffer, fin.gcount());
-        }
-      }
-      fin.close();
-      fout.close();
-      int nx, ny, nz, bi, ti;
-      std::vector<Array<std::complex<double>,3> > allRotatedSplines;
-      Array<std::complex<double>,3> splineData;
-      TinyVector<int,3> mesh;
-      // Find the orbital mesh size
-      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
-      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
-      h_mesh.read (H5FileID, "/electrons/mesh");
-      //     myComm->bcast(mesh);
-      nx=mesh[0];
-      ny=mesh[1];
-      nz=mesh[2];
-      splineData.resize(nx,ny,nz);
-      std::vector<BandInfo>& SortBands(*FullBands[spin]);
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        int iorb = rotatedOrbitals[i];
-        int ti   = SortBands[iorb].TwistIndex;
-        int bi   = SortBands[iorb].BandIndex;
-        double e = SortBands[iorb].Energy;
-        PosType k;
-        PosType twist = TwistAngles[ti];
-        k = orbitalSet->PrimLattice.k_cart(twist);
-        fprintf (stderr, "  Rotating state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d \n",
-                 ti, bi, e, k[0], k[1], k[2], myComm->rank() );
-        std::ostringstream path;
-        path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        std::string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(splineData);
-        h_splineData.read(H5FileID, psirName.c_str());
-        if ((splineData.size(0) != nx) ||
-            (splineData.size(1) != ny) ||
-            (splineData.size(2) != nz))
-        {
-          fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
-          fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
-          abort();
-        }
-        allRotatedSplines.push_back(splineData);
-      }
-      app_log()<< std::endl;
-      std::vector<Array<std::complex<double>,3> > allOriginalSplines(allRotatedSplines);
-#pragma omp parallel for
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-        for (int ix=0; ix<nx; ix++)
-          for (int iy=0; iy<ny; iy++)
-            for (int iz=0; iz<nz; iz++)
-              allRotatedSplines[i](ix,iy,iz)=0.0;
-#pragma omp parallel for
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        for(int j=0; j<rotatedOrbitals.size(); j++)
-        {
-          for (int ix=0; ix<nx; ix++)
-            for (int iy=0; iy<ny; iy++)
-              for (int iz=0; iz<nz; iz++)
-                allRotatedSplines[i](ix,iy,iz) += rotationMatrix[i*rotatedOrbitals.size()+j] * allOriginalSplines[j](ix,iy,iz);
-        }
-      }
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        int iorb = rotatedOrbitals[i];
-        int ti   = SortBands[iorb].TwistIndex;
-        int bi   = SortBands[iorb].BandIndex;
-        std::ostringstream path;
-        path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        std::string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
-        h_splineData.write(H5FileID, psirName.c_str());
-      }
-      //      for (int i=0;i<rotatedOrbitals.size();i++){
-      //           int iorb = rotatedOrbitals[i];
-      //           int ti   = SortBands[iorb].TwistIndex;
-      //           int bi   = SortBands[iorb].BandIndex;
-      //
-      //           std::ostringstream path;
-      //           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-      //           std::string psirName = path.str() + "psi_r";
-      //
-      //           HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allOriginalSplines[i]);
-      //           h_splineData.read(H5FileID, psirName.c_str());
-      //         }
-    }
-    else
-      app_log()<<" No rotations defined"<< std::endl;
-  }
-}
-
-void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<double>* orbitalSet)
-{
-  update_token(__FILE__,__LINE__,"RotateBands_ESHDF:double");
-  bool root = (myComm->rank()==0);
-  if (root)
-  {
-    rotationMatrix.resize(0);
-    rotatedOrbitals.resize(0);
-    xmlNodePtr kids=XMLRoot->children;
-    while(kids != NULL)
-    {
-      std::string cname((const char*)(kids->name));
-      if(cname == "rotationmatrix")
-        putContent(rotationMatrix,kids);
-      else
-        if(cname=="rotatedorbitals")
-          putContent(rotatedOrbitals,kids);
-      kids=kids->next;
-    }
-    if ((rotatedOrbitals.size()*rotatedOrbitals.size() != rotationMatrix.size()) && (rotationMatrix.size()!=0))
-    {
-      app_log()<<" Rotation Matrix is wrong dimension. "<<rotationMatrix.size()<<" should be "<<rotatedOrbitals.size()*rotatedOrbitals.size()<< std::endl;
-    }
-    else
-      if (rotationMatrix.size()>0)
-      {
-        app_log()<<" Rotating between: ";
-        for (int i=0; i<rotatedOrbitals.size(); i++)
-          app_log()<<rotatedOrbitals[i]<<" ";
-        app_log()<< std::endl;
-        app_log()<<" Using the following rotation"<< std::endl;
-        for (int i=0; i<rotatedOrbitals.size(); i++)
-        {
-          for (int j=0; j<rotatedOrbitals.size(); j++)
-            app_log()<<rotationMatrix[rotatedOrbitals.size()*i+j]<<" ";
-          app_log()<< std::endl;
-        }
-      }
-    if ((rotationMatrix.size()>0) && (rotatedOrbitals.size()>0) )
-    {
-      int N = NumDistinctOrbitals;
-      int num(0);
-      for (int iorb=0, indx=0; iorb<N; iorb++)
-      {
-        num += orbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
-        if (num==rotatedOrbitals[indx])
-        {
-          rotatedOrbitals[indx]=iorb;
-          indx++;
-        }
-      }
-      //simple copy file function. make backup.
-      std::string backupName = H5FileName+"_bkup";
-      std::ifstream fin(H5FileName.c_str(), std::ios::in | std::ios::binary);
-      std::ofstream fout(backupName.c_str() , std::ios::in); // open with this mode to check whether file exists
-      //       std::ofstream fout(backupName.c_str(), std::ios::out | std::ios::binary);
-      if (fin.fail())
-      {
-        // reset status flags
-        fin.clear();
-        std::cout << " source file does not exist, try it again"<< std::endl;
-        exit( 0 );
-      }
-      if (!fout.fail())
-      {
-        fout.close();
-        std::cout << " destination file already exists, backup completed"<< std::endl;
-      }
-      else
-      {
-        fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
-        int BUFFER_SIZE = 128;
-        char buffer[BUFFER_SIZE];
-        while (!fin.eof() )
-        {
-          fin.read( buffer, BUFFER_SIZE);
-          if (fin.bad())
-          {
-            std::cout << "Error reading data" << std::endl;
-            exit( 0 );
-          }
-          else
-            fout.write(buffer, fin.gcount());
-        }
-      }
-      fin.close();
-      fout.close();
-      int nx, ny, nz, bi, ti;
-      std::vector<Array<std::complex<double>,3> > allRotatedSplines;
-      Array<std::complex<double>,3> splineData;
-      TinyVector<int,3> mesh;
-      // Find the orbital mesh size
-      HDFAttribIO<TinyVector<int,3> > h_mesh(mesh);
-      h_mesh.read (H5FileID, "/electrons/psi_r_mesh");
-      h_mesh.read (H5FileID, "/electrons/mesh");
-      //     myComm->bcast(mesh);
-      nx=mesh[0];
-      ny=mesh[1];
-      nz=mesh[2];
-      splineData.resize(nx,ny,nz);
-      std::vector<BandInfo>& SortBands(*FullBands[spin]);
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        int iorb = rotatedOrbitals[i];
-        int ti   = SortBands[iorb].TwistIndex;
-        int bi   = SortBands[iorb].BandIndex;
-        double e = SortBands[iorb].Energy;
-        PosType k;
-        PosType twist = TwistAngles[ti];
-        k = orbitalSet->PrimLattice.k_cart(twist);
-        fprintf (stderr, "  Rotating state:  ti=%3d  bi=%3d energy=%8.5f k=(%7.4f, %7.4f, %7.4f) rank=%d \n",
-                 ti, bi, e, k[0], k[1], k[2], myComm->rank() );
-        std::ostringstream path;
-        path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        std::string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(splineData);
-        h_splineData.read(H5FileID, psirName.c_str());
-        if ((splineData.size(0) != nx) ||
-            (splineData.size(1) != ny) ||
-            (splineData.size(2) != nz))
-        {
-          fprintf (stderr, "Error in EinsplineSetBuilder::ReadBands.\n");
-          fprintf (stderr, "Extended orbitals should all have the same dimensions\n");
-          abort();
-        }
-        allRotatedSplines.push_back(splineData);
-      }
-      app_log()<< std::endl;
-      std::vector<Array<std::complex<double>,3> > allOriginalSplines(allRotatedSplines);
-#pragma omp parallel for
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-        for (int ix=0; ix<nx; ix++)
-          for (int iy=0; iy<ny; iy++)
-            for (int iz=0; iz<nz; iz++)
-              allRotatedSplines[i](ix,iy,iz)=0.0;
-#pragma omp parallel for
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        for(int j=0; j<rotatedOrbitals.size(); j++)
-        {
-          for (int ix=0; ix<nx; ix++)
-            for (int iy=0; iy<ny; iy++)
-              for (int iz=0; iz<nz; iz++)
-                allRotatedSplines[i](ix,iy,iz) += rotationMatrix[i*rotatedOrbitals.size()+j] * allOriginalSplines[j](ix,iy,iz);
-        }
-      }
-      for (int i=0; i<rotatedOrbitals.size(); i++)
-      {
-        int iorb = rotatedOrbitals[i];
-        int ti   = SortBands[iorb].TwistIndex;
-        int bi   = SortBands[iorb].BandIndex;
-        std::ostringstream path;
-        path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-        std::string psirName = path.str() + "psi_r";
-        HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allRotatedSplines[i],true);
-        h_splineData.write(H5FileID, psirName.c_str());
-      }
-      //      for (int i=0;i<rotatedOrbitals.size();i++){
-      //           int iorb = rotatedOrbitals[i];
-      //           int ti   = SortBands[iorb].TwistIndex;
-      //           int bi   = SortBands[iorb].BandIndex;
-      //
-      //           std::ostringstream path;
-      //           path << "/electrons/kpoint_" << ti << "/spin_" << spin << "/state_" << bi << "/";
-      //           std::string psirName = path.str() + "psi_r";
-      //
-      //           HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(allOriginalSplines[i]);
-      //           h_splineData.read(H5FileID, psirName.c_str());
-      //         }
-    }
-    else
-      app_log()<<" No rotations defined"<< std::endl;
-  }
-}
-#endif
 } // namespace qmcplusplus

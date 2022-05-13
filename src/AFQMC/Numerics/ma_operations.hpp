@@ -586,7 +586,7 @@ T invert(MultiArray2D&& m, T LogOverlapFactor)
   using iallocator_type = typename allocator_type::template rebind<int>::other;
   using extensions      = typename boost::multi::layout_t<1u>::extensions_type;
   using qmcplusplus::afqmc::fill2D;
-  size_t bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
+  auto bufferSize(invert_optimal_workspace_size(std::forward<MultiArray2D>(m)));
   boost::multi::array<element, 1, allocator_type> WORK(extensions{bufferSize}, m.get_allocator());
   boost::multi::array<int, 1, iallocator_type> pivot(extensions{m.size(0) + 1}, iallocator_type{m.get_allocator()});
 
@@ -664,7 +664,7 @@ MultiArray2D exp(MultiArray2D const& A, bool printeV = false)
   using TMat     = boost::multi::array<Type, 2>;
   using eigSys   = std::pair<TVec, TMat>;
   assert(A.size(0) == A.size(1));
-  size_t N = A.size(0);
+  typename MultiArray2D::size_type N = A.size(0);
 
   MultiArray2D ExpA({N, N});
   std::fill_n(pointer_dispatch(ExpA.origin()), N * N, Type(0));

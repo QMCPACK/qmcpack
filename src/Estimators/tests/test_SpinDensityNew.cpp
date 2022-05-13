@@ -50,6 +50,7 @@ public:
 
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
+  const SimulationCell simulation_cell;
   for (int iops = 0; iops < ncrowds; ++iops)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -64,9 +65,9 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
 
     for (int iw = 0; iw < nwalkers; ++iw)
     {
-      psets.emplace_back();
+      psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
       pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
     }
@@ -77,7 +78,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -85,6 +86,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
 
 void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
+  const SimulationCell simulation_cell;
   for (auto& uptr_crowd_sdn : crowd_sdns)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -101,9 +103,9 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     auto it_rng_reals = rng_reals.begin();
     for (int iw = 0; iw < nwalkers; ++iw)
     {
-      psets.emplace_back();
+      psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
@@ -114,7 +116,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -207,11 +209,12 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 
   std::vector<ParticleSet> psets;
 
+  const SimulationCell simulation_cell;
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    psets.emplace_back();
+    psets.emplace_back(simulation_cell);
     ParticleSet& pset = psets.back();
-    pset.create(2);
+    pset.create({2});
     pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }
@@ -222,7 +225,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
   auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
 

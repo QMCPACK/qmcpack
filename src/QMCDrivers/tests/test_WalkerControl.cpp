@@ -15,6 +15,9 @@
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
+#include "ParticleSetPool.h"
+#include "WaveFunctionPool.h"
+#include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "QMCDrivers/QMCDriverInput.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
@@ -36,7 +39,6 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
                                         dpools_.particle_pool->getParticleSet("e"),
                                         dpools_.wavefunction_pool->getPrimary(),
-                                        dpools_.wavefunction_pool->getWaveFunctionFactory("wavefunction"),
                                         dpools_.hamiltonian_pool->getPrimary());
 
   pop_->createWalkers(1);

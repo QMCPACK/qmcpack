@@ -27,7 +27,13 @@
 #include <stack>
 #include <bitset>
 #ifdef HAVE_MPI
-namespace boost { namespace mpi3 { class communicator; } }
+namespace boost
+{
+namespace mpi3
+{
+class communicator;
+}
+} // namespace boost
 #endif
 
 class Communicate;
@@ -191,8 +197,8 @@ public:
     if (!(Mode[IS_PARALLEL] || Mode[IS_MASTER]))
       throw std::runtime_error("Only write data in parallel or by master but not every rank!");
     hid_t p = group_id.empty() ? file_id : group_id.top();
-    h5data_proxy<T> e(data);
-    return e.write(p, aname, xfer_plist);
+    h5data_proxy<typename std::remove_const<T>::type> e(data);
+    return e.write(data, p, aname, xfer_plist);
   }
 
   /** write the data to the group aname and check status
@@ -217,10 +223,10 @@ public:
   void writeSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -239,7 +245,7 @@ public:
       return true;
     hid_t p = group_id.empty() ? file_id : group_id.top();
     h5data_proxy<T> e(data);
-    return e.read(p, aname, xfer_plist);
+    return e.read(data, p, aname, xfer_plist);
   }
 
   /** read the data from the group aname and check status
@@ -264,10 +270,10 @@ public:
   void readSlabReshaped(T& data, const std::array<IT, RANK>& shape, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = static_cast<hsize_t>(shape[dim]);
-      counts[dim] = static_cast<hsize_t>(shape[dim]);
+      counts[dim]  = static_cast<hsize_t>(shape[dim]);
       offsets[dim] = 0;
     }
 
@@ -288,17 +294,17 @@ public:
   void readSlabSelection(T& data, const std::array<IT, RANK>& readSpec, const std::string& aname)
   {
     std::array<hsize_t, RANK> globals, counts, offsets;
-    for(int dim = 0; dim < RANK; dim++)
+    for (int dim = 0; dim < RANK; dim++)
     {
       globals[dim] = 0;
       if (readSpec[dim] < 0)
       {
-        counts[dim] = 0;
+        counts[dim]  = 0;
         offsets[dim] = 0;
       }
       else
       {
-        counts[dim] = 1;
+        counts[dim]  = 1;
         offsets[dim] = static_cast<hsize_t>(readSpec[dim]);
       }
     }

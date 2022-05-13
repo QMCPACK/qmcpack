@@ -29,81 +29,47 @@ WaveFunctionPool::WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, c
   myName    = aname;
 }
 
-WaveFunctionPool::~WaveFunctionPool()
-{
-  DEBUG_MEMORY("WaveFunctionPool::~WaveFunctionPool");
-  PoolType::iterator it(myPool.begin());
-  while (it != myPool.end())
-  {
-    delete (*it).second;
-    ++it;
-  }
-}
+WaveFunctionPool::~WaveFunctionPool() = default;
 
 bool WaveFunctionPool::put(xmlNodePtr cur)
 {
-  std::string id("psi0"), target("e"), role("extra"), tasking;
+  std::string target("e"), role("extra");
   OhmmsAttributeSet pAttrib;
-  pAttrib.add(id, "id");
-  pAttrib.add(id, "name");
   pAttrib.add(target, "target");
   pAttrib.add(target, "ref");
-  pAttrib.add(tasking, "tasking", {"no", "yes"});
   pAttrib.add(role, "role");
   pAttrib.put(cur);
 
   ParticleSet* qp = ptcl_pool_.getParticleSet(target);
 
-  if(qp == nullptr)
+  if (qp == nullptr)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
-  std::map<std::string, WaveFunctionFactory*>::iterator pit(myPool.find(id));
-  WaveFunctionFactory* psiFactory = 0;
-  bool isPrimary                  = true;
-  if (pit == myPool.end())
-  {
-    psiFactory = new WaveFunctionFactory(id, *qp, ptcl_pool_.getPool(), myComm, tasking == "yes");
-    isPrimary  = (myPool.empty() || role == "primary");
-    myPool[id] = psiFactory;
-  }
-  else
-  {
-    psiFactory = (*pit).second;
-  }
-  bool success = psiFactory->put(cur);
-  if (success && isPrimary)
-  {
-    primary_psi_ = psiFactory->getTWF();
-  }
-  return success;
+  WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
+  auto psi = psiFactory.buildTWF(cur);
+  addFactory(std::move(psi), myPool.empty() || role == "primary");
+  return true;
 }
 
-void WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
+void WaveFunctionPool::addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary)
 {
-  PoolType::iterator oit(myPool.find(psifac->getName()));
-  if (oit == myPool.end())
-  {
-    app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
-    myPool[psifac->getName()] = psifac;
-  }
-  else
-  {
-    app_warning() << "  " << psifac->getName() << " exists. Ignore addition" << std::endl;
-  }
+  if (myPool.find(psi->getName()) != myPool.end())
+    throw std::runtime_error("  " + psi->getName() + " exists. Cannot be added.");
+
+  app_log() << "  Adding " << psi->getName() << " TrialWaveFunction to the pool" << std::endl;
+
+  if (primary)
+    primary_psi_ = psi.get();
+  myPool.emplace(psi->getName(), std::move(psi));
 }
 
 xmlNodePtr WaveFunctionPool::getWaveFunctionNode(const std::string& id)
 {
   if (myPool.empty())
     return NULL;
-  std::map<std::string, WaveFunctionFactory*>::iterator it(myPool.find(id));
-  if (it == myPool.end())
-  {
+  if (auto it(myPool.find(id)); it == myPool.end())
     return (*myPool.begin()).second->getNode();
-  }
   else
-  {
     return (*it).second->getNode();
-  }
 }
 } // namespace qmcplusplus

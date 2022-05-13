@@ -9,17 +9,9 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR CUDA)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
-
-if(NOT QMC_CUDA2HIP)
-  add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
-else()
-  hip_add_library(cuda_device_value_test_kernels test_device_value_kernels.cu)
-endif()
-target_link_libraries(cuda_device_value_test_kernels PUBLIC platform_runtime)
 
 add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
 target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)

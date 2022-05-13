@@ -18,6 +18,11 @@
 namespace qmcplusplus
 {
 
+SpinDensityInput::SpinDensityInput(xmlNodePtr node)
+{
+  readXML(node);
+}
+
 void SpinDensityInput::readXML(xmlNodePtr cur)
 {
   std::string write_report;
@@ -38,7 +43,7 @@ void SpinDensityInput::readXML(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "dr")
       {
         have_dr_ = true;

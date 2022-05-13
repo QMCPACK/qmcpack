@@ -19,7 +19,7 @@
 
 namespace qmcplusplus
 {
-typedef double RealType;
+using RealType = double;
 
 class MinTest
 {

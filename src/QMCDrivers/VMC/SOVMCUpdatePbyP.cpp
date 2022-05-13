@@ -12,11 +12,11 @@
 
 #include "SOVMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 
 
@@ -26,7 +26,7 @@ namespace qmcplusplus
 SOVMCUpdatePbyP::SOVMCUpdatePbyP(MCWalkerConfiguration& w,
                                  TrialWaveFunction& psi,
                                  QMCHamiltonian& h,
-                                 RandomGenerator_t& rg)
+                                 RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg),
       buffer_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::Buffer", timer_level_medium)),
       movepbyp_timer_(*timer_manager.createTimer("SOVMCUpdatePbyP::MovePbyP", timer_level_medium)),
@@ -91,12 +91,12 @@ void SOVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           ComplexType spingrad_new;
           prob = std::norm(Psi.calcRatioGradWithSpin(W, iat, grad_new, spingrad_new));
           DriftModifier->getDrift(tauovermass, grad_new, dr);
-          dr             = W.R[iat] - W.activePos - dr;
+          dr             = W.R[iat] - W.getActivePos() - dr;
           RealType logGb = -oneover2tau * dot(dr, dr);
           RealType logGf = mhalf * dot(deltaR[iat], deltaR[iat]);
 
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_new, ds);
-          ds = W.spins[iat] - W.activeSpinVal - ds;
+          ds = W.spins[iat] - W.getActiveSpinVal() - ds;
           logGb += -spinMass * oneover2tau * ds * ds;
           logGf += mhalf * deltaS[iat] * deltaS[iat];
 

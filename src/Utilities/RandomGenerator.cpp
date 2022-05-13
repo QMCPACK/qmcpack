@@ -12,60 +12,27 @@
 
 
 #include "RandomGenerator.h"
-#include "Message/Communicate.h"
+#include <ctime>
 
-//using namespace qmcplusplus;
-//RandomGenerator_t
-//Random(CommCreate::get()->getNodeID(), CommCreate::get()->getNumNodes());
+uint32_t make_seed(int i, int n) { return static_cast<uint32_t>(std::time(0)) % 10474949 + (i + 1) * n + i; }
 
-qmcplusplus::RNGThreadSafe qmcplusplus::Random;
+namespace qmcplusplus
+{
 
-// /**class GaussinRandomGenerator
-//  *\brief A filter class that converts random numbers [0,1) -> gaussian
-//  */
-// class GaussianRandomGenerator {
-// public:
+template<class RNG>
+typename RNG::result_type RNGThreadSafe<RNG>::operator()()
+{
+  result_type result;
+#pragma omp critical
+  {
+    result = RNG::operator()();
+  }
+  return result;
+}
 
-//   typedef RandomGenerator_t::Return_t Return_t;
+template class RNGThreadSafe<FakeRandom>;
+template class RNGThreadSafe<RandomGenerator>;
 
-//   GaussianRandomGenerator(RandomGenerator_t& rg):d_engine(rg) { }
-
-//   inline Return_t operator()(){
-//     if(newpair) {
-//       d_engine.bivariate(gauss0,gauss1);
-//       newpair = false;
-//       return gauss0;
-//     } else {
-//       newpair = true;
-//       return gauss1;
-//     }
-//   }
-// private:
-//   RandomGenerator_t d_engine;
-//   bool newpair;
-//   Return_t gauss0, gauss1;
-// };
-// GaussianRandomGenerator GaussianRandom(Random);
-
-
-//   class GaussianRandom {
-//   public:
-//     typedef RandomGenerator_t::Return_t Return_t;
-//     GaussianRandom(RandomGenerator_t& rg, Return_t sig=1.0, Return_t c0=0.0):
-//       d_engine(rg), newpair(true){ Sigma2 = sig*sig; Center = c0;}
-//     inline Return_t operator()(){
-//       if(newpair) {
-// 	d_engine.bivariate(gauss0,gauss1);
-// 	newpair = false;
-// 	return Sigma2*gauss0+Center;
-//       } else {
-// 	newpair = true;
-// 	return Sigma2*gauss1+Center;
-//       }
-//     }
-//   private:
-//     RandomGenerator_t& d_engine;
-//     bool newpair;
-//     Return_t gauss0, gauss1, Sigma2, Center;
-
-//   };
+RNGThreadSafe<FakeRandom> fake_random_global;
+RNGThreadSafe<RandomGenerator> random_global;
+} // namespace qmcplusplus

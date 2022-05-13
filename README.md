@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qmcpack/badge/?version=develop)](https://qmcpack.readthedocs.io/en/develop/?badge=develop)
 
 [![GitHub release](https://img.shields.io/github/release/QMCPACK/qmcpack/all.svg)](https://github.com/QMCPACK/qmcpack/releases)
-[![Spack Version](https://img.shields.io/spack/v/qmcpack.svg)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
+[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
 
 [![GitHub Actions CI](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml/badge.svg)](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml)
 [![codecov-deterministic](https://codecov.io/gh/QMCPACK/qmcpack/branch/develop/graph/badge.svg?token=35D0u6GlBm)](https://codecov.io/gh/QMCPACK/qmcpack)
@@ -23,14 +23,15 @@ particular emphasis is placed on code quality and reproducibility.
 # Prerequisites
 
  * C++ 17 and C99 capable compilers. 
- * CMake v3.15.0 or later, build utility, http://www.cmake.org
- * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
+ * CMake v3.17.0 or later, build utility, http://www.cmake.org
+ * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
  * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
+ * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
 over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the

@@ -15,12 +15,7 @@
 
 #include <complex>
 #include "config.h"
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime_api.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
+#include "CUDAruntime.hpp"
 
 namespace qmcplusplus
 {
@@ -33,8 +28,8 @@ namespace qmcplusplus
  */
 namespace cuBLAS_MFs
 {
-typedef cudaError_t cuBLAS_MFs_status;
-typedef cudaStream_t cuBLAS_MFs_handle;
+using cuBLAS_MFs_status = cudaError_t;
+using cuBLAS_MFs_handle = cudaStream_t;
 
 // BLAS2
 /** Xgemv batched API

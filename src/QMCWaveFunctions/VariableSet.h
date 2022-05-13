@@ -43,16 +43,15 @@ enum
  */
 struct VariableSet
 {
+  using value_type = qmcplusplus::QMCTraits::ValueType;
+  using real_type  = qmcplusplus::QMCTraits::RealType;
 
-  typedef qmcplusplus::QMCTraits::ValueType value_type;
-  typedef qmcplusplus::QMCTraits::RealType  real_type;
-
-  typedef std::pair<std::string, value_type> pair_type;
-  typedef std::pair<std::string, int> index_pair_type;
-  typedef std::vector<pair_type>::iterator iterator;
-  typedef std::vector<pair_type>::const_iterator const_iterator;
-  typedef std::vector<pair_type>::size_type size_type;
-  typedef std::map<std::string, value_type> variable_map_type;
+  using pair_type         = std::pair<std::string, value_type>;
+  using index_pair_type   = std::pair<std::string, int>;
+  using iterator          = std::vector<pair_type>::iterator;
+  using const_iterator    = std::vector<pair_type>::const_iterator;
+  using size_type         = std::vector<pair_type>::size_type;
+  using variable_map_type = std::map<std::string, value_type>;
 
   ///number of active variables
   int num_active_vars;
@@ -172,13 +171,13 @@ struct VariableSet
     }
   }
 
-  inline void getParameterTypeList(std::vector<int>& types)
+  inline void getParameterTypeList(std::vector<int>& types) const
   {
-    std::vector<index_pair_type>::iterator PTit(ParameterType.begin()), PTend(ParameterType.end());
-    types.resize(PTend - PTit);
-    std::vector<int>::iterator tit(types.begin());
-    while (PTit != PTend)
-      (*tit++) = (*PTit++).second;
+    auto ptit(ParameterType.begin()), ptend(ParameterType.end());
+    types.resize(ptend - ptit);
+    auto tit(types.begin());
+    while (ptit != ptend)
+      (*tit++) = (*ptit++).second;
   }
 
 

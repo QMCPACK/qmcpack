@@ -85,11 +85,11 @@ void RPAJastrow::buildOrbital(const std::string& name,
   DropLongRange  = (useL == "no");
   DropShortRange = (useS == "no");
   RealType tlen =
-      std::pow(3.0 / 4.0 / M_PI * targetPtcl.Lattice.Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
+      std::pow(3.0 / 4.0 / M_PI * targetPtcl.getLattice().Volume / static_cast<RealType>(targetPtcl.getTotalNum()),
                1.0 / 3.0);
   if (Rs < 0)
   {
-    if (targetPtcl.Lattice.SuperCellEnum)
+    if (targetPtcl.getLattice().SuperCellEnum)
     {
       Rs = tlen;
     }
@@ -99,8 +99,8 @@ void RPAJastrow::buildOrbital(const std::string& name,
       Rs = 100.0;
     }
   }
-  int indx      = targetPtcl.SK->getKLists().ksq.size() - 1;
-  double Kc_max = std::pow(targetPtcl.SK->getKLists().ksq[indx], 0.5);
+  int indx      = targetPtcl.getSimulationCell().getKLists().ksq.size() - 1;
+  double Kc_max = std::pow(targetPtcl.getSimulationCell().getKLists().ksq[indx], 0.5);
   if (Kc < 0)
   {
     Kc = 2.0 * std::pow(2.25 * M_PI, 1.0 / 3.0) / tlen;
@@ -141,10 +141,10 @@ void RPAJastrow::makeLongRange()
   // create two-body kSpaceJastrow
   kSpaceJastrow::SymmetryType oneBodySymm, twoBodySymm;
   bool oneBodySpin, twoBodySpin;
-  oneBodySymm  = kSpaceJastrow::ISOTROPIC;
-  twoBodySymm  = kSpaceJastrow::ISOTROPIC;
-  oneBodySpin  = false;
-  twoBodySpin  = false;
+  oneBodySymm = kSpaceJastrow::ISOTROPIC;
+  twoBodySymm = kSpaceJastrow::ISOTROPIC;
+  oneBodySpin = false;
+  twoBodySpin = false;
   auto LongRangeRPA_uptr =
       std::make_unique<kSpaceJastrow>(targetPtcl, targetPtcl, oneBodySymm, -1, "cG1", oneBodySpin, // no one-body part
                                       twoBodySymm, Kc, "cG2", twoBodySpin);
@@ -153,7 +153,7 @@ void RPAJastrow::makeLongRange()
   std::vector<RealType> oneBodyCoefs, twoBodyCoefs;
   twoBodyCoefs.resize(myHandler->MaxKshell);
   //  need to cancel prefactor in kSpaceJastrow
-  RealType prefactorInv = -targetPtcl.Lattice.Volume;
+  RealType prefactorInv = -targetPtcl.getLattice().Volume;
   for (size_t is = 0; is < myHandler->MaxKshell; is++)
   {
     twoBodyCoefs[is] = prefactorInv * myHandler->Fk_symm[is];
@@ -177,11 +177,11 @@ void RPAJastrow::makeShortRange()
   nfunc           = nfunc_uptr.get();
   ShortRangePartAdapter<RealType> SRA(myHandler.get());
   SRA.setRmax(Rcut);
-  auto j2 = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
-  size_t nparam                              = 12;  // number of Bspline parameters
-  size_t npts                                = 100; // number of 1D grid points for basis functions
-  RealType cusp                              = SRA.df(0);
-  RealType delta                             = Rcut / static_cast<double>(npts);
+  auto j2        = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
+  size_t nparam  = 12;  // number of Bspline parameters
+  size_t npts    = 100; // number of 1D grid points for basis functions
+  RealType cusp  = SRA.df(0);
+  RealType delta = Rcut / static_cast<double>(npts);
   std::vector<RealType> X(npts + 1), Y(npts + 1);
   for (size_t i = 0; i < npts; ++i)
   {
@@ -220,8 +220,8 @@ void RPAJastrow::reportStatus(std::ostream& os)
 }
 
 RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& G,
-                                                 ParticleSet::ParticleLaplacian_t& L)
+                                                 ParticleSet::ParticleGradient& G,
+                                                 ParticleSet::ParticleLaplacian& L)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Psi.size(); i++)

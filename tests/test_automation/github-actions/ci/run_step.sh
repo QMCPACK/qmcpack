@@ -31,6 +31,28 @@ case "$1" in
       ;; 
     esac
 
+    if [[ "${GH_JOBNAME}" =~ (-CUDA) ]]
+    then
+      if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
+      then
+        echo "Set PATH to cuda-11.2 to be associated with the C and C++ compilers"
+        export PATH=/usr/local/cuda-11.2/bin:$PATH
+        echo "Set CUDACXX CMake environment variable to nvcc cuda 11.2 location due to a regression bug in 11.6"
+        export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
+
+        # Make current environment variables available to subsequent steps
+        echo "PATH=$PATH" >> $GITHUB_ENV
+        echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
+
+      else
+        echo "Set CUDACXX CMake environment variable to nvcc standard location"
+        export CUDACXX=/usr/local/cuda/bin/nvcc
+
+        # Make current environment variables available to subsequent steps
+        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
+      fi
+    fi 
+
     # Sanitizer
     case "${GH_JOBNAME}" in
       *"ASan"*)
@@ -57,8 +79,45 @@ case "$1" in
         IS_MIXED_PRECISION=0
       ;;
     esac
+
+    # Path to QMC_DATA in self-hosted CI system
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    then
+      QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
+    fi
     
     case "${GH_JOBNAME}" in
+      *"GCC9-NoMPI-Debug-"*)
+        echo 'Configure for debug mode to capture asserts with gcc'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DCMAKE_BUILD_TYPE=Debug \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"GCC9-NoMPI-NoOMP-"*)
+        echo 'Configure for disabling OpenMP with QMC_OMP=0'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DQMC_OMP=0 \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"GCC9-NoMPI-Sandbox-"*)
+        echo 'Configure for enabling sandbox (minimal) only option with gcc'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=gcc \
+              -DCMAKE_CXX_COMPILER=g++ \
+              -DQMC_MPI=0 \
+              -DQMC_BUILD_SANDBOX_ONLY=ON \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              ${GITHUB_WORKSPACE}
+      ;;
       *"GCC9-MPI-Gcov-"*)
         echo 'Configure for code coverage with gcc and gcovr -DENABLE_GCOV=TRUE and upload reports to Codecov'
         cmake -GNinja \
@@ -102,16 +161,19 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang14Dev-MPI-CUDA-AFQMC-Offload"*)
+      *"Clang14-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
-              "with llvm development commit 01d59c0de822, need built-from-source OpenBLAS due to bug in rpm"
-              # TODO: upgrade to llvm14 clang14 when available
-        export OMPI_CC=/opt/llvm/01d59c0de822/bin/clang
-        export OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++
+              "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
+
+        export OMPI_CC=/opt/llvm/14.0.1/bin/clang
+        export OMPI_CXX=/opt/llvm/14.0.1/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/01d59c0de822/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/01d59c0de822/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
+
+        # Confirm that cuda 11.2 gets picked up by the compiler
+        /opt/llvm/14.0.1/bin/clang++ -v
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -125,6 +187,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"Intel19-MPI-CUDA-AFQMC"*)
@@ -150,6 +213,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
@@ -164,6 +228,22 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
+              ${GITHUB_WORKSPACE}
+      ;;
+      *"ROCm-Clang13-NoMPI-Legacy-CUDA2HIP"*)
+        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+        cmake -GNinja \
+              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+              -DQMC_CUDA=1 \
+              -DQMC_MPI=0 \
+              -DQMC_CUDA2HIP=ON \
+              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
+              -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-MPI-CUDA-AFQMC"*)
@@ -178,6 +258,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-NoMPI-Legacy-CUDA"*)
@@ -188,6 +269,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"GCC8-NoMPI-MKL-"*)
@@ -201,6 +283,7 @@ case "$1" in
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+              -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
       *"macOS-GCC11-NoMPI-Real"*)
@@ -218,6 +301,12 @@ case "$1" in
 
   # Build using ninja (~ 25 minutes on GitHub-hosted runner)
   build)
+    # CUDA toolchain can be used implicitly by the compiler. Double check the location.
+    if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
+    then
+      which nvcc
+    fi
+
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja
     ;;
@@ -236,7 +325,8 @@ case "$1" in
       echo "Enabling OpenMPI oversubscription"
       export OMPI_MCA_rmaps_base_oversubscribe=1
       export OMPI_MCA_hwloc_base_binding_policy=none
-      if [[ "$HOST_NAME" =~ (sulfur) ]]
+      
+      if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
       then
         echo "Set the management layer to ucx"
         export OMPI_MCA_pml=ucx
@@ -247,13 +337,19 @@ case "$1" in
     then
        echo "Adding /usr/lib/llvm-12/lib/ to LD_LIBRARY_PATH to enable libomptarget.so"
        export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH}
+       export KMP_TEAMS_THREAD_LIMIT=1
        # Run only unit tests (reasonable for CI)
        TEST_LABEL="-L unit"
     fi
 
     if [[ "${GH_JOBNAME}" =~ (CUDA) ]]
     then
-       export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH}
+      if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
+      then
+        export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
+      else
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
+      fi
     fi
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC) ]]
@@ -270,7 +366,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
@@ -282,8 +378,22 @@ case "$1" in
     then 
        source /opt/intel2020/mkl/bin/mklvars.sh intel64
     fi
+
+    # Add ctest concurrent parallel jobs 
+    # Default for Linux GitHub Action runners
+    CTEST_JOBS="2"
+    # Default for macOS GitHub Action runners
+    if [[ "${GH_OS}" =~ (macOS) ]]
+    then
+      CTEST_JOBS="3"
+    fi
+
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    then
+      CTEST_JOBS="32"
+    fi
     
-    ctest --output-on-failure $TEST_LABEL
+    ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS
     ;;
   
   # Generate coverage reports
@@ -300,6 +410,14 @@ case "$1" in
   install)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja install
+    ;;
+
+  rebase)
+    source external_codes/github_actions/auto-rebase.sh
+    ;;
+  
+  pull-rebase)
+    source external_codes/github_actions/trigger-rebase-on-push.sh
     ;;
 
   *)

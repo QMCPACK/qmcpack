@@ -32,8 +32,6 @@ public:
   VMCBatchedTest()
   {
     Concurrency::OverrideMaxCapacity<> override(8);
-    Communicate* comm;
-    OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
   }
 
@@ -41,9 +39,6 @@ public:
   {
     using namespace testing;
     Concurrency::OverrideMaxCapacity<> override(8);
-    Communicate* comm;
-    OHMMS::Controller->initialize(0, NULL);
-    comm = OHMMS::Controller;
 
     Libxml2Document doc;
     doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
@@ -51,13 +46,9 @@ public:
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
-    MinimalParticlePool mpp;
-    ParticleSetPool particle_pool = mpp(comm);
-    MinimalWaveFunctionPool wfp;
-    WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
-    wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
-    MinimalHamiltonianPool mhp;
-    HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm_);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm_, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
   }
 
 private:

@@ -35,10 +35,10 @@ namespace qmcplusplus
 class RandomNumberControl : public OhmmsElementBase
 {
 public:
-  typedef RandomGenerator_t::uint_type uint_type;
+  using uint_type = RandomGenerator::uint_type;
   static PrimeNumberSet<uint_type> PrimeNumbers;
   //children random number generator
-  static std::vector<std::unique_ptr<RandomGenerator_t>> Children;
+  static std::vector<std::unique_ptr<RandomGenerator>> Children;
 
   /// constructors and destructors
   RandomNumberControl(const char* aname = "random");
@@ -86,16 +86,6 @@ public:
    * @param comm communicator
    */
   static void write_rank_0(hdf_archive& hout, Communicate* comm);
-  /** read random state from a xml file
-   * @param fname file name
-   * @param comm communicator
-   */
-  static void read_old(const std::string& fname, Communicate* comm);
-  /** write random state to a xml file
-   * @param fname file name
-   * @param comm communicator
-   */
-  static void write_old(const std::string& fname, Communicate* comm);
 
 private:
   bool NeverBeenInitialized;

@@ -88,7 +88,7 @@
       <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
-         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml" algorithm="non-batched">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
          <estimator type="flux" name="Flux"/>

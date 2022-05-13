@@ -18,8 +18,15 @@
 project(qmctools)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${qmcpack_BINARY_DIR}/bin)
-add_executable(convert4qmc convert4qmc.cpp QMCGaussianParserBase.cpp GaussianFCHKParser.cpp GamesAsciiParser.cpp
-  LCAOHDFParser.cpp DiracParser.cpp RMGParser.cpp)
+add_executable(
+  convert4qmc
+  convert4qmc.cpp
+  QMCGaussianParserBase.cpp
+  GaussianFCHKParser.cpp
+  GamesAsciiParser.cpp
+  LCAOHDFParser.cpp
+  DiracParser.cpp
+  RMGParser.cpp)
 
 target_link_libraries(convert4qmc PUBLIC qmcparticle)
 if(USE_OBJECT_TARGET)
@@ -51,8 +58,14 @@ if(USE_OBJECT_TARGET)
   target_link_libraries(qmcfinitesize qmcparticle qmcutil)
 endif()
 
-install(TARGETS convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc qmcfinitesize
-        RUNTIME DESTINATION bin)
+file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gpaw4qmcpack.py ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpaw4qmcpack.py SYMBOLIC)
+install(FILES gpaw4qmcpack.py DESTINATION bin)
+
+foreach(EXE_TARGET convert4qmc qmc-extract-eshdf-kvectors qmc-get-supercell qmc-check-affinity convertpw4qmc
+                   qmcfinitesize)
+  add_test_target_in_output_location(${EXE_TARGET} bin)
+  install(TARGETS ${EXE_TARGET} RUNTIME DESTINATION bin)
+endforeach()
 
 add_subdirectory(ppconvert)
 

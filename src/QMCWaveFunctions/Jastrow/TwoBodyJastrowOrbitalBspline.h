@@ -39,13 +39,13 @@ private:
   // Mostly QMCTraits here
   using JBase = J2OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType      = typename JBase::RealType;
-  using ValueType     = typename JBase::ValueType;
-  using GradType      = typename JBase::GradType;
-  using PosType       = typename JBase::PosType;
-  using GradMatrix_t  = typename JBase::GradMatrix_t;
-  using ValueMatrix_t = typename JBase::ValueMatrix_t;
-  using RealMatrix_t  = typename JBase::RealMatrix_t;
+  using RealType     = typename JBase::RealType;
+  using ValueType    = typename JBase::ValueType;
+  using GradType     = typename JBase::GradType;
+  using PosType      = typename JBase::PosType;
+  using GradMatrix   = typename JBase::GradMatrix;
+  using ValueMatrix  = typename JBase::ValueMatrix;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
@@ -72,7 +72,7 @@ private:
   gpu::device_vector<CTS::RealType> NL_rMaxGPU, NL_QuadPointsGPU, NL_RatiosGPU;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
   void freeGPUmem() override;
   void checkInVariables(opt_variables_type& active) override;
@@ -138,7 +138,7 @@ public:
 
   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
@@ -175,7 +175,7 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC = pset.Lattice.SuperCellEnum;
+    UsePBC = pset.getLattice().SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;
     int nsp = this->NumGroups = pset.groups();
     GPUSplines.resize(nsp * nsp, 0);
@@ -185,8 +185,8 @@ public:
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.getLattice().b(j)[i];
         }
       // for (int i=0; i<OHMMS_DIM; i++)
       // 	for (int j=0; j<OHMMS_DIM; j++) {

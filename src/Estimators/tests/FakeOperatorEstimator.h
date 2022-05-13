@@ -32,7 +32,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator_t& rng) override
+                  RandomGenerator& rng) override
   {}
 
   void registerOperatorEstimator(hid_t gid) override {}

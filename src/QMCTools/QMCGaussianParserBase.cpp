@@ -43,7 +43,11 @@ const std::vector<double> QMCGaussianParserBase::gCoreTable = {
     18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
     28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
     36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
-    46, 46, 46, 46, 46, 54                  /*In-Xe*/
+    46, 46, 46, 46, 46, 54,                 /*In-Xe*/
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*Cs-  */
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*   Lu*/
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*Hf-Hg*/
+    78, 78, 78, 78, 78, 78,                 /*Tl-Rn*/
 };
 
 QMCGaussianParserBase::QMCGaussianParserBase()
@@ -100,6 +104,7 @@ QMCGaussianParserBase::QMCGaussianParserBase()
       multih5file(""),
       WFS_name("wfj"),
       CodeName(""),
+      IonSystem(simulation_cell),
       gShell(0),
       gNumber(0),
       gBound(0),
@@ -164,6 +169,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv)
       multih5file(""),
       WFS_name("wfj"),
       CodeName(""),
+      IonSystem(simulation_cell),
       gShell(0),
       gNumber(0),
       gBound(0),
@@ -343,7 +349,7 @@ void QMCGaussianParserBase::setOccupationNumbers()
 
 xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
 {
-  ParticleSet els;
+  ParticleSet els(simulation_cell);
   els.setName("e");
   if (!isSpinor)
   {
@@ -2468,8 +2474,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag, 
       xmlAddChild(hamPtr, pairpot3);
     }
 
-    std::string tmp_codename = CodeName;
-    tolower(tmp_codename);
+    std::string tmp_codename(lowerCase(CodeName));
 
     if (tmp_codename == "rmg")
     {

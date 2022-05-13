@@ -38,20 +38,20 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   {
     MAXINDEX = 2 + OHMMS_DIM
   };
-  typedef typename OrbitalSetTraits<T>::RealType RealType;
-  typedef typename OrbitalSetTraits<T>::ValueType ValueType;
-  typedef typename OrbitalSetTraits<T>::IndexType IndexType;
-  typedef typename OrbitalSetTraits<T>::HessType HessType;
-  typedef typename OrbitalSetTraits<T>::IndexVector_t IndexVector_t;
-  typedef typename OrbitalSetTraits<T>::ValueVector_t ValueVector_t;
-  typedef typename OrbitalSetTraits<T>::ValueMatrix_t ValueMatrix_t;
-  typedef typename OrbitalSetTraits<T>::GradVector_t GradVector_t;
-  typedef typename OrbitalSetTraits<T>::GradMatrix_t GradMatrix_t;
-  typedef typename OrbitalSetTraits<T>::HessVector_t HessVector_t;
-  typedef typename OrbitalSetTraits<T>::HessMatrix_t HessMatrix_t;
-  typedef TinyVector<HessType, OHMMS_DIM> GGGType;
-  typedef Vector<GGGType> GGGVector_t;
-  typedef Matrix<GGGType> GGGMatrix_t;
+  using RealType    = typename OrbitalSetTraits<T>::RealType;
+  using ValueType   = typename OrbitalSetTraits<T>::ValueType;
+  using IndexType   = typename OrbitalSetTraits<T>::IndexType;
+  using HessType    = typename OrbitalSetTraits<T>::HessType;
+  using IndexVector = typename OrbitalSetTraits<T>::IndexVector;
+  using ValueVector = typename OrbitalSetTraits<T>::ValueVector;
+  using ValueMatrix = typename OrbitalSetTraits<T>::ValueMatrix;
+  using GradVector  = typename OrbitalSetTraits<T>::GradVector;
+  using GradMatrix  = typename OrbitalSetTraits<T>::GradMatrix;
+  using HessVector  = typename OrbitalSetTraits<T>::HessVector;
+  using HessMatrix  = typename OrbitalSetTraits<T>::HessMatrix;
+  using GGGType     = TinyVector<HessType, OHMMS_DIM>;
+  using GGGVector   = Vector<GGGType>;
+  using GGGMatrix   = Matrix<GGGType>;
 
 
   ///size of the basis set
@@ -61,21 +61,21 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   ///counter to keep track
   unsigned long Counter;
   ///phi[i] the value of the i-th basis set
-  ValueVector_t Phi;
+  ValueVector Phi;
   ///dphi[i] the gradient of the i-th basis set
-  GradVector_t dPhi;
+  GradVector dPhi;
   ///d2phi[i] the laplacian of the i-th basis set
-  ValueVector_t d2Phi;
+  ValueVector d2Phi;
   ///grad_grad_Phi[i] the full hessian of the i-th basis set
-  HessVector_t grad_grad_Phi;
+  HessVector grad_grad_Phi;
   ///grad_grad_grad_Phi the full hessian of the i-th basis set
-  GGGVector_t grad_grad_grad_Phi;
+  GGGVector grad_grad_grad_Phi;
   ///container to store value, laplacian and gradient
-  ValueMatrix_t Temp;
+  ValueMatrix Temp;
 
-  ValueMatrix_t Y;
-  GradMatrix_t dY;
-  ValueMatrix_t d2Y;
+  ValueMatrix Y;
+  GradMatrix dY;
+  ValueMatrix d2Y;
 
   ///default constructor
   BasisSetBase() : BasisSetSize(0), ActivePtcl(-1), Counter(0) {}
@@ -136,10 +136,10 @@ struct BasisSetBase : public OrbitalSetTraits<T>
 template<typename T>
 struct SoaBasisSetBase
 {
-  typedef T value_type;
-  typedef VectorSoaContainer<T, OHMMS_DIM + 2> vgl_type;
-  typedef VectorSoaContainer<T, 10> vgh_type;
-  typedef VectorSoaContainer<T, 20> vghgh_type;
+  using value_type = T;
+  using vgl_type   = VectorSoaContainer<T, OHMMS_DIM + 2>;
+  using vgh_type   = VectorSoaContainer<T, 10>;
+  using vghgh_type = VectorSoaContainer<T, 20>;
   ///size of the basis set
   int BasisSetSize;
 

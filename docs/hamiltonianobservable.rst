@@ -204,6 +204,8 @@ attributes:
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``physical``:math:`^o`  | boolean      | yes/no               | yes                    | Hamiltonian(yes)/Observable(no) |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
+  | ``gpu``                 | boolean      | yes/no               | depend                 | Offload computation to GPU      |
+  +-------------------------+--------------+----------------------+------------------------+---------------------------------+
   | ``forces``              | boolean      | yes/no               | no                     | *Deprecated*                    |
   +-------------------------+--------------+----------------------+------------------------+---------------------------------+
 
@@ -232,6 +234,8 @@ Additional information:
    outputted ``LocalEnergy``. Regardless of the value of ``physical``
    output data will appear in ``scalar.dat`` in a column headed by
    ``name``.
+
+-  **gpu**: When not specified, use the ``gpu`` attribute of ``particleset``.
 
 .. code-block::
   :caption: QMCPXML element for Coulomb interaction between electrons.
@@ -327,7 +331,7 @@ attributes:
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``format``:math:`^r`        | text         | xml/table             | table                  | Select file format                               |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
-  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | depends                | Choose NLPP algorithm                            |
+  | ``algorithm``:math:`^o`     | text         | batched/non-batched   | batched                | Choose NLPP algorithm                            |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
   | ``DLA``:math:`^o`           | text         | yes/no                | no                     | Use determinant localization approximation       |
   +-----------------------------+--------------+-----------------------+------------------------+--------------------------------------------------+
@@ -359,9 +363,7 @@ Additional information:
    These elements specify individual file names and formats (both the
    FSAtom XML and CASINO tabular data formats are supported).
 
--  **algorithm** The default value is ``batched`` when OpenMP offload
-   is enabled and``non-batched`` otherwise.
-   The ``non-batched`` algorithm evaluates the ratios of
+-  **algorithm** The ``non-batched`` algorithm evaluates the ratios of
    wavefunction components together for each quadrature point and then
    one point after another. The ``batched`` algorithm evaluates the ratios
    of quadrature points together for each wavefunction component and
@@ -1684,7 +1686,7 @@ Additional information:
   :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
   :name: Listing 39
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="spo_uv" group="0" index_min="4" index_max="10"/>
@@ -1694,7 +1696,7 @@ Additional information:
   :caption: Example ``sposet`` initialization for density matrix use. Density matrix orbital basis created separately (``basis="dm_basis"``).
   :name: Listing 40
 
-  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" meshfactor="1.0" gpu="no" precision="single">
+  <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
     <sposet type="bspline" name="spo_d"  group="0" size="2"/>
     <sposet type="bspline" name="dm_basis" size="50" spindataset="0"/>

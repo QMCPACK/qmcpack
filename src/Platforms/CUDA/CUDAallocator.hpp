@@ -40,10 +40,10 @@ inline size_t getCUDAdeviceMemAllocated() { return CUDAallocator_device_mem_allo
 template<typename T>
 struct CUDAManagedAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAManagedAllocator() = default;
   template<class U>
@@ -53,7 +53,7 @@ struct CUDAManagedAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAManagedAllocator<U> other;
+    using other = CUDAManagedAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -95,10 +95,10 @@ template<typename T>
 class CUDAAllocator
 {
 public:
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAAllocator() = default;
   template<class U>
@@ -108,7 +108,7 @@ public:
   template<class U>
   struct rebind
   {
-    typedef CUDAAllocator<U> other;
+    using other = CUDAAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -155,19 +155,19 @@ public:
   void copyToDevice(T* device_ptr, T* host_ptr, size_t n)
   {
     cudaErrorCheck(cudaMemcpy(device_ptr, host_ptr, sizeof(T) * n, cudaMemcpyHostToDevice),
-                     "cudaMemcpy failed in copyToDevice");
+                   "cudaMemcpy failed in copyToDevice");
   }
 
   void copyFromDevice(T* host_ptr, T* device_ptr, size_t n)
   {
     cudaErrorCheck(cudaMemcpy(host_ptr, device_ptr, sizeof(T) * n, cudaMemcpyDeviceToHost),
-                     "cudaMemcpy failed in copyFromDevice");
+                   "cudaMemcpy failed in copyFromDevice");
   }
 
   void copyDeviceToDevice(T* to_ptr, size_t n, T* from_ptr)
   {
-      cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
-                     "cudaMemcpy failed in copyDeviceToDevice");
+    cudaErrorCheck(cudaMemcpy(to_ptr, from_ptr, sizeof(T) * n, cudaMemcpyDeviceToDevice),
+                   "cudaMemcpy failed in copyDeviceToDevice");
   }
 };
 
@@ -188,18 +188,6 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
-  static void updateTo(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyToDevice(device_ptr, host_ptr, n);
-  }
-
-  static void updateFrom(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyFromDevice(host_ptr, device_ptr, n);
-  }
-
 };
 
 /** allocator for CUDA host pinned memory
@@ -208,10 +196,10 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
 template<typename T>
 struct CUDAHostAllocator
 {
-  typedef T value_type;
-  typedef size_t size_type;
-  typedef T* pointer;
-  typedef const T* const_pointer;
+  using value_type    = T;
+  using size_type     = size_t;
+  using pointer       = T*;
+  using const_pointer = const T*;
 
   CUDAHostAllocator() = default;
   template<class U>
@@ -221,7 +209,7 @@ struct CUDAHostAllocator
   template<class U>
   struct rebind
   {
-    typedef CUDAHostAllocator<U> other;
+    using other = CUDAHostAllocator<U>;
   };
 
   T* allocate(std::size_t n)
@@ -230,8 +218,7 @@ struct CUDAHostAllocator
     cudaErrorCheck(cudaMallocHost(&pt, n * sizeof(T)), "Allocation failed in CUDAHostAllocator!");
     return static_cast<T*>(pt);
   }
-  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!");
-  }
+  void deallocate(T* p, std::size_t) { cudaErrorCheck(cudaFreeHost(p), "Deallocation failed in CUDAHostAllocator!"); }
 };
 
 template<class T1, class T2>
@@ -267,7 +254,7 @@ struct CUDALockedPageAllocator : public ULPHA
   template<class U, class V>
   struct rebind
   {
-    typedef CUDALockedPageAllocator<U, V> other;
+    using other = CUDALockedPageAllocator<U, V>;
   };
 
   value_type* allocate(std::size_t n)

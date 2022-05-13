@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="qmc_onebodydensitymatrices_short" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <qmcsystem>
       <simulationcell>
@@ -60,7 +61,7 @@
          </pairpot>
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <estimator type="OneBodyDensityMatrices" name="OneBodyDensityMatrices">
        <parameter name="basis"        >  spo_ud spo_dm </parameter>

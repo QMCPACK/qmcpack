@@ -39,19 +39,19 @@ class WalkerControl : public MPIObjectBase
 {
 public:
   ///typedef of Walker_t
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
   /// distinct type for "new" walker, currently same as Walker_t
   using MCPWalker = MCPopulation::MCPWalker;
   ///typedef of FullPrecRealType
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///typedef of IndexType
-  typedef QMCTraits::IndexType IndexType;
+  using IndexType = QMCTraits::IndexType;
 
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop = false);
+  WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop = false);
 
   /** empty destructor to clean up the derived classes */
   ~WalkerControl();
@@ -141,7 +141,7 @@ private:
   };
 
   ///random number generator
-  RandomGenerator_t& rng_;
+  RandomGenerator& rng_;
   ///if true, use fixed population
   bool use_fixed_pop_;
   ///minimum number of walkers

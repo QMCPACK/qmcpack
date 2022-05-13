@@ -14,42 +14,34 @@
 ####################################
 set(PARTICLE
     InitMolecularSystem.cpp
+    SimulationCell.cpp
     ParticleSetPool.cpp
     ParticleSet.cpp
     PSdispatcher.cpp
     VirtualParticleSet.cpp
     ParticleSet.BC.cpp
     DynamicCoordinatesBuilder.cpp
+    MCCoords.cpp
     MCWalkerConfiguration.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp
     HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
+    LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
+    LongRange/EwaldHandler2D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
-if(ENABLE_OFFLOAD)
-  set(PARTICLE ${PARTICLE} createDistanceTableAAOMPTarget.cpp createDistanceTableABOMPTarget.cpp)
-endif(ENABLE_OFFLOAD)
-
-if(OHMMS_DIM MATCHES 2)
-  set(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-endif(OHMMS_DIM MATCHES 2)
-
-set(PARTICLEIO
-    ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
-    ParticleIO/XMLParticleIO.cpp
-    ParticleIO/ParticleIOUtility.cpp
-    HDFWalkerOutput.cpp
-    HDFWalkerInput_0_4.cpp)
+set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp
+               HDFWalkerInput_0_4.cpp)
 
 if(USE_OBJECT_TARGET)
   add_library(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})

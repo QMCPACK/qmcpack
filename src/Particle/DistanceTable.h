@@ -142,7 +142,7 @@ public:
   virtual void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
-                       const IndexType iat = 0,
+                       const IndexType iat,
                        bool prepare_old    = true) const
   {
 #pragma omp parallel for
@@ -195,23 +195,6 @@ public:
 #pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].finalizePbyP(p_list[iw]);
-  }
-
-  /** build a compact list of a neighbor for the iat source
-   * @param iat source particle id
-   * @param rcut cutoff radius
-   * @param jid compressed index
-   * @param dist compressed distance
-   * @param displ compressed displacement
-   * @return number of target particles within rcut
-   */
-  virtual size_t get_neighbors(int iat,
-                               RealType rcut,
-                               int* restrict jid,
-                               RealType* restrict dist,
-                               PosType* restrict displ) const
-  {
-    return 0;
   }
 
   /** find the first nearest neighbor
@@ -306,10 +289,20 @@ public:
    */
   const DisplRow& getOldDispls() const { return old_dr_; }
 
+  virtual size_t get_num_particls_stored() const { return 0; }
+
   /// return multi walker temporary pair distance table data pointer
   virtual const RealType* getMultiWalkerTempDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+    return nullptr;
+  }
+
+  virtual const RealType* mw_evalDistsInRange(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              size_t range_begin,
+                                              size_t range_end) const
+  {
     return nullptr;
   }
 };

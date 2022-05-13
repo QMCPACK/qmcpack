@@ -19,8 +19,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "MultiQuinticSpline1D.h"
-#include "SoaCartesianTensor.h"
-#include "SoaSphericalTensor.h"
+#include "Numerics/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 #include "SoaAtomicBasisSet.h"
 #include "SoaLocalizedBasisSet.h"
 #include "LCAOrbitalSet.h"
@@ -132,8 +132,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "basisset")
     {
-      XMLAttrString basisset_name_input(element, "name");
-      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
       if (basisset_map_.find(basisset_name) != basisset_map_.end())
       {
         std::ostringstream err_msg;
@@ -850,7 +850,7 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   else
   {
-    const XMLAttrString o(occ_ptr, "mode");
+    const std::string o(getXMLAttributeValue(occ_ptr, "mode"));
     if (!o.empty())
       occ_mode = o;
   }

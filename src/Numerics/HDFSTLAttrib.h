@@ -25,7 +25,7 @@ namespace qmcplusplus
 template<>
 struct HDFAttribIO<std::vector<int>> : public HDFAttribIOBase
 {
-  typedef std::vector<int> ArrayType_t;
+  using ArrayType_t = std::vector<int>;
   ArrayType_t& ref;
   bool replace;
 
@@ -70,7 +70,7 @@ struct HDFAttribIO<std::vector<int>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<std::vector<double>> : public HDFAttribIOBase
 {
-  typedef std::vector<double> ArrayType_t;
+  using ArrayType_t = std::vector<double>;
   std::vector<hsize_t> Dim;
   ArrayType_t& ref;
   bool replace;
@@ -145,7 +145,7 @@ struct HDFAttribIO<std::vector<std::complex<double>>> : public HDFAttribIOBase
   //NOTE: This specialization assumes each complex number was/will be saved
   // as a pair of doubles. This is checked.
 
-  typedef std::vector<std::complex<double>> ArrayType_t;
+  using ArrayType_t = std::vector<std::complex<double>>;
   std::vector<hsize_t> Dim;
   ArrayType_t& ref;
 
@@ -210,7 +210,7 @@ struct HDFAttribIO<std::bitset<N>> : public HDFAttribIOBase
   //NOTE: This specialization assumes each complex number was/will be saved
   // as a pair of doubles. This is checked.
 
-  typedef std::bitset<N> ArrayType_t;
+  using ArrayType_t = std::bitset<N>;
   ArrayType_t& ref;
   bool replace;
 

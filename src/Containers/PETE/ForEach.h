@@ -76,7 +76,7 @@ namespace qmcplusplus
 template<class Expr, class FTag, class CTag>
 struct ForEach
 {
-  typedef typename LeafFunctor<Expr, FTag>::Type_t Type_t;
+  using Type_t = typename LeafFunctor<Expr, FTag>::Type_t;
   inline static Type_t apply(const Expr& expr, const FTag& f, const CTag&)
   {
     return LeafFunctor<Expr, FTag>::apply(expr, f);
@@ -92,8 +92,8 @@ inline typename ForEach<Expr, FTag, CTag>::Type_t forEach(const Expr& e, const F
 template<class Op, class A, class FTag, class CTag>
 struct ForEach<UnaryNode<Op, A>, FTag, CTag>
 {
-  typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
-  typedef typename Combine1<TypeA_t, Op, CTag>::Type_t Type_t;
+  using TypeA_t = typename ForEach<A, FTag, CTag>::Type_t;
+  using Type_t  = typename Combine1<TypeA_t, Op, CTag>::Type_t;
   inline static Type_t apply(const UnaryNode<Op, A>& expr, const FTag& f, const CTag& c)
   {
     return Combine1<TypeA_t, Op, CTag>::combine(ForEach<A, FTag, CTag>::apply(expr.child(), f, c), expr.operation(), c);
@@ -103,9 +103,9 @@ struct ForEach<UnaryNode<Op, A>, FTag, CTag>
 template<class Op, class A, class B, class FTag, class CTag>
 struct ForEach<BinaryNode<Op, A, B>, FTag, CTag>
 {
-  typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
-  typedef typename ForEach<B, FTag, CTag>::Type_t TypeB_t;
-  typedef typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t Type_t;
+  using TypeA_t = typename ForEach<A, FTag, CTag>::Type_t;
+  using TypeB_t = typename ForEach<B, FTag, CTag>::Type_t;
+  using Type_t  = typename Combine2<TypeA_t, TypeB_t, Op, CTag>::Type_t;
   inline static Type_t apply(const BinaryNode<Op, A, B>& expr, const FTag& f, const CTag& c)
   {
     return Combine2<TypeA_t, TypeB_t, Op, CTag>::combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
@@ -117,10 +117,10 @@ struct ForEach<BinaryNode<Op, A, B>, FTag, CTag>
 template<class Op, class A, class B, class C, class FTag, class CTag>
 struct ForEach<TrinaryNode<Op, A, B, C>, FTag, CTag>
 {
-  typedef typename ForEach<A, FTag, CTag>::Type_t TypeA_t;
-  typedef typename ForEach<B, FTag, CTag>::Type_t TypeB_t;
-  typedef typename ForEach<C, FTag, CTag>::Type_t TypeC_t;
-  typedef typename Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::Type_t Type_t;
+  using TypeA_t = typename ForEach<A, FTag, CTag>::Type_t;
+  using TypeB_t = typename ForEach<B, FTag, CTag>::Type_t;
+  using TypeC_t = typename ForEach<C, FTag, CTag>::Type_t;
+  using Type_t  = typename Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::Type_t;
   inline static Type_t apply(const TrinaryNode<Op, A, B, C>& expr, const FTag& f, const CTag& c)
   {
     return Combine3<TypeA_t, TypeB_t, TypeC_t, Op, CTag>::combine(ForEach<A, FTag, CTag>::apply(expr.left(), f, c),
@@ -138,7 +138,7 @@ class Expression;
 template<class T, class FTag, class CTag>
 struct ForEach<Expression<T>, FTag, CTag>
 {
-  typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
+  using Type_t = typename ForEach<T, FTag, CTag>::Type_t;
   inline static Type_t apply(const Expression<T>& expr, const FTag& f, const CTag& c)
   {
     return ForEach<T, FTag, CTag>::apply(expr.expression(), f, c);
@@ -153,7 +153,7 @@ struct Reference;
 template<class T, class FTag, class CTag>
 struct ForEach<Reference<T>, FTag, CTag>
 {
-  typedef typename ForEach<T, FTag, CTag>::Type_t Type_t;
+  using Type_t = typename ForEach<T, FTag, CTag>::Type_t;
   inline static Type_t apply(const Reference<T>& ref, const FTag& f, const CTag& c)
   {
     return ForEach<T, FTag, CTag>::apply(ref.reference(), f, c);

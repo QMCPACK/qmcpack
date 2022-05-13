@@ -29,9 +29,9 @@ PWOrbitalSet::~PWOrbitalSet()
 
 std::unique_ptr<SPOSet> PWOrbitalSet::makeClone() const
 {
-  auto myclone          = std::make_unique<PWOrbitalSet>(*this);
-  myclone->myBasisSet   = new PWBasis(*myBasisSet);
-  myclone->IsCloned     = true;
+  auto myclone        = std::make_unique<PWOrbitalSet>(*this);
+  myclone->myBasisSet = new PWBasis(*myBasisSet);
+  myclone->IsCloned   = true;
   return myclone;
 }
 
@@ -48,7 +48,7 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   OrbitalSetSize = nbands;
   OwnBasisSet    = cleanup;
   BasisSetSize   = myBasisSet->NumPlaneWaves;
-  C              = new ValueMatrix_t(OrbitalSetSize, BasisSetSize);
+  C              = new ValueMatrix(OrbitalSetSize, BasisSetSize);
   Temp.resize(OrbitalSetSize, PW_MAXINDEX);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize
             << std::endl;
@@ -88,7 +88,7 @@ void PWOrbitalSet::addVector(const std::vector<RealType>& coefs, int jorb)
   }
 }
 
-void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
@@ -97,7 +97,7 @@ void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& p
   MatrixOperators::product(*C, myBasisSet->Zv, &psi[0]);
 }
 
-void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   //Evaluate the orbitals and derivatives for particle iat only.
   myBasisSet->evaluateAll(P, iat);
@@ -114,9 +114,9 @@ void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector_t& psi
 void PWOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                         int first,
                                         int last,
-                                        ValueMatrix_t& logdet,
-                                        GradMatrix_t& dlogdet,
-                                        ValueMatrix_t& d2logdet)
+                                        ValueMatrix& logdet,
+                                        GradMatrix& dlogdet,
+                                        ValueMatrix& d2logdet)
 {
   for (int iat = first, i = 0; iat < last; iat++, i++)
   {

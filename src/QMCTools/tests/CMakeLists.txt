@@ -9,7 +9,6 @@
 #// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 set(SRC_DIR tools)
 set(UTEST_EXE test_${SRC_DIR})
@@ -37,20 +36,26 @@ if(HAVE_MPI)
 else()
   add_test(NAME check-affinity_runs COMMAND $<TARGET_FILE:qmc-check-affinity>)
 endif()
-set_tests_properties(
-  check-affinity_runs
-  PROPERTIES TIMEOUT
-             120
-             LABELS
-             "deterministic"
-             PASS_REGULAR_EXPRESSION
-             "OpenMP"
-             PROCESSORS
-             1
-             ENVIRONMENT
-             OMP_NUM_THREADS=3
-             PROCESSOR_AFFINITY
-             TRUE)
+
+if(QMC_OMP)
+  set_tests_properties(
+    check-affinity_runs
+    PROPERTIES TIMEOUT
+               120
+               LABELS
+               "deterministic"
+               PASS_REGULAR_EXPRESSION
+               "OpenMP"
+               PROCESSORS
+               1
+               ENVIRONMENT
+               OMP_NUM_THREADS=3
+               PROCESSOR_AFFINITY
+               TRUE)
+else()
+  message(STATUS "Check-affinity-runs without OpenMP")
+  set_tests_properties(check-affinity_runs PROPERTIES TIMEOUT 120 LABELS "deterministic" PROCESSORS 1)
+endif()
 
 # Basic test for qmc-get-supercell. Cubic primitive vectors, request what should optimally be a 2x2x2 tiling
 if(HAVE_MPI)

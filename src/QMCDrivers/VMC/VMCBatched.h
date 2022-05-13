@@ -37,7 +37,7 @@ public:
   using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
 
   /** To avoid 10's of arguments to runVMCStep
    *
@@ -80,6 +80,7 @@ public:
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
+  template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,

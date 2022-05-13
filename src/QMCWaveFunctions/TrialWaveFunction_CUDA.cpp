@@ -252,7 +252,7 @@ void TrialWaveFunction::update(const std::vector<Walker_t*>& walkers, const std:
 }
 
 
-void TrialWaveFunction::gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+void TrialWaveFunction::gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
 {
   for (int i = 0; i < grads.rows(); i++)
     for (int j = 0; j < grads.cols(); j++)
@@ -328,8 +328,8 @@ void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<R
 void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W,
                                          std::vector<RealType>& logpsi_fixed,
                                          std::vector<RealType>& logpsi_opt,
-                                         GradMatrix_t& fixedG,
-                                         ValueMatrix_t& fixedL)
+                                         GradMatrix& fixedG,
+                                         ValueMatrix& fixedL)
 {
   for (int iw = 0; iw < logpsi_fixed.size(); iw++)
   {
@@ -376,8 +376,8 @@ void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W,
 
 void TrialWaveFunction::evaluateOptimizableLog(MCWalkerConfiguration& W,
                                                std::vector<RealType>& logpsi_opt,
-                                               GradMatrix_t& optG,
-                                               ValueMatrix_t& optL)
+                                               GradMatrix& optG,
+                                               ValueMatrix& optL)
 {
   for (int iw = 0; iw < W.getActiveWalkers(); iw++)
     logpsi_opt[iw] = RealType();

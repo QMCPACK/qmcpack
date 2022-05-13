@@ -36,21 +36,20 @@ struct h5data_proxy<boost::multi::array<T, 1, Alloc>> : public h5_space_type<T, 
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array<T, 1, Alloc>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.num_elements(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     using iextensions = typename boost::multi::iextensions<1u>;
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.reextent(iextensions{dims[0]});
-    return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
+      ref.reextent(iextensions{static_cast<boost::multi::size_t>(dims[0])});
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 };
 
@@ -61,22 +60,23 @@ struct h5data_proxy<boost::multi::array<T, 2, Alloc>> : public h5_space_type<T, 
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array<T, 2, Alloc>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
-    dims[0] = ref_.size(0);
-    dims[1] = ref_.size(1);
+    dims[0] = a.size(0);
+    dims[1] = a.size(1);
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.reextent({dims[0], dims[1]});
-    return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
+      ref.reextent({static_cast<boost::multi::size_t>(dims[0]), static_cast<boost::multi::size_t>(dims[1])});
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 };
 
@@ -87,27 +87,26 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, Ptr>> : public h5_space_type<T
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array_ref<T, 1, Ptr>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.num_elements(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << ref_.size(0) << std::endl;
+        std::cerr << dims[0] << " " << ref.size(0) << std::endl;
       }
       return false;
     }
-    return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 };
 
@@ -118,29 +117,30 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, Ptr>> : public h5_space_type<T
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array_ref<T, 2, Ptr>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
-    dims[0] = ref_.size(0);
-    dims[1] = ref_.size(1);
+    dims[0] = a.size(0);
+    dims[1] = a.size(1);
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << dims[1] << " " << ref_.size(0) << " " << ref_.size(1) << std::endl;
+        std::cerr << dims[0] << " " << dims[1] << " " << ref.size(0) << " " << ref.size(1) << std::endl;
       }
       return false;
     }
-    return h5d_read(grp, aname, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_read(grp, aname, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(std::addressof(*ref.origin())), xfer_plist);
   }
 };
 
@@ -156,26 +156,25 @@ struct h5data_proxy<boost::multi::array<T, 1, device::device_allocator<T>>> : pu
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array<T, 1, device::device_allocator<T>>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.num_elements(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.reextent({dims[0]});
-    std::size_t sz    = ref_.num_elements();
+      ref.reextent({dims[0]});
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref.origin());
     return ret;
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
   }
 };
 
@@ -186,28 +185,29 @@ struct h5data_proxy<boost::multi::array<T, 2, device::device_allocator<T>>> : pu
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array<T, 2, device::device_allocator<T>>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
-    dims[0] = ref_.size(0);
-    dims[1] = ref_.size(1);
+    dims[0] = a.size(0);
+    dims[1] = a.size(1);
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.reextent({dims[0], dims[1]});
-    std::size_t sz    = ref_.num_elements();
+      ref.reextent({dims[0], dims[1]});
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref.origin());
     return ret;
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
   }
 };
 
@@ -218,33 +218,32 @@ struct h5data_proxy<boost::multi::array_ref<T, 1, device::device_pointer<T>>> : 
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array_ref<T, 1, device::device_pointer<T>>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.num_elements(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.num_elements(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << ref_.size(0) << std::endl;
+        std::cerr << dims[0] << " " << ref.size(0) << std::endl;
       }
       return false;
     }
-    std::size_t sz    = ref_.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref.origin());
     return ret;
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
   }
 };
 
@@ -255,68 +254,72 @@ struct h5data_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>> : 
   using FileSpace::dims;
   using FileSpace::get_address;
   using data_type = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
-  data_type& ref_;
 
-  inline h5data_proxy(data_type& a) : ref_(a)
+  inline h5data_proxy(const data_type& a)
   {
-    dims[0] = ref_.size(0);
-    dims[1] = ref_.size(1);
+    dims[0] = a.size(0);
+    dims[1] = a.size(1);
   }
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
     {
       if (dims[0] * dims[1] > 0)
       {
         std::cerr << " Error: multi::array_ref can't be resized in h5data_proxy<>::read." << std::endl;
-        std::cerr << dims[0] << " " << dims[1] << " " << ref_.size(0) << " " << ref_.size(1) << std::endl;
+        std::cerr << dims[0] << " " << dims[1] << " " << ref.size(0) << " " << ref.size(1) << std::endl;
       }
       return false;
     }
-    std::size_t sz    = ref_.num_elements();
+    auto sz           = ref.num_elements();
     using iextensions = typename boost::multi::iextensions<1u>;
     boost::multi::array<T, 1> buf(iextensions{sz});
     auto ret = h5d_read(grp, aname, get_address(buf.data()), xfer_plist);
-    device::copy_n(buf.data(), sz, ref_.origin());
+    device::copy_n(buf.data(), sz, ref.origin());
     return ret;
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     throw std::runtime_error(" write from gpu not implemented yet.");
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref_.origin())), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(to_address(ref.origin())), xfer_plist);
   }
 };
 
 template<typename T, unsigned RANK>
 struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_allocator<T>>, RANK>>
 {
-  typedef boost::multi::array<T, 2, device::device_allocator<T>> CT;
-  hyperslab_proxy<CT, RANK>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  using CT        = boost::multi::array<T, 2, device::device_allocator<T>>;
+  using data_type = hyperslab_proxy<CT, RANK>;
+
+  h5data_proxy(const data_type& a) {}
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
+    if (ref.use_slab)
     {
       // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref_.ref.num_elements();
+      auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      device::copy_n(buf.data(), sz, ref_.ref.origin());
+      auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
+                          ref.slab_offset.data(), buf.origin(), xfer_plist);
+      device::copy_n(buf.data(), sz, ref.ref.origin());
       return ret;
     }
     else
     {
-      int rank = ref_.slab_rank;
-      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
+      int rank = ref.slab_rank;
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref.slab_dims.data(), true))
       {
         std::cerr << " Disabled hyperslab resize with boost::multi::array<gpu_allocator>.\n";
         return false;
       }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
+      return h5d_read(grp, aname, ref.data(), xfer_plist);
     }
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     std::cerr << " Disabled hyperslab write with boost::multi::array<gpu_allocator>.\n";
     return false;
@@ -326,33 +329,36 @@ struct h5data_proxy<hyperslab_proxy<boost::multi::array<T, 2, device::device_all
 template<typename T, unsigned RANK>
 struct h5data_proxy<hyperslab_proxy<boost::multi::array_ref<T, 2, device::device_pointer<T>>, RANK>>
 {
-  typedef boost::multi::array_ref<T, 2, device::device_pointer<T>> CT;
-  hyperslab_proxy<CT, RANK>& ref_;
-  h5data_proxy(hyperslab_proxy<CT, RANK>& a) : ref_(a) {}
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  using CT        = boost::multi::array_ref<T, 2, device::device_pointer<T>>;
+  using data_type = hyperslab_proxy<CT, RANK>;
+
+  h5data_proxy(const data_type& a) {}
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    if (ref_.use_slab)
+    if (ref.use_slab)
     {
       // later on specialize h5d_read for fancy pointers
-      std::size_t sz = ref_.ref.num_elements();
+      auto sz = ref.ref.num_elements();
       boost::multi::array<T, 1> buf(typename boost::multi::layout_t<1u>::extensions_type{sz});
-      auto ret = h5d_read(grp, aname.c_str(), ref_.slab_rank, ref_.slab_dims.data(), ref_.slab_dims_local.data(),
-                          ref_.slab_offset.data(), buf.origin(), xfer_plist);
-      device::copy_n(buf.data(), sz, ref_.ref.origin());
+      auto ret = h5d_read(grp, aname.c_str(), ref.slab_rank, ref.slab_dims.data(), ref.slab_dims_local.data(),
+                          ref.slab_offset.data(), buf.origin(), xfer_plist);
+      device::copy_n(buf.data(), sz, ref.ref.origin());
       return ret;
     }
     else
     {
-      int rank = ref_.slab_rank;
-      if (!checkShapeConsistency<T>(grp, aname, rank, ref_.slab_dims.data(), true))
+      int rank = ref.slab_rank;
+      if (!checkShapeConsistency<T>(grp, aname, rank, ref.slab_dims.data(), true))
       {
         std::cerr << " Disabled hyperslab resize with boost::multi::array_ref<gpu_ptr>.\n";
         return false;
       }
-      return h5d_read(grp, aname, ref_.data(), xfer_plist);
+      return h5d_read(grp, aname, ref.data(), xfer_plist);
     }
   }
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     std::cerr << " Disabled hyperslab write with boost::multi::array_ref<gpu_ptr>.\n";
     return false;

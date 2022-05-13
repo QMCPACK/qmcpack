@@ -11,7 +11,7 @@
 
 #include "InputSection.h"
 #include "Message/UniformCommunicateError.h"
-
+#include "Utilities/string_utils.h"
 namespace qmcplusplus
 {
 
@@ -21,16 +21,15 @@ void InputSection::readXML(xmlNodePtr cur)
   xmlAttrPtr att = cur->properties;
   while (att != NULL)
   {
-    std::string name = (const char*)(att->name);
-    for (auto& c : name)
-      c = tolower(c);
+    // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
+    std::string name{lowerCase(castXMLCharToChar(att->name))};
     if (!is_attribute(name))
     {
       std::stringstream error;
       error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
       throw UniformCommunicateError(error.str());
     }
-    std::istringstream stream((const char*)(att->children->content));
+    std::istringstream stream(castXMLCharToChar(att->children->content));
     set_from_stream(name, stream);
     att = att->next;
   }
@@ -39,14 +38,10 @@ void InputSection::readXML(xmlNodePtr cur)
   xmlNodePtr element = cur->xmlChildrenNode;
   while (element != NULL)
   {
-    std::string ename((const char*)element->name);
-    for (auto& c : ename)
-      c = tolower(c);
+    std::string ename{lowerCase(castXMLCharToChar(element->name))};
     if (ename == "parameter")
     {
-      XMLAttrString name(element, "name");
-      for (auto& c : name)
-        c = tolower(c);
+      std::string name(lowerCase(getXMLAttributeValue(element, "name")));
       if (!is_parameter(name))
       {
         std::stringstream error;
@@ -197,8 +192,7 @@ void InputSection::report() const
 
 std::any InputSection::lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map)
 {
-  std::string enum_value_str(enum_name + "-" + enum_value);
-  tolower(enum_value_str);
+  std::string enum_value_str(lowerCase(enum_name + "-" + enum_value));
   try
   {
     return enum_map.at(enum_value_str);

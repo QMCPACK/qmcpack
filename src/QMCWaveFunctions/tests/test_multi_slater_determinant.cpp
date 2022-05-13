@@ -16,7 +16,10 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "WaveFunctionFactory.h"
+#include "LCAO/LCAOrbitalSet.h"
+#include "TWFGrads.hpp"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -40,15 +43,16 @@ void test_LiH_msd(const std::string& spo_xml_string,
                   int test_nlpp_algorithm_batched,
                   int test_batched_api)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({1, 1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   ions_.R[1]           = {0.0, 0.0, 3.0139239693};
@@ -57,6 +61,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   int HIdx             = ispecies.addSpecies("H");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2, 2});
   elec_.R[0] = {0.5, 0.5, 0.5};
   elec_.R[1] = {0.1, 0.1, 1.1};
@@ -72,30 +77,23 @@ void test_LiH_msd(const std::string& spo_xml_string,
   // Necessary to set mass
   elec_.resetGroups();
 
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
   REQUIRE(okay);
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  CHECK(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  CHECK(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
+  CHECK(spo.getOrbitalSetSize() == check_spo_size);
+  CHECK(spo.getBasisSetSize() == check_basisset_size);
 
   ions_.update();
   elec_.update();
 
-  auto& twf(*wf_factory.getTWF());
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 
@@ -219,8 +217,19 @@ void test_LiH_msd(const std::string& spo_xml_string,
     displ[0] = {0.1, 0.2, 0.3};
     displ[1] = {-0.2, -0.3, 0.0};
 
+    // testing batched interfaces
+    ResourceCollection pset_res("test_pset_res");
+    ResourceCollection twf_res("test_twf_res");
+
+    elec_.createResource(pset_res);
+    twf.createResource(twf_res);
+
+    // testing batched interfaces
     RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
     RefVectorWithLeader<TrialWaveFunction> wf_ref_list(twf, {twf, *twf_clone});
+
+    ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+    ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, wf_ref_list);
 
     ParticleSet::mw_update(p_ref_list);
     TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
@@ -233,19 +242,21 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
 
-    std::vector<GradType> grad_old(2);
+    TrialWaveFunction::mw_prepareGroup(wf_ref_list, p_ref_list, 0);
+
+    TWFGrads<CoordsType::POS> grad_old(2);
 
     const int moved_elec_id = 1;
     TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
-    CHECK(grad_old[0][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[0][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[0][2] == ValueApprox(-5.8209379274));
-    CHECK(grad_old[1][0] == ValueApprox(-2.6785305398));
-    CHECK(grad_old[1][1] == ValueApprox(-1.7953759996));
-    CHECK(grad_old[1][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[0][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[0][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[0][2] == ValueApprox(-5.8209379274));
+    CHECK(grad_old.grads_positions[1][0] == ValueApprox(-2.6785305398));
+    CHECK(grad_old.grads_positions[1][1] == ValueApprox(-1.7953759996));
+    CHECK(grad_old.grads_positions[1][2] == ValueApprox(-5.8209379274));
 
-    std::vector<GradType> grad_new(2);
+    TWFGrads<CoordsType::POS> grad_new(2);
     std::vector<PsiValueType> ratios(2);
 
     ParticleSet::mw_makeMove(p_ref_list, moved_elec_id, displ);
@@ -259,12 +270,12 @@ void test_LiH_msd(const std::string& spo_xml_string,
     CHECK(ratios[0] == ValueApprox(PsiValueType(-0.6181619459)));
     CHECK(ratios[1] == ValueApprox(PsiValueType(1.6186330488)));
 
-    CHECK(grad_new[0][0] == ValueApprox(1.2418467899));
-    CHECK(grad_new[0][1] == ValueApprox(1.2425653495));
-    CHECK(grad_new[0][2] == ValueApprox(4.4273237873));
-    CHECK(grad_new[1][0] == ValueApprox(-0.8633778143));
-    CHECK(grad_new[1][1] == ValueApprox(0.8245347691));
-    CHECK(grad_new[1][2] == ValueApprox(-5.1513380151));
+    CHECK(grad_new.grads_positions[0][0] == ValueApprox(1.2418467899));
+    CHECK(grad_new.grads_positions[0][1] == ValueApprox(1.2425653495));
+    CHECK(grad_new.grads_positions[0][2] == ValueApprox(4.4273237873));
+    CHECK(grad_new.grads_positions[1][0] == ValueApprox(-0.8633778143));
+    CHECK(grad_new.grads_positions[1][1] == ValueApprox(0.8245347691));
+    CHECK(grad_new.grads_positions[1][2] == ValueApprox(-5.1513380151));
   }
 }
 
@@ -295,38 +306,6 @@ TEST_CASE("LiH multi Slater dets table_method", "[wavefunction]")
 </wavefunction> \
 ";
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105, true, true);
-}
-
-TEST_CASE("LiH multi Slater dets all_determinants", "[wavefunction]")
-{
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  app_log() << "LiH_msd using the traditional slow method with all the determinants" << std::endl;
-  app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1_slow = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-    </sposet_collection> \
-    <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\"  algorithm=\"all_determinants\"> \
-        <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
-      </multideterminant> \
-    </determinantset> \
-</wavefunction> \
-";
-  /* NOTE: test_batched_api is set false because of unexpected failures.
-     all_determinants should pass all the existing tests. There are likely bugs.
-   */
-  test_LiH_msd(spo_xml_string1_slow, "spo-up", 85, 105, false, false);
 }
 
 TEST_CASE("LiH multi Slater dets precomputed_table_method", "[wavefunction]")
@@ -364,21 +343,23 @@ void test_Bi_msd(const std::string& spo_xml_string,
                  int check_spo_size,
                  int check_basisset_size)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion0");
+  ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create(std::vector<int>{1});
   ions_.R[0]           = {0.0, 0.0, 0.0};
   SpeciesSet& ispecies = ions_.getSpeciesSet();
   int LiIdx            = ispecies.addSpecies("Bi");
 
   elec_.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create(std::vector<int>{5});
   elec_.R[0] = {1.592992772, -2.241313928, -0.7315193518};
   elec_.R[1] = {0.07621077199, 0.8497557547, 1.604678718};
@@ -386,12 +367,12 @@ void test_Bi_msd(const std::string& spo_xml_string,
   elec_.R[3] = {-1.488849594, 0.7470552741, 0.6659555498};
   elec_.R[4] = {-1.448485879, 0.7337274141, 0.02687190951};
 
-  elec_.spins[0]   = 4.882003828;
-  elec_.spins[1]   = 0.06469299507;
-  elec_.spins[2]   = 5.392168887;
-  elec_.spins[3]   = 5.33941214;
-  elec_.spins[4]   = 3.127416326;
-  elec_.is_spinor_ = true;
+  elec_.spins[0] = 4.882003828;
+  elec_.spins[1] = 0.06469299507;
+  elec_.spins[2] = 5.392168887;
+  elec_.spins[3] = 5.33941214;
+  elec_.spins[4] = 3.127416326;
+  elec_.setSpinor(true);
 
   SpeciesSet& tspecies     = elec_.getSpeciesSet();
   int upIdx                = tspecies.addSpecies("u");
@@ -400,30 +381,22 @@ void test_Bi_msd(const std::string& spo_xml_string,
   // Necessary to set mass
   elec_.resetGroups();
 
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
   REQUIRE(okay);
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet(check_sponame));
-  REQUIRE(spo_ptr != nullptr);
-  CHECK(spo_ptr->getOrbitalSetSize() == check_spo_size);
-  CHECK(spo_ptr->getBasisSetSize() == check_basisset_size);
+  auto& spo = twf_ptr->getSPOSet(check_sponame);
+  CHECK(spo.getOrbitalSetSize() == check_spo_size);
 
   ions_.update();
   elec_.update();
 
-  auto& twf(*wf_factory.getTWF());
+  auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
 

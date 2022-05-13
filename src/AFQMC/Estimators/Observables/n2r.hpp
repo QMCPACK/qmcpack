@@ -408,14 +408,14 @@ private:
   void set_buffer(size_t N)
   {
     if (Buff.num_elements() < N)
-      Buff = auxCVector(iextensions<1u>{N}, aux_alloc);
+      Buff = auxCVector(iextensions<1u>(N), aux_alloc);
     using std::fill_n;
     fill_n(Buff.origin(), N, ComplexType(0.0));
   }
   void set_buffer2(size_t N)
   {
     if (Buff2.num_elements() < N)
-      Buff2 = stdCVector(iextensions<1u>{N});
+      Buff2 = stdCVector(iextensions<1u>(N));
     using std::fill_n;
     fill_n(Buff2.origin(), N, ComplexType(0.0));
   }

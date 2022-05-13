@@ -22,7 +22,7 @@
 #include <hip/hip_runtime.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 #endif
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 #if defined(ENABLE_CUDA)
 namespace qmc_cuda

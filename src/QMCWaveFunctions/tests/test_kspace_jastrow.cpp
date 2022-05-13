@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrowBuilder.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 
 #include <stdio.h>
 #include <string>
@@ -30,36 +30,8 @@ namespace qmcplusplus
 {
 TEST_CASE("kspace jastrow", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
-
-  ions_.setName("ion");
-  ions_.create(1);
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-
-  elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = 2;
-  ud[1] = 0;
-  elec_.create(ud);
-  elec_.R[0][0] = -0.28;
-  elec_.R[0][1] = 0.0225;
-  elec_.R[0][2] = -2.709;
-  elec_.R[1][0] = -1.08389;
-  elec_.R[1][1] = 1.9679;
-  elec_.R[1][2] = -0.0128914;
-
-  SpeciesSet& tspecies         = elec_.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int downIdx                  = tspecies.addSpecies("d");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(chargeIdx, downIdx) = -1;
   // initialize simulationcell for kvectors
   const char* xmltext = "<tmp> \
   <simulationcell>\
@@ -82,13 +54,36 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
-  LatticeParser lp(*SimulationCell);
+  ParticleSet::ParticleLayout lattice;
+  LatticeParser lp(lattice);
   lp.put(part1);
-  SimulationCell->print(app_log(), 0);
-  elec_.Lattice = *SimulationCell;
-  // kSpaceJastrow::setupGvecs requires ions to have lattice
-  ions_.Lattice = *SimulationCell;
+  lattice.print(app_log(), 0);
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
+
+  ions_.setName("ion");
+  ions_.create({1});
+  ions_.R[0][0] = 0.0;
+  ions_.R[0][1] = 0.0;
+  ions_.R[0][2] = 0.0;
+
+  elec_.setName("elec");
+  elec_.create({2,0});
+  elec_.R[0][0] = -0.28;
+  elec_.R[0][1] = 0.0225;
+  elec_.R[0][2] = -2.709;
+  elec_.R[1][0] = -1.08389;
+  elec_.R[1][1] = 1.9679;
+  elec_.R[1][2] = -0.0128914;
+
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
   // initialize SK
   elec_.createSK();
 
@@ -102,10 +97,10 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
 </jastrow> \
 </tmp> \
 ";
-  okay = doc.parseFromString(particles);
+  okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 
-  root = doc.getRoot();
+  root            = doc.getRoot();
   xmlNodePtr jas1 = xmlFirstElementChild(root);
 
   kSpaceJastrowBuilder jastrow(c, elec_, ions_);

@@ -17,9 +17,9 @@
 
 namespace qmcplusplus
 {
-typedef LatticeGaussianProduct::ValueType ValueType;
-typedef LatticeGaussianProduct::GradType GradType;
-typedef LatticeGaussianProduct::PsiValueType PsiValueType;
+using ValueType    = LatticeGaussianProduct::ValueType;
+using GradType     = LatticeGaussianProduct::GradType;
+using PsiValueType = LatticeGaussianProduct::PsiValueType;
 
 LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
     : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
@@ -58,12 +58,12 @@ void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
 LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
-                                                                         ParticleSet::ParticleGradient_t& G,
-                                                                         ParticleSet::ParticleLaplacian_t& L)
+                                                                         ParticleSet::ParticleGradient& G,
+                                                                         ParticleSet::ParticleLaplacian& L)
 {
   const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = 0;
-  log_value_            = 0.0;
+  log_value_          = 0.0;
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   for (int iat = 0; iat < NumTargetPtcls; iat++)
@@ -140,14 +140,14 @@ void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_de
 }
 
 void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& dG,
-                                                 ParticleSet::ParticleLaplacian_t& dL)
+                                                 ParticleSet::ParticleGradient& dG,
+                                                 ParticleSet::ParticleLaplacian& dL)
 {
   const auto& d_table = P.getDistTableAB(myTableID);
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   int icent           = 0;
-  log_value_            = 0.0;
+  log_value_          = 0.0;
   U                   = 0.0;
   dU                  = 0.0;
   d2U                 = 0.0;

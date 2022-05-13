@@ -36,8 +36,8 @@
 
 namespace qmcplusplus
 {
-MCWalkerConfiguration::MCWalkerConfiguration(const DynamicCoordinateKind kind)
-    : ParticleSet(kind),
+MCWalkerConfiguration::MCWalkerConfiguration(const SimulationCell& simulation_cell, const DynamicCoordinateKind kind)
+    : ParticleSet(simulation_cell, kind),
 #ifdef QMC_CUDA
       RList_GPU("MCWalkerConfiguration::RList_GPU"),
       GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
@@ -120,7 +120,7 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
  */
 void MCWalkerConfiguration::sample(iterator it, RealType tauinv)
 {
-  APP_ABORT("MCWalkerConfiguration::sample obsolete");
+  throw std::runtime_error("MCWalkerConfiguration::sample obsolete");
   //  makeGaussRandom(R);
   //  R *= tauinv;
   //  R += (*it)->R + (*it)->Drift;
@@ -248,50 +248,37 @@ void MCWalkerConfiguration::loadEnsemble()
   samples.clearEnsemble();
 }
 
-///** load SampleStack to WalkerList
-// */
-//void MCWalkerConfiguration::loadEnsemble(const Walker_t& wcopy)
-//{
-//  int nsamples=std::min(MaxSamples,CurSampleCount);
-//  if(SampleStack.empty() || nsamples==0) return;
-//
-//  Walker_t::PropertyContainer_t prop(1,PropertyList.size());
-//
-//  while(WalkerList.size()) pop_back();
-//  WalkerList.resize(nsamples);
-//
-//  for(int i=0; i<nsamples; ++i)
-//  {
-//    Walker_t* awalker=new Walker_t(TotalNum);
-//    awalker->Properties.copy(prop);
-//    SampleStack[i]->get(*awalker);
-//    WalkerList[i]=awalker;
-//  }
-//  resizeWalkerHistories();
-//  clearEnsemble();
-//}
-//
-//void MCWalkerConfiguration::loadEnsemble(MCWalkerConfiguration& other)
-//{
-//  if(SampleStack.empty()) return;
-//
-//  Walker_t twalker(*WalkerList[0]);
-//  for(int i=0; i<MaxSamples; ++i)
-//  {
-//    Walker_t* awalker=new Walker_t(twalker);
-//    SampleStack[i]->get(*awalker);
-//    other.WalkerList.push_back(awalker);
-//  }
-//
-//  clearEnsemble();
-//}
-
 bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others,
                                          HDFWalkerOutput& out,
                                          int np,
                                          int nBlock)
 {
-  return samples.dumpEnsemble(others, out, np, nBlock);
+  WalkerConfigurations wctemp;
+  for (auto* mcwc : others)
+  {
+    const auto& astack(mcwc->getSampleStack());
+    const size_t sample_size = std::min(mcwc->getMaxSamples(), mcwc->numSamples());
+    for (int j = 0; j < sample_size; ++j)
+    {
+      const auto& sample     = astack.getSample(j);
+      const size_t num_ptcls = sample.getNumPtcls();
+      auto awalker           = std::make_unique<Walker_t>(num_ptcls);
+      sample.convertToWalker(*awalker);
+      wctemp.push_back(std::move(awalker));
+    }
+  }
+  const int w = wctemp.getActiveWalkers();
+  if (w == 0)
+    return false;
+
+  // The following code assumes the same amount of active walkers on all the MPI ranks
+  std::vector<int> nwoff(np + 1, 0);
+  for (int ip = 0; ip < np; ++ip)
+    nwoff[ip + 1] = nwoff[ip] + w;
+  wctemp.setGlobalNumWalkers(nwoff[np]);
+  wctemp.setWalkerOffsets(nwoff);
+  out.dump(wctemp, nBlock);
+  return true;
 }
 
 int MCWalkerConfiguration::getMaxSamples() const { return samples.getMaxSamples(); }
@@ -395,8 +382,8 @@ void MCWalkerConfiguration::allocateGPU(size_t buffersize)
 {
   int N    = WalkerList[0]->R.size();
   int Numk = 0;
-  if (SK)
-    Numk = SK->getKLists().numk;
+  if (structure_factor_)
+    Numk = simulation_cell_.getKLists().numk;
   int NumSpecies = getSpeciesSet().TotalNum;
   for (int iw = 0; iw < WalkerList.size(); iw++)
   {

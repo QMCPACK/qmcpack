@@ -21,8 +21,7 @@
 
 #include <memory>
 #include <config.h>
-#include "LongRange/LRHandlerTemp.h"
-#include "LongRange/LRHandlerSRCoulomb.h"
+#include "LongRange/LRHandlerBase.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
@@ -34,15 +33,17 @@ struct LRCoulombSingleton
 {
   DECLARE_COULOMB_TYPES
 
-  typedef LRHandlerBase LRHandlerType;
-  typedef LinearGrid<pRealType> GridType;
-  typedef OneDimCubicSpline<pRealType> RadFunctorType;
+  using LRHandlerType  = LRHandlerBase;
+  using GridType       = LinearGrid<pRealType>;
+  using RadFunctorType = OneDimCubicSpline<pRealType>;
 
   enum lr_type
   {
     ESLER = 0,
     EWALD,
-    NATOLI
+    NATOLI,
+    QUASI2D,
+    STRICT2D
   };
   static lr_type this_lr_type;
   ///Stores the energ optimized LR handler.
@@ -67,7 +68,7 @@ struct LRCoulombSingleton
    * The spline function is the short-range term after breaking up
    * \f$r V_{S} = r \times (V(r)-V_{L})\f$
    */
-  static std::unique_ptr<RadFunctorType> createSpline4RbyVs(LRHandlerType* aLR,
+  static std::unique_ptr<RadFunctorType> createSpline4RbyVs(const LRHandlerType* aLR,
                                                             mRealType rcut,
                                                             const GridType* agrid = nullptr);
   /** create a linear spline of the derivative of short-range potential
@@ -79,7 +80,7 @@ struct LRCoulombSingleton
    * The spline function is the short-range term after breaking up
    * \f$r \frac{d}{dr} V_{S} = \frac{d}{dr}\left(r \times (V(r)-V_{L})\right)\f$
    */
-  static std::unique_ptr<RadFunctorType> createSpline4RbyVsDeriv(LRHandlerType* aLR,
+  static std::unique_ptr<RadFunctorType> createSpline4RbyVsDeriv(const LRHandlerType* aLR,
                                                                  mRealType rcut,
                                                                  const GridType* agrid = nullptr);
 };

@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
 {
@@ -76,21 +77,17 @@ void create_CN_particlesets(ParticleSet& elec, ParticleSet& ions)
   xmlNodePtr part1 = xmlFirstElementChild(root);
   xmlNodePtr part2 = xmlNextElementSibling(part1);
 
-  Tensor<int, 3> tmat;
-  tmat(0, 0) = 1;
-  tmat(1, 1) = 1;
-  tmat(2, 2) = 1;
+  XMLParticleParser parse_ions(ions);
+  parse_ions.readXML(part1);
 
-  XMLParticleParser parse_ions(ions, tmat);
-  parse_ions.put(part1);
-
-  XMLParticleParser parse_electrons(elec, tmat);
-  parse_electrons.put(part2);
+  XMLParticleParser parse_electrons(elec);
+  parse_electrons.readXML(part2);
 
   elec.addTable(elec);
   elec.addTable(ions);
   elec.update();
 }
+
 //Takes a HamiltonianFactory and handles the XML I/O to get a QMCHamiltonian pointer.  For CN molecule with pseudopotentials.
 QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
 {
@@ -112,7 +109,6 @@ QMCHamiltonian& create_CN_Hamiltonian(HamiltonianFactory& hf)
   hf.put(root);
 
   return *hf.getH();
-  
 }
 
 TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
@@ -120,37 +116,36 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.4233853149e+01,0.0000000000e+00)
@@ -166,7 +161,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   REQUIRE(logpsi == Approx(-14.233853149));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  RealType eloc = ham.evaluateDeterministic(elec);
+  RealType eloc       = ham.evaluateDeterministic(elec);
   enum observ_id
   {
     KINETIC = 0,
@@ -186,10 +181,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -271,7 +266,7 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
@@ -289,37 +284,36 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.wfj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //  Logpsi: (-8.945509461103977600e+00,0.000000000000000000e+00)
@@ -355,10 +349,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -439,7 +433,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
@@ -457,37 +451,36 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater No Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-1.411499619826623686e+01,0.000000000000000000e+00)
@@ -523,10 +516,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -596,37 +589,36 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   app_log() << "====Ion Derivative Test: Multislater+Jastrow====\n";
   using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   create_CN_particlesets(elec, ions);
 
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
-  HamiltonianFactory::PsiPoolType psi_map;
+  HamiltonianFactory::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
-
-  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
-
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
+  WaveFunctionFactory wff(elec, particle_set_map, c);
 
   Libxml2Document wfdoc;
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
   REQUIRE(wfokay);
 
   xmlNodePtr wfroot = wfdoc.getRoot();
-  wff.put(wfroot);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(wfroot));
 
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   //Output of WFTester Eloc test for this ion/electron configuration.
   //Logpsi: (-8.693299948465634586e+00,0.000000000000000000e+00)
@@ -663,10 +655,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -739,11 +731,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "========================================================================================\n";
   using RealType  = QMCTraits::RealType;
   using ValueType = QMCTraits::ValueType;
-  Communicate* c;
-  c = OHMMS::Controller;
 
-  ParticleSet ions;
-  ParticleSet elec;
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
 
   //Build a CN test molecule.
   create_CN_particlesets(elec, ions);
@@ -755,26 +749,24 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
-  particle_set_map["e"]    = &elec;
-  particle_set_map["ion0"] = &ions;
+  psi_map.emplace("psi0", wff.buildTWF(root2));
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
-  psi_map["psi0"] = &wff;
-
-  wff.put(root2);
-
-  TrialWaveFunction* psi = wff.getTWF();
+  TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
   //end incantation
 
-//  TWFPrototype twf;
+  TWFFastDerivWrapper twf;
 
-//  psi->initialize_TWF_Prototype(elec, twf);
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  psi->initializeTWFFastDerivWrapper(elec, twf);
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(9);
   dpsi.resize(9);
   d2psi.resize(9);
@@ -782,8 +774,8 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
-  
-  //This is already defined in QMCHamiltonian, but keep it here for easy access.
+
+  //Enum to give human readable indexing into QMCHamiltonian. 
   enum observ_id
   {
     KINETIC = 0,
@@ -793,32 +785,30 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     NONLOCALECP
   };
 
-  using ValueMatrix_t = SPOSet::ValueMatrix_t;
+  using ValueMatrix = SPOSet::ValueMatrix;
 
-  int IONINDEX = 1;
- 
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
-  //These matrices are not necessarily square to accomodate orb opt and multidets.  
+  //These matrices are not necessarily square to accomodate orb opt and multidets.
 
-  ValueMatrix_t upmat; //Up slater matrix.
-  ValueMatrix_t dnmat; //Down slater matrix.
-  int Nup=5;  //These are hard coded until the interface calls get implemented/cleaned up.
-  int Ndn=4;
-  int Norb=14;
+  ValueMatrix upmat; //Up slater matrix.
+  ValueMatrix dnmat; //Down slater matrix.
+  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
+  int Ndn  = 4;
+  int Norb = 14;
   upmat.resize(Nup, Norb);
   dnmat.resize(Ndn, Norb);
 
-  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.  
-  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons. 
-  std::vector<ValueMatrix_t> matlist; //Vector of slater matrices.  
-  std::vector<ValueMatrix_t> B, X; //Vector of B matrix, and auxiliary X matrix.  
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
+  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
 
   //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
   // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
   // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
 
-  std::vector<std::vector<ValueMatrix_t>> dM; //Derivative of slater matrix.
-  std::vector<std::vector<ValueMatrix_t>> dB; //Derivative of B matrices. 
+  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
   matlist.push_back(upmat);
   matlist.push_back(dnmat);
 
@@ -836,16 +826,16 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   X.push_back(upmat);
   X.push_back(dnmat);
 
-//  twf.get_M(elec, matlist);
+  twf.getM(elec, matlist);
 
   OperatorBase* kinop = ham.getHamiltonian(KINETIC);
 
-//  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
 
-  
-  std::vector<ValueMatrix_t> minv;
-  std::vector<ValueMatrix_t> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations. 
-                                         //These are N_s x N_s square matrices (N_s is number of particles for species s).
+
+  std::vector<ValueMatrix> minv;
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
+                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
   B_gs.push_back(upmat);
   B_gs.push_back(dnmat);
   M_gs.push_back(upmat);
@@ -854,19 +844,19 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   minv.push_back(dnmat);
 
 
-//  twf.get_M(elec, matlist);
-  std::vector<std::vector<ValueMatrix_t>> dB_gs;
-  std::vector<std::vector<ValueMatrix_t>> dM_gs;
-  std::vector<ValueMatrix_t> tmp_gs;
-//  twf.get_gs_matrix(B, B_gs);
-//  twf.get_gs_matrix(matlist, M_gs);
-//  twf.invert_M(M_gs, minv);
-//  twf.build_X(minv, B_gs, X);
+  //  twf.getM(elec, matlist);
+  std::vector<std::vector<ValueMatrix>> dB_gs;
+  std::vector<std::vector<ValueMatrix>> dM_gs;
+  std::vector<ValueMatrix> tmp_gs;
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
   for (int id = 0; id < matlist.size(); id++)
   {
-//    int ptclnum = twf.num_particles(id);
-    int ptclnum = (id==0 ? Nup : Ndn); //hard coded until twf interface comes online.  
-    ValueMatrix_t gs_m;
+    //    int ptclnum = twf.numParticles(id);
+    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
+    ValueMatrix gs_m;
     gs_m.resize(ptclnum, ptclnum);
     tmp_gs.push_back(gs_m);
   }
@@ -882,26 +872,26 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   //Finally, we have all the data structures with the right dimensions.  Continue.
 
-  ParticleSet::ParticleGradient_t fkin_complex(ions.getTotalNum());
-  ParticleSet::ParticlePos_t fkin(ions.getTotalNum());
+  ParticleSet::ParticleGradient fkin_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fkin(ions.getTotalNum());
 
 
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipe_matrix(dB[idim]);
-//      twf.wipe_matrix(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
-//    twf.get_igrad_M(elec, ions, ionid, dM);
-//    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    twf.getIonGradM(elec, ions, ionid, dM);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
-//      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
-//      fkin_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fkin_complex[ionid], fkin[ionid]);
   }
@@ -909,23 +899,23 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   ValueType keval = 0.0;
   RealType keobs  = 0.0;
-//  keval           = twf.trAB(minv, B_gs);
+  keval           = twf.trAB(minv, B_gs);
   convertToReal(keval, keobs);
-//  CHECK(keobs == Approx(9.1821937928e+00));
+  CHECK(keobs == Approx(9.1821937928e+00));
 #if defined(MIXED_PRECISION)
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820).epsilon(1e-4));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562).epsilon(1e-4));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852).epsilon(1e-4));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536).epsilon(1e-4));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529).epsilon(1e-4));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454).epsilon(1e-4));
 #else
-//  CHECK(fkin[0][0] == Approx(1.0852823603357820));
-//  CHECK(fkin[0][1] == Approx(24.2154119471038562));
-//  CHECK(fkin[0][2] == Approx(111.8849364775797852));
-//  CHECK(fkin[1][0] == Approx(2.1572063443997536));
-//  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
-//  CHECK(fkin[1][2] == Approx(7.5625192454964454));
+  CHECK(fkin[0][0] == Approx(1.0852823603357820));
+  CHECK(fkin[0][1] == Approx(24.2154119471038562));
+  CHECK(fkin[0][2] == Approx(111.8849364775797852));
+  CHECK(fkin[1][0] == Approx(2.1572063443997536));
+  CHECK(fkin[1][1] == Approx(-3.3743242489947529));
+  CHECK(fkin[1][2] == Approx(7.5625192454964454));
 #endif
 
   app_log() << " KEVal = " << keval << std::endl;
@@ -936,61 +926,319 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
 
 
-//  twf.wipe_matrix(B);
-//  twf.wipe_matrix(B_gs);
-//  twf.wipe_matrix(X);
-//  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
-//  twf.get_gs_matrix(B, B_gs);
-//  twf.build_X(minv, B_gs, X);
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
 
   ValueType nlpp    = 0.0;
   RealType nlpp_obs = 0.0;
-//  nlpp              = twf.trAB(minv, B_gs);
+  nlpp              = twf.trAB(minv, B_gs);
   convertToReal(nlpp, nlpp_obs);
 
   app_log() << "NLPP = " << nlpp << std::endl;
 
-//  CHECK(nlpp_obs == Approx(1.3849558361e+01));
+  CHECK(nlpp_obs == Approx(1.3849558361e+01));
 
-  ParticleSet::ParticleGradient_t fnlpp_complex(ions.getTotalNum());
-  ParticleSet::ParticlePos_t fnlpp(ions.getTotalNum());
+  ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
   for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
   {
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.wipe_matrix(dB[idim]);
-//      twf.wipe_matrix(dM[idim]);
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
     }
 
-//    twf.get_igrad_M(elec, ions, ionid, dM);
-//    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-//      twf.get_gs_matrix(dB[idim], dB_gs[idim]);
-//      twf.get_gs_matrix(dM[idim], dM_gs[idim]);
-//      fnlpp_complex[ionid][idim] = twf.compute_gs_derivative(minv, X, dM_gs[idim], dB_gs[idim]);
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
     }
     convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
   }
 
 #if defined(MIXED_PRECISION)
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491).epsilon(2e-4));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263).epsilon(2e-4));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159).epsilon(2e-4));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704).epsilon(2e-4));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692).epsilon(2e-4));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989).epsilon(2e-4));
 #else
-//  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
-//  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
-//  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
-//  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
-//  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
-//  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
+  CHECK(fnlpp[0][0] == Approx(24.2239540340527491));
+  CHECK(fnlpp[0][1] == Approx(-41.9981344310649263));
+  CHECK(fnlpp[0][2] == Approx(-98.9123955744908159));
+  CHECK(fnlpp[1][0] == Approx(2.5105943834091704));
+  CHECK(fnlpp[1][1] == Approx(1.1345766918857692));
+  CHECK(fnlpp[1][2] == Approx(-5.2293234395150989));
 #endif
 }
 
+TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
+{
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "====================Ion Derivative Test:  Prototype Single Slater+Jastrow===========\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
+  //Build a CN test molecule.
+  create_CN_particlesets(elec, ions);
+  //////////////////////////////////
+  /////////////////////////////////
+  //Incantation to read and build a TWF from cn.wfnoj//
+  Libxml2Document doc2;
+  bool okay = doc2.parse("cn.wfj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
+  WaveFunctionFactory wff(elec, particle_set_map, c);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(root2));
+
+  TrialWaveFunction* psi = psi_map["psi0"].get();
+  REQUIRE(psi != nullptr);
+  //end incantation
+
+  TWFFastDerivWrapper twf;
+
+  psi->initializeTWFFastDerivWrapper(elec, twf);
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
+  values.resize(9);
+  dpsi.resize(9);
+  d2psi.resize(9);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+
+  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+
+  //This is already defined in QMCHamiltonian, but keep it here for easy access.
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
+  //These matrices are not necessarily square to accomodate orb opt and multidets.
+
+  ValueMatrix upmat; //Up slater matrix.
+  ValueMatrix dnmat; //Down slater matrix.
+  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
+  int Ndn  = 4;
+  int Norb = 14;
+  upmat.resize(Nup, Norb);
+  dnmat.resize(Ndn, Norb);
+
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
+  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
+
+  //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
+  // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
+  // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
+
+  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
+  matlist.push_back(upmat);
+  matlist.push_back(dnmat);
+
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+
+  B.push_back(upmat);
+  B.push_back(dnmat);
+
+  X.push_back(upmat);
+  X.push_back(dnmat);
+
+  twf.getM(elec, matlist);
+
+  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+
+
+  std::vector<ValueMatrix> minv;
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
+                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
+  B_gs.push_back(upmat);
+  B_gs.push_back(dnmat);
+  M_gs.push_back(upmat);
+  M_gs.push_back(dnmat);
+  minv.push_back(upmat);
+  minv.push_back(dnmat);
+
+
+  //  twf.getM(elec, matlist);
+  std::vector<std::vector<ValueMatrix>> dB_gs;
+  std::vector<std::vector<ValueMatrix>> dM_gs;
+  std::vector<ValueMatrix> tmp_gs;
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
+  for (int id = 0; id < matlist.size(); id++)
+  {
+    //    int ptclnum = twf.numParticles(id);
+    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
+    ValueMatrix gs_m;
+    gs_m.resize(ptclnum, ptclnum);
+    tmp_gs.push_back(gs_m);
+  }
+
+
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+
+  //Finally, we have all the data structures with the right dimensions.  Continue.
+
+  ParticleSet::ParticleGradient fkin_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fkin(ions.getTotalNum());
+
+
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fkin_complex[ionid], fkin[ionid]);
+  }
+
+
+  ValueType keval = 0.0;
+  RealType keobs  = 0.0;
+  keval           = twf.trAB(minv, B_gs);
+  convertToReal(keval, keobs);
+  CHECK(keobs == Approx(7.6732404154e+00));
+
+#if defined(MIXED_PRECISION)
+  CHECK(fkin[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
+  CHECK(fkin[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
+  CHECK(fkin[0][2] == Approx(126.5885230360197369).epsilon(1e-4));
+  CHECK(fkin[1][0] == Approx(2.7271604366774223).epsilon(1e-4));
+  CHECK(fkin[1][1] == Approx(-3.5321234918228579).epsilon(1e-4));
+  CHECK(fkin[1][2] == Approx(5.8844148870917925).epsilon(1e-4));
+#else
+  CHECK(fkin[0][0] == Approx(-3.3359153349010735));
+  CHECK(fkin[0][1] == Approx(30.0487085581835309));
+  CHECK(fkin[0][2] == Approx(126.5885230360197369));
+  CHECK(fkin[1][0] == Approx(2.7271604366774223));
+  CHECK(fkin[1][1] == Approx(-3.5321234918228579));
+  CHECK(fkin[1][2] == Approx(5.8844148870917925));
+#endif
+  app_log() << " KEVal = " << keval << std::endl;
+
+  app_log() << " Now evaluating nonlocalecp\n";
+  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  app_log() << "nlppop = " << nlppop << std::endl;
+  app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
+
+
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
+
+  ValueType nlpp    = 0.0;
+  RealType nlpp_obs = 0.0;
+  nlpp              = twf.trAB(minv, B_gs);
+  convertToReal(nlpp, nlpp_obs);
+
+  app_log() << "NLPP = " << nlpp << std::endl;
+
+  CHECK(nlpp_obs == Approx(1.37365415248e+01));
+
+  ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
+  }
+
+#if defined(MIXED_PRECISION)
+  CHECK(fnlpp[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
+  CHECK(fnlpp[0][1] == Approx(-42.8268964286715459).epsilon(2e-4));
+  CHECK(fnlpp[0][2] == Approx(-101.5046844660360961).epsilon(2e-4));
+  CHECK(fnlpp[1][0] == Approx(2.2255825024686260).epsilon(2e-4));
+  CHECK(fnlpp[1][1] == Approx(1.1362118534918864).epsilon(2e-4));
+  CHECK(fnlpp[1][2] == Approx(-4.5825638607333019).epsilon(2e-4));
+#else
+  CHECK(fnlpp[0][0] == Approx(27.1517161490208956));
+  CHECK(fnlpp[0][1] == Approx(-42.8268964286715459));
+  CHECK(fnlpp[0][2] == Approx(-101.5046844660360961));
+  CHECK(fnlpp[1][0] == Approx(2.2255825024686260));
+  CHECK(fnlpp[1][1] == Approx(1.1362118534918864));
+  CHECK(fnlpp[1][2] == Approx(-4.5825638607333019));
+#endif
+}
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";
@@ -1007,7 +1255,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1015,7 +1263,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1078,10 +1326,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -1162,7 +1410,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   hf_term    = 0.0;
   pulay_term = 0.0;
   wf_grad    = 0.0;
-  RandomGenerator_t myrng;
+  RandomGenerator myrng;
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
   
@@ -1192,7 +1440,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1200,7 +1448,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1263,10 +1511,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);
@@ -1347,7 +1595,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   int Nions = ions.getTotalNum();
   int Nelec = elec.getTotalNum();
 
-  HamiltonianFactory::PtclPoolType particle_set_map;
+  HamiltonianFactory::PSetMap particle_set_map;
   HamiltonianFactory::PsiPoolType psi_map;
 
   particle_set_map["e"]    = &elec;
@@ -1355,7 +1603,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
 
-  WaveFunctionFactory wff("psi0", elec, particle_set_map, c);
+  WaveFunctionFactory wff(elec, particle_set_map, c);
   psi_map["psi0"] = &wff;
 
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
@@ -1419,10 +1667,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
 
   //Now for the derivative tests
-  ParticleSet::ParticleGradient_t wfgradraw;
-  ParticleSet::ParticlePos_t hf_term;
-  ParticleSet::ParticlePos_t pulay_term;
-  ParticleSet::ParticlePos_t wf_grad;
+  ParticleSet::ParticleGradient wfgradraw;
+  ParticleSet::ParticlePos hf_term;
+  ParticleSet::ParticlePos pulay_term;
+  ParticleSet::ParticlePos wf_grad;
 
   wfgradraw.resize(Nions);
   wf_grad.resize(Nions);

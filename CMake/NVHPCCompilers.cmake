@@ -3,7 +3,6 @@
 # Specifying 'allcores' will run on all cores if OMP_NUM_THREADS is not set (which seems
 #  to be the default for other OpenMP implementations)
 if(QMC_OMP)
-  set(ENABLE_OPENMP 1)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mp=allcores")
   if(ENABLE_OFFLOAD)
     message(WARNING "QMCPACK OpenMP offload is not ready for NVIDIA HPC compiler.")

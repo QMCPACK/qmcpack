@@ -573,7 +573,6 @@ void EshdfFile::processKPts(const XmlNode& band_structure_xml,
                             vector<double>& weights,
                             vector<int>& ngvecs)
 {
-  int nks = 0;
   for (int i = 0; i < band_structure_xml.getNumChildren(); i++)
   {
     const XmlNode& child_xml = band_structure_xml.getChild(i);
@@ -586,7 +585,6 @@ void EshdfFile::processKPts(const XmlNode& band_structure_xml,
       double weight;
       int ngvec;
 
-      nks++;
       const XmlNode& k_point_xml = child_xml.getChild("k_point");
       k_point_xml.getAttribute("weight", weight);
       k_point_xml.getValue(kpt_vec);

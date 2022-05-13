@@ -16,8 +16,9 @@
 #define QMCPLUSPLUS_KCONTAINER_H
 
 #include "Configuration.h"
-#include "Pools/PooledData.h"
-#include "Utilities/IteratorUtility.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+
 namespace qmcplusplus
 {
 /** Container for k-points
@@ -30,12 +31,10 @@ class KContainer : public QMCTraits
 private:
   /// The cutoff up to which k-vectors are generated.
   RealType kcutoff;
-  /// kcutoff*kcutoff
-  RealType kcut2;
 
 public:
   //Typedef for the lattice-type
-  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout_t;
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
 
   ///number of k-points
   int numk;
@@ -73,15 +72,20 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, bool useSphere = true);
 
+  const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(const ParticleLayout& lattice);
+  void findApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
   void BuildKLists(const ParticleLayout& lattice, bool useSphere);
+
+  /** K-vector in Cartesian coordinates in SoA layout
+   */
+  VectorSoaContainer<RealType, DIM, OffloadAllocator<RealType>> kpts_cart_soa_;
 };
 
 } // namespace qmcplusplus

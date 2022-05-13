@@ -36,7 +36,8 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
-#include "Message/OpenMP.h"
+#include "Message/UniformCommunicateError.h"
+#include "Concurrency/OpenMP.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
@@ -88,7 +89,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_ROCM)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -123,19 +124,29 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_ROCM)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
-#else
+#else // GPU case
 #if defined(ENABLE_OFFLOAD)
   app_summary() << "  OpenMP target offload to accelerators build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_CUDA) || defined(QMC_CUDA)
+#if defined(ENABLE_HIP)
+  app_summary() << "  HIP acceleration with direct HIP source code build option is enabled" << std::endl;
+#endif
+
+#if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
+  app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
+#elif defined(QMC_CUDA2HIP) && defined(QMC_CUDA)
+  app_summary() << "  HIP acceleration with legacy CUDA source code build option is enabled" << std::endl;
+#elif defined(ENABLE_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
+#elif defined(QMC_CUDA)
+  app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_SYCL)
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
-#if defined(ENABLE_ROCM)
-  app_summary() << "  ROCM acceleration build option is enabled" << std::endl;
-#endif
-#endif
+#endif // GPU case end
+
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
                 << timer_manager.get_timer_threshold_string() << std::endl;
@@ -204,7 +215,6 @@ bool QMCMain::execute()
     return false;
   }
 #endif
-
 
   NewTimer* t2 = timer_manager.createTimer("Total", timer_level_coarse);
   t2->start();
@@ -392,7 +402,14 @@ bool QMCMain::validateXML()
   }
   else
   {
-    myProject.put(result[0]);
+    try
+    {
+      myProject.put(result[0]);
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
   app_summary() << std::endl;
   myProject.get(app_summary());
@@ -454,7 +471,7 @@ bool QMCMain::validateXML()
     else if (cname == "include")
     {
       //file is provided
-      const XMLAttrString include_name(cur, "href");
+      const std::string include_name(getXMLAttributeValue(cur, "href"));
       if (!include_name.empty())
       {
         bool success = pushDocument(include_name);
@@ -534,12 +551,11 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if (cname == "simulationcell")
     {
       inputnode = true;
-      ptclPool->putLattice(cur);
+      ptclPool->readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {
       inputnode = true;
-      ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
     else if (cname == "wavefunction")
@@ -579,10 +595,16 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
   else
   {
     QMCDriverFactory driver_factory(myProject);
-    QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-
-    qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
-    append_run = das.append_run;
+    try
+    {
+      QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      append_run = das.append_run;
+    }
+    catch (const UniformCommunicateError& ue)
+    {
+      myComm->barrier_and_abort(ue.what());
+    }
   }
 
   if (qmc_driver)

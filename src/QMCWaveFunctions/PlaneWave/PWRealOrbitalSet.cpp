@@ -93,7 +93,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb
   }
 }
 
-void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_t& psi)
+void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC, myBasisSet->Zv, tempPsi.data());
@@ -103,9 +103,9 @@ void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector_
 
 void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
                                    int iat,
-                                   ValueVector_t& psi,
-                                   GradVector_t& dpsi,
-                                   ValueVector_t& d2psi)
+                                   ValueVector& psi,
+                                   GradVector& dpsi,
+                                   ValueVector& d2psi)
 {
   myBasisSet->evaluateAll(P, iat);
   MatrixOperators::product(CC, myBasisSet->Z, Temp);
@@ -129,9 +129,9 @@ void PWRealOrbitalSet::evaluateVGL(const ParticleSet& P,
 void PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P,
                                             int first,
                                             int last,
-                                            ValueMatrix_t& logdet,
-                                            GradMatrix_t& dlogdet,
-                                            ValueMatrix_t& d2logdet)
+                                            ValueMatrix& logdet,
+                                            GradMatrix& dlogdet,
+                                            ValueMatrix& d2logdet)
 {
   for (int iat = first, i = 0; iat < last; iat++, i++)
   {

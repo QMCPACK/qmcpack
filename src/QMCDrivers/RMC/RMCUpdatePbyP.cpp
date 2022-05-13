@@ -14,7 +14,7 @@
 
 #include "RMCUpdatePbyP.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "Configuration.h"
 #include "Particle/Reptile.h"
 #include <cmath>
@@ -40,7 +40,7 @@ using WP = WalkerProperties::Indexes;
 RMCUpdatePbyPWithDrift::RMCUpdatePbyPWithDrift(MCWalkerConfiguration& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
-                                               RandomGenerator_t& rg,
+                                               RandomGenerator& rg,
                                                std::vector<int> act,
                                                std::vector<int> tp)
     : QMCUpdateBase(w, psi, h, rg),
@@ -132,7 +132,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR, RandomGen);
   int nAcceptTemp(0);
-  int nRejectTemp(0);
   //copy the old energy and scale factor of drift
   RealType eold(prophead.Properties(WP::LOCALENERGY));
   RealType vqold(prophead.Properties(WP::DRIFTSCALE));
@@ -157,7 +156,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {
-        ++nRejectTemp;
         W.accept_rejectMove(iat, false);
         continue;
       }
@@ -165,7 +163,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
-        ++nRejectTemp;
         ++nNodeCrossing;
         W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
@@ -175,7 +172,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr               = W.R[iat] - W.activePos - dr;
+        dr               = W.R[iat] - W.getActivePos() - dr;
         RealType logGb   = -oneover2tau * dot(dr, dr);
         RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
         bool is_accepted = false;
@@ -188,7 +185,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersVMC()
         }
         else
         {
-          ++nRejectTemp;
           Psi.rejectMove(iat);
         }
         W.accept_rejectMove(iat, is_accepted);
@@ -261,7 +257,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
 
   makeGaussRandomWithEngine(deltaR, RandomGen);
   int nAcceptTemp(0);
-  int nRejectTemp(0);
   //copy the old energy and scale factor of drift
   RealType eold(prophead.Properties(WP::LOCALENERGY));
   RealType vqold(prophead.Properties(WP::DRIFTSCALE));
@@ -285,7 +280,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       rr_proposed += rr;
       if (!is_valid || rr > m_r2max)
       {
-        ++nRejectTemp;
         W.accept_rejectMove(iat, false);
         continue;
       }
@@ -293,7 +287,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
       //node is crossed reject the move
       if (branchEngine->phaseChanged(Psi.getPhaseDiff()))
       {
-        ++nRejectTemp;
         ++nNodeCrossing;
         W.accept_rejectMove(iat, false);
         Psi.rejectMove(iat);
@@ -303,7 +296,7 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         RealType logGf = -0.5 * dot(deltaR[iat], deltaR[iat]);
         //Use the force of the particle iat
         DriftModifier->getDrift(tauovermass, grad_iat, dr);
-        dr               = W.R[iat] - W.activePos - dr;
+        dr               = W.R[iat] - W.getActivePos() - dr;
         RealType logGb   = -oneover2tau * dot(dr, dr);
         RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);
         bool is_accepted = false;
@@ -316,7 +309,6 @@ void RMCUpdatePbyPWithDrift::advanceWalkersRMC()
         }
         else
         {
-          ++nRejectTemp;
           Psi.rejectMove(iat);
         }
         W.accept_rejectMove(iat, is_accepted);

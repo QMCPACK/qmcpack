@@ -57,7 +57,7 @@ template<class T, unsigned D>
 class AntiSymTensor
 {
 public:
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     ElemDim = 2
@@ -300,7 +300,7 @@ template<class T>
 class AntiSymTensor<T, 1>
 {
 public:
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     ElemDim = 2

@@ -40,15 +40,15 @@ class TraceManager;
 class QMCUpdateBase : public QMCTraits
 {
 public:
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  typedef MCWalkerConfiguration::iterator WalkerIter_t;
-  typedef SimpleFixedNodeBranch BranchEngineType;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
+  using WalkerIter_t     = MCWalkerConfiguration::iterator;
+  using BranchEngineType = SimpleFixedNodeBranch;
 #ifdef MIXED_PRECISION
-  typedef TinyVector<OHMMS_PRECISION_FULL, DIM> mPosType;
-  typedef Tensor<OHMMS_PRECISION_FULL, DIM> mTensorType;
+  using mPosType    = TinyVector<OHMMS_PRECISION_FULL, DIM>;
+  using mTensorType = Tensor<OHMMS_PRECISION_FULL, DIM>;
 #else
-  typedef PosType mPosType;
-  typedef TensorType mTensorType;
+  using mPosType    = PosType;
+  using mTensorType = TensorType;
 #endif
 
   ///If true, terminate the simulation, but it is never checked
@@ -78,13 +78,13 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg);
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg);
   ///Alt Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w,
                 TrialWaveFunction& psi,
                 TrialWaveFunction& guide,
                 QMCHamiltonian& h,
-                RandomGenerator_t& rg);
+                RandomGenerator& rg);
   ///destructor
   virtual ~QMCUpdateBase();
 
@@ -209,7 +209,7 @@ public:
   //       virtual void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
   //     , std::vector<MCWalkerConfiguration*>& wclone
   //     , std::vector<QMCHamiltonian*>& hclone
-  //     , std::vector<RandomGenerator_t*>& rng
+  //     , std::vector<RandomGenerator*>& rng
   //     , std::vector<RealType>& ratio_i_0){};
   int RMC_checkIndex(int N, int NMax)
   {
@@ -229,7 +229,7 @@ public:
       it += (last - first);
   }
 
-  inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
+  inline RealType logBackwardGF(const ParticleSet::ParticlePos& displ)
   {
     RealType logGb = 0.0;
     for (int iat = 0; iat < W.getTotalNum(); ++iat)
@@ -266,7 +266,7 @@ protected:
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator
-  RandomGenerator_t& RandomGen;
+  RandomGenerator& RandomGen;
   ///branch engine, stateless reference to the one in QMCDriver
   const BranchEngineType* branchEngine;
   ///drift modifer, stateless reference to the one in QMCDriver
@@ -282,22 +282,22 @@ protected:
   ///sqrt(tau/Mass) per particle
   std::vector<RealType> SqrtTauOverMass;
   ///temporary storage for drift
-  ParticleSet::ParticlePos_t drift;
+  ParticleSet::ParticlePos drift;
   ///temporary storage for random displacement
-  ParticleSet::ParticlePos_t deltaR;
+  ParticleSet::ParticlePos deltaR;
   ///temporart storage for spin displacement
-  ParticleSet::ParticleScalar_t deltaS;
+  ParticleSet::ParticleScalar deltaS;
   ///storage for differential gradients for PbyP update
-  ParticleSet::ParticleGradient_t G, dG;
+  ParticleSet::ParticleGradient G, dG;
   ///storage for differential laplacians for PbyP update
-  ParticleSet::ParticleLaplacian_t L, dL;
+  ParticleSet::ParticleLaplacian L, dL;
 
   /** evaluate the ratio of scaled velocity and velocity
    * @param g gradient
    * @param gscaled scaled gradient
    * @return the ratio
    */
-  RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
+  RealType getNodeCorrection(const ParticleSet::ParticleGradient& g, ParticleSet::ParticlePos& gscaled);
 
   ///copy constructor (disabled)
   QMCUpdateBase(const QMCUpdateBase&) = delete;

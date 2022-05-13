@@ -36,6 +36,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   std::string serialize_walkers;
   std::string debug_checks_str;
+  std::string measure_imbalance_str;
 
   ParameterSet parameter_set;
   parameter_set.add(store_config_period_, "storeconfigs");
@@ -63,12 +64,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(tau_, "timestep");
   parameter_set.add(tau_, "time_step");
   parameter_set.add(tau_, "tau");
+  parameter_set.add(spin_mass_, "spin_mass");
   parameter_set.add(blocks_between_recompute_, "blocks_between_recompute");
   parameter_set.add(drift_modifier_, "drift_modifier");
   parameter_set.add(drift_modifier_unr_a_, "drift_UNR_a");
   parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+  parameter_set.add(measure_imbalance_str, "measure_imbalance", {"no", "yes"});
 
   OhmmsAttributeSet aAttrib;
   // first stage in from QMCDriverFactory
@@ -137,6 +140,9 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     if (debug_checks_str == "all" || debug_checks_str == "checkGL_after_tmove")
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
+
+  if (measure_imbalance_str == "yes")
+    measure_imbalance_ = true;
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;

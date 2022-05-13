@@ -18,16 +18,16 @@
 #include <assert.h>
 #include "Numerics/Ylm.h"
 #include "type_traits/complex_help.hpp"
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 
 namespace qmcplusplus
 {
 template<class T>
 struct Quadrature3D
 {
-  typedef T RealType;
-  typedef TinyVector<T, 3> PosType;
-  typedef OHMMS_PRECISION_FULL mRealType;
+  using RealType  = T;
+  using PosType   = TinyVector<T, 3>;
+  using mRealType = OHMMS_PRECISION_FULL;
 
   int nk;
   typedef enum
@@ -91,6 +91,14 @@ struct Quadrature3D
       C        = 27.0 / 840.0;
       break;
     case 7:
+      nk       = 32;
+      symmetry = ICOSA;
+      lexact   = 9;
+      A        = 5.0 / 168.0;
+      B        = 5.0 / 168.0;
+      C        = 27.0 / 840.0;
+      break;
+    case 8:
       nk       = 50;
       symmetry = OCTA;
       lexact   = 11;
@@ -307,8 +315,8 @@ struct Quadrature3D
             {
               Ylm.evaluateV(grid[k][0], grid[k][1], grid[k][2]);
               const RealType* Ylm_v = Ylm[0];
-              RealType v1 = Ylm_v[Ylm.index(l1, m1)];
-              RealType v2 = Ylm_v[Ylm.index(l2, m2)];
+              RealType v1           = Ylm_v[Ylm.index(l1, m1)];
+              RealType v2           = Ylm_v[Ylm.index(l2, m2)];
               sum += 4.0 * M_PI * w[k] * v1 * v2;
             }
             if ((l1 == l2) && (m1 == m2))

@@ -168,11 +168,6 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     //      APP_ABORT(" ");
   }
   nvecs = Idata[7];
-#ifdef QMC_COMPLEX
-  int nkpts = -1;
-  if (htype == KPFactorized || htype == KPTHC)
-    nkpts = Idata[2];
-#endif
 
   // MAM: this is wrong in NONCOLLINEAR, but how do I know what
   // walker type it is right here???

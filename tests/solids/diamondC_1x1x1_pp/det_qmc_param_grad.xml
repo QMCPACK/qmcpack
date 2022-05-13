@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
    <project id="det_qmc_short_param_grad" series="0">
-      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+     <parameter name="driver_version">batched</parameter>
    </project>
    <random seed="2"/>
    <qmcsystem>
@@ -83,7 +84,7 @@
       </hamiltonian>
    </qmcsystem>
  <loop max="1">
-  <qmc gpu="yes" method="linear_batch" move="pbyp">
+  <qmc gpu="yes" method="linear" move="pbyp">
     <optimize method="gradient_test">
       <parameter name="output_param_file">yes</parameter>
     </optimize>

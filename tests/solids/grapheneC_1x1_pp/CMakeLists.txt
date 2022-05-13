@@ -1,11 +1,7 @@
 # Q.E. reference
 #  LIST(APPEND DET_GRAPHENE_Z10_SCALARS "ionion" "14.002118125 0.000001")
 
-if(QMC_MIXED_PRECISION AND NOT QMC_CUDA)
-  list(APPEND DET_GRAPHENE_Z10_SCALARS "ionion" "14.00170492 0.000005")
-else()
-  list(APPEND DET_GRAPHENE_Z10_SCALARS "ionion" "14.00211652 0.000001")
-endif()
+list(APPEND DET_GRAPHENE_Z10_SCALARS "ionion" "14.00211652 0.000002")
 
 qmc_run_and_check(
   deterministic-grapheneC_1x1_pp-vmc_sdj_z10
@@ -22,11 +18,7 @@ qmc_run_and_check(
 # Q.E. References
 #  LIST(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60597872 0.000001")
 
-if(QMC_MIXED_PRECISION AND NOT QMC_CUDA)
-  list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60540019 0.00002")
-else()
-  list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60576396 0.000001")
-endif()
+list(APPEND DET_GRAPHENE_Z30_SCALARS "ionion" "81.60576396 0.000006")
 
 qmc_run_and_check(
   deterministic-grapheneC_1x1_pp-vmc_sdj_z30

@@ -37,22 +37,20 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  ParticleSet ions_;
-  ParticleSet elec_;
+  const SimulationCell simulation_cell;
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
 
   ions_.setName("ion");
-  ions_.create(1);
+  ions_.create({1});
   ions_.R[0][0] = 2.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 1;
-  elec_.create(ud);
+  elec_.create({1,1});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -86,7 +84,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-  typedef J2OrbitalSoA<BsplineFunctor<RealType>> J2Type;
+  using J2Type = J2OrbitalSoA<BsplineFunctor<RealType>>;
   auto j2_uptr = jastrow.buildComponent(jas1);
   J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());
   REQUIRE(j2);
@@ -100,9 +98,29 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
 
+  opt_variables_type optvars;
+  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
+  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+
+  j2->checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  j2->checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables);
+  dhpsioverpsi.resize(NumOptimizables);
+  j2->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+
+  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  for (int iparam = 0; iparam < NumOptimizables; iparam++)
+    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+  std::cout << std::endl;
+
+  CHECK(std::real(dlogpsi[2]) == Approx(-0.2211666667));
+  CHECK(std::real(dhpsioverpsi[3]) == Approx(0.1331717179));
+
 
   // now test evaluateHessian
-  WaveFunctionComponent::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector grad_grad_psi;
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
@@ -192,8 +210,8 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   }
 #endif
 
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   // set virtutal particle position
   PosType newpos(0.3, 0.2, 0.5);

@@ -19,7 +19,7 @@
 
 #include "Particle/DistanceTable.h"
 #include "Particle/VirtualParticleSet.h"
-#include "QMCWaveFunctions/LCAO/SoaSphericalTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 #include "spline2/MultiBspline1D.hpp"
 #include "Numerics/SmoothFunctions.hpp"
 #include "hdf/hdf_archive.h"
@@ -443,7 +443,7 @@ public:
 
   void set_info(const ParticleSet& ions, ParticleSet& els, const std::vector<int>& mapping)
   {
-    myTableID  = els.addTable(ions);
+    myTableID  = els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST);
     Super2Prim = mapping;
   }
 
@@ -542,7 +542,7 @@ public:
   inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -618,7 +618,7 @@ public:
   inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];
@@ -637,7 +637,7 @@ public:
   inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
     const auto& ei_dist  = P.getDistTableAB(myTableID);
-    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl == iat);
+    const int center_idx = ei_dist.get_first_neighbor(iat, dist_r, dist_dr, P.getActivePtcl() == iat);
     if (center_idx < 0)
       abort();
     auto& myCenter = AtomicCenters[Super2Prim[center_idx]];

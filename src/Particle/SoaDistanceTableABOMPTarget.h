@@ -20,6 +20,7 @@
 #include "Platforms/PinnedAllocator.h"
 #include "Particle/RealSpacePositionsOMPTarget.h"
 #include "ResourceCollection.h"
+#include "OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -118,16 +119,12 @@ private:
 
 public:
   SoaDistanceTableABOMPTarget(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableAB(source, target, DTModes::NEED_TEMP_DATA_ON_HOST),
-        offload_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::offload_") + name_, timer_level_fine)),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::evaluate_") + name_,
-                                                   timer_level_fine)),
-        move_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::move_") + name_, timer_level_fine)),
-        update_timer_(
-            *timer_manager.createTimer(std::string("SoaDistanceTableABOMPTarget::update_") + name_, timer_level_fine))
+      : DTD_BConds<T, D, SC>(source.getLattice()),
+        DistanceTableAB(source, target, DTModes::ALL_OFF),
+        offload_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::offload_") + name_, timer_level_fine)),
+        evaluate_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::evaluate_") + name_, timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::move_") + name_, timer_level_fine)),
+        update_timer_(*timer_manager.createTimer(std::string("DTABOMPTarget::update_") + name_, timer_level_fine))
 
   {
     auto* coordinates_soa = dynamic_cast<const RealSpacePositionsOMPTarget*>(&source.getCoordinates());
@@ -204,7 +201,7 @@ public:
     assert(distances_[0].data() + num_padded == displacements_[0].data());
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
     const size_t stride_size   = getPerTargetPctlStrideSize();
 
@@ -218,8 +215,7 @@ public:
         for (int team_id = 0; team_id < num_teams; team_id++)
         {
           const int first = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const int last  = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)
@@ -305,7 +301,7 @@ public:
     }
 
     // To maximize thread usage, the loop over electrons is chunked. Each chunk is sent to an OpenMP offload thread team.
-    const int ChunkSizePerTeam = 256;
+    const int ChunkSizePerTeam = 512;
     const size_t num_teams     = (num_sources_ + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     auto* r_dr_ptr              = mw_r_dr.data();
@@ -328,8 +324,7 @@ public:
           auto* dr_iat_ptr     = r_dr_ptr + iat * num_padded * (D + 1) + num_padded;
 
           const int first = ChunkSizePerTeam * team_id;
-          const int last =
-              (first + ChunkSizePerTeam) > num_sources_local ? num_sources_local : first + ChunkSizePerTeam;
+          const int last  = omptarget::min(first + ChunkSizePerTeam, num_sources_local);
 
           T pos[D];
           for (int idim = 0; idim < D; idim++)
@@ -381,28 +376,6 @@ public:
       std::copy_n(temp_dr_.data(idim), num_sources_, displacements_[iat].data(idim));
   }
 
-  size_t get_neighbors(int iat,
-                       RealType rcut,
-                       int* restrict jid,
-                       RealType* restrict dist,
-                       PosType* restrict displ) const override
-  {
-    constexpr T cminus(-1);
-    size_t nn = 0;
-    for (int jat = 0; jat < num_targets_; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        jid[nn]   = jat;
-        dist[nn]  = rij;
-        displ[nn] = cminus * displacements_[jat][iat];
-        nn++;
-      }
-    }
-    return nn;
-  }
-
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
   {
     RealType min_dist = std::numeric_limits<RealType>::max();
@@ -437,21 +410,6 @@ public:
     }
     assert(index >= 0 && index < num_sources_);
     return index;
-  }
-
-  size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
-  {
-    size_t nn = 0;
-    for (int jat = 0; jat < num_targets_; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        dist[nn] = rij;
-        nn++;
-      }
-    }
-    return nn;
   }
 
 private:

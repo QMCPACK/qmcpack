@@ -23,18 +23,15 @@ SpinDensity::SpinDensity(ParticleSet& P)
   // get particle information
   SpeciesSet& species = P.getSpeciesSet();
   nspecies            = species.size();
-  int isize           = species.addAttribute("membersize");
-  if (isize == species.numAttributes())
-    APP_ABORT("SpinDensity(P)  Species set does not have the required attribute 'membersize'");
   for (int s = 0; s < nspecies; ++s)
-    species_size.push_back(species(isize, s));
+    species_size.push_back(P.groupsize(s));
   for (int s = 0; s < nspecies; ++s)
     species_name.push_back(species.speciesName[s]);
   reset();
 
   //jtk: spin density only works for periodic bc's for now
   //     abort if using open boundary conditions
-  bool open_bcs = (P.Lattice.SuperCellEnum == SUPERCELL_OPEN);
+  bool open_bcs = (P.getLattice().SuperCellEnum == SUPERCELL_OPEN);
   if (open_bcs)
   {
     APP_ABORT("SpinDensity is not implemented for open boundary conditions at present\n  please contact the developers "
@@ -88,7 +85,7 @@ bool SpinDensity::put(xmlNodePtr cur)
     std::string ename((const char*)element->name);
     if (ename == "parameter")
     {
-      const XMLAttrString name(element, "name");
+      const std::string name(getXMLAttributeValue(element, "name"));
       if (name == "dr")
       {
         have_dr = true;
@@ -136,7 +133,7 @@ bool SpinDensity::put(xmlNodePtr cur)
       APP_ABORT("SpinDensity::put  must provide corner or center");
   }
   else
-    cell = Ptmp->Lattice;
+    cell = Ptmp->getLattice();
 
   if (have_center)
     corner = center - cell.Center;
@@ -192,7 +189,7 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 
 void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
-  hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
+  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)
@@ -238,7 +235,7 @@ SpinDensity::Return_t SpinDensity::evaluate(ParticleSet& P)
 void SpinDensity::test(int moves, ParticleSet& P)
 {
   app_log() << "  SpinDensity test" << std::endl;
-  RandomGenerator_t rng;
+  RandomGenerator rng;
   int particles = P.getTotalNum();
   int pmin      = std::numeric_limits<int>::max();
   int pmax      = std::numeric_limits<int>::min();
@@ -249,7 +246,7 @@ void SpinDensity::test(int moves, ParticleSet& P)
       PosType u;
       for (int d = 0; d < DIM; ++d)
         u[d] = rng();
-      P.R[p] = P.Lattice.toCart(u);
+      P.R[p] = P.getLattice().toCart(u);
     }
     test_evaluate(P, pmin, pmax);
   }

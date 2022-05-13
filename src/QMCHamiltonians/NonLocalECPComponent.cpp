@@ -50,6 +50,13 @@ void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
   outputManager.resume();
 }
 
+void NonLocalECPComponent::deleteVirtualParticle()
+{
+  if (VP)
+    delete VP;
+  VP = nullptr;
+}
+
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
 {
   angpp_m.push_back(l);
@@ -68,11 +75,11 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
   vrad.resize(m);
   dvrad.resize(m);
   vgrad.resize(m);
-  wvec.resize(m);
-  Amat.resize(n * m);
-  dAmat.resize(n * m);
+  wvec.resize(n);
   lpol.resize(l + 1, 1.0);
-  dlpol.resize(l + 1, 0.0);
+  //dlpol needs two data points to do a recursive construction.  Also is only nontrivial for l>1.
+  //This +2 guards against l=0 case.
+  dlpol.resize(l + 2, 0.0);
   rrotsgrid_m.resize(n);
   nchannel = nlpp_m.size();
   nknot    = sgridxyz_m.size();
@@ -100,14 +107,18 @@ void NonLocalECPComponent::resize_warrays(int n, int m, int l)
 
 void NonLocalECPComponent::print(std::ostream& os)
 {
-  os << "    Maximum angular mementum = " << lmax << std::endl;
+  os << "    Maximum angular momentum = " << lmax << std::endl;
   os << "    Number of non-local channels = " << nchannel << std::endl;
   for (int l = 0; l < nchannel; l++)
     os << "       l(" << l << ")=" << angpp_m[l] << std::endl;
   os << "    Cutoff radius = " << Rmax << std::endl;
-  os << "    Spherical grids and weights: " << std::endl;
-  for (int ik = 0; ik < nknot; ik++)
-    os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
+  os << "    Number of spherical integration grid points = " << nknot << std::endl;
+  if (outputManager.isActive(Verbosity::HIGH))
+  {
+    os << "    Spherical grid and weights: " << std::endl;
+    for (int ik = 0; ik < nknot; ik++)
+      os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
+  }
 }
 
 NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
@@ -170,18 +181,14 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
     RealType lpolprev = czero;
     for (int l = 0; l < lmax; l++)
     {
-      //Not a big difference
-      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-      //lpol[l+1]/=(l+1);
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
-      lpolprev = lpol[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
+      lpolprev    = lpol[l];
     }
 
-    ValueType lsum = 0.0;
+    RealType lsum = 0.0;
     for (int l = 0; l < nchannel; l++)
       lsum += vrad[l] * lpol[angpp_m[l]];
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pairpot += knot_pots[j];
   }
 
@@ -371,12 +378,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
@@ -390,12 +395,12 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
     for (int l = 0; l < nchannel; l++)
     {
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      lsum += vrad[l] * lpol[angpp_m[l]];
       gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
-      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
     }
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
   }
@@ -411,7 +416,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
                                                                            RealType r,
                                                                            const PosType& dr,
                                                                            PosType& force_iat,
-                                                                           ParticleSet::ParticlePos_t& pulay_terms)
+                                                                           ParticleSet::ParticlePos& pulay_terms)
 {
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -438,10 +443,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
   //Now for the Pulay specific stuff...
   // $\nabla_I \Psi(...r...)/\Psi(...r...)$
-  ParticleSet::ParticlePos_t pulay_ref;
-  ParticleSet::ParticlePos_t pulaytmp_;
+  ParticleSet::ParticlePos pulay_ref;
+  ParticleSet::ParticlePos pulaytmp_;
   // $\nabla_I \Psi(...q...)/\Psi(...r...)$ for each quadrature point.
-  std::vector<ParticleSet::ParticlePos_t> pulay_quad(nknot);
+  std::vector<ParticleSet::ParticlePos> pulay_quad(nknot);
 
   //A working array for pulay stuff.
   GradType iongradtmp_(0);
@@ -558,12 +563,10 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     for (int l = 0; l < lmax; l++)
     {
       //Legendre polynomial recursion formula.
-      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
-      lpol[l + 1] *= Lfactor2[l];
+      lpol[l + 1] = (Lfactor1[l] * zz * lpol[l] - l * lpolprev) * Lfactor2[l];
 
       //and for the derivative...
-      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
-      dlpol[l + 1] *= Lfactor2[l];
+      dlpol[l + 1] = (Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev) * Lfactor2[l];
 
       lpolprev  = lpol[l];
       dlpolprev = dlpol[l];
@@ -580,13 +583,13 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
     {
       //Note.  Because we are computing "forces", there's a -1 difference between this and
       //direct finite difference calculations.
-      lsum += std::real(vrad[l]) * lpol[angpp_m[l]];
+      lsum += vrad[l] * lpol[angpp_m[l]];
       gradpotterm_ += vgrad[l] * lpol[angpp_m[l]] * std::real(psiratio[j]);
-      gradlpolyterm_ += std::real(vrad[l]) * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
-      gradwfnterm_ += std::real(vrad[l]) * lpol[angpp_m[l]] * wfngrad[j];
-      pulaytmp_ -= std::real(vrad[l]) * lpol[angpp_m[l]] * pulay_quad[j];
+      gradlpolyterm_ += vrad[l] * dlpol[angpp_m[l]] * cosgrad[j] * std::real(psiratio[j]);
+      gradwfnterm_ += vrad[l] * lpol[angpp_m[l]] * wfngrad[j];
+      pulaytmp_ -= vrad[l] * lpol[angpp_m[l]] * pulay_quad[j];
     }
-    knot_pots[j] = std::real(lsum * psiratio[j]);
+    knot_pots[j] = lsum * std::real(psiratio[j]);
     pulaytmp_ += knot_pots[j] * pulay_ref;
     pairpot += knot_pots[j];
     force_iat += gradpotterm_ + gradlpolyterm_ - gradwfnterm_;
@@ -596,8 +599,282 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   return pairpot;
 }
 
+void NonLocalECPComponent::evaluateOneBodyOpMatrixContribution(ParticleSet& W,
+                                                               const int iat,
+                                                               const TWFFastDerivWrapper& psi,
+                                                               const int iel,
+                                                               const RealType r,
+                                                               const PosType& dr,
+                                                               std::vector<ValueMatrix>& B)
+
+{
+  using ValueVector = SPOSet::ValueVector;
+  //Some initial computation to find out the species and row number of electron.
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType firstIndex = W.first(gid);
+  const IndexType thisIndex  = iel - firstIndex;
+
+  const IndexType numOrbs = psi.numOrbitals(sid);
+  ValueVector phi_row; //phi_0(r), phi_1(r), ...
+  ValueVector temp_row;
+
+  phi_row.resize(numOrbs);
+  temp_row.resize(numOrbs);
+
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+
+
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  const RealType rinv = cone / r;
+
+  for (int ip = 0; ip < nchannel; ip++)
+    vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+
+  for (int j = 0; j < nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j], false); //Update distance tables.
+    psi.getRowM(W, iel, phi_row);
+    RealType jratio = psi.evaluateJastrowRatio(W, iel);
+    W.rejectMove(iel);
+
+    RealType zz = dot(dr, rrotsgrid_m[j]) * rinv;
+    // Forming the Legendre polynomials
+    lpol[0]           = cone;
+    RealType lpolprev = czero;
+    for (int l = 0; l < lmax; l++)
+    {
+      lpol[l + 1] = Lfactor2[l] * (Lfactor1[l] * zz * lpol[l] - l * lpolprev);
+      lpolprev    = lpol[l];
+    }
+
+    ValueType lsum = 0.0;
+    for (int l = 0; l < nchannel; l++)
+    {
+      temp_row = (vrad[l] * lpol[angpp_m[l]] * sgridweight_m[j]) * jratio * phi_row;
+      for (int iorb = 0; iorb < numOrbs; iorb++)
+        B[sid][thisIndex][iorb] += temp_row[iorb];
+    }
+  }
+}
+
+void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
+                                                                 ParticleSet& ions,
+                                                                 const int iat,
+                                                                 const int iat_src,
+                                                                 const TWFFastDerivWrapper& psi,
+                                                                 const int iel,
+                                                                 const RealType r,
+                                                                 const PosType& dr,
+                                                                 std::vector<std::vector<ValueMatrix>>& dB)
+{
+  using ValueVector = SPOSet::ValueVector;
+  using GradVector  = SPOSet::GradVector;
+  constexpr RealType czero(0);
+  constexpr RealType cone(1);
+
+  //We check that our quadrature grid is valid.  Namely, that all points lie on the unit sphere.
+  //We check this by seeing if |r|^2 = 1 to machine precision.
+  for (int j = 0; j < nknot; j++)
+    assert(std::abs(std::sqrt(dot(rrotsgrid_m[j], rrotsgrid_m[j])) - 1) <
+           100 * std::numeric_limits<RealType>::epsilon());
+
+  for (int j = 0; j < nknot; j++)
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
+
+  // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
+  RealType secondderiv(0);
+
+  const RealType rinv = cone / r;
+
+  // Compute radial potential and its derivative times (2l+1)
+  for (int ip = 0; ip < nchannel; ip++)
+  {
+    //fun fact.  NLPComponent stores v(r) as v(r), and not as r*v(r) like in other places.
+    vrad[ip]  = nlpp_m[ip]->splint(r, dvrad[ip], secondderiv) * wgt_angpp_m[ip];
+    vgrad[ip] = dvrad[ip] * dr * wgt_angpp_m[ip] * rinv;
+  }
+
+  const IndexType gid        = W.getGroupID(iel);
+  const IndexType sid        = psi.getTWFGroupIndex(gid);
+  const IndexType thisEIndex = iel - W.first(gid);
+  const IndexType numptcls   = W.last(gid) - W.first(gid);
+  const IndexType norbs      = psi.numOrbitals(sid);
+  SPOSet& spo(*psi.getSPOSet(sid));
+
+  RealType pairpot = 0;
+  // Compute spherical harmonics on grid
+  GradMatrix iongrad_phimat;
+  GradVector iongrad_phi;
+  ValueVector phi, laplphi;
+  ValueMatrix phimat, laplphimat;
+  GradMatrix gradphimat;
+  GradVector gradphi;
+  GradMatrix wfgradmat;
+
+  //This stores all ion gradients of the Jastrow, evaluated on all quadrature points.
+  //Has length nknot.
+  ParticleSet::ParticleGradient jgrad_quad;
+  jgrad_quad.resize(nknot);
+
+  wfgradmat.resize(nknot, norbs);
+
+  iongrad_phimat.resize(nknot, norbs);
+  laplphimat.resize(nknot, norbs);
+
+  phimat.resize(nknot, norbs);
+  gradphimat.resize(nknot, norbs);
+  iongrad_phi.resize(norbs);
+  phi.resize(norbs);
+  gradphi.resize(norbs);
+  laplphi.resize(norbs);
+
+  GradVector udotgradpsi, wfgradrow;
+  GradMatrix udotgradpsimat;
+  GradVector gpot, glpoly, gwfn;
+  ValueVector nlpp_prefactor;
+  GradVector dlpoly_prefactor;
+  GradVector dvdr_prefactor;
+
+  nlpp_prefactor.resize(nknot);
+  dlpoly_prefactor.resize(nknot);
+  dvdr_prefactor.resize(nknot);
+
+  udotgradpsimat.resize(nknot, norbs);
+  wfgradrow.resize(norbs);
+  udotgradpsi.resize(norbs);
+  gpot.resize(norbs);
+  glpoly.resize(norbs);
+  gwfn.resize(norbs);
+
+  buildQuadraturePointDeltaPositions(r, dr, deltaV);
+  //This is the ion gradient of J at the original (non quadrature) coordinate.
+  GradType jigradref(0.0);
+
+  jigradref = psi.evaluateJastrowGradSource(W, ions, iat_src);
+
+  //Until we have a more efficient routine, we move to a quadrature point,
+  //update distance tables, compute the ion gradient of J, then move the particle back.
+  //At cost of distance table updates.  Not good, but works.
+  for (int j = 0; j < nknot; j++)
+  {
+    W.makeMove(iel, deltaV[j], false);
+    W.acceptMove(iel);
+    jgrad_quad[j] = psi.evaluateJastrowGradSource(W, ions, iat_src);
+    W.makeMove(iel, -deltaV[j], false);
+    W.acceptMove(iel);
+  }
+
+  for (int j = 0; j < nknot; j++)
+  {
+    ScopedTimer gsourcerowtimer(*timer_manager.createTimer("NLPP::dB::GradSourceRow"));
+    W.makeMove(iel, deltaV[j], false);
+    iongrad_phi = 0.0;
+    spo.evaluateGradSourceRow(W, iel, ions, iat_src, iongrad_phi);
+    GradType jegrad(0.0);
+    GradType jigrad(0.0);
+
+    RealType jratio = psi.calcJastrowRatioGrad(W, iel, jegrad);
+    jigrad          = psi.evaluateJastrowGradSource(W, ions, iat_src);
+
+    spo.evaluateVGL(W, iel, phi, gradphi, laplphi);
+
+    //Quick comment on the matrix elements being computed below.
+    //For the no jastrow implementation, phimat, gradphimat, iongrad_phimat were straightforward containers storing phi_j(r_i), grad(phi_j), etc.
+    //Generalizing to jastrows is straightforward if we replace phi_j(q) with exp(J(q))/exp(J(r))*phi(q).  Storing these in the phimat, gradphimat, etc.
+    //data structures allows us to not modify the rather complicated expressions we have already derived.
+    if (iat == iat_src)
+    {
+      ScopedTimer vglrowtimer(*timer_manager.createTimer("NLPP::dB::evaluateVGL"));
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        //Treating exp(J(q))/exp(J(r))phi_j(q) as the fundamental block.
+        phimat[j][iorb] = jratio * phi[iorb];
+        //This is the electron gradient of the above expression.
+        gradphimat[j][iorb] = jratio * (gradphi[iorb] + GradType(jegrad) * phi[iorb]);
+        laplphimat[j][iorb] = laplphi[iorb]; //this is not used, so not including jastrow contribution.
+      }
+    }
+    for (int iorb = 0; iorb < norbs; iorb++)
+    {
+      //This is the ion gradient of exp(J(q))/exp(J(r))phi_j(q).
+      iongrad_phimat[j][iorb] = jratio * (iongrad_phi[iorb] + phi[iorb] * (GradType(jgrad_quad[j]) - jigradref));
+    }
+    W.rejectMove(iel);
+  }
+
+  for (int j = 0; j < nknot; j++)
+  {
+    ScopedTimer prefactortimer(*timer_manager.createTimer("NLPP::dB::prefactors"));
+
+    RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
+    PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
+
+    cosgrad[j] = rinv * uminusrvec;
+
+    // Forming the Legendre polynomials
+    //P_0(x)=1; P'_0(x)=0.
+    lpol[0]  = cone;
+    dlpol[0] = czero;
+    dlpol[1] = cone;
+
+    RealType lpolprev  = czero;
+    RealType dlpolprev = czero;
+
+    for (int l = 0; l < lmax; l++)
+    {
+      ScopedTimer lgpolytimer(*timer_manager.createTimer("NLPP::dB::lgpoly"));
+      //Legendre polynomial recursion formula.
+      lpol[l + 1] = Lfactor1[l] * zz * lpol[l] - l * lpolprev;
+      lpol[l + 1] *= Lfactor2[l];
+
+      //and for the derivative...
+      dlpol[l + 1] = Lfactor1[l] * (zz * dlpol[l] + lpol[l]) - l * dlpolprev;
+      dlpol[l + 1] *= Lfactor2[l];
+
+      lpolprev  = lpol[l];
+      dlpolprev = dlpol[l];
+    }
+
+    for (int l = 0; l < nchannel; l++)
+    {
+      ScopedTimer finalltimer(*timer_manager.createTimer("NLPP::dB::final_l_timer"));
+      //Note.  Because we are computing "forces", there's a -1 difference between this and
+      //direct finite difference calculations.
+
+      nlpp_prefactor[j] += sgridweight_m[j] * vrad[l] * lpol[angpp_m[l]];
+      dvdr_prefactor[j] += sgridweight_m[j] * vgrad[l] * lpol[angpp_m[l]];
+      dlpoly_prefactor[j] += sgridweight_m[j] * vrad[l] * dlpol[angpp_m[l]] * cosgrad[j];
+    }
+  }
+
+
+  for (int j = 0; j < nknot; j++)
+    for (int iorb = 0; iorb < norbs; iorb++)
+      gwfn[iorb] += nlpp_prefactor[j] * (iongrad_phimat[j][iorb]);
+
+  if (iat == iat_src)
+  {
+    for (int j = 0; j < nknot; j++)
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        //this is for diagonal case.
+        udotgradpsimat[j][iorb] = dot(gradphimat[j][iorb], rrotsgrid_m[j]);
+        wfgradmat[j][iorb]      = gradphimat[j][iorb] - dr * (udotgradpsimat[j][iorb] * rinv);
+        gpot[iorb] += dvdr_prefactor[j] * phimat[j][iorb];
+        glpoly[iorb] += dlpoly_prefactor[j] * phimat[j][iorb];
+        gwfn[iorb] += nlpp_prefactor[j] * (wfgradmat[j][iorb]);
+      }
+  }
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int iorb = 0; iorb < norbs; iorb++)
+      dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
+}
+
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -609,7 +886,7 @@ void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator_t& myRNG)
+void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
   RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
@@ -646,8 +923,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator_t& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
 
 
 } // namespace qmcplusplus
