@@ -89,6 +89,7 @@ cqmc::engine::LMYEngine<S>::LMYEngine(const formic::VarDeps* dep_ptr,
       _block_lm(block_lm),
       _num_samp(num_samp),
       _num_params(num_params),
+      _total_num_params(num_params),
       _lm_krylov_iter(lm_krylov_iter),
       _lm_spam_inner_iter(lm_spam_inner_iter),
       _appro_degree(appro_degree),
@@ -215,9 +216,11 @@ void cqmc::engine::LMYEngine<S>::get_param(const formic::VarDeps * dep_ptr,
   _sample_initialized=false, _block_lm=block_lm, _store_der_vec=false, _num_samp=num_samp, _samp_count=0, _lm_krylov_iter=lm_krylov_iter, _lm_spam_inner_iter=lm_spam_inner_iter;
   _appro_degree=appro_degree, _n_sites=n_sites, _n_pm=n_pm, _n_jas=n_jas, _hd_lm_shift=hd_lm_shift, _var_weight=var_weight, _lm_eigen_thresh=lm_eigen_thresh, _lm_min_S_eval=lm_min_S_eval;
   _init_cost=init_cost, _init_var=init_var, _lm_max_e_change=lm_max_e_change, _lm_ham_shift_i=lm_ham_shift_i, _lm_ham_shift_s=lm_ham_shift_s, _lm_max_update_abs=lm_max_update_abs;
-  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr, _num_params=num_params;
+  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr, _num_params=num_params,_total_num_params = num_params;
   _1rdm = one_rdm;
 
+
+  
   // solve results
   _good_solve.resize(_shift_scale.size());
   _solved_shifts.resize(_shift_scale.size());
@@ -708,6 +711,7 @@ void cqmc::engine::LMYEngine<S>::sample_finish() {
         }
       }
 
+      
       // the total weight through all samples
       double all_samp_weight = 0.0;
 
@@ -1375,6 +1379,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_one(const formic::VarD
     deng_cmpct[ip].reset(n_dir, 0.0);
   }
  
+
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1452,8 +1457,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
         dd.at(1+k,1+l) += _lmb.ou_mat().at(i, k) * _lmb.ou_mat().at(i, l);
     }
 
-    //std::cout << "dd constructed" << std::endl;
-
     // for each shift, we solve the linear method eigenvalue problem for the update in this basis
     //updates.assign(shift_scale.size() * ( 1 + _dep_ptr->n_tot()), 0.0);
     //std::cout << "before matrix wrapper constructed" << updates.size() << std::endl;
@@ -1462,7 +1465,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
     // loop over shifts
     for (int shift_p = 0; shift_p < shift_scale.size(); shift_p++) {
      
-      //std::cout << "entering loop over shifts" << std::endl;
       // compute the update in the compact basis 
       formic::Matrix<double> update_dir;
       if ( !_lmb.iterative() ) 
@@ -1566,17 +1568,11 @@ template<typename S>
 void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
 {
     //Number of samples on a process
-    //int num_samples = der_rat_history.size();
 
     int num_samples = der_rat_history.rows();
     int der_vec_len = der_rat_history.cols();
     int my_rank = formic::mpi::rank();
 
-    if(my_rank == 0)
-    {
-        std::cout << "Inside buildMatricesFromDerivatives, num_samples: " << num_samples << std::endl;
-
-    }
     for(int i = 0; i < num_samples; i++)
     {
         std::vector<double> der_rat_samp;
@@ -1613,11 +1609,13 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
 
             //Need to add guiding function or change signature
             //this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,lotf,weight);
+            this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,weight);
 
         }
         else
          {
             //this->take_sample(der_rat_samp,le_der_samp,le_der_samp,vgs,lotf,weight);
+            this->take_sample(der_rat_samp,le_der_samp,le_der_samp,vgs,weight);
             }
 
 

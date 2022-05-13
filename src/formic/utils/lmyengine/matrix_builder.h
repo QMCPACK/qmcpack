@@ -591,16 +591,8 @@ int my_rank = formic::mpi::rank();
         //std::cout << "netering matrix build finish_sample5" << std::endl;
 
         // print the matrix if requested
-        if ( _print_matrix && my_rank == 0 ) {
 
-          // hamiltonian 
-          //output << _hmat.print("%12.6f", "hamiltonian");
-
-          // overlap
-          //output << _smat.print("%12.6f", "overlap");
-        }
-
-        if (my_rank == 0) {
+        if (_print_matrix && my_rank == 0) {
           
           // discard the imaginary part of the diagonal elements of Hamiltonian matrix 
           //for (int i=0; i < _hmat.rows(); i++) {

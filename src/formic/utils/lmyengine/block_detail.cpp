@@ -115,6 +115,7 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
   // get the number of vectors in basis 1
   const int nd = hh.rows();
 
+  int my_rank = formic::mpi::rank();
 
   // sanity checks
   if ( hh.rows() != hh.cols() )
@@ -149,9 +150,9 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
   // initialize matrix of update direction coefficients in basis 2
   formic::Matrix<double> update_dirs(nd, nkeep, 1.0);
 
-  // ietratively find the best nkeep directions
+  // iteratively find the best nkeep directions
   for (int nkept = 0; nkept < nkeep; nkept++) {
-    
+   
     // make sure previous update directions are excluded by projecting them out
     formic::Matrix<double> proj_dirs = formic::identity_matrix<double>(nd-1);
     if ( nkept > 0 ) {
@@ -180,7 +181,6 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
 
     // get overlap in these projected directions
     formic::Matrix<double> ps = proj_dirs.t() * ss3 * proj_dirs;
-    //output << ps.print("%12.6f", "ps") << std::endl;
 
     // diagonalize the projected overlap
     formic::ColVec<double> ps_evals;
@@ -334,6 +334,7 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
   // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
 
+
   // check to see whether nkeep is one and throw out an error if not
   if ( nkeep != 1 ) 
     throw formic::Exception("nkeep must be 1 in get_important_brlm_dirs_davidson!");
@@ -440,6 +441,7 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs_davidson(const form
       output << boost::format("The largest weight on the derivative vector for shift %.4e is %.6e") % shift_i % max_update_abs_value << std::endl << std::endl;
     }
   }
+
 
   // clean up memory used by matrices and vectors
   formic::reusable_array_garbage_collect();

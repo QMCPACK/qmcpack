@@ -496,8 +496,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
 #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
-  if (MinMethod == "adaptive")
+  if (MinMethod == "adaptive" && !EngineObj->getStoringSamples())
   {
+      //Only call sample_finish now if samples are not being stored
     EngineObj->sample_finish();
 
     if (EngineObj->block_first())
