@@ -58,7 +58,7 @@ case "$1" in
     esac
     ;;
 
-  # Build using ninja (~ 25 minutes on GitHub-hosted runner)
+  # Build using ninja (~ 2 hours 15 minutes on GitHub-hosted runner)
   build)
     cd ${GITHUB_WORKSPACE}/../qmcpack-build
     ninja
