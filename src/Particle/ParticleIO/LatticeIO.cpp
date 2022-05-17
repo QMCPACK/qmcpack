@@ -119,6 +119,13 @@ bool LatticeParser::put(xmlNodePtr cur)
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
         else if (handler_type == "opt_breakup_original")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
+        else if (handler_type == "ewald_strict2d")
+        {
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
+          ref_.ndim = 2;
+        }
+        else if (handler_type == "ewald_quasi2d")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
         else
           APP_ABORT("\n  Long range breakup handler not recognized.\n");
       }

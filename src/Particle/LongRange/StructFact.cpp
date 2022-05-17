@@ -31,7 +31,7 @@ StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
-  if (qmc_common.use_ewald && lattice.SuperCellEnum == SUPERCELL_SLAB)
+  if (lattice.SuperCellEnum == SUPERCELL_SLAB)
   {
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;
