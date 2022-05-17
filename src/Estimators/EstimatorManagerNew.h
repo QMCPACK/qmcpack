@@ -147,8 +147,6 @@ public:
   std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 
 private:
-  EstimatorManagerInput input_;
-
   /** Construct estimator of type matching the underlying EstimatorInput type Consumer
    *  and push its its unique_ptr onto operator_ests_
    */
