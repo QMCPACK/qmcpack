@@ -471,7 +471,7 @@ if(add_estimator_tests)
     -r
     qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat)
 
-  if(!QMC_CUDA)
+  if(NOT QMC_CUDA)
     # Still some issue with SpinDensityNew in the complete application
     SIMPLE_RUN_AND_CHECK(
       short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity

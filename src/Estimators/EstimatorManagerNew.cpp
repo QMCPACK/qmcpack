@@ -55,7 +55,6 @@ bool EstimatorManagerNew::createEstimator(VAR& input, Args&&... args)
   {
     operator_ests_.push_back(std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)),
                                                                                std::forward<Args>(args)...));
-    app_log() << "EstimatorManager-> Adding " << operator_ests_.back()->get_my_name();
     return true;
   }
   else
@@ -156,17 +155,17 @@ void EstimatorManagerNew::reset()
 
 void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
 {
-  os << "EstimatorManager setup for this block:\n"
+  os << "EstimatorManager setup for this section:\n"
      << "  Main Estimator:  " << main_estimator_->getSubTypeStr() << '\n';
   if (scalar_ests_.size() > 0)
   {
-    os << "  ScalarEstimators:";
+    os << "  ScalarEstimators:\n";
     for (auto& scalar_est : scalar_ests_)
-      os << "    " << scalar_est->getSubTypeStr() << '\n';
+    os << "    " << scalar_est->getSubTypeStr() << '\n';
   }
   if (operator_ests_.size() > 0)
   {
-    os << "  General Estimators:";
+    os << "  General Estimators:\n";
     for (auto& est : operator_ests_)
       os << "    " << est->get_my_name() << '\n';
   }
