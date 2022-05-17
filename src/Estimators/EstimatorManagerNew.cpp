@@ -154,7 +154,7 @@ void EstimatorManagerNew::reset()
   max4ascii += BlockAverages.size();
 }
 
-void EstimatorManagerNew::makeConfigReport(std::ostream& os)
+void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
 {
   os << "EstimatorManager setup for this block:\n"
      << "  Main Estimator:  " << main_estimator_->getSubTypeStr() << '\n';

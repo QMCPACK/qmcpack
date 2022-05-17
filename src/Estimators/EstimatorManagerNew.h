@@ -161,7 +161,7 @@ private:
 
   /** Return a string with information about which estimators estimator manager is holding.
    */
-  void makeConfigReport(std::ostream& os);
+  void makeConfigReport(std::ostream& os) const;
 
   /** reset the estimator
    */
