@@ -1,4 +1,4 @@
-name: static checks
+name: static
 
 on:
   workflow_dispatch:
@@ -16,14 +16,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [GCC9-MPI-Real, GCC9-MPI-Complex]
+        jobname: [ClangTidy10-NoMPI-Real, ClangTidy10-NoMPI-Complex]
         include:
-          - jobname: GCC9-MPI-Real
+          - jobname: ClangTidy10-NoMPI-Real
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
 
-          - jobname: GCC9-MPI-Complex
+          - jobname: ClangTidy10-NoMPI-Complex
             container:
               image: williamfgc/qmcpack-ci:ubuntu20-openmpi
               options: -u 1001
@@ -33,25 +33,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Configure
-        run: export OMPI_CXX=clang++ export OMPI_CC=clang \
-          cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DBUILD_AFQMC=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*"  ..
+        run: tests/test_automation/github-actions/ci/run_step_static.sh configure
 
       - name: Build
-        run: tests/test_automation/github-actions/ci/run_step.sh build
-
-      - name: Test
-        run: tests/test_automation/github-actions/ci/run_step.sh test
-
-      - name: Coverage
-        if: contains(matrix.jobname, 'Gcov')
-        run: tests/test_automation/github-actions/ci/run_step.sh coverage
-
-      - name: Upload Coverage
-        if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v2
-        with:
-          files: ../qmcpack-build/coverage.xml
-          flags: tests-deterministic # optional
-          name: codecov-QMCPACK # optional
-          fail_ci_if_error: true # optional (default = false)
-
+        run: tests/test_automation/github-actions/ci/run_step_static.sh build
