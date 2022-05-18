@@ -34,7 +34,7 @@ QMCDriverInterface* DMCFactoryNew::create(const ProjectData& project_data,
   qmcdriver_input.readXML(input_node_);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(input_node_);
-  QMCDriverInterface* qmc = new DMCBatched(project_data, std::move(qmcdriver_input), std::move(global_emi),
+  QMCDriverInterface* qmc = new DMCBatched(project_data, std::move(qmcdriver_input), global_emi,
                                            std::move(dmcdriver_input), std::move(pop), comm);
   // This can probably be eliminated completely since we only support PbyP
   qmc->setUpdateMode(dmc_mode_ & 1);

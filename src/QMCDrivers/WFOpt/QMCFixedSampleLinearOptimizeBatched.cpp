@@ -114,7 +114,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
       W(w),
-      global_emi_(std::move(global_emi))
+      global_emi_(global_emi)
 {
   //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
