@@ -286,7 +286,8 @@ private:
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.
   MCWalkerConfiguration& W;
-  std::optional<EstimatorManagerInput> global_emi_;
+  /// This is retained in order to construct and reconstruct the vmcEngine.
+  const std::optional<EstimatorManagerInput> global_emi_;
 };
 } // namespace qmcplusplus
 #endif
