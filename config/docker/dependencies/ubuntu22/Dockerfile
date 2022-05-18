@@ -12,6 +12,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     clang \
     clang-format \
     clang-tidy \
+    libomp-dev \
     gcovr \
     python3 \
     cmake \
