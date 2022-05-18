@@ -43,15 +43,14 @@ case "$1" in
     esac
     
     case "${GH_JOBNAME}" in
-      *"ClangTidy10-NoMPI-"*)
+      *"ClangTidy14-NoMPI-"*)
         echo 'Configure for debug mode'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=clang \
               -DCMAKE_CXX_COMPILER=clang++ \
-              -DQMC_MIXED_PRECISION=1 \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=Debug \
-              -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" \
-              -DCMAKE_CXX_CLANG_TIDY="clang-tidy;-checks=*" \
+              -DCMAKE_CXX_CLANG_TIDY="clang-tidy" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               ${GITHUB_WORKSPACE}
       ;;
