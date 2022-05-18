@@ -732,8 +732,8 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine.reset(nullptr);
 
   // Explicitly copy the driver input objects since they will be used to instantiate the VMCEngine repeatedly.
-  QMCDriverInput qmcdriver_input_copy                  = qmcdriver_input_;
-  VMCDriverInput vmcdriver_input_copy                  = vmcdriver_input_;
+  QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+  VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
 
   // create VMC engine
   vmcEngine =

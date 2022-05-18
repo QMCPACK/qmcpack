@@ -56,7 +56,7 @@ class LocalEnergyInput
   };
 
 public:
-  using Consumer     = LocalEnergyEstimator;
+  using Consumer = LocalEnergyEstimator;
   // required because legacy code using LocalEnergyEstimator does not use input object.
   // LocalEnergyInput must be trivially constructable.
   LocalEnergyInput() = default;
@@ -89,7 +89,7 @@ class CSLocalEnergyInput
   };
 
 public:
-  using Consumer       = CSEnergyEstimator;
+  using Consumer = CSEnergyEstimator;
   // required because legacy code using CSEnergyEstimator does not use input object.
   // So CSLocalEnergyInput must be trivially constructable.
   CSLocalEnergyInput() = default;
@@ -122,7 +122,7 @@ class RMCLocalEnergyInput
   };
 
 public:
-  using Consumer        = RMCLocalEnergyEstimator;
+  using Consumer = RMCLocalEnergyEstimator;
   // required because legacy code using RMCLocalEnergyEstimator does not use input object.
   // So RMCLocalEnergyInput must be trivially constructable.
 
@@ -131,6 +131,7 @@ public:
   int get_n_obs() const { return n_obs_; }
   const std::string& get_name() const { return name_; }
   const std::string& get_type() const { return type_; }
+
 private:
   std::string name_;
   std::string type_ = "RMCLocalEnergy";

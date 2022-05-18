@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 /// create DriftModifier
 DriftModifierBase* createDriftModifier(xmlNodePtr cur, const Communicate* myComm);
- DriftModifierBase* createDriftModifier(const std::string& drift_modifier_str, QMCTraits::RealType unr_a);
+DriftModifierBase* createDriftModifier(const std::string& drift_modifier_str, QMCTraits::RealType unr_a);
 } // namespace qmcplusplus
 
 #endif

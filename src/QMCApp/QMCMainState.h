@@ -74,7 +74,7 @@ struct QMCMainState : public MPIObjectBase
 
   ///Global estimators defined outside of <qmc> nodes
   std::optional<EstimatorManagerInput> estimator_manager_input_;
-  
+
   /** virtual destructor **/
   virtual ~QMCMainState();
 };

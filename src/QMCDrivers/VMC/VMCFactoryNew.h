@@ -43,7 +43,7 @@ public:
    *                              a global input should not be consumed by driver.
    */
   QMCDriverInterface* create(const ProjectData& project_data,
-			     const std::optional<EstimatorManagerInput>& global_emi,
+                             const std::optional<EstimatorManagerInput>& global_emi,
                              MCPopulation&& pop,
                              SampleStack& samples,
                              Communicate* comm);

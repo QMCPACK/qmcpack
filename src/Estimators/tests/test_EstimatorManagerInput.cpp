@@ -144,16 +144,15 @@ TEST_CASE("EstimatorManagerInput::moveConstructor", "[estimators]")
 TEST_CASE("EstimatorManagerInput::MergeConstructor", "[estimators]")
 {
   using namespace testing;
-  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  Libxml2Document estimators_doc        = createEstimatorManagerNewInputXML();
   Libxml2Document global_estimators_doc = createEstimatorManagerNewGlobalInputXML();
   EstimatorManagerInput emi_global(global_estimators_doc.getRoot());
   EstimatorManagerInput emi_local(estimators_doc.getRoot());
   EstimatorManagerInput emi_merged{emi_global, emi_local};
-  
+
   CHECK(emi_merged.get_estimator_inputs().size() == 3);
   CHECK(emi_merged.get_scalar_estimator_inputs().size() == 5);
 }
 
 
-  
 } // namespace qmcplusplus

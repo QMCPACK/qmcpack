@@ -24,14 +24,14 @@ class OneBodyDensityMatricesTests;
 }
 
 class OneBodyDensityMatrices;
-  
+
 /** Native representation for DensityMatrices1B Estimator's inputs
  */
 class OneBodyDensityMatricesInput
 {
 public:
   using Consumer = OneBodyDensityMatrices;
-  
+
   enum class Integrator
   {
     UNIFORM_GRID,

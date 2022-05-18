@@ -615,7 +615,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     try
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool,
+                                                  *hamPool, myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)

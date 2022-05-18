@@ -41,7 +41,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
   testing::EstimatorManagerNewTest embt(ham, c, 1);
 
   // Just checking here that we have an empty estimator manager in embt.
-  
+
   CHECK(embt.em.getNumEstimators() == 0);
   CHECK(embt.em.getNumScalarEstimators() == 0);
 }
@@ -54,19 +54,19 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
-  
+
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset             = *(particle_pool.getParticleSet("e"));
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham = *(hamiltonian_pool.getPrimary());
+  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham              = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
 
   CHECK(emn.getNumEstimators() == 2);
   CHECK(emn.getNumScalarEstimators() == 0);
 }
-  
+
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
@@ -81,15 +81,14 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 
   embt.fakeMainScalarSamples();
   embt.collectMainEstimators();
-  double correct_value = 5.0;  
+  double correct_value = 5.0;
   REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
-  correct_value = 8.0;  
+  correct_value = 8.0;
   REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
-  correct_value = 11.0;  
+  correct_value = 11.0;
   REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
-  correct_value = 14.0;  
+  correct_value = 14.0;
   REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
-
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
@@ -103,15 +102,14 @@ TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
   // accumulated data has been reduced down.  So here there should just be simple sums.
 
   embt.fakeScalarSamplesAndCollect();
-  double correct_value = 11.0;  
+  double correct_value = 11.0;
   CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
-  correct_value = 20.0;  
+  correct_value = 20.0;
   CHECK(embt.em.get_AverageCache()[1] == Approx(correct_value));
-  correct_value = 29.0;  
+  correct_value = 29.0;
   CHECK(embt.em.get_AverageCache()[2] == Approx(correct_value));
-  correct_value = 38.0;  
+  correct_value = 38.0;
   CHECK(embt.em.get_AverageCache()[3] == Approx(correct_value));
-
 }
 
 TEST_CASE("EstimatorManagerNew adhoc addVector operator", "[estimators]")

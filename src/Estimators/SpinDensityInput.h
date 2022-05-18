@@ -36,7 +36,7 @@ public:
   using POLT               = PtclOnLatticeTraits;
   using Lattice            = POLT::ParticleLayout;
   using PosType            = QMCTraits::PosType;
-  using Consumer = SpinDensityNew;
+  using Consumer           = SpinDensityNew;
   static constexpr int DIM = QMCTraits::DIM;
 
 public:

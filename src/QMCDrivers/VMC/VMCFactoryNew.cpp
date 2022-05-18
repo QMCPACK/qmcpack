@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
-					  const std::optional<EstimatorManagerInput>& global_emi,
+                                          const std::optional<EstimatorManagerInput>& global_emi,
                                           MCPopulation&& pop,
                                           SampleStack& samples,
                                           Communicate* comm)
@@ -43,8 +43,8 @@ QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(project_data, std::move(qmcdriver_input), global_emi, std::move(vmcdriver_input), std::move(pop), samples,
-                         comm);
+    qmc = new VMCBatched(project_data, std::move(qmcdriver_input), global_emi, std::move(vmcdriver_input),
+                         std::move(pop), samples, comm);
   }
   else
   {

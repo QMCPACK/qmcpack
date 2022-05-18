@@ -35,8 +35,8 @@ public:
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                                 = default;
-  QMCDriverInput(const QMCDriverInput&)            = default;
+  QMCDriverInput()                      = default;
+  QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&) noexcept;
   QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
@@ -90,7 +90,7 @@ protected:
   /** The EstimatorManagerInput for batched version input
    */
   std::optional<EstimatorManagerInput> estimator_manager_input_;
-  
+
   // from putQMCInfo
   input::PeriodStride walker_dump_period_{0, 0};
   input::PeriodStride check_point_period_{0, 0};
@@ -148,7 +148,7 @@ public:
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept            = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
 inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus

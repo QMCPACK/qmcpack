@@ -32,26 +32,28 @@ TEST_CASE("Scalar Estimator Input", "[estimators]")
     std::string atype(lowerCase(getXMLAttributeValue(node, "type")));
     std::string aname(lowerCase(getXMLAttributeValue(node, "name")));
     // Since legacy inconsistently used name instead of type attribute to specify scalar estimator type
-    if (atype.empty() && ! aname.empty())
+    if (atype.empty() && !aname.empty())
       atype = aname;
-    if (aname.empty() && ! atype.empty())
+    if (aname.empty() && !atype.empty())
       aname = atype;
     if (atype == "localenergy" || atype == "elocal")
     {
-      LocalEnergyInput lei(node);	
+      LocalEnergyInput lei(node);
       CHECK(lowerCase(lei.get_type()) == "localenergy");
     }
-    else if (atype == "cslocalenergy") {
+    else if (atype == "cslocalenergy")
+    {
       CSLocalEnergyInput cslei(node);
       CHECK(lowerCase(cslei.get_type()) == "cslocalenergy");
     }
-    else if (atype == "rmc") {
+    else if (atype == "rmc")
+    {
       RMCLocalEnergyInput rmclei(node);
       CHECK(lowerCase(rmclei.get_type()) == "rmclocalenergy");
     }
     else
     {
-      FAIL( "Unhandled scalar estimator  " << atype );
+      FAIL("Unhandled scalar estimator  " << atype);
     }
   }
 }

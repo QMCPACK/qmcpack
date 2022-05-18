@@ -23,8 +23,8 @@ template<class T, class R>
 constexpr bool has(const R& this_one)
 {
   return std::holds_alternative<T>(this_one);
-}  
-
 }
+
+} // namespace qmcplusplus
 
 #endif
