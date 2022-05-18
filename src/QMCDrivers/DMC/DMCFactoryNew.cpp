@@ -11,7 +11,7 @@
 
 #include "DMCFactoryNew.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus

@@ -29,7 +29,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/QMCDriverInterface.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"

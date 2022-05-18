@@ -38,7 +38,7 @@
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
-#include "QMCDrivers/QMCDriverInputDelegates.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"

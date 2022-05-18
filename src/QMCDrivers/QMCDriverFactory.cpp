@@ -41,7 +41,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
-#include "QMCDrivers/QMCDriverInputDelegates.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus

@@ -16,7 +16,7 @@
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupDMCTest.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "Platforms/Host/OutputManager.h"

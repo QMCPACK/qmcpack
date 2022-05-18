@@ -15,7 +15,7 @@
 
 #include "VMCFactoryNew.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
 
 namespace qmcplusplus

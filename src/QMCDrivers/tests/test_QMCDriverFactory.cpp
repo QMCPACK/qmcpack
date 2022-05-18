@@ -31,7 +31,7 @@
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 
 namespace qmcplusplus
 {

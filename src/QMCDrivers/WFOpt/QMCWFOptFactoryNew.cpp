@@ -3,7 +3,7 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
-#include "QMCDrivers/QMCDriverInputDelegates.h"
+#include "Estimators/EstimatorInputDelegates.h"
 
 namespace qmcplusplus
 {

@@ -33,7 +33,7 @@
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
-#include "QMCDriverInputDelegates.h"
+#include "EstimatorInputDelegates.h"
 
 
 namespace qmcplusplus
