@@ -39,7 +39,8 @@ class EstimatorManagerInputTests;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
-using EstimatorInput  = std::variant<MomentumDistributionInput, SpinDensityInput, OneBodyDensityMatricesInput>;
+using EstimatorInput =
+    std::variant<std::monostate, MomentumDistributionInput, SpinDensityInput, OneBodyDensityMatricesInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs
@@ -47,19 +48,25 @@ using EstimatorInputs = std::vector<EstimatorInput>;
 class LocalEnergyInput;
 class CSLocalEnergyInput;
 class RMCLocalEnergyInput;
-using ScalarEstimatorInput  = std::variant<LocalEnergyInput, CSLocalEnergyInput, RMCLocalEnergyInput>;
+using ScalarEstimatorInput  = std::variant<std::monostate, LocalEnergyInput, CSLocalEnergyInput, RMCLocalEnergyInput>;
 using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 
 /** Input type for EstimatorManagerNew
  *  Parses Estimators level of input and and delegates child estimator nodes
  *  to appropriate estimator input class
- *  Will later provide access to estimator input instances for esimator construction.
+ *  Will later provide access to estimator input instances for estimator construction.
  */
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput()                            = default;
-  EstimatorManagerInput(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput()                                 = default;
+  EstimatorManagerInput(const EstimatorManagerInput& emi) = default;
+  EstimatorManagerInput(EstimatorManagerInput&& emi)      = default;
+  EstimatorManagerInput& operator=(const EstimatorManagerInput& emi) = default;
+  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi) = default;
+  // This constructor is for merging the global and local EstimatorManagerInput.
+  // but you could also merge more instances
+  EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil);
   EstimatorManagerInput(xmlNodePtr cur);
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
   ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }

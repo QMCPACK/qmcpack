@@ -12,10 +12,14 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERINPUT_H
 #define QMCPLUSPLUS_QMCDRIVERINPUT_H
 
+#include <optional>
+
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "InputTypes.hpp"
 #include "DriverDebugChecks.h"
+#include "EstimatorManagerInput.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -31,8 +35,8 @@ public:
   void readXML(xmlNodePtr cur);
 
   // To allow compile check if move constructor is still implicit
-  QMCDriverInput()                                 = default;
-  QMCDriverInput(const QMCDriverInput&)            = default;
+  QMCDriverInput()                      = default;
+  QMCDriverInput(const QMCDriverInput&) = default;
   QMCDriverInput& operator=(const QMCDriverInput&) = default;
   QMCDriverInput(QMCDriverInput&&) noexcept;
   QMCDriverInput& operator=(QMCDriverInput&&) noexcept;
@@ -82,6 +86,10 @@ protected:
   // from QMCDriverFactory
   std::string qmc_method_{"invalid"};
   std::string update_mode_{"pbyp"};
+
+  /** The EstimatorManagerInput for batched version input
+   */
+  std::optional<EstimatorManagerInput> estimator_manager_input_;
 
   // from putQMCInfo
   input::PeriodStride walker_dump_period_{0, 0};
@@ -135,10 +143,12 @@ public:
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
+
+  const std::optional<EstimatorManagerInput>& get_estimator_manager_input() const { return estimator_manager_input_; }
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken
-inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept            = default;
+inline QMCDriverInput::QMCDriverInput(QMCDriverInput&&) noexcept = default;
 inline QMCDriverInput& QMCDriverInput::operator=(QMCDriverInput&&) noexcept = default;
 
 } // namespace qmcplusplus

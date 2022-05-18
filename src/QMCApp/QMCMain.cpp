@@ -38,6 +38,7 @@
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
@@ -124,7 +125,8 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && !defined(ENABLE_SYCL)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && \
+    !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
 #else // GPU case
 #if defined(ENABLE_OFFLOAD)
@@ -488,7 +490,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "qmcsystem")
     {
-      processPWH(cur);
+      inputnode = processPWH(cur);
     }
     else if (cname == "init")
     {
@@ -568,6 +570,21 @@ bool QMCMain::processPWH(xmlNodePtr cur)
       inputnode = true;
       hamPool->put(cur);
     }
+    else if (cname == "estimators")
+    {
+      inputnode = true;
+      try
+      {
+        if (estimator_manager_input_)
+          throw UniformCommunicateError(
+              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
+      }
+      catch (const UniformCommunicateError& ue)
+      {
+        myComm->barrier_and_abort(ue.what());
+      }
+    }
     else
     //add to m_qmcaction
     {
@@ -598,7 +615,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     try
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool,
+                                                  *hamPool, myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)

@@ -5,23 +5,19 @@
 // Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//
-// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_ESTIMATOR_MANAGER_INPUT_TEST_H
-#define QMCPLUSPLUS_ESTIMATOR_MANAGER_INPUT_TEST_H
+/** \file
+ *  Compilation units that construct QMCDriverInput need visibility to the actual input classe
+ *  types in the delegation tree.
+ */
+#ifndef QMCPLUSPLUS_QMCDRIVERINPUTDELEGATES_H
+#define QMCPLUSPLUS_QMCDRIVERINPUTDELEGATES_H
 
-#include "OhmmsData/Libxml2Doc.h"
+#include "EstimatorManagerInput.h"
+#include "ScalarEstimatorInputs.h"
+#include "MomentumDistributionInput.h"
+#include "OneBodyDensityMatricesInput.h"
+#include "SpinDensityInput.h"
 
-namespace qmcplusplus
-{
-namespace testing
-{
-
-Libxml2Document createEstimatorManagerNewGlobalInputXML();
-Libxml2Document createEstimatorManagerNewInputXML();
-
-} // namespace testing
-} // namespace qmcplusplus
 #endif

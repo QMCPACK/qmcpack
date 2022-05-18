@@ -41,6 +41,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -157,6 +158,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
 
 std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr cur,
                                                                       DriverAssemblyState& das,
+                                                                      const std::optional<EstimatorManagerInput>& emi,
                                                                       MCWalkerConfiguration& qmc_system,
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
@@ -238,7 +240,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver.reset(fac.create(project_data_,
+    new_driver.reset(fac.create(project_data_, emi,
                                 MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 qmc_system.getSampleStack(), comm));
   }
@@ -250,7 +252,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver.reset(fac.create(project_data_,
+    new_driver.reset(fac.create(project_data_, emi,
                                 MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
                                 comm));
   }
@@ -277,7 +279,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
               "Please use full precision build instead.");
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
-        QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
+        QMCWFOptLinearFactoryNew(cur, project_data_, emi, qmc_system,
                                  MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
                                               primaryH),
                                  qmc_system.getSampleStack(), comm);

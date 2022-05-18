@@ -471,23 +471,35 @@ if(add_estimator_tests)
     -r
     qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat)
 
-  # Still some issue with SpinDensityNew in the complete application
-  # SIMPLE_RUN_AND_CHECK(
-  #   short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
-  #   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-  #   qmc_spindens_vmcbatch_short${IFEXT}.in.xml
-  #   ${NMPI} ${NOMP}
-  #   check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
-  #   )
+  if(NOT QMC_CUDA)
+    # Still some issue with SpinDensityNew in the complete application
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmcbatch-estimator-spindensity
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_spindens_vmcbatch_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py
+      -s
+      0
+      -q
+      spindensity
+      -e
+      20
+      -c
+      8
+      -p
+      qmc_spindens_short
+      -r
+      qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat)
 
-  # This is the new 1RDM test, it passes with 16 sigma, which is better than the
-  # old test but we need to fix these in general.
-  simple_run_and_check(
-    short-diamondC_1x1x1_pp-vmcbatch-estimator-onebodydensitymatrices
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    qmc_onebodydensitymatrices_vmcbatch_short${IFEXT}.in.xml
-    ${NMPI}
-    ${NOMP}
+    # This is the new 1RDM test, it passes with 16 sigma, which is better than the
+    # old test but we need to fix these in general.
+    simple_run_and_check(
+      short-diamondC_1x1x1_pp-vmcbatch-estimator-onebodydensitymatrices
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_onebodydensitymatrices_vmcbatch_short${IFEXT}.in.xml
+      ${NMPI}
+      ${NOMP}
       check_stats.py
       -s
       0
@@ -503,6 +515,7 @@ if(add_estimator_tests)
       qmc_onebodydensitymatrices_short
       -r
       qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat)
+  endif()
 
   simple_run_and_check(
     short-diamondC_1x1x1_pp-dmc-estimator-spindensity
