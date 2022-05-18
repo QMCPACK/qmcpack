@@ -98,7 +98,6 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
     estimator_made = estimator_made ||
         createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                      twf.getSPOMap(), pset);
-    ;
     if (!estimator_made)
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
