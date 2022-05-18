@@ -16,16 +16,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jobname: [ClangTidy10-NoMPI-Real, ClangTidy10-NoMPI-Complex]
+        jobname: [ClangTidy14-NoMPI-Real, ClangTidy14-NoMPI-Complex]
         include:
-          - jobname: ClangTidy10-NoMPI-Real
+          - jobname: ClangTidy14-NoMPI-Real
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: williamfgc/qmcpack-ci:ubuntu22-openmpi
               options: -u 1001
 
-          - jobname: ClangTidy10-NoMPI-Complex
+          - jobname: ClangTidy14-NoMPI-Complex
             container:
-              image: williamfgc/qmcpack-ci:ubuntu20-openmpi
+              image: williamfgc/qmcpack-ci:ubuntu22-openmpi
               options: -u 1001
 
     steps:
