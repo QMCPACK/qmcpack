@@ -45,7 +45,7 @@ namespace qmcplusplus
  */
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
-                           std::optional<EstimatorManagerInput>&& global_emi,
+                           const std::optional<EstimatorManagerInput>& global_emi,
                            MCPopulation&& population,
                            const std::string timer_prefix,
                            Communicate* comm,

@@ -50,7 +50,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
     const ProjectData& project_data,
     MCWalkerConfiguration& w,
     QMCDriverInput&& qmcdriver_input,
-    std::optional<EstimatorManagerInput>&& global_emi,
+    const std::optional<EstimatorManagerInput>& global_emi,
     VMCDriverInput&& vmcdriver_input,
     MCPopulation&& population,
     SampleStack& samples,
@@ -734,10 +734,10 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // Explicitly copy the driver input objects since they will be used to instantiate the VMCEngine repeatedly.
   QMCDriverInput qmcdriver_input_copy                  = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy                  = vmcdriver_input_;
-  std::optional<EstimatorManagerInput> global_emi_copy = global_emi_;
+
   // create VMC engine
   vmcEngine =
-      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(global_emi_copy),
+      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
                                    std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &population_.get_golden_twf(),

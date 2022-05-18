@@ -29,7 +29,7 @@ class ProjectData;
 
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               const ProjectData& project_data,
-                                                              std::optional<EstimatorManagerInput> global_emi,
+                                                              const std::optional<EstimatorManagerInput>& global_emi,
                                                               MCWalkerConfiguration& w,
                                                               MCPopulation&& pop,
                                                               SampleStack& samples,

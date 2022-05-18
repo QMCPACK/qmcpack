@@ -28,14 +28,14 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-                       std::optional<EstimatorManagerInput>&& global_emi,
+                       const std::optional<EstimatorManagerInput>& global_emi,
                        VMCDriverInput&& input,
                        MCPopulation&& pop,
                        SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
-                   std::move(global_emi),
+                   global_emi,
                    std::move(pop),
                    "VMCBatched::",
                    comm,

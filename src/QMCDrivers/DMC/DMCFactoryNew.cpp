@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 QMCDriverInterface* DMCFactoryNew::create(const ProjectData& project_data,
-                                          std::optional<EstimatorManagerInput> global_emi,
+                                          const std::optional<EstimatorManagerInput> global_emi,
                                           MCPopulation&& pop,
                                           Communicate* comm)
 {
