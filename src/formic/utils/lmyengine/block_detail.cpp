@@ -290,7 +290,8 @@ formic::Matrix<double> cqmc::engine::get_important_brlm_dirs(const int nkeep,
 
    // clean up memory used by matrices and vectors
    formic::reusable_array_garbage_collect();
-
+    //std::cout << "returning update_dirs" << std::endl;
+    //output << update_dirs.print("%12.4f", "update_dirs") << std::endl;
    // return the eigenvectors in basis 1
    return update_dirs;
  

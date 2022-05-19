@@ -481,6 +481,7 @@ void cqmc::engine::LMYEngine<S>::take_sample(std::vector<S> & der_rat_samp,
         //  std::cout << std::endl;
         //}
         //output << boost::format("entering second part of sampling") << std::endl;
+
         //output << boost::format("size of drat_cmpct is %i") % drat_cmpct.size();
         //output << boost::format("size of deng_cmpct is %i") % deng_cmpct.size();
         // get the number of special vectors(initial wfn + old updates)
@@ -679,7 +680,7 @@ void cqmc::engine::LMYEngine<S>::sample_finish() {
 
   // if block algorithm
   else {
-
+    
     const bool first = !_block_first_sample_finished;
     
     if ( first ) {
@@ -752,7 +753,7 @@ void cqmc::engine::LMYEngine<S>::sample_finish() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename S>
 void cqmc::engine::LMYEngine<S>::var_deps_ptr_update(const formic::VarDeps * new_dep_ptr) {
-  
+ 
   // update pointer 
   _dep_ptr = new_dep_ptr;
 
@@ -1071,6 +1072,8 @@ void cqmc::engine::LMYEngine<S>::call_engine(const formic::VarDeps * dep_ptr,
   const int correct_vf_var_size = (dep_ptr->n_tot()+1) * num_shift;
   if (vf_var.size() != correct_vf_var_size) 
     vf_var.resize(correct_vf_var_size);
+
+
   //if ( var_deps_use ) {
   //  const int correct_vf_var_size = (dep_ptr->n_tot()+1) *  num_shift;
   //  if (vf_var.size() != correct_vf_var_size) 
@@ -1412,6 +1415,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
   int my_rank = formic::mpi::rank();
 
+
   // size update vector correctly
   updates.assign(shift_scale.size() * ( 1 + _dep_ptr->n_tot()), 0.0);
 
@@ -1512,6 +1516,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
       // expand the update into the basis of dependent variables
       updates_matrix.at(0,shift_p) = 1.0;
+
       _dep_ptr->expand_ind_to_all(iv_up.begin(), updates_matrix.col_begin(shift_p)+1);
 
       // say that the solve for this shift worked
@@ -1528,7 +1533,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
   formic::mpi::bcast(&updates.at(0), updates.size());
   //for (int i = 0; i < updates.size(); i++) 
   //  output << boost::format("%12.6f ") % updates.at(i);
-
 }
 
 //Function for setting the size of the derivative ratio histories according to the total number of optimizable parameters and the number of samples per process
@@ -1573,6 +1577,7 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
     int der_vec_len = der_rat_history.cols();
     int my_rank = formic::mpi::rank();
 
+
     for(int i = 0; i < num_samples; i++)
     {
         std::vector<double> der_rat_samp;
@@ -1605,7 +1610,6 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
                     reduced_le_der_samp.push_back(le_der_samp[i]);
                 }
             }
-
 
             //Need to add guiding function or change signature
             //this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,lotf,weight);
@@ -1889,8 +1893,6 @@ if(my_rank == 0)
     std::cout << "Number of Parameters left on: " << new_param_num << std::endl;
 }
 resetParamNumber(new_param_num);
-const formic::VarDeps new_vdeps(new_param_num, std::vector<double>());
-this->var_deps_ptr_update(&new_vdeps);
 
 
 

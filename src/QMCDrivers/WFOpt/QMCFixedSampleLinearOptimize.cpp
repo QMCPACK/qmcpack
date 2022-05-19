@@ -572,6 +572,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
   block_lm    = (block_lmStr == "yes");
 
   filter_paramStr = lowerCase(filter_paramStr);
+  filter_param_ = (filter_paramStr == "yes");
   store_samplesStr = lowerCase(store_samplesStr);
   store_samples_ = (store_samplesStr == "yes");
 
@@ -962,6 +963,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   //Set whether LM will use stored samples
   EngineObj->setStoringSamples(store_samples_);
 
+  app_log() << "Check filter_param_: " << filter_param_ << std::endl;
   //Set whether LM will only update a filtered set of parameters
   EngineObj->setFiltering(filter_param_);
 
@@ -1018,6 +1020,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
                          shifts_s.at(central_index), max_param_change, shift_scales);
   }
 
+  //Reset parameter number for vdeps to the total number in case filtration happened on a previous iteration
+  if(filter_param_)
+  {
+    formic::VarDeps tmp_vdeps(numParams, std::vector<double>());
+    vdeps=tmp_vdeps;
+    EngineObj->var_deps_ptr_update(&vdeps);
+  }
+
   // update shift
   EngineObj->shift_update(shift_scales);
 
@@ -1052,6 +1062,31 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // generate samples and compute weights, local energies, and derivative vectors
   engine_start(EngineObj, *descentEngineObj, MinMethod);
+
+int new_num = 0;
+
+/*
+if(filter_param_)
+{
+
+for(int i = 0; i < numParams; i++)
+{
+    app_log() << "Checking Param setting #" << i << " : " << EngineObj->getParameterSetting(i) << std::endl;
+    if(EngineObj->getParameterSetting(i) == true)
+    {
+        new_num++;
+    }
+}
+
+app_log() << "new_num: " << new_num << std::endl;
+
+formic::VarDeps real_vdeps(new_num, std::vector<double>());
+vdeps = real_vdeps;
+EngineObj->var_deps_ptr_update(&real_vdeps);
+}
+*/
+
+
 //To handle different cases for the LM's mode of operation, first check if samples are being stored
 if(store_samples_)
 {
@@ -1065,15 +1100,20 @@ if(store_samples_)
         EngineObj->selectParameters();
 
     //app_log() << "After EngineObj->selectParameters()" << std::endl;
-        int new_opt_num = 0;
+        //int new_opt_num = 0;
         for(int i = 0; i < numParams; i++)
         {
             if(EngineObj->getParameterSetting(i))
             {
-                new_opt_num++;
+                //new_opt_num++;
+                new_num++;
             }
         }
 
+        formic::VarDeps real_vdeps(new_num, std::vector<double>());
+        vdeps = real_vdeps;
+        EngineObj->var_deps_ptr_update(&vdeps);
+        
         //Also need to check if Blocked LM is being used
         if(EngineObj->use_blm())
         {
@@ -1098,7 +1138,7 @@ if(store_samples_)
                 std::vector<ValueType> full_vec = hybridBLM_Input[i];
                 std::vector<ValueType> filtered_vec;
 
-                formic::ColVec<double> reduced_vector(new_opt_num,0.0);
+                formic::ColVec<double> reduced_vector(new_num,0.0);
                 int count = 0;
 
                 for(int j = 0; j < full_vec.size(); j++)
@@ -1122,9 +1162,9 @@ if(store_samples_)
 
             app_log() << "After setHybridBLM_Input" << std::endl;
 
-            const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
-            app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
-            EngineObj->var_deps_ptr_update(&new_vdeps);
+            //const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
+            //app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
+            //EngineObj->var_deps_ptr_update(&new_vdeps);
 
             EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
             EngineObj->reset();
@@ -1140,7 +1180,7 @@ if(store_samples_)
             {
                 formic::ColVec<double> full_vec = previous_update[i];
 
-                formic::ColVec<double> reduced_vector(new_opt_num,0.0);
+                formic::ColVec<double> reduced_vector(new_num,0.0);
                 int count = 0;
 
                 for(int j = 0; j < full_vec.size(); j++)
@@ -1158,9 +1198,9 @@ if(store_samples_)
                 trimmed_old_updates[i] = reduced_vector;
             }
 
-            const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
-            app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
-            EngineObj->var_deps_ptr_update(&new_vdeps);
+            //const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
+            //app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
+            //EngineObj->var_deps_ptr_update(&new_vdeps);
 
                 EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
                 EngineObj->reset();
@@ -1187,29 +1227,13 @@ if(store_samples_)
 
 }
 
-int new_num = 0;
 
-if(filter_param_)
-{
-
-for(int i = 0; i < numParams; i++)
-{
-    app_log() << "Checking Param setting #" << i << " : " << EngineObj->getParameterSetting(i) << std::endl;
-    if(EngineObj->getParameterSetting(i) == true)
-    {
-        new_num++;
-    }
-}
-
-app_log() << "new_num: " << new_num << std::endl;
-
-formic::VarDeps real_vdeps(new_num, std::vector<double>());
-vdeps = real_vdeps;
-}
 
 
   // get dimension of the linear method matrices
   size_t N = numParams + 1;
+    if(filter_param_)
+        N = new_num +1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -1257,9 +1281,9 @@ vdeps = real_vdeps;
 
         if(filter_param_)
         {
-        const formic::VarDeps new_vdeps(new_num, std::vector<double>());
-            app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
-            EngineObj->var_deps_ptr_update(&new_vdeps);
+        //const formic::VarDeps new_vdeps(new_num, std::vector<double>());
+            //app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
+            //EngineObj->var_deps_ptr_update(&new_vdeps);
         engine_start(EngineObj,*descentEngineObj,MinMethod);
          EngineObj->buildMatricesFromDerivatives();
 
@@ -1282,13 +1306,14 @@ if(store_samples_)
 }
 //Currently have to reset the vdeps object of the LM engine at various points in the code to get parameter filtration to work.
 //Will try to reduce the use of this when improving the code.
+/*
 if(filter_param_)
 {
 const formic::VarDeps new_vdeps(new_num, std::vector<double>());
             app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
             EngineObj->var_deps_ptr_update(&new_vdeps);
 }
-
+*/
 
   // say what we are doing
   app_log() << std::endl
@@ -1345,13 +1370,13 @@ for (int j = 0; j < numParams+1; j++)
     {
 
         tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(lm_update_idx);
-      //  app_log() << "Copied value: " << parameterDirections.at(i).at(lm_update_idx) << " with indices: " << i << " , " << j << "for param #" << j-1 << std::endl;
+        //app_log() << "Copied value: " << parameterDirections.at(i).at(lm_update_idx) << " with indices: " << i << " , " << j << "for param #" << j-1 << std::endl;
         lm_update_idx++;
 
     }
     else
     {
-        //app_log() << "Value should be unchanged at zero: " << tmpParameterDirections.at(i).at(j) << " for indices: " << i << " , " << j << std::endl;
+       // app_log() << "Value should be unchanged at zero: " << tmpParameterDirections.at(i).at(j) << " for indices: " << i << " , " << j << std::endl;
     }
 
 

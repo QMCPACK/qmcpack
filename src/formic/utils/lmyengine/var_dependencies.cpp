@@ -225,9 +225,10 @@ void formic::VarDeps::append(const formic::VarDeps & other) {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 template<class S> void formic::VarDeps::expand_ind_to_all(const S * const ind_vars, S * const all_vars) const {
-  for (int i = 0, j = 0; i < this->n_ind(); i++)
+    for (int i = 0, j = 0; i < this->n_ind(); i++)
     for (int k = j + m_deps_per_ind[i]; j < k; j++)
       all_vars[m_indices[j]] = m_scalars[j] * ind_vars[i];
+    
 }
 
 template void formic::VarDeps::expand_ind_to_all(const double * const ind_vars, double * const all_vars) const;
