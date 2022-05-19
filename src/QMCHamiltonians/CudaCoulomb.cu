@@ -48,14 +48,14 @@ bool textureInUse[MAX_TEXTURES] = {false, false, false, false, false, false, fal
 __device__ float tex1D(float* tex, float x, int clamp)
 {
     float xb = x-0.5f;
-    float whole = std::floor(xb);
+    float whole = floor(xb);
     float alpha = xb-whole;
     int i0 = int(whole);
     int i1 = i0+1;
-    i0 = std::max(0, i0);
-    i0 = std::min(i0, clamp-1);
-    i1 = std::max(0, i1);
-    i1 = std::min(i1, clamp-1);
+    i0 = max(0, i0);
+    i0 = min(i0, clamp-1);
+    i1 = max(0, i1);
+    i1 = min(i1, clamp-1);
     return (1.0f-alpha)*tex[i0]+alpha*tex[i1];
 }
 
