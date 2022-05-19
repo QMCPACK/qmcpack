@@ -100,6 +100,9 @@ private:
   ///\brief whether to turn noisy parameters off
   bool filter_param_;
 
+  ///\brief whether to print details on which parameters are turned off
+  bool filter_info_;
+
   /// \brief [in]total number of samples 
   int _num_samp;
 
@@ -613,6 +616,8 @@ public:
 void setStoringSamples(bool storing) {store_samples_ = storing;}
 
 void setFiltering(bool use_filtering) {filter_param_ = use_filtering;}
+
+void setFilterInfo(bool print_info) {filter_info_ = print_info;}
 
 void setThreshold(double thres) {ratio_threshold_ = thres;}
 

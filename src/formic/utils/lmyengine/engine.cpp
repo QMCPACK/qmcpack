@@ -1703,6 +1703,10 @@ void cqmc::engine::LMYEngine<S>::selectParameters()
 {
 int my_rank = formic::mpi::rank();
 
+if(my_rank == 0)
+{
+    std::cout << "Filtering parameters based on the noise of their gradients." << std::endl;
+}
 
 int num_samples = der_rat_history.rows();
 int num_all_params = der_rat_history.cols()-1;
@@ -1764,14 +1768,7 @@ if(!_ground)
 
 }
 
-if(my_rank == 0)
-{
 
-std::cout << "Inside selectParameters" << std::endl;
-std::cout << "Energy is: " << mean_energy << std::endl;
-if(!_ground)
-    std::cout<< "Numerator Val: " << numerVal << " Denominator Val: " << denomVal << " Target Val: " << numerVal/denomVal << std::endl;
-}
 for(int i = 1; i< num_all_params+1; i ++)
 {
 
@@ -1863,12 +1860,11 @@ int sample_counter = 0;
 
             ratio = mean_deriv/deriv_sigma;
         }
-if(my_rank == 0)
+if(filter_info_ && my_rank == 0)
 {
         std::cout << "Mean for Parameter #" << i-1 << " : " << mean_deriv;
         std::cout << " Sigma for Parameter #" << i-1 << " : " << deriv_sigma;
-        std::cout << " Ratio for Parameter #" << i-1 << " : " << std::abs(ratio);
-        std::cout << " Reciprocal Ratio for Parameter #" << i-1 << " : " << 1/std::abs(ratio) << std::endl;
+        std::cout << " Ratio for Parameter #" << i-1 << " : " << std::abs(ratio) << std::endl;
 }
 
             if(std::abs(ratio) < ratio_threshold_)

@@ -189,6 +189,12 @@ private:
   ///whether to filter parameters for the lm
   std::string filter_paramStr;
 
+  ///whether to filter parameters for the lm
+  bool filter_info_;
+
+  ///whether to filter parameters for the lm
+  std::string filter_infoStr;
+
   ///threshold for filtering parameters for the lm
   double ratio_threshold_;
 

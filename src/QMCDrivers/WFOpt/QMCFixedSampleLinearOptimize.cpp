@@ -85,6 +85,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       block_third(false),
       filter_param_(false),
       filter_paramStr("no"),
+      filter_info_(false),
+      filter_infoStr("no"),
       ratio_threshold_(0.0),
       store_samplesStr("no"),
       store_samples_(false),
@@ -130,6 +132,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(filter_paramStr, "filter_param");
   m_param.add(ratio_threshold_, "deriv_threshold");
   m_param.add(store_samplesStr, "store_samples");
+  m_param.add(filter_infoStr, "filter_info");
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -502,7 +505,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
   m_param.add(OutputMatrices, "output_matrices_csv");
   m_param.add(FreezeParameters, "freeze_parameters");
-
+  
   oAttrib.put(q);
   m_param.put(q);
 
@@ -553,6 +556,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
+
     return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
@@ -565,6 +569,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
                                                  bool useGPU)
 {
   m_param.put(opt_xml);
+  
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
 
@@ -573,6 +578,10 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
 
   filter_paramStr = lowerCase(filter_paramStr);
   filter_param_ = (filter_paramStr == "yes");
+  
+  filter_infoStr = lowerCase(filter_infoStr);
+  filter_info_ = (filter_infoStr == "yes");
+
   store_samplesStr = lowerCase(store_samplesStr);
   store_samples_ = (store_samplesStr == "yes");
 
@@ -966,6 +975,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
   app_log() << "Check filter_param_: " << filter_param_ << std::endl;
   //Set whether LM will only update a filtered set of parameters
   EngineObj->setFiltering(filter_param_);
+  EngineObj->setFilterInfo(filter_info_);
 
   if(filter_param_ && !store_samples_)
       myComm->barrier_and_abort(" Error: Parameter Filtration requires storing the samples.. \n");
@@ -1065,27 +1075,6 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
 int new_num = 0;
 
-/*
-if(filter_param_)
-{
-
-for(int i = 0; i < numParams; i++)
-{
-    app_log() << "Checking Param setting #" << i << " : " << EngineObj->getParameterSetting(i) << std::endl;
-    if(EngineObj->getParameterSetting(i) == true)
-    {
-        new_num++;
-    }
-}
-
-app_log() << "new_num: " << new_num << std::endl;
-
-formic::VarDeps real_vdeps(new_num, std::vector<double>());
-vdeps = real_vdeps;
-EngineObj->var_deps_ptr_update(&real_vdeps);
-}
-*/
-
 
 //To handle different cases for the LM's mode of operation, first check if samples are being stored
 if(store_samples_)
@@ -1130,7 +1119,7 @@ if(store_samples_)
             std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 
 
-            app_log() << "Blocked LM is part of hybrid, Need to filter vectors: " << filter_param_ << std::endl;
+            app_log() << "Blocked LM is part of hybrid run. Need to filter vectors from descent. " << std::endl;
 
             //This section handles the trimming of the old update vectors from descent
             for(int i = 0; i < hybridBLM_Input.size();i++)
@@ -1145,7 +1134,6 @@ if(store_samples_)
                 {
                     if(EngineObj->getParameterSetting(j))
                     {
-                        //app_log() << "Input vector #" << i << " parameter #" << j << " is on: " << full_vec[j] << std::endl;
                         filtered_vec.push_back(full_vec[j]);
                         reduced_vector[count] = full_vec[j];
                         count++;
@@ -1160,11 +1148,6 @@ if(store_samples_)
 
             EngineObj->setHybridBLM_Input(hybridBLM_Input);
 
-            app_log() << "After setHybridBLM_Input" << std::endl;
-
-            //const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
-            //app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
-            //EngineObj->var_deps_ptr_update(&new_vdeps);
 
             EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
             EngineObj->reset();
@@ -1174,7 +1157,7 @@ if(store_samples_)
         //If the Blocked LM is not part of a hybrid run, carry out the trimming of the old updates here
         else
         {
-                app_log() << "Regular Blocked LM run, Need to filter vectors: " << filter_param_ << std::endl;
+                app_log() << "Regular Blocked LM run. Need to filter old update vectors. " << std::endl;
 
             for(int i = 0; i < previous_update.size();i++)
             {
@@ -1187,7 +1170,6 @@ if(store_samples_)
                 {
                     if(EngineObj->getParameterSetting(j))
                     {
-                        app_log() << "Input vector #" << i << " parameter #" << j << " is on: " << full_vec[j] << std::endl;
                         reduced_vector[count] = full_vec[j];
                         count++;
                     }
@@ -1197,10 +1179,6 @@ if(store_samples_)
 
                 trimmed_old_updates[i] = reduced_vector;
             }
-
-            //const formic::VarDeps new_vdeps(new_opt_num, std::vector<double>());
-            //app_log() << "Updating vdeps, Check vdeps size: " << new_vdeps.n_tot() << std::endl;
-            //EngineObj->var_deps_ptr_update(&new_vdeps);
 
                 EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
                 EngineObj->reset();
@@ -1349,7 +1327,6 @@ const formic::VarDeps new_vdeps(new_num, std::vector<double>());
 //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
 if(filter_param_)
 {
-//app_log() << "About to copy to full parameter updates, shifts_i.size() is" << shifts_i.size() << std::endl;
 std::vector<std::vector<RealType>> tmpParameterDirections;
 tmpParameterDirections.resize(shifts_i.size());
 
@@ -1363,25 +1340,18 @@ for (int j = 0; j < numParams+1; j++)
     if(j == 0)
     {
     tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(j);
-    //app_log() << "Copied value: " << parameterDirections.at(i).at(j) << " with indices: " << i << " , " << j << std::endl;
     lm_update_idx++;
     }
     else if(EngineObj->getParameterSetting(j-1) == true)
     {
 
         tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(lm_update_idx);
-        //app_log() << "Copied value: " << parameterDirections.at(i).at(lm_update_idx) << " with indices: " << i << " , " << j << "for param #" << j-1 << std::endl;
         lm_update_idx++;
 
-    }
-    else
-    {
-       // app_log() << "Value should be unchanged at zero: " << tmpParameterDirections.at(i).at(j) << " for indices: " << i << " , " << j << std::endl;
     }
 
 
 }
-app_log() << "Completed copy for one shift" << std::endl;
 parameterDirections.at(i) = tmpParameterDirections.at(i);
 
 }
@@ -1776,6 +1746,8 @@ bool QMCFixedSampleLinearOptimize::hybrid_run()
 {
   app_log() << "This is methodName: " << MinMethod << std::endl;
 
+  //Ensure LM engine knows it is being used as part of a hybrid run
+  EngineObj->setOnHybrid(true);
   //Either the adaptive BLM or descent optimization is run
 
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
