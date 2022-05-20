@@ -59,11 +59,11 @@ using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput()                                 = default;
-  EstimatorManagerInput(const EstimatorManagerInput& emi) = default;
-  EstimatorManagerInput(EstimatorManagerInput&& emi)      = default;
+  EstimatorManagerInput()                                            = default;
+  EstimatorManagerInput(const EstimatorManagerInput& emi)            = default;
+  EstimatorManagerInput(EstimatorManagerInput&& emi)                 = default;
   EstimatorManagerInput& operator=(const EstimatorManagerInput& emi) = default;
-  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi)      = default;
   // This constructor is for merging the global and local EstimatorManagerInput.
   // but you could also merge more instances
   EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil);

@@ -61,12 +61,16 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
   for (auto& est_input : emi.get_estimator_inputs())
   {
     if (has<SpinDensityInput>(est_input))
-      operator_ests_.push_back(std::make_unique<SpinDensityNew>(std::move(std::get<SpinDensityInput>(est_input)), pset.getLattice(), pset.getSpeciesSet()));
+      operator_ests_.push_back(std::make_unique<SpinDensityNew>(std::move(std::get<SpinDensityInput>(est_input)),
+                                                                pset.getLattice(), pset.getSpeciesSet()));
     else if (has<MomentumDistributionInput>(est_input))
-      operator_ests_.push_back(std::make_unique<MomentumDistribution>(std::move(std::get<MomentumDistributionInput>(est_input)), pset.getTotalNum(), pset.getTwist(), pset.getLattice()));
+      operator_ests_.push_back(
+          std::make_unique<MomentumDistribution>(std::move(std::get<MomentumDistributionInput>(est_input)),
+                                                 pset.getTotalNum(), pset.getTwist(), pset.getLattice()));
     else if (has<OneBodyDensityMatricesInput>(est_input))
-      operator_ests_.push_back(std::make_unique<OneBodyDensityMatrices>(std::move(std::get<OneBodyDensityMatricesInput>(est_input)), pset.getLattice(), pset.getSpeciesSet(),
-                                                     twf.getSPOMap(), pset));
+      operator_ests_.push_back(
+          std::make_unique<OneBodyDensityMatrices>(std::move(std::get<OneBodyDensityMatricesInput>(est_input)),
+                                                   pset.getLattice(), pset.getSpeciesSet(), twf.getSPOMap(), pset));
     else
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
