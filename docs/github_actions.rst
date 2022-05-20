@@ -961,7 +961,7 @@ To run the workflow:
 
 **Note:** the current `.clang-tidy` configuration file is compatible with clang v14 and runs on the `williamfgc/qmcpack-ci:ubuntu22-openmpi` docker image. To run locally on a Linux system use: `docker run -it user williamfgc/qmcpack-ci:ubuntu22-openmpi /bin/bash` or refer to the :ref:`running_docker`` section.
 
-To build locally enaling `clang-tidy`` static checks defined in `qmcpack/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
+To build locally enaling `clang-tidy`` static checks defined in `qmcpack/src/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
 
 .. code-block:: bash
 
