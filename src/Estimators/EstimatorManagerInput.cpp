@@ -34,13 +34,14 @@ EstimatorManagerInput::EstimatorManagerInput(std::initializer_list<EstimatorMana
 
   est_offset        = 0;
   scalar_est_offset = 0;
-  std::for_each(emil.begin(), emil.end(), [&](const EstimatorManagerInput& emi) {
+  for (const EstimatorManagerInput& emi : emil)
+  {
     std::copy(emi.estimator_inputs_.begin(), emi.estimator_inputs_.end(), estimator_inputs_.begin() + est_offset);
     est_offset += emi.estimator_inputs_.size();
     std::copy(emi.scalar_estimator_inputs_.begin(), emi.scalar_estimator_inputs_.end(),
               scalar_estimator_inputs_.begin() + scalar_est_offset);
     scalar_est_offset += emi.scalar_estimator_inputs_.size();
-  });
+  }
 }
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
