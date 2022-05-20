@@ -67,23 +67,23 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       if (aname.empty() && !atype.empty())
         aname = atype;
       if (atype == "localenergy" || atype == "elocal")
-        appendScalarEstimatorInput<LocalEnergyInput>(child);
+        scalar_estimator_inputs_.emplace_back(std::in_place_type<LocalEnergyInput>, child);
       else if (atype == "cslocalenergy")
       {
-        appendScalarEstimatorInput<CSLocalEnergyInput>(child);
+        scalar_estimator_inputs_.emplace_back(std::in_place_type<CSLocalEnergyInput>, child);
         app_warning() << "CSLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "rmc")
       {
-        appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
+        scalar_estimator_inputs_.emplace_back(std::in_place_type<RMCLocalEnergyInput>, child);
         app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "onebodydensitymatrices")
-        appendEstimatorInput<OneBodyDensityMatricesInput>(child);
+        estimator_inputs_.emplace_back(std::in_place_type<OneBodyDensityMatricesInput>, child);
       else if (atype == "spindensity")
-        appendEstimatorInput<SpinDensityInput>(child);
+        estimator_inputs_.emplace_back(std::in_place_type<SpinDensityInput>, child);
       else if (atype == "momentumdistribution")
-        appendEstimatorInput<MomentumDistributionInput>(child);
+        estimator_inputs_.emplace_back(std::in_place_type<MomentumDistributionInput>, child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
