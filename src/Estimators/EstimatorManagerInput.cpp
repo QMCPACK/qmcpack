@@ -22,6 +22,8 @@ EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
 
 EstimatorManagerInput::EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil)
 {
+  // \todo the following code fusing two vectors can be written in more consice way with std::back_inserter. See history.
+  // Right now needs to use a clumsy way to make intel classic compiler 19.1.x happy when using gcc 9 on some OS distros.
   size_t est_offset        = 0;
   size_t scalar_est_offset = 0;
   for (const EstimatorManagerInput& emi : emil)
