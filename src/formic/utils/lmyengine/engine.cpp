@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 #include <complex>
+#include <tuple>
 
 #include <boost/shared_ptr.hpp>
 
@@ -1717,6 +1718,7 @@ int new_param_num = 0;
 
 std::vector<double> grad_mean_list;
 std::vector<double> grad_sigma_list;
+std::vector<double> grad_ratio_list;
 
 std::vector<double> temp_e_list;
 std::vector<double> numerHistory;
@@ -1817,10 +1819,6 @@ int sample_counter = 0;
 
             mean_deriv = first_term_results[0] - mean_energy*second_term_results[0];
 
-            if(my_rank == 0)
-            {
-                //std::cout << "Deriv parts, first_term_results[0]: " << first_term_results[0] << ", mean_energy: " << mean_energy << " ,second_term_results[0]: " << second_term_results[0] << std::endl;
-            }
 
             deriv_sigma = std::sqrt(first_term_results[1]*first_term_results[1] + second_term_results[1]*second_term_results[1]);
 
@@ -1828,7 +1826,7 @@ int sample_counter = 0;
             grad_sigma_list.push_back(deriv_sigma);
 
             ratio = mean_deriv/deriv_sigma;
-
+            grad_ratio_list.push_back(std::abs(ratio));
 
 
 
@@ -1843,7 +1841,6 @@ int sample_counter = 0;
             double derivNumer = results[0]*denomVal - secondResults[0]*numerVal;
             double derivDenom = denomVal*denomVal;
             mean_deriv = derivNumer/derivDenom;
-            //app_log() << "descentDeriv, should match mean: " << descentDeriv << std::endl;
 
             double numerVar_term1 = results[0]*denomVal*results[0]*denomVal* ( (denomSigma/denomVal)*(denomSigma/denomVal) + (results[1]/results[0])*(results[1]/results[0]) );
             double numerVar_term2 = secondResults[0]*numerVal*secondResults[0]*numerVal* ( (numerSigma/numerVal)*(numerSigma/numerVal) + (secondResults[1]/secondResults[0])*(secondResults[1]/secondResults[0]) );
@@ -1859,25 +1856,28 @@ int sample_counter = 0;
 
 
             ratio = mean_deriv/deriv_sigma;
+            grad_ratio_list.push_back(std::abs(ratio));
+
         }
-if(filter_info_ && my_rank == 0)
-{
+
+    if(filter_info_ && my_rank == 0)
+    {
         std::cout << "Mean for Parameter #" << i-1 << " : " << mean_deriv;
-        std::cout << " Sigma for Parameter #" << i-1 << " : " << deriv_sigma;
-        std::cout << " Ratio for Parameter #" << i-1 << " : " << std::abs(ratio) << std::endl;
-}
+        std::cout << "   Sigma for Parameter #" << i-1 << " : " << deriv_sigma;
+        std::cout << "   Ratio for Parameter #" << i-1 << " : " << std::abs(ratio) << std::endl;
+    }
 
-            if(std::abs(ratio) < ratio_threshold_)
-            {
-               parameterSettings[i-1] = false;
+    if(std::abs(ratio) < ratio_threshold_)
+    {
+        parameterSettings[i-1] = false;
 
-            }
-            else
-            {
+    }
+    else
+    {
 
-                parameterSettings[i-1] = true;
-                new_param_num++;
-              }
+        parameterSettings[i-1] = true;
+        new_param_num++;
+    }
 
 
 
@@ -1888,6 +1888,67 @@ if(my_rank == 0)
 {
     std::cout << "Number of Parameters left on: " << new_param_num << std::endl;
 }
+
+//In the unlikely event all parameters were turned off, turn some back on at random to avoid crashing the engine.
+if(new_param_num == 0)
+{
+    if(my_rank==0)
+    {
+        std::cout << "All parameters were turned off by filtration. Turning some on at random." << std::endl;
+    }
+
+    //Try to turn on 20% of the total parameter number
+    new_param_num = num_all_params/5;
+
+    int i = 0;
+    while(i< new_param_num)
+    {
+        int idx = std::rand() % num_all_params;
+        parameterSettings[idx] = true;
+        i++;
+    }
+
+}
+
+if(_block_lm)
+{
+    int tot_block_lm_param = _nblocks*_nkeps;
+   
+   //If the blocked LM is used, it is possible to have fewer parameters left than what the input number of 
+   //blocks and kept directions require. 
+    if(new_param_num < tot_block_lm_param)
+    {
+        if(my_rank == 0)
+        {
+            std::cout << "Remaining number of parameters less than that expected by blocked LM. Turning on more parameters." << std::endl;
+        
+        }
+
+        std::vector<std::tuple <double,int,bool> > combined_ratio_param_list;
+        for(int i = 0;i < num_all_params; i++)
+        {
+            std::tuple<double,int,bool> param_entry = std::make_tuple(grad_ratio_list[i],i,parameterSettings[i]);
+            combined_ratio_param_list.push_back(param_entry);
+        
+        }
+
+        //Identify the parameters with the largest ratios and turn on 
+        //as many as the blocked LM's minimum requirement.
+        std::sort(combined_ratio_param_list.begin(),combined_ratio_param_list.end());
+        for(int i = num_all_params-1; i > num_all_params - tot_block_lm_param-1; i--)
+        {
+            int idx = std::get<1>(combined_ratio_param_list[i]);
+            double ratio = std::get<0>(combined_ratio_param_list[i]);
+            parameterSettings[idx] = true;
+        }
+        new_param_num = tot_block_lm_param; 
+    }
+
+}
+
+
+
+
 resetParamNumber(new_param_num);
 
 
