@@ -40,6 +40,8 @@
 namespace qmcplusplus
 {
 
+using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
 EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {
@@ -48,41 +50,9 @@ EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate*
   addMainEstimator(std::make_unique<LocalEnergyEstimator>(ham, true));
 }
 
-template<class EstInputType, typename VAR, typename... Args>
-bool EstimatorManagerNew::createEstimator(VAR& input, Args&&... args)
-{
-  if (has<EstInputType>(input))
-  {
-    operator_ests_.push_back(std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)),
-                                                                               std::forward<Args>(args)...));
-    return true;
-  }
-  else
-    return false;
-}
-
-template<class EstInputType, typename VAR, typename... Args>
-bool EstimatorManagerNew::createScalarEstimator(VAR& input, Args&&... args)
-{
-  if (has<EstInputType>(input))
-  {
-    auto estimator = std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)),
-                                                                       std::forward<Args>(args)...);
-    if (estimator->isMainEstimator())
-      addMainEstimator(std::move(estimator));
-    else
-      scalar_ests_.push_back(std::move(estimator));
-    return true;
-  }
-  else
-    return false;
-}
-
-using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
-
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
-                                         EstimatorManagerInput&& emi,
+                                         EstimatorManagerInput emi,
                                          const QMCHamiltonian& H,
                                          const ParticleSet& pset,
                                          const TrialWaveFunction& twf)
@@ -90,34 +60,43 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
 {
   for (auto& est_input : emi.get_estimator_inputs())
   {
-    bool estimator_made = false;
-    estimator_made =
-        estimator_made || createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet());
-    estimator_made = estimator_made ||
-        createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(), pset.getLattice());
-    estimator_made = estimator_made ||
-        createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
-                                                     twf.getSPOMap(), pset);
-    if (!estimator_made)
+    if (has<SpinDensityInput>(est_input))
+      operator_ests_.push_back(std::make_unique<SpinDensityNew>(std::move(std::get<SpinDensityInput>(est_input)), pset.getLattice(), pset.getSpeciesSet()));
+    else if (has<MomentumDistributionInput>(est_input))
+      operator_ests_.push_back(std::make_unique<MomentumDistribution>(std::move(std::get<MomentumDistributionInput>(est_input)), pset.getTotalNum(), pset.getTwist(), pset.getLattice()));
+    else if (has<OneBodyDensityMatricesInput>(est_input))
+      operator_ests_.push_back(std::make_unique<OneBodyDensityMatrices>(std::move(std::get<OneBodyDensityMatricesInput>(est_input)), pset.getLattice(), pset.getSpeciesSet(),
+                                                     twf.getSPOMap(), pset));
+    else
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
   }
+
   for (auto& scalar_input : emi.get_scalar_estimator_inputs())
   {
-    bool estimator_made = false;
-    estimator_made      = estimator_made || createScalarEstimator<LocalEnergyInput>(scalar_input, H);
-    estimator_made      = estimator_made || createScalarEstimator<CSLocalEnergyInput>(scalar_input, H);
-    estimator_made      = estimator_made || createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H);
-    if (!estimator_made)
+    std::unique_ptr<ScalarEstimatorBase> scalar_est;
+    if (has<LocalEnergyInput>(scalar_input))
+      scalar_est = std::make_unique<LocalEnergyEstimator>(std::move(std::get<LocalEnergyInput>(scalar_input)), H);
+    else if (has<CSLocalEnergyInput>(scalar_input))
+      scalar_est = std::make_unique<CSEnergyEstimator>(std::move(std::get<CSLocalEnergyInput>(scalar_input)), H);
+    else if (has<RMCLocalEnergyInput>(scalar_input))
+      scalar_est = std::make_unique<RMCLocalEnergyEstimator>(std::move(std::get<RMCLocalEnergyInput>(scalar_input)), H);
+    else
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct a scalar estimator from scalar estimator input object.");
+    if (scalar_est->isMainEstimator())
+      addMainEstimator(std::move(scalar_est));
+    else
+      scalar_ests_.push_back(std::move(scalar_est));
   }
+
   if (main_estimator_ == nullptr)
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
     addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
   }
+
   makeConfigReport(app_log());
 }
 
