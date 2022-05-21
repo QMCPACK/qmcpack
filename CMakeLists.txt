@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.17.0)
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
 
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.22.0)
+if (POLICY CMP0127)
   cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
 endif()
 
