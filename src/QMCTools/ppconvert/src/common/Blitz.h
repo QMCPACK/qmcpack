@@ -647,7 +647,7 @@ inline void copy(const Array<T1, 3>& src, Array<T2, 3>& dest)
 
 inline std::complex<float> operator+(std::complex<float> z, double r)
 {
-  return std::complex<float>(z.real() + r, z.imag());
+  return std::complex<float>(z.real() + static_cast<float>(r), z.imag());
 }
 
 
