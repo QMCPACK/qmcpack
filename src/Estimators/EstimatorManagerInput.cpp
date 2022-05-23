@@ -22,11 +22,28 @@ EstimatorManagerInput::EstimatorManagerInput(xmlNodePtr cur) { readXML(cur); }
 
 EstimatorManagerInput::EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil)
 {
-  std::for_each(emil.begin(), emil.end(), [this](const EstimatorManagerInput& emi) {
-    std::copy(emi.estimator_inputs_.begin(), emi.estimator_inputs_.end(), std::back_inserter(estimator_inputs_));
+  // \todo the following code fusing two vectors can be written in more consice way with std::back_inserter. See history.
+  // Right now needs to use a clumsy way to make intel classic compiler 19.1.x happy when using gcc 9 on some OS distros.
+  size_t est_offset        = 0;
+  size_t scalar_est_offset = 0;
+  for (const EstimatorManagerInput& emi : emil)
+  {
+    est_offset += emi.estimator_inputs_.size();
+    scalar_est_offset += emi.scalar_estimator_inputs_.size();
+  }
+  estimator_inputs_.resize(est_offset);
+  scalar_estimator_inputs_.resize(scalar_est_offset);
+
+  est_offset        = 0;
+  scalar_est_offset = 0;
+  for (const EstimatorManagerInput& emi : emil)
+  {
+    std::copy(emi.estimator_inputs_.begin(), emi.estimator_inputs_.end(), estimator_inputs_.begin() + est_offset);
+    est_offset += emi.estimator_inputs_.size();
     std::copy(emi.scalar_estimator_inputs_.begin(), emi.scalar_estimator_inputs_.end(),
-              std::back_inserter(scalar_estimator_inputs_));
-  });
+              scalar_estimator_inputs_.begin() + scalar_est_offset);
+    scalar_est_offset += emi.scalar_estimator_inputs_.size();
+  }
 }
 
 void EstimatorManagerInput::readXML(xmlNodePtr cur)
@@ -54,12 +71,12 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       else if (atype == "cslocalenergy")
       {
         appendScalarEstimatorInput<CSLocalEnergyInput>(child);
-        app_warning() << "CSLocalEnergyEstimator support is at best experimental with batch drivers";
+        app_warning() << "CSLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "rmc")
       {
         appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
-        app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers";
+        app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "onebodydensitymatrices")
         appendEstimatorInput<OneBodyDensityMatricesInput>(child);
@@ -82,7 +99,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       child = child->next;
     else
     {
-      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom";
+      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom"
+                    << std::endl;
       break;
     }
   }
