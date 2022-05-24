@@ -1,19 +1,26 @@
-FROM ubuntu:jammy-20220130
+FROM ubuntu:22.04
 LABEL maintainer="williamfgc@yahoo.com"
 
 RUN export DEBIAN_FRONTEND=noninteractive &&\
+    apt-get clean &&\
     apt-get update -y &&\
-    apt-get upgrade -y apt-utils
+    apt-get upgrade -y apt-utils &&\
+    apt-get install -y gpg wget
 
-# Dependencies
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
+    clang \
+    clang-format \
+    clang-tidy \
+    libomp-dev \
     gcovr \
     python3 \
     cmake \
     ninja-build \
     libboost-all-dev \
     git \
+    libopenmpi-dev \
+    libhdf5-openmpi-dev \
     libhdf5-serial-dev \
     hdf5-tools \
     libfftw3-dev \
@@ -25,18 +32,19 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     wget \
     software-properties-common \
     vim \
+    numdiff \
     -y
 
+# Python packages for tests
+RUN export DEBIAN_FRONTEND=noninteractive &&\
+    apt-get install python3-numpy \
+    python3-h5py \
+    python3-pandas \
+    python3-pip \
+    -y
 
-# add gcc-12 repo
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test
-
-# add clang-13 repo
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key| apt-key add - &&\
-    apt-add-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-13 main'
-
-RUN apt-get update -y &&\     
-    apt-get install gcc-12 g++-12 clang-13 clang-tools-13 libomp-13-dev -y
+RUN export DEBIAN_FRONTEND=noninteractive &&\
+    pip3 install cif2cell
 
 # must add a user different from root 
 # to run MPI executables
@@ -47,4 +55,3 @@ RUN echo "user:user" | chpasswd
 
 USER user
 WORKDIR /home/user
-
