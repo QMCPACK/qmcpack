@@ -71,7 +71,7 @@ public:
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
   ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }
 
-  /** read <Estimators> node or (<estimators> node for legacy support)
+  /** read <estimators> node or (<estimator> node for legacy support)
    *  This can be done multiple times with <estimators> nodes
    *  or with <estimator> nodes to support deprecated bare <estimator> definitions
    */
@@ -81,6 +81,18 @@ private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;
   ScalarEstimatorInputs scalar_estimator_inputs_;
+
+  template<typename T>
+  void appendEstimatorInput(xmlNodePtr node)
+  {
+    estimator_inputs_.emplace_back(std::in_place_type<T>, node);
+  }
+
+  template<typename T>
+  void appendScalarEstimatorInput(xmlNodePtr node)
+  {
+    scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, node);
+  }
 
   friend class testing::EstimatorManagerInputTests;
 };

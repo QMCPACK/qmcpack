@@ -35,7 +35,7 @@ public:
   template<class T>
   void testAppendFromXML(EstimatorManagerInput& emi, xmlNodePtr node)
   {
-    emi.estimator_inputs_.emplace_back(std::in_place_type<T>, node);
+    emi.appendEstimatorInput<T>(node);
   }
   /** @} */
 };

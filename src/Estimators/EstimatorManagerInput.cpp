@@ -54,7 +54,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
   if (cur_name == "estimators")
     child = cur->xmlChildrenNode;
   else
-    child = cur;
+    child = cur; // the case when 'estimator's are not encapsulated by a 'estimators' node
   while (child != NULL)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
@@ -67,23 +67,23 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
       if (aname.empty() && !atype.empty())
         aname = atype;
       if (atype == "localenergy" || atype == "elocal")
-        scalar_estimator_inputs_.emplace_back(std::in_place_type<LocalEnergyInput>, child);
+        appendScalarEstimatorInput<LocalEnergyInput>(child);
       else if (atype == "cslocalenergy")
       {
-        scalar_estimator_inputs_.emplace_back(std::in_place_type<CSLocalEnergyInput>, child);
+        appendScalarEstimatorInput<CSLocalEnergyInput>(child);
         app_warning() << "CSLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "rmc")
       {
-        scalar_estimator_inputs_.emplace_back(std::in_place_type<RMCLocalEnergyInput>, child);
+        appendScalarEstimatorInput<RMCLocalEnergyInput>(child);
         app_warning() << "RMCLocalEnergyEstimator support is at best experimental with batch drivers" << std::endl;
       }
       else if (atype == "onebodydensitymatrices")
-        estimator_inputs_.emplace_back(std::in_place_type<OneBodyDensityMatricesInput>, child);
+        appendEstimatorInput<OneBodyDensityMatricesInput>(child);
       else if (atype == "spindensity")
-        estimator_inputs_.emplace_back(std::in_place_type<SpinDensityInput>, child);
+        appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
-        estimator_inputs_.emplace_back(std::in_place_type<MomentumDistributionInput>, child);
+        appendEstimatorInput<MomentumDistributionInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");
@@ -92,14 +92,14 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
-      throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
+      throw UniformCommunicateError(error_tag + "<estimators> can only contain <estimator> nodes");
     }
 
     if (cur_name == "estimators")
       child = child->next;
     else
     {
-      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom"
+      app_summary() << "<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom"
                     << std::endl;
       break;
     }

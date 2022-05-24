@@ -65,7 +65,7 @@ public:
    *  \param[in]  twf    The fully constructed TrialWaveFunction.
    */
   EstimatorManagerNew(Communicate* comm,
-                      EstimatorManagerInput emi,
+                      EstimatorManagerInput&& emi,
                       const QMCHamiltonian& H,
                       const ParticleSet& pset,
                       const TrialWaveFunction& twf);
@@ -147,6 +147,18 @@ public:
   std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 
 private:
+  /** Construct estimator of type matching the underlying EstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename... Args>
+  bool createEstimator(EstimatorInput& input, Args&&... args);
+
+  /** Construct scalar estimator of type matching the underlying ScalarEstimatorInput type Consumer
+   *  and push its its unique_ptr onto operator_ests_
+   */
+  template<typename EstInputType, typename... Args>
+  bool createScalarEstimator(ScalarEstimatorInput& input, Args&&... args);
+
   /** Return a string with information about which estimators estimator manager is holding.
    */
   void makeConfigReport(std::ostream& os) const;
