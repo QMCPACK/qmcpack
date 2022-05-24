@@ -947,9 +947,9 @@ Upload Coverage
 Upload the generated code coverage to `CodeCov <https://codecov.io/gh/QMCPACK/qmcpack/tree/develop/src>`_ where the badges on our repo will then be updated. Only done by jobs with name `*-coverage`.
 
 
-====== ====== ======== 
-Static Checks Workflow
-====== ====== ========
+====== ======== ======== 
+Static Analysis Workflow
+====== ======== ========
 
 A manually triggered workflow on the GitHub Actions tab can generate the required checks using the [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) static analyzer. The current approach is to set checks in the `qmcpack/.clang-tidy` configuration file and run using `clang-tidy` v14 on GitHub Actions runners. The workflow is not part of CI, and it's currently used for reporting potential warnings on the GitHub Actions logs as they are addressed on the `develop` branch as part of refactoring efforts for code quality. 
 
