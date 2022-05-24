@@ -40,6 +40,8 @@
 namespace qmcplusplus
 {
 
+using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
 EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {
@@ -48,8 +50,8 @@ EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate*
   addMainEstimator(std::make_unique<LocalEnergyEstimator>(ham, true));
 }
 
-template<class EstInputType, typename VAR, typename... Args>
-bool EstimatorManagerNew::createEstimator(VAR& input, Args&&... args)
+template<class EstInputType, typename... Args>
+bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
   if (has<EstInputType>(input))
   {
@@ -61,8 +63,8 @@ bool EstimatorManagerNew::createEstimator(VAR& input, Args&&... args)
     return false;
 }
 
-template<class EstInputType, typename VAR, typename... Args>
-bool EstimatorManagerNew::createScalarEstimator(VAR& input, Args&&... args)
+template<class EstInputType, typename... Args>
+bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Args&&... args)
 {
   if (has<EstInputType>(input))
   {
@@ -78,8 +80,6 @@ bool EstimatorManagerNew::createScalarEstimator(VAR& input, Args&&... args)
     return false;
 }
 
-using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
-
 //initialize the name of the primary estimator
 EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
                                          EstimatorManagerInput&& emi,
@@ -89,39 +89,32 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {
   for (auto& est_input : emi.get_estimator_inputs())
-  {
-    bool estimator_made = false;
-    estimator_made =
-        estimator_made || createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet());
-    estimator_made = estimator_made ||
-        createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(), pset.getLattice());
-    estimator_made = estimator_made ||
-        createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
-                                                     twf.getSPOMap(), pset);
-    if (!estimator_made)
+    if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
+          createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
+                                                     pset.getLattice()) ||
+          createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
+                                                       twf.getSPOMap(), pset)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
-  }
+
   for (auto& scalar_input : emi.get_scalar_estimator_inputs())
-  {
-    bool estimator_made = false;
-    estimator_made      = estimator_made || createScalarEstimator<LocalEnergyInput>(scalar_input, H);
-    estimator_made      = estimator_made || createScalarEstimator<CSLocalEnergyInput>(scalar_input, H);
-    estimator_made      = estimator_made || createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H);
-    if (!estimator_made)
+    if (!(createScalarEstimator<LocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<CSLocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct a scalar estimator from scalar estimator input object.");
-  }
+
   if (main_estimator_ == nullptr)
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
     addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
   }
+
   makeConfigReport(app_log());
 }
 
-EstimatorManagerNew::~EstimatorManagerNew() {}
+EstimatorManagerNew::~EstimatorManagerNew() = default;
 
 /** reset names of the properties
  *

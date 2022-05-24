@@ -54,7 +54,7 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
   if (cur_name == "estimators")
     child = cur->xmlChildrenNode;
   else
-    child = cur;
+    child = cur; // the case when 'estimator's are not encapsulated by a 'estimators' node
   while (child != NULL)
   {
     std::string cname{lowerCase(castXMLCharToChar(child->name))};
@@ -92,14 +92,14 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
     {
       std::string atype(lowerCase(getXMLAttributeValue(child, "type")));
       std::string aname(lowerCase(getXMLAttributeValue(child, "name")));
-      throw UniformCommunicateError(error_tag + "<Estimators> can only contain <Estimator> nodes");
+      throw UniformCommunicateError(error_tag + "<estimators> can only contain <estimator> nodes");
     }
 
     if (cur_name == "estimators")
       child = child->next;
     else
     {
-      app_summary() << "<estimator> nodes not contained in <estimators></estimators> is a deprecated input xml idiom"
+      app_summary() << "<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom"
                     << std::endl;
       break;
     }
