@@ -1,8 +1,8 @@
 .. _github_actions:
 
-======  =======  ===  ===  =======
-Github  Actions  CI   on   QMCPACK
-======  =======  ===  ===  =======
+
+Github Actions CI on QMCPACK
+============================
 
 QMCPACK uses GitHub Actions as part of the suite of continuous integration (CI) checks before a pull request can be merged in the main `develop` branch. Github Actions is an event driven automation tool that allows us to automatically execute commands in response to QMCPACK repo related actions. For example, merging a branch into master might then trigger our test scripts to run.
 
@@ -947,11 +947,11 @@ Upload Coverage
 Upload the generated code coverage to `CodeCov <https://codecov.io/gh/QMCPACK/qmcpack/tree/develop/src>`_ where the badges on our repo will then be updated. Only done by jobs with name `*-coverage`.
 
 
-====== ======== ======== 
-Static Analysis Workflow
-====== ======== ========
 
-A manually triggered workflow on the GitHub Actions tab can generate the required checks using the [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) static analyzer. The current approach is to set checks in the `qmcpack/.clang-tidy` configuration file and run using `clang-tidy` v14 on GitHub Actions runners. The workflow is not part of CI, and it's currently used for reporting potential warnings on the GitHub Actions logs as they are addressed on the `develop` branch as part of refactoring efforts for code quality. 
+Static Analysis Workflow
+========================
+
+A manually triggered workflow on the GitHub Actions tab can generate the required checks using the [clang-tidy](https://clang.llvm.org/extra/clang-tidy/) static analyzer. The current approach is to set checks in the `qmcpack/src/.clang-tidy` configuration file and run using `clang-tidy` v14 on GitHub Actions runners. The workflow is not part of CI, and it's currently used for reporting potential warnings on the GitHub Actions logs as they are addressed on the `develop` branch as part of refactoring efforts for code quality. 
 
 To run the workflow:
 - Go to the Actions tab
@@ -961,7 +961,7 @@ To run the workflow:
 
 **Note:** the current `.clang-tidy` configuration file is compatible with clang v14 and runs on the `williamfgc/qmcpack-ci:ubuntu22-openmpi` docker image. To run locally on a Linux system use: `docker run -it user williamfgc/qmcpack-ci:ubuntu22-openmpi /bin/bash` or refer to the :ref:`running_docker`` section.
 
-To build locally enaling `clang-tidy`` static checks defined in `qmcpack/src/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
+To build locally enabling `clang-tidy`` static checks defined in `qmcpack/src/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
 
 .. code-block:: bash
 
