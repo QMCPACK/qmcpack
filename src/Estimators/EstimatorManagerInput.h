@@ -59,11 +59,11 @@ using ScalarEstimatorInputs = std::vector<ScalarEstimatorInput>;
 class EstimatorManagerInput
 {
 public:
-  EstimatorManagerInput()                                 = default;
-  EstimatorManagerInput(const EstimatorManagerInput& emi) = default;
-  EstimatorManagerInput(EstimatorManagerInput&& emi)      = default;
+  EstimatorManagerInput()                                            = default;
+  EstimatorManagerInput(const EstimatorManagerInput& emi)            = default;
+  EstimatorManagerInput(EstimatorManagerInput&& emi)                 = default;
   EstimatorManagerInput& operator=(const EstimatorManagerInput& emi) = default;
-  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi) = default;
+  EstimatorManagerInput& operator=(EstimatorManagerInput&& emi)      = default;
   // This constructor is for merging the global and local EstimatorManagerInput.
   // but you could also merge more instances
   EstimatorManagerInput(std::initializer_list<EstimatorManagerInput> emil);
@@ -71,7 +71,7 @@ public:
   EstimatorInputs& get_estimator_inputs() { return estimator_inputs_; }
   ScalarEstimatorInputs& get_scalar_estimator_inputs() { return scalar_estimator_inputs_; }
 
-  /** read <Estimators> node or (<estimators> node for legacy support)
+  /** read <estimators> node or (<estimator> node for legacy support)
    *  This can be done multiple times with <estimators> nodes
    *  or with <estimator> nodes to support deprecated bare <estimator> definitions
    */
@@ -82,16 +82,16 @@ private:
   EstimatorInputs estimator_inputs_;
   ScalarEstimatorInputs scalar_estimator_inputs_;
 
-  template<typename T, typename... Args>
-  void appendEstimatorInput(Args&&... args)
+  template<typename T>
+  void appendEstimatorInput(xmlNodePtr node)
   {
-    estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
+    estimator_inputs_.emplace_back(std::in_place_type<T>, node);
   }
 
-  template<typename T, typename... Args>
-  void appendScalarEstimatorInput(Args&&... args)
+  template<typename T>
+  void appendScalarEstimatorInput(xmlNodePtr node)
   {
-    scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, std::forward<Args>(args)...);
+    scalar_estimator_inputs_.emplace_back(std::in_place_type<T>, node);
   }
 
   friend class testing::EstimatorManagerInputTests;
