@@ -38,7 +38,7 @@ add_definitions(-Drestrict=__restrict__)
 # 998 function "AA" is hidden by "BB" -- virtual function override intended?
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --display_error_number --diag_suppress 177 --diag_suppress 550")
 set(CMAKE_CXX_FLAGS
-    "${CMAKE_CXX_FLAGS} --display_error_number --diag_suppress 177 --diag_suppress 550 --diag_suppress 612 --diag_suppress 998"
+    "${CMAKE_CXX_FLAGS} --display_error_number --diag_suppress 177 --diag_suppress 550 --diag_suppress 612 --diag_suppress 998 --diag_suppress 111"
 )
 
 # Set extra optimization specific flags
