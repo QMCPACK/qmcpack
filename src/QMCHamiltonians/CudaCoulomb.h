@@ -24,7 +24,7 @@ public:
   float rMin, rMax;
   int NumPoints;
   int MyTexture;
-  cudaArray* myArray;
+  float* myArray;
   void set(const float data[], int numPoints, float rmin, float rmax);
   void set(const double data[], int numPoints, double rmin, double rmax);
 
