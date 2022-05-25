@@ -55,7 +55,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      dispatchers_(!qmcdriver_input_.are_walkers_serialized()),
+      dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
@@ -158,7 +158,12 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
-  if (dispatchers_.are_walkers_batched())
+  if (qmcdriver_input_.areWalkersSerialized())
+  {
+    if(estimator_manager_->areThereListeners())
+      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are incompatible with estimators requiring per particle listeners");
+  }
+  else
   {
     app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
