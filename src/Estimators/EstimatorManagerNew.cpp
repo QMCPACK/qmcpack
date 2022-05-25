@@ -50,6 +50,12 @@ EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate*
   addMainEstimator(std::make_unique<LocalEnergyEstimator>(ham, true));
 }
 
+bool EstimatorManagerNew::areThereListeners() const
+{
+  return std::any_of(operator_ests_.begin(), operator_ests_.end(),
+                     [](auto& oper_est) { return oper_est->isListenerRequired(); });
+}
+  
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {

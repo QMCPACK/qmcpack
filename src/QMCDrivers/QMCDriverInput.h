@@ -138,7 +138,7 @@ public:
   const std::string& get_update_mode() const { return update_mode_; }
   DriverDebugChecks get_debug_checks() const { return debug_checks_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
-  bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
+  bool areWalkersSerialized() const { return crowd_serialize_walkers_; }
   bool get_measure_imbalance() const { return measure_imbalance_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }

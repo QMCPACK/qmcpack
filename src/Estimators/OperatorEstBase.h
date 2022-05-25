@@ -130,6 +130,8 @@ public:
 
   const std::string& get_my_name() const { return my_name_; }
 
+  bool isListenerRequired() { return requires_listener_; }
+
 protected:
   ///name of this object -- only used for debugging and h5 output
   std::string my_name_;
@@ -140,6 +142,8 @@ protected:
   UPtrVector<ObservableHelper> h5desc_;
 
   Data data_;
+
+  bool requires_listener_ = false;
 
   friend testing::OEBAccessor;
 };
