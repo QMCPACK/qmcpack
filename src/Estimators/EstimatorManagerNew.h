@@ -146,7 +146,10 @@ public:
   std::size_t getNumEstimators() { return operator_ests_.size(); }
   std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 
-  bool areThereListeners();
+  /** Do any of the instantiated estimators in operator_ests_ listen to per particle hamiltonian values?
+   *  Listeners are lambda functions captured from crowd scope estimators and passed to QMCHamiltonian leaders.
+   */
+  bool areThereListeners() const;
 
 private:
   /** Construct estimator of type matching the underlying EstimatorInput type Consumer
