@@ -295,6 +295,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
 
+    //app_log() << "Inside checkConfigurations, num_batches:  " << num_batches << " local_samples: " << local_samples << " final_batch_size: " << final_batch_size << std::endl; 
     for (int inb = 0; inb < num_batches; inb++)
     {
       int current_batch_size = walkers_per_crowd[crowd_id];
@@ -303,6 +304,7 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
+    //app_log() << "In inb loop, inb: " << inb << " current_batch_size: " << current_batch_size << " base_sample_index: " << base_sample_index << std::endl;
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);
@@ -365,9 +367,14 @@ void QMCCostFunctionBatched::checkConfigurations()
           {
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
             HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+          
+            //app_log() << "Within j loop, j: " << j << " ib: " << ib << " is: " << is << " DerivRecords[is][j]: " << DerivRecords[is][j] << " HDerivRecords[is][j]: " << HDerivRecords[is][j]
+              //  << " energy_list[ib]: " << energy_list[ib] << std::endl;
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+        
+            
         }
 
         for (int ib = 0; ib < current_batch_size; ib++)
@@ -456,7 +463,294 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
                                                         DescentEngine& descentEngineObj,
                                                         const std::string& MinMethod)
 {
-  APP_ABORT("LMYEngine not implemented with batch optimization");
+  //APP_ABORT("LMYEngine not implemented with batch optimization");
+
+//Copied code from checkConfigurations, main difference is passing local energy and derivatives to either the LM or descent engine.
+
+ScopedTimer tmp_timer(check_config_timer_);
+
+  RealType et_tot = 0.0;
+  RealType e2_tot = 0.0;
+
+  // Ensure number of samples did not change after getConfigurations
+  assert(rank_local_num_samples_ == samples_.getNumSamples());
+
+  if (RecordsOnNode_.size1() == 0)
+  {
+    RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
+    if (needGrads)
+    {
+      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+    }
+  }
+  else if (RecordsOnNode_.size1() != rank_local_num_samples_)
+  {
+    RecordsOnNode_.resize(rank_local_num_samples_, SUM_INDEX_SIZE);
+    if (needGrads)
+    {
+      DerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+      HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
+    }
+  }
+  OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
+  bool compute_nlpp  = useNLPPDeriv && nlpp;
+  //set the optimization mode for the trial wavefunction
+  Psi.startOptimization();
+  //    synchronize the random number generator with the node
+  (*MoverRng[0]) = (*RngSaved[0]);
+  H.setRandomGenerator(MoverRng[0]);
+
+
+  // Create crowd-local storage for evaluation
+  outputManager.pause();
+  const size_t opt_num_crowds = walkers_per_crowd_.size();
+  opt_eval_.resize(opt_num_crowds);
+  for (int i = 0; i < opt_num_crowds; i++)
+    opt_eval_[i] =
+        std::make_unique<CostFunctionCrowdData>(walkers_per_crowd_[i], W, Psi, H, H_KE_node_names_, *MoverRng[0]);
+  outputManager.resume();
+
+
+  // TODO - walkers per crowd may not be evenly divided, so the samples per crowd
+  //        might need to be divided differently for better load balancing.
+
+  // Divide samples among the crowds
+  std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
+  FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
+
+  // lambda to execute on each crowd
+  auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
+                          const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
+                          std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
+                          Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
+                          Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
+                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH, cqmc::engine::LMYEngine<Return_t>* EngineObj,
+                          DescentEngine& descentEngineObj,const std::string& MinMethod) {
+    CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
+
+    const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
+    int num_batches;
+    int final_batch_size;
+
+    compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
+
+    //app_log() << "Inside checkConfigurations, num_batches:  " << num_batches << " local_samples: " << local_samples << " final_batch_size: " << final_batch_size << std::endl; 
+    for (int inb = 0; inb < num_batches; inb++)
+    {
+      int current_batch_size = walkers_per_crowd[crowd_id];
+      if (inb == num_batches - 1)
+        current_batch_size = final_batch_size;
+
+      const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
+
+    //app_log() << "In inb loop, inb: " << inb << " current_batch_size: " << current_batch_size << " base_sample_index: " << base_sample_index << std::endl;
+      auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
+      auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
+      auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);
+      const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
+      const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
+      const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
+
+      ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
+      ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.getSharedResource().ham_res, h_list);
+
+      auto ref_dLogPsi  = convertPtrToRefVectorSubset(gradPsi, base_sample_index, current_batch_size);
+      auto ref_d2LogPsi = convertPtrToRefVectorSubset(lapPsi, base_sample_index, current_batch_size);
+
+      // Load samples into the crowd data
+      for (int ib = 0; ib < current_batch_size; ib++)
+      {
+        samples.loadSample(p_list[ib], base_sample_index + ib);
+
+        // Set the RNG used in QMCHamiltonian.  This is used to offset the grid
+        // during spherical integration in the non-local pseudopotential.
+        // The RNG state gets reset to the same starting point in correlatedSampling
+        // to use the same grid offsets in the correlated sampling values.
+        // Currently this code sets the RNG to the same state for every configuration
+        // on this node.  Every configuration of electrons is different, and so in
+        // theory using the same spherical integration grid should not be a problem.
+        // If this needs to be changed, one possibility is to advance the RNG state
+        // differently for each configuration.  Make sure the same initialization is
+        // performed in correlatedSampling.
+        *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
+        h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+      }
+
+      // Compute distance tables.
+      ParticleSet::mw_update(p_list);
+
+      // Log psi and prepare for difference the log psi
+      opt_data.zero_log_psi();
+
+      TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
+                                                  opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
+
+      if (needGrads)
+      {
+        // Compute parameter derivatives of the wavefunction
+        int nparam = optVars.size();
+        RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
+        RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
+        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
+
+
+        auto energy_list =
+            QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
+                                                           dhpsioverpsi_array, compute_nlpp);
+
+        
+        for (int ib = 0; ib < current_batch_size; ib++)
+        {
+        
+            std::vector<Return_t> der_rat_samp(nparam + 1, 0.0);
+            std::vector<Return_t> le_der_samp(nparam + 1, 0.0);
+    
+            der_rat_samp.at(0) = 1.0;
+            le_der_samp.at(0) = energy_list[ib];
+          const int is = base_sample_index + ib;
+          for (int j = 0; j < nparam; j++)
+          {
+            DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
+            HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+       
+            //der_rat_samp.push_back(DerivRecords[is][j]);
+            //le_der_samp.push_back(HDerivRecords[is][j]);   
+
+            der_rat_samp.at(j+1) = std::real(dlogpsi_array.getValue(j, ib));
+            le_der_samp.at(j+1) = std::real(dhpsioverpsi_array.getValue(j, ib));   
+            //app_log() << "Within j loop, j: " << j << " ib: " << ib << " is: " << is << " DerivRecords[is][j]: " << DerivRecords[is][j] << " HDerivRecords[is][j]: " << HDerivRecords[is][j]
+              //  << " energy_list[ib]: " << energy_list[ib] << std::endl;
+          }
+          RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
+          RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+ 
+            auto etmp    = energy_list[ib];   
+            //app_log() << "etmp: " << etmp <<  " der_rat_samp[1]: " << der_rat_samp[1] << " le_der_samp[1]: " << le_der_samp[1] << std::endl; 
+            if (MinMethod == "adaptive")
+            {
+                std::cout << "le_der_samp before take_sample: ";
+                for(int i = 0; i < le_der_samp.size();i++)
+                {
+                    std::cout << le_der_samp[i] << " , ";
+                }
+                std::cout << std::endl;
+
+                //Need to figure out weights
+                EngineObj->take_sample(der_rat_samp,le_der_samp, le_der_samp,1.0, 1.0);
+            }
+            else if (MinMethod == "descent")
+            {
+                int ip = omp_get_thread_num();
+                //int ip = 1;
+                descentEngineObj.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
+            }      
+            
+        }
+
+        for (int ib = 0; ib < current_batch_size; ib++)
+        {
+          const int is = base_sample_index + ib;
+          auto etmp    = energy_list[ib];
+          opt_data.get_e0() += etmp;
+          opt_data.get_e2() += etmp * etmp;
+
+          RecordsOnNode[is][ENERGY_NEW]   = etmp;
+          RecordsOnNode[is][ENERGY_TOT]   = etmp;
+          RecordsOnNode[is][REWEIGHT]     = 1.0;
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
+
+          if (includeNonlocalH != "no")
+          {
+            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
+            if (nlpp)
+              RecordsOnNode[is][ENERGY_FIXED] -= nlpp->getValue();
+          }
+        }
+      }
+      else
+      {
+        // Energy
+        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
+
+        for (int ib = 0; ib < current_batch_size; ib++)
+        {
+          const int is = base_sample_index + ib;
+          auto etmp    = energy_list[ib];
+          opt_data.get_e0() += etmp;
+          opt_data.get_e2() += etmp * etmp;
+
+          RecordsOnNode[is][ENERGY_NEW]   = etmp;
+          RecordsOnNode[is][ENERGY_TOT]   = etmp;
+          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
+          RecordsOnNode[is][REWEIGHT]     = 1.0;
+        }
+      }
+    }
+  };
+
+  ParallelExecutor<> crowd_tasks;
+  crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
+              d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
+              compute_nlpp, includeNonlocalH,EngineObj,descentEngineObj,MinMethod);
+  // Sum energy values over crowds
+  for (int i = 0; i < opt_eval_.size(); i++)
+  {
+    et_tot += opt_eval_[i]->get_e0();
+    e2_tot += opt_eval_[i]->get_e2();
+  }
+
+  OptVariablesForPsi.setComputed();
+  //     app_log() << "  VMC Efavg = " << eft_tot/static_cast<Return_t>(wPerNode[NumThreads]) << std::endl;
+  //Need to sum over the processors
+  std::vector<Return_rt> etemp(3);
+  etemp[0] = et_tot;
+  etemp[1] = static_cast<Return_rt>(rank_local_num_samples_);
+  etemp[2] = e2_tot;
+  // Sum energy values over nodes
+  myComm->allreduce(etemp);
+  Etarget    = static_cast<Return_rt>(etemp[0] / etemp[1]);
+  NumSamples = static_cast<int>(etemp[1]);
+  app_log() << "  VMC Eavg = " << Etarget << std::endl;
+  app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
+  app_log() << "  Total weights = " << etemp[1] << std::endl;
+  
+  
+ #ifdef HAVE_LMY_ENGINE
+  // engine finish taking samples
+  if (MinMethod == "adaptive" && !EngineObj->getStoringSamples())
+  {
+      //Only call sample_finish now if samples are not being stored
+    EngineObj->sample_finish();
+
+    if (EngineObj->block_first())
+    {   
+      OptVariablesForPsi.setComputed();
+      app_log() << "calling setComputed function" << std::endl;
+    }   
+  }
+  else if (MinMethod == "descent")
+  {
+    descentEngineObj.sample_finish();
+  }
+#endif 
+  
+  app_log().flush();
+  setTargetEnergy(Etarget);
+  ReportCounter = 0;
+  IsValid = true;
+
+  //collect SumValue for computedCost
+  SumValue[SUM_WGT]       = etemp[1];
+  SumValue[SUM_WGTSQ]     = etemp[1];
+  SumValue[SUM_E_WGT]     = etemp[0];
+  SumValue[SUM_ESQ_WGT]   = etemp[2];
+  SumValue[SUM_E_BARE]    = etemp[0];
+  SumValue[SUM_ESQ_BARE]  = etemp[2];
+  SumValue[SUM_ABSE_BARE] = 0.0;
+
+
 }
 #endif
 
@@ -770,6 +1064,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
 
   myComm->allreduce(D_avg);
 
+  app_log() << "Inside fillOverlapHamiltonianMatrices, rank_local_num_samples_: " << rank_local_num_samples_ << std::endl;
   for (int iw = 0; iw < rank_local_num_samples_; iw++)
   {
     const Return_rt* restrict saved = RecordsOnNode_[iw];
@@ -782,7 +1077,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
     std::vector<int> params_per_crowd(opt_num_crowds + 1);
     FairDivide(getNumParams(), opt_num_crowds, params_per_crowd);
 
-
+    app_log() << "Within iw loop, iw: " << iw << std::endl;
     auto constructMatrices = [](int crowd_id, std::vector<int>& crowd_ranges, int numParams, const Return_rt* Dsaved,
                                 const Return_rt* HDsaved, Return_rt weight, Return_rt eloc_new, RealType H2_avg,
                                 RealType V_avg, std::vector<Return_rt>& D_avg, RealType b1, RealType b2,
@@ -790,8 +1085,10 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::fillOverlapHamiltonian
       int local_pm_start = crowd_ranges[crowd_id];
       int local_pm_end   = crowd_ranges[crowd_id + 1];
 
+      //app_log() << "Within constructMatrices? " << " local_pm_start: " << local_pm_start << " local_pm_end: " << local_pm_end << std::endl;
       for (int pm = local_pm_start; pm < local_pm_end; pm++)
       {
+         // app_log() << "Within pm loop: " << pm << " HDsaved[pm]: " << HDsaved[pm] << " Dsaved[pm]: " << Dsaved[pm]  << " D_avg[pm]: " << D_avg[pm] << " eloc_new: " << eloc_new << std::endl;
         Return_rt wfe = (HDsaved[pm] + (Dsaved[pm] - D_avg[pm]) * eloc_new) * weight;
         Return_rt wfd = (Dsaved[pm] - D_avg[pm]) * weight;
         Return_rt vterm =

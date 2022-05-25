@@ -1057,6 +1057,7 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
+    app_log() << "Inside batched version of code?" << std::endl;
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
@@ -1069,6 +1070,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   // get number of optimizable parameters
   const int numParams = optTarget->getNumParams();
 
+  std::cout << "check optTargetInfo saved_grads_flag: " << saved_grads_flag << " init_num_samp: " << init_num_samp << " numParams: " << numParams << std::endl;
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
   const std::vector<double> shifts_s = prepare_shifts(bestShift_s);
@@ -1089,8 +1091,14 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     count++;
   }
 
+  
+  std::cout << "EngineObj->full_init(): " << EngineObj->full_init() << std::endl;
+  //formic::VarDeps real_vdeps(numParams, std::vector<double>());
+    //vdeps = real_vdeps;
+
   if (!EngineObj->full_init())
   {
+      std::cout << "Entered here for batched?" << std::endl;
     // prepare a variable dependency object with no dependencies
     formic::VarDeps real_vdeps(numParams, std::vector<double>());
     vdeps = real_vdeps;
@@ -1109,6 +1117,9 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   // turn on wavefunction update mode
   EngineObj->turn_on_update();
+
+    //EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
+     // EngineObj->reset();
 
   // initialize the engine if we do not use block lm or it's the first part of block lm
   EngineObj->initialize(nblocks, 0, nkept, previous_update, false);

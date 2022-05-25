@@ -994,7 +994,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
 
   // get number of optimizable parameters
   size_t numParams = optTarget->getNumParams();
-
+  std::cout << "check optTargetInfo saved_grads_flag: " << saved_grads_flag << " init_num_samp: " << init_num_samp << " numParams: " << numParams << std::endl;
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
   const std::vector<double> shifts_s = prepare_shifts(bestShift_s);
@@ -1014,6 +1014,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run()
       previous_update.at(count).at(i) = 2.0 * (formic::random_number<double>() - 0.5);
     count++;
   }
+  std::cout << "EngineObj->full_init(): " << EngineObj->full_init() << std::endl;
 
   if (!EngineObj->full_init())
   {
