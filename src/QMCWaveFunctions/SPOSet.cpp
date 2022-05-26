@@ -188,7 +188,6 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
 std::unique_ptr<SPOSet> SPOSet::makeClone() const
 {
   throw std::runtime_error("Missing  SPOSet::makeClone for " + className);
-  return std::unique_ptr<SPOSet>();
 }
 
 void SPOSet::basic_report(const std::string& pad) const

@@ -152,10 +152,9 @@ protected:
    *
    *  can't be bothered then just define your enum option as a string.
    */
-  virtual std::any assignAnyEnum(const std::string& tag) const
+  [[noreturn]] virtual std::any assignAnyEnum(const std::string& tag) const
   {
     throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
-    return std::any();
   }
 
   /** Assign any enum helper for InputSection derived class
