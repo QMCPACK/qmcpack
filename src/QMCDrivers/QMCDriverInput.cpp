@@ -107,7 +107,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
         rAttrib.add(check_point_period_.stride, "stride");
         rAttrib.add(check_point_period_.period, "period");
         rAttrib.put(tcur);
-        dump_config_ = (check_point_period_.period > 0);
+        //dump_config_ = (check_point_period_.period > 0);
       }
       else if (cname == "dumpconfig")
       {
@@ -155,6 +155,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
+
+  dump_config_ = (check_point_period_.period >= 0);
 }
 
 } // namespace qmcplusplus

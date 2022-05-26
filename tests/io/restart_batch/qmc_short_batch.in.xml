@@ -82,7 +82,7 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc_batch" move="pbyp" checkpoint="0">
-      <parameter name="walkers_per_rank"    >    16              </parameter>
+      <parameter name="walkers_per_rank"    >    1              </parameter>
       <parameter name="blocks"              >    10              </parameter>
       <parameter name="steps"               >    8.0             </parameter>
       <parameter name="subSteps"            >    2               </parameter>
@@ -90,7 +90,7 @@
       <parameter name="warmupSteps"         >    100             </parameter>
    </qmc>
    <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
-      <parameter name="walkers_per_rank"    >    16              </parameter>
+      <parameter name="walkers_per_rank"    >    1              </parameter>
       <parameter name="blocks"              >    1               </parameter>
       <parameter name="steps"               >    1               </parameter>
       <parameter name="subSteps"            >    1               </parameter>

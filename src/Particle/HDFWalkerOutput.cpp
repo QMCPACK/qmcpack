@@ -128,7 +128,8 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
     W.putConfigurations(RemoteData[0]->data());
     block = nblock;
   }
-
+  std::cout << W.WalkerOffsets.size() << " " << myComm->size() << std::endl;
+  //exit(1);
   number_of_walkers_ = W.WalkerOffsets[myComm->size()];
   hout.write(number_of_walkers_, hdf::num_walkers);
 
