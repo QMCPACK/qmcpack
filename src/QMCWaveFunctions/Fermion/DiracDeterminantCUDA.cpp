@@ -92,8 +92,8 @@ void DiracDeterminantCUDA::det_lookahead(MCWalkerConfiguration& W,
        0)) // this only needs to be calculated once and then the columns can be manually updated upon rejection (update function below does this in the update_onemove kernel)
   {
     // make sure the evaluate function kernels are finished
-    cudaEventRecord(gpu::syncEvent, gpu::kernelStream);
-    cudaEventSynchronize(gpu::syncEvent);
+    cudaCheck(cudaEventRecord(gpu::syncEvent, gpu::kernelStream));
+    cudaCheck(cudaEventSynchronize(gpu::syncEvent));
     // calculate new lemma matrix
     cublas_lemma_mats(gpu::cublasHandle, AinvList_d.data(), newRowList_d.data(), LemmaList_d.data(), AinvUList_d.data(),
                       kd, W.getkstart(), NumPtcls, nw, RowStride);
@@ -129,7 +129,7 @@ void DiracDeterminantCUDA::det_lookahead(MCWalkerConfiguration& W,
   {
     // Copy back to host
     ratio_host.asyncCopy(ratio_d);
-    cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream);
+    cudaCheck(cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream));
   }
   else
   {
@@ -277,9 +277,9 @@ void DiracDeterminantCUDA::update(MCWalkerConfiguration* W,
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
-  cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
-  cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
   // for (int i=0; i<NumPtcls; i++)
   //  	cerr << "new_row(" << i << ") = " << new_row[i]
   // 	     << "  old_row = " << A[iat-FirstIndex][i] << std::endl;
@@ -390,9 +390,9 @@ void DiracDeterminantCUDA::update(const std::vector<Walker_t*>& walkers, const s
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
-  cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
-  cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
   // for (int i=0; i<NumPtcls; i++)
   //  	cerr << "new_row(" << i << ") = " << new_row[i]
   // 	     << "  old_row = " << A[iat-FirstIndex][i] << std::endl;
@@ -525,7 +525,7 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
       gethostname(name, 1000);
       fprintf(stderr, "Offending hostname = %s\n", name);
       int dev;
-      cudaGetDevice(&dev);
+      cudaCheck(cudaGetDevice(&dev));
       fprintf(stderr, "Offending device = %d\n", dev);
     }
   if (failed)
@@ -537,8 +537,8 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
-  cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
 
   FILE *f1, *f2;
   f1 = fopen("A.dat", "a");
@@ -718,13 +718,13 @@ void DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration& W, int iat, int k
   }
   gpu::streamsSynchronize();
   ratio_host.asyncCopy(ratio_d);
-  cudaEventRecord(gpu::gradientSyncDiracEvent, gpu::memoryStream);
+  cudaCheck(cudaEventRecord(gpu::gradientSyncDiracEvent, gpu::memoryStream));
 }
 
 void DiracDeterminantCUDA::addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
 {
   auto& walkers = W.WalkerList;
-  cudaEventSynchronize(gpu::gradientSyncDiracEvent);
+  cudaCheck(cudaEventSynchronize(gpu::gradientSyncDiracEvent));
   for (int iw = 0; iw < walkers.size(); iw++)
   {
 #ifdef DEBUG_DELAYED
@@ -1028,7 +1028,7 @@ void DiracDeterminantCUDA::calcRatio(MCWalkerConfiguration& W,
     gpu::streamsSynchronize();
     // Copy back to host
     ratio_host.asyncCopy(ratio_d);
-    cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream);
+    cudaCheck(cudaEventRecord(gpu::ratioSyncDiracEvent, gpu::memoryStream));
   }
 #ifdef CUDA_DEBUG
   // Now, check against CPU
@@ -1054,7 +1054,7 @@ void DiracDeterminantCUDA::addRatio(MCWalkerConfiguration& W,
                                     std::vector<ValueType>& lapl)
 {
   auto& walkers = W.WalkerList;
-  cudaEventSynchronize(gpu::ratioSyncDiracEvent);
+  cudaCheck(cudaEventSynchronize(gpu::ratioSyncDiracEvent));
   // Calculate ratio, gradient and laplacian
   for (int iw = 0; iw < walkers.size(); iw++)
   {
@@ -1183,7 +1183,7 @@ void DiracDeterminantCUDA::gradLapl(MCWalkerConfiguration& W, GradMatrix& grads,
         gethostname(name, 1000);
         fprintf(stderr, "Offending hostname = %s\n", name);
         int dev;
-        cudaGetDevice(&dev);
+        cudaCheck(cudaGetDevice(&dev));
         fprintf(stderr, "Offending device = %d\n", dev);
         gpu::host_vector<CTS::ValueType> host_data;
         host_data  = walkers[iw]->cuda_DataSet;
@@ -1293,7 +1293,7 @@ void DiracDeterminantCUDA::NLratios_CPU(MCWalkerConfiguration& W,
     Ainv_host[iw].resize(NumOrbitals, NumOrbitals);
     ValueType* dest     = &(Ainv_host[iw](0, 0));
     CTS::ValueType* src = &(walkers[iw]->cuda_DataSet.data()[AinvOffset]);
-    cudaMemcpy(dest, src, mat_size, cudaMemcpyDeviceToHost);
+    cudaCheck(cudaMemcpy(dest, src, mat_size, cudaMemcpyDeviceToHost));
   }
   std::vector<RealType> phi(NumOrbitals);
   int index = 0;
@@ -1406,7 +1406,7 @@ void DiracDeterminantCUDA::NLratios(MCWalkerConfiguration& W,
     }
     if (hasResults)
     {
-      cudaStreamSynchronize(gpu::memoryStream);
+      cudaCheck(cudaStreamSynchronize(gpu::memoryStream));
       for (int i = 0; i < ratio_pointers[counter].size(); i++)
         *(ratio_pointers[counter][i]) *= NLratios_host[i];
       hasResults = false;
@@ -1456,7 +1456,7 @@ void DiracDeterminantCUDA::NLratios(MCWalkerConfiguration& W,
   }
   if (hasResults)
   {
-    cudaStreamSynchronize(gpu::memoryStream);
+    cudaCheck(cudaStreamSynchronize(gpu::memoryStream));
     for (int i = 0; i < ratio_pointers[(counter + 1) % 2].size(); i++)
       *(ratio_pointers[(counter + 1) % 2][i]) *= NLratios_host[i];
   }

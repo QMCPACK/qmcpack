@@ -49,8 +49,8 @@ void cuda_spline_init()
                     0.0,      0.0,     -3.0,     1.0,
                     0.0,      0.0,      1.0,     0.0
                   };
-  cudaMemcpyToSymbol(AcudaSpline, A_h, 48*sizeof(float), 0,
-                     cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToSymbol(AcudaSpline, A_h, 48*sizeof(float), 0,
+            cudaMemcpyHostToDevice));
   double A_d[48] = { -1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
                      3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
                      -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
@@ -64,8 +64,8 @@ void cuda_spline_init()
                      0.0,      0.0,     -3.0,     1.0,
                      0.0,      0.0,      1.0,     0.0
                    };
-  cudaMemcpyToSymbol(AcudaSpline_double, A_d, 48*sizeof(double), 0,
-                     cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToSymbol(AcudaSpline_double, A_d, 48*sizeof(double), 0,
+            cudaMemcpyHostToDevice));
   AisInitialized = true;
   // clang-format on
 }

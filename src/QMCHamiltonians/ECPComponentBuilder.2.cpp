@@ -453,9 +453,9 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 {
 #ifdef QMC_CUDA
   int device;
-  cudaGetDevice(&device);
+  cudaCheck(cudaGetDevice(&device));
   cudaDeviceProp deviceProp;
-  cudaGetDeviceProperties(&deviceProp, device);
+  cudaCheck(cudaGetDeviceProperties(&deviceProp, device));
   const int max_points = deviceProp.maxTexture1D - 1;
 #else
   const int max_points = 100000;
