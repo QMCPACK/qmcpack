@@ -27,10 +27,11 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
+      Llocal(llocal),
       Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
