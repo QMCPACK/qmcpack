@@ -779,7 +779,7 @@ void MultiDiracDeterminant::mw_evaluateDetsAndGradsForPtclMove(
     for (size_t iw = 0; iw < nw; iw++)
     {
       GradType ratioGradRef_local(0);
-      PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioGradRef_local)")
+      //PRAGMA_OFFLOAD("omp parallel for reduction(+ : ratioGradRef_local)")
       for (size_t i = 0; i < NumPtcls; i++)
       {
         const size_t J            = confgListOccup_ptr[i];

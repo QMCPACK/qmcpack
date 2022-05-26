@@ -105,8 +105,8 @@ struct SoaCartesianTensor
 template<class T>
 SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
 {
-  if (Lmax < 0 || Lmax > 6)
-    throw std::runtime_error("CartesianTensor can't handle Lmax > 6 or Lmax < 0.\n");
+  if (Lmax > 6)
+    throw std::runtime_error("CartesianTensor can't handle Lmax > 6.\n");
 
   int ntot = 0;
   for (int i = 0; i <= Lmax; i++)
@@ -2292,7 +2292,6 @@ void SoaCartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
 
   default:
     throw std::runtime_error("CartesianTensor::getABC() - Incorrect index.\n");
-    break;
   }
 }
 

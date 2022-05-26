@@ -106,7 +106,8 @@ int SFNBranch::initParam(const MCPopulation& population,
   vParam[SBVP::SIGMA2] = var;
   vParam[SBVP::TAUEFF] = vParam[SBVP::TAU] * R2Accepted.result() / R2Proposed.result();
   /// FIXME, magic number 50
-  setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 50, population.get_golden_electrons()->getTotalNum());
+  setBranchCutoff(vParam[SBVP::SIGMA2], vParam[SBVP::SIGMA_BOUND], 50,
+                  population.get_golden_electrons()->getTotalNum());
 
   int nwtot_now = population.get_num_global_walkers();
   if (iParam[B_TARGETWALKERS] == 0)
@@ -168,8 +169,7 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
     else
     {
       throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
-      /// FIXME
-      vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
+      /// FIXME vParam[SBVP::ETRIAL] = vParam[SBVP::EREF];
     }
   }
   else //warmup
@@ -190,8 +190,7 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
     else
     {
       throw UniformCommunicateError("Bug: FIXME SBVP::EREF should be calculated based on weights");
-      /// FIXME
-      vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW];
+      /// FIXME vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW];
     }
 
     --WarmUpToDoSteps;

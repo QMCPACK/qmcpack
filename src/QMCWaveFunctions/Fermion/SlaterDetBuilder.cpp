@@ -867,7 +867,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
       for (size_t i = 0; i < confgLists[grp].size(); i++)
       {
         bool found = false;
-        size_t k   = -1;
+        int k      = -1;
         for (size_t j = 0; j < uniqueConfgs[grp].size(); j++)
         {
           if (confgLists[grp][i] == uniqueConfgs[grp][j])
