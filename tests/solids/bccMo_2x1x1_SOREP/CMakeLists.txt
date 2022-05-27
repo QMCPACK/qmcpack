@@ -1,5 +1,5 @@
 if(QMC_COMPLEX)
-
+ if (NOT QMC_CUDA AND NOT ENABLE_OFFLOAD) 
   list(APPEND BCC_MO_VMC_SCALARS "totenergy" "-136.52078308 0.016914")
   list(APPEND BCC_MO_VMC_SCALARS "kinetic" "47.99405288 0.094614")
   list(APPEND BCC_MO_VMC_SCALARS "potential" "-184.51483596 0.095482")
@@ -123,4 +123,5 @@ if(QMC_COMPLEX)
       DET_BCC_MO_DMC_SCALARS # DMC
     )
   endif()
+ endif()
 endif()
