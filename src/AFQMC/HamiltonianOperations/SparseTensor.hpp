@@ -198,7 +198,7 @@ public:
     int nwalk = Gc.size(1);
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
     for (int n = 0; n < nwalk; n++)
