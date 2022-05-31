@@ -30,7 +30,7 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 public:
   using Base = QMCDriverNew;
   QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
-      : QMCDriverNew(test_project,
+      : test_project("",ProjectData::DriverVersion::BATCH), QMCDriverNew(test_project,
                      std::move(input),
                      std::nullopt,
                      std::move(population),

@@ -53,7 +53,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
-      root_name_(project_data.CurrentMainRoot()),
+      //root_name_(project_data.CurrentMainRoot()),
       population_(std::move(population)),
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
@@ -75,6 +75,13 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     else
       return {};
   };
+
+  if(!project_data.CurrentMainRoot().empty())
+  {
+    std::cout << "meow? " << project_data.CurrentMainRoot() << std::endl;
+    exit(1);    
+    //root_name_ = project_data.CurrentMainRoot();
+  }
 
   estimator_manager_ =
       std::make_unique<EstimatorManagerNew>(comm,
