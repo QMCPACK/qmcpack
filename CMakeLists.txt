@@ -723,6 +723,13 @@ if(QMC_CUDA OR ENABLE_CUDA)
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
     endif()
     enable_language(CUDA)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+      if(CMAKE_CUDA_COMPILER_VERSION VERSION_EQUAL 11.7)
+        message(FATAL_ERROR 
+		"CUDA 11.7 supports GCC versions 6 - 11. Please change"
+	        "CMAKE_CXX_COMPILER or use CMAKE_CUDA_HOST_COMPILER.")
+      endif()
+    endif()
     find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
