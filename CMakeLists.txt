@@ -724,10 +724,10 @@ if(QMC_CUDA OR ENABLE_CUDA)
     endif()
     enable_language(CUDA)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
-      if(CMAKE_CUDA_COMPILER_VERSION VERSION_EQUAL 11.7)
+      if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS_EQUAL 11.7)
         message(FATAL_ERROR 
-		"CUDA 11.7 supports GCC versions 6 - 11. Please change"
-	        "CMAKE_CXX_COMPILER or use CMAKE_CUDA_HOST_COMPILER.")
+		"CUDA version <=11.7 do not support GCC versions >= 12. Please change CMAKE_CXX_COMPILER"
+		"to an older GCC version compatible with the CUDA version ${CMAKE_CUDA_COMPILER_VERSION}")
       endif()
     endif()
     find_package(CUDAToolkit 11.0 REQUIRED)
