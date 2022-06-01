@@ -27,8 +27,8 @@ void* cuda_memory_manager_type::allocate(size_t bytes, std::string name)
   // Make sure size is a multiple of 16
   bytes = (((bytes + 15) / 16) * 16);
   void* p;
-  cudaCheck(cudaMalloc((void**)&p, bytes));
-  gpu_pointer_map[p]                                   = std::pair<std::string, size_t>(name, bytes);
+  cudaCheckMalloc(cudaMalloc((void**)&p, bytes), bytes, name.c_str());
+  gpu_pointer_map[p] = std::pair<std::string, size_t>(name, bytes);
   std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
   if (iter == gpu_mem_map.end())
   {
@@ -49,8 +49,8 @@ void* cuda_memory_manager_type::allocate_managed(size_t bytes, std::string name,
   // Make sure size is a multiple of 16
   bytes = (((bytes + 15) / 16) * 16);
   void* p;
-  cudaCheck(cudaMallocManaged((void**)&p, bytes, flags));
-  gpu_pointer_map[p]                                   = std::pair<std::string, size_t>(name, bytes);
+  cudaCheckMalloc(cudaMallocManaged((void**)&p, bytes, flags), bytes, name.c_str());
+  gpu_pointer_map[p] = std::pair<std::string, size_t>(name, bytes);
   std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
   if (iter == gpu_mem_map.end())
   {

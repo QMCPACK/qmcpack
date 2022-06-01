@@ -262,7 +262,7 @@ create_UBspline_3d_s_cuda_conv (UBspline_3d_d* spline)
 
   size_t size = Nx*Ny*N*sizeof(float);
 
-  cudaCheck(cudaMalloc((void**)&(cuda_spline->coefs), size));
+  cudaCheckMalloc(cudaMalloc((void**)&(cuda_spline->coefs), size), size, "GPU spline coefficients");
   
   float *spline_buff = (float*)malloc(size);
   for (int ix=0; ix<Nx; ix++)
