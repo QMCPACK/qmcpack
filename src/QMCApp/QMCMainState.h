@@ -25,6 +25,7 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCDrivers/QMCDriverFactory.h"
+#include "Estimators/EstimatorManagerInput.h"
 #include "type_traits/template_types.hpp"
 
 class Communicate;
@@ -70,6 +71,9 @@ struct QMCMainState : public MPIObjectBase
 
   /** set the active qmcDriver */
   void putCommunicator(xmlNodePtr cur);
+
+  ///Global estimators defined outside of <qmc> nodes
+  std::optional<EstimatorManagerInput> estimator_manager_input_;
 
   /** virtual destructor **/
   virtual ~QMCMainState();

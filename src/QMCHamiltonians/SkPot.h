@@ -31,7 +31,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
-  Return_t evaluate(ParticleSet& P) override;
+  [[noreturn]] Return_t evaluate(ParticleSet& P) override;
 
   bool put(xmlNodePtr cur) override;
   bool get(std::ostream& os) const override;
@@ -41,7 +41,8 @@ public:
   {
     for (int ki = 0; ki < NumK; ki++)
     {
-      RealType k = dot(sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki], sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki]);
+      RealType k = dot(sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki],
+                       sourcePtcl->getSimulationCell().getKLists().kpts_cart[ki]);
       k          = std::sqrt(k) - K_0;
       Fk[ki]     = OneOverN * V_0 * std::exp(-k * k);
       //         app_log()<<ki<<": "<<Fk[ki] << std::endl;

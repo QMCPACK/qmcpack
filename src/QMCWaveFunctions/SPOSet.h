@@ -489,7 +489,7 @@ public:
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  virtual std::unique_ptr<SPOSet> makeClone() const;
+  [[noreturn]] virtual std::unique_ptr<SPOSet> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.

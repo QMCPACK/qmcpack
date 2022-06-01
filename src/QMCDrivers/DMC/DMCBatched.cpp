@@ -24,6 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "EstimatorInputDelegates.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
@@ -40,10 +41,11 @@ using WP = WalkerProperties::Indexes;
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
+		       const std::optional<EstimatorManagerInput>& global_emi,
                        DMCDriverInput&& input,
                        MCPopulation&& pop,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop),
+  : QMCDriverNew(project_data, std::move(qmcdriver_input), global_emi, std::move(pop),
                    "DMCBatched::", comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),

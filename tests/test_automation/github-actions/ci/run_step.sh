@@ -390,7 +390,7 @@ case "$1" in
 
     if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
     then
-      CTEST_JOBS="16"
+      CTEST_JOBS="32"
     fi
     
     ctest --output-on-failure $TEST_LABEL -j $CTEST_JOBS

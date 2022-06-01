@@ -1206,6 +1206,43 @@ the values found in the \*.sXXX.opt.h5 file. Be careful to keep the pair
 of optimized CI coefficients and Jastrow coefficients together to avoid
 inconsistencies.
 
+Parameter gradients
+~~~~~~~~~~~~~~~~~~~
+The gradients of the energy with respect to the variational parameters can be checked and optionally written to a file.
+The check compares the analytic derivatives with a finite difference approximation.
+These are activated by giving a ``gradient_test`` method in and ``optimize`` block, as follows:
+
+::
+
+     <qmc method="linear" move="pbyp">
+      <optimize method="gradient_test">
+      </optimize>
+      ... rest of optimizer input ...
+
+The check will print a table to the standard output with the parameter name, value, analytic gradient, finite difference gradient, and the percent difference between them.
+
+Writing the analytic parameter gradients to a file is enabled by using the ``output_param_file`` parameter.
+The file name is ``<project id>.param.s000.scalar.dat``.
+It contains one line per loop iteration, to allow using existing tools to compute averages and error bars on the values.
+
+  +-----------------------+--------------+-------------+-------------+--------------------------------------------+
+  | **Name**              | **Datatype** | **Values**  | **Default** | **Description**                            |
+  +=======================+==============+=============+=============+============================================+
+  | ``output_param_file`` | text         | yes, no     | no          |  Output parameter gradients to a file      |
+  +-----------------------+--------------+-------------+-------------+--------------------------------------------+
+
+The input would look like the following:
+
+::
+
+    <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+      <optimize method="gradient_test">
+        <parameter name="output_param_file">yes</parameter>
+      </optimize>
+      ... rest of optimizer input ...
+
+
+
 Output of intermediate values
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -20,14 +20,14 @@
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
   {
     APP_ABORT("  Illegal cutoff for KContainer");
   }
-  FindApproxMMax(lattice);
+  findApproxMMax(lattice, ndim);
   BuildKLists(lattice, useSphere);
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
@@ -36,7 +36,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool u
   app_log() << std::endl;
 }
 
-void KContainer::FindApproxMMax(const ParticleLayout& lattice)
+void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
@@ -79,17 +79,23 @@ void KContainer::FindApproxMMax(const ParticleLayout& lattice)
     mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
 
-  //overwrite the non-periodic directon to be zero
-  if (qmc_common.use_ewald)
-  {
-    app_log() << "  Using Ewald sum for the slab " << std::endl;
-    if (lattice.SuperCellEnum == SUPERCELL_SLAB)
-      mmax[2] = 0;
-  }
 
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
+
+  //overwrite the non-periodic directon to be zero
+  if (lattice.SuperCellEnum == SUPERCELL_SLAB)
+  {
+    app_log() << "  No kspace sum perpendicular to slab " << std::endl;
+    mmax[2] = 0;
+  }
+  if (ndim < 3)
+  {
+    app_log() << "  No kspace sum along z " << std::endl;
+    mmax[2] = 0;
+  }
+  if (ndim < 2) mmax[1] = 0;
 }
 
 void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)

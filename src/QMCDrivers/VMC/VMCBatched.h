@@ -66,6 +66,7 @@ public:
   /// Constructor.
   VMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
+             const std::optional<EstimatorManagerInput>& global_emi,
              VMCDriverInput&& input,
              MCPopulation&& pop,
              SampleStack& samples_,
@@ -112,7 +113,7 @@ public:
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  const VMCDriverInput vmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;

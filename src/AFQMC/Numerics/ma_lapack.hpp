@@ -243,11 +243,11 @@ std::pair<MultiArray1D, MultiArray2D> symEig(MultiArray2D const& A)
   using Type       = typename MultiArray2D::element;
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-  assert(A.size(0) == A.size(1));
+  assert(A.size() == A.size(1));
   assert(A.stride(1) == 1);
-  assert(A.size(0) > 0);
-  int N   = A.size(0);
-  int LDA = A.stride(0);
+  assert(A.size() > 0);
+  int N   = A.size();
+  int LDA = A.stride();
 
   MultiArray1D eigVal(extensions{N});
   MultiArray2D eigVec({N, N});

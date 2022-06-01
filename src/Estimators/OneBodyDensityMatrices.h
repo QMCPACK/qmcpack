@@ -55,8 +55,8 @@ public:
 
   using Evaluator  = OneBodyDensityMatricesInput::Evaluator;
   using Integrator = OneBodyDensityMatricesInput::Integrator;
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
-  
+  using SPOMap     = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
   enum class Sampling
   {
     VOLUME_BASED,
@@ -153,7 +153,7 @@ public:
                          const Lattice& lattice,
                          const SpeciesSet& species,
                          const SPOMap& spomap,
-                         ParticleSet& pset_target);
+                         const ParticleSet& pset_target);
 
   /** Constructor used when spawing crowd clones
    *  needs to be public so std::make_unique can call it.

@@ -217,6 +217,18 @@ public:
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
   }
 
+  template<class MatAPtr, class MatBPtr, class MatC, class TVec>
+  void BatchedMixedDensityMatrix(
+								const std::vector<MatAPtr>&,
+								std::vector<MatBPtr>&,
+								MatC&& C,
+								T,
+								TVec&&,
+								bool = false, bool = true)
+  {
+    APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
+  }
+
   template<class MatA, class MatB, class MatC, class TVec>
   void BatchedDensityMatrices(const std::vector<MatA>& hermA,
                               std::vector<MatB>& Bi,

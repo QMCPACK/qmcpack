@@ -37,6 +37,7 @@ set(PARTICLE
     LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
+    LongRange/EwaldHandler2D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
 set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp

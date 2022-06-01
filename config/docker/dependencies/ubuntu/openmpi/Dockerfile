@@ -15,6 +15,7 @@ RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
     clang \
     clang-format \
+    clang-tidy \
     gcovr \
     python3 \
     cmake \

@@ -35,8 +35,7 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
 
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
 
     Lattice lattice;
     if (sdi.get_cell().explicitly_defined == true)

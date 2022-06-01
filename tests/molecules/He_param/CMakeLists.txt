@@ -25,6 +25,25 @@ if(NOT QMC_CUDA)
     SCALAR_VALUES
     HE_BSPLINE_PARAM)
 
+  # Check the parameter gradient code for the legacy driver
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    He_param_grad_legacy_driver
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+    PREFIX
+    He_param_grad_legacy_driver.param
+    INPUT_FILE
+    He_param_grad_legacy_driver.xml
+    PROCS
+    1
+    THREADS
+    16
+    SERIES
+    0
+    SCALAR_VALUES
+    HE_BSPLINE_PARAM)
+
 
   #  Test loading from variational parameter file
   check_python_reqs(h5py he_param_h5 add_h5_tests)

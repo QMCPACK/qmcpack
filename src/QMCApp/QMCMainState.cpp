@@ -30,6 +30,7 @@
 #include "QMCDrivers/RMC/RMCFactory.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"

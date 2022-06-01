@@ -15,16 +15,16 @@ module load git
 module load cuda/11.0.3
 module load essl
 module load netlib-lapack
-module load hdf5
+module load hdf5/1.10.7
 module load fftw
 module load boost/1.76.0
 module load python/3.8-anaconda3
 # private module until OLCF provides a new llvm build
-if [[ ! -d /ccs/proj/mat151/opt/modules ]] ; then
-  echo "Required module folder /ccs/proj/mat151/opt/modules not found!"
+if [[ ! -d /gpfs/alpine/mat151/world-shared/opt/modules ]] ; then
+  echo "Required module folder /gpfs/alpine/mat151/world-shared/opt/modules not found!"
   exit 1
 fi
-module use /ccs/proj/mat151/opt/modules
+module use /gpfs/alpine/mat151/world-shared/opt/modules
 module load llvm/main-20220317-cuda11.0
 
 TYPE=Release
