@@ -142,7 +142,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
-          nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        {
+          if( !targetPtcl.isSpinor())
+            nonLocalPot[i]->initVirtualParticle(targetPtcl);
+          else
+            APP_ABORT("Batched NLPP evaluation not validated with spinors.  Use legacy algorithm") 
+        } 
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
     }
