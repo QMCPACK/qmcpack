@@ -146,7 +146,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
           if( !targetPtcl.isSpinor())
             nonLocalPot[i]->initVirtualParticle(targetPtcl);
           else
-            APP_ABORT("Batched NLPP evaluation not validated with spinors.  Use legacy algorithm") 
+            throw std::runtime_error("Batched NLPP evaluation not validated with spinors.  Use algorithm=\"non-batched\" in pseudopotential block."); 
         } 
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
