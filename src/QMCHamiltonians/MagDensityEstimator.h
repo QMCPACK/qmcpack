@@ -45,10 +45,17 @@ public:
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
   inline int getGridIndex(int i, int j, int k) const { return my_index_ + k + NumGrids[2] * (j + NumGrids[1] * i); }
-
+ 
+  // index of grid point i=x, j=y, k=z, and vector component dim
+  inline int getMagGridIndex(int i, int j, int k, int dim) const {return my_index_ + dim + OHMMS_DIM*(k + NumGrids[2] * (j+NumGrids[1] * i));}
   inline int getGridIndexPotential(int i, int j, int k) const
   {
     return potentialIndex + k + NumGrids[2] * (j + NumGrids[1] * i);
+  }
+
+  inline int getMagGridIndexPotential(int i, int j, int k, int dim) const
+  {
+    return potentialIndex + dim + OHMMS_DIM*(k + NumGrids[2] * (j + NumGrids[1] * i));
   }
 
 

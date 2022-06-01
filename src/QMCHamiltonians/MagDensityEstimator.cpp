@@ -53,7 +53,8 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
       int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
       int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
       int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-      P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
+      for( int idim = 0; idim < OHMMS_DIM; idim++)
+        P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
       //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
     }
   }
@@ -72,7 +73,8 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
         int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-        P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
+        for( int idim = 0; idim < OHMMS_DIM; idim++)
+          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
         //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
       }
     }
@@ -111,7 +113,7 @@ void MagDensityEstimator::addObservables(PropertySetType& plist, BufferType& col
 {
   //current index
   my_index_ = collectables.current();
-  std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
+  std::vector<RealType> tmp(OHMMS_DIM*NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
   //potentialIndex=collectables.current();
   //vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
@@ -121,9 +123,10 @@ void MagDensityEstimator::addObservables(PropertySetType& plist, BufferType& col
 void MagDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
 {
   int loc = h5desc.size();
-  std::vector<int> ng(OHMMS_DIM);
+  std::vector<int> ng(OHMMS_DIM+1);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
+  ng[OHMMS_DIM]=OHMMS_DIM;
   h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, my_index_);
