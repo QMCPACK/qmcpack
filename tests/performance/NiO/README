@@ -55,9 +55,11 @@ limitations.
 
 Download the necessary NiO h5 orbital files of different sizes from
 the following link
+
 https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
 Or directly download files in the command line via curl -L -O -J <URL>
+
 # NiO-fcc-supertwist111-supershift000-S1.h5
 https://m.box.com/file/284382973675/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 # NiO-fcc-supertwist111-supershift000-S2.h5
@@ -81,7 +83,10 @@ https://m.box.com/file/178686464361/download?shared_link=https%3A%2F%2Fanl.box.c
 # NiO-fcc-supertwist111-supershift000-S256.h5
 https://m.box.com/file/178703355825/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
-Only need to download the problem sizes to be included in the benchmarking runs.
+The above direct links were verified in June 2022 but may be fragile.
+
+Only the specific problem sizes needed for the intended benchmarking runs need to be downloaded.
+
 Please check the md5 value of h5 files before starting any benchmarking.
 
 $ md5sum *.h5
