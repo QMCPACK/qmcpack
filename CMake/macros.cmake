@@ -304,7 +304,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "latdev"
       "EnergyEstim__nume_real"
       "kecorr"
-      "mpc")
+      "mpc"
+      "soecp")
     list(
       APPEND
       CHECK_SCALAR_FLAG
@@ -337,7 +338,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--latdev"
       "--el"
       "--kec"
-      "--mpc")
+      "--mpc"
+      "--sopp")
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")

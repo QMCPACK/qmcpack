@@ -221,7 +221,7 @@ A typical application will include the SOC terms in the local energy, and an exa
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source=ion0" target="ion0" physical="true"/>
-    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml">
+    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" algorithm="non-batched">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
   </hamiltonian>
@@ -243,6 +243,7 @@ An example output is shown below
 
 The ``NonLocalECP`` represents the :math:`W^{\rm ARECP}`, ``SOECP`` represents the :math:`W^{\rm SORECP}`, and the sum is the full :math:`W^{\rm RECP}` contribution.
 
+Note that for now, the default "batched" non-local pseudopotential evaluation is not compatible with dynamical spin QMC calculations.  Therefore, the specification of algorithm="non-batched" in all pseudopotential blocks is required.  
 
 
 .. bibliography:: /bibs/spin-orbit.bib

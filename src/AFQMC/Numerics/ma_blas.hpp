@@ -265,8 +265,8 @@ MultiArray2DC&& gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T 
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
-    M = a.size(1);
-    N = b.size(1);
+    M = std::get<1>(a.sizes());
+    N = std::get<1>(b.sizes());
     K = a.size();
     assert(a.size() == b.size() and c.size() == b.size(1) and c.size(1) == a.size(1));
   }
