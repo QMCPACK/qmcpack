@@ -428,7 +428,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
 
       T rmin = delx * delx + dely * dely + delz * delz;
       int ic = 0;
-#pragma unroll 7
+#pragma unroll(7)
       for (int c = 1; c < 8; ++c)
       {
         const T x  = delx + cellx[c];
@@ -489,7 +489,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
 
     T rmin = delx * delx + dely * dely + delz * delz;
     int ic = 0;
-#pragma unroll 7
+#pragma unroll(7)
     for (int c = 1; c < 8; ++c)
     {
       const T x  = delx + cellx[c];
@@ -521,7 +521,7 @@ struct DTD_BConds<T, 3, PPPG + SOA_OFFSET>
     const T delz = dz + ar_0 * r02 + ar_1 * r12 + ar_2 * r22;
 
     T rmin = delx * delx + dely * dely + delz * delz;
-#pragma unroll 7
+#pragma unroll(7)
     for (int c = 1; c < 8; ++c)
     {
       const T x  = delx + cellx[c];
@@ -614,7 +614,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
 
       T rmin = delx * delx + dely * dely;
       int ic = 0;
-#pragma unroll 3
+#pragma unroll(3)
       for (int c = 1; c < 4; ++c)
       {
         const T x  = delx + cellx[c];
@@ -671,7 +671,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
 
     T rmin = delx * delx + dely * dely;
     int ic = 0;
-#pragma unroll 3
+#pragma unroll(3)
     for (int c = 1; c < 4; ++c)
     {
       const T x  = delx + cellx[c];
@@ -699,7 +699,7 @@ struct DTD_BConds<T, 3, PPNG + SOA_OFFSET>
     const T dely = dy + ar_0 * r01 + ar_1 * r11;
 
     T rmin = delx * delx + dely * dely;
-#pragma unroll 3
+#pragma unroll(3)
     for (int c = 1; c < 4; ++c)
     {
       const T x  = delx + cellx[c];
