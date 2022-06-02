@@ -664,8 +664,8 @@ void EinsplineSetExtended<T>::get_split_spline_pointers()
       cudaCheck(cudaSetDevice(gpu::device_group_numbers[i]));
       if (i != gpu::relative_rank % gpu::device_group_size)
       {
-        cudaCheck(cudaIpcOpenMemHandle((void**))&spline_rank_pointers[i], spline_rank_handles[gpu::device_rank_numbers[i]],
-                  cudaIpcMemLazyEnablePeerAccess);
+        cudaCheck(cudaIpcOpenMemHandle((void**)&spline_rank_pointers[i], spline_rank_handles[gpu::device_rank_numbers[i]],
+                  cudaIpcMemLazyEnablePeerAccess));
       }
       else
         spline_rank_pointers[i] = CudaMultiSpline->coefs;
