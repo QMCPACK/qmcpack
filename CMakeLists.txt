@@ -798,7 +798,7 @@ if(ENABLE_ROCM)
   find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
   set(HIP_ARCH
-      "gfx906,gfx908"
+      "gfx906,gfx908,gfx90a"
       CACHE STRING "HIP architecture gfxXXX")
   list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
