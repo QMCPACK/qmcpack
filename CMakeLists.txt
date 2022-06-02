@@ -797,9 +797,7 @@ if(ENABLE_ROCM)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
-  set(HIP_ARCH
-      "gfx906,gfx908,gfx90a"
-      CACHE STRING "HIP architecture gfxXXX")
+  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
   list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
@@ -807,9 +805,6 @@ if(ENABLE_ROCM)
   list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
   list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
   list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
-  if(${COMPILER} MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-pass-failed")
-  endif()
 
   if(BUILD_AFQMC)
     find_package(rocrand CONFIG REQUIRED)
