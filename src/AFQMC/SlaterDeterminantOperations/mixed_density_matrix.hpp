@@ -397,10 +397,10 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
   }
   else
   {
-    assert(A.size(0) == BV.size(0)); // [BV] = [MxN]
-    assert(A.size(1) == BV.size(1));
-    assert(C.size(0) == A.size(0));
-    assert(C.size(1) == A.size(0));
+    assert( std::get<0>(A.sizes()) == std::get<0>(BV.sizes()) ); // [BV] = [MxN]
+    assert( std::get<1>(A.sizes()) == std::get<1>(BV.sizes()) );
+    assert( std::get<0>(C.sizes()) == std::get<0>(A.sizes()) );
+    assert( std::get<1>(C.sizes()) == std::get<0>(A.sizes()) );
   }
 
   using ma::determinant_from_geqrf;
@@ -473,7 +473,7 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
     ma::product(B, H(VT), BV);
 
     // BV = BV * inv(S), which works since S is diagonal and real
-    term_by_term_matrix_vector(ma::TOp_DIV, 1, BV.size(0), BV.size(1), ma::pointer_dispatch(BV.origin()), BV.stride(0),
+    term_by_term_matrix_vector(ma::TOp_DIV, 1, std::get<0>(BV.sizes()), std::get<1>(BV.sizes()), ma::pointer_dispatch(BV.origin()), BV.stride(0),
                                ma::pointer_dispatch(S.origin()), 1);
 
     // UA = H(U) * H(A)
