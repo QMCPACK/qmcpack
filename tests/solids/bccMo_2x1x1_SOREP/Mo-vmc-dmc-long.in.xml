@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="Mo-vmc-dmc-long" series="0"> 
+    <application name="qmcapp" role="molecu" class="serial" version="0.2"/>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+      <parameter name="lattice">
+     5.952636864   5.952636864   5.952636864
+      -2.976318432   2.976318432   2.976318432
+      -2.976318432   -2.976318432   2.976318432
+      </parameter>
+      <parameter name="bconds">p p p </parameter>
+      <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="2">
+    <group name="Mo">
+      <parameter name="charge">14</parameter>
+      <parameter name="valence">14</parameter>
+      <parameter name="atomicnumber">0</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0   0   0
+   0.5  0   0
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      Mo  Mo
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i" spinor="yes">
+    <group name="u" size="28">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+ <sposet_builder name="spo_builder" type="spinorbspline" href="eshdf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="i" size="28" meshfactor="1.0" precision="single">
+      <sposet type="bspline" name="myspo" size="28">
+        <occupation mode="ground"/>
+      </sposet>
+    </sposet_builder>
+    <determinantset>
+      <slaterdeterminant>
+         <determinant id="det" group="u" sposet="myspo" size="28"/>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10">
+        <coefficients id="uu" type="Array"> 0.4377052539 0.3234564151 0.2407991166 0.1759617013 0.1277362253 0.09146430044 0.06325631389 0.0418800602 0.0240753101 0.01263463938</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="Mo" cusp="0.0" size="10">
+        <coefficients id="Mo" type="Array"> -1.233031829 -0.6150743239 -0.716666697 -0.6458417055 -0.5113032038 -0.4243777586 -0.3130696067 -0.2080519783 -0.1335840987 -0.06559165286</coefficients>
+      </correlation>
+    </jastrow>    
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml" physicalSO="yes" algorithm="non-batched">
+      <pseudo elementType="Mo" href="Mo.ccECP.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+   <qmc method="vmc" move="pbyp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers">    16 </parameter>
+     <parameter name="substeps">  1 </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="steps">  1 </parameter>
+     <parameter name="blocks">  1 </parameter>
+     <parameter name="timestep">  1.0 </parameter>
+   </qmc>
+   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 16 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   100 </parameter>
+     <parameter name="blocks">  1000 </parameter>
+   </qmc>
+  
+</simulation>
