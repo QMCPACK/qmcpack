@@ -31,7 +31,7 @@
 
 #define cudaCheck(call) \
 { \
-    hipError_t code = call; \
+    cudaError_t code = call; \
     if (code != cudaSuccess) \
       cudaThrow(#call, code, __func__, __FILE__, __LINE__); \
 }
@@ -39,8 +39,8 @@
 inline void cudaThrow(const char* call, cudaError_t code,
                       const char* func, const char* file, int line)
 {
-  char const* name = hipGetErrorName(code);
-  char const* string = hipGetErrorString(code);
+  char const* name = cudaGetErrorName(code);
+  char const* string = cudaGetErrorString(code);
   std::cerr << call << " returned " << name << " (" << string << ")." << std::endl;
   std::cerr << "func: " << func << std::endl;
   std::cerr << "file: " << file << std::endl;
@@ -50,7 +50,7 @@ inline void cudaThrow(const char* call, cudaError_t code,
 
 #define cudaCheckMalloc(call, ...) \
 { \
-    hipError_t code = call; \
+    cudaError_t code = call; \
     if (code != cudaSuccess) \
       cudaThrowMalloc(#call, code, ##__VA_ARGS__, __func__, __FILE__, __LINE__); \
 }
@@ -58,8 +58,8 @@ inline void cudaThrow(const char* call, cudaError_t code,
 inline void cudaThrowMalloc(const char* call, cudaError_t code,
                             const char* func, const char* file, int line)
 {
-  char const* name = hipGetErrorName(code);
-  char const* string = hipGetErrorString(code);
+  char const* name = cudaGetErrorName(code);
+  char const* string = cudaGetErrorString(code);
   std::cerr << call << " returned " << name << " (" << string << ")." << std::endl;
   std::cerr << "func: " << func << std::endl;
   std::cerr << "file: " << file << std::endl;
@@ -71,8 +71,8 @@ inline void cudaThrowMalloc(const char* call, cudaError_t code,
                             std::size_t size, const char* purpose,
                             const char* func, const char* file, int line)
 {
-  char const* name = hipGetErrorName(code);
-  char const* string = hipGetErrorString(code);
+  char const* name = cudaGetErrorName(code);
+  char const* string = cudaGetErrorString(code);
   std::cerr << call << " returned " << name << " (" << string << ")." << std::endl;
   std::cerr << "func: " << func << std::endl;
   std::cerr << "file: " << file << std::endl;
