@@ -198,7 +198,7 @@ public:
   UPtrVector<MCPWalker>& get_walkers() { return walkers_; }
   const UPtrVector<MCPWalker>& get_walkers() const { return walkers_; }
   const UPtrVector<MCPWalker>& get_dead_walkers() const { return dead_walkers_; }
-
+  
   UPtrVector<ParticleSet>& get_elec_particle_sets() { return walker_elec_particle_sets_; }
 
   UPtrVector<TrialWaveFunction>& get_twfs() { return walker_trial_wavefunctions_; }

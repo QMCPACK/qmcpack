@@ -228,6 +228,7 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations()
 {
+
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
@@ -295,7 +296,6 @@ void QMCCostFunctionBatched::checkConfigurations()
 
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
 
-    //app_log() << "Inside checkConfigurations, num_batches:  " << num_batches << " local_samples: " << local_samples << " final_batch_size: " << final_batch_size << std::endl; 
     for (int inb = 0; inb < num_batches; inb++)
     {
       int current_batch_size = walkers_per_crowd[crowd_id];
@@ -304,13 +304,14 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
-    //app_log() << "In inb loop, inb: " << inb << " current_batch_size: " << current_batch_size << " base_sample_index: " << base_sample_index << std::endl;
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
       const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
+
+    
 
       ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
       ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
@@ -338,6 +339,7 @@ void QMCCostFunctionBatched::checkConfigurations()
         h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
+
       // Compute distance tables.
       ParticleSet::mw_update(p_list);
 
@@ -346,6 +348,8 @@ void QMCCostFunctionBatched::checkConfigurations()
 
       TrialWaveFunction::mw_evaluateDeltaLogSetup(wf_list, p_list, opt_data.get_log_psi_fixed(),
                                                   opt_data.get_log_psi_opt(), ref_dLogPsi, ref_d2LogPsi);
+
+      TrialWaveFunction::mw_evaluateLog(wf_list, p_list);
 
       if (needGrads)
       {
@@ -368,8 +372,6 @@ void QMCCostFunctionBatched::checkConfigurations()
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
             HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
           
-            //app_log() << "Within j loop, j: " << j << " ib: " << ib << " is: " << is << " DerivRecords[is][j]: " << DerivRecords[is][j] << " HDerivRecords[is][j]: " << HDerivRecords[is][j]
-              //  << " energy_list[ib]: " << energy_list[ib] << std::endl;
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
@@ -399,6 +401,7 @@ void QMCCostFunctionBatched::checkConfigurations()
       }
       else
       {
+
         // Energy
         auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
 
@@ -413,8 +416,12 @@ void QMCCostFunctionBatched::checkConfigurations()
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
+
+        RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
+          RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+
         }
-      }
+             }
     }
   };
 
@@ -463,7 +470,6 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
                                                         DescentEngine& descentEngineObj,
                                                         const std::string& MinMethod)
 {
-  //APP_ABORT("LMYEngine not implemented with batch optimization");
 
 //Copied code from checkConfigurations, main difference is passing local energy and derivatives to either the LM or descent engine.
 
@@ -537,7 +543,6 @@ ScopedTimer tmp_timer(check_config_timer_);
     double by_hand_element = 0.0;
         double sample_count = 0.0;
 
-    app_log() << "Inside checkConfigurations, num_batches:  " << num_batches << " local_samples: " << local_samples << " final_batch_size: " << final_batch_size << std::endl; 
     for (int inb = 0; inb < num_batches; inb++)
     {
       int current_batch_size = walkers_per_crowd[crowd_id];
@@ -546,7 +551,6 @@ ScopedTimer tmp_timer(check_config_timer_);
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
-    //app_log() << "In inb loop, inb: " << inb << " current_batch_size: " << current_batch_size << " base_sample_index: " << base_sample_index << std::endl;
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);
@@ -618,40 +622,22 @@ ScopedTimer tmp_timer(check_config_timer_);
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
             HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
        
-            //der_rat_samp.push_back(DerivRecords[is][j]);
-            //le_der_samp.push_back(HDerivRecords[is][j]);   
 
             auto etmp    = energy_list[ib];   
             der_rat_samp.at(j+1) = std::real(dlogpsi_array.getValue(j, ib));
             le_der_samp.at(j+1) = std::real(dhpsioverpsi_array.getValue(j, ib)) +etmp*std::real(dlogpsi_array.getValue(j, ib));
 
-            //app_log() << "Within j loop, j: " << j << " ib: " << ib << " is: " << is << " DerivRecords[is][j]: " << DerivRecords[is][j] << " HDerivRecords[is][j]: " << HDerivRecords[is][j]
-              //  << " energy_list[ib]: " << energy_list[ib] << std::endl;
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
  
-            //app_log() << "etmp: " << etmp <<  " der_rat_samp[1]: " << der_rat_samp[1] << " le_der_samp[1]: " << le_der_samp[1] << std::endl; 
             if (MinMethod == "adaptive")
             {
-                /*
-                std::cout << "der_rat_samp before take_sample: ";
-                for(int i = 0; i < der_rat_samp.size();i++)
-                {
-                    std::cout << der_rat_samp[i] << " , ";
-                }
-                std::cout << std::endl;
-                */
-
-                by_hand_element = by_hand_element+ le_der_samp[1];
-               sample_count = sample_count + 1.0; 
-                //Need to figure out weights
                 EngineObj->take_sample(der_rat_samp,le_der_samp, le_der_samp,1.0, 1.0);
             }
             else if (MinMethod == "descent")
             {
                 int ip = omp_get_thread_num();
-                //int ip = 1;
                 descentEngineObj.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
             }      
             
@@ -696,9 +682,6 @@ ScopedTimer tmp_timer(check_config_timer_);
         }
       }
     }
-     std::cout << "Totals, by_hand_element: " << by_hand_element << " sample_count: " << sample_count << std::endl;
-        by_hand_element = by_hand_element/sample_count;
-        std::cout << " Did Monte Carlo by hand for 1,0 element: " << by_hand_element << std::endl;
 
   };
 
@@ -794,12 +777,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
 
 QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)
 {
-    std::cout << "Entered correlatedSampling, batched, needGrad: " << needGrad << std::endl;
-    std::cout << "Check WF params" << std::endl;
-    for(int i = 0; i < OptVariables.size();i++)
-    {
-        std::cout << "Param #" << i << " : " << OptVariables[i] << std::endl;
-    }
+    
   ScopedTimer tmp_timer(corr_sampling_timer_);
 
   {
@@ -876,6 +854,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       // Update distance tables, etc for the loaded sample positions
       ParticleSet::mw_update(p_list, true);
 
+
       // Evaluate difference in log psi
 
       std::vector<std::unique_ptr<ParticleSet::ParticleGradient>> dummyG_ptr_list;
@@ -917,6 +896,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
         opt_data.get_wgt2() += inv_n_samples * weight * weight;
       }
 
+      TrialWaveFunction::mw_evaluateLog(wf_list, p_list);
+     
       if (needGrad)
       {
         // Parameter derivatives
@@ -956,7 +937,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
           RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
-          std::cout << "etmp: " << etmp << " RecordsOnNode[is][ENERGY_NEW]: " << RecordsOnNode[is][ENERGY_NEW] << std::endl;
         }
       }
     }

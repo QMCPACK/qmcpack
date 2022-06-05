@@ -1420,6 +1420,7 @@ parameterDirections.at(i) = tmpParameterDirections.at(i);
   for (int i = 0; i < numParams; i++)
     currParams.at(i) = optTarget->Params(i);
 
+
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
@@ -1906,6 +1907,7 @@ void QMCFixedSampleLinearOptimize::generateSamples()
   //     W.reset();
   branchEngine->flush(0);
   branchEngine->reset();
+
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;

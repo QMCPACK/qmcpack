@@ -449,13 +449,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
           }
           else
           {
-                std::cout << "le_der_samp before take_sample: ";
-                for(int i = 0; i < le_der_samp.size();i++)
-                {    
-                    std::cout << le_der_samp[i] << " , ";
-                }    
-                std::cout << std::endl;
-
             EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, saved[REWEIGHT]);
           }
         }
@@ -552,6 +545,7 @@ void QMCCostFunction::resetPsi(bool final_reset)
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
+
   for (int ip = 0; ip < NumThreads; ++ip)
   {
     //    synchronize the random number generator with the node

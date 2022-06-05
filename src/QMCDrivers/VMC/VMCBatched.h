@@ -121,6 +121,8 @@ private:
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;
 
+  /// Number of times walkers are initialized in run()
+  int init_count = 0;
 
   /// Storage for samples (later used in optimizer)
   SampleStack& samples_;

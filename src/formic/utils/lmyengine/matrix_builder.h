@@ -424,7 +424,6 @@ int my_rank = formic::mpi::rank();
                        double vgs_samp,
                        double weight_samp)
       {
-        
         // dimension of matrix 
         const int ndim = der_rat_samp.size();
 
@@ -455,7 +454,7 @@ int my_rank = formic::mpi::rank();
 
         // for ground state calculations 
         if ( _ground_state ) {
-           
+          
           // add contribution to hamiltonian matrix 
           formic::xgemm('N', 'N', ndim, ndim, 1, ww * formic::unity(S()), &der_rat_samp_ct.at(0), ndim, &le_der_samp.at(0), 1, formic::unity(S()), &(_hmat_temp.at(myThread).at(0,0)), ndim);
 
@@ -532,7 +531,7 @@ int my_rank = formic::mpi::rank();
         int my_rank = formic::mpi::rank(); 
         int num_rank = formic::mpi::size();
 
-        //std::cout << "netering matrix build finish_sample1" << std::endl;
+       // std::cout << "entering matrix build finish_sample" << std::endl;
 
         // get the number of threads 
         int NumThreads = omp_get_max_threads();

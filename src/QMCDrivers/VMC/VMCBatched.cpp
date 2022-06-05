@@ -149,9 +149,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
             crowd.incReject();
             isAccepted.push_back(false);
           }
-
+         
+        
         twf_dispatcher.flex_accept_rejectMove(walker_twfs, walker_elecs, iat, isAccepted, true);
-
         ps_dispatcher.flex_accept_rejectMove<CT>(walker_elecs, iat, isAccepted);
       }
     }
@@ -163,6 +163,9 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.buffer_timer.start();
   twf_dispatcher.flex_evaluateGL(walker_twfs, walker_elecs, recompute);
+  
+  twf_dispatcher.flex_evaluateLog(walker_twfs, walker_elecs);
+  
   if (sft.qmcdrv_input.get_debug_checks() & DriverDebugChecks::CHECKGL_AFTER_MOVES)
     checkLogAndGL(crowd, "checkGL_after_moves");
   timers.buffer_timer.stop();
@@ -295,14 +298,18 @@ bool VMCBatched::run()
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
                                   myComm->rank() == 0);
 
-  { // walker initialization
+if(init_count < 1)
+  { 
+    // walker initialization
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
     print_mem("VMCBatched after initialLogEvaluation", app_summary());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("InitialLogEvaluation");
-  }
+    init_count++;
+}
+
 
   ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
@@ -357,6 +364,7 @@ bool VMCBatched::run()
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       vmc_state.step = step;
+        
       crowd_task(crowds_.size(), runVMCStep, vmc_state, timers_, std::ref(step_contexts_), std::ref(crowds_));
 
       if (collect_samples_)
@@ -368,7 +376,7 @@ bool VMCBatched::run()
         }
       }
     }
-    print_mem("VMCBatched after a block", app_debug_stream());
+        print_mem("VMCBatched after a block", app_debug_stream());
     if (qmcdriver_input_.get_measure_imbalance())
       measureImbalance("Block " + std::to_string(block));
     endBlock();
@@ -388,6 +396,8 @@ bool VMCBatched::run()
       break;
     }
   }
+
+
   // This is confusing logic from VMC.cpp want this functionality write documentation of this
   // and clean it up
   // bool wrotesamples = qmcdriver_input_.get_dump_config();
@@ -420,6 +430,8 @@ bool VMCBatched::run()
 
   return finalize(num_blocks, true);
 }
+
+
 
 void VMCBatched::enable_sample_collection()
 {

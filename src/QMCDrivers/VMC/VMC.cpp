@@ -86,6 +86,7 @@ bool VMC::run()
         wClones[ip]->resetCollectables();
         bool recompute = (nBlocksBetweenRecompute && (step + 1) == nSteps &&
                           (1 + block) % nBlocksBetweenRecompute == 0 && qmc_driver_mode[QMC_UPDATE_MODE]);
+        
         Movers[ip]->advanceWalkers(wit, wit_end, recompute);
         if (has_collectables)
           wClones[ip]->Collectables *= cnorm;

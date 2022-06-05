@@ -59,7 +59,6 @@ QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::L
 
       // record the sample's local energy
       //lce_vec.at(j) = saved[ENERGY_NEW];
-
       // take sample
       EngineObj->take_sample(saved[ENERGY_NEW], 1.0, saved[REWEIGHT] / SumValue[SUM_WGT]);
     }

@@ -602,7 +602,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   for (int iw = 0; iw < ham_list.size(); ++iw)
     local_energies[iw] = ham_list[iw].get_LocalEnergy();
-
+  
   return local_energies;
 }
 

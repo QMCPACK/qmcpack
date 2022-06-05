@@ -281,10 +281,10 @@ void QMCFixedSampleLinearOptimizeBatched::generateSamples()
 {
   app_log() << "<optimization-report>" << std::endl;
   t1.restart();
-  //     W.reset();
+ //      W.reset();
   samples_.resetSampleCount();
   population_.set_variational_parameters(optTarget->getOptVariables());
-
+  
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "</vmc>" << std::endl;
@@ -1057,7 +1057,6 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
-    app_log() << "Inside batched version of code?" << std::endl;
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
 
@@ -1070,7 +1069,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   // get number of optimizable parameters
   const int numParams = optTarget->getNumParams();
 
-  std::cout << "check optTargetInfo saved_grads_flag: " << saved_grads_flag << " init_num_samp: " << init_num_samp << " numParams: " << numParams << std::endl;
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
   const std::vector<double> shifts_s = prepare_shifts(bestShift_s);
@@ -1092,10 +1090,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   }
 
   
-  std::cout << "EngineObj->full_init(): " << EngineObj->full_init() << std::endl;
-  //formic::VarDeps real_vdeps(numParams, std::vector<double>());
-    //vdeps = real_vdeps;
-
+  
   if (!EngineObj->full_init())
   {
       std::cout << "Entered here for batched?" << std::endl;
@@ -1117,9 +1112,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   // turn on wavefunction update mode
   EngineObj->turn_on_update();
-
-    //EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
-     // EngineObj->reset();
 
   // initialize the engine if we do not use block lm or it's the first part of block lm
   EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
@@ -1147,7 +1139,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************************************************"
             << std::endl
             << std::endl;
-  //const Return_t starting_cost = this->optTarget->LMYEngineCost(true);
 
   // prepare wavefunction update which does nothing if we do not use block lm
   EngineObj->wfn_update_prep();
@@ -1233,7 +1224,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << std::endl;
 
   // generate the new sample on which we will compare the different shifts
-
   finish();
   app_log() << std::endl
             << "*************************************************************" << std::endl
@@ -1252,11 +1242,11 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "Comparing different shifts' cost function values on updated sample" << std::endl
             << "******************************************************************" << std::endl
             << std::endl;
-
   // update the current parameters to those of the new guiding function
   for (int i = 0; i < numParams; i++)
     currParams.at(i) = optTarget->Params(i);
 
+  
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i = 0; i < numParams; i++)
     optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i + 1);
