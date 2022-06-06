@@ -66,22 +66,23 @@ void MPC::init_gvecs()
       Rho_G.push_back(PtclRef->Density_G[iG]);
     }
   }
-  SplineDim = 4 * maxIndex;
-  MaxDim    = std::max(maxIndex[0], std::max(maxIndex[1], maxIndex[2]));
+  for (int idim = 0; idim < OHMMS_DIM; idim++)
+    SplineDim[idim] = 4 * maxIndex[idim];
+  MaxDim = std::max(maxIndex[0], std::max(maxIndex[1], maxIndex[2]));
   app_log() << "  Using " << Gvecs.size() << " G-vectors for MPC interaction.\n";
   app_log() << "   Using real-space box of size [" << SplineDim[0] << "," << SplineDim[1] << "," << SplineDim[2]
             << "] for MPC spline.\n";
 }
 
 
-void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
+void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, size_t N)
 {
   double L     = PtclRef->getLattice().WignerSeitzRadius;
   double Linv  = 1.0 / L;
   double Linv3 = Linv * Linv * Linv;
   // create an FFTW plan
-  Array<std::complex<double>, 3> rBox(N, N, N);
-  Array<std::complex<double>, 3> GBox(N, N, N);
+  Array<std::complex<double>, 3> rBox({N, N, N});
+  Array<std::complex<double>, 3> GBox({N, N, N});
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
   DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(PtclRef->getLattice());
@@ -217,9 +218,8 @@ void MPC::init_f_G()
 
 void MPC::init_spline()
 {
-  Array<std::complex<double>, 3> rBox(SplineDim[0], SplineDim[1], SplineDim[2]),
-      GBox(SplineDim[0], SplineDim[1], SplineDim[2]);
-  Array<double, 3> splineData(SplineDim[0], SplineDim[1], SplineDim[2]);
+  Array<std::complex<double>, 3> rBox(SplineDim), GBox(SplineDim);
+  Array<double, 3> splineData(SplineDim);
   GBox   = std::complex<double>();
   Vconst = 0.0;
   // Now fill in elements of GBox

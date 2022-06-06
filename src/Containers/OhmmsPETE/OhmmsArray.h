@@ -16,100 +16,73 @@
 
 /** A D-dimensional Array class based on PETE
  *
- *  Equivalent to blitz::Array<T,D>, pooma::Array<D,T>.
- *  No operators are provided.
- *  \todo use aligned_vector<T>
  */
-#include <vector>
-#include <iostream>
+#include <array>
+#include <type_traits>
+#include "OhmmsVector.h"
 
-template<class T, unsigned D>
-struct Array
+template<class T, unsigned D, typename ALLOC = std::allocator<T>>
+class Array
 {
+public:
   using Type_t      = T;
-  using Container_t = std::vector<T>;
-  using This_t      = Array<T, D>;
-
-  size_t Length[D];
-  Container_t X;
+  using Container_t = qmcplusplus::Vector<T, ALLOC>;
+  using This_t      = Array<T, D, ALLOC>;
 
   //default constructor
-  Array()
-  {
-    for (int i = 0; i < D; i++)
-      Length[i] = 0;
-  }
+  Array() { Length.fill(0); }
 
   //copy constructor
   Array(const Array& rhs)
   {
-    resize(rhs);
+    resize(rhs.shape());
     std::copy(rhs.begin(), rhs.end(), X.begin());
   }
 
-  // specialized for 1-Dim
-  Array(size_t n) { resize(n); }
-
-  // specialized for 2-Dim
-  Array(size_t n, size_t m) { resize(n, m); }
-
-  // specialized for 3-Dim
-  Array(size_t l, size_t m, size_t n) { resize(l, m, n); }
-
-  // specialized for 4-Dim
-  Array(size_t l, size_t m, size_t n, size_t o) { resize(l, m, n, o); }
-
-  // specialized for something like TinyVector
-  template<typename ST1>
-  Array(ST1* dims)
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  Array(const std::array<SIZET, D>& dims)
   {
     resize(dims);
   }
 
-  // do nothing Destructor
-  ~Array() {}
-
   inline unsigned dim() const { return D; }
-  inline size_t* shape() const { return &Length[0]; }
+  inline const std::array<size_t, D>& shape() const { return Length; }
   inline size_t size() const { return X.size(); }
   inline size_t size(int i) const { return Length[i]; }
 
   Container_t& storage() { return X; }
 
-  template<typename TT>
-  void resize(const Array<TT, D>& rhs)
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  void resize(const std::array<SIZET, D>& dims)
   {
-    X.resize(rhs.size());
-    for (int i = 0; i < D; i++)
-      Length[i] = rhs.Length[i];
+    for (int i = 0; i < dims.size(); i++)
+      Length[i] = dims[i];
+    X.resize(full_size(Length));
   }
 
+  void resize(size_t n) { resize(std::array<size_t, 1>{n}); }
 
-  template<typename ST1>
-  void resize(ST1* newdims)
-  {
-    int ntot = 1;
-    for (int i = 0; i < D; ++i)
-      ntot *= Length[i] = newdims[i];
-    if (ntot == 0)
-      return;
-    X.resize(ntot);
-  }
+  void resize(size_t m, size_t n) { resize({m, n}); }
 
-  // resize is specialized for D-dimensional
-  void resize(size_t);
-  void resize(size_t, size_t);
-  void resize(size_t, size_t, size_t);
-  void resize(size_t, size_t, size_t, size_t);
+  void resize(size_t l, size_t m, size_t n) { resize({l, m, n}); }
 
   inline typename Container_t::iterator begin() { return X.begin(); }
   inline typename Container_t::iterator end() { return X.end(); }
   inline typename Container_t::const_iterator begin() const { return X.begin(); }
   inline typename Container_t::const_iterator end() const { return X.end(); }
 
-  inline Type_t* data() { return &(X[0]); }
-
-  inline const Type_t* data() const { return &(X[0]); }
+  inline Type_t* data() { return X.data(); }
+  inline const Type_t* data() const { return X.data(); }
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  inline Type_t* device_data()
+  {
+    return X.device_data();
+  }
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  inline const Type_t* device_data() const
+  {
+    return X.device_data();
+  }
 
   inline const Type_t* first_address() const { return &(X[0]); }
 
@@ -129,16 +102,16 @@ struct Array
   {
     if (&rhs != this)
     {
-      resize(rhs);
+      resize(rhs.shape());
       std::copy(rhs.begin(), rhs.end(), X.begin());
     }
     return *this;
   }
 
-  template<typename TT>
-  This_t& operator=(const Array<TT, D>& rhs)
+  template<typename TT, typename ALLOC2>
+  This_t& operator=(const Array<TT, D, ALLOC2>& rhs)
   {
-    resize(rhs);
+    resize(rhs.shape());
     std::copy(rhs.begin(), rhs.end(), X.begin());
     return *this;
   }
@@ -160,48 +133,25 @@ struct Array
     return X[l + Length[3] * (k + Length[2] * (j + Length[1] * i))];
   }
 
-  inline Type_t sum()
+  inline Type_t sum() const
   {
     Type_t s = 0;
     for (int i = 0; i < X.size(); ++i)
       s += X[i];
     return s;
   }
+
+private:
+  std::array<size_t, D> Length;
+  Container_t X;
+  /// compute the full size of dims
+  size_t full_size(const std::array<size_t, D>& dims) const
+  {
+    size_t total = dims[0];
+    for (int i = 1; i < dims.size(); i++)
+      total *= dims[i];
+    return total;
+  }
 };
 
-
-//need to assert
-template<class T, unsigned D>
-void Array<T, D>::resize(size_t n)
-{
-  Length[0] = n;
-  X.resize(n, T());
-}
-
-template<class T, unsigned D>
-void Array<T, D>::resize(size_t n, size_t m)
-{
-  Length[0] = n;
-  Length[1] = m;
-  X.resize(n * m, T());
-}
-
-template<class T, unsigned D>
-void Array<T, D>::resize(size_t l, size_t m, size_t n)
-{
-  Length[0] = l;
-  Length[1] = m;
-  Length[2] = n;
-  X.resize(l * m * n); //,T());
-}
-
-template<class T, unsigned D>
-void Array<T, D>::resize(size_t l, size_t m, size_t n, size_t o)
-{
-  Length[0] = l;
-  Length[1] = m;
-  Length[2] = n;
-  Length[3] = o;
-  X.resize(l * m * n * o); //,T());
-}
 #endif //OHMMS_PETE_ARRAY_H

@@ -15,6 +15,7 @@
 
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
+
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 
@@ -35,7 +36,7 @@ protected:
   std::shared_ptr<UBspline_3d_d> VlongSpline;
   //std::shared_ptr<UBspline_3d_d> DensitySpline;
   double Vconst;
-  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
+  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, size_t N);
   void init_gvecs();
   void init_f_G();
   void init_spline();
@@ -43,7 +44,7 @@ protected:
   std::vector<TinyVector<int, OHMMS_DIM>> Gints;
   std::vector<PosType> Gvecs;
   std::vector<ComplexType> Rho_G;
-  TinyVector<int, OHMMS_DIM> SplineDim;
+  std::array<size_t, OHMMS_DIM> SplineDim;
   int MaxDim;
   Return_t evalSR(ParticleSet& P) const;
   Return_t evalLR(ParticleSet& P) const;

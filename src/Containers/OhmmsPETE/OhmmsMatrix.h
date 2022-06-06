@@ -19,7 +19,7 @@
 #include <type_traits>
 #include <iostream>
 #include "PETE/PETE.h"
-#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsVector.h"
 
 namespace qmcplusplus
 {
