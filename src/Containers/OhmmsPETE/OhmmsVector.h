@@ -295,27 +295,27 @@ private:
   {
     if constexpr (std::is_trivial<T>::value)
       qmc_allocator_traits<Alloc>::fill_n(ptr, n_elements, val);
-    else if constexpr(qmc_allocator_traits<Alloc>::is_host_accessible)
-      for(size_t i = 0; i < n_elements; i++)
-        new(ptr + i) Type_t(val);
+    else if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
+      for (size_t i = 0; i < n_elements; i++)
+        new (ptr + i) Type_t(val);
   }
 
   inline static void construct_copy_elements(const Type_t* from, size_t n_elements, Type_t* to)
   {
-    if constexpr(qmc_allocator_traits<Alloc>::is_host_accessible)
+    if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
     {
       if constexpr (std::is_trivial<T>::value)
         std::copy_n(from, n_elements, to);
       else
-        for(size_t i = 0; i < n_elements; i++)
-          new(to + i) Type_t(*(from + i));
+        for (size_t i = 0; i < n_elements; i++)
+          new (to + i) Type_t(*(from + i));
     }
   }
 
   inline void static destroy_elements(Type_t* ptr, size_t n_elements)
   {
     if constexpr (!std::is_trivial<T>::value && qmc_allocator_traits<Alloc>::is_host_accessible)
-      for(size_t i = 0; i < n_elements; i++)
+      for (size_t i = 0; i < n_elements; i++)
         (ptr + i)->~Type_t();
   }
 };

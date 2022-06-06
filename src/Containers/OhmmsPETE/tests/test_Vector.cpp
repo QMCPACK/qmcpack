@@ -105,8 +105,21 @@ TEST_CASE("NestedContainers", "[OhmmsPETE]")
   vec_of_vecs[0].push_back(123);
   vec_of_vecs.resize(5);
   vec_of_vecs[0].push_back(123);
+  vec_of_vecs.resize(0);
   vec_of_vecs.resize(3);
   vec_of_vecs[0].push_back(123);
+  CHECK(vec_of_vecs[0].back() == 123);
+
+  Vector<std::vector<int>> vec_copy(vec_of_vecs);
+  REQUIRE(vec_copy.size() == 3);
+  REQUIRE(vec_copy[0].size() == 1);
+  CHECK(vec_copy[0].back() == 123);
+
+  Vector<std::vector<int>> vec_assign;
+  vec_assign = vec_of_vecs;
+  REQUIRE(vec_copy.size() == 3);
+  REQUIRE(vec_copy[0].size() == 1);
+  CHECK(vec_copy[0].back() == 123);
 }
 
 } // namespace qmcplusplus
