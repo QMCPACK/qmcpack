@@ -1548,7 +1548,7 @@ void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams,int numSamples)
 
 //Function for storing a sample (local energy and the sets of derivative ratios)
 template<typename S>
-void cqmc::engine::LMYEngine<S>::store_sample(std::vector<double> & der_rat_samp,std::vector<double> & le_der_samp,std::vector<double> & ls_der_samp,double vgs_samp,double lotf_samp,double weight_samp,int sample_count)
+void cqmc::engine::LMYEngine<S>::store_sample(std::vector<double> & der_rat_samp,std::vector<double> & le_der_samp,std::vector<double> & ls_der_samp,double vgs_samp,double weight_samp,int sample_count)
 {
 
 
@@ -1562,7 +1562,6 @@ void cqmc::engine::LMYEngine<S>::store_sample(std::vector<double> & der_rat_samp
 
 
     vgs_history.push_back(vgs_samp);
-    lotf_history.push_back(lotf_samp);
     weight_history.push_back(weight_samp);
 }
 
@@ -1591,7 +1590,6 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
         }
 
         double vgs = vgs_history[i];
-        double lotf = lotf_history[i];
         double weight = weight_history[i];
 
         if(filter_param_)
@@ -1613,13 +1611,11 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
             }
 
             //Need to add guiding function or change signature
-            //this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,lotf,weight);
             this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,weight);
 
         }
         else
          {
-            //this->take_sample(der_rat_samp,le_der_samp,le_der_samp,vgs,lotf,weight);
             this->take_sample(der_rat_samp,le_der_samp,le_der_samp,vgs,weight);
             }
 
@@ -1638,7 +1634,6 @@ void cqmc::engine::LMYEngine<S>::clear_histories()
         der_rat_history.clear();
         le_der_rat_history.clear();
         vgs_history.clear();
-        lotf_history.clear();
         weight_history.clear();
         if(my_rank == 0)
         {

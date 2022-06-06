@@ -471,6 +471,14 @@ void QMCCostFunctionBatched::engine_checkConfigurations(cqmc::engine::LMYEngine<
                                                         const std::string& MinMethod)
 {
 
+  if (MinMethod == "descent")
+  {
+    //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
+    OptVariablesForPsi.setRecompute();
+    //Reset vectors and scalars from any previous iteration
+    descentEngineObj.prepareStorage(omp_get_max_threads(), NumOptimizables);
+  }
+
 //Copied code from checkConfigurations, main difference is passing local energy and derivatives to either the LM or descent engine.
 
 ScopedTimer tmp_timer(check_config_timer_);
@@ -540,8 +548,15 @@ ScopedTimer tmp_timer(check_config_timer_);
     int final_batch_size;
 
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
-    double by_hand_element = 0.0;
-        double sample_count = 0.0;
+
+    if(EngineObj->getStoringSamples())
+     {
+        int numParams = EngineObj->getTotalParamNum();
+        //int numSamples = wRef.numSamples();
+        //app_log() << "Sizing matrices on a process for storing samples, total numParams: " << numParams << ", numSamples: " << numSamples << std::endl;
+        EngineObj->setUpStorage(numParams,local_samples);
+
+     }
 
     for (int inb = 0; inb < num_batches; inb++)
     {
@@ -631,11 +646,20 @@ ScopedTimer tmp_timer(check_config_timer_);
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
  
-            if (MinMethod == "adaptive")
-            {
-                EngineObj->take_sample(der_rat_samp,le_der_samp, le_der_samp,1.0, 1.0);
+           if (MinMethod == "adaptive")
+           { 
+              //Engines take 1.0 for weights until modified guiding function can be implemented  
+              // pass into engine
+              if(EngineObj->getStoringSamples())
+              {
+                EngineObj->store_sample(der_rat_samp, le_der_samp, le_der_samp,1.0,1.0,is);
+              }
+              else
+              {
+                EngineObj->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
+              }
             }
-            else if (MinMethod == "descent")
+           else if (MinMethod == "descent")
             {
                 int ip = omp_get_thread_num();
                 descentEngineObj.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);

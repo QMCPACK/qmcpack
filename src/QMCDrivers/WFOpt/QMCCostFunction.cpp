@@ -445,7 +445,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
           // pass into engine
           if(EngineObj->getStoringSamples())
           {
-            EngineObj->store_sample(der_rat_samp, le_der_samp, le_der_samp,ttgsr, lotf, saved[REWEIGHT],iw);
+            EngineObj->store_sample(der_rat_samp, le_der_samp, le_der_samp,ttgsr, saved[REWEIGHT],iw);
           }
           else
           {

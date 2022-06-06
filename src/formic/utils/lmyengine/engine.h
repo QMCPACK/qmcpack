@@ -284,8 +284,6 @@ private:
 
   std::vector<double> vgs_history;
 
-  std::vector<double> lotf_history;
-
   std::vector<double> weight_history;
 
   bool prev_descent_;
@@ -409,7 +407,6 @@ public:
                    std::vector<double> & le_der_samp,
                    std::vector<double> & ls_der_samp,
                    double vgs_samp,    // trial-to-guiding square ratio
-                   double lotf_samp,   // log of the trial function
                    double weight_samp,
                    int sample_count);
 
