@@ -17,6 +17,7 @@
 #include "OhmmsPETE/TinyVector.h"
 
 #include <stdio.h>
+#include <vector>
 #include <string>
 
 using std::string;
@@ -96,6 +97,16 @@ TEST_CASE("VectorViewer", "[OhmmsPETE]")
   REQUIRE(a[2] == -5);
 
   // TODO: add optional bounds checking to accesses via operator[]
+}
+
+TEST_CASE("NestedContainers", "[OhmmsPETE]")
+{
+  Vector<std::vector<int>> vec_of_vecs(2);
+  vec_of_vecs[0].push_back(123);
+  vec_of_vecs.resize(5);
+  vec_of_vecs[0].push_back(123);
+  vec_of_vecs.resize(3);
+  vec_of_vecs[0].push_back(123);
 }
 
 } // namespace qmcplusplus

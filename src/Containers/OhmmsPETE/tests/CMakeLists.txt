@@ -12,7 +12,7 @@
 set(UTEST_EXE test_containers_ohmmspete)
 set(UTEST_NAME deterministic-unit_${UTEST_EXE})
 
-add_executable(${UTEST_EXE} test_vector.cpp test_matrix.cpp test_tinyvector.cpp)
+add_executable(${UTEST_EXE} test_Vector.cpp test_matrix.cpp test_tinyvector.cpp)
 target_link_libraries(${UTEST_EXE} catch_main containers)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
