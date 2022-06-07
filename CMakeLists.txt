@@ -797,9 +797,7 @@ if(ENABLE_ROCM)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
-  set(HIP_ARCH
-      "gfx906,gfx908"
-      CACHE STRING "HIP architecture gfxXXX")
+  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
   list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")

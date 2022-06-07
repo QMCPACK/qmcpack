@@ -34,49 +34,34 @@ void CMC_profileSample(const char* function, float msec)
   printf("%s: %1.3e msec\n", function, msec);
 }
 
-#define CMC_PROFILING_BEGIN()                                                                                      \
-  cudaMemcpyToSymbolAsync(CMC_L, lattice, sizeof(CMC_L), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream);          \
-  cudaMemcpyToSymbolAsync(CMC_Linv, latticeInv, sizeof(CMC_Linv), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream); \
-  cudaEvent_t start;                                                                                               \
-  cudaEvent_t stop;                                                                                                \
-  if (CMC_profile)                                                                                                 \
-  {                                                                                                                \
-    cudaEventCreate(&start);                                                                                       \
-    cudaEventCreate(&stop);                                                                                        \
-    cudaGetLastError();                                                                                            \
-    cudaEventRecord(start);                                                                                        \
+#define CMC_PROFILING_BEGIN()                                                                                                 \
+  cudaCheck(cudaMemcpyToSymbolAsync(CMC_L, lattice, sizeof(CMC_L), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream));          \
+  cudaCheck(cudaMemcpyToSymbolAsync(CMC_Linv, latticeInv, sizeof(CMC_Linv), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream)); \
+  cudaEvent_t start;                                                                                                          \
+  cudaEvent_t stop;                                                                                                           \
+  if (CMC_profile)                                                                                                            \
+  {                                                                                                                           \
+    cudaCheck(cudaEventCreate(&start));                                                                                       \
+    cudaCheck(cudaEventCreate(&stop));                                                                                        \
+    cudaCheck(cudaGetLastError());                                                                                            \
+    cudaCheck(cudaEventRecord(start));                                                                                        \
   }
 
-#define CMC_PROFILING_END(lineno)                                                                          \
-  if (CMC_profile)                                                                                         \
-  {                                                                                                        \
-    cudaEventRecord(stop);                                                                                 \
-    cudaEventSynchronize(stop);                                                                            \
-    float time = 0.0f;                                                                                     \
-    cudaEventElapsedTime(&time, start, stop);                                                              \
-    cudaEventDestroy(start);                                                                               \
-    cudaEventDestroy(stop);                                                                                \
-    CMC_profileSample(__FUNCTION__, time);                                                                 \
-  }                                                                                                        \
-  cudaError_t error = cudaGetLastError();                                                                  \
-  if (error)                                                                                               \
-  {                                                                                                        \
-    printf("%s\nCUDA ERROR!!! Detected at end of CMC_PROFILING_END in BsplineJastrowCudaPBC line %d!!!\n", \
-           cudaGetErrorString(error),                                                                      \
-           lineno);                                                                                        \
-    exit(1);                                                                                               \
+#define CMC_PROFILING_END(lineno)                        \
+  if (CMC_profile)                                       \
+  {                                                      \
+    cudaCheck(cudaEventRecord(stop));                    \
+    cudaCheck(cudaEventSynchronize(stop));               \
+    float time = 0.0f;                                   \
+    cudaCheck(cudaEventElapsedTime(&time, start, stop)); \
+    cudaCheck(cudaEventDestroy(start));                  \
+    cudaCheck(cudaEventDestroy(stop));                   \
+    CMC_profileSample(__FUNCTION__, time);               \
   }
 
-#define COPY_LATTICE_DP_TO_SP()                                                                                    \
-  cudaMemcpyToSymbolAsync(CMC_L, lattice, sizeof(CMC_L), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream);          \
-  cudaMemcpyToSymbolAsync(CMC_Linv, latticeInv, sizeof(CMC_Linv), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream); \
-  cudaError_t error = cudaGetLastError();                                                                          \
-  if (error)                                                                                                       \
-  {                                                                                                                \
-    printf("%s\nCUDA ERROR!!! Detected at end of COPY_LATTICE_DP_TO_SP in BsplineJastrowCudaPBC!!!\n",             \
-           cudaGetErrorString(error));                                                                             \
-    exit(1);                                                                                                       \
-  }
+#define COPY_LATTICE_DP_TO_SP()                                                                                               \
+  cudaCheck(cudaMemcpyToSymbolAsync(CMC_L, lattice, sizeof(CMC_L), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream));          \
+  cudaCheck(cudaMemcpyToSymbolAsync(CMC_Linv, latticeInv, sizeof(CMC_Linv), 0, cudaMemcpyDeviceToDevice, gpu::kernelStream));
 
 static __constant__ CUDA_PRECISION CMC_L[3][3];
 static __constant__ CUDA_PRECISION CMC_Linv[3][3];
@@ -334,8 +319,8 @@ void cuda_spline_init_PBC()
                     0.0,      0.0,      1.0,     0.0
                   };
 
-  cudaMemcpyToSymbol(AcudaSpline, A_h, 48*sizeof(float), 0,
-                     cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToSymbol(AcudaSpline, A_h, 48*sizeof(float), 0,
+            cudaMemcpyHostToDevice));
   double A_d[48] = {-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
                     3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
                     -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
@@ -349,8 +334,8 @@ void cuda_spline_init_PBC()
                     0.0,      0.0,     -3.0,     1.0,
                     0.0,      0.0,      1.0,     0.0
                    };
-  cudaMemcpyToSymbol(AcudaSpline_double, A_d, 48*sizeof(double), 0,
-                     cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToSymbol(AcudaSpline_double, A_d, 48*sizeof(double), 0,
+            cudaMemcpyHostToDevice));
   AisInitializedPBC = true;
   // clang-format on
 }
