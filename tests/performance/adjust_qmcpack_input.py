@@ -51,13 +51,13 @@ def use_delayed_update(tree, delay):
     for node in nodes:
       add_or_change_attribute(node, 'delay_rank', str(delay))
 
-def use_det_batched(tree):
+def use_det_batched(tree, string):
     nodes = tree.findall(".//wavefunction/determinantset/slaterdeterminant")
     if len(nodes) == 0:
         print('slaterdeterminant not found')
         return
     for node in nodes:
-      add_or_change_attribute(node, 'batch', 'yes')
+      add_or_change_attribute(node, 'batch', string)
 
 def change_jastrow(tree, j3_tree):
     wf_nodes = tree.findall('.//wavefunction')
@@ -118,7 +118,9 @@ if __name__ == '__main__':
     use_delayed_update(tree, args.delay)
 
   if args.detbatched:
-    use_det_batched(tree)
+    use_det_batched(tree, 'yes')
+  else:
+    use_det_batched(tree, 'no')
 
   if args.J123:
     j3_tree = ET.parse(args.J123)
