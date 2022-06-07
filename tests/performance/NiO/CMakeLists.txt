@@ -112,6 +112,10 @@ else()
       64
       64
       64)
+  # walker count preset for NIO_SIZES problems
+  # These numbers are not optimal but should be indicative of performance
+  # Walker count scan for each problem size is still required to maximize throughput
+  # for a given hardware if its memory capacity allows.
   set(WALKER_COUNTS
       1024
       512
