@@ -103,7 +103,10 @@ public:
   void add(int icenter, std::unique_ptr<COT> aos);
 
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
-  void addV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t vals_size) { evaluateV(P, iat, vals,vals_size); }
+  void addV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t vals_size)
+  {
+    evaluateV(P, iat, vals, vals_size);
+  }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);
