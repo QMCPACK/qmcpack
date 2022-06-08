@@ -14,7 +14,7 @@
     </parameter>
     <parameter name="bconds">p p n </parameter>
     <parameter name="LR_dim_cutoff">30</parameter>
-    <parameter name="LR_handler"> opt_breakup </parameter>      
+    <parameter name="LR_handler"> opt_breakup </parameter>
   </simulationcell>
   </qmcsystem>
   <particleset name="i" size="4">
@@ -35,7 +35,7 @@
     0.666666627   0.333333313   0.351999998
     </attrib>
     <attrib name="ionid" datatype="stringArray">
-      In  In  Se  Se  
+      In  In  Se  Se
     </attrib>
   </particleset>
   <particleset name="e" random="yes" randomsrc="i">
