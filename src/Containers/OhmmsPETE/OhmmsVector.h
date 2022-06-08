@@ -161,7 +161,8 @@ public:
   //! return the current size
   inline size_t size() const { return nLocal; }
 
-  ///resize
+  /// Resize the container. For performance consideration, previous data may or may not get kept.
+  /// Please avoid relying on previous data after resizing.
   inline void resize(size_t n, Type_t val = Type_t())
   {
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value,

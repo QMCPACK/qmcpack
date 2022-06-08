@@ -104,6 +104,7 @@ TEST_CASE("NestedContainers", "[OhmmsPETE]")
   Vector<std::vector<int>> vec_of_vecs(2);
   vec_of_vecs[0].push_back(123);
   vec_of_vecs.resize(5);
+  vec_of_vecs[0].clear();
   vec_of_vecs[0].push_back(123);
   vec_of_vecs.resize(0);
   vec_of_vecs.resize(3);
