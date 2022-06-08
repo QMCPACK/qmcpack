@@ -94,7 +94,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   const auto gy_in = myVGL[2];
   const auto gz_in = myVGL[3];
   const auto l_in  = myVGL[4];
-  for (size_t i = 0; i < BasisSetSize; ++i)
+  for (size_t i = 0; i < psi.size(); ++i)
   {
     psi[i] += v_in[i];
     dpsi[i][0] += gx_in[i];
@@ -129,7 +129,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   const auto gy_in = myVGL[2];
   const auto gz_in = myVGL[3];
   const auto l_in  = myVGL[4];
-  for (size_t i = 0; i < BasisSetSize; ++i)
+  for (size_t i = 0; i < psi.rows(); ++i)
   {
     psi[idx][i] += v_in[i];
     dpsi[idx][i][0] += gx_in[i];
@@ -139,7 +139,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   }
 }
 
-void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals)
+void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t val_size)
 {
   ValueType* tmp_vals = myVGL[0];
 
@@ -159,7 +159,7 @@ void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueType* rest
 
   { //collect
     const auto v_in = myVGL[0];
-    for (size_t i = 0; i < BasisSetSize; ++i)
+    for (size_t i = 0; i < val_size; ++i)
     {
       vals[i] += v_in[i];
     }
