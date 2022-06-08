@@ -12,11 +12,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/Communicate.h"
 #include "KContainer.h"
-#include "Utilities/qmc_common.h"
 #include <map>
 #include <cstdint>
+#include "Message/Communicate.h"
+#include "LRCoulombSingleton.h"
+#include "Utilities/qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -78,14 +79,12 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
   for (int i = 0; i < DIM; i++)
     mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
-
-
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
 
   //overwrite the non-periodic directon to be zero
-  if (lattice.SuperCellEnum == SUPERCELL_SLAB)
+  if (LRCoulombSingleton::isQuasi2D())
   {
     app_log() << "  No kspace sum perpendicular to slab " << std::endl;
     mmax[2] = 0;
@@ -95,7 +94,8 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
     app_log() << "  No kspace sum along z " << std::endl;
     mmax[2] = 0;
   }
-  if (ndim < 2) mmax[1] = 0;
+  if (ndim < 2)
+    mmax[1] = 0;
 }
 
 void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
@@ -215,11 +215,11 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
     std::vector<int>::iterator vit((*it).second->begin());
     while (vit != (*it).second->end())
     {
-      int ik        = (*vit);
-      kpts[ok]      = kpts_tmp[ik];
-      kpts_cart[ok] = kpts_cart_tmp[ik];
+      int ik             = (*vit);
+      kpts[ok]           = kpts_tmp[ik];
+      kpts_cart[ok]      = kpts_cart_tmp[ik];
       kpts_cart_soa_(ok) = kpts_cart_tmp[ik];
-      ksq[ok]       = ksq_tmp[ik];
+      ksq[ok]            = ksq_tmp[ik];
       ++vit;
       ++ok;
     }
