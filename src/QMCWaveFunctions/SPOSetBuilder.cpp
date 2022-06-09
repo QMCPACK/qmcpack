@@ -104,8 +104,9 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
       std::string cname((const char*)(tcur->name));
       if (cname == "opt_vars")
       {
-        rot_spo->params_supplied = true;
-        putContent(rot_spo->params, tcur);
+        std::vector<RealType> params;
+        putContent(params, tcur);
+        rot_spo->setRotationParameters(params);
       }
       tcur = tcur->next;
     }
