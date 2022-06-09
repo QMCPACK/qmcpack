@@ -73,4 +73,10 @@ TEST_CASE("array NestedContainers", "[OhmmsPETE]")
   CHECK(vec_copy(0).back() == 123);
 }
 
+TEST_CASE("Array::dimension sizes constructor", "[OhmmsPETE]")
+{
+  Array<double, 3> rank3_tensor(2,4,5);
+  CHECK(rank3_tensor.shape() == std::array<std::size_t, 3>{2,4,5});
+  //  rank3_tensor.resize(5,6); this is caught at compile time.
+}
 } // namespace qmcplusplus
