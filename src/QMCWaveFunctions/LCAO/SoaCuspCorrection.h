@@ -93,6 +93,8 @@ public:
   /** compute values for the iat-paricle move
    *
    * Always uses getTempDists() and getTempDispls()
+   *
+   * vals_size is the length of the array passed in vals.
    */
   void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t vals_size);
 
