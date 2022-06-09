@@ -154,4 +154,25 @@ private:
   }
 };
 
+template<class T, unsigned D, class Alloc>
+bool operator==(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
+{
+  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  if (lhs.size() == rhs.size())
+  {
+    for (int i = 0; i < rhs.size(); i++)
+      if (lhs(i) != rhs(i))
+        return false;
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class T, unsigned D, class Alloc>
+bool operator!=(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
+{
+  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  return !(lhs == rhs);
+}
 #endif //OHMMS_PETE_ARRAY_H

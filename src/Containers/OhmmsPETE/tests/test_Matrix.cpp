@@ -11,12 +11,11 @@
 
 
 #include "catch.hpp"
+#include <cstdio>
+#include <string>
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "config.h"
-
-#include <stdio.h>
-#include <string>
 
 using std::string;
 
@@ -52,6 +51,9 @@ TEST_CASE("matrix", "[OhmmsPETE]")
   {
     CHECK(*ia == Approx(3.1));
   }
+
+  REQUIRE( A == A);
+  REQUIRE( A != C);
 
   // copy constructor and copy method
   Mat D(C);
