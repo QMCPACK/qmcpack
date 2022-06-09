@@ -139,7 +139,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   }
 }
 
-void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t val_size)
+void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueVector& psi)
 {
   ValueType* tmp_vals = myVGL[0];
 
@@ -159,9 +159,9 @@ void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueType* rest
 
   { //collect
     const auto v_in = myVGL[0];
-    for (size_t i = 0; i < val_size; ++i)
+    for (size_t i = 0; i < psi.size(); ++i)
     {
-      vals[i] += v_in[i];
+      psi[i] += v_in[i];
     }
   }
 }

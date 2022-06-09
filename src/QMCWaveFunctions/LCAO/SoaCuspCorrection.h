@@ -93,10 +93,8 @@ public:
   /** compute values for the iat-paricle move
    *
    * Always uses getTempDists() and getTempDispls()
-   *
-   * vals_size is the length of the array passed in vals.
    */
-  void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t vals_size);
+  void evaluateV(const ParticleSet& P, int iat, ValueVector& psi);
 
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center
@@ -105,9 +103,9 @@ public:
   void add(int icenter, std::unique_ptr<COT> aos);
 
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
-  void addV(const ParticleSet& P, int iat, ValueType* restrict vals, size_t vals_size)
+  void addV(const ParticleSet& P, int iat, ValueVector& psi)
   {
-    evaluateV(P, iat, vals, vals_size);
+    evaluateV(P, iat, psi);
   }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
