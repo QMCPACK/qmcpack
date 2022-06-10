@@ -12,13 +12,11 @@
 
 
 #include "catch.hpp"
-
-#include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsPETE/TinyVector.h"
-
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 #include <string>
+#include "OhmmsPETE/OhmmsVector.h"
+#include "OhmmsPETE/TinyVector.h"
 
 using std::string;
 
