@@ -23,6 +23,7 @@
 #include "SYCL/SYCLallocator.hpp"
 #endif
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "OhmmsPETE/OhmmsArray.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 
 #include "makeRngSpdMatrix.hpp"
@@ -79,36 +80,39 @@ void testDualAllocator()
   CHECK(device_ptr2 != nullptr);
   CHECK(device_ptr3 != nullptr);
 
-  std::ptrdiff_t distance_host = matrix_view.data() - vcsoa.data();
+  std::ptrdiff_t distance_host   = matrix_view.data() - vcsoa.data();
   std::ptrdiff_t distance_device = matrix_view.device_data() - vcsoa.device_data();
-  CHECK( distance_host == distance_device );
+  CHECK(distance_host == distance_device);
 
-  distance_host = matrix_view2.data() - vcsoa.data();
+  distance_host   = matrix_view2.data() - vcsoa.data();
   distance_device = matrix_view2.device_data() - vcsoa.device_data();
-  CHECK( distance_host == distance_device );
+  CHECK(distance_host == distance_device);
 
-  distance_host = matrix_view3.data() - vcsoa.data();
+  distance_host   = matrix_view3.data() - vcsoa.data();
   distance_device = matrix_view3.device_data() - vcsoa.device_data();
-  CHECK( distance_host == distance_device );
+  CHECK(distance_host == distance_device);
 
-  int ifrom                = 2;
-  int ito                  = 0;
+  int ifrom = 2;
+  int ito   = 0;
 
-  vcsoa.copyDeviceDataByIndex(0,2);
+  vcsoa.copyDeviceDataByIndex(0, 2);
   vcsoa.updateFrom();
 
   auto check_matrix_result = checkMatrix(mat_spd, matrix_view);
-  CHECKED_ELSE(check_matrix_result.result) {
-    FAIL(check_matrix_result.result_message); }
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 
-  matrix_view2(0,0) = 0.0;
-  matrix_view2(1,0) = 1,0;
+  matrix_view2(0, 0) = 0.0;
+  matrix_view2(1, 0) = 1, 0;
 
   matrix_view2.updateTo();
-  vcsoa.copyDeviceDataByIndex(0,1);
+  vcsoa.copyDeviceDataByIndex(0, 1);
   matrix_view.updateFrom();
-  CHECK(matrix_view(0,0) == 0.0);
-  CHECK(matrix_view(1,0) == 1.0);
+  CHECK(matrix_view(0, 0) == 0.0);
+  CHECK(matrix_view(1, 0) == 1.0);
+
+  Array<Value, 3, OPA> aa;
+  aa.resize(2, 2, 3);
+  CHECK(aa.size() == 12);
 }
 
 TEST_CASE("OhmmsMatrix_VectorSoaContainer_View", "[Integration][Allocators]")

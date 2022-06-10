@@ -48,7 +48,7 @@ public:
     if (n)
     {
       resize_impl(n);
-      qmc_allocator_traits<Alloc>::fill_n(X, n, val);
+      construct_fill_elements(X, n, val);
     }
   }
 
@@ -60,11 +60,8 @@ public:
   {
     if (nLocal)
     {
-      resize_impl(rhs.nLocal);
-      if (qmc_allocator_traits<Alloc>::is_host_accessible)
-        std::copy_n(rhs.data(), nLocal, X);
-      else
-        qmc_allocator_traits<Alloc>::fill_n(X, nLocal, T());
+      resize_impl(rhs.size());
+      construct_copy_elements(rhs.data(), rhs.size(), X);
     }
   }
 
@@ -82,27 +79,14 @@ public:
   /** Initializer list constructor that can deal with both POD
    *  and nontrivial nested elements with move assignment operators.
    */
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   Vector(std::initializer_list<T> ts)
   {
-    if (qmc_allocator_traits<Alloc>::is_host_accessible)
+    if (ts.size())
     {
-      if (ts.size() == 0)
-        return;
-      std::size_t num_elements = ts.size();
-      resize_impl(num_elements);
-      if constexpr (std::is_trivial<T>::value)
-      {
-        std::copy_n(ts.begin(), ts.size(), X);
-      }
-      else
-      {
-        auto ts_it = ts.begin();
-        for (int i = 0; i < num_elements; ++i, ++ts_it)
-          (*this)[i] = std::move(*ts_it);
-      }
+      resize_impl(ts.size());
+      construct_copy_elements(std::data(ts), ts.size(), X);
     }
-    else
-      throw std::runtime_error("initializer lists are not supported for Vector's inaccessible to the host");
   }
 
   // default assignment operator
@@ -177,7 +161,8 @@ public:
   //! return the current size
   inline size_t size() const { return nLocal; }
 
-  ///resize
+  /// Resize the container. For performance consideration, previous data may or may not get kept.
+  /// Please avoid relying on previous data after resizing.
   inline void resize(size_t n, Type_t val = Type_t())
   {
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
@@ -187,16 +172,19 @@ public:
 
     if (n > nAllocated)
     {
+      if (nLocal)
+        destroy_elements(X, nLocal);
       resize_impl(n);
-      qmc_allocator_traits<Alloc>::fill_n(X, n, val);
+      construct_fill_elements(X, n, val);
     }
     else
     {
       if (n > nLocal)
-        qmc_allocator_traits<Alloc>::fill_n(X + nLocal, n - nLocal, val);
+        construct_fill_elements(X + nLocal, n - nLocal, val);
+      if (n < nLocal)
+        destroy_elements(X + n, nLocal - n);
       nLocal = n;
     }
-    return;
   }
 
   ///clear
@@ -209,6 +197,8 @@ public:
   {
     if (nAllocated)
     {
+      if (nLocal)
+        destroy_elements(X, nLocal);
       mAllocator.deallocate(X, nAllocated);
     }
     nLocal     = 0;
@@ -300,6 +290,34 @@ private:
     X          = mAllocator.allocate(n);
     nLocal     = n;
     nAllocated = n;
+  }
+
+  inline static void construct_fill_elements(Type_t* ptr, size_t n_elements, const Type_t& val)
+  {
+    if constexpr (std::is_trivial<T>::value)
+      qmc_allocator_traits<Alloc>::fill_n(ptr, n_elements, val);
+    else if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
+      for (size_t i = 0; i < n_elements; i++)
+        new (ptr + i) Type_t(val);
+  }
+
+  inline static void construct_copy_elements(const Type_t* from, size_t n_elements, Type_t* to)
+  {
+    if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
+    {
+      if constexpr (std::is_trivial<T>::value)
+        std::copy_n(from, n_elements, to);
+      else
+        for (size_t i = 0; i < n_elements; i++)
+          new (to + i) Type_t(*(from + i));
+    }
+  }
+
+  inline void static destroy_elements(Type_t* ptr, size_t n_elements)
+  {
+    if constexpr (!std::is_trivial<T>::value && qmc_allocator_traits<Alloc>::is_host_accessible)
+      for (size_t i = 0; i < n_elements; i++)
+        (ptr + i)->~Type_t();
   }
 };
 

@@ -93,7 +93,11 @@ struct h5data_proxy<Array<T, D>> : public h5_space_type<T, D>
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref.resize(dims);
+    {
+      std::array<size_t, D> dims_array;
+      std::copy(std::cbegin(dims), std::cend(dims), dims_array.begin());
+      ref.resize(dims_array);
+    }
     return h5d_read(grp, aname, get_address(ref.data()), xfer_plist);
   }
 
