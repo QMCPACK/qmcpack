@@ -36,7 +36,7 @@ protected:
   std::shared_ptr<UBspline_3d_d> VlongSpline;
   //std::shared_ptr<UBspline_3d_d> DensitySpline;
   double Vconst;
-  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, size_t N);
+  void compute_g_G(double& g_0_N, std::vector<double>& g_G_N, int N);
   void init_gvecs();
   void init_f_G();
   void init_spline();

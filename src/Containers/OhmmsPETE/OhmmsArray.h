@@ -45,7 +45,6 @@ public:
   Array(Args... sizes) {
     resize(sizes...);
   }
-
   
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Array(const std::array<SIZET, D>& dims)
@@ -68,15 +67,6 @@ public:
     X.resize(full_size(Length));
   }
 
-  template <typename TT, typename... Args>
-constexpr std::array<TT, sizeof...(Args)> to_array (Args && ... args)
- { return {{ static_cast<TT>(std::forward<Args>(args))... }}; }
-  
-  // void resize(const size_t n)
-  // {
-  //   resize(std::array<size_t,1>{n});
-  // }		  
-
   /** Provides specialized resize(size_1, ... , size_D) functions for the array D
    */   
   template<typename... Args>
@@ -84,13 +74,6 @@ constexpr std::array<TT, sizeof...(Args)> to_array (Args && ... args)
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
     resize({static_cast<std::size_t>(std::forward<Args>(sizes))...});
   }
-
-  
-  // Void resize(size_t n) { resize(std::array<size_t, 1>{n}); }
-
-  // void resize(size_t m, size_t n) { resize({m, n}); }
-
-  // void resize(size_t l, size_t m, size_t n) { resize({l, m, n}); }
 
   inline typename Container_t::iterator begin() { return X.begin(); }
   inline typename Container_t::iterator end() { return X.end(); }

@@ -75,6 +75,9 @@ TEST_CASE("array NestedContainers", "[OhmmsPETE]")
 
 TEST_CASE("Array::dimension sizes constructor", "[OhmmsPETE]")
 {
+  const int dim = 2;
+  Array<double, 1> vec(dim);
+
   Array<double, 3> rank3_tensor(2,4,5);
   CHECK(rank3_tensor.shape() == std::array<std::size_t, 3>{2,4,5});
   //  rank3_tensor.resize(5,6); this is caught at compile time.

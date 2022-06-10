@@ -60,8 +60,7 @@ bool GridExternalPotential::put(xmlNodePtr cur)
     delta    = (grid.end - grid.start) / (grid.num);
   }
 
-  const size_t grid_num = grid.num;
-  Array<double, 3> data({grid_num, grid_num, grid_num});
+  Array<double, 3> data(grid.num, grid.num, grid.num);
 
   hdf_archive hin;
   bool read_okay = hin.open(file_name, H5F_ACC_RDONLY);

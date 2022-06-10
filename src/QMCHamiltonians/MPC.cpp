@@ -75,14 +75,14 @@ void MPC::init_gvecs()
 }
 
 
-void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, size_t N)
+void MPC::compute_g_G(double& g_0, std::vector<double>& g_G, int N)
 {
   double L     = PtclRef->getLattice().WignerSeitzRadius;
   double Linv  = 1.0 / L;
   double Linv3 = Linv * Linv * Linv;
   // create an FFTW plan
-  Array<std::complex<double>, 3> rBox({N, N, N});
-  Array<std::complex<double>, 3> GBox({N, N, N});
+  Array<std::complex<double>, 3> rBox(N, N, N);
+  Array<std::complex<double>, 3> GBox(N, N, N);
   // app_log() << "Doing " << N << " x " << N << " x " << N << " FFT.\n";
   //create BC handler
   DTD_BConds<RealType, 3, SUPERCELL_BULK> mybc(PtclRef->getLattice());

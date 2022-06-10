@@ -136,7 +136,7 @@ struct einspline_spo
   }
 
   //fix for general num_splines
-  void set(size_t nx, size_t ny, size_t nz, int num_splines, int nblocks, bool init_random = true)
+  void set(int nx, int ny, int nz, int num_splines, int nblocks, bool init_random = true)
   {
     nSplines         = num_splines;
     nBlocks          = nblocks;
@@ -150,7 +150,7 @@ struct einspline_spo
       pos_type end(1);
       einsplines.resize(nBlocks);
       RandomGenerator myrandom(11);
-      Array<double, 3> data({nx, ny, nz});
+      Array<double, 3> data(nx, ny, nz);
       std::generate(data.begin(), data.end(), myrandom);
 
       // prepare spline grid specs

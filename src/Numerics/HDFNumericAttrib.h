@@ -796,8 +796,7 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
       hsize_t dims[D + 1];
       H5Sget_simple_extent_dims(dataspace, dims, NULL);
       std::array<size_t, D> dims_cplx;
-      for(int ind = 0; ind < D; ind++)
-        dims_cplx[ind] = dims[ind];
+      std::copy_n(std::cbegin(dims), D, dims_cplx.begin());
       ref.resize(dims_cplx);
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
       H5Sclose(dataspace);
