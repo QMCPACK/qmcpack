@@ -118,7 +118,7 @@
         </atomicBasisSet>
       </basisset>
       <slaterdeterminant>
-        <determinant id="updet" size="7" cuspInfo="hcn_updet.cuspInfo.xml">
+        <determinant id="updet" size="9" cuspInfo="hcn_updet.cuspInfo.xml">
           <occupation mode="ground"/>
           <coefficient size="33" id="updetC">
   1.00180500000000e+00  2.76000000000000e-03 -8.17900000000000e-03  2.85400000000000e-03
@@ -412,7 +412,7 @@
  -1.45805000000000e+00  0.00000000000000e+00  0.00000000000000e+00
 </coefficient>
         </determinant>
-        <determinant id="downdet" size="7" cuspInfo="hcn_downdet.cuspInfo.xml">
+        <determinant id="downdet" size="9" cuspInfo="hcn_downdet.cuspInfo.xml">
           <occupation mode="ground"/>
           <coefficient size="33" id="downdetC">
   1.00180500000000e+00  2.76000000000000e-03 -8.17900000000000e-03  2.85400000000000e-03

@@ -38,10 +38,8 @@ public:
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
 
-  /// true if SPO parameters (orbital rotation parameters) have been supplied by input
-  bool params_supplied;
-  /// list of supplied orbital rotation parameters
-  std::vector<RealType> params;
+  /// Set the rotation parameters (usually from input file)
+  void setRotationParameters(const std::vector<RealType>& param_list);
 
   /// the number of electrons of the majority spin
   size_t nel_major_;
@@ -306,6 +304,12 @@ public:
 
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
+
+private:
+  /// true if SPO parameters (orbital rotation parameters) have been supplied by input
+  bool params_supplied;
+  /// list of supplied orbital rotation parameters
+  std::vector<RealType> params;
 };
 
 } //namespace qmcplusplus
