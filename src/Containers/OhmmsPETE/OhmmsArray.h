@@ -39,17 +39,17 @@ public:
     std::copy(rhs.begin(), rhs.end(), X.begin());
   }
 
-  /** Provides specialized constructors with signature (size_1, ... , size_D) for  array dimension D
-   */   
-  template<typename... Args>
-  Array(Args... sizes) {
-    resize(sizes...);
-  }
-  
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Array(const std::array<SIZET, D>& dims)
   {
     resize(dims);
+  }
+
+  /// Provides specialized constructors with signature (size_1, ... , size_D) for  array dimension D
+  template<typename... Args>
+  Array(Args... sizes)
+  {
+    resize(sizes...);
   }
 
   inline unsigned dim() const { return D; }
@@ -59,6 +59,8 @@ public:
 
   Container_t& storage() { return X; }
 
+  /// Resize the container. For performance consideration, previous data may or may not get kept.
+  /// Please avoid relying on previous data after resizing.
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   void resize(const std::array<SIZET, D>& dims)
   {
@@ -67,10 +69,10 @@ public:
     X.resize(full_size(Length));
   }
 
-  /** Provides specialized resize(size_1, ... , size_D) functions for the array D
-   */   
+  /// Provides specialized resize(size_1, ... , size_D) functions for the array D
   template<typename... Args>
-  void resize(Args... sizes) {
+  void resize(Args... sizes)
+  {
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
     resize({static_cast<std::size_t>(std::forward<Args>(sizes))...});
   }
@@ -166,7 +168,8 @@ private:
 template<class T, unsigned D, class Alloc>
 bool operator==(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
 {
-  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible,
+                "operator== requires host accessible Vector.");
   if (lhs.size() == rhs.size())
   {
     for (int i = 0; i < rhs.size(); i++)
@@ -181,7 +184,8 @@ bool operator==(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
 template<class T, unsigned D, class Alloc>
 bool operator!=(const Array<T, D, Alloc>& lhs, const Array<T, D, Alloc>& rhs)
 {
-  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible, "operator== requires host accessible Vector.");
+  static_assert(qmcplusplus::qmc_allocator_traits<Alloc>::is_host_accessible,
+                "operator== requires host accessible Vector.");
   return !(lhs == rhs);
 }
 #endif //OHMMS_PETE_ARRAY_H

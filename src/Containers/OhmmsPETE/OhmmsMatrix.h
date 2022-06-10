@@ -94,6 +94,8 @@ public:
   inline typename Container_t::iterator begin(int i) { return X.begin() + i * D2; }
   inline typename Container_t::const_iterator begin(int i) const { return X.begin() + i * D2; }
 
+  /// Resize the container. For performance consideration, previous data may or may not get kept.
+  /// Please avoid relying on previous data after resizing.
   inline void resize(size_type n, size_type m)
   {
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
