@@ -84,11 +84,11 @@ def read_int(sval):
 
 def read_real(sval):
     sval = remove_comment(sval)
-    return float(sval.replace('d','e'))
+    return float(sval.lower().replace('d','e'))
 #end def read_real
 
 
-bool_dict = dict(true=True,false=False)
+bool_dict = dict(true=True,false=False,t=True,f=False)
 def read_bool(sval):
     sval = remove_comment(sval)
     return bool_dict[sval.lower().strip('.')]
@@ -140,7 +140,11 @@ def write_bool(v):
 
 
 def write_string(v):
-    return v
+    if '\n' not in v:
+        return v
+    else:
+        return '"'+v+'"' # multi-line string
+    #end if
 #end def write_string
 
 
@@ -367,6 +371,49 @@ class VFile(Vobj):
         #end if
         return line
     #end def remove_comment
+
+    def preprocess_multiline_strings(self,text):
+        mvals = obj()
+        if '"' in text:
+            text_in = text
+            text = ''
+            plocs = []
+            i = 0
+            istart = 0
+            n = 0
+            nqmax = 101
+            while i!=-1 and n<nqmax:
+                i = text_in.find('"',istart)
+                plocs.append(i)
+                istart = i+1
+                n+=1
+            #end while
+            if len(plocs)>0:
+                plocs.pop()
+            #end if
+            if n>=nqmax:
+                self.error('max number of multi-line strings exceeded.\nOver {} quotation marks found in file.'.format(nqmax-1))
+            #end if
+            if len(plocs)%2!=0:
+                self.error('quotation marks for multi-line strings are not paired')
+            #end if
+            nlabel = 0
+            istart = 0
+            for n,i in enumerate(plocs):
+                if n%2==0:
+                    text += text_in[istart:i]
+                else:
+                    q = text_in[istart:i]
+                    label = '--multiline{}--'.format(str(nlabel).zfill(3))
+                    text += label+'\n'
+                    mvals[label] = q
+                    nlabel += 1
+                #end if
+                istart = i+1
+            #end for
+        #end if
+        return text,mvals
+    #end def preprocess_multiline_strings
 #end class VFile
 
 
@@ -461,6 +508,7 @@ class VKeywordFile(VFile):
 
 
     def read_text(self,text,filepath=''):
+        text,multiline_values = self.preprocess_multiline_strings(text)
         lines = text.splitlines()
         expression = None
         continued  = False
@@ -470,7 +518,7 @@ class VKeywordFile(VFile):
                 ls = self.remove_comment(ls)
                 this_cont = ls.endswith('\\')
                 if this_cont:
-                    ls = ls.rstrip('\\')
+                    ls = ls.rstrip('\\')+' '
                     if continued:
                         expression += ls
                     else:
@@ -491,6 +539,9 @@ class VKeywordFile(VFile):
                             name  = name.lower().strip()
                             value = value.strip()
                             if name in self.keywords:
+                                if value.startswith('--multiline'):
+                                    value = multiline_values[value]
+                                #end if
                                 try:
                                     value = self.read_value[name](value)
                                     self[name] = value
@@ -602,34 +653,46 @@ class Incar(VKeywordFile):
 
     ints = set('''
       antires apaco 
-      ch_nedos clnt cln cll clz 
-      elmin
+      ch_nedos clnt cln cll 
+      elmin exxoep
       findiff fockcorr
       hflmax hflmaxf hills_bin
       ialgo ibrion ichain icharg ichibare i_constrained_m icorelevel idipol 
       iepsilon igpar images imix inimix iniwav ipead isif ismear ispin istart 
       isym ivdw iwavpr 
-      kblock kpar kpoints_opt_nkbatch 
+      kblock kpar kpoints_opt_mode kpoints_opt_nkbatch 
       ldauprint ldautype lmaxfock lmaxfockae lmaxfockmp2 lmaxmix lmaxmp2 
       lmaxpaw lorbit 
-      maxmem maxmix mdalgo mixpre 
+      maxmem maxmix mdalgo mixpre
+      ml_ff_icouple_mb ml_ff_ireg_mb ml_ff_istart ml_ff_lmax2_mb 
+      ml_ff_mrb1_mb ml_ff_mrb2_mb ml_ff_natom_coupled_mb 
       ml_iafilt2 ml_ialgo_linreg ml_icriteria ml_ireg ml_iscale_toten ml_istart
       ml_iweight ml_lmax2 ml_mb ml_mconf ml_mconf_new ml_mhis ml_mrb1 ml_mrb2
       ml_natom_coupled ml_nhyp ml_nmdint ml_nrank_sparsdes
-      naturalo nbands nbandsgw nbandso nbandsv nblk nblock nbmod nbseeig
-      ncore ncore_in_image1 nedos nelm nelmdl nelmgw nelmin nfree 
-      ngx ngxf ngy ngyf ngz ngzf nkred nkredx nkredy nkredz nmaxfockae 
-      nomega nomegapar nomegar npaco npar nppstr nrmm nsim nstorb nsw
-      ntaupar ntemper num_wann nupdown nwrite 
-      phon_nstruct phon_ntlist plevel proutine
+      naturalo 
+      nbands nbandsgw nbandso nbandsv nblk nblock nblock_fock nbmod nbseeig
+      ncore ncore_in_image1 ncshmem 
+      nedos nelm nelmall nelmdl nelmgw nelmin 
+      nfree 
+      ngx ngxf ngy ngyf ngz ngzf 
+      nkred nkredx nkredy nkredz 
+      nmaxfockae 
+      nomega nomegapar nomegar 
+      npaco npar nppstr 
+      nrmm 
+      nsim nstorb nsw
+      ntaupar ntemper 
+      num_wann nupdown 
+      nwrite 
+      phon_nstruct phon_ntlist phon_nwrite plevel proutine
       shakemaxiter smass spring 
       voskown
       '''.split())
 
     reals = set('''
-      aexx aggac aggax aldac amin amix amix_mag andersen_prob
+      aexx aggac aggax aldac aldax amin amix amix_mag andersen_prob
       bmix bmix_mag bparam
-      ch_sigma cshift cmbja cmbjb cparam
+      ch_sigma cshift clz cmbja cmbjb cparam
       deper dimer_dist dq
       ebreak ediff ediffg efield emax emin enaug encut encutfock encutgw 
       encutgwsoft enini enmax enmin epsilon estop
@@ -639,13 +702,15 @@ class Incar(VKeywordFile):
       lambda langevin_gamma_l libxc1_pn libxc2_pn
       mbja mbjb minrot
       ml_afilt2 ml_cdoub ml_csig ml_cslope ml_ctifor ml_cx ml_eps_low ml_eps_reg
+      ml_ff_rcouple_mb ml_ff_rcut1_mb ml_ff_rcut2_mb ml_ff_sion1_mb 
+      ml_ff_sion2_mb ml_ff_w1_mb ml_ff_w2_mb
       ml_rcouple ml_rcut1 ml_rcut2 ml_rdes_sparsdes ml_sclc_ctifor ml_sigv0
       ml_sigw0 ml_sion1 ml_sion2 ml_w1 ml_wtifor ml_wtoten ml_wtsif
       nelect 
       ofield_a ofield_kappa ofield_q6_far ofield_q6_near omegamax omegamin 
       omegatl
       param1 param2 pmass pomass potim pstress pthreshold 
-      scalee scsrad shaketol sigma step_max step_size symprec 
+      scalee scsrad shaketol shaketolsoft sigma smass step_max step_size symprec 
       tebeg teend time timestep
       vcaimages vcutoff vdw_a1 vdw_a2 vdw_cnradius vdw_d vdw_radius vdw_scaling 
       vdw_sr vdw_s6 vdw_s8
@@ -658,29 +723,34 @@ class Incar(VKeywordFile):
       ch_lspec
       evenonly evenonlygw
       gga_compat 
+      kpoints_opt
       ladder laechg lasph lasync 
       lberry lblueout lbone 
       lcalceps lcalcpol lcharg lchargh5 lchimag lclimb lcorr 
-      ldau ldiag ldipol ldisentangle ldneb 
+      ldau ldiag ldipol ldisentangle ldisentangled ldneb 
       lefg lelf lepsilon 
-      lfinite_temperature lfockace lfockaedft lfxc
+      lfermigw lfinite_temperature lfockace lfockaedft lfxc
       lh5 lhartree lhfcalc lhyperfine 
+      lintpol_kpath
       lkpoints_opt lkproj 
       llraug
       lmaxtau lmixtau lmodelhf lmono lmp2lt
-      lnabla lnebcell lnmr_sym_red lnoncollinear 
-      loptics lorbmom
-      lpard lpead lplane 
-      lrpa lrpaforce
+      lnabla lnebcell lnlrpa lnmr_sym_red lnoncollinear 
+      loptics lorbitalreal lorbmom
+      lpard lpead lpead_sym_red lphon_dispersion lphon_polar lplane 
+      lreal_compat lrpa lrpaforce
       lscaaware lscalapack lscaler0 lscalu lscdm lsck lscsgrad lselfenergy lsepb
-      lsepk lsmp2lt lsorbit lspectral lspectralgw lspiral lsubrot
+      lsepk lsingles lsmp2lt lsorbit lspectral lspectralgw lspiral lsubrot
       ltangentold ltboundlibxc ltemper lthomas ltriplet
       luse_vdw 
       lvdw lvdw_ewald lvdwexpansion lvdwscs lvhar lvtot 
-      lwannier90 lwannier90_run lwave lwaveh5 lweighted lwrite_mmn_amn 
-      lwrite_unk lwrite_wanproj
+      lwannier90 lwannier90_auto_window lwannier90_run lwave lwaveh5 lweighted 
+      lwrite_mmn_amn lwrite_unk lwrite_wannier_xsf lwrite_wanproj
       lzeroz
-      ml_lafilt2 ml_lcouple ml_leatom ml_lheat ml_lmlff ml_lsparsdes
+      ml_ff_lcouple_mb ml_ff_lheat_mb ml_ff_lmlff 
+      ml_ff_lnorm1_mb ml_ff_lnorm2_mb ml_ff_lsic_mb ml_ff_lsupervec_mb
+      ml_lafilt2 ml_lcouple ml_leatom ml_lheat ml_lmlff ml_lsparsdes 
+      ml_luse_names
       kgamma 
       nlspline
       oddonly oddonlygw
@@ -690,9 +760,11 @@ class Incar(VKeywordFile):
 
     strings = set('''
       algo 
+      fftwmakeplan
       gga 
       libxc1 libxc2 locproj lreal
-      metagga 
+      metagga
+      nthreads_lo nthreads_hi nthreads_mu
       prec precfock
       quad_efg
       stop_on system
@@ -718,8 +790,9 @@ class Incar(VKeywordFile):
       langevin_gamma ldauj ldauu
       magmom m_constr
       ml_eatom_ref
+      ml_ff_eatom
       ngyromag
-      phon_tlist psubsys
+      phon_born_charges phon_dielectric phon_tlist psubsys
       qmaxfockae qspiral
       ropt rwigs 
       saxis
@@ -728,7 +801,7 @@ class Incar(VKeywordFile):
       '''.split())
 
     bool_arrays = set('''
-      lattice_constraints locproj lvdw_onecell
+      lattice_constraints lvdw_onecell
       '''.split()) # formatted: F F T, etc
 
     keyword_classification = obj(
