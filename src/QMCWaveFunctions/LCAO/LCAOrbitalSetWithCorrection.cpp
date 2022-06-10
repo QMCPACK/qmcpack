@@ -36,7 +36,7 @@ std::unique_ptr<SPOSet> LCAOrbitalSetWithCorrection::makeClone() const
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   LCAOrbitalSet::evaluateValue(P, iat, psi);
-  cusp.addV(P, iat, psi.data());
+  cusp.addV(P, iat, psi);
 }
 
 void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P,
