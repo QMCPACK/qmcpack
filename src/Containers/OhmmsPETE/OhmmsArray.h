@@ -98,70 +98,70 @@ public:
   }
 
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
-  Type_t* data(const std::array<SIZET, D>& dims)
+  Type_t* data(const std::array<SIZET, D>& offsets)
   {
-    size_t offset = dims[0];
-    for (int i = 1; i < dims.size(); i++)
-      offset = offset * Length[i] + dims[i];
+    size_t offset = offsets[0];
+    for (int i = 1; i < offsets.size(); i++)
+      offset = offset * Length[i] + offsets[i];
     return X.data() + offset;
   }
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
-  const Type_t* data(const std::array<SIZET, D>& dims) const
+  const Type_t* data(const std::array<SIZET, D>& offsets) const
   {
-    size_t offset = dims[0];
-    for (int i = 1; i < dims.size(); i++)
-      offset = offset * Length[i] + dims[i];
+    size_t offset = offsets[0];
+    for (int i = 1; i < offsets.size(); i++)
+      offset = offset * Length[i] + offsets[i];
     return X.data() + offset;
   }
   template<typename SIZET     = size_t,
            typename           = std::is_integral<SIZET>,
            typename Allocator = ALLOC,
            typename           = qmcplusplus::IsDualSpace<Allocator>>
-  Type_t* device_data(const std::array<SIZET, D>& dims)
+  Type_t* device_data(const std::array<SIZET, D>& offsets)
   {
-    size_t offset = dims[0];
-    for (int i = 1; i < dims.size(); i++)
-      offset = offset * Length[i] + dims[i];
+    size_t offset = offsets[0];
+    for (int i = 1; i < offsets.size(); i++)
+      offset = offset * Length[i] + offsets[i];
     return X.device_data() + offset;
   }
   template<typename SIZET     = size_t,
            typename           = std::is_integral<SIZET>,
            typename Allocator = ALLOC,
            typename           = qmcplusplus::IsDualSpace<Allocator>>
-  const Type_t* device_data(const std::array<SIZET, D>& dims) const
+  const Type_t* device_data(const std::array<SIZET, D>& offsets) const
   {
-    size_t offset = dims[0];
-    for (int i = 1; i < dims.size(); i++)
-      offset = offset * Length[i] + dims[i];
+    size_t offset = offsets[0];
+    for (int i = 1; i < offsets.size(); i++)
+      offset = offset * Length[i] + offsets[i];
     return X.device_data() + offset;
   }
 
   /// access data pointer at (offset_1, ..., offset_D})
   template<typename... Args>
-  Type_t* data(Args... sizes)
+  Type_t* data(Args... offsets)
   {
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
-    return data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+    return data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   /// const access data pointer at (offset_1, ..., offset_D})
   template<typename... Args>
-  const Type_t* data(Args... sizes) const
+  const Type_t* data(Args... offsets) const
   {
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
-    return data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+    return data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
-  Type_t* device_data(Args... sizes)
+  Type_t* device_data(Args... offsets)
   {
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
-    return device_data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+    return device_data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   /// const access data pointer at (offset_1, ..., offset_D})
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
-  const Type_t* device_data(Args... sizes) const
+  const Type_t* device_data(Args... offsets) const
   {
     static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
-    return device_data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+    return device_data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
 
 
