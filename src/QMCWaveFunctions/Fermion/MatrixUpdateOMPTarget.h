@@ -54,6 +54,8 @@ public:
   using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, OffloadPinnedAllocator<DT>>;
+  template<typename DT>
+  using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
 
   struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   {
@@ -240,23 +242,24 @@ public:
                            const std::vector<Value*>& psiM_g_list,
                            const std::vector<Value*>& psiM_l_list,
                            const std::vector<bool>& isAccepted,
-                           const Value* phi_vgl_v_dev_ptr,
-                           const size_t phi_vgl_stride,
+                           const OffloadMWVGLArray<Value>& phi_vgl_v,
                            const std::vector<Value>& ratios)
   {
     const size_t n_accepted = psiM_g_list.size();
     if (n_accepted == 0)
       return;
 
-    auto& engine_leader = engines.getLeader();
-    auto& buffer_H2D    = engine_leader.mw_mem_->buffer_H2D;
-    auto& grads_value_v = engine_leader.mw_mem_->grads_value_v;
-    auto& cone_vec      = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec     = engine_leader.mw_mem_->czero_vec;
-    auto& mw_temp       = engine_leader.mw_mem_->mw_temp;
-    auto& mw_rcopy      = engine_leader.mw_mem_->mw_rcopy;
-    const int norb      = engine_leader.get_psiMinv().rows();
-    const int lda       = engine_leader.get_psiMinv().cols();
+    auto& engine_leader         = engines.getLeader();
+    auto& buffer_H2D            = engine_leader.mw_mem_->buffer_H2D;
+    auto& grads_value_v         = engine_leader.mw_mem_->grads_value_v;
+    auto& cone_vec              = engine_leader.mw_mem_->cone_vec;
+    auto& czero_vec             = engine_leader.mw_mem_->czero_vec;
+    auto& mw_temp               = engine_leader.mw_mem_->mw_temp;
+    auto& mw_rcopy              = engine_leader.mw_mem_->mw_rcopy;
+    const int norb              = engine_leader.get_psiMinv().rows();
+    const int lda               = engine_leader.get_psiMinv().cols();
+    const size_t nw             = isAccepted.size();
+    const size_t phi_vgl_stride = nw * norb;
 
     engine_leader.resize_scratch_arrays(norb, n_accepted);
 
@@ -264,11 +267,11 @@ public:
     buffer_H2D.resize((sizeof(Value*) * 6 + sizeof(Value)) * n_accepted);
     Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(buffer_H2D.data()), 6, n_accepted);
     Value* c_ratio_inv = reinterpret_cast<Value*>(buffer_H2D.data() + sizeof(Value*) * 6 * n_accepted);
-    for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
+    for (int iw = 0, count = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
         ptr_buffer[0][count] = engines[iw].get_ref_psiMinv().device_data();
-        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
+        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
@@ -343,11 +346,10 @@ public:
                                   const std::vector<Value*>& psiM_g_list,
                                   const std::vector<Value*>& psiM_l_list,
                                   const std::vector<bool>& isAccepted,
-                                  const Value* phi_vgl_v_dev_ptr,
-                                  const size_t phi_vgl_stride,
+                                  const OffloadMWVGLArray<Value>& phi_vgl_v,
                                   const std::vector<Value>& ratios)
   {
-    mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride, ratios);
+    mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
   }
 
   /** update the full Ainv and reset delay_count

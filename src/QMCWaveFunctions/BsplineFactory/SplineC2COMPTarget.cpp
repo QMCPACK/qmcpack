@@ -699,7 +699,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
                                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                                             int iat,
                                                             const std::vector<const ValueType*>& invRow_ptr_list,
-                                                            VGLVector& phi_vgl_v,
+                                                            OffloadMWVGLArray& phi_vgl_v,
                                                             std::vector<ValueType>& ratios,
                                                             std::vector<GradType>& grads) const
 {
@@ -732,12 +732,12 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   }
 
   const size_t num_pos          = nwalkers;
+  const auto orb_size           = phi_vgl_v.size(2);
+  const auto padded_size        = myV.size();
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  const auto padded_size        = myV.size();
   // for V(1)G(3)H(6) intermediate result
   mw_offload_scratch.resize(padded_size * num_pos * 10);
-  const auto orb_size = phi_vgl_v.size() / num_pos;
   // for V(1)G(3)L(1) final result
   mw_results_scratch.resize(padded_size * num_pos * 5);
   // per team ratio and grads
@@ -757,7 +757,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   auto* rg_private_ptr           = rg_private.data();
   const size_t buffer_H2D_stride = buffer_H2D.cols();
   const size_t first_spo_local   = first_spo;
-  const size_t phi_vgl_stride    = phi_vgl_v.capacity();
+  const size_t phi_vgl_stride    = num_pos * orb_size;
 
   {
     ScopedTimer offload(offload_timer_);

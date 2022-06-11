@@ -112,20 +112,20 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const std::vector<const ValueType*>& invRow_ptr_list,
-                                            VGLVector& phi_vgl_v,
+                                            OffloadMWVGLArray& phi_vgl_v,
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads) const
 {
   assert(this == &spo_list.getLeader());
-  assert(OrbitalSetSize * nw == phi_vgl_v.size());
+  assert(phi_vgl_v.size(0) == DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
   const size_t nw             = spo_list.size();
-  const size_t norb_requested = phi_vgl_v.size() / nw;
+  const size_t norb_requested = phi_vgl_v.size(2);
   GradVector dphi_v(norb_requested);
-#pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
   {
-    ValueVector phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
-    ValueVector d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
+    ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
+    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
     spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
@@ -134,11 +134,12 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
     // transpose the array of gradients to SoA in phi_vgl_v
     for (size_t idim = 0; idim < DIM; idim++)
     {
-      ValueType* phi_g = phi_vgl_v.data(idim + 1) + norb_requested * iw;
-      for (size_t iorb = 0; iorb < OrbitalSetSize; iorb++)
+      ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
+      for (size_t iorb = 0; iorb < norb_requested; iorb++)
         phi_g[iorb] = dphi_v[iorb][idim];
     }
   }
+  phi_vgl_v.updateTo();
 }
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)

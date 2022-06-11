@@ -27,6 +27,7 @@
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -55,6 +56,8 @@ public:
   using VGLVector   = OrbitalSetTraits<ValueType>::VGLVector;
   using Walker_t    = ParticleSet::Walker_t;
   using SPOPool_t   = std::map<std::string, SPOSet*>;
+
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
 
   /** constructor */
   SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
@@ -283,8 +286,8 @@ public:
                                       const RefVector<ValueVector>& d2psi_v_list,
                                       const RefVector<ValueVector>& dspin_v_list) const;
 
-  /** evaluate the values, gradients and laplacians of this single-particle orbital sets
-   *  and determinant ratio and grads of multiple walkers
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
+   *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
    * @param iat active particle
@@ -295,7 +298,7 @@ public:
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
-                                              VGLVector& phi_vgl_v,
+                                              OffloadMWVGLArray& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
                                               std::vector<GradType>& grads) const;
 

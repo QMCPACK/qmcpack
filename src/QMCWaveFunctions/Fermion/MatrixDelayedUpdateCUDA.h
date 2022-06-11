@@ -60,6 +60,8 @@ public:
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -269,8 +271,7 @@ private:
    *  \param[in] psiM_g_list        device ptrs
    *  \param[in] psiM_l_list        device ptrs
    *  \param[in] isAccepted         bool but wait some lists are also filtered
-   *  \param[in] phi_vgl_v_dev_ptr  device ptr
-   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
@@ -278,8 +279,7 @@ private:
                            const std::vector<Value*>& psiM_g_list,
                            const std::vector<Value*>& psiM_l_list,
                            const std::vector<bool>& isAccepted,
-                           const Value* phi_vgl_v_dev_ptr,
-                           const size_t phi_vgl_stride,
+                           const OffloadMWVGLArray<Value>& phi_vgl_v,
                            const std::vector<Value>& ratios)
   {
     auto& engine_leader = engines.getLeader();
@@ -293,14 +293,16 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& hstream              = engine_leader.cuda_handles_->hstream;
-    auto& updateRow_buffer_H2D = engine_leader.mw_mem_->updateRow_buffer_H2D;
-    auto& mw_temp              = engine_leader.mw_mem_->mw_temp;
-    auto& mw_rcopy             = engine_leader.mw_mem_->mw_rcopy;
-    auto& cone_vec             = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec            = engine_leader.mw_mem_->czero_vec;
-    const int norb             = engine_leader.get_ref_psiMinv().rows();
-    const int lda              = engine_leader.get_ref_psiMinv().cols();
+    auto& hstream               = engine_leader.cuda_handles_->hstream;
+    auto& updateRow_buffer_H2D  = engine_leader.mw_mem_->updateRow_buffer_H2D;
+    auto& mw_temp               = engine_leader.mw_mem_->mw_temp;
+    auto& mw_rcopy              = engine_leader.mw_mem_->mw_rcopy;
+    auto& cone_vec              = engine_leader.mw_mem_->cone_vec;
+    auto& czero_vec             = engine_leader.mw_mem_->czero_vec;
+    const int norb              = engine_leader.get_ref_psiMinv().rows();
+    const int lda               = engine_leader.get_ref_psiMinv().cols();
+    const int nw                = engines.size();
+    const size_t phi_vgl_stride = nw * norb;
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
     updateRow_buffer_H2D.resize((sizeof(Value*) * 6 + sizeof(Value)) * n_accepted);
@@ -312,7 +314,7 @@ private:
       if (isAccepted[iw])
       {
         ptr_buffer[0][count] = engines[iw].get_ref_psiMinv().device_data();
-        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
+        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
@@ -540,8 +542,7 @@ public:
    *  \param[in] psiM_g_list
    *  \param[in] psiM_l_list
    *  \param[in] isAccepted
-   *  \param[in] phi_vgl_v_dev_ptr
-   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
@@ -549,8 +550,7 @@ public:
                                   const std::vector<Value*>& psiM_g_list,
                                   const std::vector<Value*>& psiM_l_list,
                                   const std::vector<bool>& isAccepted,
-                                  const Value* phi_vgl_v_dev_ptr,
-                                  const size_t phi_vgl_stride,
+                                  const OffloadMWVGLArray<Value>& phi_vgl_v,
                                   const std::vector<Value>& ratios)
   {
     auto& engine_leader = engines.getLeader();
@@ -559,8 +559,7 @@ public:
 
     if (engine_leader.isSM1())
     {
-      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride,
-                   ratios);
+      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
     }
 
@@ -575,6 +574,7 @@ public:
     const int lda                     = engine_leader.get_psiMinv().cols();
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
+    const size_t phi_vgl_stride       = nw * norb;
     accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * 12 + sizeof(Value)) * nw);
     engine_leader.resize_fill_constant_arrays(nw);
 
@@ -594,7 +594,7 @@ public:
         ptr_buffer[6][count_accepted]  = engine.Binv_gpu.data() + delay_count;
         ptr_buffer[7][count_accepted]  = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
         ptr_buffer[8][count_accepted]  = engine.V_gpu.data() + norb * delay_count;
-        ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
+        ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[10][count_accepted] = psiM_g_list[count_accepted];
         ptr_buffer[11][count_accepted] = psiM_l_list[count_accepted];
         c_ratio_inv[count_accepted]    = Value(1) / ratios[iw];
