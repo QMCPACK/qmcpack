@@ -73,6 +73,12 @@ TEST_CASE("array NestedContainers", "[OhmmsPETE]")
   CHECK(vec_copy(0).back() == 123);
 }
 
+TEST_CASE("Array::data", "[OhmmsPETE]")
+{
+  Array<double, 3> tensor(2, 4, 5);
+  CHECK(tensor.data() + 1 * 4 * 5 + 2 * 5 + 3 == tensor.data(1, 2, 3));
+}
+
 TEST_CASE("Array::dimension sizes constructor", "[OhmmsPETE]")
 {
   const int dim = 2;

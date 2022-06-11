@@ -82,7 +82,9 @@ public:
   inline typename Container_t::const_iterator begin() const { return X.begin(); }
   inline typename Container_t::const_iterator end() const { return X.end(); }
 
+  /// access data pointer
   inline Type_t* data() { return X.data(); }
+  /// const access data pointer
   inline const Type_t* data() const { return X.data(); }
   template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   inline Type_t* device_data()
@@ -94,6 +96,74 @@ public:
   {
     return X.device_data();
   }
+
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  Type_t* data(const std::array<SIZET, D>& dims)
+  {
+    size_t offset = dims[0];
+    for (int i = 1; i < dims.size(); i++)
+      offset = offset * Length[i] + dims[i];
+    return X.data() + offset;
+  }
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  const Type_t* data(const std::array<SIZET, D>& dims) const
+  {
+    size_t offset = dims[0];
+    for (int i = 1; i < dims.size(); i++)
+      offset = offset * Length[i] + dims[i];
+    return X.data() + offset;
+  }
+  template<typename SIZET     = size_t,
+           typename           = std::is_integral<SIZET>,
+           typename Allocator = ALLOC,
+           typename           = qmcplusplus::IsDualSpace<Allocator>>
+  Type_t* device_data(const std::array<SIZET, D>& dims)
+  {
+    size_t offset = dims[0];
+    for (int i = 1; i < dims.size(); i++)
+      offset = offset * Length[i] + dims[i];
+    return X.device_data() + offset;
+  }
+  template<typename SIZET     = size_t,
+           typename           = std::is_integral<SIZET>,
+           typename Allocator = ALLOC,
+           typename           = qmcplusplus::IsDualSpace<Allocator>>
+  const Type_t* device_data(const std::array<SIZET, D>& dims) const
+  {
+    size_t offset = dims[0];
+    for (int i = 1; i < dims.size(); i++)
+      offset = offset * Length[i] + dims[i];
+    return X.device_data() + offset;
+  }
+
+  /// access data pointer at (offset_1, ..., offset_D})
+  template<typename... Args>
+  Type_t* data(Args... sizes)
+  {
+    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    return data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+  }
+  /// const access data pointer at (offset_1, ..., offset_D})
+  template<typename... Args>
+  const Type_t* data(Args... sizes) const
+  {
+    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    return data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+  }
+  template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  Type_t* device_data(Args... sizes)
+  {
+    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    return device_data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+  }
+  /// const access data pointer at (offset_1, ..., offset_D})
+  template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  const Type_t* device_data(Args... sizes) const
+  {
+    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    return device_data({static_cast<std::size_t>(std::forward<Args>(sizes))...});
+  }
+
 
   inline const Type_t* first_address() const { return &(X[0]); }
 
@@ -150,6 +220,18 @@ public:
     for (int i = 0; i < X.size(); ++i)
       s += X[i];
     return s;
+  }
+
+  // Abstract Dual Space Transfers
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    X.updateTo();
+  }
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    X.updateFrom();
   }
 
 private:
