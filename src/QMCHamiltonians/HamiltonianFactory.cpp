@@ -270,7 +270,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "magdensity")
       {
-          std::unique_ptr<MagDensityEstimator> apot = std::make_unique<MagDensityEstimator>(targetPtcl);
+          std::unique_ptr<MagDensityEstimator> apot = std::make_unique<MagDensityEstimator>(targetPtcl,*targetPsi);
           apot->put(cur);
           targetH->addOperator(std::move(apot), potName, false);
       }

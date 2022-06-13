@@ -28,7 +28,7 @@ using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 class MagDensityEstimator : public OperatorBase
 {
 public:
-  MagDensityEstimator(ParticleSet& elns);
+  MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi);
   int potentialIndex;
   void resetTargetParticleSet(ParticleSet& P) override;
 
@@ -60,6 +60,9 @@ public:
 
 
 private:
+  ///reference to the trial wavefunction for ratio evaluations
+  TrialWaveFunction& refPsi;
+    
   ///true if any direction of a supercell is periodic
   bool Periodic;
   ///normalization factor
@@ -85,6 +88,7 @@ private:
    * The argument list is not completed
    */
   void resize();
+
 };
 
 } // namespace qmcplusplus

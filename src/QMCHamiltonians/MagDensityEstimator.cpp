@@ -19,8 +19,10 @@
 #include "MagDensityEstimator.h"
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/LRCoulombSingleton.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "Particle/ParticleBase/RandomSeqGeneratorGlobal.h"
 
 namespace qmcplusplus
 {
@@ -28,7 +30,8 @@ using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
 using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
-MagDensityEstimator::MagDensityEstimator(ParticleSet& elns)
+MagDensityEstimator::MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi):
+refPsi(psi)
 {
   update_mode_.set(COLLECTABLE, 1);
   Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
@@ -43,19 +46,49 @@ void MagDensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 {
+  int Nsamps=5;
+  std::vector<ValueType> ratios;
+  ratios.resize(Nsamps);
+  ParticleSet::ParticleScalar dS;
+  const PosType dr(0.0); //Integration over spin variable doesn't change particle position.  
+			 //This is the argument for the calcRatio calls, which require both.
+  dS.resize(Nsamps);
+
   RealType wgt = t_walker_->Weight;
   if (Periodic)
   {
-    for (int iat = 0; iat < P.getTotalNum(); ++iat)
+    for (int ig = 0; ig < P.groups(); ++ig)
     {
-      PosType ru;
-      ru    = P.getLattice().toUnit(P.R[iat]);
-      int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-      int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-      int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-      for( int idim = 0; idim < OHMMS_DIM; idim++)
-        P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
-      //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
+      refPsi.prepareGroup(P,ig);
+      for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
+      {
+        PosType ru;
+        ru    = P.getLattice().toUnit(P.R[iat]);
+        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
+        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
+        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+     
+        //This has to be complex type for spinors.  If not true, other part of code will
+        //handle it.
+        ValueType sx(0.0);
+        ValueType sy(0.0);
+        ValueType sz(0.0);
+        makeUniformRandom(dS);
+        dS=dS*TWOPI; //We want the spin delta to go from 0-2pi.
+        for(int samp=0; samp<Nsamps; samp++)
+        {
+          if (!P.makeMoveAndCheckWithSpin(iat, dr, dS[samp]))
+          {
+            P.accept_rejectMove(iat, false);
+            //throw exception
+          }
+          ratios[samp] = refPsi.calcRatio(P, iat);
+          P.accept_rejectMove(iat,false); //reject the move
+        }
+        for( int idim = 0; idim < OHMMS_DIM; idim++)
+          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
+ 
+        }
     }
   }
   else
@@ -65,7 +98,6 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
       PosType ru;
       for (int dim = 0; dim < OHMMS_DIM; dim++)
       {
-        //ru[dim]=(P.R[iat][dim]-density_min[dim])/(density_max[dim]-density_min[dim]);
         ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
       }
       if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
@@ -75,7 +107,6 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
         for( int idim = 0; idim < OHMMS_DIM; idim++)
           P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
-        //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
       }
     }
   }
