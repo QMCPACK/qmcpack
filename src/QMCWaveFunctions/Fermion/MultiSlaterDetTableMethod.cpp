@@ -669,6 +669,28 @@ void MultiSlaterDetTableMethod::restore(int iat)
   curRatio = 1.0;
 }
 
+void MultiSlaterDetTableMethod::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                          const RefVectorWithLeader<ParticleSet>& p_list,
+                          int iat,
+                          const std::vector<bool>& isAccepted,
+                          bool safe_to_delay) const
+{
+  ScopedTimer local_timer(AccRejTimer);
+  for (size_t iw = 0; iw < isAccepted.size(); iw++)
+  {
+    auto& det = wfc_list.getCastedElement<MultiSlaterDetTableMethod>(iw);
+    if (isAccepted[iw])
+    {
+      det.psi_ratio_to_ref_det_ = det.new_psi_ratio_to_new_ref_det_;
+      det.log_value_ += convertValueToLog(det.curRatio);
+    }
+    det.curRatio = 1.0;
+  }
+  const auto det_id = getDetID(iat);
+  const auto det_list(extract_DetRef_list(wfc_list, det_id));
+  Dets[det_id]->mw_accept_rejectMove(det_list, p_list, iat, isAccepted);
+}
+
 void MultiSlaterDetTableMethod::registerData(ParticleSet& P, WFBufferType& buf)
 {
   for (size_t id = 0; id < Dets.size(); id++)
