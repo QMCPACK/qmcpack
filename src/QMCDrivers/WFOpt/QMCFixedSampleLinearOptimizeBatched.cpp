@@ -321,8 +321,12 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
+#if !defined(QMC_COMPLEX)
     app_log() << "Doing hybrid run" << std::endl;
     return hybrid_run();
+#else
+    myComm->barrier_and_abort(" Error: Hybrid method does not work with QMC_COMPLEX=1. \n");
+#endif
   }
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
@@ -330,7 +334,11 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
     return adaptive_three_shift_run();
 
   if (current_optimizer_type_ == OptimizerType::DESCENT)
+#if !defined(QMC_COMPLEX)
     return descent_run();
+#else
+  myComm->barrier_and_abort(" Error: Descent method does not work with QMC_COMPLEX=1. \n");
+#endif
 
 #endif
 
