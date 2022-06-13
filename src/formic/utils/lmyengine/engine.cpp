@@ -1610,7 +1610,6 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
                 }
             }
 
-            //Need to add guiding function or change signature
             this->take_sample(reduced_der_rat_samp,reduced_le_der_samp,reduced_le_der_samp,vgs,weight);
 
         }
@@ -1665,8 +1664,6 @@ _num_params=new_num;
 
 _mbuilder.resetParamNumber(new_num);
 
-//formic::VarDeps real_vdeps(new_num, std::vector<double>());
-//_dep_ptr = real_vdeps;
 
 int num_shift = _shift_scale.size();
   
@@ -1746,7 +1743,6 @@ if(!_ground)
 
 }
 
-//std::vector<double> energy_results = computeSigma_helper(weight_history, temp_e_list, weight_history);
 std::vector<double> energy_results = computeSigma_helper(weight_history, temp_e_list, vgs_history);
 
 double mean_energy = energy_results[0];
@@ -1980,7 +1976,6 @@ double y[7];
     y[5] += weight * n * d;
   }
 
-//  my_comm_->allreduce(y);
     
     double z[7];
   formic::mpi::allreduce(&y[0], &z[0], 7, MPI_SUM);
@@ -1992,12 +1987,6 @@ double y[7];
   double mp = z[5] / z[0]; // mean of the product of numerator times denominator
   double ns = z[6];        // number of samples
   
-  //double mf = y[1] / y[0]; // mean of numerator
-  //double mg = y[2] / y[0]; // mean of denominator
-  //double sf = y[3] / y[0]; // mean of the square of the numerator terms
-  //double sg = y[4] / y[0]; // mean of the square of the denominator terms
-  //double mp = y[5] / y[0]; // mean of the product of numerator times denominator
-  //double ns = y[6];        // number of samples
   
   double vf = (sf - mf * mf) * ns / (ns - static_cast<double>(1.0));
   double vg = (sg - mg * mg) * ns / (ns - static_cast<double>(1.0));
@@ -2007,7 +1996,6 @@ double y[7];
   double mean     = (mf / mg) / (static_cast<double>(1.0) + (vg / mg / mg - cv / mf / mg) / ns);
   double variance = (mf * mf / mg / mg) * (vf / mf / mf + vg / mg / mg - static_cast<double>(2.0) * cv / mf / mg);
   double stdErr   = std::sqrt(variance/z[0]); 
-  //double stdErr   = std::sqrt(variance);
   
   std::vector<double> results;
   results.push_back(mean);

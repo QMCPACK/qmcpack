@@ -241,7 +241,6 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
                                                        DescentEngine& descentEngineObj,
                                                        std::string MinMethod)
 {
-  app_log() << "entering engine_start function" << std::endl;
 
   // generate samples
   generate_samples_timer_.start();
@@ -1231,7 +1230,7 @@ int new_num = 0;
 if(store_samples_)
 {
 
-    //Need to clear lists from previous iter?
+    //Need to clear lists from previous iter
     EngineObj->reset();
 
     //If samples are being stored, check for the subcase where parameters are also being filtered

@@ -652,6 +652,8 @@ ScopedTimer tmp_timer(check_config_timer_);
            { 
               //Engines take 1.0 for weights until modified guiding function can be implemented  
               // pass into engine
+              //Derivative ratios on each sample can either by stored within the LM engine object or 
+              //taken one at a time to construct LM matrices.
               if(EngineObj->getStoringSamples())
               {
                 EngineObj->store_sample(der_rat_samp, le_der_samp, le_der_samp,1.0,1.0,is);
