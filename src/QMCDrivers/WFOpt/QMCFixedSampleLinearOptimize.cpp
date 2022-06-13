@@ -556,7 +556,7 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
-
+        hybridEngineObj->incrementStepCounter();
     return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
@@ -1133,19 +1133,19 @@ if(store_samples_)
                     if(EngineObj->getParameterSetting(j))
                     {
                         filtered_vec.push_back(full_vec[j]);
-                        reduced_vector[count] = full_vec[j];
+                        reduced_vector[count] = formic::real(full_vec[j]);
                         count++;
                     }
 
                 }
 
-                hybridBLM_Input[i] = filtered_vec;
+                hybridBLM_Input[i] = formic::real(filtered_vec);
                 trimmed_old_updates[i] = reduced_vector;
 
                 }
-
+#if !defined(QMC_COMPLEX)
             EngineObj->setHybridBLM_Input(hybridBLM_Input);
-
+#endif
 
             EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
             EngineObj->reset();
@@ -1325,7 +1325,7 @@ const formic::VarDeps new_vdeps(new_num, std::vector<double>());
 //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
 if(filter_param_)
 {
-std::vector<std::vector<RealType>> tmpParameterDirections;
+std::vector<std::vector<ValueType>> tmpParameterDirections;
 tmpParameterDirections.resize(shifts_i.size());
 
 for (int i = 0; i < shifts_i.size(); i++)

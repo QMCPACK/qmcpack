@@ -276,11 +276,11 @@ private:
 
   //std::vector<std::vector<double> > der_rat_history;
 
-  formic::Matrix<double> der_rat_history;
+  formic::Matrix<S> der_rat_history;
 
   //std::vector<std::vector<double> > le_der_rat_history;
 
-  formic::Matrix<double> le_der_rat_history;
+  formic::Matrix<S> le_der_rat_history;
 
   std::vector<double> vgs_history;
 
@@ -403,9 +403,9 @@ public:
   /// \param[in]  weight_samp    weight for this sample
   ///
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
-  void store_sample(std::vector<double> & der_rat_samp,
-                   std::vector<double> & le_der_samp,
-                   std::vector<double> & ls_der_samp,
+  void store_sample(std::vector<S> & der_rat_samp,
+                   std::vector<S> & le_der_samp,
+                   std::vector<S> & ls_der_samp,
                    double vgs_samp,    // trial-to-guiding square ratio
                    double weight_samp,
                    int sample_count);

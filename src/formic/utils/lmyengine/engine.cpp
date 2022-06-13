@@ -1548,7 +1548,7 @@ void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams,int numSamples)
 
 //Function for storing a sample (local energy and the sets of derivative ratios)
 template<typename S>
-void cqmc::engine::LMYEngine<S>::store_sample(std::vector<double> & der_rat_samp,std::vector<double> & le_der_samp,std::vector<double> & ls_der_samp,double vgs_samp,double weight_samp,int sample_count)
+void cqmc::engine::LMYEngine<S>::store_sample(std::vector<S> & der_rat_samp,std::vector<S> & le_der_samp,std::vector<S> & ls_der_samp,double vgs_samp,double weight_samp,int sample_count)
 {
 
 
@@ -1580,8 +1580,8 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
 
     for(int i = 0; i < num_samples; i++)
     {
-        std::vector<double> der_rat_samp;
-        std::vector<double> le_der_samp;
+        std::vector<S> der_rat_samp;
+        std::vector<S> le_der_samp;
 
         for(int j = 0;j < der_vec_len;j++)
         {
@@ -1594,8 +1594,8 @@ void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
 
         if(filter_param_)
         {
-            std::vector<double> reduced_der_rat_samp;
-            std::vector<double> reduced_le_der_samp;
+            std::vector<S> reduced_der_rat_samp;
+            std::vector<S> reduced_le_der_samp;
 
             reduced_der_rat_samp.push_back(der_rat_samp[0]);
             reduced_le_der_samp.push_back(le_der_samp[0]);
@@ -1728,7 +1728,7 @@ double denomSigma;
 
 for(int j = 0; j < num_samples; j++)
 {
-    double etmp = le_der_rat_history.at(j,0);
+    double etmp = formic::real(le_der_rat_history.at(j,0));
 
     double vgs = vgs_history[j];
 
@@ -1776,10 +1776,10 @@ int sample_counter = 0;
 
     for(int j = 0; j < num_samples; j++)
     {
-        double param_le_der = le_der_rat_history.at(j,i);
-        double param_der_rat = der_rat_history.at(j,i);
+        double param_le_der = formic::real(le_der_rat_history.at(j,i));
+        double param_der_rat = formic::real(der_rat_history.at(j,i));
         double vgs = vgs_history[j];
-        double etmp = le_der_rat_history.at(j,0);
+        double etmp = formic::real(le_der_rat_history.at(j,0));
 
         if(_ground)
         {

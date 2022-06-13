@@ -552,12 +552,13 @@ ScopedTimer tmp_timer(check_config_timer_);
     if(EngineObj->getStoringSamples())
      {
         int numParams = EngineObj->getTotalParamNum();
-        //int numSamples = wRef.numSamples();
-        //app_log() << "Sizing matrices on a process for storing samples, total numParams: " << numParams << ", numSamples: " << numSamples << std::endl;
-        EngineObj->setUpStorage(numParams,local_samples);
+        int numSamples = samples.getNumSamples();
+        app_log() << "Sizing matrices on a process for storing samples, total numParams: " << numParams << ", numSamples: " << numSamples  << " num_batches: " << num_batches << std::endl;
+        EngineObj->setUpStorage(numParams,numSamples);
 
      }
 
+    
     for (int inb = 0; inb < num_batches; inb++)
     {
       int current_batch_size = walkers_per_crowd[crowd_id];
@@ -566,6 +567,7 @@ ScopedTimer tmp_timer(check_config_timer_);
 
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
+      
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto h_list_no_leader  = opt_data.get_h_list(current_batch_size);

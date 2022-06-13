@@ -68,7 +68,6 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 //Retrieves the appropriate XML input for the current optimization method
 xmlNodePtr HybridEngine::getSelectedXML()
 {
-  step_num_++;
 
   return saved_xml_opt_methods_[identifyMethodIndex()];
 }
@@ -91,6 +90,7 @@ bool HybridEngine::queryStore(int store_num, const OptimizerType method) const
   const int pos          = step_num_ % tot_micro_it;
   //interval is the number of steps between stores based on the number of stores desired
   int interval = num_updates_opt_methods_[idx] / store_num;
+
 
   if (interval == 0)
   {
