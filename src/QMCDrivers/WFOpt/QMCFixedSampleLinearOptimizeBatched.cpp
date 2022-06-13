@@ -719,8 +719,17 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   previous_optimizer_type_ = current_optimizer_type_;
   current_optimizer_type_  = OptimizerNames.at(MinMethod);
 
-  if (current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
-    descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+  if (current_optimizer_type_ == OptimizerType::DESCENT)
+  {
+      if(!descentEngineObj)
+      {
+        descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
+      }
+      else
+      {
+          descentEngineObj->processXML(opt_xml);
+      }
+  }
 
   // sanity check
   if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE
