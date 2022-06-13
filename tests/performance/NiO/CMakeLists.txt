@@ -112,6 +112,22 @@ else()
       64
       64
       64)
+  # walker count preset for NIO_SIZES problems
+  # These numbers are not optimal but should be indicative of performance
+  # Walker count scan for each problem size is still required to maximize throughput
+  # for a given hardware if its memory capacity allows.
+  set(WALKER_COUNTS
+      1024
+      512
+      256
+      128
+      64
+      32
+      16
+      16
+      16
+      16
+      16)
 
   if(QMC_NIO_MAX_SIZE)
     foreach(SIZE IN LISTS NIO_SIZES)
@@ -135,11 +151,12 @@ else()
     set(H5_FILE NiO-fcc-supertwist111-supershift000-S${SIZE}.h5)
     set(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
     if(EXISTS ${H5_FULL_PATH})
+      list(GET WALKER_COUNTS ${INDEX} WALKER_COUNT)
       set(ADJUST_INPUT "-i")
       if(NOT QMC_CUDA)
         # CPU driver
         set(DRIVER_TYPE cpu_driver)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w16-SM1)
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-SM1)
         set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
@@ -149,10 +166,10 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w 16 -d 1")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d 1")
         ## delayed update
         list(GET DELAY_RANKS ${INDEX} NDELAY)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w16-DU${NDELAY})
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-DU${NDELAY})
         set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-DU${NDELAY})
         add_nio_test(
           ${PERF_TEST}
@@ -162,9 +179,9 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w 16 -d ${NDELAY}")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY}")
         ## J3
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w16-J3)
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-J3)
         set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-J3)
         add_nio_test(
           ${PERF_TEST}
@@ -174,12 +191,12 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w 16 -j ${TEST_DIR}/J123.xml")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -j ${TEST_DIR}/J123.xml")
 
         # Batched driver
         set(DRIVER_TYPE batched_driver)
         ## delayed update
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w16-DU${NDELAY})
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-DU${NDELAY})
         set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-DU${NDELAY})
         add_nio_test(
           ${PERF_TEST}
@@ -189,11 +206,11 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w 16 -d ${NDELAY} -u --detbatched")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -u --detbatched")
       else(NOT QMC_CUDA)
         # legacy CUDA driver
         set(DRIVER_TYPE legacy_cuda)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w32)
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
         set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
@@ -203,7 +220,7 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w 32")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT}")
       endif(NOT QMC_CUDA)
     else()
       message(

@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -26,7 +26,8 @@ set(HAM_SRCS
     test_PairCorrEstimator.cpp
     test_SkAllEstimator.cpp
     test_QMCHamiltonian.cpp
-    test_ObservableHelper.cpp)
+    test_ObservableHelper.cpp
+    test_Listener.cpp)
     
 
 if(QMC_CUDA)

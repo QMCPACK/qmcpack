@@ -41,44 +41,44 @@ std::vector<int>
 
 void initCUDAStreams()
 {
-  cudaStreamCreate(&kernelStream);
-  cudaStreamCreate(&memoryStream);
+  cudaCheck(cudaStreamCreate(&kernelStream));
+  cudaCheck(cudaStreamCreate(&memoryStream));
 }
 
 void initCUDAEvents()
 {
-  cudaEventCreateWithFlags(&syncEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&gradientSyncDiracEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&gradientSyncOneBodyEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&gradientSyncTwoBodyEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&ratioSyncDiracEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&ratioSyncOneBodyEvent, cudaEventDisableTiming);
-  cudaEventCreateWithFlags(&ratioSyncTwoBodyEvent, cudaEventDisableTiming);
+  cudaCheck(cudaEventCreateWithFlags(&syncEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&gradientSyncDiracEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&gradientSyncOneBodyEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&gradientSyncTwoBodyEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&ratioSyncDiracEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&ratioSyncOneBodyEvent, cudaEventDisableTiming));
+  cudaCheck(cudaEventCreateWithFlags(&ratioSyncTwoBodyEvent, cudaEventDisableTiming));
 }
 
 void initCublas() { cublasCreate(&cublasHandle); }
 
 void finalizeCUDAStreams()
 {
-  cudaStreamDestroy(kernelStream);
-  cudaStreamDestroy(memoryStream);
+  cudaCheck(cudaStreamDestroy(kernelStream));
+  cudaCheck(cudaStreamDestroy(memoryStream));
 }
 
 void finalizeCUDAEvents()
 {
-  cudaEventDestroy(syncEvent);
-  cudaEventDestroy(gradientSyncDiracEvent);
-  cudaEventDestroy(gradientSyncOneBodyEvent);
-  cudaEventDestroy(gradientSyncTwoBodyEvent);
-  cudaEventDestroy(ratioSyncDiracEvent);
-  cudaEventDestroy(ratioSyncOneBodyEvent);
-  cudaEventDestroy(ratioSyncTwoBodyEvent);
+  cudaCheck(cudaEventDestroy(syncEvent));
+  cudaCheck(cudaEventDestroy(gradientSyncDiracEvent));
+  cudaCheck(cudaEventDestroy(gradientSyncOneBodyEvent));
+  cudaCheck(cudaEventDestroy(gradientSyncTwoBodyEvent));
+  cudaCheck(cudaEventDestroy(ratioSyncDiracEvent));
+  cudaCheck(cudaEventDestroy(ratioSyncOneBodyEvent));
+  cudaCheck(cudaEventDestroy(ratioSyncTwoBodyEvent));
 }
 
 void finalizeCublas() { cublasDestroy(cublasHandle); }
 
-void synchronize() { cudaDeviceSynchronize(); }
+void synchronize() { cudaCheck(cudaDeviceSynchronize()); }
 
-void streamsSynchronize() { cudaEventRecord(syncEvent, 0); }
+void streamsSynchronize() { cudaCheck(cudaEventRecord(syncEvent, 0)); }
 
 } // namespace gpu

@@ -11,6 +11,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "delayed_update.h"
+#include "Platforms/CUDA_legacy/cuda_error.h"
 #include <cstdio>
 #include <unistd.h>
 #include <sstream>
@@ -1924,7 +1925,7 @@ void calc_gradlapl_and_collect(std::complex<float>* lemma_lu[],
                                                                            kdelay,
                                                                            N,
                                                                            rowstride);
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 void calc_gradlapl_and_collect(std::complex<double>* lemma_lu[],
@@ -1947,7 +1948,7 @@ void calc_gradlapl_and_collect(std::complex<double>* lemma_lu[],
                                                                             kdelay,
                                                                             N,
                                                                             rowstride);
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 void calc_gradient_delayed(std::complex<float>* Ainv_row[],

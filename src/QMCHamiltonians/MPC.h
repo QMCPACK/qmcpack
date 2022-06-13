@@ -15,6 +15,7 @@
 
 #ifndef QMCPLUSPLUS_MPC_H
 #define QMCPLUSPLUS_MPC_H
+
 #include "QMCHamiltonians/OperatorBase.h"
 #include "LongRange/LRCoulombSingleton.h"
 
@@ -43,7 +44,7 @@ protected:
   std::vector<TinyVector<int, OHMMS_DIM>> Gints;
   std::vector<PosType> Gvecs;
   std::vector<ComplexType> Rho_G;
-  TinyVector<int, OHMMS_DIM> SplineDim;
+  std::array<size_t, OHMMS_DIM> SplineDim;
   int MaxDim;
   Return_t evalSR(ParticleSet& P) const;
   Return_t evalLR(ParticleSet& P) const;
