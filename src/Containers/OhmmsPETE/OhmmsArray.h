@@ -82,9 +82,9 @@ public:
   inline typename Container_t::const_iterator begin() const { return X.begin(); }
   inline typename Container_t::const_iterator end() const { return X.end(); }
 
-  /// access data pointer
+  ///@{
+  /// access the container data pointer
   inline Type_t* data() { return X.data(); }
-  /// const access data pointer
   inline const Type_t* data() const { return X.data(); }
   template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   inline Type_t* device_data()
@@ -96,7 +96,10 @@ public:
   {
     return X.device_data();
   }
+  ///@}
 
+  ///@{
+  /// access the data pointer at {index_1, ..., index_D}
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Type_t* data_at(const std::array<SIZET, D>& indices)
   {
@@ -124,34 +127,31 @@ public:
     return X.device_data() + compute_offset(indices);
   }
 
-  /// access data pointer at {index_1, ..., index_D}
   template<typename... Args>
   Type_t* data_at(Args... indices)
   {
     static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
     return data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
-  /// const access data pointer at {index_1, ..., index_D}
   template<typename... Args>
   const Type_t* data_at(Args... indices) const
   {
     static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
     return data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
-  /// access data pointer at {index_1, ..., index_D}
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   Type_t* device_data_at(Args... indices)
   {
     static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
     return device_data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
-  /// const access data pointer at {index_1, ..., index_D}
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   const Type_t* device_data_at(Args... indices) const
   {
     static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
     return device_data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
+  ///@}
 
   inline const Type_t* first_address() const { return X.data(); }
 
@@ -185,7 +185,8 @@ public:
     return *this;
   }
 
-  // Get and Set Operations
+  ///@{
+  /// access the element at {index_1, ..., index_D}
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Type_t& operator()(const std::array<SIZET, D>& indices)
   {
@@ -208,6 +209,7 @@ public:
     static_assert(sizeof...(Args) == D, "operator() arguments must match dimensionality of Array");
     return operator()({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
+  ///@}
 
   inline Type_t sum() const
   {
