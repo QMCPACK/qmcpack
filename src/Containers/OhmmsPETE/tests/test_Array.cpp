@@ -75,8 +75,13 @@ TEST_CASE("array NestedContainers", "[OhmmsPETE]")
 
 TEST_CASE("Array::data", "[OhmmsPETE]")
 {
-  Array<double, 3> tensor(2, 4, 5);
+  Array<float, 3> tensor(2, 4, 5);
+  REQUIRE(tensor.size() == 40);
+
   CHECK(tensor.data() + 1 * 4 * 5 + 2 * 5 + 3 == tensor.data_at(1, 2, 3));
+
+  tensor(1, 2, 3) = 0.5f;
+  CHECK(*tensor.data_at(1, 2, 3) == 0.5f);
 }
 
 TEST_CASE("Array::dimension sizes constructor", "[OhmmsPETE]")
