@@ -1856,7 +1856,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
-  start();
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);

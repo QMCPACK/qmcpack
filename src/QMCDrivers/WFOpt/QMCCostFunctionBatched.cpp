@@ -549,7 +549,7 @@ ScopedTimer tmp_timer(check_config_timer_);
 
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
 
-    if(EngineObj->getStoringSamples())
+    if(MinMethod == "adaptive" && EngineObj->getStoringSamples())
      {
         int numParams = EngineObj->getTotalParamNum();
         int numSamples = samples.getNumSamples();
@@ -857,18 +857,19 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
         current_batch_size = final_batch_size;
       }
 
+
       const int base_sample_index = inb * walkers_per_crowd[crowd_id] + samples_per_crowd_offsets[crowd_id];
 
       auto p_list_no_leader  = opt_data.get_p_list(current_batch_size);
       auto wf_list_no_leader = opt_data.get_wf_list(current_batch_size);
-      auto h0_list_no_leader = opt_data.get_h0_list(current_batch_size);
+      auto h_list_no_leader = opt_data.get_h_list(current_batch_size);
       const RefVectorWithLeader<ParticleSet> p_list(p_list_no_leader[0], p_list_no_leader);
       const RefVectorWithLeader<TrialWaveFunction> wf_list(wf_list_no_leader[0], wf_list_no_leader);
-      const RefVectorWithLeader<QMCHamiltonian> h0_list(h0_list_no_leader[0], h0_list_no_leader);
+      const RefVectorWithLeader<QMCHamiltonian> h_list(h_list_no_leader[0], h_list_no_leader);
 
       ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(opt_data.getSharedResource().pset_res, p_list);
       ResourceCollectionTeamLock<TrialWaveFunction> twfs_res_lock(opt_data.getSharedResource().twf_res, wf_list);
-      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.get_h0_res(), h0_list);
+      ResourceCollectionTeamLock<QMCHamiltonian> hams_res_lock(opt_data.get_h0_res(), h_list);
 
       // Load this batch of samples into the crowd data
       for (int ib = 0; ib < current_batch_size; ib++)
@@ -876,7 +877,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
         samples.loadSample(p_list[ib], base_sample_index + ib);
         // Copy the saved RNG state
         *opt_data.get_rng_ptr_list()[ib] = opt_data.get_rng_save();
-        h0_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
+        h_list[ib].setRandomGenerator(opt_data.get_rng_ptr_list()[ib].get());
       }
 
       // Update distance tables, etc for the loaded sample positions
@@ -935,11 +936,10 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 
         TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
 
-
-        // Energy
         auto energy_list =
-            QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, wf_list, p_list, optVars, dlogpsi_array,
+            QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                            dhpsioverpsi_array, compute_nlpp);
+
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
@@ -959,12 +959,13 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
       else
       {
         // Just energy needed if no gradients
-        auto energy_list = QMCHamiltonian::mw_evaluate(h0_list, wf_list, p_list);
+        auto energy_list = QMCHamiltonian::mw_evaluate(h_list, wf_list, p_list);
         for (int ib = 0; ib < current_batch_size; ib++)
         {
           const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
-          RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+          //RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+          RecordsOnNode[is][ENERGY_NEW] = etmp;
         }
       }
     }
