@@ -140,27 +140,27 @@ public:
   template<typename... Args>
   Type_t* data(Args... offsets)
   {
-    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
     return data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   /// const access data pointer at (offset_1, ..., offset_D})
   template<typename... Args>
   const Type_t* data(Args... offsets) const
   {
-    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
     return data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   Type_t* device_data(Args... offsets)
   {
-    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
     return device_data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
   /// const access data pointer at (offset_1, ..., offset_D})
   template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
   const Type_t* device_data(Args... offsets) const
   {
-    static_assert(sizeof...(Args) == D, "resize arguments must match dimensionality of Array");
+    static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
     return device_data({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
 
@@ -198,20 +198,33 @@ public:
   }
 
   // Get and Set Operations
-  inline Type_t& operator()(size_t i) { return X[i]; }
-
-  inline Type_t operator()(size_t i) const { return X[i]; }
-  inline Type_t& operator()(size_t i, size_t j) { return X[j + Length[1] * i]; }
-  inline Type_t operator()(size_t i, size_t j) const { return X[j + Length[1] * i]; }
-  inline Type_t& operator()(size_t i, size_t j, size_t k) { return X[k + Length[2] * (j + Length[1] * i)]; }
-  inline Type_t operator()(size_t i, size_t j, size_t k) const { return X[k + Length[2] * (j + Length[1] * i)]; }
-  inline Type_t& operator()(size_t i, size_t j, size_t k, size_t l)
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  Type_t& operator()(const std::array<SIZET, D>& indices)
   {
-    return X[l + Length[3] * (k + Length[2] * (j + Length[1] * i))];
+    size_t offset = indices[0];
+    for (int i = 1; i < indices.size(); i++)
+      offset = offset * Length[i] + indices[i];
+    return X[offset];
   }
-  inline Type_t operator()(size_t i, size_t j, size_t k, size_t l) const
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  const Type_t& operator()(const std::array<SIZET, D>& indices) const
   {
-    return X[l + Length[3] * (k + Length[2] * (j + Length[1] * i))];
+    size_t offset = indices[0];
+    for (int i = 1; i < indices.size(); i++)
+      offset = offset * Length[i] + indices[i];
+    return X[offset];
+  }
+  template<typename... Args>
+  Type_t& operator()(Args... offsets)
+  {
+    static_assert(sizeof...(Args) == D, "operator() arguments must match dimensionality of Array");
+    return operator()({static_cast<std::size_t>(std::forward<Args>(offsets))...});
+  }
+  template<typename... Args>
+  const Type_t& operator()(Args... offsets) const
+  {
+    static_assert(sizeof...(Args) == D, "operator() arguments must match dimensionality of Array");
+    return operator()({static_cast<std::size_t>(std::forward<Args>(offsets))...});
   }
 
   inline Type_t sum() const

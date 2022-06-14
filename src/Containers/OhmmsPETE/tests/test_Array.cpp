@@ -24,8 +24,8 @@ namespace qmcplusplus
 TEST_CASE("array", "[OhmmsPETE]")
 {
   using Array1D = Array<double, 1>;
-  Array1D A({3});
-  Array1D B({3});
+  Array1D A(3);
+  Array1D B(3);
 
   // iterator
   auto ia = A.begin();
