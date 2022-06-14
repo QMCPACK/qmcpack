@@ -33,6 +33,8 @@
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/Timer.h"
 #include "Message/UniformCommunicateError.h"
+#include "EstimatorInputDelegates.h"
+
 
 namespace qmcplusplus
 {
@@ -43,6 +45,7 @@ namespace qmcplusplus
  */
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
+                           const std::optional<EstimatorManagerInput>& global_emi,
                            MCPopulation&& population,
                            const std::string timer_prefix,
                            Communicate* comm,
@@ -52,7 +55,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
       population_(std::move(population)),
-      dispatchers_(!qmcdriver_input_.are_walkers_serialized()),
+      dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
       wOut(0),
       timers_(timer_prefix),
@@ -61,10 +64,28 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       project_data_(project_data),
       setNonLocalMoveHandler_(snlm_handler)
 {
-  //create and initialize estimator
-  estimator_manager_ = std::make_unique<EstimatorManagerNew>(population_.get_golden_hamiltonian(), myComm);
+  // This is done so that the application level input structures reflect the actual input to the code.
+  // While the actual simulation objects still take singular input structures at construction.
+  auto makeEstimatorManagerInput = [](auto& global_emi, auto& local_emi) -> EstimatorManagerInput {
+    if (global_emi.has_value() && local_emi.has_value())
+      return {global_emi.value(), local_emi.value()};
+    else if (global_emi.has_value())
+      return {global_emi.value()};
+    else if (local_emi.has_value())
+      return {local_emi.value()};
+    else
+      return {};
+  };
 
-  drift_modifier_.reset(createDriftModifier(qmcdriver_input_));
+  estimator_manager_ =
+      std::make_unique<EstimatorManagerNew>(comm,
+                                            makeEstimatorManagerInput(global_emi,
+                                                                      qmcdriver_input_.get_estimator_manager_input()),
+                                            population_.get_golden_hamiltonian(), *population.get_golden_electrons(),
+                                            population.get_golden_twf());
+
+  drift_modifier_.reset(
+      createDriftModifier(qmcdriver_input_.get_drift_modifier(), qmcdriver_input_.get_drift_modifier_unr_a()));
 
   // This needs to be done here to keep dependency on CrystalLattice out of the QMCDriverInput.
   max_disp_sq_ = input.get_max_disp_sq();
@@ -137,10 +158,12 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
-  estimator_manager_->put(population_.get_golden_hamiltonian(), *population_.get_golden_electrons(),
-                          population_.get_golden_twf(), cur);
-
-  if (dispatchers_.are_walkers_batched())
+  if (qmcdriver_input_.areWalkersSerialized())
+  {
+    if(estimator_manager_->areThereListeners())
+      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are incompatible with estimators requiring per particle listeners");
+  }
+  else
   {
     app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons()->createResource(golden_resource_.pset_res);

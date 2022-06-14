@@ -19,8 +19,9 @@ namespace qmcplusplus
 namespace testing
 {
 
+Libxml2Document createEstimatorManagerNewGlobalInputXML();
 Libxml2Document createEstimatorManagerNewInputXML();
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus
 #endif

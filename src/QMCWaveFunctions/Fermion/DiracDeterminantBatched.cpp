@@ -232,13 +232,11 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
 
     auto psiMinv_row_dev_ptr_list = DET_ENGINE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    phi_vgl_v.resize(NumOrbitals * wfc_list.size());
+    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 
-    VectorSoaContainer<Value, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
-                                                      phi_vgl_v.capacity());
-    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view,
+    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
                                                    ratios_local, grad_new_local);
   }
 
@@ -317,15 +315,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_accept_rejectMove(
     det.curRatio = 1.0;
   }
 
-  if (!Phi->isOMPoffload() && n_accepted > 0)
-  {
-    auto* phi_vgl_v_ptr = phi_vgl_v.data();
-    // transfer host to device, total size 5, v(1) + g(3) + l(1)
-    PRAGMA_OFFLOAD("omp target update to(phi_vgl_v_ptr[:phi_vgl_v.capacity()*5])")
-  }
-
   DET_ENGINE::mw_accept_rejectRow(engine_list, WorkingIndex, psiM_g_dev_ptr_list, psiM_l_dev_ptr_list, isAccepted,
-                                  phi_vgl_v.device_data(), phi_vgl_v.capacity(), ratios_local);
+                                  phi_vgl_v, ratios_local);
 
   if (!safe_to_delay)
     DET_ENGINE::mw_updateInvMat(engine_list);
@@ -595,15 +586,13 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_calcRatio(const RefVectorWithLeader
 
     auto psiMinv_row_dev_ptr_list = DET_ENGINE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
 
-    phi_vgl_v.resize(NumOrbitals * wfc_list.size());
+    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
     ratios_local.resize(wfc_list.size());
     grad_new_local.resize(wfc_list.size());
 
-    VectorSoaContainer<Value, DIM + 2> phi_vgl_v_view(phi_vgl_v.data(), NumOrbitals * wfc_list.size(),
-                                                      phi_vgl_v.capacity());
     // calling Phi->mw_evaluateVGLandDetRatioGrads is a temporary workaround.
     // We may implement mw_evaluateVandDetRatio in the future.
-    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v_view,
+    wfc_leader.Phi->mw_evaluateVGLandDetRatioGrads(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
                                                    ratios_local, grad_new_local);
   }
 

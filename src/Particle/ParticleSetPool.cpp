@@ -87,8 +87,17 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
 
-  LatticeParser a(simulation_cell_->lattice_);
-  bool lattice_defined = a.put(cur);
+  bool lattice_defined = false;
+  try
+  {
+    LatticeParser a(simulation_cell_->lattice_);
+    lattice_defined = a.put(cur);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
+
   if (lattice_defined)
   {
     app_log() << "  Overwriting global supercell " << std::endl;

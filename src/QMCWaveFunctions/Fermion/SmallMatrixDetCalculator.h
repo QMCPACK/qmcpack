@@ -296,7 +296,6 @@ inline VALUE calcSmallDeterminant(size_t n, const VALUE* table_matrix, const int
   default:
     throw std::runtime_error("calculateSmallDeterminant only handles the number of excitations <= 5.");
   }
-  return 0.0;
 }
 
 

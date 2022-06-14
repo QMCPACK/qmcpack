@@ -14,6 +14,7 @@
 
 
 #include "CudaCoulomb.h"
+#include "Platforms/CUDA_legacy/cuda_error.h"
 
 __device__ inline void sincos_t(float x, float *sin, float *cos) {
   sincosf(x, sin, cos);
@@ -33,49 +34,64 @@ void init_Acuda()
   {
     float A_h[16] = {-1.0 / 6.0, 3.0 / 6.0, -3.0 / 6.0, 1.0 / 6.0, 3.0 / 6.0, -6.0 / 6.0, 0.0 / 6.0, 4.0 / 6.0,
                      -3.0 / 6.0, 3.0 / 6.0, 3.0 / 6.0,  1.0 / 6.0, 1.0 / 6.0, 0.0 / 6.0,  0.0 / 6.0, 0.0 / 6.0};
-    cudaMemcpyToSymbol(Acuda, A_h, 16 * sizeof(float), 0, cudaMemcpyHostToDevice);
+    cudaCheck(cudaMemcpyToSymbol(Acuda, A_h, 16 * sizeof(float), 0, cudaMemcpyHostToDevice));
     initialized = true;
   }
 }
 
 
-texture<float, 1, cudaReadModeElementType> myTex;
-texture<float, 1, cudaReadModeElementType> tex00, tex01, tex02, tex03, tex04, tex05, tex06, tex07, tex08, tex09;
+__device__ float* myTex;
+__device__ float *tex00, *tex01, *tex02, *tex03, *tex04, *tex05, *tex06, *tex07, *tex08, *tex09;
+__device__ int clamp00, clamp01, clamp02, clamp03, clamp04, clamp05, clamp06, clamp07, clamp08, clamp09;
 bool textureInUse[MAX_TEXTURES] = {false, false, false, false, false, false, false, false, false, false};
 
+
+__device__ float tex1D(float* tex, float x, int clamp)
+{
+    float xb = x-0.5f;
+    float whole = floor(xb);
+    float alpha = xb-whole;
+    int i0 = int(whole);
+    int i1 = i0+1;
+    i0 = max(0, i0);
+    i0 = min(i0, clamp-1);
+    i1 = max(0, i1);
+    i1 = min(i1, clamp-1);
+    return (1.0f-alpha)*tex[i0]+alpha*tex[i1];
+}
 
 #define arraytexFetch(_u, _texnum, _return) \
   switch (_texnum)                          \
   {                                         \
   case 0:                                   \
-    _return = tex1D(tex00, (_u));           \
+    _return = tex1D(tex00, (_u), clamp00);  \
     break;                                  \
   case 1:                                   \
-    _return = tex1D(tex01, (_u));           \
+    _return = tex1D(tex01, (_u), clamp01);  \
     break;                                  \
   case 2:                                   \
-    _return = tex1D(tex02, (_u));           \
+    _return = tex1D(tex02, (_u), clamp02);  \
     break;                                  \
   case 3:                                   \
-    _return = tex1D(tex03, (_u));           \
+    _return = tex1D(tex03, (_u), clamp03);  \
     break;                                  \
   case 4:                                   \
-    _return = tex1D(tex04, (_u));           \
+    _return = tex1D(tex04, (_u), clamp04);  \
     break;                                  \
   case 5:                                   \
-    _return = tex1D(tex05, (_u));           \
+    _return = tex1D(tex05, (_u), clamp05);  \
     break;                                  \
   case 6:                                   \
-    _return = tex1D(tex06, (_u));           \
+    _return = tex1D(tex06, (_u), clamp06);  \
     break;                                  \
   case 7:                                   \
-    _return = tex1D(tex07, (_u));           \
+    _return = tex1D(tex07, (_u), clamp07);  \
     break;                                  \
   case 8:                                   \
-    _return = tex1D(tex08, (_u));           \
+    _return = tex1D(tex08, (_u), clamp08);  \
     break;                                  \
   case 9:                                   \
-    _return = tex1D(tex09, (_u));           \
+    _return = tex1D(tex09, (_u), clamp09);  \
     break;                                  \
   }
 
@@ -108,70 +124,49 @@ void TextureSpline::set(const double data[], int numPoints, double rmin, double 
   float data_Host[numPoints];
   for (int i = 0; i < numPoints; i++)
     data_Host[i] = data[i];
-  cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
-  cudaMallocArray(&myArray, &channelDesc, numPoints);
-  cudaMemcpyToArrayAsync(myArray, 0, 0, data_Host, numPoints * sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMalloc(&myArray, numPoints * sizeof(float)));
+  cudaCheck(cudaMemcpyAsync(myArray, data_Host, numPoints * sizeof(float), cudaMemcpyHostToDevice));
   switch (MyTexture)
   {
   case 0:
-    tex00.addressMode[0] = cudaAddressModeClamp;
-    tex00.filterMode     = cudaFilterModeLinear;
-    tex00.normalized     = false;
-    cudaBindTextureToArray(tex00, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex00, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp00, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 1:
-    tex01.addressMode[0] = cudaAddressModeClamp;
-    tex01.filterMode     = cudaFilterModeLinear;
-    tex01.normalized     = false;
-    cudaBindTextureToArray(tex01, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex01, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp01, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 2:
-    tex02.addressMode[0] = cudaAddressModeClamp;
-    tex02.filterMode     = cudaFilterModeLinear;
-    tex02.normalized     = false;
-    cudaBindTextureToArray(tex02, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex02, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp02, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 3:
-    tex03.addressMode[0] = cudaAddressModeClamp;
-    tex03.filterMode     = cudaFilterModeLinear;
-    tex03.normalized     = false;
-    cudaBindTextureToArray(tex03, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex03, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp03, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 4:
-    tex04.addressMode[0] = cudaAddressModeClamp;
-    tex04.filterMode     = cudaFilterModeLinear;
-    tex04.normalized     = false;
-    cudaBindTextureToArray(tex04, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex04, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp04, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 5:
-    tex05.addressMode[0] = cudaAddressModeClamp;
-    tex05.filterMode     = cudaFilterModeLinear;
-    tex05.normalized     = false;
-    cudaBindTextureToArray(tex05, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex05, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp05, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 6:
-    tex06.addressMode[0] = cudaAddressModeClamp;
-    tex06.filterMode     = cudaFilterModeLinear;
-    tex06.normalized     = false;
-    cudaBindTextureToArray(tex06, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex06, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp06, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 7:
-    tex07.addressMode[0] = cudaAddressModeClamp;
-    tex07.filterMode     = cudaFilterModeLinear;
-    tex07.normalized     = false;
-    cudaBindTextureToArray(tex07, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex07, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp07, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 8:
-    tex08.addressMode[0] = cudaAddressModeClamp;
-    tex08.filterMode     = cudaFilterModeLinear;
-    tex08.normalized     = false;
-    cudaBindTextureToArray(tex08, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex08, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp08, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   case 9:
-    tex09.addressMode[0] = cudaAddressModeClamp;
-    tex09.filterMode     = cudaFilterModeLinear;
-    tex09.normalized     = false;
-    cudaBindTextureToArray(tex09, myArray, channelDesc);
+    cudaCheck(cudaMemcpyToSymbol(tex09, &myArray, sizeof(void*), 0, cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyToSymbol(clamp09, &numPoints, sizeof(int), 0, cudaMemcpyHostToDevice));
     break;
   }
 }
@@ -310,7 +305,7 @@ __global__ void coulomb_AA_PBC_kernel(TR** R,
           arraytexFetch(nrm * dist + 0.5, textureNum, tval);
           mysum += tval / dist;
         }
-        //	  mysum += dist;
+        // mysum += dist;
       }
     }
   }
@@ -344,7 +339,7 @@ __global__ void coulomb_AA_PBC_kernel(TR** R,
           float tval;
           arraytexFetch(nrm * dist + 0.5, textureNum, tval);
           mysum += tval / dist;
-          //	  mysum += tex1D(shortTex[textureNum], nrm*dist+0.5)/dist;
+          // mysum += tex1D(shortTex[textureNum], nrm*dist+0.5)/dist;
         }
       }
     }
@@ -394,7 +389,7 @@ __global__ void coulomb_AA_kernel(T** R, int N, T* sum)
         T distInv = recipSqrt(dx * dx + dy * dy + dz * dz);
         if (ptcl1 != ptcl2)
           mysum += distInv;
-        //	  mysum += dist;
+        // mysum += dist;
       }
     }
   }
@@ -1404,30 +1399,30 @@ void TestTexture()
   int Npoints = 31415;
   cudaArray* myArray;
   cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);
-  cudaMallocArray(&myArray, &channelDesc, Ntex);
+  cudaCheck(cudaMallocArray(&myArray, &channelDesc, Ntex));
   float data[Ntex];
   for (int i = 0; i < Ntex; i++)
   {
     double x = (double)i / (double)(Ntex - 1) * 2.0 * M_PI;
     data[i]  = (float)sin(x);
   }
-  cudaMemcpyToArrayAsync(myArray, 0, 0, data, Ntex * sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToArrayAsync(myArray, 0, 0, data, Ntex * sizeof(float), cudaMemcpyHostToDevice));
   myTex.addressMode[0] = cudaAddressModeClamp;
   myTex.filterMode     = cudaFilterModeLinear;
   myTex.normalized     = false;
-  cudaBindTextureToArray(myTex, myArray, channelDesc);
+  cudaCheck(cudaBindTextureToArray(myTex, myArray, channelDesc));
   float *x_d, *vals_d;
-  cudaMalloc((void**)&x_d, Npoints * sizeof(float));
-  cudaMalloc((void**)&vals_d, Npoints * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&x_d, Npoints * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&vals_d, Npoints * sizeof(float)));
   float x_host[Npoints];
   for (int i = 0; i < Npoints; i++)
     x_host[i] = (double)i / (double)(Npoints - 1) * (double)Ntex;
-  cudaMemcpyAsync(x_d, x_host, Npoints * sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(x_d, x_host, Npoints * sizeof(float), cudaMemcpyHostToDevice));
   dim3 dimBlock(1);
   dim3 dimGrid(1);
   test_texture_kernel<<<dimGrid, dimBlock>>>(x_d, vals_d, Ntex, Npoints);
   float vals_host[Npoints];
-  cudaMemcpy(vals_host, vals_d, Npoints * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(vals_host, vals_d, Npoints * sizeof(float), cudaMemcpyDeviceToHost));
   for (int i = 0; i < Npoints; i++)
     fprintf(stderr, "%18.10f %18.10f\n", sin(2.0 * M_PI * x_host[i] / (double)Ntex), vals_host[i]);
 }

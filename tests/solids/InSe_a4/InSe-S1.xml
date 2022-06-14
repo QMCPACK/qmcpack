@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="InSe-S1-dmc" series="1">
+	  <application name="qmcapp" role="molecu" class="serial" version="0.2"/>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+      7.653390614   0   0
+      -3.826695307   6.628030697   0
+      0   0   31.993061563
+    </parameter>
+    <parameter name="bconds">p p n </parameter>
+    <parameter name="LR_dim_cutoff">30</parameter>
+    <parameter name="LR_handler"> opt_breakup </parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="4">
+    <group name="In">
+      <parameter name="charge">3</parameter>
+      <parameter name="valence">3</parameter>
+      <parameter name="atomicnumber">49</parameter>
+    </group>
+    <group name="Se">
+      <parameter name="charge">6.0000000000</parameter>
+      <parameter name="valence">6.0000000000</parameter>
+      <parameter name="atomicnumber">34</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.333333343   0.666666687   0.407000005
+    0.333333343   0.666666687   0.592999995
+    0.666666627   0.333333313   0.648000002
+    0.666666627   0.333333313   0.351999998
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      In  In  Se  Se
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="9">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="9">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+</simulation>

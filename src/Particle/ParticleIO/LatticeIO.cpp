@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 #include "LongRange/LRCoulombSingleton.h"
 #include "ModernStringUtils.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -63,8 +64,10 @@ bool LatticeParser::put(xmlNodePtr cur)
         const std::string units_prop(getXMLAttributeValue(cur, "units"));
         if (!units_prop.empty() && units_prop != "bohr")
         {
-          APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
-                    << units_prop);
+          std::ostringstream err_msg;
+          err_msg << "LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: "
+                  << units_prop;
+          throw UniformCommunicateError(err_msg.str());
         }
 
         putContent(lattice_in, cur);
@@ -89,14 +92,20 @@ bool LatticeParser::put(xmlNodePtr cur)
           }
           else
           {
-            APP_ABORT("LatticeParser::put. Unknown label '" + bconds[idir] +
-                      "' used for periodicity. Only 'p', 'P', 'n' and 'N' are valid!");
+            std::ostringstream err_msg;
+            err_msg << "LatticeParser::put. Unknown label '" + bconds[idir] +
+                    "' used for periodicity. Only 'p', 'P', 'n' and 'N' are valid!";
+            throw UniformCommunicateError(err_msg.str());
           }
 
           // Protect BCs which are not implemented.
           if (idir > 0 && !ref_.BoxBConds[idir - 1] && ref_.BoxBConds[idir])
-            APP_ABORT(
-                "LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.");
+          {
+            std::ostringstream err_msg;
+            err_msg
+                << "LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.";
+            throw UniformCommunicateError(err_msg.str());
+          }
         }
       }
       else if (aname == "vacuum")
@@ -119,8 +128,15 @@ bool LatticeParser::put(xmlNodePtr cur)
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::ESLER;
         else if (handler_type == "opt_breakup_original")
           LRCoulombSingleton::this_lr_type = LRCoulombSingleton::NATOLI;
+        else if (handler_type == "ewald_strict2d")
+        {
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
+          ref_.ndim                        = 2;
+        }
+        else if (handler_type == "ewald_quasi2d")
+          LRCoulombSingleton::this_lr_type = LRCoulombSingleton::QUASI2D;
         else
-          APP_ABORT("\n  Long range breakup handler not recognized.\n");
+          throw UniformCommunicateError("LatticeParser::put. Long range breakup handler not recognized.");
       }
       else if (aname == "LR_tol")
       {
@@ -143,6 +159,7 @@ bool LatticeParser::put(xmlNodePtr cur)
     }
     cur = cur->next;
   }
+
   // checking boundary conditions
   if (lattice_defined)
   {
@@ -155,7 +172,8 @@ bool LatticeParser::put(xmlNodePtr cur)
   else if (boxsum == 0)
     app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
   else
-    APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
+    throw UniformCommunicateError("LatticeParser::put. Mixed boundary is supported only when a lattice is specified!");
+
   //special heg processing
   if (rs > 0.0)
   {
@@ -198,8 +216,13 @@ bool LatticeParser::put(xmlNodePtr cur)
     lattice_in *= a0;
     ref_.set(lattice_in);
   }
+
+  if (ref_.SuperCellEnum != SUPERCELL_SLAB && LRCoulombSingleton::isQuasi2D())
+    throw UniformCommunicateError("LatticeParser::put. Quasi 2D Ewald only works with boundary condition 'p p n'!");
+
   if (ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius = ref_.SimulationCellRadius;
+
   std::string unit_name = "bohr";
   app_log() << std::fixed;
   app_log() << "  Simulation cell radius   = " << ref_.SimulationCellRadius << " " << unit_name << std::endl;

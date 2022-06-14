@@ -122,6 +122,7 @@ public:
   /// Constructor.
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
+               const std::optional<EstimatorManagerInput>& global_emi,
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
@@ -211,6 +212,8 @@ public:
 
   IndexType get_num_living_walkers() const { return population_.get_walkers().size(); }
   IndexType get_num_dead_walkers() const { return population_.get_dead_walkers().size(); }
+
+  const QMCDriverInput& getQMCDriverInput() const { return qmcdriver_input_; }
 
   /** @ingroup Legacy interface to be dropped
    *  @{
@@ -351,7 +354,7 @@ protected:
     {}
   };
 
-  const QMCDriverInput qmcdriver_input_;
+  QMCDriverInput qmcdriver_input_;
 
   /** @ingroup Driver mutable input values
    *

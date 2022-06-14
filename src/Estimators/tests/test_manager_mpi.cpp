@@ -50,6 +50,7 @@ bool EstimatorManagerNewTest::testMakeBlockAverages()
   em.PropertyCache[em.weightInd] = block_weight;
   em.PropertyCache[em.cpuInd]    = 1.0;
 
+  //RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
   RefVector<ScalarEstimatorBase> est_lists(makeRefVector<ScalarEstimatorBase>(estimators_));
   em.collectMainEstimators(est_lists);
 

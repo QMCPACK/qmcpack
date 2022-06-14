@@ -81,27 +81,31 @@
          </pairpot>
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
+      <estimators>
+	<estimator name="spindensity" type="spindensity" report="yes" save_memory="no">
+	  <parameter name="grid">
+            10 10 10
+	  </parameter>
+	  <!-- this is the default in the legacy implementation -->
+	  <parameter name="corner">
+            0.0 0.0 0.0
+	  </parameter>
+	  <parameter name="cell">
+            3.37316115        3.37316115        0.00000000
+            0.00000000        3.37316115        3.37316115
+            3.37316115        0.00000000        3.37316115
+	  </parameter>\
+	</estimator>
+      </estimators>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
-     <estimator name="LocalEnergy" hdf5="no"/>
-     <estimator name="SpinDensityNew" type="spindensity_new" report="yes" save_memory="no">
-       <parameter name="grid">
-         10 10 10
-       </parameter>
-       <!-- this is the default in the legacy implementation -->
-       <parameter name="corner">
-         0.0 0.0 0.0
-       </parameter>
-       <parameter name="cell">
-                  3.37316115        3.37316115        0.00000000
-                  0.00000000        3.37316115        3.37316115
-                  3.37316115        0.00000000        3.37316115
-       </parameter>
-     </estimator>
-      <parameter name="walkers"             >    2            </parameter>
-      <parameter name="blocks"              >    1000         </parameter>
-      <parameter name="steps"               >    8           </parameter>
-      <parameter name="timestep"            >    0.3          </parameter>
-      <parameter name="warmupSteps"         >    100          </parameter>
+     <estimators>
+       <estimator name="LocalEnergy" hdf5="no"/>
+     </estimators>
+     <parameter name="total_walkers"             >    64            </parameter>
+     <parameter name="blocks"              >    1000         </parameter>
+     <parameter name="steps"               >    8           </parameter>
+     <parameter name="timestep"            >    0.3          </parameter>
+     <parameter name="warmupSteps"         >    100          </parameter>
    </qmc>
 </simulation>

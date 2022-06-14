@@ -1,0 +1,32 @@
+ &control
+    calculation       = 'scf',
+    prefix            = 'Mo',
+    tstress           = .true.,
+    tprnfor           = .true.,
+    pseudo_dir        = './',
+    outdir            = './out' 
+    wf_collect        = .true.,
+ /
+ &system
+    ibrav             = 3,
+    celldm(1)         = 5.952636864,
+    nat               = 1,
+    ntyp              = 1,
+    ecutwfc           = 100.0,
+    starting_magnetization(1) = 0.0,
+    occupations       = 'smearing',
+    smearing          = 'mp',
+    degauss           = .0005,
+    noncolin          = .true.,
+    lspinorb         = .true.,
+ /
+ &electrons
+ /
+ATOMIC_SPECIES
+Mo  95.95  Mo.ccECP.SOREP.upf
+ATOMIC_POSITIONS crystal
+Mo   0.00  0.00 0.00
+K_POINTS crystal
+2
+0.00000000       0.00000000       0.00000000       0.50000000
+0.50000000       0.00000000       0.00000000       0.50000000

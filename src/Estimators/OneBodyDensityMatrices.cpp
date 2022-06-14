@@ -30,7 +30,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
                                                const Lattice& lattice,
                                                const SpeciesSet& species,
                                                const SPOMap& spomap,
-                                               ParticleSet& pset_target)
+                                               const ParticleSet& pset_target)
     : OperatorEstBase(DataLocality::crowd),
       input_(obdmi),
       lattice_(lattice),
@@ -152,7 +152,9 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
   // with respect to what?
   if (!input_.get_normalized())
   {
-    normalizeBasis(pset_target);
+    //Since the following is not a const method we copy particle set
+    ParticleSet pset_temp(pset_target);
+    normalizeBasis(pset_temp);
   }
 
   data_.resize(calcFullDataSize(basis_size_, species_.size()), 0.0);

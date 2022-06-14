@@ -44,6 +44,7 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : Partic
   //initialize local data structure
   TotalNum = nptcl;
   R.resize(nptcl);
+  spins.resize(nptcl);
   coordinates_->resize(nptcl);
 
   //create distancetables

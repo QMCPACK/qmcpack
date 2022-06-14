@@ -56,6 +56,7 @@ public:
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       MCWalkerConfiguration& w,
                                       QMCDriverInput&& qmcdriver_input,
+                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
                                       MCPopulation&& population,
                                       SampleStack& samples,
@@ -305,6 +306,8 @@ private:
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.
   MCWalkerConfiguration& W;
+  /// This is retained in order to construct and reconstruct the vmcEngine.
+  const std::optional<EstimatorManagerInput> global_emi_;
 };
 } // namespace qmcplusplus
 #endif

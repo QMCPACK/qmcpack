@@ -58,12 +58,36 @@ the following link
 
 https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
-This link will be updated when a longer term storage host is
-identified. You only need to download the sizes you would like to
-include in your benchmarking runs.
+Or directly download files in the command line via curl -L -O -J <URL>
 
-Please check the md5 value of h5 files before starting any
-benchmarking.
+# NiO-fcc-supertwist111-supershift000-S1.h5
+https://m.box.com/file/284382973675/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S2.h5
+https://m.box.com/file/284381326469/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S4.h5
+https://m.box.com/file/284383098200/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S8.h5
+https://m.box.com/file/130886492400/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S16.h5
+https://m.box.com/file/130890136573/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S24.h5
+https://m.box.com/file/332796364308/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S32.h5
+https://m.box.com/file/130890425841/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S48.h5
+https://m.box.com/file/332771490576/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S64.h5
+https://m.box.com/file/136595055334/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S128.h5
+https://m.box.com/file/178686464361/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# NiO-fcc-supertwist111-supershift000-S256.h5
+https://m.box.com/file/178703355825/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+
+The above direct links were verified in June 2022 but may be fragile.
+
+Only the specific problem sizes needed for the intended benchmarking runs need to be downloaded.
+
+Please check the md5 value of h5 files before starting any benchmarking.
 
 $ md5sum *.h5
 e09c619f93daebca67f51a6d235bfcb8  NiO-fcc-supertwist111-supershift000-S1.h5
@@ -120,7 +144,7 @@ command line before building your binary:
 
 -DQMC_DATA=YOUR_DATA_FOLDER
 
-YOUR_DATA_FOLDER contains a folder called NiO with the h5 files in it.
+All the h5 files must be placed in a subdirectory YOUR_DATA_FOLDER/NiO.
 Run tests with command "ctest -R performance-NiO" after building
 QMCPACK. Add "-VV" to capture the QMCPACK output. Enabling the timers
 is not essential, but activates fine grained timers and counters useful for

@@ -142,7 +142,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
-          nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        {
+          if( !targetPtcl.isSpinor())
+            nonLocalPot[i]->initVirtualParticle(targetPtcl);
+          else
+            throw std::runtime_error("Batched NLPP evaluation not validated with spinors.  Use algorithm=\"non-batched\" in pseudopotential block."); 
+        } 
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
     }
@@ -212,6 +217,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string ionName("none");
       std::string format("xml");
       int nrule = -1;
+      int llocal = -1;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
@@ -219,6 +225,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.add(ionName, "symbol");
       hAttrib.add(format, "format");
       hAttrib.add(nrule, "nrule");
+      hAttrib.add(llocal, "l-local");
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -232,7 +239,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
 
-        ECPComponentBuilder ecp(ionName, myComm, nrule);
+        ECPComponentBuilder ecp(ionName, myComm, nrule, llocal);
         if (format == "xml")
         {
           if (href == "none")

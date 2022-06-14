@@ -77,6 +77,7 @@ public:
   /// Constructor.
   DMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
+             const std::optional<EstimatorManagerInput>& global_emi,
              DMCDriverInput&& input,
              MCPopulation&& pop,
              Communicate* comm);

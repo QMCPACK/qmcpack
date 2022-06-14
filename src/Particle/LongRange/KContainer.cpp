@@ -12,22 +12,23 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/Communicate.h"
 #include "KContainer.h"
-#include "Utilities/qmc_common.h"
 #include <map>
 #include <cstdint>
+#include "Message/Communicate.h"
+#include "LRCoulombSingleton.h"
+#include "Utilities/qmc_common.h"
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
   {
     APP_ABORT("  Illegal cutoff for KContainer");
   }
-  FindApproxMMax(lattice);
+  findApproxMMax(lattice, ndim);
   BuildKLists(lattice, useSphere);
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
@@ -36,7 +37,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, bool u
   app_log() << std::endl;
 }
 
-void KContainer::FindApproxMMax(const ParticleLayout& lattice)
+void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
 {
   //Estimate the size of the parallelpiped that encompasses a sphere of kcutoff.
   //mmax is stored as integer translations of the reciprocal cell vectors.
@@ -78,18 +79,23 @@ void KContainer::FindApproxMMax(const ParticleLayout& lattice)
   for (int i = 0; i < DIM; i++)
     mmax[i] = static_cast<int>(std::floor(std::sqrt(dot(lattice.a(i), lattice.a(i))) * kcutoff / (2 * M_PI))) + 1;
 
-
-  //overwrite the non-periodic directon to be zero
-  if (qmc_common.use_ewald)
-  {
-    app_log() << "  Using Ewald sum for the slab " << std::endl;
-    if (lattice.SuperCellEnum == SUPERCELL_SLAB)
-      mmax[2] = 0;
-  }
-
   mmax[DIM] = mmax[0];
   for (int i = 1; i < DIM; ++i)
     mmax[DIM] = std::max(mmax[i], mmax[DIM]);
+
+  //overwrite the non-periodic directon to be zero
+  if (LRCoulombSingleton::isQuasi2D())
+  {
+    app_log() << "  No kspace sum perpendicular to slab " << std::endl;
+    mmax[2] = 0;
+  }
+  if (ndim < 3)
+  {
+    app_log() << "  No kspace sum along z " << std::endl;
+    mmax[2] = 0;
+  }
+  if (ndim < 2)
+    mmax[1] = 0;
 }
 
 void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
@@ -209,11 +215,11 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
     std::vector<int>::iterator vit((*it).second->begin());
     while (vit != (*it).second->end())
     {
-      int ik        = (*vit);
-      kpts[ok]      = kpts_tmp[ik];
-      kpts_cart[ok] = kpts_cart_tmp[ik];
+      int ik             = (*vit);
+      kpts[ok]           = kpts_tmp[ik];
+      kpts_cart[ok]      = kpts_cart_tmp[ik];
       kpts_cart_soa_(ok) = kpts_cart_tmp[ik];
-      ksq[ok]       = ksq_tmp[ik];
+      ksq[ok]            = ksq_tmp[ik];
       ++vit;
       ++ok;
     }

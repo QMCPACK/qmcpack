@@ -24,6 +24,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
+#include "EstimatorManagerInput.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -56,6 +57,18 @@ public:
   EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* comm);
   ///copy constructor, deleted
   EstimatorManagerNew(EstimatorManagerNew& em) = delete;
+  /** Batched version constructor.
+   *
+   *  \param[in]  emi    EstimatorManagerInput consisting of merged global and local estimator definitions. Moved from!
+   *  \param[in]  H      Fully Constructed Golden Hamiltonian.
+   *  \param[in]  pset   The electron or equiv. pset
+   *  \param[in]  twf    The fully constructed TrialWaveFunction.
+   */
+  EstimatorManagerNew(Communicate* comm,
+                      EstimatorManagerInput&& emi,
+                      const QMCHamiltonian& H,
+                      const ParticleSet& pset,
+                      const TrialWaveFunction& twf);
   ///destructor
   ~EstimatorManagerNew();
 
@@ -133,18 +146,27 @@ public:
   std::size_t getNumEstimators() { return operator_ests_.size(); }
   std::size_t getNumScalarEstimators() { return scalar_ests_.size(); }
 
+  /** Do any of the instantiated estimators in operator_ests_ listen to per particle hamiltonian values?
+   *  Listeners are lambda functions captured from crowd scope estimators and passed to QMCHamiltonian leaders.
+   */
+  bool areThereListeners() const;
+
 private:
   /** Construct estimator of type matching the underlying EstimatorInput type Consumer
    *  and push its its unique_ptr onto operator_ests_
    */
-  template<typename EstInputType, typename T, typename... Args>
-  bool createEstimator(T& input, Args&&... args);
+  template<typename EstInputType, typename... Args>
+  bool createEstimator(EstimatorInput& input, Args&&... args);
 
   /** Construct scalar estimator of type matching the underlying ScalarEstimatorInput type Consumer
    *  and push its its unique_ptr onto operator_ests_
    */
-  template<typename EstInputType, typename T, typename... Args>
-  bool createScalarEstimator(T& input, Args&&... args);
+  template<typename EstInputType, typename... Args>
+  bool createScalarEstimator(ScalarEstimatorInput& input, Args&&... args);
+
+  /** Return a string with information about which estimators estimator manager is holding.
+   */
+  void makeConfigReport(std::ostream& os) const;
 
   /** reset the estimator
    */
@@ -214,6 +236,7 @@ private:
   /** accumulator for the variance **/
   ScalarEstimatorBase::accumulator_type varAccumulator;
   ///cached block averages of the values
+
   Vector<RealType> AverageCache;
   ///cached block averages of properties, e.g. BlockCPU
   Vector<RealType> PropertyCache;
@@ -247,6 +270,8 @@ private:
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
   size_t FieldWidth;
+
+  static constexpr std::string_view error_tag_{"EstimatorManagerNew "};
 
   friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
