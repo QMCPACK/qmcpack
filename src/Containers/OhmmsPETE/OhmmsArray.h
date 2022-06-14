@@ -100,18 +100,12 @@ public:
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Type_t* data_at(const std::array<SIZET, D>& indices)
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X.data() + offset;
+    return X.data() + compute_offset(indices);
   }
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   const Type_t* data_at(const std::array<SIZET, D>& indices) const
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X.data() + offset;
+    return X.data() + compute_offset(indices);
   }
   template<typename SIZET     = size_t,
            typename           = std::is_integral<SIZET>,
@@ -119,10 +113,7 @@ public:
            typename           = qmcplusplus::IsDualSpace<Allocator>>
   Type_t* device_data_at(const std::array<SIZET, D>& indices)
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X.device_data() + offset;
+    return X.device_data() + compute_offset(indices);
   }
   template<typename SIZET     = size_t,
            typename           = std::is_integral<SIZET>,
@@ -130,10 +121,7 @@ public:
            typename           = qmcplusplus::IsDualSpace<Allocator>>
   const Type_t* device_data_at(const std::array<SIZET, D>& indices) const
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X.device_data() + offset;
+    return X.device_data() + compute_offset(indices);
   }
 
   /// access data pointer at {index_1, ..., index_D}
@@ -165,13 +153,13 @@ public:
     return device_data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
   }
 
-  inline const Type_t* first_address() const { return &(X[0]); }
+  inline const Type_t* first_address() const { return X.data(); }
 
-  inline const Type_t* last_address() const { return &(X[0]) + X.size(); }
+  inline const Type_t* last_address() const { return X.data() + X.size(); }
 
-  inline Type_t* first_address() { return &(X[0]); }
+  inline Type_t* first_address() { return X.data(); }
 
-  inline Type_t* last_address() { return &(X[0]) + X.size(); }
+  inline Type_t* last_address() { return X.data() + X.size(); }
 
   This_t& operator=(const T& rhs)
   {
@@ -201,18 +189,12 @@ public:
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   Type_t& operator()(const std::array<SIZET, D>& indices)
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X[offset];
+    return X[compute_offset(indices)];
   }
   template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
   const Type_t& operator()(const std::array<SIZET, D>& indices) const
   {
-    size_t offset = indices[0];
-    for (int i = 1; i < indices.size(); i++)
-      offset = offset * Length[i] + indices[i];
-    return X[offset];
+    return X[compute_offset(indices)];
   }
   template<typename... Args>
   Type_t& operator()(Args... indices)
@@ -257,6 +239,15 @@ private:
     for (int i = 1; i < dims.size(); i++)
       total *= dims[i];
     return total;
+  }
+
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  SIZET compute_offset(const std::array<SIZET, D>& indices) const
+  {
+    SIZET offset = indices[0];
+    for (int i = 1; i < indices.size(); i++)
+      offset = offset * Length[i] + indices[i];
+    return offset;
   }
 };
 
