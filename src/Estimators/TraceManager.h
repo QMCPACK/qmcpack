@@ -1193,9 +1193,7 @@ struct TraceBuffer
       if (has_complex)
         complex_samples->combine_samples();
       //collect data from all samples into the buffer row
-      int offset = current_row * row_size;
       {
-        int boffset;
         std::vector<TraceSample<T>*>& ordered_samples = samples->ordered_samples;
         for (int s = 0; s < ordered_samples.size(); s++)
         {
@@ -1203,17 +1201,13 @@ struct TraceBuffer
           if (tsample.write)
           {
             auto& sample = tsample.sample;
-            boffset      = offset + tsample.buffer_start;
             for (int i = 0; i < sample.size(); ++i)
-            {
-              buffer(boffset + i) = sample[i];
-            }
+              buffer(current_row, tsample.buffer_start + i) = sample[i];
           }
         }
       }
       if (has_complex)
       {
-        int boffset;
         std::vector<TraceSample<std::complex<T>>*>& ordered_samples = complex_samples->ordered_samples;
         for (int s = 0; s < ordered_samples.size(); s++)
         {
@@ -1221,11 +1215,10 @@ struct TraceBuffer
           if (tsample.write)
           {
             auto& sample = tsample.sample;
-            boffset      = offset + tsample.buffer_start;
             for (int i = 0, ib = 0; i < sample.size(); ++i, ib += 2)
             {
-              buffer(boffset + ib)     = sample[i].real();
-              buffer(boffset + ib + 1) = sample[i].imag();
+              buffer(current_row, tsample.buffer_start + ib)     = sample[i].real();
+              buffer(current_row, tsample.buffer_start + ib + 1) = sample[i].imag();
             }
           }
         }

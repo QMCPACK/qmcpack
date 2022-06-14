@@ -24,8 +24,8 @@ namespace qmcplusplus
 TEST_CASE("array", "[OhmmsPETE]")
 {
   using Array1D = Array<double, 1>;
-  Array1D A({3});
-  Array1D B({3});
+  Array1D A(3);
+  Array1D B(3);
 
   // iterator
   auto ia = A.begin();
@@ -71,6 +71,17 @@ TEST_CASE("array NestedContainers", "[OhmmsPETE]")
   REQUIRE(vec_copy.size() == 3);
   REQUIRE(vec_copy(0).size() == 1);
   CHECK(vec_copy(0).back() == 123);
+}
+
+TEST_CASE("Array::data", "[OhmmsPETE]")
+{
+  Array<float, 3> tensor(2, 4, 5);
+  REQUIRE(tensor.size() == 40);
+
+  CHECK(tensor.data() + 1 * 4 * 5 + 2 * 5 + 3 == tensor.data_at(1, 2, 3));
+
+  tensor(1, 2, 3) = 0.5f;
+  CHECK(*tensor.data_at(1, 2, 3) == 0.5f);
 }
 
 TEST_CASE("Array::dimension sizes constructor", "[OhmmsPETE]")
