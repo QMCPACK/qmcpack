@@ -55,6 +55,8 @@ public:
   using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
 
+  using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
+
   struct DiracDeterminantBatchedMultiWalkerResource : public Resource
   {
     DiracDeterminantBatchedMultiWalkerResource() : Resource("DiracDeterminantBatched") {}
@@ -64,8 +66,8 @@ public:
 
     Resource* makeClone() const override { return new DiracDeterminantBatchedMultiWalkerResource(*this); }
     DualVector<LogValue> log_values;
-    /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw*norb]
-    DualVGLVector phi_vgl_v;
+    /// value, grads, laplacian of single-particle orbital for particle-by-particle update and multi walker [5][nw][norb]
+    OffloadMWVGLArray phi_vgl_v;
     // multi walker of ratio
     std::vector<Value> ratios_local;
     // multi walker of grads
