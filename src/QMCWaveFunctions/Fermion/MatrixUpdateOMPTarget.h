@@ -157,10 +157,11 @@ public:
     auto& buffer_H2D    = engine_leader.mw_mem_->buffer_H2D;
     auto& grads_value_v = engine_leader.mw_mem_->grads_value_v;
 
-    const int norb = engine_leader.get_psiMinv().rows();
-    const int nw   = engines.size();
-    buffer_H2D.resize(sizeof(Value*) * 2 * nw);
-    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), 2, nw);
+    const int norb                   = engine_leader.get_psiMinv().rows();
+    const int nw                     = engines.size();
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
+    buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       ptr_buffer[0][iw] = engines[iw].get_psiMinv().device_data() + rowchanged * engine_leader.get_psiMinv().cols();
@@ -264,9 +265,10 @@ public:
     engine_leader.resize_scratch_arrays(norb, n_accepted);
 
     // to handle Value** of Ainv, psi_v, temp, rcopy
-    buffer_H2D.resize((sizeof(Value*) * 6 + sizeof(Value)) * n_accepted);
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(buffer_H2D.data()), 6, n_accepted);
-    Value* c_ratio_inv = reinterpret_cast<Value*>(buffer_H2D.data() + sizeof(Value*) * 6 * n_accepted);
+    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * n_accepted);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(buffer_H2D.data()), num_ptrs_packed, n_accepted);
+    Value* c_ratio_inv = reinterpret_cast<Value*>(buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * n_accepted);
     for (int iw = 0, count = 0; iw < nw; iw++)
       if (isAccepted[iw])
       {
