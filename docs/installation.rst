@@ -282,20 +282,20 @@ the path to the source directory.
 
   ::
 
-    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
     QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
                           (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
-    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
-                          Production quality for AFQMC. Pre-production quality for real-space.
-                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    ENABLE_TIMERS         ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
-                          to avoid potential slowdown in tiny systems.
-                          For systems beyond tiny sizes (100+ electrons) there is no risk.
+    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
+    ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
+                          Production quality for AFQMC and real-space performance portable implementation.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
+    QMC_CUDA2HIP          ON/OFF(default). To be set ON, it requires either QMC_CUDA or ENABLE_CUDA to be ON.
+                          Compile CUDA source code as HIP and use ROCm libraries for AMD GPUs.
+    ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
 
 - General build options
 
@@ -327,6 +327,9 @@ the path to the source directory.
 
   ::
 
+    ENABLE_TIMERS          ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
+                           to avoid potential slowdown in tiny systems.
+                           For systems beyond tiny sizes (100+ electrons) there is no risk.
     QE_BIN                 Location of Quantum ESPRESSO binaries including pw2qmcpack.x
     RMG_BIN                Location of RMG binary (rmg-cpu)
     QMC_DATA               Specify data directory for QMCPACK performance and integration tests
@@ -412,7 +415,7 @@ and is not suitable for production. Additional implementation in QMCPACK as
 well as improvements in open-source and vendor compilers is required for production status 
 to be reached. The following compilers have been verified:
 
-- LLVM Clang 11. Support NVIDIA GPUs.
+- LLVM Clang 14. Support NVIDIA GPUs.
 
   ::
 
@@ -425,31 +428,43 @@ to be reached. The following compilers have been verified:
     OFFLOAD_TARGET for the offload target. default nvptx64-nvidia-cuda.
     OFFLOAD_ARCH for the target architecture (sm_80, gfx906, ...) if not using the compiler default.
 
-- AMD AOMP Clang 11.8. Support AMD GPUs.
+- AMD ROCm/AOMP LLVM-based compilers. Support AMD GPUs.
   
   ::
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=amdgcn-amd-amdhsa -D OFFLOAD_ARCH=gfx906
 
-- Intel oneAPI beta08. Support Intel GPUs.
+- Intel oneAPI 2022.1.0 icx/icpx compilers. Support Intel GPUs.
   
   ::
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=spir64
 
-- HPE Cray 11. It is derived from Clang and supports NVIDIA and AMD GPUs.
+- HPE Cray 13. It is derived from Clang and supports NVIDIA and AMD GPUs.
   
   ::
   
     -D ENABLE_OFFLOAD=ON -D OFFLOAD_TARGET=nvptx64-nvidia-cuda -D OFFLOAD_ARCH=sm_80
 
 OpenMP offload features can be used together with vendor specific code paths to maximize QMCPACK performance.
-Some new CUDA functionality has been implemented to improve efficiency on NVIDIA GPUs in conjunction with the Offload code paths:
-For example, using Clang 11 on Summit.
+Some new CUDA functionality has been implemented to improve performance on NVIDIA GPUs in conjunction with the offload code paths:
+For example, using Clang 14 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70 -D CMAKE_CUDA_HOST_COMPILER=`which gcc`
+    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
+
+Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
+
+  ::
+
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -DHIP_ARCH=gfx906
+
+Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
+
+  ::
+
+    -D ENABLE_OFFLOAD=ON -D ENABLE_SYCL=ON
 
 
 Installation from CMake
