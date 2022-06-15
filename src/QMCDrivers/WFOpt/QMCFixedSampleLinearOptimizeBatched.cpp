@@ -744,10 +744,10 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
     APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef _OPENMP
-  if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
+  if ((current_optimizer_type_ == OptimizerType::ADAPTIVE || current_optimizer_type_ == OptimizerType::DESCENT) && (omp_get_max_threads() > 1))
   {
-    // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
-    app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
+     APP_ABORT("OpenMP threading not enabled with AdaptiveThreeShift and descent optimizers for batched drivers. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+    //app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
   }
 #endif
 
