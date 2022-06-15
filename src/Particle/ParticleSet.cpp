@@ -33,13 +33,6 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-//using namespace particle_info;
-
-#ifdef QMC_CUDA
-template<>
-int ParticleSet::Walker_t::cuda_DataSize = 0;
-#endif
-
 enum PSetTimers
 {
   PS_newpos,
