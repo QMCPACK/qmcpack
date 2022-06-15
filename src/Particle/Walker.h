@@ -154,7 +154,7 @@ public:
 
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
-  static inline int cuda_DataSize;
+  static inline int cuda_DataSize = 0;
   using cuda_Buffer_t = gpu::device_vector<CTS::ValueType>;
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
