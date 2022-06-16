@@ -59,7 +59,7 @@ endforeach()
 
 if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
-    set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp)
+    set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp test_RotatedSPOs_LCAO.cpp)
     if(NOT QMC_MIXED_PRECISION)
       set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
     endif()

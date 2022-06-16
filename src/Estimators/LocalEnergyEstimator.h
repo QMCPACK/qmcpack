@@ -46,17 +46,18 @@ class LocalEnergyEstimator : public ScalarEstimatorBase
 
 public:
   /** constructor
-   * @param h QMCHamiltonian to define the components
+   *  @param[in] h            QMCHamiltonian to define the components
+   *  @param[in] use_hdf5     record local energy values in hdf5?
    */
   LocalEnergyEstimator(const QMCHamiltonian& h, bool use_hdf5);
   /** Construct from LocalEnergyInput and const reference to hamiltonian.
-   *  \param[in] LocalEnergyInput contains input parameters for LocalEnergyEstimator
-   *  \param[in] is taken as a local reference and used to size scalars data
+   *  @param[in] input     contains input parameters for LocalEnergyEstimator
+   *  @param[in] ham       is taken as a local reference and used to size scalars data
    */
   LocalEnergyEstimator(LocalEnergyInput&& input, const QMCHamiltonian& ham);
   /** accumulation per walker
-   * @param awalker current walker
-   * @param wgt weight
+   *  @param awalker current walker
+   *  @param wgt weight
    *
    * Weight of observables should take into account the walkers weight. For Pure DMC. In branching DMC set weights to 1.
    */

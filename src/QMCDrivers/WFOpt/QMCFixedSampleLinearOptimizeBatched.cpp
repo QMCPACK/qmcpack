@@ -28,6 +28,7 @@
 #include "Concurrency/Info.hpp"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
@@ -45,19 +46,24 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
-                                                                         MCWalkerConfiguration& w,
-                                                                         QMCDriverInput&& qmcdriver_input,
-                                                                         VMCDriverInput&& vmcdriver_input,
-                                                                         MCPopulation&& population,
-                                                                         SampleStack& samples,
-                                                                         Communicate* comm)
-    : QMCDriverNew(project_data,
-                   std::move(qmcdriver_input),
-                   std::move(population),
-                   "QMCLinearOptimizeBatched::",
-                   comm,
-                   "QMCLinearOptimizeBatched"),
+QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
+    const ProjectData& project_data,
+    MCWalkerConfiguration& w,
+    QMCDriverInput&& qmcdriver_input,
+    const std::optional<EstimatorManagerInput>& global_emi,
+    VMCDriverInput&& vmcdriver_input,
+    MCPopulation&& population,
+    SampleStack& samples,
+    Communicate* comm)
+    : QMCDriverNew(
+          project_data,
+          std::move(qmcdriver_input),
+          std::
+              nullopt, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual global_emi_
+          std::move(population),
+          "QMCLinearOptimizeBatched::",
+          comm,
+          "QMCLinearOptimizeBatched"),
       objFuncWrapper_(*this),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
@@ -107,8 +113,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(const P
       wfNode(NULL),
       vmcdriver_input_(vmcdriver_input),
       samples_(samples),
-      W(w)
-
+      W(w),
+      global_emi_(global_emi)
 {
   //set the optimization flag
   qmc_driver_mode_.set(QMC_OPTIMIZE, 1);
@@ -642,10 +648,11 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
   else
     processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 
+  auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
   QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
-                              qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
+      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input.get_total_walkers(),
+                              qmcdriver_input.get_walkers_per_rank(), 1.0, qmcdriver_input.get_num_crowds());
   QMCDriverNew::startup(q, awc);
 }
 
@@ -723,13 +730,15 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
-  // create VMC engine
-  // if (vmcEngine == 0)
-  // {
+
+  // Explicitly copy the driver input objects since they will be used to instantiate the VMCEngine repeatedly.
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+
+  // create VMC engine
   vmcEngine =
-      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), std::move(vmcdriver_input_copy),
+      std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
+                                   std::move(vmcdriver_input_copy),
                                    MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
                                                 population_.get_golden_electrons(), &population_.get_golden_twf(),
                                                 &population_.get_golden_hamiltonian()),
@@ -744,7 +753,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   vmcEngine->enable_sample_collection();
 
-
+  auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
   QMCDriverNew::AdjustedWalkerCounts awc =
       adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                               qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());

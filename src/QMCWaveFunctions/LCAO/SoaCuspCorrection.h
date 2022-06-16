@@ -94,7 +94,7 @@ public:
    *
    * Always uses getTempDists() and getTempDispls()
    */
-  void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals);
+  void evaluateV(const ParticleSet& P, int iat, ValueVector& psi);
 
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center
@@ -103,7 +103,10 @@ public:
   void add(int icenter, std::unique_ptr<COT> aos);
 
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
-  void addV(const ParticleSet& P, int iat, ValueType* restrict vals) { evaluateV(P, iat, vals); }
+  void addV(const ParticleSet& P, int iat, ValueVector& psi)
+  {
+    evaluateV(P, iat, psi);
+  }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);

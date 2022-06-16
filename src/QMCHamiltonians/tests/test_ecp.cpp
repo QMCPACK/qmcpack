@@ -83,7 +83,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ECPComponentBuilder ecp("test_read_ecp", c);
+  ECPComponentBuilder ecp("test_read_ecp", c, 4, 1);
 
   bool okay = ecp.read_pp_file("C.BFD.xml");
   REQUIRE(okay);

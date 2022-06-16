@@ -30,6 +30,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       FirstTime(true),
       myConst(0.0),
       ComputeForces(computeForces),
+      quasi2d(LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D),
       Ps(ref),
       use_offload_(active && !computeForces && use_offload),
       d_aa_ID(ref.addTable(ref, use_offload_ ? DTModes::ALL_OFF : DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP)),
@@ -44,13 +45,16 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ref);
   PtclRefName = ref.getDistTable(d_aa_ID).getName();
-  initBreakup(ref);
-
-  if (ComputeForces)
+  if (ComputeForces || quasi2d)
   {
     ref.turnOnPerParticleSK();
+  }
+  initBreakup(ref);
+  if (ComputeForces)
+  {
     updateSource(ref);
   }
+
   if (!is_active)
   {
     ref.update();
@@ -436,11 +440,44 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 {
   mRealType Consts = 0.0; // constant term
   mRealType v1;           //single particle energy
+  mRealType vl_r0 = AA->evaluateLR_r0();
+  mRealType vs_k0 = AA->evaluateSR_k0();
+  if (quasi2d) // background term has z dependence
+  { // just evaluate the Madelung term
+    for (int ispec=1; ispec<NumSpecies; ispec++)
+      if (Zspec[ispec] != Zspec[0])
+        throw std::runtime_error("quasi2d assumes same charge");
+    if (report)
+    {
+      app_log() << "    vlr(r->0) = " << vl_r0 << std::endl;
+      app_log() << "   1/V vsr_k0 = " << vs_k0 << std::endl;
+    }
+    // make sure we can ignore the short-range Madelung sum
+    mRealType Rws = Ps.getLattice().WignerSeitzRadius;
+    mRealType rvsr_at_image = Rws*AA->evaluate(Rws, 1.0/Rws);
+    if (rvsr_at_image > 1e-6)
+    {
+      std::ostringstream msg;
+      msg << std::setprecision(14);
+      msg << "Ewald alpha = " << rvsr_at_image << " is too small" << std::endl;
+      msg << "Short-range potential r*vsr(r) = " << rvsr_at_image << " at image radius r=" << Rws << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+    // perform long-range Madelung sum
+    const StructFact& PtclRhoK(Ps.getSK());
+    v1 = AA->evaluate_slab(0,
+                           Ps.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[0],
+                           PtclRhoK.eikr_i[0], PtclRhoK.eikr_r[0], PtclRhoK.eikr_i[0]);
+    if (report)
+      app_log() << "   LR Madelung = " << v1 << std::endl;
+    MC0 = 0.5*(v1 - vl_r0);
+    Consts = NumCenters*MC0;
+  }
+  else // group background term together with Madelung vsr_k0 part
+  {
 #if !defined(REMOVE_TRACEMANAGER)
   V_const = 0.0;
 #endif
-  //v_l(r=0) including correction due to the non-periodic direction
-  mRealType vl_r0 = AA->evaluateLR_r0();
   for (int ipart = 0; ipart < NumCenters; ipart++)
   {
     v1 = -.5 * Zat[ipart] * Zat[ipart] * vl_r0;
@@ -451,8 +488,6 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
   }
   if (report)
     app_log() << "   PBCAA self-interaction term " << Consts << std::endl;
-  //Neutraling background term
-  mRealType vs_k0 = AA->evaluateSR_k0(); //v_s(k=0)
   //Compute Madelung constant
   MC0 = 0.0;
   for (int i = 0; i < AA->Fk.size(); i++)
@@ -469,6 +504,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalConsts(bool report)
 #endif
     Consts += v1;
   }
+  } // end if quasi2d
   if (report)
     app_log() << "   PBCAA total constant " << Consts << std::endl;
   return Consts;
@@ -587,10 +623,27 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLR(ParticleSet& P)
   ScopedTimer local_timer(evalLR_timer_);
   mRealType res = 0.0;
   const StructFact& PtclRhoK(P.getSK());
-  if (PtclRhoK.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error(
-        "CoulombPBCAA::evalLR PtclRhoK.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an "
-        "implementation with complex-valued storage that may be resurrected using real-valued storage.");
+  if (quasi2d)
+  {
+    const auto& d_aa(P.getDistTableAA(d_aa_ID));
+    // need 1/2 \sum_{i,j} v_E(r_i - r_j)
+    //distance table handles jat<iat
+    for (int iat = 1; iat < NumCenters; ++iat)
+    {
+      mRealType u = 0;
+      const int slab_dir = OHMMS_DIM - 1;
+      const auto& dr = d_aa.getDisplRow(iat);
+      for (int jat = 0; jat < iat; ++jat)
+      {
+        const RealType z = std::abs(dr[jat][slab_dir]);
+        u += Zat[jat] *
+             AA->evaluate_slab(z,
+                               P.getSimulationCell().getKLists().kshell, PtclRhoK.eikr_r[iat],
+                               PtclRhoK.eikr_i[iat], PtclRhoK.eikr_r[jat], PtclRhoK.eikr_i[jat]);
+      }
+      res += Zat[iat]*u;
+    }
+  }
   else
   {
     for (int spec1 = 0; spec1 < NumSpecies; spec1++)

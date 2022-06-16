@@ -185,6 +185,10 @@ function(
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
     add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+    set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY LABELS "QMCPACK")
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
@@ -304,7 +308,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "latdev"
       "EnergyEstim__nume_real"
       "kecorr"
-      "mpc")
+      "mpc"
+      "soecp")
     list(
       APPEND
       CHECK_SCALAR_FLAG
@@ -337,7 +342,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--latdev"
       "--el"
       "--kec"
-      "--mpc")
+      "--mpc"
+      "--sopp")
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
@@ -351,12 +357,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       TEST_ADDED
       TEST_LABELS
       ${INPUT_FILE})
-    if(TEST_ADDED)
-      set_property(
-        TEST ${FULL_NAME}
-        APPEND
-        PROPERTY LABELS "QMCPACK")
-    endif()
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)

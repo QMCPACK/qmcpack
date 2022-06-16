@@ -6,6 +6,10 @@ cmake_minimum_required(VERSION 3.17.0)
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
 
+if (POLICY CMP0127)
+  cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
+endif()
+
 ######################################################################
 # QMCPACK project
 ######################################################################
@@ -719,6 +723,9 @@ if(QMC_CUDA OR ENABLE_CUDA)
       set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
     endif()
     enable_language(CUDA)
+    if(QMC_CUDA)
+      include(TestCUDAHostCompatibility)
+    endif()
     find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
@@ -772,7 +779,7 @@ if(ENABLE_ROCM)
     message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
     find_path(
       HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS /opt/rocm
+      HINTS $ENV{ROCM_PATH} /opt/rocm
       PATH_SUFFIXES hip/cmake)
     if(HIP_MODULE_FILE_DIR)
       message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
@@ -793,9 +800,7 @@ if(ENABLE_ROCM)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
-  set(HIP_ARCH
-      "gfx906,gfx908"
-      CACHE STRING "HIP architecture gfxXXX")
+  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
   list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")

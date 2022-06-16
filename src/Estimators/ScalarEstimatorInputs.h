@@ -56,7 +56,9 @@ class LocalEnergyInput
   };
 
 public:
-  using Consumer     = LocalEnergyEstimator;
+  using Consumer = LocalEnergyEstimator;
+  // required because legacy code using LocalEnergyEstimator does not use input object.
+  // LocalEnergyInput must be trivially constructable.
   LocalEnergyInput() = default;
   LocalEnergyInput(xmlNodePtr cur);
   bool get_use_hdf5() const { return use_hdf5_; }
@@ -65,7 +67,7 @@ public:
 
 private:
   std::string name_;
-  std::string type_;
+  std::string type_ = "LocalEnergy";
   LocalEnergyInputSection input_section_;
   bool use_hdf5_ = true;
 };
@@ -87,7 +89,9 @@ class CSLocalEnergyInput
   };
 
 public:
-  using Consumer       = CSEnergyEstimator;
+  using Consumer = CSEnergyEstimator;
+  // required because legacy code using CSEnergyEstimator does not use input object.
+  // So CSLocalEnergyInput must be trivially constructable.
   CSLocalEnergyInput() = default;
   CSLocalEnergyInput(xmlNodePtr cur);
   int get_n_psi() const { return n_psi_; }
@@ -96,7 +100,7 @@ public:
 
 private:
   std::string name_;
-  std::string type_;
+  std::string type_ = "CSLocalEnergy";
   CSLocalEnergyInputSection input_section_;
   int n_psi_ = 1;
 };
@@ -118,15 +122,19 @@ class RMCLocalEnergyInput
   };
 
 public:
-  using Consumer        = RMCLocalEnergyEstimator;
+  using Consumer = RMCLocalEnergyEstimator;
+  // required because legacy code using RMCLocalEnergyEstimator does not use input object.
+  // So RMCLocalEnergyInput must be trivially constructable.
+
   RMCLocalEnergyInput() = default;
   RMCLocalEnergyInput(xmlNodePtr cur);
   int get_n_obs() const { return n_obs_; }
   const std::string& get_name() const { return name_; }
   const std::string& get_type() const { return type_; }
+
 private:
   std::string name_;
-  std::string type_;
+  std::string type_ = "RMCLocalEnergy";
   RMCLocalEnergyInputSection input_section_;
   int n_obs_ = 1;
 };

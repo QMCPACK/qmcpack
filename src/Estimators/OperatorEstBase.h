@@ -55,9 +55,6 @@ public:
    */
   DataLocality data_locality_;
 
-  ///name of this object -- only used for debugging and h5 output
-  std::string my_name_;
-
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
@@ -131,13 +128,22 @@ public:
    */
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
 
+  const std::string& get_my_name() const { return my_name_; }
+
+  bool isListenerRequired() { return requires_listener_; }
+
 protected:
+  ///name of this object -- only used for debugging and h5 output
+  std::string my_name_;
+
   QMCT::FullPrecRealType walkers_weight_;
 
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
   Data data_;
+
+  bool requires_listener_ = false;
 
   friend testing::OEBAccessor;
 };

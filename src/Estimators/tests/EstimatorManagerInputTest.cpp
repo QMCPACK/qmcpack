@@ -22,6 +22,22 @@ namespace qmcplusplus
 namespace testing
 {
 
+Libxml2Document createEstimatorManagerNewGlobalInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  return estimators_doc;
+}
+
 Libxml2Document createEstimatorManagerNewInputXML()
 {
   const int max_node_recurse = 3;
@@ -31,13 +47,6 @@ Libxml2Document createEstimatorManagerNewInputXML()
     using namespace testing::onebodydensitymatrices;
     Libxml2Document doc;
     bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
-    REQUIRE(okay);
-    xmlNodePtr node = doc.getRoot();
-    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
-  }
-  {
-    Libxml2Document doc;
-    bool okay = doc.parseFromString(valid_spin_density_input_sections[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));

@@ -23,8 +23,10 @@
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
 #include "QMCDrivers/VMC/VMC.h"
 #include "QMCDrivers/WFOpt/QMCCostFunction.h"
+#include "QMCDrivers/WFOpt/GradientTest.h"
 #include "CPU/Blasf.h"
 #include "Numerics/MatrixOperators.h"
+#include "Message/UniformCommunicateError.h"
 #include <cassert>
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
@@ -196,6 +198,17 @@ QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealTy
   return c;
 }
 
+bool QMCFixedSampleLinearOptimize::test_run()
+{
+  // generate samples and compute weights, local energies, and derivative vectors
+  start();
+
+  testEngineObj->run(*optTarget, get_root_name());
+
+  finish();
+
+  return true;
+}
 
 bool QMCFixedSampleLinearOptimize::run()
 {
@@ -207,6 +220,13 @@ bool QMCFixedSampleLinearOptimize::run()
     output_hamiltonian_.init_file(get_root_name(), "ham", N);
     output_matrices_initialized_ = true;
   }
+
+  if (doGradientTest)
+  {
+    app_log() << "Doing gradient test run" << std::endl;
+    return test_run();
+  }
+
 #ifdef HAVE_LMY_ENGINE
   if (doHybrid)
   {
@@ -493,6 +513,29 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
                   << std::endl;
     app_log() << std::endl;
   }
+
+  doGradientTest = false;
+  processChildren(q, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "optimize")
+    {
+      const std::string att(getXMLAttributeValue(element, "method"));
+      if (!att.empty() && att == "gradient_test")
+      {
+        GradientTestInput test_grad_input;
+        test_grad_input.readXML(element);
+        if (!testEngineObj)
+          testEngineObj = std::make_unique<GradientTest>(std::move(test_grad_input));
+        doGradientTest = true;
+        MinMethod      = "gradient_test";
+      }
+      else
+      {
+        std::stringstream error_msg;
+        app_log() << "Unknown or missing 'method' attribute in optimize tag: " << att << "\n";
+        throw UniformCommunicateError(error_msg.str());
+      }
+    }
+  });
 
 
   doHybrid = false;
@@ -1478,7 +1521,7 @@ void QMCFixedSampleLinearOptimize::start()
     // check recomputed variance against VMC
     auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
     auto sigma2_check = optTarget->getVariance();
-    if (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc)
+    if (optTarget->getNumSamples() > 1 && (sigma2_check > 2.0 * sigma2_vmc || sigma2_check < 0.5 * sigma2_vmc))
       throw std::runtime_error(
           "Safeguard failure: checkConfigurations variance out of [0.5, 2.0] * reference! Please report this bug.\n");
     app_log() << "  Execution time = " << std::setprecision(4) << t2.elapsed() << std::endl;

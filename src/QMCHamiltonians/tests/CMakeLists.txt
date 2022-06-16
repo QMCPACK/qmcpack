@@ -2,7 +2,7 @@
 #// This file is distributed under the University of Illinois/NCSA Open Source License.
 #// See LICENSE file in top directory for details.
 #//
-#// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+#// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
 #//
 #// File developed by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
@@ -15,6 +15,7 @@ set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
                  test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
+set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
@@ -25,7 +26,9 @@ set(HAM_SRCS
     test_PairCorrEstimator.cpp
     test_SkAllEstimator.cpp
     test_QMCHamiltonian.cpp
-    test_ObservableHelper.cpp)
+    test_ObservableHelper.cpp
+    test_Listener.cpp)
+    
 
 if(QMC_CUDA)
   set(COULOMB_SRCS ${COULOMB_SRCS} test_coulomb_CUDA.cpp)
@@ -48,7 +51,7 @@ foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 
-foreach(CATEGORY coulomb force ham)
+foreach(CATEGORY coulomb force ham ewald2d)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)

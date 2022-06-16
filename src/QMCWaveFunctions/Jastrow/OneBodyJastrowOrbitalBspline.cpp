@@ -249,7 +249,7 @@ void OneBodyJastrowOrbitalBspline<FT>::calcRatio(MCWalkerConfiguration& W,
   // Copy data back to CPU memory
   gpu::streamsSynchronize();
   SumHost.asyncCopy(SumGPU);
-  cudaEventRecord(gpu::ratioSyncOneBodyEvent, gpu::memoryStream);
+  cudaCheck(cudaEventRecord(gpu::ratioSyncOneBodyEvent, gpu::memoryStream));
 }
 
 template<class FT>
@@ -263,7 +263,7 @@ void OneBodyJastrowOrbitalBspline<FT>::addRatio(MCWalkerConfiguration& W,
   int N         = W.Rnew_GPU.size();
   auto& walkers = W.WalkerList;
   int nw        = walkers.size();
-  cudaEventSynchronize(gpu::ratioSyncOneBodyEvent);
+  cudaCheck(cudaEventSynchronize(gpu::ratioSyncOneBodyEvent));
   for (int iw = 0; iw < nw; iw++)
   {
 #ifdef DEBUG_DELAYED
@@ -398,14 +398,14 @@ void OneBodyJastrowOrbitalBspline<FT>::calcGradient(MCWalkerConfiguration& W,
   // Copy data back to CPU memory
   gpu::streamsSynchronize();
   this->OneGradHost.asyncCopy(this->OneGradGPU);
-  cudaEventRecord(gpu::gradientSyncOneBodyEvent, gpu::memoryStream);
+  cudaCheck(cudaEventRecord(gpu::gradientSyncOneBodyEvent, gpu::memoryStream));
 }
 
 template<class FT>
 void OneBodyJastrowOrbitalBspline<FT>::addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
 {
   auto& walkers = W.WalkerList;
-  cudaEventSynchronize(gpu::gradientSyncOneBodyEvent);
+  cudaCheck(cudaEventSynchronize(gpu::gradientSyncOneBodyEvent));
   for (int iw = 0; iw < walkers.size(); iw++)
   {
 #ifdef DEBUG_DELAYED

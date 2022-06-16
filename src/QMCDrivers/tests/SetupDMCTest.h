@@ -45,10 +45,12 @@ public:
 
     QMCDriverInput qmc_input_copy(qmcdrv_input);
     DMCDriverInput dmc_input_copy(dmcdrv_input);
-    return {test_project, std::move(qmc_input_copy), std::move(dmc_input_copy),
+    return {test_project,
+            std::move(qmc_input_copy),
+            std::nullopt,
+            std::move(dmc_input_copy),
             MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool->getParticleSet("e"),
-                         wavefunction_pool->getPrimary(),
-                         hamiltonian_pool->getPrimary()),
+                         wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
             comm};
   }
 
