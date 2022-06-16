@@ -25,6 +25,8 @@
 
 namespace qmcplusplus
 {
+class MCPopulation;
+  
 /** Manages the state of QMC sections and handles population control for DMCs
  *
  * \todo: Remove duplicate reading of Driver XML section with own copies of input

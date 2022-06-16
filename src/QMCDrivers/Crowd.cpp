@@ -12,10 +12,19 @@
 
 namespace qmcplusplus
 {
+
+Crowd::Crowd(EstimatorManagerNew& emb, const MultiWalkerDispatchers& dispatchers)
+    : dispatchers_(dispatchers), estimator_manager_crowd_(emb)
+{}
+
 Crowd::Crowd(EstimatorManagerNew& emb,
-             const DriverWalkerResourceCollection& driverwalker_res,
+             ParticleSet& pset_electrons,
+             TrialWaveFunction& twf,
+             QMCHamiltonian& ham,
              const MultiWalkerDispatchers& dispatchers)
-    : dispatchers_(dispatchers), driverwalker_resource_collection_(driverwalker_res), estimator_manager_crowd_(emb)
+    : dispatchers_(dispatchers),
+      driverwalker_resource_collection_(createCrowdResources(pset_electrons, twf, ham)),
+      estimator_manager_crowd_(emb)
 {}
 
 Crowd::~Crowd() = default;
@@ -27,6 +36,17 @@ void Crowd::clearWalkers()
   walker_elecs_.clear();
   walker_twfs_.clear();
   walker_hamiltonians_.clear();
+}
+
+DriverWalkerResourceCollection Crowd::createCrowdResources(ParticleSet& pset,
+                                                           TrialWaveFunction& twf,
+                                                           QMCHamiltonian& ham)
+{
+  DriverWalkerResourceCollection resources;
+  pset.createResource(resources.pset_res);
+  twf.createResource(resources.twf_res);
+  ham.createResource(resources.ham_res);
+  return resources;
 }
 
 void Crowd::reserve(int crowd_size)

@@ -12,6 +12,7 @@
 
 #include "SFNBranch.h"
 #include <numeric>
+#include "MCPopulation.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
 #include "Particle/Reptile.h"

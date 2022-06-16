@@ -99,7 +99,7 @@ __global__ void computeLogDet_kernel(const int n,
   if (tid == 0)
     logdets[iw] = logdet_vals[0];
 }
-
+  
 /** Calculates logdets using LU_diags and pivots
  *  \param[in] LU_mat - the LU output from cublasXgetrfBatched
  *  \param[out] LU_diags - the LU_diags from the LU

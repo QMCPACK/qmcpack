@@ -11,7 +11,6 @@
 #define QMCPLUSPLUS_CROWD_H
 
 #include <vector>
-#include "QMCDrivers/MCPopulation.h"
 #include "RandomGenerator.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
@@ -36,15 +35,31 @@ class EstimatorManagerNew;
 class Crowd
 {
 public:
-  using MCPWalker        = MCPopulation::MCPWalker;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
   using GradType         = QMCTraits::GradType;
   using RealType         = QMCTraits::RealType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  /** This is the data structure for walkers within a crowd
+
+  /** Constructor for crowd in a multiwalker environment
+   *  \param[in] emb                EstimatorManagerNew for the rank.
+   *  \param[in] pset               ParticlesSet for multiwalker resource creation (in app this is the gold electrons)
+   *  \param[in] twf                TrialWaveFunction       ""
+   *  \param[in] ham                TrialWaveFunction       ""
+   *  \param[in] dispatchers        For flex dispatching, caused by unabstracted omp parallel nesting for the edge case
+   *                                where walkers are so large you will run fewer crowds than rank CPU threads.
    */
   Crowd(EstimatorManagerNew& emb,
-        const DriverWalkerResourceCollection& driverwalker_res,
+        ParticleSet& pset,
+        TrialWaveFunction& twf,
+        QMCHamiltonian& ham,
         const MultiWalkerDispatchers& dispatchers);
+
+  /** Constructor for serialized walker environment
+   *  no multiwalker resources are created in crowd scope so walker element
+   *  arguments are uneeded.
+   */
+  Crowd(EstimatorManagerNew& emb, const MultiWalkerDispatchers& dispatchers);
+
   ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
@@ -104,6 +119,9 @@ public:
   const MultiWalkerDispatchers& dispatchers_;
 
 private:
+  static DriverWalkerResourceCollection createCrowdResources(ParticleSet& pset_electrons,
+                                                             TrialWaveFunction& twf,
+                                                             QMCHamiltonian& ham);
   /** @name Walker Vectors
    *
    *  A single index into these ordered lists constitutes a complete 

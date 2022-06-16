@@ -23,6 +23,8 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "Concurrency/ParallelExecutor.hpp"
+#include "FairDivide.h"
+
 //#define QMCCOSTFUNCTION_DEBUG
 
 namespace qmcplusplus
