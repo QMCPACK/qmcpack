@@ -54,12 +54,15 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 			 //This is the argument for the calcRatio calls, which require both.
   dS.resize(Nsamps);
 
+
+  std::complex<RealType> eye(0,1.0);
+
   RealType wgt = t_walker_->Weight;
   if (Periodic)
   {
     for (int ig = 0; ig < P.groups(); ++ig)
     {
-      refPsi.prepareGroup(P,ig);
+    //  refPsi.prepareGroup(P,ig);
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
       {
         PosType ru;
@@ -75,40 +78,47 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         ValueType sz(0.0);
         makeUniformRandom(dS);
         dS=dS*TWOPI; //We want the spin delta to go from 0-2pi.
+        
         for(int samp=0; samp<Nsamps; samp++)
         {
-          if (!P.makeMoveAndCheckWithSpin(iat, dr, dS[samp]))
-          {
-            P.accept_rejectMove(iat, false);
-            //throw exception
-          }
+          P.makeMoveWithSpin(iat, 0.0, dS[samp]);
           ratios[samp] = refPsi.calcRatio(P, iat);
-          P.accept_rejectMove(iat,false); //reject the move
+          P.rejectMove(iat); //reject the move
+          refPsi.resetPhaseDiff();
+          sx+=   2.0*std::cos(P.spins[iat]+dS[samp])*ratios[samp];
+          sy+=  -2.0*std::sin(P.spins[iat]+dS[samp])*ratios[samp];
+          sz+=  -2.0*eye*std::sin(-dS[samp])*ratios[samp];
         }
-        for( int idim = 0; idim < OHMMS_DIM; idim++)
-          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
+        sx=sx/RealType(Nsamps);
+        sy=sy/RealType(Nsamps);
+        sz=sz/RealType(Nsamps);
+
+        P.Collectables[getMagGridIndex(i, j, k, 0)] += std::real(sx); //1.0;
+        P.Collectables[getMagGridIndex(i, j, k, 1)] += std::real(sy); //1.0;
+        P.Collectables[getMagGridIndex(i, j, k, 2)] += std::real(sz); //1.0;
+     
  
         }
     }
   }
   else
   {
-    for (int iat = 0; iat < P.getTotalNum(); ++iat)
-    {
-      PosType ru;
-      for (int dim = 0; dim < OHMMS_DIM; dim++)
-      {
-        ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
-      }
-      if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
-      {
-        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-        for( int idim = 0; idim < OHMMS_DIM; idim++)
-          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
-      }
-    }
+//    for (int iat = 0; iat < P.getTotalNum(); ++iat)
+//    {
+//      PosType ru;
+//      for (int dim = 0; dim < OHMMS_DIM; dim++)
+//      {
+//        ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
+//      }
+//      if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
+//      {
+//        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
+//        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
+//        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+//        for( int idim = 0; idim < OHMMS_DIM; idim++)
+//          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
+//      }
+//    }
   }
   return 0.0;
 }
@@ -144,6 +154,7 @@ void MagDensityEstimator::addObservables(PropertySetType& plist, BufferType& col
 {
   //current index
   my_index_ = collectables.current();
+  app_log()<<"addObservables = "<<NumGrids[OHMMS_DIM]<<std::endl;
   std::vector<RealType> tmp(OHMMS_DIM*NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
   //potentialIndex=collectables.current();
@@ -213,7 +224,9 @@ bool MagDensityEstimator::get(std::ostream& os) const
 std::unique_ptr<OperatorBase> MagDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   //default constructor is sufficient
-  return std::make_unique<MagDensityEstimator>(*this);
+  std::unique_ptr<MagDensityEstimator> myClone = std::make_unique<MagDensityEstimator>(qp,psi);
+  myClone->NumGrids = NumGrids;
+  return myClone;
 }
 
 void MagDensityEstimator::resize()
