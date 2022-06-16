@@ -178,4 +178,26 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
   #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+  # multithreade multistream benchmarks
+  set(UTEST_EXE benchmark_multi_diracmatrixcompute)
+  set(UTEST_NAME deterministic-unit_${UTEST_EXE})
+  set(BENCHMARK_SRC benchmark_multi_DiracMatrixComputeCUDA.cpp)
+  add_executable(${UTEST_EXE} ${BENCHMARK_SRC})
+  target_link_libraries(
+    ${UTEST_EXE}
+    catch_main
+    qmcwfs
+    platform_LA
+    platform_runtime
+    utilities_for_test
+    container_testing)
+  if(USE_OBJECT_TARGET)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
+  endif()
+  #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")
+  # This should not be added as a unit test unless processor affinity is being handled well
+  # add_unit_test(${UTEST_NAME} 1 7 $<TARGET_FILE:${UTEST_EXE}>)
+  
 endif()

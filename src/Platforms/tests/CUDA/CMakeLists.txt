@@ -13,7 +13,7 @@ set(SRC_DIR CUDA)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_CUDAallocator.cpp)
-target_link_libraries(${UTEST_EXE} platform_runtime containers catch_main)
+add_executable(${UTEST_EXE} test_CUDAallocator.cpp test_CUDALinearAlgebraHandles.cpp)
+target_link_libraries(${UTEST_EXE} platform_runtime platform_LA containers catch_main qmcutil)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

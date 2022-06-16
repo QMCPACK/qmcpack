@@ -106,8 +106,8 @@ class DiracMatrixComputeCUDA : public Resource
     psiM_invM_ptrs_.resize(nw * 2);
     const int lda           = a_mats[0].get().cols();
     const int ldinv         = inv_a_mats[0].get().cols();
-    cudaStream_t hstream    = cuda_handles.hstream;
-    cublasHandle_t h_cublas = cuda_handles.h_cublas;
+    cudaStream_t hstream    = cuda_handles.getStream();
+    cublasHandle_t h_cublas = cuda_handles.getCuBLAS();
     psiM_fp_.resize(n * ldinv * nw);
 
     for (int iw = 0; iw < nw; ++iw)
@@ -184,8 +184,8 @@ class DiracMatrixComputeCUDA : public Resource
     infos_.resize(nw);
     LU_diags_fp_.resize(n * nw);
 
-    cudaStream_t hstream    = cuda_handles.hstream;
-    cublasHandle_t h_cublas = cuda_handles.h_cublas;
+    cudaStream_t hstream    = cuda_handles.getStream();
+    cublasHandle_t h_cublas = cuda_handles.getCuBLAS();
     cudaErrorCheck(cudaMemcpyAsync(psi_Ms.device_data(), psi_Ms.data(), psi_Ms.size() * sizeof(VALUE_FP),
                                    cudaMemcpyHostToDevice, hstream),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
@@ -239,11 +239,11 @@ public:
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
-                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                                   cudaMemcpyHostToDevice, cuda_handles.getStream()),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     simd::transpose(a_mat.data(), n, lda, psiM_fp_.data(), n, lda);
     cudaErrorCheck(cudaMemcpyAsync(psiM_fp_.device_data(), psiM_fp_.data(), psiM_fp_.size() * sizeof(VALUE_FP),
-                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                                   cudaMemcpyHostToDevice, cuda_handles.getStream()),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::psiM_fp to device");
     mw_computeInvertAndLog_stride(cuda_handles, psiM_fp_, invM_fp_, n, lda, log_values);
     DualMatrix<VALUE_FP> data_ref_matrix;
@@ -254,7 +254,7 @@ public:
     // smaller of the two's dimensions
     inv_a_mat.assignUpperLeft(data_ref_matrix);
     cudaErrorCheck(cudaMemcpyAsync(inv_a_mat.device_data(), inv_a_mat.data(), inv_a_mat.size() * sizeof(TMAT),
-                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                                   cudaMemcpyHostToDevice, cuda_handles.getStream()),
                    "cudaMemcpyAsync of inv_a_mat to device failed!");
   }
 
@@ -288,7 +288,7 @@ public:
     std::fill(log_values.begin(), log_values.end(), LogValue{0.0, 0.0});
     // making sure we know the log_values are zero'd on the device.
     cudaErrorCheck(cudaMemcpyAsync(log_values.device_data(), log_values.data(), log_values.size() * sizeof(LogValue),
-                                   cudaMemcpyHostToDevice, cuda_handles.hstream),
+                                   cudaMemcpyHostToDevice, cuda_handles.getStream()),
                    "cudaMemcpyAsync failed copying DiracMatrixBatch::log_values to device");
     for (int iw = 0; iw < nw; ++iw)
       simd::transpose(a_mats[iw].get().data(), n, a_mats[iw].get().cols(), psiM_fp_.data() + nsqr * iw, n, lda);
@@ -302,7 +302,7 @@ public:
       inv_a_mats[iw].get().assignUpperLeft(data_ref_matrix);
       cudaErrorCheck(cudaMemcpyAsync(inv_a_mats[iw].get().device_data(), inv_a_mats[iw].get().data(),
                                      inv_a_mats[iw].get().size() * sizeof(TMAT), cudaMemcpyHostToDevice,
-                                     cuda_handles.hstream),
+                                     cuda_handles.getStream()),
                      "cudaMemcpyAsync of inv_a_mat to device failed!");
     }
   }

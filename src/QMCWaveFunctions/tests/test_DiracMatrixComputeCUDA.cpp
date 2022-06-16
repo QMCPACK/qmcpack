@@ -51,8 +51,9 @@ TEST_CASE("DiracMatrixComputeCUDA_cuBLAS_geam_call", "[wavefunction][fermion]")
   CUDALinearAlgebraHandles cuda_handles;
   int lda = n;
   cudaCheck(cudaMemcpyAsync((void*)(temp_mat.device_data()), (void*)(mat_a.data()), mat_a.size() * sizeof(double),
-                            cudaMemcpyHostToDevice, cuda_handles.hstream));
-  cublasErrorCheck(cuBLAS::geam(cuda_handles.h_cublas, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
+                            cudaMemcpyHostToDevice, cuda_handles.getStream()));
+  auto cublas_handle = cuda_handles.getCuBLAS();
+  cublasErrorCheck(cuBLAS::geam(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_N, n, n, &host_one,
                                 temp_mat.device_data(), lda, &host_zero, mat_c.device_data(), lda, mat_a.device_data(),
                                 lda),
                    "cuBLAS::geam failed.");
