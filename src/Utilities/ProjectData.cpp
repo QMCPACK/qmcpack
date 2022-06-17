@@ -33,27 +33,6 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
   myComm  = OHMMS::Controller;
   if (m_title.empty())
     m_title = getDateAndTime("%Y%m%dT%H%M");
-
-  int groupid = myComm->getGroupID();
-  char fileroot[256];
-
-  bool no_gtag = (qmc_common.mpi_groups == 1);
-  if (no_gtag) //qnproc_g == nproc)
-    sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
-  else
-    sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
-
-  std::cout << "woof? ";
-  for(int i = 0 ; i < 256 ; i ++ ){
-          std::cout << fileroot[i] ;
-  }
-  std::cout << std::endl;
-  exit(1);
-
-  m_projectmain = fileroot;
-  //set the communicator name
-  myComm->setName(fileroot);
-
 }
 
 void ProjectData::setCommunicator(Communicate* c) { myComm = c; }
@@ -112,19 +91,20 @@ void ProjectData::reset()
   char fileroot[256], nextroot[256];
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
+  int length{0};
   if (no_gtag) //qnproc_g == nproc)
-    sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
+    length = sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
   else
-    sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
+    length = sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
 
-  std::cout << "woof? ";
-  for(int i = 0 ; i < 256 ; i ++ ){
+  /*std::cout << "woof? ";
+  for(int i = 0 ; i < asdf ; i ++ ){
 	  std::cout << fileroot[i] ;
   }
   std::cout << std::endl;
-  exit(1);
-
-  m_projectmain = fileroot;
+  exit(1);*/
+  
+  m_projectmain = std::string(fileroot,length);
   //set the communicator name
   myComm->setName(fileroot);
   if (no_gtag)

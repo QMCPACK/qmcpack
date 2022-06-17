@@ -53,7 +53,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
-      //root_name_(project_data.CurrentMainRoot()),
+      root_name_(project_data.CurrentMainRoot()),
       population_(std::move(population)),
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
@@ -75,13 +75,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     else
       return {};
   };
-
-  if(!project_data.CurrentMainRoot().empty())
-  {
-    std::cout << "meow? " << project_data.CurrentMainRoot() << std::endl;
-    exit(1);    
-    //root_name_ = project_data.CurrentMainRoot();
-  }
 
   estimator_manager_ =
       std::make_unique<EstimatorManagerNew>(comm,
@@ -266,8 +259,10 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   bool DumpConfig = qmcdriver_input_.get_dump_config();
   auto& W         = population_.getWalkerConfigsRef();
 
-  if (DumpConfig && dumpwalkers)
+  if (DumpConfig && dumpwalkers) {
+    std::cout << "myComm.size()? " << myComm->size() << std::endl;  
     wOut->dump(W, block);
+  }
   infoSummary.flush();
   infoLog.flush();
 
@@ -307,10 +302,11 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
     setNonLocalMoveHandler_(*ham);
 
-  // setWalkerOffsets();
+  this->setWalkerOffsets();
   // ////update the global number of walkers
-  // ////int nw=W.getActiveWalkers();
-  // ////myComm->allreduce(nw);
+  auto& W = population_.getWalkerConfigsRef();
+  int nw = W.getActiveWalkers();
+  myComm->allreduce(nw);
 }
 
 /** Creates Random Number generators for crowds and step contexts
@@ -407,20 +403,23 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
 void QMCDriverNew::setWalkerOffsets()
 {
   std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  //  nw[myComm->rank()] = W.getActiveWalkers();
+  population_.saveWalkerConfigurations();
+  auto& W = population_.getWalkerConfigsRef();
+  nw[myComm->rank()] = W.getActiveWalkers();
   myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++)
+  for (int ip = 0; ip < myComm->size(); ip++) {
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  //  W.setGlobalNumWalkers(nwoff[myComm->size()]);
-  //  W.setWalkerOffsets(nwoff);
+  }
+    W.setGlobalNumWalkers(nwoff[myComm->size()]);
+    W.setWalkerOffsets(nwoff);
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
   {
-    //    W[iw]->ID       = id;
-    //    W[iw]->ParentID = id;
+        W[iw]->ID       = id;
+        W[iw]->ParentID = id;
   }
-  //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
+  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
+  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
