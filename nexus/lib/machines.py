@@ -3316,6 +3316,109 @@ class Archer2(Supercomputer):
 #end class Archer2
 
 
+## Added 16/06/2022 by A Zen
+class Daint(Supercomputer):
+    # https://www.cscs.ch/computers/piz-daint/
+
+    name = 'daint'
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def post_process_job(self,job):
+        if job.gpus is None:
+            job.gpus = 0 # gpus to use per node
+        elif job.gpus == 1 and job.processes_per_node is None:
+            job.threads = 12  # OpenMP thread(s)
+            job.processes_per_node = 1 # MPI rank(s) 
+        elif job.gpus > 1:
+            self.warn('!!! ATTENTION !!!\n  there is only 1 GPU/node in Daint. It is not possible to set gpus={}'.format(job.gpus))
+        if job.processes_per_node is None:
+            job.threads = 1 # OpenMP thread(s)
+            job.processes_per_node = 12 # MPI rank(s)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='normal'
+        #end if
+        ### Slurm batch queues
+        # https://user.cscs.ch/access/running/piz_daint/
+        base_partition = None
+        max_partition = 2400
+        if job.queue == 'long': # Maximum 5 long jobs in total (one per user)
+            max_time = 7*24
+            max_partition = 4
+        elif job.queue == 'large': # Large scale work, by arrangement only
+            max_time = 12
+            max_partition = 4400
+        elif job.queue == 'low': # Up to 130% of project's quarterly allocation
+            max_time = 6
+            max_partition = 2400
+        elif job.queue == 'prepost': # High priority pre/post processing
+            max_time = 0.5  # 30 min
+            max_partition = 1
+        else:
+            max_time = 24
+            max_partition = 2400
+        #end if
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes = 0
+            job.seconds = 0
+        #end if
+        if job.nodes > max_partition:   
+            self.warn('!!! ATTENTION !!!\n  the maximum nodes on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+            job.nodes   = max_partition
+        #end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH --partition={}\n'.format(job.queue)
+        c+='#SBATCH --constraint=gpu\n'
+        if job.hyperthreads is None or job.hyperthreads==1:
+            c+='#SBATCH --hint=nomultithread\n'
+            c+='#SBATCH --ntasks-per-core=1\n'
+        elif job.hyperthreads==2:
+            c+='#SBATCH --hint=multithread\n'
+            c+='#SBATCH --ntasks-per-core=2\n'
+        #end if job.hyperthreads
+        if job.email is not None:
+            c+='#SBATCH --mail-user {}\n'.format(job.email)
+            c+='#SBATCH --mail-type ALL\n'
+            #c+='#SBATCH --mail-type FAIL\n'
+        #end if
+        c+='\n'
+        #c+='module load daint-gpu\n'
+        #c+='\n'
+        c+='echo JobID : $SLURM_JOBID\n'
+        c+='echo Number of nodes requested: $SLURM_JOB_NUM_NODES\n'
+        c+='echo List of nodes assigned to the job: $SLURM_NODELIST\n'
+        c+='\n'
+        c+='export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n'
+        if job.gpus==1:
+            c+='export CRAY_CUDA_MPS=1\n'
+        c+='\n'
+        c+='ulimit -s unlimited\n'
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Daint
+
+
 class Tomcat3(Supercomputer):
     name             = 'tomcat3'
     requires_account = False
@@ -3389,6 +3492,7 @@ Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Daint(        5704,   1,    12,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
