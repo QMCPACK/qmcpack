@@ -238,6 +238,12 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
 {
   app_log() << "entering engine_start function" << std::endl;
 
+  engineData forCostFunc;
+  forCostFunc.lmEngine = EngineObj;
+  forCostFunc.descentEngine = &descentEngineObj;
+  forCostFunc.method = MinMethod;
+
+
   // generate samples
   generate_samples_timer_.start();
   generateSamples();
@@ -257,8 +263,10 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   initialize_timer_.start();
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
-  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
-                                        MinMethod); // computes derivative ratios and pass into engine
+  optTarget->checkConfigurations(forCostFunc);
+  //optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
+  //                                      MinMethod); // computes derivative ratios and pass into engine
+  
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;

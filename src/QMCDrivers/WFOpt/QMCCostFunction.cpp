@@ -228,6 +228,8 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
       d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
 }
+void QMCCostFunction::checkConfigurations(engineData& data)
+{}
 
 /** evaluate everything before optimization */
 void QMCCostFunction::checkConfigurations()
