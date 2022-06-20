@@ -1,4 +1,0 @@
-library 'qmcpack_shared_jenkins'
-
-common_pipeline(name:"cpu", spack_path:"/var/lib/jenkins/spack", prefix:"vm")
-
