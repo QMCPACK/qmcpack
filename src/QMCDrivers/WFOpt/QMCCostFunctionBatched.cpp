@@ -377,6 +377,9 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
             #ifdef HAVE_LMY_ENGINE
             std::vector<Return_t> der_rat_samp(nparam + 1, 0.0);
             std::vector<Return_t> le_der_samp(nparam + 1, 0.0);
+            
+            der_rat_samp.at(0) = 1.0;
+            le_der_samp.at(0) = energy_list[ib];
             #endif
 
           const int is = base_sample_index + ib;
@@ -395,6 +398,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
 
+               std::cout << "taking sample, etmp: " << energy_list[ib] << std::endl;
             #ifdef HAVE_LMY_ENGINE
            if (data.method == "adaptive")
            {
@@ -447,6 +451,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
+        std::cout << "Entered checkConfig without needGrads, etmp: " << etmp << std::endl;
         }
       }
     }
@@ -482,7 +487,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
   // engine finish taking samples
   if (data.method == "adaptive")
   {
-      //Only call sample_finish now if samples are not being stored
+     //Only call sample_finish now if samples are not being stored
     data.lmEngine->sample_finish();
 
     if (data.lmEngine->block_first())
@@ -706,6 +711,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
           RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
+            std::cout << "In correlatedSampling, etmp: " << etmp << " RecordsOnNode[is][ENERGY_NEW]: " << RecordsOnNode[is][ENERGY_NEW] << std::endl;
         }
       }
     }
