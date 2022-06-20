@@ -9,9 +9,7 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-message_verbose("Adding AFQMC numerics unit tests")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+message(VERBOSE "Adding AFQMC numerics unit tests")
 
 set(SRC_DIR afqmc_numerics)
 set(UTEST_EXE test_${SRC_DIR})
@@ -28,10 +26,10 @@ add_executable(
   test_tensor_operations.cpp
   test_determinant.cpp
   test_misc_kernels.cpp)
-target_link_libraries(${UTEST_EXE} catch_main afqmc Math::BLAS_LAPACK)
+target_link_libraries(${UTEST_EXE} catch_main afqmc platform_LA)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set_property(
   TEST ${UTEST_NAME}
   APPEND

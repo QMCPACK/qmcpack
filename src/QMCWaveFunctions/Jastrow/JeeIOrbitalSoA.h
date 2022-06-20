@@ -16,7 +16,7 @@
 #if !defined(QMC_BUILD_SANDBOX_ONLY)
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "CPU/SIMD/algorithm.hpp"
 #include <map>
@@ -40,13 +40,13 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   ///element position type
   using posT = TinyVector<valT, OHMMS_DIM>;
   ///use the same container
-  using DistRow  = DistanceTableData::DistRow;
-  using DisplRow = DistanceTableData::DisplRow;
+  using DistRow  = DistanceTable::DistRow;
+  using DisplRow = DistanceTable::DisplRow;
   ///table index for el-el
   const int ee_Table_ID_;
   ///table index for i-el
   const int ei_Table_ID_;
-  //nuber of particles
+  //number of particles
   int Nelec, Nion;
   ///number of particles + padded
   size_t Nelec_padded;
@@ -94,7 +94,6 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   VectorSoaContainer<valT, 9> mVGL;
 
   // Used for evaluating derivatives with respect to the parameters
-  int NumVars;
   Array<std::pair<int, int>, 3> VarOffset;
   Vector<RealType> dLogPsi;
   Array<PosType, 2> gradLogPsi;
@@ -107,23 +106,55 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
   std::vector<std::vector<PosType>> dgrad_dalpha;
   std::vector<std::vector<Tensor<RealType, 3>>> dhess_dalpha;
 
+  void resizeWFOptVectors()
+  {
+    dLogPsi.resize(myVars.size());
+    gradLogPsi.resize(myVars.size(), Nelec);
+    lapLogPsi.resize(myVars.size(), Nelec);
+
+    du_dalpha.resize(J3Unique.size());
+    dgrad_dalpha.resize(J3Unique.size());
+    dhess_dalpha.resize(J3Unique.size());
+
+    int ifunc = 0;
+    for (auto& j3UniquePair : J3Unique)
+    {
+      auto functorPtr           = j3UniquePair.second.get();
+      J3UniqueIndex[functorPtr] = ifunc;
+      const int numParams       = functorPtr->getNumParameters();
+      du_dalpha[ifunc].resize(numParams);
+      dgrad_dalpha[ifunc].resize(numParams);
+      dhess_dalpha[ifunc].resize(numParams);
+      ifunc++;
+    }
+  }
+
+  /// compute G and L from internally stored data
+  QTFull::RealType computeGL(ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L) const
+  {
+    for (int iat = 0; iat < Nelec; ++iat)
+    {
+      G[iat] += dUat[iat];
+      L[iat] += d2Uat[iat];
+    }
+    return -0.5 * simd::accumulate_n(Uat.data(), Nelec, QTFull::RealType());
+  }
+
+
 public:
   ///alias FuncType
   using FuncType = FT;
 
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
-        ee_Table_ID_(elecs.addTable(elecs)),
-        ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME)),
-        Ions(ions),
-        NumVars(0)
+        ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+        ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+        Ions(ions)
   {
     if (myName.empty())
       throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
-
-  ~JeeIOrbitalSoA() override {}
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
@@ -146,10 +177,6 @@ public:
     // Ye: I don't like the following memory allocated by default.
     eeIcopy->myVars.clear();
     eeIcopy->myVars.insertFrom(myVars);
-    eeIcopy->NumVars = NumVars;
-    eeIcopy->dLogPsi.resize(NumVars);
-    eeIcopy->gradLogPsi.resize(NumVars, Nelec);
-    eeIcopy->lapLogPsi.resize(NumVars, Nelec);
     eeIcopy->VarOffset   = VarOffset;
     eeIcopy->Optimizable = Optimizable;
     return eeIcopy;
@@ -195,25 +222,6 @@ public:
     DistIndice_k.resize(Nbuffer);
   }
 
-  void initUnique()
-  {
-    du_dalpha.resize(J3Unique.size());
-    dgrad_dalpha.resize(J3Unique.size());
-    dhess_dalpha.resize(J3Unique.size());
-    int ifunc = 0;
-
-    for (auto& j3UniquePair : J3Unique)
-    {
-      auto functorPtr           = j3UniquePair.second.get();
-      J3UniqueIndex[functorPtr] = ifunc;
-      const int numParams       = functorPtr->getNumParameters();
-      du_dalpha[ifunc].resize(numParams);
-      dgrad_dalpha[ifunc].resize(numParams);
-      dhess_dalpha[ifunc].resize(numParams);
-      ifunc++;
-    }
-  }
-
   void addFunc(int iSpecies, int eSpecies1, int eSpecies2, std::unique_ptr<FT> j)
   {
     if (eSpecies1 == eSpecies2)
@@ -246,7 +254,6 @@ public:
     std::stringstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique.emplace(aname.str(), std::move(j));
-    initUnique();
   }
 
 
@@ -331,12 +338,9 @@ public:
     }
 
     myVars.getIndex(active);
-    NumVars = myVars.size();
+    const size_t NumVars = myVars.size();
     if (NumVars)
     {
-      dLogPsi.resize(NumVars);
-      gradLogPsi.resize(NumVars, Nelec);
-      lapLogPsi.resize(NumVars, Nelec);
       VarOffset.resize(iGroups, eGroups, eGroups);
       int varoffset = myVars.Index[0];
       for (int ig = 0; ig < iGroups; ig++)
@@ -378,8 +382,8 @@ public:
 
   void build_compact_list(const ParticleSet& P)
   {
-    const auto& eI_dists  = P.getDistTable(ei_Table_ID_).getDistances();
-    const auto& eI_displs = P.getDistTable(ei_Table_ID_).getDisplacements();
+    const auto& eI_dists  = P.getDistTableAB(ei_Table_ID_).getDistances();
+    const auto& eI_displs = P.getDistTableAB(ei_Table_ID_).getDisplacements();
 
     for (int iat = 0; iat < Nion; ++iat)
       for (int jg = 0; jg < eGroups; ++jg)
@@ -401,18 +405,19 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
-    return evaluateGL(P, G, L, true);
+    recompute(P);
+    return log_value_ = computeGL(G, L);
   }
 
   PsiValueType ratio(ParticleSet& P, int iat) override
   {
     UpdateMode = ORB_PBYP_RATIO;
 
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
     return std::exp(static_cast<PsiValueType>(DiffVal));
@@ -423,15 +428,15 @@ public:
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
-                                    VP.getDistTable(ei_Table_ID_).getDistRow(k),
-                                    VP.getDistTable(ee_Table_ID_).getDistRow(k), ions_nearby_old));
+                                    VP.getDistTableAB(ei_Table_ID_).getDistRow(k),
+                                    VP.getDistTableAB(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const auto& eI_dists              = eI_table.getDistances();
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& eI_dists = eI_table.getDistances();
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
 
     for (int jg = 0; jg < eGroups; ++jg)
     {
@@ -462,8 +467,8 @@ public:
   {
     UpdateMode = ORB_PBYP_PARTIAL;
 
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     computeU3(P, iat, eI_table.getTempDists(), eI_table.getTempDispls(), ee_table.getTempDists(),
               ee_table.getTempDispls(), cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk, ions_nearby_new);
     DiffVal = Uat[iat] - cur_Uat;
@@ -475,8 +480,8 @@ public:
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
     // get the old value, grad, lapl
     computeU3(P, iat, eI_table.getDistRow(iat), eI_table.getDisplRow(iat), ee_table.getOldDists(),
               ee_table.getOldDispls(), Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk, ions_nearby_old);
@@ -502,7 +507,7 @@ public:
         save_g[jel] += new_g[jel] - old_g[jel];
     }
 
-    LogValue += Uat[iat] - cur_Uat;
+    log_value_ += Uat[iat] - cur_Uat;
     Uat[iat]   = cur_Uat;
     dUat(iat)  = cur_dUat;
     d2Uat[iat] = cur_d2Uat;
@@ -565,8 +570,8 @@ public:
 
   inline void recompute(const ParticleSet& P) override
   {
-    const DistanceTableData& eI_table = P.getDistTable(ei_Table_ID_);
-    const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
 
     build_compact_list(P);
 
@@ -829,9 +834,9 @@ public:
 
   inline LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override
   {
-    evaluateGL(P, P.G, P.L, false);
+    log_value_ = computeGL(P.G, P.L);
     buf.forward(Bytes_in_WFBuffer);
-    return LogValue;
+    return log_value_;
   }
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override
@@ -843,21 +848,11 @@ public:
   }
 
   LogValueType evaluateGL(const ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& G,
-                          ParticleSet::ParticleLaplacian_t& L,
+                          ParticleSet::ParticleGradient& G,
+                          ParticleSet::ParticleLaplacian& L,
                           bool fromscratch = false) override
   {
-    if (fromscratch)
-      recompute(P);
-    LogValue = valT(0);
-    for (int iat = 0; iat < Nelec; ++iat)
-    {
-      LogValue += Uat[iat];
-      G[iat] += dUat[iat];
-      L[iat] += d2Uat[iat];
-    }
-
-    return LogValue = -LogValue * 0.5;
+    return log_value_ = computeGL(G, L);
   }
 
   void evaluateDerivatives(ParticleSet& P,
@@ -865,6 +860,8 @@ public:
                            std::vector<ValueType>& dlogpsi,
                            std::vector<ValueType>& dhpsioverpsi) override
   {
+    resizeWFOptVectors();
+
     bool recalculate(false);
     std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
@@ -885,9 +882,9 @@ public:
       constexpr valT ctwo(2);
       constexpr valT lapfac = OHMMS_DIM - cone;
 
-      const DistanceTableData& ee_table = P.getDistTable(ee_Table_ID_);
-      const auto& ee_dists              = ee_table.getDistances();
-      const auto& ee_displs             = ee_table.getDisplacements();
+      const auto& ee_table  = P.getDistTableAA(ee_Table_ID_);
+      const auto& ee_dists  = ee_table.getDistances();
+      const auto& ee_displs = ee_table.getDisplacements();
 
       build_compact_list(P);
 
@@ -982,8 +979,8 @@ public:
 
   inline GradType evalGradSource(ParticleSet& P, ParticleSet& source, int isrc) override
   {
-    ParticleSet::ParticleGradient_t tempG;
-    ParticleSet::ParticleLaplacian_t tempL;
+    ParticleSet::ParticleGradient tempG;
+    ParticleSet::ParticleLaplacian tempL;
     tempG.resize(P.getTotalNum());
     tempL.resize(P.getTotalNum());
     QTFull::RealType delta = 0.00001;
@@ -1026,11 +1023,11 @@ public:
   inline GradType evalGradSource(ParticleSet& P,
                                  ParticleSet& source,
                                  int isrc,
-                                 TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                 TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                                 TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                 TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
-    ParticleSet::ParticleGradient_t Gp, Gm, dG;
-    ParticleSet::ParticleLaplacian_t Lp, Lm, dL;
+    ParticleSet::ParticleGradient Gp, Gm, dG;
+    ParticleSet::ParticleLaplacian Lp, Lm, dL;
     Gp.resize(P.getTotalNum());
     Gm.resize(P.getTotalNum());
     dG.resize(P.getTotalNum());

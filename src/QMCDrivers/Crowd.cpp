@@ -46,7 +46,7 @@ void Crowd::addWalker(MCPWalker& walker, ParticleSet& elecs, TrialWaveFunction& 
   walker_hamiltonians_.push_back(hamiltonian);
 };
 
-void Crowd::setRNGForHamiltonian(RandomGenerator_t& rng)
+void Crowd::setRNGForHamiltonian(RandomGenerator& rng)
 {
   for (QMCHamiltonian& ham : walker_hamiltonians_)
     ham.setRandomGenerator(&rng);
@@ -61,9 +61,6 @@ void Crowd::startBlock(int num_steps)
   estimator_manager_crowd_.startBlock(num_steps);
 }
 
-void Crowd::stopBlock()
-{
-  estimator_manager_crowd_.stopBlock();
-}
+void Crowd::stopBlock() { estimator_manager_crowd_.stopBlock(); }
 
 } // namespace qmcplusplus

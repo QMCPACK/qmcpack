@@ -19,14 +19,13 @@ namespace qmcplusplus
     OperatorEstBase(data_locality)
 {
   data_locality_ = data_locality;
-  data_ = createLocalData(num_ranks * 10, data_locality_);
+  data_.resize(num_ranks * 10);
 }
 
 FakeOperatorEstimator::FakeOperatorEstimator(const FakeOperatorEstimator& foe)
   : OperatorEstBase(foe)
 {
-  size_t data_size = foe.data_->size();
-  data_ = createLocalData(data_size, data_locality_);
+  data_.resize(foe.data_.size());
 }
 
 }

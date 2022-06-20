@@ -97,43 +97,28 @@ elseif(ENABLE_HIP)
       Numerics/detail/HIP/Kernels/inplace_product.hip.cpp
       Numerics/detail/HIP/Kernels/get_diagonal.hip.cpp)
   set(AFQMC_SRCS ${AFQMC_SRCS} Memory/HIP/hip_utilities.cpp Memory/HIP/hip_arch.cpp Memory/HIP/hip_init.cpp)
-else(ENABLE_CUDA)
-
-endif(ENABLE_CUDA)
+endif()
 
 if(ENABLE_CUDA)
-  cuda_add_library(afqmc ${AFQMC_SRCS})
-  cuda_add_cublas_to_target(afqmc)
-  target_link_libraries(afqmc PRIVATE ${CUDA_cusparse_LIBRARY})
-  target_link_libraries(afqmc PRIVATE ${CUDA_cusolver_LIBRARY})
-  target_link_libraries(afqmc PRIVATE ${CUDA_curand_LIBRARY})
+  add_library(afqmc ${AFQMC_SRCS})
+  target_link_libraries(afqmc PRIVATE CUDA::curand CUDA::cusparse CUDA::cusolver CUDA::cublas)
 elseif(ENABLE_HIP)
   set_source_files_properties(${AFQMC_HIP_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
-  hip_add_library(
-    afqmc_hip_lib
-    ${AFQMC_HIP_SRCS}
-    HIPCC_OPTIONS
-    "-std=c++14"
-    HCC_OPTIONS
-    ""
-    NVCC_OPTIONS
-    "")
-  target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost)
-  target_include_directories(afqmc_hip_lib PUBLIC ${PROJECT_SOURCE_DIR}/external_codes/thrust)
+  hip_add_library(afqmc_hip_lib ${AFQMC_HIP_SRCS})
+  target_link_libraries(afqmc_hip_lib PUBLIC HIP::HIP ROCM::libraries Boost::boost qmc_external_thrust)
   add_library(afqmc ${AFQMC_SRCS})
-  target_link_libraries(afqmc PRIVATE afqmc_hip_lib)
+  target_link_libraries(afqmc PUBLIC afqmc_hip_lib)
 else(ENABLE_CUDA)
   add_library(afqmc ${AFQMC_SRCS})
 endif(ENABLE_CUDA)
 
-target_link_libraries(afqmc PUBLIC qmcutil)
-target_link_libraries(afqmc PRIVATE Math::BLAS_LAPACK Boost::boost)
+target_link_libraries(afqmc PUBLIC qmcutil qmc_external_multi)
+target_link_libraries(afqmc PRIVATE platform_LA Boost::boost)
 if(HAVE_MPI)
   target_compile_definitions(afqmc PRIVATE "USE_MPI")
 endif(HAVE_MPI)
 
 if(BUILD_UNIT_TESTS)
-  include_directories(${PROJECT_SOURCE_DIR}/external_codes/catch)
   set(AFQMC_UNIT_TEST_INPUT_NOSYM
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/ham_chol_sc.h5
       ${qmcpack_SOURCE_DIR}/tests/afqmc/C_1x1x1_dzvp/wfn_rhf.dat

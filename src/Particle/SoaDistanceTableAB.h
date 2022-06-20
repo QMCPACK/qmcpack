@@ -13,8 +13,9 @@
 #ifndef QMCPLUSPLUS_DTDIMPL_AB_H
 #define QMCPLUSPLUS_DTDIMPL_AB_H
 
+#include "Lattice/ParticleBConds3DSoa.h"
 #include "Utilities/FairDivide.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -22,43 +23,42 @@ namespace qmcplusplus
  * @brief A derived classe from DistacneTableData, specialized for AB using a transposed form
  */
 template<typename T, unsigned D, int SC>
-struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableData
+struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableAB
 {
   SoaDistanceTableAB(const ParticleSet& source, ParticleSet& target)
-      : DTD_BConds<T, D, SC>(source.Lattice),
-        DistanceTableData(source, target),
-        evaluate_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::evaluate_") + target.getName() +
-                                                       "_" + source.getName(),
-                                                   timer_level_fine)),
-        move_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::move_") + target.getName() + "_" +
-                                                   source.getName(),
+      : DTD_BConds<T, D, SC>(source.getLattice()),
+        DistanceTableAB(source, target, DTModes::ALL_OFF),
+        evaluate_timer_(
+            *timer_manager.createTimer(std::string("DTAB::evaluate_") + target.getName() + "_" + source.getName(),
+                                       timer_level_fine)),
+        move_timer_(*timer_manager.createTimer(std::string("DTAB::move_") + target.getName() + "_" + source.getName(),
                                                timer_level_fine)),
-        update_timer_(*timer_manager.createTimer(std::string("SoaDistanceTableAB::update_") + target.getName() + "_" +
-                                                     source.getName(),
-                                                 timer_level_fine))
+        update_timer_(
+            *timer_manager.createTimer(std::string("DTAB::update_") + target.getName() + "_" + source.getName(),
+                                       timer_level_fine))
   {
     resize();
   }
 
   void resize()
   {
-    if (N_sources * N_targets == 0)
+    if (num_sources_ * num_targets_ == 0)
       return;
 
     // initialize memory containers and views
-    const int Nsources_padded = getAlignedSize<T>(N_sources);
-    distances_.resize(N_targets);
-    displacements_.resize(N_targets);
-    for (int i = 0; i < N_targets; ++i)
+    const int num_sources_padded = getAlignedSize<T>(num_sources_);
+    distances_.resize(num_targets_);
+    displacements_.resize(num_targets_);
+    for (int i = 0; i < num_targets_; ++i)
     {
-      distances_[i].resize(Nsources_padded);
-      displacements_[i].resize(Nsources_padded);
+      distances_[i].resize(num_sources_padded);
+      displacements_[i].resize(num_sources_padded);
     }
 
     // The padding of temp_r_ and temp_dr_ is necessary for the memory copy in the update function
     // temp_r_ is padded explicitly while temp_dr_ is padded internally
-    temp_r_.resize(Nsources_padded);
-    temp_dr_.resize(N_sources);
+    temp_r_.resize(num_sources_padded);
+    temp_dr_.resize(num_sources_);
   }
 
   SoaDistanceTableAB()                          = delete;
@@ -71,11 +71,11 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
 #pragma omp parallel
     {
       int first, last;
-      FairDivideAligned(N_sources, getAlignment<T>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+      FairDivideAligned(num_sources_, getAlignment<T>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
       //be aware of the sign of Displacement
-      for (int iat = 0; iat < N_targets; ++iat)
-        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
+      for (int iat = 0; iat < num_targets_; ++iat)
+        DTD_BConds<T, D, SC>::computeDistances(P.R[iat], origin_.getCoordinates().getAllParticlePos(),
                                                distances_[iat].data(), displacements_[iat], first, last);
     }
   }
@@ -84,44 +84,22 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
   inline void move(const ParticleSet& P, const PosType& rnew, const IndexType iat, bool prepare_old) override
   {
     ScopedTimer local_timer(move_timer_);
-    DTD_BConds<T, D, SC>::computeDistances(rnew, Origin->getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
-                                           0, N_sources);
+    DTD_BConds<T, D, SC>::computeDistances(rnew, origin_.getCoordinates().getAllParticlePos(), temp_r_.data(), temp_dr_,
+                                           0, num_sources_);
     // If the full table is not ready all the time, overwrite the current value.
     // If this step is missing, DT values can be undefined in case a move is rejected.
     if (!(modes_ & DTModes::NEED_FULL_TABLE_ANYTIME) && prepare_old)
-      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], Origin->getCoordinates().getAllParticlePos(),
-                                             distances_[iat].data(), displacements_[iat], 0, N_sources);
+      DTD_BConds<T, D, SC>::computeDistances(P.R[iat], origin_.getCoordinates().getAllParticlePos(),
+                                             distances_[iat].data(), displacements_[iat], 0, num_sources_);
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat) override
   {
     ScopedTimer local_timer(update_timer_);
-    std::copy_n(temp_r_.data(), N_sources, distances_[iat].data());
+    std::copy_n(temp_r_.data(), num_sources_, distances_[iat].data());
     for (int idim = 0; idim < D; ++idim)
-      std::copy_n(temp_dr_.data(idim), N_sources, displacements_[iat].data(idim));
-  }
-
-  size_t get_neighbors(int iat,
-                       RealType rcut,
-                       int* restrict jid,
-                       RealType* restrict dist,
-                       PosType* restrict displ) const override
-  {
-    constexpr T cminus(-1);
-    size_t nn = 0;
-    for (int jat = 0; jat < N_targets; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        jid[nn]   = jat;
-        dist[nn]  = rij;
-        displ[nn] = cminus * displacements_[jat][iat];
-        nn++;
-      }
-    }
-    return nn;
+      std::copy_n(temp_dr_.data(idim), num_sources_, displacements_[iat].data(idim));
   }
 
   int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const override
@@ -130,7 +108,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
     int index         = -1;
     if (newpos)
     {
-      for (int jat = 0; jat < N_sources; ++jat)
+      for (int jat = 0; jat < num_sources_; ++jat)
         if (temp_r_[jat] < min_dist)
         {
           min_dist = temp_r_[jat];
@@ -144,7 +122,7 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
     }
     else
     {
-      for (int jat = 0; jat < N_sources; ++jat)
+      for (int jat = 0; jat < num_sources_; ++jat)
         if (distances_[iat][jat] < min_dist)
         {
           min_dist = distances_[iat][jat];
@@ -156,22 +134,8 @@ struct SoaDistanceTableAB : public DTD_BConds<T, D, SC>, public DistanceTableDat
         dr = displacements_[iat][index];
       }
     }
+    assert(index >= 0 && index < num_sources_);
     return index;
-  }
-
-  size_t get_neighbors(int iat, RealType rcut, RealType* restrict dist) const
-  {
-    size_t nn = 0;
-    for (int jat = 0; jat < N_targets; ++jat)
-    {
-      const RealType rij = distances_[jat][iat];
-      if (rij < rcut)
-      { //make the compact list
-        dist[nn] = rij;
-        nn++;
-      }
-    }
-    return nn;
   }
 
 private:

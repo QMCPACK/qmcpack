@@ -15,16 +15,13 @@
 
 #include "SOVMCUpdateAll.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w,
-                               TrialWaveFunction& psi,
-                               QMCHamiltonian& h,
-                               RandomGenerator_t& rg)
+SOVMCUpdateAll::SOVMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   UpdatePbyP = false;
@@ -71,7 +68,7 @@ void SOVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
           W.spins[iat] = thisWalker.spins[iat] + invSqrtSpinMass * SqrtTauOverMass[iat] * deltaS[iat];
 
         // W.R += dR*dt; W.DistTables,SK are updated; W.G,L are now stale
-        RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.LogValue,PhaseValue
+        RealType logpsi = Psi.evaluateLog(W); // update W.G,L at changed W.R; update Psi.log_real_,PhaseValue
         RealType g      = std::exp(2.0 * (logpsi - logpsi_old));
         if (RandomGen() <= g)
         {                        // move is accepted; logpsi_old and R_old are stale

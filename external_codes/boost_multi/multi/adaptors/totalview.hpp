@@ -1,7 +1,7 @@
 #ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;-*-
 $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2020
+// © Alfredo A. Correa 2020-2021
 
 #ifndef MULTI_ADAPTORS_TOTALVIEW_HPP
 #define MULTI_ADAPTORS_TOTALVIEW_HPP
@@ -9,8 +9,9 @@ $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 #include<stdarg.h> // TODO remove
 #include<stdio.h>
 
+#include<array>
 #include<complex>
-#include<iostream>
+//#include<iostream>
 
 #include "../adaptors/../array.hpp"
 
@@ -19,17 +20,26 @@ $CXXX $CXXFLAGS $0 -o $0x -lboost_unit_test_framework&&$0x&&rm $0x;exit
 // ^^^^^^^^^^^ this can produce problemas later with linking
 // https://docs.roguewave.com/totalview/2018.1/html/index.html#page/Reference_Guide%2FCompilingAndLinkingTV_data_display.html%23ww1738654
 
-#include<boost/type_index.hpp>
+template<typename T> constexpr char const* pretty_name = "unknown";
+
+template<> constexpr char const* pretty_name<double> = "double";
+template<> constexpr char const* pretty_name<float > = "float";
+
+template<> constexpr char const* pretty_name<std::complex<double>> = "std::complex<double>";
+template<> constexpr char const* pretty_name<std::complex<float> > = "std::complex<float>";
+
+template<> constexpr char const* pretty_name<long> = "long";
+template<> constexpr char const* pretty_name<int > = "int";
 
 template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::array<TT, 1> const* mad1P){
-	if(not mad1P->empty()){
-		char tname[128];
-		snprintf(tname, sizeof(tname), "%s[%ld]", boost::typeindex::type_id<TT>().pretty_name().c_str(), (long)mad1P->size());//, (long)mad1P->stride());
-		int result = TV_ttf_add_row("elements", tname, mad1P->origin());
+int TV_ttf_display_type(boost::multi::array<TT, 1> const* mad1P) {
+	if(not mad1P->is_empty()) {
+		std::array<char, 128> tname;  // char tname[128];
+		snprintf(tname.data(), tname.size(), "%s[%ld]", pretty_name<TT>, (long)mad1P->size());//, (long)mad1P->stride());
+		int result = TV_ttf_add_row("elements", tname.data(), mad1P->origin());
 		if (result != 0){
 			fprintf(stderr, "TV_ttf_add_row returned error %d\n", result);
 			return TV_ttf_format_failed;
@@ -42,14 +52,14 @@ template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::array<TT, 2> const* mad2P){
-	if(not mad2P->empty()){
-		char tname[128];
+int TV_ttf_display_type(boost::multi::array<TT, 2> const* mad2P) {
+	if(not mad2P->is_empty()) {
+		std::arra<char, 128> tname;  // char tname[128];
 		using std::get;
-		snprintf(tname, sizeof(tname), "%s[%ld][%ld]", boost::typeindex::type_id<TT>().pretty_name().c_str(), (long)get<0>(mad2P->sizes()), (long)get<1>(mad2P->sizes()));//, (long)mad1P->stride());
-		int result = TV_ttf_add_row("elements", tname, mad2P->origin());
+		snprintf(tname.data(), tname.size(), "%s[%ld][%ld]", pretty_name<TT>, (long)get<0>(mad2P->sizes()), (long)get<1>(mad2P->sizes()));//, (long)mad1P->stride());
+		int result = TV_ttf_add_row("elements", tname.data(), mad2P->origin());
 
-		if (result != 0){
+		if(result != 0) {
 			fprintf(stderr, "TV_ttf_add_row returned error %d\n", result);
 			return TV_ttf_format_failed;
 		}
@@ -61,7 +71,7 @@ template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::basic_array<TT, 1> const* mad2P){
+int TV_ttf_display_type(boost::multi::basic_array<TT, 1> const* mad2P) {
 	boost::multi::array<TT, 1> const value = *mad2P;
 	return TV_ttf_display_type(std::addressof(value));
 }
@@ -70,7 +80,7 @@ template<class TT>
 #ifdef __GCC__
 __attribute__((used))
 #endif
-int TV_ttf_display_type(boost::multi::basic_array<TT, 2> const* mad2P){
+int TV_ttf_display_type(boost::multi::basic_array<TT, 2> const* mad2P) {
 	boost::multi::array<TT, 2> const value = *mad2P;
 	return TV_ttf_display_type(std::addressof(value));
 }
@@ -103,7 +113,7 @@ template int TV_ttf_display_type<std::complex<float> >(boost::multi::basic_array
 template int TV_ttf_display_type<int                 >(boost::multi::basic_array<int                 , 2> const*);
 template int TV_ttf_display_type<long                >(boost::multi::basic_array<long                , 2> const*);
 
-#if not __INCLUDE_LEVEL__
+#if defined(__INCLUDE_LEVEL__) and (not __INCLUDE_LEVEL__)
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi TotalView adaptor"
 #define BOOST_TEST_DYN_LINK
@@ -119,7 +129,7 @@ template int TV_ttf_display_type<long                >(boost::multi::basic_array
 
 namespace multi = boost::multi;
 
-BOOST_AUTO_TEST_CASE(multi_1d){
+BOOST_AUTO_TEST_CASE(multi_1d) {
 
 	std::vector<int> V = {10, 20, 30};
 
@@ -127,7 +137,7 @@ BOOST_AUTO_TEST_CASE(multi_1d){
 	auto&& Apart = A({1, 3});
 
 	multi::array<double, 2> const B = {{1, 2, 3}, {4, 5, 6}};
-	
+
 	double sum = 0;
 	for(auto i : A.extension()) sum += A[i];
 

@@ -140,7 +140,7 @@ template<typename T, typename INVT = double>
 struct DiracDet
 {
   ///log|det|
-  std::complex<INVT> LogValue;
+  std::complex<INVT> log_value;
   ///current ratio
   INVT curRatio;
   ///workspace size
@@ -152,7 +152,7 @@ struct DiracDet
   ///internal storage to perform inversion correctly
   Matrix<INVT> psiM; //matrix to be inverted
   ///random number generator for testing
-  RandomGenerator<T> myRandom;
+  RandomGenerator myRandom;
 
   //temporary workspace for inversion
   aligned_vector<int> pivot;
@@ -169,7 +169,7 @@ struct DiracDet
     psiMsave.resize(nels, nels);
   }
 
-  void initialize(RandomGenerator<T> RNG)
+  void initialize(RandomGenerator RNG)
   {
     int nels = psiM.rows();
     //get lwork and resize workspace
@@ -178,11 +178,11 @@ struct DiracDet
 
     myRandom = RNG;
     constexpr T shift(0.5);
-    RNG.generate_uniform(psiMsave.data(), nels * nels);
+    std::generate(psiMsave.begin(), psiMsave.end(), RNG);
     psiMsave -= shift;
 
     transpose(psiMsave.data(), psiM.data(), nels, nels);
-    InvertWithLog(psiM.data(), nels, nels, work.data(), LWork, pivot.data(), LogValue);
+    InvertWithLog(psiM.data(), nels, nels, work.data(), LWork, pivot.data(), log_value);
     copy_n(psiM.data(), nels * nels, psiMinv.data());
 
     if (omp_get_num_threads() == 1)
@@ -245,8 +245,8 @@ struct DiracDet
           std::complex<INVT> newlog;
           InvertWithLog(psiM.data(), nels, nels, work.data(), pivot.data(), newlog);
 
-          ratio_full = std::exp(std::real(newlog - LogValue));
-          LogValue   = newlog;
+          ratio_full = std::exp(std::real(newlog - log_value));
+          log_value  = newlog;
           double err = r / ratio_full - 1;
           ratio_error += err;
 #pragma omp master

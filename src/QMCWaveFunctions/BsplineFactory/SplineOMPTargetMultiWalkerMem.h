@@ -13,19 +13,15 @@
 #ifndef QMCPLUSPLUS_OFFLOADSHAREDMEM_H
 #define QMCPLUSPLUS_OFFLOADSHAREDMEM_H
 
-#include "OMPTarget/OMPallocator.hpp"
-#include "PinnedAllocator.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
 
 template<typename ST, typename TT>
-struct SplineOMPTargetMultiWalkerMem: public Resource
+struct SplineOMPTargetMultiWalkerMem : public Resource
 {
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
-
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> mw_ratios_private;
   ///team private ratios and grads for reduction, numVP x numTeams
@@ -47,5 +43,5 @@ struct SplineOMPTargetMultiWalkerMem: public Resource
 
   Resource* makeClone() const override { return new SplineOMPTargetMultiWalkerMem(*this); }
 };
-}
+} // namespace qmcplusplus
 #endif

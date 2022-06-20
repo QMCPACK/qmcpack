@@ -15,7 +15,8 @@
  */
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTable.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "random.hpp"
 #include "mpi/collectives.h"
@@ -73,56 +74,49 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType    = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
 
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
   double t0 = 0.0, t1 = 0.0;
-  constexpr OHMMS_PRECISION scale(1);
 
-  RandomGenerator<RealType> random_th(11);
+  RandomGenerator random_th(11);
 
-  ParticleSet ions, els;
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
+  super_lattice.LR_rc = 5;
+  ParticleSet ions(super_lattice), els(super_lattice);
 
   ions.setName("ion0");
-  ions.Lattice.BoxBConds = 1;
-  ions.Lattice.LR_rc     = 5;
-  tile_cell(ions, tmat, scale);
-  ions.setCoordinates(ions.R); //this needs to be handled internally
+  els.setName("e");
+  tile_cell(ions, tmat);
+  ions.update();
 
   const int nions = ions.getTotalNum();
   const int nels  = count_electrons(ions);
   const int nels3 = 3 * nels;
 
   { //create up/down electrons
-    els.Lattice.BoxBConds = 1;
-    els.Lattice.LR_rc     = 5;
-    els.Lattice           = ions.Lattice;
-    vector<int> ud(2);
-    ud[0] = nels / 2;
-    ud[1] = nels - ud[0];
-    els.create(ud);
+    els.create({nels / 2, nels - nels / 2});
     els.R.InUnit = PosUnit::Lattice;
-    random_th.generate_uniform(&els.R[0][0], nels3);
+    std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
     els.convert2Cart(els.R);   // convert to Cartiesian
-    els.setCoordinates(els.R); //this needs to be handled internally
-    els.setName("e");
+    els.update();
   }
 
   constexpr RealType eps = numeric_limits<float>::epsilon();
 
   //copy of ParticleSet for validations
-  ParticleSet::ParticlePos_t Rcopy(els.R);
+  ParticleSet::ParticlePos Rcopy(els.R);
 
-  const auto& d_ee = els.getDistTable(els.addTable(els));
-  const auto& d_ie = els.getDistTable(els.addTable(ions));
+  const auto& d_ee = els.getDistTableAA(els.addTable(els));
+  const auto& d_ie = els.getDistTableAB(els.addTable(ions));
 
-  RealType Rsim = els.Lattice.WignerSeitzRadius;
+  RealType Rsim = els.getLattice().WignerSeitzRadius;
 
   //SoA version does not need update if PbyP
   els.update();
@@ -140,13 +134,13 @@ int main(int argc, char** argv)
   cout << "---------------------------------" << endl;
   cout << "AA SoA(upper) - SoA(lower) distances     = " << sym_err / nn << endl;
 
-  ParticlePos_t delta(nels);
+  ParticlePos delta(nels);
 
   //main particle-by-particle update
   RealType sqrttau = 0.2;
   for (int s = 0; s < nsteps; ++s)
   {
-    random_th.generate_normal(&delta[0][0], nels3);
+    assignGaussRand(&delta[0][0], nels3, random_th);
     for (int iel = 0; iel < nels; ++iel)
     {
       PosType dr      = sqrttau * delta[iel];

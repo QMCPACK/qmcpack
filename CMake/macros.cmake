@@ -14,7 +14,7 @@
 #     using a specified script
 #############################################################
 
-include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+include(test_labels)
 
 # Function to copy a directory
 function(COPY_DIRECTORY SRC_DIR DST_DIR)
@@ -119,9 +119,18 @@ function(
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
   set(QMC_APP $<TARGET_FILE:qmcpack>)
   set(TEST_ADDED_TEMP FALSE)
+
+  if(NOT QMC_OMP)
+    if(${THREADS} GREATER 1)
+      message(VERBOSE
+              "Disabling test ${TESTNAME} (exceeds maximum number of threads=1 if OpenMP is disabled -DQMC_OMP=0)")
+      return()
+    endif()
+  endif()
+
   if(HAVE_MPI)
     if(${TOT_PROCS} GREATER ${TEST_MAX_PROCS})
-      message_verbose("Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
+      message(VERBOSE "Disabling test ${TESTNAME} (exceeds maximum number of processors ${TEST_MAX_PROCS})")
     else()
       add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
                                         ${QMC_APP} ${ARGN})
@@ -160,20 +169,26 @@ function(
                    OMP_NUM_THREADS=${THREADS})
       set(TEST_ADDED_TEMP TRUE)
     else()
-      message_verbose("Disabling test ${TESTNAME} (building without MPI)")
+      message(VERBOSE "Disabling test ${TESTNAME} (building without MPI)")
     endif()
   endif()
 
   if(TEST_ADDED_TEMP
      AND (QMC_CUDA
           OR ENABLE_CUDA
-          OR ENABLE_OFFLOAD))
+          OR ENABLE_ROCM
+          OR ENABLE_OFFLOAD
+         ))
     set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
   endif()
 
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
     add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+    set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY LABELS "QMCPACK")
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
@@ -293,7 +308,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "latdev"
       "EnergyEstim__nume_real"
       "kecorr"
-      "mpc")
+      "mpc"
+      "soecp")
     list(
       APPEND
       CHECK_SCALAR_FLAG
@@ -326,12 +342,13 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--latdev"
       "--el"
       "--kec"
-      "--mpc")
+      "--mpc"
+      "--sopp")
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
-    message_verbose("Adding test ${FULL_NAME}")
+    message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
       ${BASE_DIR}
@@ -340,12 +357,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       TEST_ADDED
       TEST_LABELS
       ${INPUT_FILE})
-    if(TEST_ADDED)
-      set_property(
-        TEST ${FULL_NAME}
-        APPEND
-        PROPERTY LABELS "QMCPACK")
-    endif()
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)
@@ -398,7 +409,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
               #MESSAGE("check command = ${CHECK_CMD}")
               add_test(
                 NAME ${TEST_NAME}
-                COMMAND ${CHECK_CMD}
+                COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
                 WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
               set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
               set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -469,7 +480,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
     set(FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}")
-    message_verbose("Adding test ${FULL_NAME}")
+    message(VERBOSE "Adding test ${FULL_NAME}")
     run_qmc_app(
       ${FULL_NAME}
       ${BASE_DIR}
@@ -526,7 +537,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
             ${SCALAR_ERROR})
         add_test(
           NAME ${TEST_NAME}
-          COMMAND ${CHECK_CMD}
+          COMMAND ${Python3_EXECUTABLE} ${CHECK_CMD}
           WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}")
         set_property(TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME})
         set_property(TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results")
@@ -551,7 +562,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     # build test name
     set(full_name "${base_name}-${procs}-${threads}")
-    message_verbose("Adding test ${full_name}")
+    message(VERBOSE "Adding test ${full_name}")
 
     # add run (task 1)
     set(test_added false)
@@ -585,7 +596,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
     add_test(
       NAME "${test_name}"
-      COMMAND ${check_cmd} ${ARGN}
+      COMMAND ${Python3_EXECUTABLE} ${check_cmd} ${ARGN}
       WORKING_DIRECTORY "${work_dir}")
 
     # make test depend on the run
@@ -635,12 +646,5 @@ function(
   if(TEST_ADDED)
     set_property(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
     set_property(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
-  endif()
-endfunction()
-
-# Print THE_MESSAGE if verbose configuration is enabled
-function(MESSAGE_VERBOSE THE_MESSAGE)
-  if(QMC_VERBOSE_CONFIGURATION)
-    message(STATUS ${THE_MESSAGE})
   endif()
 endfunction()

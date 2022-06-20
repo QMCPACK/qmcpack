@@ -27,7 +27,7 @@ std::unique_ptr<OperatorBase> ChiesaCorrection::makeClone(ParticleSet& qp, Trial
   return std::make_unique<ChiesaCorrection>(qp, psi);
 }
 
-ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return Value = psi_ref.KECorrection(); }
+ChiesaCorrection::Return_t ChiesaCorrection::evaluate(ParticleSet& P) { return value_ = psi_ref.KECorrection(); }
 #ifdef QMC_CUDA
 void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
@@ -36,7 +36,7 @@ void ChiesaCorrection::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
   auto& walkers = W.WalkerList;
   for (int iw = 0; iw < LocalEnergy.size(); iw++)
   {
-    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + myIndex] = corr;
+    walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = corr;
     LocalEnergy[iw] += corr;
   }
 }

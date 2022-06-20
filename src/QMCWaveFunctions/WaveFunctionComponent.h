@@ -17,20 +17,20 @@
 
 #ifndef QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
 #define QMCPLUSPLUS_WAVEFUNCTIONCOMPONENT_H
+
+#include <memory>
 #include "Message/Communicate.h"
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
-#include "Particle/DistanceTableData.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "type_traits/template_types.hpp"
+#include "TWFGrads.hpp"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
-
-#include <memory>
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
@@ -48,12 +48,9 @@ struct NLjob
 #endif
 
 ///forward declaration
-struct WaveFunctionComponent;
-struct DiffWaveFunctionComponent;
+class WaveFunctionComponent;
 class ResourceCollection;
-
-typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
-
+class TWFFastDerivWrapper;
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -71,8 +68,9 @@ typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-struct WaveFunctionComponent : public QMCTraits
+class WaveFunctionComponent : public QMCTraits
 {
+public:
   /** enum for a update mode */
   enum
   {
@@ -83,16 +81,14 @@ struct WaveFunctionComponent : public QMCTraits
     ORB_ALLWALKER     /*!< all walkers update */
   };
 
-  typedef ParticleAttrib<ValueType> ValueVectorType;
-  typedef ParticleAttrib<GradType> GradVectorType;
-  typedef ParticleSet::Walker_t Walker_t;
-  typedef Walker_t::WFBuffer_t WFBufferType;
-  typedef Walker_t::Buffer_t BufferType;
-  typedef OrbitalSetTraits<RealType>::ValueMatrix_t RealMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t GradMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::HessType HessType;
-  typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
+  using Walker_t     = ParticleSet::Walker_t;
+  using WFBufferType = Walker_t::WFBuffer_t;
+  using BufferType   = Walker_t::Buffer_t;
+  using RealMatrix_t = OrbitalSetTraits<RealType>::ValueMatrix;
+  using ValueMatrix  = OrbitalSetTraits<ValueType>::ValueMatrix;
+  using GradMatrix   = OrbitalSetTraits<ValueType>::GradMatrix;
+  using HessType     = OrbitalSetTraits<ValueType>::HessType;
+  using HessVector   = OrbitalSetTraits<ValueType>::HessVector;
 
   // the value type for log(psi)
   using LogValueType = std::complex<QTFull::RealType>;
@@ -111,20 +107,6 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** current update mode */
   int UpdateMode;
-  /** current \f$\log\phi \f$
-   */
-  LogValueType LogValue;
-  /** Pointer to the differential WaveFunctionComponent of this object
-   *
-   * If dPsi=0, this WaveFunctionComponent is constant with respect to the optimizable variables
-   */
-  DiffWaveFunctionComponentPtr dPsi;
-  /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
-   */
-  GradVectorType dLogPsi;
-  /** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
-   */
-  ValueVectorType d2LogPsi;
   /** Name of the class derived from WaveFunctionComponent
    */
   const std::string ClassName;
@@ -138,19 +120,27 @@ struct WaveFunctionComponent : public QMCTraits
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
+protected:
+  /** Current \f$\log\phi \f$.
+   *  Exception! Slater Determinant most of the time has inconsistent a log_value inconsistent with the determinants
+   *  it contains dduring a move sequence. That case the log_value_ would be more safely calculated on the fly.
+   *
+   *  There could be others.
+   */
+  LogValueType log_value_;
+
+public:
+  const LogValueType& get_log_value() const { return log_value_; }
+
   /// default constructor
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
-
   ///default destructor
-  virtual ~WaveFunctionComponent() {}
+  virtual ~WaveFunctionComponent();
 
   inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
-  ///assign a differential WaveFunctionComponent
-  virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
-
   ///assembles the full value
-  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(LogValue); }
+  PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -172,18 +162,22 @@ struct WaveFunctionComponent : public QMCTraits
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;
 
+  /** Register the component with the TWFFastDerivWrapper wrapper.  
+   */
+  virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const;
+
   /** evaluate the value of the WaveFunctionComponent from scratch
-   * @param P  active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @return the log value
+   * \param[in] P  active ParticleSet
+   * \param[out] G Gradients, \f$\nabla\ln\Psi\f$
+   * \param[out] L Laplacians, \f$\nabla^2\ln\Psi\f$
+   * \return the log value
    *
    * Mainly for walker-by-walker move. The initial stage of particle-by-particle
-   * move also uses this.
+   * move also uses this. causes complete state update in WFC's
    */
   virtual LogValueType evaluateLog(const ParticleSet& P,
-                                   ParticleSet::ParticleGradient_t& G,
-                                   ParticleSet::ParticleLaplacian_t& L) = 0;
+                                   ParticleSet::ParticleGradient& G,
+                                   ParticleSet::ParticleLaplacian& L) = 0;
 
   /** evaluate from scratch the same type WaveFunctionComponent of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -194,8 +188,8 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const;
+                              const RefVector<ParticleSet::ParticleGradient>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian>& L_list) const;
 
   /** recompute the value of the WaveFunctionComponents which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of WaveFunctionComponents
@@ -211,7 +205,7 @@ struct WaveFunctionComponent : public QMCTraits
   //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");
   // }
 
-  virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
+  virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
   {
     APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
@@ -241,6 +235,7 @@ struct WaveFunctionComponent : public QMCTraits
     return GradType();
   }
 
+
   /** return the current spin gradient for the iat-th particle
    * Default implementation assumes that WaveFunctionComponent does not explicitly depend on Spin.
    * @param P quantum particle set
@@ -248,6 +243,15 @@ struct WaveFunctionComponent : public QMCTraits
    * @return the spin gradient of the iat-th particle
    */
   virtual GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) { return evalGrad(P, iat); }
+
+  /** compute the current gradients for the iat-th particle of multiple walkers
+   * @param[out] grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  template<CoordsType CT>
+  void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list,
+                   const int iat,
+                   TWFGrads<CT>& grads_now) const;
 
   /** compute the current gradients for the iat-th particle of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -286,8 +290,8 @@ struct WaveFunctionComponent : public QMCTraits
   virtual GradType evalGradSource(ParticleSet& P,
                                   ParticleSet& source,
                                   int iat,
-                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
+                                  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                                  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad)
   {
     return GradType();
   }
@@ -311,6 +315,13 @@ struct WaveFunctionComponent : public QMCTraits
   {
     return ratioGrad(P, iat, grad_iat);
   }
+
+  template<CoordsType CT>
+  void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                    const RefVectorWithLeader<ParticleSet>& p_list,
+                    int iat,
+                    std::vector<PsiValueType>& ratios,
+                    TWFGrads<CT>& grad_new) const;
 
   /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
@@ -345,12 +356,14 @@ struct WaveFunctionComponent : public QMCTraits
                                     const std::vector<bool>& isAccepted,
                                     bool safe_to_delay = false) const;
 
-  /** complete all the delayed updates, must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations before leaving the p-by-p move region.
+   * Must be called at the end of each substep if p-by-p move is used.
+   * This function was initially introduced for determinant delayed updates to complete all the delayed operations.
+   * It has been extended to handle asynchronous operations on accellerators before leaving the p-by-p move region.
    */
   virtual void completeUpdates() {}
 
-  /** complete all the delayed updates for all the walkers in a batch
-   * must be called after each substep or step during pbyp move
+  /** complete all the delayed or asynchronous operations for all the walkers in a batch before leaving the p-by-p move region.
    */
   virtual void mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const;
 
@@ -385,12 +398,13 @@ struct WaveFunctionComponent : public QMCTraits
    * @param P particle set
    * @param G Gradients, \f$\nabla\ln\Psi\f$
    * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @param fromscratch if true, all the internal data are recomputed from scratch
+   * @param fromscratch if true and this WFC is sensitive to numeical error accumulation,
+   *        all the internal data are recomputed from scratch.
    * @return log(psi)
    */
   virtual LogValueType evaluateGL(const ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& G,
-                                  ParticleSet::ParticleLaplacian_t& L,
+                                  ParticleSet::ParticleGradient& G,
+                                  ParticleSet::ParticleLaplacian& L,
                                   bool fromscratch);
 
   /** evaluate gradients and laplacian of the same type WaveFunctionComponent of multiple walkers
@@ -398,12 +412,13 @@ struct WaveFunctionComponent : public QMCTraits
    * @param p_list the list of ParticleSet pointers in a walker batch
    * @param G_list the list of Gradients pointers in a walker batch, \f$\nabla\ln\Psi\f$
    * @param L_list the list of Laplacians pointers in a walker batch, \f$\nabla^2\ln\Psi\f$
-   * @param fromscratch if true, all the internal data are recomputed from scratch
+   * @param fromscratch if true and this WFC is sensitive to numerical error accumulation,
+   *        all the internal data are recomputed from scratch.
    */
   virtual void mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
-                             const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                             const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                             const RefVector<ParticleSet::ParticleGradient>& G_list,
+                             const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                              bool fromscratch) const;
 
   /** For particle-by-particle move. Requests space in the buffer
@@ -438,11 +453,15 @@ struct WaveFunctionComponent : public QMCTraits
 
   /** acquire a shared resource from a collection
    */
-  virtual void acquireResource(ResourceCollection& collection) {}
+  virtual void acquireResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** return a shared resource to a collection
    */
-  virtual void releaseResource(ResourceCollection& collection) {}
+  virtual void releaseResource(ResourceCollection& collection,
+                               const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+  {}
 
   /** make clone
    * @param tqp target Quantum ParticleSet
@@ -456,28 +475,31 @@ struct WaveFunctionComponent : public QMCTraits
    */
   virtual RealType KECorrection();
 
-  /** Compute derivatives of the wavefunction with respect to the optimizable
-   *  parameters.
+  /** Compute the derivatives of both the log of the wavefunction and kinetic energy
+   * with respect to optimizable parameters.
    *  @param P particle set
    *  @param optvars optimizable parameters
-   *  @param dlogpsi array of derivatives of the log of the wavefunction
-   *  @param dhpsioverpsi array of derivatives of the Laplacian of the wavefunction divided by the wavefunction.
-   *          Note that this does not use the Laplacian of the log of the wavefunction, as in evaluateLog.
-   *          Also the factor of -1/2 from the kinetic energy must be included here.  The 1/m
-   *          factor is applied in TrialWaveFunction.
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
+   *         Add the contribution from this component.
+   *  @param dhpsioverpsi array of Hamiltonian derivatives.
+   *         Add the kinetic energy derivatives contribution from this component.
+   *         \f$ -\frac{1}{2}{\partial}_\alpha \tilde L - G \cdot {\partial}_\alpha \tilde G \f$.
+   *         \f$ \tilde L \f$ and \f$ \tilde G \f$ are from this WaveFunctionComponent.
+   *         \f$ G \f$ is from TrialWaveFunction. The 1/m factor is applied in TrialWaveFunction.
+   *         This is a bug when the particle set doesn't hold equal mass particles.
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi);
+                                   std::vector<ValueType>& dhpsioverpsi) = 0;
 
-  /** Compute derivatives of rhe wavefunction with respect to the optimizable 
+  /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
    *  parameters
    *  @param P particle set
    *  @param optvars optimizable parameters
-   *  @param dlogpsi array of derivatives of the log of the wavefunction
+   *  @param dlogpsi array of derivatives of the log of the wavefunction.
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
-   *        the derivative of the log of the wavefunction. 
+   *        the derivative of the log of the wavefunction.
   */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
@@ -485,7 +507,7 @@ struct WaveFunctionComponent : public QMCTraits
 
   virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
   {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(LogValue));
+    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
     for (int j = 0; j < myVars.size(); j++)
     {
       int loc = myVars.where(j);
@@ -499,7 +521,7 @@ struct WaveFunctionComponent : public QMCTraits
       returned as dgradlogpsi.
    */
 
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<ValueType>& dgradlogpsi)
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName + " class.\n");
   }
@@ -524,15 +546,15 @@ struct WaveFunctionComponent : public QMCTraits
    * @param ratios of all the virtual moves of all the walkers
    */
   virtual void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                 const RefVector<const VirtualParticleSet>& vp_list,
+                                 const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                  std::vector<std::vector<ValueType>>& ratios) const;
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
    * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
-   * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
+   * @param dratios Nq x Num_param matrix. \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
-  virtual void evaluateDerivRatios(VirtualParticleSet& VP,
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
@@ -634,7 +656,7 @@ struct WaveFunctionComponent : public QMCTraits
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
   {
     APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + ClassName +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
@@ -696,6 +718,35 @@ struct WaveFunctionComponent : public QMCTraits
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 #endif
+
+private:
+  /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers
+   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param p_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param grad_now the list of gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   * @param spingrad_now the list of spin gradients in a walker batch, \f$\nabla_s\ln\Psi\f$
+   *
+   */
+  virtual void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   std::vector<GradType>& grad_now,
+                                   std::vector<ComplexType>& spingrad_now) const;
+
+  /** compute the ratio of the new to old WaveFunctionComponent value and the new gradient/spingradient of multiple walkers
+   * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch
+   * @param p_list the list of ParticleSet pointers in a walker batch
+   * @param iat particle index
+   * @param ratios the list of WF ratios of a walker batch, \f$ \Psi( \{ {\bf R}^{'} \} )/ \Psi( \{ {\bf R}\})\f$
+   * @param grad_now the list of new gradients in a walker batch, \f$\nabla\ln\Psi\f$
+   */
+  virtual void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    int iat,
+                                    std::vector<PsiValueType>& ratios,
+                                    std::vector<GradType>& grad_new,
+                                    std::vector<ComplexType>& spingrad_new) const;
 };
 } // namespace qmcplusplus
 #endif

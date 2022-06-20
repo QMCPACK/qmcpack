@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -12,16 +12,16 @@
 
 #include <vector>
 #include "QMCDrivers/MCPopulation.h"
-#include "Estimators/EstimatorManagerBase.h"
-#include "Estimators/EstimatorManagerCrowd.h"
 #include "RandomGenerator.h"
 #include "MultiWalkerDispatchers.h"
 #include "DriverWalkerTypes.h"
+#include "Estimators/EstimatorManagerCrowd.h"
 
 namespace qmcplusplus
 {
 // forward declaration
 class ResourceCollection;
+class EstimatorManagerNew;
 
 /** Driver synchronized step context
  * 
@@ -45,7 +45,6 @@ public:
   Crowd(EstimatorManagerNew& emb,
         const DriverWalkerResourceCollection& driverwalker_res,
         const MultiWalkerDispatchers& dispatchers);
-
   ~Crowd();
   /** Because so many vectors allocate them upfront.
    *
@@ -68,14 +67,14 @@ public:
    */
   void clearWalkers();
 
-  void accumulate()
+  void accumulate(RandomGenerator& rng)
   {
     if (this->size() == 0)
       return;
-    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_);
+    estimator_manager_crowd_.accumulate(mcp_walkers_, walker_elecs_, walker_twfs_, rng);
   }
 
-  void setRNGForHamiltonian(RandomGenerator_t& rng);
+  void setRNGForHamiltonian(RandomGenerator& rng);
 
   auto beginWalkers() { return mcp_walkers_.begin(); }
   auto endWalkers() { return mcp_walkers_.end(); }
@@ -117,8 +116,9 @@ private:
   RefVector<QMCHamiltonian> walker_hamiltonians_;
   /** }@ */
 
+  // provides multi walker resource
   DriverWalkerResourceCollection driverwalker_resource_collection_;
-
+  /// per crowd estimator manager
   EstimatorManagerCrowd estimator_manager_crowd_;
 
   /** @name Step State

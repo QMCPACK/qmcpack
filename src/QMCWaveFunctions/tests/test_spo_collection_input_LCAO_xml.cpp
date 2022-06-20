@@ -28,12 +28,16 @@ namespace qmcplusplus
 {
 void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& elec(*elec_uptr);
+  ParticleSet& ions(*ions_uptr);
+
   elec.setName("e");
+  ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1, 1});
   elec.R[0] = 0.0;
 
@@ -44,10 +48,9 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   tspecies(massIdx, upIdx)   = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  ParticleSet& ions(*ions_uptr);
   ions.setName("ion0");
-  ions.create(1);
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions.create({1});
   ions.R[0]            = 0.0;
   SpeciesSet& ispecies = ions.getSpeciesSet();
   int heIdx            = ispecies.addSpecies("He");
@@ -56,32 +59,26 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   elec.addTable(ions);
   elec.update();
 
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
-
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
   REQUIRE(okay);
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
-  REQUIRE(spo_ptr);
-  std::unique_ptr<SPOSet> sposet(spo_ptr->makeClone());
+  std::unique_ptr<SPOSet> sposet(twf_ptr->getSPOSet("spo").makeClone());
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
   values.resize(1);
   dpsi.resize(1);
   d2psi.resize(1);
 
   // Call makeMove to compute the distances
-  ParticleSet::SingleParticlePos_t newpos(0.0001, 0.0, 0.0);
+  ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
   elec.makeMove(0, newpos);
 
   sposet->evaluateValue(elec, 0, values);
@@ -99,7 +96,7 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   REQUIRE(d2psi[0] == ValueApprox(-20.03410564));
 
 
-  ParticleSet::SingleParticlePos_t disp(1.0, 0.0, 0.0);
+  ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
   elec.makeMove(0, disp);
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);

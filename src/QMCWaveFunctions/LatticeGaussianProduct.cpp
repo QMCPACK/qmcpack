@@ -17,9 +17,9 @@
 
 namespace qmcplusplus
 {
-typedef LatticeGaussianProduct::ValueType ValueType;
-typedef LatticeGaussianProduct::GradType GradType;
-typedef LatticeGaussianProduct::PsiValueType PsiValueType;
+using ValueType    = LatticeGaussianProduct::ValueType;
+using GradType     = LatticeGaussianProduct::GradType;
+using PsiValueType = LatticeGaussianProduct::PsiValueType;
 
 LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
     : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
@@ -58,12 +58,12 @@ void LatticeGaussianProduct::reportStatus(std::ostream& os) {}
      *and \f[ L[i]+=\nabla^2_i J({\bf R}). \f]
      */
 LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const ParticleSet& P,
-                                                                         ParticleSet::ParticleGradient_t& G,
-                                                                         ParticleSet::ParticleLaplacian_t& L)
+                                                                         ParticleSet::ParticleGradient& G,
+                                                                         ParticleSet::ParticleLaplacian& L)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = 0;
-  LogValue            = 0.0;
+  log_value_          = 0.0;
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   for (int iat = 0; iat < NumTargetPtcls; iat++)
@@ -76,14 +76,14 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
     {
       dist = d_table.getDistRow(iat)[icent];
       disp = -1.0 * d_table.getDisplRow(iat)[icent];
-      LogValue -= a * dist * dist;
+      log_value_ -= a * dist * dist;
       U[iat] += a * dist * dist;
       G[iat] -= 2.0 * a * disp;
       L[iat] -= 6.0 * a;
       icent++;
     }
   }
-  return LogValue;
+  return log_value_;
 }
 
 /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
@@ -92,7 +92,7 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
  */
 PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -104,7 +104,7 @@ PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
 
 GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
@@ -117,7 +117,7 @@ GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 
 PsiValueType LatticeGaussianProduct::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   int icent           = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -140,14 +140,14 @@ void LatticeGaussianProduct::acceptMove(ParticleSet& P, int iat, bool safe_to_de
 }
 
 void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
-                                                 ParticleSet::ParticleGradient_t& dG,
-                                                 ParticleSet::ParticleLaplacian_t& dL)
+                                                 ParticleSet::ParticleGradient& dG,
+                                                 ParticleSet::ParticleLaplacian& dL)
 {
-  const auto& d_table = P.getDistTable(myTableID);
+  const auto& d_table = P.getDistTableAB(myTableID);
   RealType dist       = 0.0;
   PosType disp        = 0.0;
   int icent           = 0;
-  LogValue            = 0.0;
+  log_value_          = 0.0;
   U                   = 0.0;
   dU                  = 0.0;
   d2U                 = 0.0;
@@ -158,7 +158,7 @@ void LatticeGaussianProduct::evaluateLogAndStore(const ParticleSet& P,
     {
       dist = d_table.getDistRow(iat)[icent];
       disp = -1.0 * d_table.getDisplRow(iat)[icent];
-      LogValue -= a * dist * dist;
+      log_value_ -= a * dist * dist;
       U[iat] += a * dist * dist;
       dU[iat] -= 2.0 * a * disp;
       d2U[iat] -= 6.0 * a;
@@ -187,7 +187,7 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::updateBuffer(Partic
   buf.put(U.first_address(), U.last_address());
   buf.put(d2U.first_address(), d2U.last_address());
   buf.put(FirstAddressOfdU, LastAddressOfdU);
-  return LogValue;
+  return log_value_;
 }
 
 /** copy the current data from a buffer

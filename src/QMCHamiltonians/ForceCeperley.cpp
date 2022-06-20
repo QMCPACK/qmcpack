@@ -15,7 +15,7 @@
 
 
 #include "ForceCeperley.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Numerics/DeterminantOperators.h"
@@ -29,7 +29,7 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
     : ForceBase(ions, elns), d_aa_ID(ions.addTable(ions)), d_ei_ID(elns.addTable(ions))
 {
   ReportEngine PRE("ForceCeperley", "ForceCeperley");
-  myName = "Ceperley_Force_Base";
+  name_  = "Ceperley_Force_Base";
   prefix = "HFCep";
   // Defaults
   Rcut    = 0.4;
@@ -41,11 +41,11 @@ ForceCeperley::ForceCeperley(ParticleSet& ions, ParticleSet& elns)
   evaluate_IonIon(forces_IonIon);
 }
 
-void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos_t& forces) const
+void ForceCeperley::evaluate_IonIon(ParticleSet::ParticlePos& forces) const
 {
   forces = 0.0;
-  const DistanceTableData& d_aa(Ions.getDistTable(d_aa_ID));
-  const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
+  const auto& d_aa(Ions.getDistTableAA(d_aa_ID));
+  const ParticleScalar* restrict Zat = Ions.Z.first_address();
   for (size_t ipart = 1; ipart < Nnuc; ipart++)
   {
     const auto& dist  = d_aa.getDistRow(ipart);
@@ -85,9 +85,9 @@ ForceCeperley::Return_t ForceCeperley::evaluate(ParticleSet& P)
     forces = forces_IonIon;
   else
     forces = 0.0;
-  const auto& d_ab                     = P.getDistTable(d_ei_ID);
-  const ParticleScalar_t* restrict Zat = Ions.Z.first_address();
-  const ParticleScalar_t* restrict Qat = P.Z.first_address();
+  const auto& d_ab                   = P.getDistTableAB(d_ei_ID);
+  const ParticleScalar* restrict Zat = Ions.Z.first_address();
+  const ParticleScalar* restrict Qat = P.Z.first_address();
   for (int jat = 0; jat < Nel; jat++)
   {
     const auto& dist  = d_ab.getDistRow(jat);

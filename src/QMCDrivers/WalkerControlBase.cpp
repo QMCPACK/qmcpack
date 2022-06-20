@@ -36,7 +36,6 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
       n_max_(10),
       MaxCopy(2),
       target_sigma_(10),
-      dmcStream(0),
       NumWalkersCreated(0),
       SwapMode(0),
       write_release_nodes_(rn)
@@ -51,15 +50,7 @@ WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   accumData.resize(LE_MAX);
 }
 
-WalkerControlBase::~WalkerControlBase()
-{
-  if (dmcStream)
-  {
-    // without this its possible to end up without all data flushed to dmc.dat.
-    (*dmcStream) << std::endl;
-    delete dmcStream;
-  }
-}
+WalkerControlBase::~WalkerControlBase() = default;
 
 //disable it: everything is done by a constructor
 //void WalkerControlBase::setCommunicator(Communicate* c)
@@ -84,13 +75,7 @@ void WalkerControlBase::start()
       hname.append(".dmc.dat");
     if (hname != dmcFname)
     {
-      if (dmcStream)
-      {
-        *dmcStream << std::endl;
-        delete dmcStream;
-      }
-      dmcStream = new std::ofstream(hname.c_str());
-      //oa = new boost::archive::binary_oarchive (*dmcStream);
+      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
@@ -147,8 +132,6 @@ void WalkerControlBase::measureProperties(int iter)
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
   {
-    //boost::archive::text_oarchive oa(*dmcStream);
-    //(*oa) & iter  & eavg_cur & wgt_cur & Etrial  & pop_old;
     (*dmcStream) << std::setw(10) << iter << std::setw(20) << ensemble_property_.Energy << std::setw(20)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)
@@ -302,19 +285,15 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   MCWalkerConfiguration::iterator it_end(W.end());
   FullPrecRealType esum = 0.0, e2sum = 0.0, wsum = 0.0, ecum = 0.0, besum = 0.0, bwgtsum = 0.0;
   FullPrecRealType r2_accepted = 0.0, r2_proposed = 0.0;
-  int nfn(0), nrn(0), ncr(0), nc(0);
+  int nrn(0), ncr(0);
   while (it != it_end)
   {
-    bool inFN = (((*it)->ReleasedNodeAge) == 0);
-    nc        = std::min(static_cast<int>((*it)->Multiplicity), MaxCopy);
+    bool inFN    = (((*it)->ReleasedNodeAge) == 0);
+    const int nc = std::min(static_cast<int>((*it)->Multiplicity), MaxCopy);
     if (write_release_nodes_)
     {
       if ((*it)->ReleasedNodeAge == 1)
         ncr += 1;
-      else if ((*it)->ReleasedNodeAge == 0)
-      {
-        nfn += 1;
-      }
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);
       FullPrecRealType local_energy((*it)->Properties(WP::LOCALENERGY));
@@ -330,9 +309,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     }
     else
     {
-      if (nc > 0)
-        nfn++;
-      else
+      if (nc == 0)
         ncr++;
       r2_accepted += (*it)->Properties(WP::R2ACCEPTED);
       r2_proposed += (*it)->Properties(WP::R2PROPOSED);

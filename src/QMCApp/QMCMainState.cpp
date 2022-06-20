@@ -28,10 +28,9 @@
 #include "QMCDrivers/VMC/VMCFactory.h"
 #include "QMCDrivers/DMC/DMCFactory.h"
 #include "QMCDrivers/RMC/RMCFactory.h"
-#include "QMCDrivers/WFOpt/QMCOptimize.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
-#include "QMCDrivers/WFOpt/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"

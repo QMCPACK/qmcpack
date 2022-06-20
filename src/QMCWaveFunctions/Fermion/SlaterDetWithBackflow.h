@@ -22,27 +22,20 @@
 
 namespace qmcplusplus
 {
-class SlaterDetWithBackflow : public SlaterDet
+class SlaterDetWithBackflow : public WaveFunctionComponent
 {
 public:
-  BackflowTransformation* BFTrans;
-
+  using Determinant_t = DiracDeterminantWithBackflow;
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation* BF);
+  SlaterDetWithBackflow(ParticleSet& targetPtcl,
+                        std::vector<std::unique_ptr<Determinant_t>> dets,
+                        std::unique_ptr<BackflowTransformation> BF);
 
   ///destructor
   ~SlaterDetWithBackflow() override;
-
-  ///set BF pointers
-  void setBF(BackflowTransformation* bf) override
-  {
-    BFTrans = bf;
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->setBF(BFTrans);
-  }
 
   void checkInVariables(opt_variables_type& active) override
   {
@@ -78,9 +71,10 @@ public:
     }
   }
 
+  void reportStatus(std::ostream& os) override {}
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
@@ -113,8 +107,8 @@ public:
   GradType evalGradSource(ParticleSet& P,
                           ParticleSet& src,
                           int iat,
-                          TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
-                          TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad) override
+                          TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM>& grad_grad,
+                          TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM>& lapl_grad) override
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();
@@ -147,7 +141,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
-  SPOSetPtr getPhi(int i = 0) override { return Dets[i]->getPhi(); }
+  SPOSetPtr getPhi(int i = 0) const { return Dets[i]->getPhi(); }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
@@ -158,8 +152,11 @@ public:
 
   void testDerivGL(ParticleSet& P);
 
-  //private:
-  //SlaterDetWithBackflow() {}
+private:
+  ///container for the DiracDeterminants
+  const std::vector<std::unique_ptr<Determinant_t>> Dets;
+  /// backflow transformation
+  const std::unique_ptr<BackflowTransformation> BFTrans;
 };
 } // namespace qmcplusplus
 #endif

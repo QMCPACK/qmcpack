@@ -66,13 +66,14 @@ def run_opt_test(options):
        exit_fail('Number of coefficient in test({0}) does not match with the reference({1})'.format(len(j_output),len(j_reference)))
 
     success = True
-    tolerance = 1e-06
+    j_tolerance = 1e-06
+    bf_tolerance = 1e-05
     j_deviation = []
     bf_deviation = []
    
     for i in range(len(j_output)):
        j_deviation.append(abs(float(j_output[i])-float(j_reference[i])))
-       quant_success = j_deviation[i] <= tolerance 
+       quant_success = j_deviation[i] <= j_tolerance 
        if quant_success is False:
            success &= quant_success
        #end if
@@ -81,7 +82,7 @@ def run_opt_test(options):
     msg='\n  Testing Series: {0}\n'.format(options.series)
     msg+='   reference Jastrow coefficients   : {0}\n'.format(j_reference)
     msg+='   computed  Jastrow coefficients   : {0}\n'.format(j_output)
-    msg+='   pass tolerance           : {0: 12.6f}\n'.format(tolerance) 
+    msg+='   pass tolerance           : {0: 12.6f}\n'.format(j_tolerance) 
     msg+='   deviation from reference : {0}\n'.format(j_deviation)
     msg+='   status of this test      :   {0}\n'.format(passfail[success])
 
@@ -91,7 +92,7 @@ def run_opt_test(options):
       
       for i in range(len(bf_output)):
        bf_deviation.append(abs(float(bf_output[i])-float(bf_reference[i])))
-       quant_success = bf_deviation[i] <= tolerance
+       quant_success = bf_deviation[i] <= bf_tolerance
        if quant_success is False:
            success &= quant_success
        #end if
@@ -100,7 +101,7 @@ def run_opt_test(options):
       msg+='\n  Testing Series: {0}\n'.format(options.series)
       msg+='   reference Backflow coefficients   : {0}\n'.format(bf_reference)
       msg+='   computed  Backflow coefficients   : {0}\n'.format(bf_output)
-      msg+='   pass tolerance           : {0: 12.6f}\n'.format(tolerance)
+      msg+='   pass tolerance           : {0: 12.6f}\n'.format(bf_tolerance)
       msg+='   deviation from reference : {0}\n'.format(bf_deviation)
       msg+='   status of this test      :   {0}\n'.format(passfail[success])
 

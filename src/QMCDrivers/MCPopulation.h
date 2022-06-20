@@ -17,10 +17,8 @@
 #include <memory>
 
 #include "Configuration.h"
-#include "type_traits/TypeRequire.hpp"
 #include "Particle/ParticleSet.h"
 #include "ParticleBase/ParticleAttrib.h"
-#include "Particle/MCWalkerConfiguration.h"
 #include "Particle/Walker.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerElementsRef.h"
@@ -54,19 +52,14 @@ private:
 
   IndexType num_global_walkers_ = 0;
   IndexType num_local_walkers_  = 0;
-  IndexType num_particles_      = 0;
-  IndexType num_groups_         = 0;
   IndexType max_samples_        = 0;
   IndexType target_population_  = 0;
   IndexType target_samples_     = 0;
   //Properties properties_;
-  ParticleSet ions_;
 
   // By making this a linked list and creating the crowds at the same time we could get first touch.
   UPtrVector<MCPWalker> walkers_;
   UPtrVector<MCPWalker> dead_walkers_;
-  std::vector<std::pair<int, int>> particle_group_indexes_;
-  SpeciesSet species_set_;
   std::vector<RealType> ptclgrp_mass_;
   ///1/Mass per species
   std::vector<RealType> ptclgrp_inv_mass_;
@@ -75,6 +68,7 @@ private:
 
   // This is necessary MCPopulation is constructed in a simple call scope in QMCDriverFactory from the legacy MCWalkerConfiguration
   // MCPopulation should have QMCMain scope eventually and the driver will just have a reference to it.
+  // Then these too can be references.
   TrialWaveFunction* trial_wf_;
   ParticleSet* elec_particle_set_;
   QMCHamiltonian* hamiltonian_;
@@ -109,7 +103,7 @@ public:
                QMCHamiltonian* hamiltonian_);
 
   ~MCPopulation();
-  MCPopulation(MCPopulation&) = delete;
+  MCPopulation(MCPopulation&)            = delete;
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&)           = default;
 
@@ -177,13 +171,10 @@ public:
   int get_rank() const { return rank_; }
   IndexType get_num_global_walkers() const { return num_global_walkers_; }
   IndexType get_num_local_walkers() const { return num_local_walkers_; }
-  IndexType get_num_particles() const { return num_particles_; }
   IndexType get_max_samples() const { return max_samples_; }
   IndexType get_target_population() const { return target_population_; }
   IndexType get_target_samples() const { return target_samples_; }
   //const Properties& get_properties() const { return properties_; }
-  const SpeciesSet& get_species_set() const { return species_set_; }
-  const ParticleSet& get_ions() const { return ions_; }
 
   // accessor to the gold copy
   const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
@@ -233,7 +224,6 @@ public:
    */
   std::vector<WalkerElementsRef> get_walker_elements();
 
-  const std::vector<std::pair<int, int>>& get_particle_group_indexes() const { return particle_group_indexes_; }
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }

@@ -142,7 +142,7 @@
     <parameter name="walkers">                1 </parameter>
     <!--parameter name="targetwalkers">  32000 </parameter-->
     <!--parameter name="max_walkers">   0    </parameter-->
-    <parameter name="reconfiguration">      runwhileincorrect </parameter>
+    <parameter name="debug_disable_branching">      yes </parameter>
     <parameter name="warmupSteps">          250 </parameter>
     <parameter name="timestep">           0.001 </parameter>
     <parameter name="steps">                  5 </parameter>

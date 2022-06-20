@@ -23,7 +23,7 @@
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations_base.hpp"
 
 #include "mpi3/shared_communicator.hpp"
-#include "type_traits/scalar_traits.h"
+#include "type_traits/complex_help.hpp"
 #include "AFQMC/Memory/buffer_managers.h"
 
 namespace qmcplusplus
@@ -217,6 +217,18 @@ public:
     APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
   }
 
+  template<class MatAPtr, class MatBPtr, class MatC, class TVec>
+  void BatchedMixedDensityMatrix(
+								const std::vector<MatAPtr>&,
+								std::vector<MatBPtr>&,
+								MatC&& C,
+								T,
+								TVec&&,
+								bool = false, bool = true)
+  {
+    APP_ABORT(" Error: Batched routines not compatible with SlaterDetOperations_shared::BatchedMixedDensityMatrix \n");
+  }
+
   template<class MatA, class MatB, class MatC, class TVec>
   void BatchedDensityMatrices(const std::vector<MatA>& hermA,
                               std::vector<MatB>& Bi,
@@ -273,10 +285,10 @@ protected:
   {
     if (SM_TMats == nullptr || SM_TMats->get_allocator() != shared_allocator<T>{comm})
     {
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N}, shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
     }
     else if (SM_TMats->num_elements() < N)
-      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>{N}, shared_allocator<T>{comm}));
+      SM_TMats = std::move(std::make_unique<shmTVector>(iextensions<1u>(N), shared_allocator<T>{comm}));
   }
 };
 

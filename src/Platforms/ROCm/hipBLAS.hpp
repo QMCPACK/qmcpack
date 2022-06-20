@@ -1,3 +1,16 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2021 QMCPACK developers.
+// Copyright(C) 2021 Advanced Micro Devices, Inc. All rights reserved.
+//
+// File developed by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//
+// File created by: Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
+//////////////////////////////////////////////////////////////////////////////////////
+
 
 #ifndef HIPBLAS_HPP
 #define HIPBLAS_HPP
@@ -5,7 +18,8 @@
 #include <hipblas.h>
 #include <hip/hip_complex.h>
 
-static inline hipblasStatus_t
+//------------------------------------------------------------------------------
+hipblasStatus_t
 hipblasCgemmBatched(hipblasHandle_t handle,
                     hipblasOperation_t transa,
                     hipblasOperation_t transb,
@@ -20,26 +34,9 @@ hipblasCgemmBatched(hipblasHandle_t handle,
                     const hipComplex *beta,
                     hipComplex *const Carray[],
                     int ldc,
-                    int batchCount)
-{
-    return hipblasCgemmBatched(handle,
-                               transa,
-                               transb,
-                               m,
-                               n,
-                               k,
-                               (const hipblasComplex *)alpha,
-                               (const hipblasComplex *const *)Aarray,
-                               lda,
-                               (const hipblasComplex *const *)Barray,
-                               ldb,
-                               (const hipblasComplex *)beta,
-                               (hipblasComplex *const *)Carray,
-                               ldc,
-                               batchCount);
-}
+                    int batchCount);
 
-static inline hipblasStatus_t
+hipblasStatus_t
 hipblasZgemmBatched(hipblasHandle_t handle,
                     hipblasOperation_t transa,
                     hipblasOperation_t transb,
@@ -54,103 +51,88 @@ hipblasZgemmBatched(hipblasHandle_t handle,
                     const hipDoubleComplex *beta,
                     hipDoubleComplex *const Carray[],
                     int ldc,
-                    int batchCount)
-{
-    return hipblasZgemmBatched(handle,
-                               transa,
-                               transb,
-                               m,
-                               n,
-                               k,
-                               (const hipblasDoubleComplex *)alpha,
-                               (const hipblasDoubleComplex *const *)Aarray,
-                               lda,
-                               (const hipblasDoubleComplex *const *)Barray,
-                               ldb,
-                               (const hipblasDoubleComplex *)beta,
-                               (hipblasDoubleComplex *const *)Carray,
-                               ldc,
-                               batchCount);
-}
+                    int batchCount);
 
-static inline hipblasStatus_t
-hipblasCgetrfBatched(cublasHandle_t handle,
-                     int n,
-                     cuComplex *const A[],
-                     int lda,
-                     int *P,
-                     int *info,
-                     int batchSize)
-{
-    return hipblasCgetrfBatched(handle,
-                                n,
-                                (hipblasComplex *const *)A,
-                                lda,
-                                P,
-                                info,
-                                batchSize);
-}
+//------------------------------------------------------------------------------
+hipblasStatus_t
+hipblasSgetrfBatched_(hipblasHandle_t handle,
+                      int n,
+                      float *const A[],
+                      int lda,
+                      int *P,
+                      int *info,
+                      int batchSize);
 
-static inline hipblasStatus_t
-hipblasZgetrfBatched(cublasHandle_t handle,
-                     int n,
-                     cuDoubleComplex *const A[],
-                     int lda,
-                     int *P,
-                     int *info,
-                     int batchSize)
-{
-    return hipblasZgetrfBatched(handle,
-                                n,
-                                (hipblasDoubleComplex *const *)A,
-                                lda,
-                                P,
-                                info,
-                                batchSize);
-}
+hipblasStatus_t
+hipblasDgetrfBatched_(hipblasHandle_t handle,
+                      int n,
+                      double *const A[],
+                      int lda,
+                      int *P,
+                      int *info,
+                      int batchSize);
 
-static inline hipblasStatus_t
-hipblasCgetriBatched(cublasHandle_t handle,
-                    int n,
-                    const cuComplex *const A[],
-                    int lda,
-                    const int *P,
-                    cuComplex *const C[],
-                    int ldc,
-                    int *info,
-                    int batchSize)
-{
-    return hipblasCgetriBatched(handle,
-                                n,
-                                (hipblasComplex *const *)A,
-                                lda,
-                                (int *)P,
-                                (hipblasComplex *const *)C,
-                                ldc,
-                                info,
-                                batchSize);
-}
+hipblasStatus_t
+hipblasCgetrfBatched_(hipblasHandle_t handle,
+                      int n,
+                      hipComplex *const A[],
+                      int lda,
+                      int *P,
+                      int *info,
+                      int batchSize);
 
-static inline hipblasStatus_t
-hipblasZgetriBatched(cublasHandle_t handle,
-                    int n,
-                    const cuDoubleComplex *const A[],
-                    int lda,
-                    const int *P,
-                    cuDoubleComplex *const C[],
-                    int ldc,
-                    int *info,
-                    int batchSize)
-{
-    return hipblasZgetriBatched(handle,
-                                n,
-                                (hipblasDoubleComplex *const *)A,
-                                lda,
-                                (int *)P,
-                                (hipblasDoubleComplex *const *)C,
-                                ldc,
-                                info,
-                                batchSize);
-}
+hipblasStatus_t
+hipblasZgetrfBatched_(hipblasHandle_t handle,
+                      int n,
+                      hipDoubleComplex *const A[],
+                      int lda,
+                      int *P,
+                      int *info,
+                      int batchSize);
+
+//------------------------------------------------------------------------------
+hipblasStatus_t
+hipblasSgetriBatched_(hipblasHandle_t handle,
+                      int n,
+                      const float *const A[],
+                      int lda,
+                      const int *P,
+                      float *const C[],
+                      int ldc,
+                      int *info,
+                      int batchSize);
+
+hipblasStatus_t
+hipblasDgetriBatched_(hipblasHandle_t handle,
+                      int n,
+                      const double *const A[],
+                      int lda,
+                      const int *P,
+                      double *const C[],
+                      int ldc,
+                      int *info,
+                      int batchSize);
+
+hipblasStatus_t
+hipblasCgetriBatched_(hipblasHandle_t handle,
+                      int n,
+                      const hipComplex *const A[],
+                      int lda,
+                      const int *P,
+                      hipComplex *const C[],
+                      int ldc,
+                      int *info,
+                      int batchSize);
+
+hipblasStatus_t
+hipblasZgetriBatched_(hipblasHandle_t handle,
+                      int n,
+                      const hipDoubleComplex *const A[],
+                      int lda,
+                      const int *P,
+                      hipDoubleComplex *const C[],
+                      int ldc,
+                      int *info,
+                      int batchSize);
 
 #endif /* HIPBLAS_HPP */

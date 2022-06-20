@@ -24,9 +24,9 @@ public:
   float rMin, rMax;
   int NumPoints;
   int MyTexture;
-  cudaArray* myArray;
-  void set(float data[], int numPoints, float rmin, float rmax);
-  void set(double data[], int numPoints, double rmin, double rmax);
+  float* myArray;
+  void set(const float data[], int numPoints, float rmin, float rmax);
+  void set(const double data[], int numPoints, double rmin, double rmax);
 
   TextureSpline();
   ~TextureSpline();

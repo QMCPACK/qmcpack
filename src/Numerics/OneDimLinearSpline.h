@@ -30,11 +30,11 @@ template<class Td, class Tg = Td, class CTd = Vector<Td>, class CTg = Vector<Tg>
 class OneDimLinearSpline : public OneDimGridFunctor<Td, Tg, CTd, CTg>
 {
 public:
-  typedef OneDimGridFunctor<Td, Tg, CTd, CTg> base_type;
-  typedef typename base_type::value_type value_type;
-  typedef typename base_type::point_type point_type;
-  typedef typename base_type::data_type data_type;
-  typedef typename base_type::grid_type grid_type;
+  using base_type  = OneDimGridFunctor<Td, Tg, CTd, CTg>;
+  using value_type = typename base_type::value_type;
+  using point_type = typename base_type::point_type;
+  using data_type  = typename base_type::data_type;
+  using grid_type  = typename base_type::grid_type;
 
   using base_type::d2Y;
   using base_type::dY;

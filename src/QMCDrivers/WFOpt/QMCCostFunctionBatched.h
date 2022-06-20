@@ -30,6 +30,11 @@ namespace qmcplusplus
 
 class CostFunctionCrowdData;
 
+namespace testing
+{
+class LinearMethodTestSupport;
+};
+
 
 class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
@@ -39,8 +44,7 @@ public:
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,
-                         int opt_num_crowds,
-                         int crowd_size,
+                         const std::vector<int>& walkers_per_crowd,
                          Communicate* comm);
 
   ///Destructor
@@ -70,12 +74,15 @@ protected:
   Matrix<Return_rt> DerivRecords_;
   Matrix<Return_rt> HDerivRecords_;
 
-  Return_rt correlatedSampling(bool needGrad = true) override;
+  EffectiveWeight correlatedSampling(bool needGrad = true) override;
 
   SampleStack& samples_;
 
-  int opt_batch_size_;
-  int opt_num_crowds_;
+  // Number of samples local to each MPI rank
+  int rank_local_num_samples_;
+
+  // Number of walkers per crowd. Size of vector is number of crowds.
+  std::vector<int> walkers_per_crowd_;
 
   std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
 
@@ -87,6 +94,8 @@ protected:
 #ifdef HAVE_LMY_ENGINE
   int total_samples();
 #endif
+
+  friend testing::LinearMethodTestSupport;
 };
 } // namespace qmcplusplus
 #endif

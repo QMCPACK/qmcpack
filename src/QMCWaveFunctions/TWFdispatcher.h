@@ -14,10 +14,10 @@
 #define QMCPLUSPLUS_TWFDISPATCH_H
 
 #include "TrialWaveFunction.h"
+#include "TWFGrads.hpp"
 
 namespace qmcplusplus
 {
-
 /** Wrappers for dispatching to TrialWaveFunction single walker APIs or mw_ APIs.
  * This should be only used by QMC drivers.
  * member function names must match mw_ APIs in TrialWaveFunction
@@ -29,6 +29,7 @@ public:
   using ComputeType  = TrialWaveFunction::ComputeType;
   using ValueType    = TrialWaveFunction::ValueType;
   using GradType     = TrialWaveFunction::GradType;
+  using Complex      = TrialWaveFunction::ComplexType;
 
   TWFdispatcher(bool use_batch);
 
@@ -49,16 +50,18 @@ public:
                          const RefVectorWithLeader<ParticleSet>& p_list,
                          int ig) const;
 
+  template<CoordsType CT>
   void flex_evalGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                      const RefVectorWithLeader<ParticleSet>& p_list,
                      int iat,
-                     std::vector<GradType>& grad_now) const;
+                     TWFGrads<CT>& grads) const;
 
+  template<CoordsType CT>
   void flex_calcRatioGrad(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                           const RefVectorWithLeader<ParticleSet>& p_list,
                           int iat,
                           std::vector<PsiValueType>& ratios,
-                          std::vector<GradType>& grad_new) const;
+                          TWFGrads<CT>& grads) const;
 
   void flex_accept_rejectMove(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -73,7 +76,7 @@ public:
                        bool fromscratch) const;
 
   void flex_evaluateRatios(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-                           const RefVector<const VirtualParticleSet>& vp_list,
+                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                            const RefVector<std::vector<ValueType>>& ratios_list,
                            ComputeType ct) const;
 

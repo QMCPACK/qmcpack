@@ -29,28 +29,30 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
   using FileSpace = h5_space_type<T, 1>;
   using FileSpace::dims;
   using FileSpace::get_address;
-  typedef std::vector<T> data_type;
-  data_type& ref_;
+  using data_type = std::vector<T>;
 
-  inline h5data_proxy(data_type& a) : ref_(a) { dims[0] = ref_.size(); }
+  inline h5data_proxy(const data_type& a) { dims[0] = a.size(); }
 
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     if (!checkShapeConsistency<T>(grp, aname, FileSpace::rank, dims))
-      ref_.resize(dims[0]);
-    return h5d_read(grp, aname, get_address(&ref_[0]), xfer_plist);
+      ref.resize(dims[0]);
+    return h5d_read(grp, aname, get_address(&ref[0]), xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
-    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref_[0]), xfer_plist);
+    return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref[0]), xfer_plist);
   }
 
-  inline bool write(hid_t grp, const std::string& aname, const std::vector<hsize_t>& dvec, hid_t xfer_plist)
+  inline bool write(const data_type& ref,
+                    hid_t grp,
+                    const std::string& aname,
+                    const std::vector<hsize_t>& dvec,
+                    hid_t xfer_plist) const
   {
-    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref_[0]), xfer_plist);
+    return h5d_write(grp, aname.c_str(), dvec.size(), dvec.data(), get_address(&ref[0]), xfer_plist);
   }
-
 };
 
 /** specialization for std::bitset<N>
@@ -58,29 +60,28 @@ struct h5data_proxy<std::vector<T>> : public h5_space_type<T, 1>
 template<std::size_t N>
 struct h5data_proxy<std::bitset<N>>
 {
-  typedef std::bitset<N> ArrayType_t;
-  ArrayType_t& ref;
+  using data_type = std::bitset<N>;
 
-  h5data_proxy<ArrayType_t>(ArrayType_t& a) : ref(a) {}
+  h5data_proxy(const data_type& a) {}
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     unsigned long c = ref.to_ulong();
     h5data_proxy<unsigned long> hc(c);
-    return hc.write(grp, aname, xfer_plist);
-  }
-
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    unsigned long c = ref.to_ulong();
-    h5data_proxy<unsigned long> hc(c);
-    if (hc.read(grp, aname, xfer_plist))
+    if (hc.read(ref, grp, aname, xfer_plist))
     {
       ref = c;
       return true;
     }
     else
       return false;
+  }
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    unsigned long c = ref.to_ulong();
+    h5data_proxy<unsigned long> hc(c);
+    return hc.write(ref, grp, aname, xfer_plist);
   }
 };
 
@@ -89,25 +90,11 @@ struct h5data_proxy<std::bitset<N>>
 template<>
 struct h5data_proxy<std::string>
 {
-  typedef std::string ArrayType_t;
-  ArrayType_t& ref;
+  using data_type = std::string;
 
-  h5data_proxy<ArrayType_t>(ArrayType_t& a) : ref(a) {}
+  h5data_proxy(const data_type& a) {}
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
-  {
-    hid_t str80 = H5Tcopy(H5T_C_S1);
-    H5Tset_size(str80, ref.size());
-    hsize_t dim     = 1;
-    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT);
-    herr_t ret      = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-    return ret != -1;
-  }
-
-  inline bool read(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
     hid_t dataset = H5Dopen(grp, aname.c_str());
     if (dataset > -1)
@@ -132,24 +119,118 @@ struct h5data_proxy<std::string>
     }
     return false;
   }
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    hid_t str80 = H5Tcopy(H5T_C_S1);
+    H5Tset_size(str80, ref.size());
+    hsize_t dim = 1;
+
+    herr_t ret = -1;
+    hid_t h1   = H5Dopen(grp, aname.c_str());
+    if (h1 < 0) // missing create one
+    {
+      hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT);
+      ret             = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    else
+    {
+      ret = H5Dwrite(h1, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
+    }
+    H5Dclose(h1);
+    return ret != -1;
+  }
+};
+
+/// Specialization for vector of strings
+template<>
+struct h5data_proxy<std::vector<std::string>>
+{
+  using data_type = std::vector<std::string>;
+
+  h5data_proxy(const data_type& a) {}
+
+  inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  {
+    hid_t datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(datatype, H5T_VARIABLE);
+    hid_t dataset = H5Dopen(grp, aname.c_str());
+    std::vector<char*> char_list;
+    herr_t ret = -1;
+    if (dataset > -1)
+    {
+      hsize_t dim_out;
+      hid_t dataspace = H5Dget_space(dataset);
+      hid_t status    = H5Sget_simple_extent_dims(dataspace, &dim_out, NULL);
+
+      char_list.resize(dim_out);
+      ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+
+      for (int i = 0; i < dim_out; i++)
+        ref.push_back(char_list[i]);
+
+      H5Dvlen_reclaim(datatype, dataspace, xfer_plist, char_list.data());
+
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    H5Tclose(datatype);
+
+    return ret >= 0;
+  }
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
+  {
+    // See the section in the HDF user's manual on datatypes,
+    // particularly the subsection on strings.
+    // (e.g. http://davis.lbl.gov/Manuals/HDF5-1.8.7/UG/11_Datatypes.html)
+    // and stackoverflow
+    // https://stackoverflow.com/questions/6184817/hdf5-inserting-a-set-of-strings-in-a-dataset
+    hid_t datatype = H5Tcopy(H5T_C_S1);
+    H5Tset_size(datatype, H5T_VARIABLE);
+    hsize_t dim = ref.size();
+
+    // Create vector of pointers to the actual string data
+    std::vector<const char*> char_list;
+    for (int i = 0; i < ref.size(); i++)
+      char_list.push_back(ref[i].data());
+
+    hid_t h1   = H5Dopen(grp, aname.c_str());
+    herr_t ret = -1;
+    if (h1 < 0) // missing create one
+    {
+      hid_t dataspace = H5Screate_simple(1, &dim, NULL);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT);
+      ret             = H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+      H5Sclose(dataspace);
+      H5Dclose(dataset);
+    }
+    else
+      ret = H5Dwrite(h1, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
+
+    H5Dclose(h1);
+    return ret >= 0;
+  }
 };
 
 template<>
 struct h5data_proxy<std::ostringstream>
 {
-  typedef std::ostringstream Data_t;
-  Data_t& ref;
+  using data_type = std::ostringstream;
 
-  h5data_proxy<Data_t>(Data_t& a) : ref(a) {}
+  h5data_proxy(const data_type& a) {}
 
-  inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
+  inline bool read(data_type& ref, hid_t grp, char* name, hid_t xfer_plist = H5P_DEFAULT) { return false; }
+
+  inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     std::string clone(ref.str());
     h5data_proxy<std::string> proxy(clone);
-    return proxy.write(grp, aname);
+    return proxy.write(clone, grp, aname);
   }
-
-  inline bool read(hid_t grp, const char* name, hid_t xfer_plist = H5P_DEFAULT) { return false; }
 };
 
 } // namespace qmcplusplus

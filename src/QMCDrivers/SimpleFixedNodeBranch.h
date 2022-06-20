@@ -28,6 +28,7 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "Estimators/BlockHistogram.h"
 #include "Estimators/accumulators.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/Crowd.h"
@@ -97,7 +98,7 @@ class EstimatorManagerBase;
  */
 struct SimpleFixedNodeBranch : public QMCTraits
 {
-  typedef SimpleFixedNodeBranch ThisType;
+  using ThisType  = SimpleFixedNodeBranch;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
   /*! enum for booleans
@@ -129,7 +130,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** booleans to set the branch modes
    * \since 2008-05-05
    */
-  typedef std::bitset<B_MODE_MAX> BranchModeType;
+  using BranchModeType = std::bitset<B_MODE_MAX>;
   BranchModeType BranchMode;
 
   /*! enum for iParam std::bitset<B_IPARAM_MAX>
@@ -160,7 +161,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** input parameters of integer types
    * \since 2008-05-05
    */
-  typedef TinyVector<int, B_IPARAM_MAX> IParamType;
+  using IParamType = TinyVector<int, B_IPARAM_MAX>;
   IParamType iParam;
 
   /** enum for vParam 
@@ -215,8 +216,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   ///Backup WalkerController for mixed DMC
   std::unique_ptr<WalkerControlBase> BackupWalkerController;
 
-  ///TODO: Should not be raw pointer
-  EstimatorManagerBase* MyEstimator;
+  std::unique_ptr<EstimatorManagerBase> MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -278,13 +278,13 @@ struct SimpleFixedNodeBranch : public QMCTraits
   inline void regressQMCCounter() { iParam[B_COUNTER]--; }
 
   /** get the EstimatorManager */
-  EstimatorManagerBase* getEstimatorManager() { return MyEstimator; }
+  EstimatorManagerBase* getEstimatorManager() { return MyEstimator.get(); }
 
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * this assumes estimator managers are reused section to section
    * */
-  void setEstimatorManager(EstimatorManagerBase* est) { MyEstimator = est; }
+  void setEstimatorManager(std::unique_ptr<EstimatorManagerBase> est) { MyEstimator = std::move(est); }
 
   /** initialize  the WalkerController
    * @param mcwc Walkers
@@ -472,6 +472,9 @@ private:
                        FullPrecRealType targetSigma,
                        FullPrecRealType maxSigma,
                        int Nelec = 0);
+
+  ///disable branching for debugging
+  std::string debug_disable_branching_;
 };
 
 std::ostream& operator<<(std::ostream& os, SimpleFixedNodeBranch::VParamType& rhs);

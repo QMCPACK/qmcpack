@@ -16,15 +16,14 @@
 /**@file
  *@brief definition of three-body jastrow of Geminal functions
  */
-#include "QMCWaveFunctions/AGPDeterminant.h"
 #include "AGPDeterminantBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
 {
-AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset)
-    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset), mySPOSetBuilderFactory(nullptr)
+AGPDeterminantBuilder::AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PSetMap& pset)
+    : WaveFunctionComponentBuilder(comm, els), ptclPool(pset)
 {}
 
 template<class BasisBuilderT>
@@ -35,7 +34,7 @@ bool AGPDeterminantBuilder::createAGP(BasisBuilderT* abuilder, xmlNodePtr cur)
   cur                                            = cur->xmlChildrenNode;
   while (cur != NULL)
   {
-    std::string cname((const char*)(cur->name));
+    std::string cname(castXMLCharToChar(cur->name));
     if (cname == "coefficient" || cname == "coefficients")
     {
       if (agpDet == nullptr)
@@ -103,7 +102,7 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
   app_log() << "  AGPDeterminantBuilder Creating AGPDeterminant." << std::endl;
   xmlNodePtr curRoot = cur;
   bool success       = true;
-  std::string cname, tname;
+  std::string tname;
   xmlNodePtr cPtr = NULL;
   xmlNodePtr uPtr = NULL;
   OhmmsAttributeSet oAttrib;
@@ -113,7 +112,7 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
   cur = cur->children;
   while (cur != NULL)
   {
-    getNodeName(cname, cur);
+    std::string cname(getNodeName(cur));
     if (cname.find("coeff") < cname.size())
     {
       cPtr = cur;
@@ -132,9 +131,9 @@ std::unique_ptr<WaveFunctionComponent> AGPDeterminantBuilder::buildComponent(xml
     APP_ABORT(err_msg.str());
     return nullptr;
   }
-  if (mySPOSetBuilderFactory == 0)
+  if (!mySPOSetBuilderFactory)
   {
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(myComm, targetPtcl, ptclPool);
+    mySPOSetBuilderFactory = std::make_unique<SPOSetBuilderFactory>(myComm, targetPtcl, ptclPool);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
   // mmorales: this needs to be fixed after changes to BasisSetfactory

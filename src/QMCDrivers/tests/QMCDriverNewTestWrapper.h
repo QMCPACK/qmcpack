@@ -16,7 +16,7 @@
 #include "Particle/SampleStack.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Message/UniformCommunicateError.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -32,6 +32,7 @@ public:
   QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
+                     std::nullopt,
                      std::move(population),
                      "QMCDriverTestWrapper::",
                      comm,
@@ -129,6 +130,8 @@ public:
   {
     void operator()(int num_crowds);
   };
+
+  void testMeasureImbalance() { measureImbalance("Test"); }
 
 private:
   ProjectData test_project;

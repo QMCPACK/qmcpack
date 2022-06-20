@@ -37,7 +37,7 @@ public:
   using Base              = QMCDriverNew;
   using FullPrecRealType  = QMCTraits::FullPrecRealType;
   using PosType           = QMCTraits::PosType;
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
+  using ParticlePositions = PtclOnLatticeTraits::ParticlePos;
 
   /** To avoid 10's of arguments to runVMCStep
    *
@@ -66,6 +66,7 @@ public:
   /// Constructor.
   VMCBatched(const ProjectData& project_data,
              QMCDriverInput&& qmcdriver_input,
+             const std::optional<EstimatorManagerInput>& global_emi,
              VMCDriverInput&& input,
              MCPopulation&& pop,
              SampleStack& samples_,
@@ -80,11 +81,13 @@ public:
    *  MCWalkerConfiguration layer removed.
    *  Obfuscation of state changes via buffer and MCWalkerconfiguration require this be tested well
    */
+  template<CoordsType CT>
   static void advanceWalkers(const StateForThread& sft,
                              Crowd& crowd,
                              DriverTimers& timers,
                              ContextForSteps& move_context,
-                             bool recompute);
+                             bool recompute,
+                             bool accumulate_this_step);
 
   // This is the task body executed at crowd scope
   // it does not have access to object member variables by design
@@ -110,7 +113,7 @@ public:
 private:
   int prevSteps;
   int prevStepsBetweenSamples;
-  const VMCDriverInput vmcdriver_input_;
+  VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
   ///Ways to set rn constant
   RealType logoffset, logepsilon;

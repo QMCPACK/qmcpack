@@ -19,16 +19,16 @@
 #include "CPU/BLAS.hpp"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "Numerics/DeterminantOperators.h"
 #include <set>
 
 namespace qmcplusplus
 {
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-    : M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
+    : M(40), refPsi(psi), lattice_(elns.getLattice()), norm_nofK(1), hdf5_out(false)
 {
-  UpdateMode.set(COLLECTABLE, 1);
+  update_mode_.set(COLLECTABLE, 1);
   psi_ratios.resize(elns.getTotalNum());
   twist = elns.getTwist();
 }
@@ -45,7 +45,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     for (int i = 0; i < OHMMS_DIM; ++i)
       newpos[i] = myRNG();
     //make it cartesian
-    vPos[s] = Lattice.toCart(newpos);
+    vPos[s] = lattice_.toCart(newpos);
     P.makeVirtualMoves(vPos[s]);
     refPsi.evaluateRatiosAlltoOne(P, psi_ratios);
     for (int i = 0; i < np; ++i)
@@ -80,8 +80,8 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   }
   if (hdf5_out)
   {
-    RealType w = tWalker->Weight * norm_nofK;
-    int j      = myIndex;
+    RealType w = t_walker_->Weight * norm_nofK;
+    int j      = my_index_;
     for (int ik = 0; ik < nofK.size(); ++ik, ++j)
       P.Collectables[j] += w * nofK[ik];
   }
@@ -104,10 +104,10 @@ void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5de
     ng[0] = nofK.size();
     h5desc.emplace_back("nofk");
     auto& h5o = h5desc.back();
-    h5o.set_dimensions(ng, myIndex);
+    h5o.set_dimensions(ng, my_index_);
     h5o.open(gid);
     h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");    
+    h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
   }
 }
 
@@ -116,12 +116,12 @@ void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& colle
 {
   if (hdf5_out)
   {
-    myIndex = collectables.size();
+    my_index_ = collectables.size();
     collectables.add(nofK.begin(), nofK.end());
   }
   else
   {
-    myIndex = plist.size();
+    my_index_ = plist.size();
     for (int i = 0; i < nofK.size(); i++)
     {
       std::stringstream sstr;
@@ -136,7 +136,7 @@ void MomentumEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_);
   }
 }
 
@@ -144,7 +144,7 @@ void MomentumEstimator::setParticlePropertyList(PropertySetType& plist, int offs
 {
   if (!hdf5_out)
   {
-    copy(nofK.begin(), nofK.end(), plist.begin() + myIndex + offset);
+    copy(nofK.begin(), nofK.end(), plist.begin() + my_index_ + offset);
   }
 }
 
@@ -170,11 +170,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag == "yes");
   // minimal length as 2 x WS radius.
-  RealType min_Length = elns.Lattice.WignerSeitzRadius_G * 4.0 * M_PI;
+  RealType min_Length = elns.getLattice().WignerSeitzRadius_G * 4.0 * M_PI;
   PosType vec_length;
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
-    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(elns.Lattice.Gv[i], elns.Lattice.Gv[i]));
+    vec_length[i] = 2.0 * M_PI * std::sqrt(dot(elns.getLattice().Gv[i], elns.getLattice().Gv[i]));
 #if OHMMS_DIM == 3
   PosType kmaxs(0);
   kmaxs[0]           = kmax0;
@@ -187,7 +187,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   if (!sphere && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * elns.getTotalNum() / elns.Lattice.Volume, 1.0 / 3);
+    kmax   = 2.0 * std::pow(6.0 * M_PI * M_PI * elns.getTotalNum() / elns.getLattice().Volume, 1.0 / 3);
     sphere = true;
   }
   sphere_kmax = kmax;
@@ -214,11 +214,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       for (int k = -kgrid; k < (kgrid + 1); k++)
       {
         PosType ikpt, kpt;
-        ikpt[0] = i - twist[0];
-        ikpt[1] = j - twist[1];
-        ikpt[2] = k - twist[2];
+        ikpt[0] = i + twist[0];
+        ikpt[1] = j + twist[1];
+        ikpt[2] = k + twist[2];
         //convert to Cartesian: note that 2Pi is multiplied
-        kpt               = Lattice.k_cart(ikpt);
+        kpt               = lattice_.k_cart(ikpt);
         bool not_recorded = true;
         // This collects the k-points within the parallelepiped (if enabled)
         if (directional && ikpt[0] * ikpt[0] <= kgrid_squared[0] && ikpt[1] * ikpt[1] <= kgrid_squared[1] &&
@@ -300,7 +300,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   if (!disk && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax = 2.0 * std::pow(4.0 * pi * elns.getTotalNum() / elns.Lattice.Volume, 0.5);
+    kmax = 2.0 * std::pow(4.0 * pi * elns.getTotalNum() / elns.getLattice().Volume, 0.5);
     disk = true;
   }
   disk_kmax = kmax;
@@ -326,7 +326,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       ikpt[0] = i - twist[0];
       ikpt[1] = j - twist[1];
       //convert to Cartesian: note that 2Pi is multiplied
-      kpt               = Lattice.k_cart(ikpt);
+      kpt               = lattice_.k_cart(ikpt);
       bool not_recorded = true;
       if (directional && ikpt[0] * ikpt[0] <= kgrid_squared[0] && ikpt[1] * ikpt[1] <= kgrid_squared[1])
       {
@@ -425,7 +425,7 @@ std::unique_ptr<OperatorBase> MomentumEstimator::makeClone(ParticleSet& qp, Tria
 {
   std::unique_ptr<MomentumEstimator> myclone = std::make_unique<MomentumEstimator>(qp, psi);
   myclone->resize(kPoints, M);
-  myclone->myIndex   = myIndex;
+  myclone->my_index_ = my_index_;
   myclone->norm_nofK = norm_nofK;
   myclone->hdf5_out  = hdf5_out;
   return myclone;
@@ -447,7 +447,7 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
     phases_vPos[im].resize(kPoints.size());
 }
 
-void MomentumEstimator::setRandomGenerator(RandomGenerator_t* rng)
+void MomentumEstimator::setRandomGenerator(RandomGenerator* rng)
 {
   //simply copy it
   myRNG = *rng;

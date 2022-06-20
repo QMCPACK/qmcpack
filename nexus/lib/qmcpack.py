@@ -25,6 +25,7 @@
 
 
 import os
+import numpy as np
 from numpy import array,dot,pi
 from numpy.linalg import inv,norm
 from generic import obj
@@ -36,11 +37,13 @@ from qmcpack_input import TracedQmcpackInput
 from qmcpack_input import loop,linear,cslinear,vmc,dmc,collection,determinantset,hamiltonian,init,pairpot,bspline_builder
 from qmcpack_input import generate_jastrows,generate_jastrow,generate_jastrow1,generate_jastrow2,generate_jastrow3
 from qmcpack_input import generate_opt,generate_opts
+from qmcpack_input import check_excitation_type
 from qmcpack_analyzer import QmcpackAnalyzer
 from qmcpack_converters import Pw2qmcpack,Convert4qmc,PyscfToAfqmc
 from debug import ci,ls,gs
 from developer import unavailable
 from nexus_base import nexus_core
+from copy import deepcopy
 try:
     import h5py
 except:
@@ -239,7 +242,12 @@ class Qmcpack(Simulation):
                 qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
                 newwfn = res.qmcsystem.wavefunction
+                if hasattr(oldwfn.determinantset,'multideterminant'):
+                    del newwfn.determinantset.slaterdeterminant
+                    newwfn.determinantset.multideterminant = oldwfn.determinantset.multideterminant
+                    newwfn.determinantset.sposets = oldwfn.determinantset.sposets
                 dset = newwfn.determinantset
+
                 if 'jastrows' in newwfn:
                     del newwfn.jastrows
                 #end if
@@ -504,6 +512,232 @@ class Qmcpack(Simulation):
                     self.failed = True
                 #end if
             #end if
+            exc_run = 'excitation' in self
+            if exc_run:
+                exc_failure = False
+
+                edata = self.read_einspline_dat()
+                exc_input = self.excitation
+
+                exc_spin,exc_type,exc_spins,exc_types,exc1,exc2 = check_excitation_type(exc_input)
+
+                elns = self.input.get_electron_particle_set()
+                
+                if exc_type==exc_types.band: 
+                    # Band Index 'tw1 band1 tw2 band2'. Eg., '0 45 3 46'
+                    # Check that tw1,band1 is no longer in occupied set
+                    tw1,bnd1 = exc2.split()[0:2]
+                    tw2,bnd2 = exc2.split()[2:4]
+                    if exc1 in ('up','down'):
+                        spin_channel = exc1
+                        dsc = edata[spin_channel]
+                        for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
+                            if tw == int(tw1) and bnd == int(bnd1):
+                                # This orbital should no longer be in the set of occupied orbitals
+                                if idx<elns.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw1,bnd1)
+                                    exc_failure = True
+                                #end if
+                            elif tw == int(tw2) and bnd == int(bnd2):
+                                # This orbital should be in the set of occupied orbitals
+                                if idx>=elns.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw2,bnd2)
+                                    exc_failure = True
+                                #end if
+                            #end if
+                        #end for
+                    else:
+                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                    #end if
+                elif exc_type in (exc_types.energy,exc_types.lowest):
+                    # Lowest or Energy Index '-orbindex1 +orbindex2'. Eg., '-4 +5'
+                    if exc_type==exc_types.lowest:
+                        if exc_spin==exc_spins.down:
+                            orb1 = elns.groups.d.size
+                        else:
+                            orb1 = elns.groups.u.size
+                        #end if
+                        orb2 = orb1+1 
+                    else:
+                        orb1 = int(exc_input[1].split()[0][1:])
+                        orb2 = int(exc_input[1].split()[1][1:])
+                    #end if
+                    if exc1 in ('up','down'):
+
+                        spin_channel = exc1
+                        nelec = elns.groups[spin_channel[0]].size
+                        eigs_spin = edata[spin_channel].Energy
+
+                        # Construct the correct set of occupied orbitals by hand based on
+                        # orb1 and orb2 values that were input by the user
+                        excited = eigs_spin
+                        order = eigs_spin.argsort()
+                        ground = excited[order]
+                        # einspline orbital ordering for excited state
+                        excited = excited[:nelec]
+                        # hand-crafted orbital order for excited state
+
+                        # ground can be list or ndarray, but we'll convert it to list
+                        # so we can concatenate with list syntax
+                        ground = np.asarray(ground).tolist()
+                        # After concatenating, convert back to ndarray
+                        hc_excited = np.array(ground[:orb1-1]+[ground[orb2-1]]+ground[orb1:nelec])
+                            
+                        etol = 1e-6
+                        if np.abs(hc_excited-excited).max() > etol:
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, the second orbital \'{}\' is not occupied (see einspline file).\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],orb1)
+                            exc_failure = True
+                        #end if
+
+                    elif exc1 in ('singlet','triplet'):
+                        wf = self.input.get('wavefunction')
+                        occ = wf.determinantset.multideterminant.detlist.csf.occ
+                        if occ[int(orb1)-1]!='1':
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, this is inconsistent with the occupations in detlist \'{}\'.\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],occ)
+                            exc_failure = True
+                        #end if
+                        if occ[int(orb2)-1]!='1':
+                            msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                            msg += '         however, this is inconsistent with the occupations in detlist \'{}\'.\n'
+                            msg += '         Please check your input.'
+                            msg = msg.format(spin_channel,exc_input[1],occ)
+                            exc_failure = True
+                        #end if
+                    #end if
+
+                else:
+                    # The format is: 'gamma vb z cb'
+                    if exc1 in ('singlet','triplet'):
+                        self.warn('No check for \'{}\' excitation of type \'{}\' was done. When this path is possible, then a check should be written.'.format(exc_input[0],exc_input[1]))
+                    else:
+
+                        # assume excitation of form 'gamma vb k cb' or 'gamma vb-1 k cb+1'
+                        excitation = exc2.upper().split(' ')
+                        k_1, band_1, k_2, band_2 = excitation
+                        tilematrix = self.system.structure.tilematrix()
+                        
+                        wf = self.input.get('wavefunction')
+                        if exc_spin==exc_spins.up:
+                            sdet =  wf.determinantset.get('updet')
+                        else:
+                            sdet =  wf.determinantset.get('downdet')
+                        #end if
+                        from numpy import linalg,where,isclose
+                        vb = int(sdet.size / abs(linalg.det(tilematrix))) -1  # Separate for each spin channel
+                        cb = vb+1
+                        # Convert band_1, band_2 to band indexes
+                        bands = [band_1, band_2]
+                        for bnum, b in enumerate(bands):
+                            b = b.lower()
+                            if 'cb' in b:
+                                if '-' in b:
+                                    b = b.split('-')
+                                    bands[bnum] = cb - int(b[1])
+                                elif '+' in b:
+                                    b = b.split('+')
+                                    bands[bnum] = cb + int(b[1])
+                                else:
+                                    bands[bnum] = cb
+                                #end if
+                            elif 'vb' in b:
+                                if '-' in b:
+                                    b = b.split('-')
+                                    bands[bnum] = vb - int(b[1])
+                                elif '+' in b:
+                                    b = b.split('+')
+                                    bands[bnum] = vb + int(b[1])
+                                else:
+                                    bands[bnum] = vb
+                                #end if
+                            else:
+                                QmcpackInput.class_error('{0} in excitation has the wrong formatting'.format(b))
+                            #end if
+                        #end for
+                        band_1, band_2 = bands
+                        
+                        # Convert k_1 k_2 to wavevector indexes
+                        structure = self.system.structure.get_smallest().copy()
+                        structure.change_units('A')
+
+                        from structure import get_kpath
+                        kpath       = get_kpath(structure=structure)
+                        kpath_label = array(kpath['explicit_kpoints_labels'])
+                        kpath_rel   = kpath['explicit_kpoints_rel']
+                        
+                        k1_in = k_1
+                        k2_in = k_2
+                        if k_1 in kpath_label and k_2 in kpath_label:   
+                            k_1 = kpath_rel[where(kpath_label == k_1)][0]
+                            k_2 = kpath_rel[where(kpath_label == k_2)][0]
+
+                            kpts = structure.kpoints_unit()
+                            found_k1 = False
+                            found_k2 = False
+                            for knum, k in enumerate(kpts):
+                                if isclose(k_1, k).all():
+                                    k_1 = knum
+                                    found_k1 = True
+                                #end if
+                                if isclose(k_2, k).all():
+                                    k_2 = knum
+                                    found_k2 = True
+                                #end if
+                            #end for
+                            if not found_k1 or not found_k2:
+                                QmcpackInput.class_error('Requested special kpoint is not in the tiled cell\nRequested "{}", present={}\nRequested "{}", present={}\nAvailable kpoints: {}'.format(k1_in,found_k1,k2_in,found_k2,sorted(set(kpath_label))))
+                            #end if
+                        else:
+                            QmcpackInput.class_error('Excitation wavevectors are not found in the kpath\nlabels requested: {} {}\nlabels present: {}'.format(k_1,k_2,sorted(set(kpath_label))))
+                        #end if
+
+                        tw1,bnd1 = (k_1,band_1)
+                        tw2,bnd2 = (k_2,band_2)
+                        spin_channel = exc1
+                        dsc = edata[spin_channel]
+                        for idx,(tw,bnd) in enumerate(zip(dsc.TwistIndex,dsc.BandIndex)):
+                            if tw == int(tw1) and bnd == int(bnd1):
+                                # This orbital should no longer be in the set of occupied orbitals
+                                if idx<elns.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the first orbital \'{} {}\' is still occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw1,bnd1)
+                                    exc_failure = True
+                                #end if
+                            elif tw == int(tw2) and bnd == int(bnd2):
+                                # This orbital should be in the set of occupied orbitals
+                                if idx>=elns.groups[spin_channel[0]].size:
+                                    msg  = 'WARNING: You requested \'{}\' excitation of type \'{}\',\n'
+                                    msg += '         however, the second orbital \'{} {}\' is not occupied (see einspline file).\n'
+                                    msg += '         Please check your input.'
+                                    msg = msg.format(spin_channel,exc_input[1],tw2,bnd2)
+                                    exc_failure = True
+                                #end if
+                            #end if
+                        #end for
+
+                #end if
+
+                if exc_failure:
+                    self.failed = True
+                    self.warn(msg)
+                    filename = self.identifier+'_errors.txt'
+                    open(os.path.join(self.locdir,filename),'w').write(msg)
+                #end if
+
+            #end if
         #end if
     #end def post_analyze
 
@@ -600,6 +834,34 @@ class Qmcpack(Simulation):
             #end if
         #end if
     #end def write_prep
+
+    def read_einspline_dat(self):
+        edata = obj()
+        import glob
+        for einpath in glob.glob(self.locdir+'/einsplin*'):
+            ftokens = einpath.split('.')
+            fspin = int(ftokens[-5][5])
+            if fspin==0:
+                spinlab = 'up'
+            else:
+                spinlab = 'down'
+            #end if
+            edata[spinlab] = obj()
+            with open(einpath) as f:
+                data = array(f.read().split()[1:])
+                data.shape = len(data)//12,12
+                data = data.T
+                for darr in data:
+                    if darr[0][0]=='K' or darr[0][0]=='E':
+                        edata[spinlab][darr[0]] = array(list(map(float,darr[1:])))
+                    else:
+                        edata[spinlab][darr[0]] = array(list(map(int,darr[1:])))
+                    #end if
+                #end for
+            #end with
+        #end for
+        return edata
+    #end def read_einspline_dat
 #end class Qmcpack
 
 
@@ -607,10 +869,28 @@ class Qmcpack(Simulation):
 def generate_qmcpack(**kwargs):
     sim_args,inp_args = Qmcpack.separate_inputs(kwargs)
 
+    exc = None
+    if 'excitation' in inp_args:
+        exc = deepcopy(inp_args.excitation)
+    #end if
+
+    spp = None
+    if 'spin_polarized' in inp_args:
+        spp = deepcopy(inp_args.spin_polarized)
+    #end if
+
     if 'input' not in sim_args:
         sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)
+
+    if exc is not None:
+        qmcpack.excitation = exc
+    #end if
+
+    if spp is not None:
+        qmcpack.spin_polarized = spp
+    #end if
 
     return qmcpack
 #end def generate_qmcpack

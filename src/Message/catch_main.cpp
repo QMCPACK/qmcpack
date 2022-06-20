@@ -12,6 +12,7 @@
 
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
+#include "DeviceManager.h"
 
 #ifdef CATCH_MAIN_HAVE_MPI
 #include "Message/Communicate.h"
@@ -25,10 +26,6 @@ std::string UTEST_HAMIL, UTEST_WFN;
 
 int main(int argc, char* argv[])
 {
-#ifdef CATCH_MAIN_HAVE_MPI
-  mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
-#endif
   Catch::Session session;
   using namespace Catch::clara;
   // Build command line parser.
@@ -38,6 +35,16 @@ int main(int argc, char* argv[])
   session.cli(cli);
   // Parse arguments.
   int parser_err = session.applyCommandLine(argc, argv);
+#ifdef CATCH_MAIN_HAVE_MPI
+  mpi3::environment env(argc, argv);
+  OHMMS::Controller->initialize(env);
+  Communicate node_comm;
+  node_comm.initializeAsNodeComm(*OHMMS::Controller);
+  // assign accelerators within a node
+  qmcplusplus::DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
+#else
+  qmcplusplus::DeviceManager::initializeGlobalDeviceManager(0, 1);
+#endif
   // Run the tests.
   int result = session.run(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI

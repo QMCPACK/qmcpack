@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "ParticleIO/ParticleLayoutIO.h"
+#include "ParticleIO/LatticeIO.h"
 
 
 #include <stdio.h>
@@ -30,46 +30,6 @@ namespace qmcplusplus
 {
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
-  ParticleSet ions_;
-  ParticleSet elec_;
-
-  ions_.setName("ion");
-  ions_.create(2);
-  ions_.R[0][0] = 2.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = -2.0;
-  ions_.R[1][1] = 0.0;
-  ions_.R[1][2] = 0.0;
-  SpeciesSet& source_species(ions_.getSpeciesSet());
-  source_species.addSpecies("O");
-  ions_.setCoordinates(ions_.R);
-  //ions_.resetGroups();
-
-  elec_.setName("elec");
-  std::vector<int> ud(2);
-  ud[0] = ud[1] = 2;
-  elec_.create(ud);
-  elec_.R[0][0] = 1.00;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 0.0;
-  elec_.R[1][2] = 0.0;
-  elec_.R[2][0] = -1.00;
-  elec_.R[2][1] = 0.0;
-  elec_.R[2][2] = 0.0;
-  elec_.R[3][0] = 0.0;
-  elec_.R[3][1] = 0.0;
-  elec_.R[3][2] = 2.0;
-
-  SpeciesSet& target_species(elec_.getSpeciesSet());
-  int upIdx                          = target_species.addSpecies("u");
-  int downIdx                        = target_species.addSpecies("d");
-  int chargeIdx                      = target_species.addAttribute("charge");
-  target_species(chargeIdx, upIdx)   = -1;
-  target_species(chargeIdx, downIdx) = -1;
-
   // initialize simulationcell for kvectors
   const char* xmltext = "<tmp> \
   <simulationcell>\
@@ -92,24 +52,62 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   xmlNodePtr part1 = xmlFirstElementChild(root);
 
   // read lattice
-  auto SimulationCell = std::make_unique<ParticleSet::ParticleLayout_t>();
-  LatticeParser lp(*SimulationCell);
+  ParticleSet::ParticleLayout lattice;
+  LatticeParser lp(lattice);
   lp.put(part1);
-  SimulationCell->print(app_log(), 0);
-  elec_.Lattice = *SimulationCell;
+  lattice.print(app_log(), 0);
+
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions_(simulation_cell);
+  ParticleSet elec_(simulation_cell);
+
+  ions_.setName("ion");
+  ions_.create({2});
+  ions_.R[0][0] = 2.0;
+  ions_.R[0][1] = 0.0;
+  ions_.R[0][2] = 0.0;
+  ions_.R[1][0] = -2.0;
+  ions_.R[1][1] = 0.0;
+  ions_.R[1][2] = 0.0;
+  SpeciesSet& source_species(ions_.getSpeciesSet());
+  source_species.addSpecies("O");
+  ions_.update();
+
+  elec_.setName("elec");
+  elec_.create({2,2});
+  elec_.R[0][0] = 1.00;
+  elec_.R[0][1] = 0.0;
+  elec_.R[0][2] = 0.0;
+  elec_.R[1][0] = 0.0;
+  elec_.R[1][1] = 0.0;
+  elec_.R[1][2] = 0.0;
+  elec_.R[2][0] = -1.00;
+  elec_.R[2][1] = 0.0;
+  elec_.R[2][2] = 0.0;
+  elec_.R[3][0] = 0.0;
+  elec_.R[3][1] = 0.0;
+  elec_.R[3][2] = 2.0;
+
+  SpeciesSet& target_species(elec_.getSpeciesSet());
+  int upIdx                          = target_species.addSpecies("u");
+  int downIdx                        = target_species.addSpecies("d");
+  int chargeIdx                      = target_species.addAttribute("charge");
+  target_species(chargeIdx, upIdx)   = -1;
+  target_species(chargeIdx, downIdx) = -1;
+
   // initialize SK
   elec_.createSK();
 
   xmltext = "<tmp> \
   <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
 </tmp> ";
-  okay = doc.parseFromString(xmltext);
+  okay    = doc.parseFromString(xmltext);
   REQUIRE(okay);
 
   root = doc.getRoot();
 
   xmlNodePtr jas_node = xmlFirstElementChild(root);
-  auto jas = std::make_unique<RPAJastrow>(elec_);
+  auto jas            = std::make_unique<RPAJastrow>(elec_);
   jas->put(root);
 
   // update all distance tables

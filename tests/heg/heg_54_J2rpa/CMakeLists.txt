@@ -23,6 +23,43 @@ if(NOT QMC_CUDA)
     1
     HEG54J2RPA_SCALARS)
 
+ if(QMC_COMPLEX)
+  if(QMC_MIXED_PRECISION)
+    list(APPEND DET_HEG54J2RPA_SCALARS "totenergy" "-3.91513517 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.27073155 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.18586671 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.18586671 0.000005")  
+   else()
+    list(APPEND DET_HEG54J2RPA_SCALARS "totenergy" "-3.91514075 0.000001")
+    list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.27072556 0.000001")
+    list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.18586631 0.000001")
+    list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.18586631 0.000001")
+   endif()
+ else()
+  if(QMC_MIXED_PRECISION)
+    list(APPEND DET_HEG54J2RPA_SCALARS "totenergy" "-3.92025567 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.63462568 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.55488135 0.000005")
+    list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.55488135 0.000005")
+   else()
+    list(APPEND DET_HEG54J2RPA_SCALARS "totenergy" "-3.92025567 0.000001") 
+    list(APPEND DET_HEG54J2RPA_SCALARS "kinetic" "3.63462568 0.000001")
+    list(APPEND DET_HEG54J2RPA_SCALARS "potential" "-7.55488135 0.000001")
+    list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.55488135 0.000001")
+   endif()
+ endif()
+
+  qmc_run_and_check(
+    deterministic-heg_54_J2rpa
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_54_J2rpa"
+    det_HEG.rs5.rpa
+    det_heg.rpa.rs5.xml
+    1
+    1
+    TRUE
+    1
+    DET_HEG54J2RPA_SCALARS)
+
 else()
-  message_verbose("Skipping HEG J2 RPA test because they are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping HEG J2 RPA test because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()

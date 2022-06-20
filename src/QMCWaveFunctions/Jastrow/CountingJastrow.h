@@ -37,7 +37,7 @@ protected:
   Matrix<RealType> F;
 
   // Counting Regions
-  RegionType* C;
+  std::unique_ptr<RegionType> C;
 
   // Optimization Flags
   bool opt_F;
@@ -91,8 +91,8 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, RegionType* c, const Matrix<RealType>& f)
-      : WaveFunctionComponent("CountingJastrow"), F(f), C(c)
+  CountingJastrow(ParticleSet& P, std::unique_ptr<RegionType> c, const Matrix<RealType>& f)
+      : WaveFunctionComponent("CountingJastrow"), F(f), C(std::move(c))
   {
     num_els = P.getTotalNum();
   }
@@ -210,8 +210,8 @@ public:
 
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     evaluateExponents(P);
     for (int i = 0; i < num_els; ++i)
@@ -219,15 +219,15 @@ public:
       G[i] += Jgrad[i];
       L[i] += Jlap[i];
     }
-    LogValue = Jval;
-    return LogValue;
+    log_value_ = Jval;
+    return log_value_;
   }
 
 
   void recompute(const ParticleSet& P) override
   {
     evaluateExponents(P);
-    LogValue = Jval;
+    log_value_ = Jval;
   }
 
   void evaluateExponents(const ParticleSet& P)
@@ -372,7 +372,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat) override
   {
     evaluateExponents(P);
-    LogValue = Jval;
+    log_value_ = Jval;
     return Jgrad[iat];
   }
 
@@ -395,8 +395,8 @@ public:
       FClap(I, iat)  = FClap_t[I];
     }
     // update exponent values to that at proposed position
-    Jval     = Jval_t;
-    LogValue = Jval;
+    Jval       = Jval_t;
+    log_value_ = Jval;
     for (int i = 0; i < num_els; ++i)
     {
       Jgrad[i] = Jgrad_t[i];

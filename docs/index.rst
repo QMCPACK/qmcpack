@@ -18,6 +18,7 @@ User's Guide and Developer's Manual
 
    introduction
    features
+   performance_portable
    installation
    running
    units

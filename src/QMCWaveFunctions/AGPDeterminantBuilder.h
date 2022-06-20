@@ -17,11 +17,13 @@
  */
 #ifndef QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
 #define QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
+
+#include "QMCWaveFunctions/AGPDeterminant.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+
 namespace qmcplusplus
 {
-class AGPDeterminant;
 
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
@@ -29,16 +31,16 @@ class AGPDeterminant;
 class AGPDeterminantBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& pset);
+  AGPDeterminantBuilder(Communicate* comm, ParticleSet& els, const PSetMap& pset);
 
   /// process a xml node at cur
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 protected:
-  ///reference to a PtclPoolType
-  PtclPoolType& ptclPool;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
   ///basiset Factory
-  SPOSetBuilderFactory* mySPOSetBuilderFactory;
+  std::unique_ptr<SPOSetBuilderFactory> mySPOSetBuilderFactory;
   ///AGPDeterminant
   std::unique_ptr<AGPDeterminant> agpDet;
   std::string funcOpt;

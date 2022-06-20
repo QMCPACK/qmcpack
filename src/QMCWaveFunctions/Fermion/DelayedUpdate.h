@@ -16,12 +16,11 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/BLAS.hpp"
 #include "CPU/BlasThreadingEnv.h"
-#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "Message/OpenMP.h"
+#include "DiracMatrix.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
-
 /** implements delayed update on CPU using BLAS
  * @tparam T base precision for most computation
  * @tparam T_FP high precision for matrix inversion, T_FP >= T
@@ -72,9 +71,9 @@ public:
    * @param Ainv inverse matrix
    */
   template<typename TREAL>
-  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& LogValue)
+  inline void invert_transpose(const Matrix<T>& logdetT, Matrix<T>& Ainv, std::complex<TREAL>& log_value)
   {
-    detEng.invert_transpose(logdetT, Ainv, LogValue);
+    detEng.invert_transpose(logdetT, Ainv, log_value);
     // safe mechanism
     delay_count = 0;
   }

@@ -52,7 +52,7 @@ Using the generated single particle spinors, we build the many-body wavefunction
 where we now utilize determinants of spinors, as opposed to the usual product of up and down determinants. An example xml input block for the trial wave function is show below:
 
 .. code-block::
-  :caption: wavefunction specification for a single determinant trial wave funciton
+  :caption: wavefunction specification for a single determinant trial wave function
   :name: slisting1
 
   <?xml version="1.0"?>
@@ -211,16 +211,17 @@ The structure of the spin-orbit ``.xml`` is
 
 This is included in the Hamiltonian in the same way as the usual pseudopotentials. 
 If the ``<vps_so>`` elements are found, the spin-orbit contributions will be present in the calculation. 
-By default, the spin-orbit terms will *not* be included in the local energy, but will be accumulated as an estimator. 
-In order to include the spin-orbit directly in the local energy (and therefore propogated into the walker weights in DMC for example),
-the ``physicalSO`` flag should be set to yes in the Hamiltonian input, for example
+By default, the spin-orbit terms *will be* included in the local energy.
+In order to accumulate the spin-orbit energy, but exclude it from the local energy (and therefore will not be propogated into the walker weights in DMC for example),
+the ``physicalSO`` flag should be set to no in the Hamiltonian input.
+A typical application will include the SOC terms in the local energy, and an example input block is given as
 
 .. code-block::
   
   <hamiltonian name="h0" type="generic" target="e">
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source=ion0" target="ion0" physical="true"/>
-    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="yes">
+    <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" algorithm="non-batched">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
   </hamiltonian>
@@ -242,6 +243,7 @@ An example output is shown below
 
 The ``NonLocalECP`` represents the :math:`W^{\rm ARECP}`, ``SOECP`` represents the :math:`W^{\rm SORECP}`, and the sum is the full :math:`W^{\rm RECP}` contribution.
 
+Note that for now, the default "batched" non-local pseudopotential evaluation is not compatible with dynamical spin QMC calculations.  Therefore, the specification of algorithm="non-batched" in all pseudopotential blocks is required.  
 
 
 .. bibliography:: /bibs/spin-orbit.bib

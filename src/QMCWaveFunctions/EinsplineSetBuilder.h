@@ -116,11 +116,11 @@ struct H5OrbSet
 class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef CrystalLattice<ParticleSet::Scalar_t, DIM> UnitCellType;
+  using PSetMap      = std::map<std::string, const std::unique_ptr<ParticleSet>>;
+  using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, DIM>;
 
   ///reference to the particleset pool
-  PtclPoolType& ParticleSets;
+  const PSetMap& ParticleSets;
   ///quantum particle set
   ParticleSet& TargetPtcl;
   ///ionic system
@@ -131,7 +131,7 @@ public:
   std::vector<std::unique_ptr<std::vector<BandInfo>>> FullBands;
 
   /// reader to use BsplineReaderBase
-  BsplineReaderBase* MixedSplineReader;
+  std::unique_ptr<BsplineReaderBase> MixedSplineReader;
 
   ///This is true if we have the orbital derivatives w.r.t. the ion positions
   bool HaveOrbDerivs;
@@ -141,7 +141,7 @@ public:
   std::map<H5OrbSet, SPOSet*, H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate* comm, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, Communicate* comm, xmlNodePtr cur);
 
   ///destructor
   ~EinsplineSetBuilder() override;
@@ -150,11 +150,6 @@ public:
    * @param cur the current xml node
    */
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
-
-  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
-   * @param cur the current xml node
-   */
-  void set_metadata(int numOrbs, int TwistNum_inp, bool skipChecks=false);
 
   /** initialize with the existing SPOSet */
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) override;
@@ -175,8 +170,8 @@ public:
   std::string parameterGroup, ionsGroup, eigenstatesGroup;
   std::vector<int> Occ;
   bool HasCoreOrbs;
-  bool ReadOrbitalInfo(bool skipChecks=false);
-  bool ReadOrbitalInfo_ESHDF(bool skipChecks=false);
+  bool ReadOrbitalInfo(bool skipChecks = false);
+  bool ReadOrbitalInfo_ESHDF(bool skipChecks = false);
   void BroadcastOrbitalInfo();
   bool CheckLattice();
 
@@ -192,8 +187,8 @@ public:
   template<typename SPE>
   inline void setTiling(SPE* oset, int numOrbs)
   {
-    oset->TileFactor   = TileFactor;
-    oset->Tiling       = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
+    oset->TileFactor = TileFactor;
+    oset->Tiling     = (TileFactor[0] * TileFactor[1] * TileFactor[2] != 1);
     oset->PrimLattice.set(Lattice);
     oset->SuperLattice.set(SuperLattice);
     oset->GGt = GGt;
@@ -218,9 +213,8 @@ public:
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
-  // This stores which "true" twist number I am using
-  int TwistNum;
-  TinyVector<double, OHMMS_DIM> givenTwist;
+  // The "true" twist number after analyzing twistnum, twist XML input and h5
+  int twist_num_;
   std::vector<TinyVector<double, OHMMS_DIM>> TwistAngles;
   //     integer index of sym operation from the irreducible brillion zone
   std::vector<int> TwistSymmetry;
@@ -234,7 +228,8 @@ public:
   // clone
   std::vector<TinyVector<int, OHMMS_DIM>> UseTwists;
   std::vector<int> IncludeTwists, DistinctTwists;
-  bool UseRealOrbitals;
+  /// if false, splines are conceptually complex valued
+  bool use_real_splines_;
   int NumDistinctOrbitals, NumCoreOrbs, NumValenceOrbs;
   // This is true if the corresponding twist in DistinctTwists should
   // should be used to generate two distinct orbitals from the real and
@@ -243,10 +238,8 @@ public:
   inline bool TwistPair(PosType a, PosType b);
   // This maps a 3-integer twist index into the twist number in the file
   std::map<TinyVector<int, OHMMS_DIM>, int, Int3less> TwistMap;
-  //void AnalyzeTwists();
-  void AnalyzeTwists2();
   void TileIons();
-  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks=false);
+  void OccupyBands(int spin, int sortBands, int numOrbs, bool skipChecks = false);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
   void CopyBands(int numOrbs);
@@ -305,6 +298,7 @@ public:
   int particle_hole_pairs;
   bool makeRotations;
 
+protected:
   /** broadcast SortBands
    * @param N number of state
    * @param root true if it is the i/o node
@@ -312,14 +306,24 @@ public:
    */
   bool bcastSortBands(int splin, int N, bool root);
 
-  int MyToken;
-  inline void update_token(const char* f, int l, const char* msg)
-  {
-    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl;
-    MyToken++;
-  }
-  //inline void update_token(const char* f, int l, const char* msg)
-  //{}
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
+   * @param cur the current xml node
+   */
+  void set_metadata(int numOrbs,
+                    int twist_num_inp,
+                    const TinyVector<double, OHMMS_DIM>& twist_inp,
+                    bool skipChecks = false);
+
+  /** analyze twists of orbitals in h5 and determinine twist_num_
+   * @param twist_num_inp twistnum XML input
+   * @param twist_inp twst XML input
+   */
+  void AnalyzeTwists2(const int twist_num_inp, const TinyVector<double, OHMMS_DIM>& twist_inp);
+
+  /// twistnum_inp == -9999 to indicate no given input after parsing XML
+  static constexpr int TWISTNUM_NO_INPUT = -9999;
+  /// twist_inp[i] <= -9999 to indicate no given input after parsing XML
+  static constexpr double TWIST_NO_INPUT = -9999;
 };
 
 } // namespace qmcplusplus

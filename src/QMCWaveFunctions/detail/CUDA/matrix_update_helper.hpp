@@ -14,7 +14,13 @@
 #define CUDA_MATRIX_UPDATE_HELPER_H
 
 #include <complex>
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
+#else
+#include <hip/hip_runtime.h>
+#include "ROCm/cuda2hip.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -23,7 +29,7 @@ namespace qmcplusplus
 namespace CUDA
 {
 /** helper function for SM-1 Fahy update
- * substract one in temp
+ * subtract one in temp
  * copy Ainv changed row to rcopy
  * save phi G and L as accept.
  */
@@ -34,8 +40,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     float* const temp[],
                                     float* const rcopy[],
-                                    const float* const dphi_in[],
-                                    const float* const d2phi_in[],
+                                    const float* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     float* const dphi_out[],
                                     float* const d2phi_out[],
                                     const int batch_count);
@@ -47,8 +53,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     double* const temp[],
                                     double* const rcopy[],
-                                    const double* const dphi_in[],
-                                    const double* const d2phi_in[],
+                                    const double* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     double* const dphi_out[],
                                     double* const d2phi_out[],
                                     const int batch_count);
@@ -60,8 +66,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     std::complex<float>* const temp[],
                                     std::complex<float>* const rcopy[],
-                                    const std::complex<float>* const dphi_in[],
-                                    const std::complex<float>* const d2phi_in[],
+                                    const std::complex<float>* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     std::complex<float>* const dphi_out[],
                                     std::complex<float>* const d2phi_out[],
                                     const int batch_count);
@@ -73,8 +79,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     std::complex<double>* const temp[],
                                     std::complex<double>* const rcopy[],
-                                    const std::complex<double>* const dphi_in[],
-                                    const std::complex<double>* const d2phi_in[],
+                                    const std::complex<double>* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     std::complex<double>* const dphi_out[],
                                     std::complex<double>* const d2phi_out[],
                                     const int batch_count);
@@ -115,9 +121,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   float* const binv[],
                                                   const int binv_lda,
                                                   const float* const ratio_inv,
-                                                  const float* const phi_in[],
-                                                  const float* const dphi_in[],
-                                                  const float* const d2phi_in[],
+                                                  const float* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   float* const phi_out[],
                                                   float* const dphi_out[],
                                                   float* const d2phi_out[],
@@ -132,9 +137,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   double* const binv[],
                                                   const int binv_lda,
                                                   const double* const ratio_inv,
-                                                  const double* const phi_in[],
-                                                  const double* const dphi_in[],
-                                                  const double* const d2phi_in[],
+                                                  const double* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   double* const phi_out[],
                                                   double* const dphi_out[],
                                                   double* const d2phi_out[],
@@ -149,9 +153,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   std::complex<float>* const binv[],
                                                   const int binv_lda,
                                                   const std::complex<float>* const ratio_inv,
-                                                  const std::complex<float>* const phi_in[],
-                                                  const std::complex<float>* const dphi_in[],
-                                                  const std::complex<float>* const d2phi_in[],
+                                                  const std::complex<float>* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   std::complex<float>* const phi_out[],
                                                   std::complex<float>* const dphi_out[],
                                                   std::complex<float>* const d2phi_out[],
@@ -166,9 +169,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   std::complex<double>* const binv[],
                                                   const int binv_lda,
                                                   const std::complex<double>* const ratio_inv,
-                                                  const std::complex<double>* const phi_in[],
-                                                  const std::complex<double>* const dphi_in[],
-                                                  const std::complex<double>* const d2phi_in[],
+                                                  const std::complex<double>* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   std::complex<double>* const phi_out[],
                                                   std::complex<double>* const dphi_out[],
                                                   std::complex<double>* const d2phi_out[],

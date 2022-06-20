@@ -43,8 +43,7 @@ if(NOT QMC_CUDA)
 
     # estimator tests
     include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-    set(stat_python_reqs numpy;h5py)
-    check_python_reqs(stat_python_reqs diamond-estimator add_tests)
+    check_python_reqs("numpy;h5py" diamond-estimator add_tests)
     if(add_tests)
       simple_run_and_check(
         short-LiH_ae-vmc_hf_noj_estimator_energydensity_voronoi
@@ -88,9 +87,9 @@ if(NOT QMC_CUDA)
     endif()
 
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping LiH_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose("Skipping LiH_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping LiH_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

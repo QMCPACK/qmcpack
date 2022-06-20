@@ -25,7 +25,7 @@ int QMCCostFunction::total_samples()
 {
   // for the unfamiliar, the [] starts a lambda function
   return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, 0,
-                         [](int x, const MCWalkerConfiguration* p) { return x + p->numSamples(); });
+                         [](int x, const auto& p) { return x + p->numSamples(); });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

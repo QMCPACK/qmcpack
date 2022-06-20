@@ -24,11 +24,11 @@ struct EslerCoulomb3D
 { // stripped down version of LRCoulombSingleton::CoulombFunctor for 3D
   double norm;
   inline double operator()(double r, double rinv) const { return rinv; }
-  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.getLRBox().Volume; }
   inline double Xk(double k, double rc) const { return -norm / (k * k) * std::cos(k * rc); }
   inline double Fk(double k, double rc) const { return -Xk(k, rc); }
   inline double integrate_r2(double r) const { return 0.5 * r * r; }
-  inline double df(double r) const { return 0; }                // ignore derivatives for now
+  inline double df(double r) const { return 0; }          // ignore derivatives for now
   void reset(ParticleSet& ref, double rs) { reset(ref); } // ignore rs
 };
 
@@ -41,22 +41,24 @@ TEST_CASE("temp3d", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Approx(Lattice.Volume) == 125);
+  CHECK(Approx(Lattice.Volume) == 125);
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
-  REQUIRE(Approx(Lattice.LR_kc) == 12);
+  CHECK(Approx(Lattice.LR_rc) == 2.5);
+  CHECK(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
+  ref.createSK();
   LRHandlerTemp<EslerCoulomb3D, LPQHIBasis> handler(ref);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(Approx(handler.LR_rc) == 2.5);
-  REQUIRE(Approx(handler.LR_kc) == 12);
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK(Approx(handler.LR_rc) == 2.5);
+  CHECK(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr, vlr;
@@ -70,9 +72,9 @@ TEST_CASE("temp3d", "[lrhandler]")
     vlr  = handler.evaluateLR(r);
     // short-range part must vanish after rcut
     if (r > 2.5)
-      REQUIRE(Approx(vsr) == 0.0);
+      CHECK(Approx(vsr) == 0.0);
     // sum must recover the Coulomb potential
-    REQUIRE(vsr + vlr == Approx(rinv));
+    CHECK(vsr + vlr == Approx(rinv));
   }
 }
 

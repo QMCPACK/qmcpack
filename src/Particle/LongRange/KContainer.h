@@ -15,9 +15,10 @@
 #ifndef QMCPLUSPLUS_KCONTAINER_H
 #define QMCPLUSPLUS_KCONTAINER_H
 
-#include "Particle/ParticleSet.h"
-#include "Utilities/PooledData.h"
-#include "Utilities/IteratorUtility.h"
+#include "Configuration.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+
 namespace qmcplusplus
 {
 /** Container for k-points
@@ -30,16 +31,10 @@ class KContainer : public QMCTraits
 private:
   /// The cutoff up to which k-vectors are generated.
   RealType kcutoff;
-  /// kcutoff*kcutoff
-  RealType kcut2;
 
 public:
-  //Typedef for the lattice-type. We don't need the full particle-set.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  ///typedef of vector containers
-  typedef std::vector<PosType> VContainer_t;
-  ///typedef of scalar containers
-  typedef std::vector<RealType> SContainer_t;
+  //Typedef for the lattice-type
+  using ParticleLayout = PtclOnLatticeTraits::ParticleLayout;
 
   ///number of k-points
   int numk;
@@ -55,10 +50,10 @@ public:
   std::vector<TinyVector<int, DIM>> kpts;
   /** K-vector in Cartesian coordinates
    */
-  VContainer_t kpts_cart;
+  std::vector<PosType> kpts_cart;
   /** squre of kpts in Cartesian coordniates
    */
-  SContainer_t ksq;
+  std::vector<RealType> ksq;
   /** Given a k index, return index to -k
    */
   std::vector<int> minusk;
@@ -77,15 +72,20 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, bool useSphere = true);
 
+  const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(ParticleLayout_t& lattice);
+  void findApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
-  void BuildKLists(ParticleLayout_t& lattice, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, bool useSphere);
+
+  /** K-vector in Cartesian coordinates in SoA layout
+   */
+  VectorSoaContainer<RealType, DIM, OffloadAllocator<RealType>> kpts_cart_soa_;
 };
 
 } // namespace qmcplusplus

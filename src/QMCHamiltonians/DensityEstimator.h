@@ -21,9 +21,9 @@
 #include "LongRange/LRCoulombSingleton.h"
 namespace qmcplusplus
 {
-typedef LRCoulombSingleton::LRHandlerType LRHandlerType;
-typedef LRCoulombSingleton::GridType GridType;
-typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
+using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
+using GridType       = LRCoulombSingleton::GridType;
+using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 class DensityEstimator : public OperatorBase
 {
@@ -44,7 +44,7 @@ public:
   bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-  inline int getGridIndex(int i, int j, int k) const { return myIndex + k + NumGrids[2] * (j + NumGrids[1] * i); }
+  inline int getGridIndex(int i, int j, int k) const { return my_index_ + k + NumGrids[2] * (j + NumGrids[1] * i); }
 
   inline int getGridIndexPotential(int i, int j, int k) const
   {

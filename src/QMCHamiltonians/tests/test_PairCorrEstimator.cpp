@@ -14,7 +14,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Lattice/CrystalLattice.h"
 #include "Particle/ParticleSet.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "Particle/ParticleSetPool.h"
 
@@ -35,13 +35,16 @@ using std::string;
 
 // Lattice block
 const char* lat_xml = "<simulationcell> \
-                         <parameter name=\"bconds\"> \
+                        <parameter name=\"lattice\" units=\"bohr\"> \
+                          2.0 0.0 0.0 \
+                          0.0 2.0 0.0 \
+                          0.0 0.0 2.0 \
+                        </parameter> \
+                        <parameter name=\"bconds\"> \
                            p p p \
                         </parameter> \
                         <parameter name=\"LR_dim_cutoff\" >     6  </parameter> \
-                        <parameter name=\"rs\"            >   1.0  </parameter> \
-                        <parameter name=\"nparticles\"    >     8  </parameter> \
-                        </simulationcell>";
+                       </simulationcell>";
 
 // Particleset block
 const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
@@ -65,15 +68,9 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 {
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
-  typedef QMCTraits::RealType RealType;
+  using RealType = QMCTraits::RealType;
 
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(2.0);
-  lattice.reset();
+  Communicate* c = OHMMS::Controller;
 
   // XML parser
   Libxml2Document doc;
@@ -86,7 +83,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   xmlNodePtr lat_xml_root = doc.getRoot();
 
   ParticleSetPool pset_builder(c, "pset_builder");
-  pset_builder.putLattice(lat_xml_root); // Builds lattice
+  pset_builder.readSimulationCellXML(lat_xml_root); // Builds lattice
 
   bool pset_okay = doc.parseFromString(pset_xml);
   REQUIRE(pset_okay);
@@ -95,9 +92,9 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
 
   // Get the (now assembled) ParticleSet, do simple sanity checks, then print info
   ParticleSet* elec = pset_builder.getParticleSet("e");
-  elec->Lattice     = lattice; // copy in the new Lattice
 
-  REQUIRE(elec->SameMass);
+  std::cout << "cheeeee " << elec->getLattice().R << std::endl;
+  REQUIRE(elec->isSameMass());
   REQUIRE(elec->getName() == "e");
 
   // Move the particles manually onto B1 lattice
@@ -202,5 +199,25 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
   std::cout << "test_paircorr:: STOP\n";
+}
+
+TEST_CASE("Pair Correlation Pair Index", "[hamiltonian]")
+{
+  // Check generation of pair id for 2 species groups
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 0, 2) == 0);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 1, 2) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 0, 2) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 1, 2) == 2);
+
+  // Check generation of pair id for 3 species groups
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 0, 3) == 0);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 1, 3) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(0, 2, 3) == 2);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 0, 3) == 1);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 1, 3) == 3);
+  REQUIRE(PairCorrEstimator::gen_pair_id(1, 2, 3) == 4);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 0, 3) == 2);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 1, 3) == 4);
+  REQUIRE(PairCorrEstimator::gen_pair_id(2, 2, 3) == 5);
 }
 } // namespace qmcplusplus

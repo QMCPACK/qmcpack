@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Amrita Mathuriya, amrita.mathuriya@intel.com, Intel Corp.
@@ -15,38 +15,57 @@
 
 #include "J2OrbitalSoA.h"
 #include "CPU/SIMD/algorithm.hpp"
-#include "BsplineFunctor.h"
-#include "PadeFunctors.h"
-#include "UserFunctor.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
 template<typename FT>
 void J2OrbitalSoA<FT>::checkInVariables(opt_variables_type& active)
 {
-  myVars.clear();
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->checkInVariables(active);
-    (*it).second->checkInVariables(myVars);
-    ++it;
-  }
+  for (auto& [key, functor] : J2Unique)
+    functor->checkInVariables(active);
 }
 
 template<typename FT>
 void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
 {
-  myVars.getIndex(active);
-  Optimizable = myVars.is_optimizable();
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
+  myVars.clear();
+  for (auto& [key, functor] : J2Unique)
   {
-    (*it).second->checkOutVariables(active);
-    ++it;
+    functor->myVars.getIndex(active);
+    myVars.insertFrom(functor->myVars);
   }
-  if (dPsi)
-    dPsi->checkOutVariables(active);
+  // Remove inactive variables so the mappings are correct
+  myVars.removeInactive();
+
+  myVars.getIndex(active);
+
+  const size_t NumVars = myVars.size();
+  if (NumVars)
+  {
+    OffSet.resize(F.size());
+    // Find first active variable for the starting offset
+    int varoffset = -1;
+    for (int i = 0; i < myVars.size(); i++)
+    {
+      varoffset = myVars.Index[i];
+      if (varoffset != -1)
+        break;
+    }
+
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (F[i] && F[i]->myVars.Index.size())
+      {
+        OffSet[i].first  = F[i]->myVars.Index.front() - varoffset;
+        OffSet[i].second = F[i]->myVars.Index.size() + OffSet[i].first;
+      }
+      else
+      {
+        OffSet[i].first = OffSet[i].second = -1;
+      }
+    }
+  }
 }
 
 template<typename FT>
@@ -54,14 +73,8 @@ void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 {
   if (!Optimizable)
     return;
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->resetParameters(active);
-    ++it;
-  }
-  if (dPsi)
-    dPsi->resetParameters(active);
+  for (auto& [key, functor] : J2Unique)
+    functor->resetParameters(active);
   for (int i = 0; i < myVars.size(); ++i)
   {
     int ii = myVars.Index[i];
@@ -85,7 +98,8 @@ template<typename FT>
 void J2OrbitalSoA<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   for (int k = 0; k < ratios.size(); ++k)
-    ratios[k] = std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTable(my_table_ID_).getDistRow(k)));
+    ratios[k] =
+        std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
@@ -122,9 +136,9 @@ typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::updateBuffer(ParticleS
                                                                        WFBufferType& buf,
                                                                        bool fromscratch)
 {
-  evaluateGL(P, P.G, P.L, false);
+  log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
-  return LogValue;
+  return log_value_;
 }
 
 template<typename FT>
@@ -161,7 +175,9 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OrbitalSoA", obj_name), my_table_ID_(p.addTable(p)), j2_ke_corr_helper(p, F)
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name),
+      my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
+      j2_ke_corr_helper(p, F)
 {
   if (myName.empty())
     throw std::runtime_error("J2OrbitalSoA object name cannot be empty!");
@@ -194,7 +210,7 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
+void J2OrbitalSoA<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
   assert(ia < NumGroups);
   assert(ib < NumGroups);
@@ -206,10 +222,10 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
       for (int ig = 0; ig < NumGroups; ++ig)
         for (int jg = 0; jg < NumGroups; ++jg, ++ij)
           if (F[ij] == nullptr)
-            F[ij] = j;
+            F[ij] = j.get();
     }
     else
-      F[ia * NumGroups + ib] = j;
+      F[ia * NumGroups + ib] = j.get();
   }
   else
   {
@@ -217,22 +233,20 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
     // uu/dd/etc. was prevented by the builder
     if (N == NumGroups)
       for (int ig = 0; ig < NumGroups; ++ig)
-        F[ig * NumGroups + ig] = j;
+        F[ig * NumGroups + ig] = j.get();
     // generic case
-    F[ia * NumGroups + ib] = j;
-    F[ib * NumGroups + ia] = j;
+    F[ia * NumGroups + ib] = j.get();
+    F[ib * NumGroups + ia] = j.get();
   }
   std::stringstream aname;
   aname << ia << ib;
-  J2Unique[aname.str()] = std::unique_ptr<FT>(j);
+  J2Unique[aname.str()] = std::move(j);
 }
 
 template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
   auto j2copy = std::make_unique<J2OrbitalSoA<FT>>(myName, tqp);
-  if (dPsi)
-    j2copy->dPsi = dPsi->makeClone(tqp);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)
@@ -243,14 +257,18 @@ std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& 
       typename std::map<const FT*, FT*>::iterator fit = fcmap.find(F[ij]);
       if (fit == fcmap.end())
       {
-        FT* fc = new FT(*F[ij]);
-        j2copy->addFunc(ig, jg, fc);
-        //if (dPsi) (j2copy->dPsi)->addFunc(aname.str(),ig,jg,fc);
-        fcmap[F[ij]] = fc;
+        auto fc      = std::make_unique<FT>(*F[ij]);
+        fcmap[F[ij]] = fc.get();
+        j2copy->addFunc(ig, jg, std::move(fc));
       }
     }
   j2copy->KEcorr      = KEcorr;
   j2copy->Optimizable = Optimizable;
+
+  j2copy->myVars.clear();
+  j2copy->myVars.insertFrom(myVars);
+  j2copy->OffSet = OffSet;
+
   return j2copy;
 }
 
@@ -295,14 +313,14 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratio(ParticleSet& P, 
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
-  cur_Uat    = computeU(P, iat, P.getDistTable(my_table_ID_).getTempDists());
+  cur_Uat    = computeU(P, iat, P.getDistTableAA(my_table_ID_).getTempDists());
   return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>
 void J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   const auto& dist    = d_table.getTempDists();
 
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -337,10 +355,10 @@ typename J2OrbitalSoA<FT>::PsiValueType J2OrbitalSoA<FT>::ratioGrad(ParticleSet&
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
-  computeU3(P, iat, P.getDistTable(my_table_ID_).getTempDists(), cur_u.data(), cur_du.data(), cur_d2u.data());
+  computeU3(P, iat, P.getDistTableAA(my_table_ID_).getTempDists(), cur_u.data(), cur_du.data(), cur_d2u.data());
   cur_Uat = simd::accumulate_n(cur_u.data(), N, valT());
   DiffVal = Uat[iat] - cur_Uat;
-  grad_iat += accumulateG(cur_du.data(), P.getDistTable(my_table_ID_).getTempDispls());
+  grad_iat += accumulateG(cur_du.data(), P.getDistTableAA(my_table_ID_).getTempDispls());
   return std::exp(static_cast<PsiValueType>(DiffVal));
 }
 
@@ -348,7 +366,7 @@ template<typename FT>
 void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   computeU3(P, iat, d_table.getOldDists(), old_u.data(), old_du.data(), old_d2u.data());
   if (UpdateMode == ORB_PBYP_RATIO)
   { //ratio-only during the move; need to compute derivatives
@@ -389,7 +407,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     }
     cur_dUat[idim] = cur_g;
   }
-  LogValue += Uat[iat] - cur_Uat;
+  log_value_ += Uat[iat] - cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
@@ -398,7 +416,7 @@ void J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 template<typename FT>
 void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 {
-  const auto& d_table = P.getDistTable(my_table_ID_);
+  const auto& d_table = P.getDistTableAA(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
   {
     for (int iat = P.first(ig), last = P.last(ig); iat < last; ++iat)
@@ -447,36 +465,39 @@ void J2OrbitalSoA<FT>::recompute(const ParticleSet& P)
 
 template<typename FT>
 typename J2OrbitalSoA<FT>::LogValueType J2OrbitalSoA<FT>::evaluateLog(const ParticleSet& P,
-                                                                      ParticleSet::ParticleGradient_t& G,
-                                                                      ParticleSet::ParticleLaplacian_t& L)
+                                                                      ParticleSet::ParticleGradient& G,
+                                                                      ParticleSet::ParticleLaplacian& L)
 {
-  return evaluateGL(P, G, L, true);
+  recompute(P);
+  return log_value_ = computeGL(G, L);
+}
+
+template<typename FT>
+typename J2OrbitalSoA<FT>::QTFull::RealType J2OrbitalSoA<FT>::computeGL(ParticleSet::ParticleGradient& G,
+                                                                        ParticleSet::ParticleLaplacian& L) const
+{
+  for (int iat = 0; iat < N; ++iat)
+  {
+    G[iat] += dUat[iat];
+    L[iat] += d2Uat[iat];
+  }
+  return -0.5 * simd::accumulate_n(Uat.data(), N, QTFull::RealType());
 }
 
 template<typename FT>
 WaveFunctionComponent::LogValueType J2OrbitalSoA<FT>::evaluateGL(const ParticleSet& P,
-                                                                 ParticleSet::ParticleGradient_t& G,
-                                                                 ParticleSet::ParticleLaplacian_t& L,
+                                                                 ParticleSet::ParticleGradient& G,
+                                                                 ParticleSet::ParticleLaplacian& L,
                                                                  bool fromscratch)
 {
-  if (fromscratch)
-    recompute(P);
-  LogValue = valT(0);
-  for (int iat = 0; iat < N; ++iat)
-  {
-    LogValue += Uat[iat];
-    G[iat] += dUat[iat];
-    L[iat] += d2Uat[iat];
-  }
-
-  return LogValue = -LogValue * 0.5;
+  return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
-void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
-  LogValue = 0.0;
-  const DistanceTableData& d_ee(P.getDistTable(my_table_ID_));
+  log_value_ = 0.0;
+  const auto& d_ee(P.getDistTableAA(my_table_ID_));
   valT dudr, d2udr2;
 
   Tensor<valT, DIM> ident;
@@ -496,7 +517,7 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
       auto dr   = displ[j];
       auto jg   = P.GroupID[j];
       auto uij  = F[igt + jg]->evaluate(r, dudr, d2udr2);
-      LogValue -= uij;
+      log_value_ -= uij;
       auto hess = rinv * rinv * outerProduct(dr, dr) * (d2udr2 - dudr * rinv) + ident * dudr * rinv;
       grad_grad_psi[i] -= hess;
       grad_grad_psi[j] -= hess;
@@ -504,8 +525,213 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_p
   }
 }
 
+template<typename FT>
+void J2OrbitalSoA<FT>::evaluateDerivatives(ParticleSet& P,
+                                           const opt_variables_type& active,
+                                           std::vector<ValueType>& dlogpsi,
+                                           std::vector<ValueType>& dhpsioverpsi)
+{
+  if (myVars.size() == 0)
+    return;
+
+  evaluateDerivativesWF(P, active, dlogpsi);
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (active.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+  if (recalculate)
+  {
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (rcsingles[k])
+      {
+        dhpsioverpsi[kk] = -RealType(0.5) * ValueType(Sum(lapLogPsi[k])) - ValueType(Dot(P.G, gradLogPsi[k]));
+      }
+    }
+  }
+}
+
+template<typename FT>
+void J2OrbitalSoA<FT>::evaluateDerivativesWF(ParticleSet& P,
+                                             const opt_variables_type& active,
+                                             std::vector<ValueType>& dlogpsi)
+{
+  if (myVars.size() == 0)
+    return;
+
+  resizeWFOptVectors();
+
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (active.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+  if (recalculate)
+  {
+    ///precomputed recalculation switch
+    std::vector<bool> RecalcSwitch(F.size(), false);
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (OffSet[i].first < 0)
+      {
+        // nothing to optimize
+        RecalcSwitch[i] = false;
+      }
+      else
+      {
+        bool recalcFunc(false);
+        for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        RecalcSwitch[i] = recalcFunc;
+      }
+    }
+    dLogPsi              = 0.0;
+    const size_t NumVars = myVars.size();
+    for (int p = 0; p < NumVars; ++p)
+    {
+      gradLogPsi[p] = 0.0;
+      lapLogPsi[p]  = 0.0;
+    }
+    std::vector<TinyVector<RealType, 3>> derivs(NumVars);
+    const auto& d_table = P.getDistTableAA(my_table_ID_);
+    constexpr RealType cone(1);
+    constexpr RealType lapfac(OHMMS_DIM - cone);
+    const size_t n  = d_table.sources();
+    const size_t ng = P.groups();
+    for (size_t i = 1; i < n; ++i)
+    {
+      const size_t ig   = P.GroupID[i] * ng;
+      const auto& dist  = d_table.getDistRow(i);
+      const auto& displ = d_table.getDisplRow(i);
+      for (size_t j = 0; j < i; ++j)
+      {
+        const size_t ptype = ig + P.GroupID[j];
+        if (RecalcSwitch[ptype])
+        {
+          std::fill(derivs.begin(), derivs.end(), 0.0);
+          if (!F[ptype]->evaluateDerivatives(dist[j], derivs))
+            continue;
+          RealType rinv(cone / dist[j]);
+          PosType dr(displ[j]);
+          for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
+          {
+            RealType dudr(rinv * derivs[ip][1]);
+            RealType lap(derivs[ip][2] + lapfac * dudr);
+            //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
+            PosType gr(dudr * dr);
+            dLogPsi[p] -= derivs[ip][0];
+            gradLogPsi[p][i] += gr;
+            gradLogPsi[p][j] -= gr;
+            lapLogPsi[p][i] -= lap;
+            lapLogPsi[p][j] -= lap;
+          }
+        }
+      }
+    }
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (rcsingles[k])
+      {
+        dlogpsi[kk] = dLogPsi[k];
+      }
+      //optVars.setDeriv(p,dLogPsi[ip],-0.5*Sum(lapLogPsi[ip])-Dot(P.G,gradLogPsi[ip]));
+    }
+  }
+}
+
+template<typename FT>
+void J2OrbitalSoA<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                           const opt_variables_type& optvars,
+                                           std::vector<ValueType>& ratios,
+                                           Matrix<ValueType>& dratios)
+{
+  evaluateRatios(VP, ratios);
+  if (myVars.size() == 0)
+    return;
+
+  bool recalculate(false);
+  std::vector<bool> rcsingles(myVars.size(), false);
+  for (int k = 0; k < myVars.size(); ++k)
+  {
+    int kk = myVars.where(k);
+    if (kk < 0)
+      continue;
+    if (optvars.recompute(kk))
+      recalculate = true;
+    rcsingles[k] = true;
+  }
+
+  if (recalculate)
+  {
+    ///precomputed recalculation switch
+    std::vector<bool> RecalcSwitch(F.size(), false);
+    for (int i = 0; i < F.size(); ++i)
+    {
+      if (OffSet[i].first < 0)
+      {
+        // nothing to optimize
+        RecalcSwitch[i] = false;
+      }
+      else
+      {
+        bool recalcFunc(false);
+        for (int rcs = OffSet[i].first; rcs < OffSet[i].second; rcs++)
+          if (rcsingles[rcs] == true)
+            recalcFunc = true;
+        RecalcSwitch[i] = recalcFunc;
+      }
+    }
+    const size_t NumVars = myVars.size();
+    std::vector<RealType> derivs_ref(NumVars);
+    std::vector<RealType> derivs(NumVars);
+    const auto& d_table = VP.getDistTableAB(my_table_ID_);
+    const size_t n      = d_table.sources();
+    const size_t nt     = VP.getTotalNum();
+    for (size_t i = 0; i < n; ++i)
+    {
+      if (i == VP.refPtcl)
+        continue;
+      const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
+      if (!RecalcSwitch[ptype])
+        continue;
+      const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
+                                           : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
+      //first calculate the old derivatives VP.refPtcl.
+      std::fill(derivs_ref.begin(), derivs_ref.end(), 0.0);
+      F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);
+      for (size_t j = 0; j < nt; ++j)
+      {
+        std::fill(derivs.begin(), derivs.end(), 0.0);
+        F[ptype]->evaluateDerivatives(d_table.getDistRow(j)[i], derivs);
+        for (int ip = 0, p = F[ptype]->myVars.Index.front(); ip < F[ptype]->myVars.Index.size(); ++ip, ++p)
+          dratios[j][p] += derivs_ref[ip] - derivs[ip];
+      }
+    }
+  }
+}
+
 template class J2OrbitalSoA<BsplineFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<PadeFunctor<QMCTraits::RealType>>;
 template class J2OrbitalSoA<UserFunctor<QMCTraits::RealType>>;
-
+template class J2OrbitalSoA<FakeFunctor<QMCTraits::RealType>>;
 } // namespace qmcplusplus

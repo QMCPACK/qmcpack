@@ -57,9 +57,8 @@ public:
   PosType SuperTwist;
 
 
-  /** container to store the offsets of the basis functions
-   *
-   * the number of basis states for center J is BasisOffset[J+1]-Basis[J]
+  /** container to store the offsets of the basis functions for each center
+   * Due to potential reordering of ions, offsets can be in any order.
    */
   std::vector<size_t> BasisOffset;
 

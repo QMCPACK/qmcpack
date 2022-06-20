@@ -63,7 +63,7 @@ public:
   inline double operator()(double x);
 
   void SetupProjector(double G_max, double G_FFT);
-  void Read(IOSectionClass& in, Grid* grid);
+  void Read(IOSectionClass& in, std::shared_ptr<Grid>& grid);
   void Write(IOSectionClass& out);
 };
 
@@ -77,7 +77,7 @@ protected:
   double Zion;
   int AtomicNumber;
   std::string Symbol;
-  Grid* PotentialGrid;
+  std::shared_ptr<Grid> PotentialGrid;
 
 public:
   // General accessor functions

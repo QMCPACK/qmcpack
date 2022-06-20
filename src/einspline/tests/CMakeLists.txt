@@ -9,8 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-
 set(SRC_DIR einspline)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -19,7 +17,7 @@ set(SRCS test_one.cpp test_3d.cpp)
 if(QMC_CUDA)
   set(SRCS ${SRCS} test_cuda.cu)
   if(NOT QMC_CUDA2HIP)
-    cuda_add_library(cudatests test_cuda.cu)
+    add_library(cudatests test_cuda.cu)
   else()
     hip_add_library(cudatests test_cuda.cu)
   endif(NOT QMC_CUDA2HIP)
@@ -29,4 +27,4 @@ endif()
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main ${CUDATESTLIB} einspline qmcutil)
 
-add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
+add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

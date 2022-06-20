@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/TimerManager.h"
 #include "spline/einspline_engine.hpp"
 #ifdef QMC_CUDA
@@ -42,7 +41,7 @@ public:
   //////////////////////
   // Type definitions //
   //////////////////////
-  typedef CrystalLattice<ParticleSet::Scalar_t, OHMMS_DIM> UnitCellType;
+  using UnitCellType = CrystalLattice<ParticleSet::Scalar_t, OHMMS_DIM>;
 
   ///////////
   // Flags //
@@ -69,11 +68,7 @@ public:
   /// metric tensor to handle generic unitcell
   Tensor<RealType, OHMMS_DIM> GGt;
 
-  ///////////////////////////////////////////////
-  // Muffin-tin orbitals from LAPW calculation //
-  ///////////////////////////////////////////////
-  std::vector<MuffinTinClass> MuffinTins;
-  int NumValenceOrbs, NumCoreOrbs;
+  int NumValenceOrbs;
 
 public:
   UnitCellType GetLattice();
@@ -81,7 +76,7 @@ public:
   void resetSourceParticleSet(ParticleSet& ions);
   void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
-  EinsplineSet() : TwistNum(0), NumValenceOrbs(0), NumCoreOrbs(0) { className = "EinsplineSet"; }
+  EinsplineSet() : TwistNum(0), NumValenceOrbs(0) { className = "EinsplineSet"; }
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -95,58 +90,58 @@ struct MultiOrbitalTraits
 template<>
 struct MultiOrbitalTraits<double, 2>
 {
-  typedef multi_UBspline_2d_d SplineType;
+  using SplineType = multi_UBspline_2d_d;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_d_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<double>, 2>
 {
-  typedef multi_UBspline_2d_z SplineType;
+  using SplineType = multi_UBspline_2d_z;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_z_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<float, 2>
 {
-  typedef multi_UBspline_2d_s SplineType;
+  using SplineType = multi_UBspline_2d_s;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_s_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<float>, 2>
 {
-  typedef multi_UBspline_2d_c SplineType;
+  using SplineType = multi_UBspline_2d_c;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_2d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_c_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<double, 3>
 {
-  typedef multi_UBspline_3d_d SplineType;
-  typedef BCtype_d BCType;
-  typedef double DataType;
+  using SplineType = multi_UBspline_3d_d;
+  using BCType     = BCtype_d;
+  using DataType   = double;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_d_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<double>, 3>
 {
-  typedef multi_UBspline_3d_z SplineType;
-  typedef BCtype_z BCType;
-  typedef std::complex<double> DataType;
+  using SplineType = multi_UBspline_3d_z;
+  using BCType     = BCtype_z;
+  using DataType   = std::complex<double>;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_z_cuda;
 #endif
 };
 
@@ -154,22 +149,22 @@ struct MultiOrbitalTraits<std::complex<double>, 3>
 template<>
 struct MultiOrbitalTraits<float, 3>
 {
-  typedef multi_UBspline_3d_s SplineType;
-  typedef BCtype_s BCType;
-  typedef float DataType;
+  using SplineType = multi_UBspline_3d_s;
+  using BCType     = BCtype_s;
+  using DataType   = float;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_s_cuda;
 #endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<float>, 3>
 {
-  typedef multi_UBspline_3d_c SplineType;
-  typedef BCtype_c BCType;
-  typedef std::complex<float> DataType;
+  using SplineType = multi_UBspline_3d_c;
+  using BCType     = BCtype_c;
+  using DataType   = std::complex<float>;
 #ifdef QMC_CUDA
-  typedef multi_UBspline_3d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_c_cuda;
 #endif
 };
 
@@ -180,27 +175,27 @@ struct StorageTypeConverter;
 template<>
 struct StorageTypeConverter<double, double>
 {
-  typedef double CudaStorageType;
+  using CudaStorageType = double;
 };
 template<>
 struct StorageTypeConverter<double, float>
 {
-  typedef float CudaStorageType;
+  using CudaStorageType = float;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, float>
 {
-  typedef std::complex<float> CudaStorageType;
+  using CudaStorageType = std::complex<float>;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, std::complex<double>>
 {
-  typedef std::complex<double> CudaStorageType;
+  using CudaStorageType = std::complex<double>;
 };
 template<>
 struct StorageTypeConverter<std::complex<double>, double>
 {
-  typedef std::complex<double> CudaStorageType;
+  using CudaStorageType = std::complex<double>;
 };
 #endif
 
@@ -218,34 +213,34 @@ protected:
   //////////////////////
   // Type definitions //
   //////////////////////
-  //typedef CrystalLattice<RealType,OHMMS_DIM> UnitCellType;
-  typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::SplineType SplineType;
-  typedef typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::BCType BCType;
+  //using UnitCellType = CrystalLattice<RealType,OHMMS_DIM>;
+  using SplineType = typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::SplineType;
+  using BCType     = typename MultiOrbitalTraits<StorageType, OHMMS_DIM>::BCType;
 
-  typedef typename OrbitalSetTraits<StorageType>::ValueVector_t StorageValueVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::GradVector_t StorageGradVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::HessVector_t StorageHessVector_t;
-  typedef typename OrbitalSetTraits<StorageType>::GradHessVector_t StorageGradHessVector_t;
-  typedef Vector<double> RealValueVector_t;
-  typedef Vector<std::complex<double>> ComplexValueVector_t;
-  typedef Vector<TinyVector<double, OHMMS_DIM>> RealGradVector_t;
-  typedef Vector<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradVector_t;
-  typedef Tensor<double, OHMMS_DIM> RealHessType;
-  typedef Tensor<std::complex<double>, OHMMS_DIM> ComplexHessType;
-  typedef Vector<RealHessType> RealHessVector_t;
-  typedef Matrix<RealHessType> RealHessMatrix_t;
-  typedef Vector<ComplexHessType> ComplexHessVector_t;
-  typedef Matrix<ComplexHessType> ComplexHessMatrix_t;
-  typedef Matrix<double> RealValueMatrix_t;
-  typedef Matrix<std::complex<double>> ComplexValueMatrix_t;
-  typedef Matrix<TinyVector<double, OHMMS_DIM>> RealGradMatrix_t;
-  typedef Matrix<TinyVector<std::complex<double>, OHMMS_DIM>> ComplexGradMatrix_t;
-  typedef TinyVector<RealHessType, 3> RealGGGType;
-  typedef Vector<RealGGGType> RealGGGVector_t;
-  typedef Matrix<RealGGGType> RealGGGMatrix_t;
-  typedef TinyVector<ComplexHessType, 3> ComplexGGGType;
-  typedef Vector<ComplexGGGType> ComplexGGGVector_t;
-  typedef Matrix<ComplexGGGType> ComplexGGGMatrix_t;
+  using StorageValueVector    = typename OrbitalSetTraits<StorageType>::ValueVector;
+  using StorageGradVector     = typename OrbitalSetTraits<StorageType>::GradVector;
+  using StorageHessVector     = typename OrbitalSetTraits<StorageType>::HessVector;
+  using StorageGradHessVector = typename OrbitalSetTraits<StorageType>::GradHessVector;
+  using RealValueVector       = Vector<double>;
+  using ComplexValueVector    = Vector<std::complex<double>>;
+  using RealGradVector        = Vector<TinyVector<double, OHMMS_DIM>>;
+  using ComplexGradVector     = Vector<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealHessType          = Tensor<double, OHMMS_DIM>;
+  using ComplexHessType       = Tensor<std::complex<double>, OHMMS_DIM>;
+  using RealHessVector        = Vector<RealHessType>;
+  using RealHessMatrix        = Matrix<RealHessType>;
+  using ComplexHessVector     = Vector<ComplexHessType>;
+  using ComplexHessMatrix     = Matrix<ComplexHessType>;
+  using RealValueMatrix       = Matrix<double>;
+  using ComplexValueMatrix    = Matrix<std::complex<double>>;
+  using RealGradMatrix        = Matrix<TinyVector<double, OHMMS_DIM>>;
+  using ComplexGradMatrix     = Matrix<TinyVector<std::complex<double>, OHMMS_DIM>>;
+  using RealGGGType           = TinyVector<RealHessType, 3>;
+  using RealGGGVector         = Vector<RealGGGType>;
+  using RealGGGMatrix         = Matrix<RealGGGType>;
+  using ComplexGGGType        = TinyVector<ComplexHessType, 3>;
+  using ComplexGGGVector      = Vector<ComplexGGGType>;
+  using ComplexGGGMatrix      = Matrix<ComplexGGGType>;
 
   /////////////////////////////
   /// Orbital storage object //
@@ -260,18 +255,17 @@ protected:
   // First-order derivative w.r.t. the ion positions
   std::vector<TinyVector<SplineType*, OHMMS_DIM>> FirstOrderSplines;
   // Temporary storage for Eispline calls
-  StorageValueVector_t StorageValueVector, StorageLaplVector;
-  StorageGradVector_t StorageGradVector;
-  StorageHessVector_t StorageHessVector;
-  StorageGradHessVector_t StorageGradHessVector;
-  // Temporary storage used when blending functions
-  StorageValueVector_t BlendValueVector, BlendLaplVector;
-  StorageGradVector_t BlendGradVector;
-  StorageHessVector_t BlendHessVector;
+  StorageValueVector storage_value_vector_, storage_lapl_vector_;
+  StorageGradVector storage_grad_vector_;
+  StorageHessVector storage_hess_vector_;
+  StorageGradHessVector storage_grad_hess_vector_;
 
   // True if we should unpack this orbital into two copies
   std::vector<bool> MakeTwoCopies;
-  // k-points for each orbital
+  /** kpoints for each unique orbitals.
+   * Note: for historic reason, this sign is opposite to what was used in DFT when orbitals were generated.
+   * Changing the sign requires updating all the evaluation code.
+   */
   Vector<TinyVector<double, OHMMS_DIM>> kPoints;
 
   ///////////////////
@@ -292,8 +286,8 @@ protected:
 
 #ifdef QMC_CUDA
   // Cuda equivalents of the above
-  typedef typename StorageTypeConverter<StorageType, CUDA_PRECISION>::CudaStorageType CudaStorageType;
-  typedef typename MultiOrbitalTraits<CudaStorageType, OHMMS_DIM>::CudaSplineType CudaSplineType;
+  using CudaStorageType = typename StorageTypeConverter<StorageType, CUDA_PRECISION>::CudaStorageType;
+  using CudaSplineType  = typename MultiOrbitalTraits<CudaStorageType, OHMMS_DIM>::CudaSplineType;
 
   CudaSplineType* CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
@@ -335,51 +329,47 @@ public:
     MultiSpline       = einspline::create(dummy, xyz_g, xyz_bc, nv);
   }
 
-  inline void resizeStorage(int n, int nvals, int ncores = 0)
+  inline void resizeStorage(int n, int nvals)
   {
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
-    StorageValueVector.resize(n);
-    BlendValueVector.resize(n);
-    StorageLaplVector.resize(n);
-    BlendLaplVector.resize(n);
-    StorageGradVector.resize(n);
-    BlendGradVector.resize(n);
-    StorageHessVector.resize(n);
-    StorageGradHessVector.resize(n);
+    storage_value_vector_.resize(n);
+    storage_lapl_vector_.resize(n);
+    storage_grad_vector_.resize(n);
+    storage_hess_vector_.resize(n);
+    storage_grad_hess_vector_.resize(n);
     phase.resize(n);
     eikr.resize(n);
     NumValenceOrbs = nvals;
-    NumCoreOrbs    = ncores;
   }
 
 #if !defined(QMC_COMPLEX)
   // Real return values
-  void evaluateValue(const ParticleSet& P, int iat, RealValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, RealValueVector& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
-                   RealValueVector_t& psi,
-                   RealGradVector_t& dpsi,
-                   RealValueVector_t& d2psi) override;
+                   RealValueVector& psi,
+                   RealGradVector& dpsi,
+                   RealValueVector& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealValueMatrix_t& d2psi) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealValueMatrix& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealHessMatrix& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            RealValueMatrix_t& psi,
-                            RealGradMatrix_t& dpsi,
-                            RealHessMatrix_t& grad_grad_psi,
-                            RealGGGMatrix_t& grad_grad_grad_logdet) override;
+                            RealValueMatrix& psi,
+                            RealGradMatrix& dpsi,
+                            RealHessMatrix& grad_grad_psi,
+                            RealGGGMatrix& grad_grad_grad_logdet) override;
 
   //    void evaluate (const ParticleSet& P, const PosType& r, std::vector<double> &psi);
   // This is the gradient of the orbitals w.r.t. the ion iat
@@ -388,7 +378,7 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& gradphi) override;
+                          RealGradMatrix& gradphi) override;
   // Evaluate the gradient w.r.t. to ion iat of the gradient and
   // laplacian of the orbitals w.r.t. the electrons
   void evaluateGradSource(const ParticleSet& P,
@@ -396,41 +386,41 @@ public:
                           int last,
                           const ParticleSet& source,
                           int iat_src,
-                          RealGradMatrix_t& dphi,
-                          RealHessMatrix_t& dgrad_phi,
-                          RealGradMatrix_t& dlaplphi) override;
+                          RealGradMatrix& dphi,
+                          RealHessMatrix& dgrad_phi,
+                          RealGradMatrix& dlaplphi) override;
 #else
   // Complex return values
-  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector_t& psi) override;
+  void evaluateValue(const ParticleSet& P, int iat, ComplexValueVector& psi) override;
   void evaluateVGL(const ParticleSet& P,
                    int iat,
-                   ComplexValueVector_t& psi,
-                   ComplexGradVector_t& dpsi,
-                   ComplexValueVector_t& d2psi) override;
+                   ComplexValueVector& psi,
+                   ComplexGradVector& dpsi,
+                   ComplexValueVector& d2psi) override;
   void evaluateVGH(const ParticleSet& P,
                    int iat,
-                   ComplexValueVector_t& psi,
-                   ComplexGradVector_t& dpsi,
-                   ComplexHessVector_t& grad_grad_psi) override;
+                   ComplexValueVector& psi,
+                   ComplexGradVector& dpsi,
+                   ComplexHessVector& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexValueMatrix_t& d2psi) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexValueMatrix& d2psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexHessMatrix_t& grad_grad_psi) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexHessMatrix& grad_grad_psi) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
-                            ComplexValueMatrix_t& psi,
-                            ComplexGradMatrix_t& dpsi,
-                            ComplexHessMatrix_t& grad_grad_psi,
-                            ComplexGGGMatrix_t& grad_grad_grad_logdet) override;
+                            ComplexValueMatrix& psi,
+                            ComplexGradMatrix& dpsi,
+                            ComplexHessMatrix& grad_grad_psi,
+                            ComplexGGGMatrix& grad_grad_grad_logdet) override;
 #endif
 
 #ifdef QMC_CUDA
@@ -438,9 +428,7 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::RealType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
@@ -462,9 +450,7 @@ public:
 
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
@@ -495,7 +481,7 @@ public:
   PosType get_k(int orb) override { return kPoints[orb]; }
 
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   EinsplineSetExtended()
       : MultiSpline(NULL),
@@ -564,10 +550,10 @@ protected:
   //////////////////////
   // Type definitions //
   //////////////////////
-  using CTS = CUDAGlobalTypes;
-  typedef typename EinsplineSetExtended<StorageType>::Walker_t Walker_t;
-  typedef typename EinsplineSetExtended<StorageType>::PosType PosType;
-  typedef typename EinsplineSetExtended<StorageType>::CudaStorageType CudaStorageType;
+  using CTS             = CUDAGlobalTypes;
+  using Walker_t        = typename EinsplineSetExtended<StorageType>::Walker_t;
+  using PosType         = typename EinsplineSetExtended<StorageType>::PosType;
+  using CudaStorageType = typename EinsplineSetExtended<StorageType>::CudaStorageType;
 
   std::vector<gpu::device_vector<CTS::RealType>> AtomicSplineCoefs_GPU, AtomicPolyCoefs_GPU;
   gpu::device_vector<AtomicOrbitalCuda<CTS::RealType>> AtomicOrbitals_GPU;
@@ -622,9 +608,7 @@ public:
 
   // Vectorized evaluation functions
 #if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::RealType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::RealType*>& phi) override;
@@ -635,9 +619,7 @@ public:
                 int row_stride) override;
   void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
 #else
-  void evaluate(std::vector<Walker_t*>& walkers,
-                int iat,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
+  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
   void evaluate(std::vector<Walker_t*>& walkers,
                 std::vector<PosType>& newpos,
                 gpu::device_vector<CTS::ComplexType*>& phi) override;
@@ -651,7 +633,7 @@ public:
 
   std::string Type();
 
-  SPOSet* makeClone() const override;
+  std::unique_ptr<SPOSet> makeClone() const override;
 
   EinsplineSetHybrid();
 };

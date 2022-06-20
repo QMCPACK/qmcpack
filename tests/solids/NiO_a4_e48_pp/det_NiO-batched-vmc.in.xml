@@ -4,6 +4,7 @@
     <application name="qmcapp" role="molecu" class="serial" version="0.2">
       DMC for NiO-fcc-S1-tw0
     </application>
+    <parameter name="driver_version">batched</parameter>
   </project>
 
   <random seed="37831"/>
@@ -86,7 +87,7 @@
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
   </hamiltonian>
 
-   <qmc method="vmc_batch" move="pbyp">
+   <qmc method="vmc" move="pbyp">
       <parameter name="total_walkers"       >    1              </parameter>
       <parameter name="blocks"              >    3              </parameter>
       <parameter name="steps"               >    3              </parameter>

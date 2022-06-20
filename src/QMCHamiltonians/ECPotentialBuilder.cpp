@@ -71,19 +71,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
 
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat, "format", {"table", "xml"});
-  pAttrib.add(NLPP_algo, "algorithm", {"", "batched", "non-batched"});
+  pAttrib.add(NLPP_algo, "algorithm", {"batched", "non-batched"});
   pAttrib.add(use_DLA, "DLA", {"no", "yes"});
   pAttrib.add(pbc, "pbc", {"yes", "no"});
   pAttrib.add(forces, "forces", {"no", "yes"});
-  pAttrib.add(physicalSO, "physicalSO", {"no", "yes"});
+  pAttrib.add(physicalSO, "physicalSO", {"yes", "no"});
   pAttrib.put(cur);
-
-  if (NLPP_algo.empty())
-#ifdef ENABLE_OFFLOAD
-    NLPP_algo = "batched";
-#else
-    NLPP_algo = "non-batched";
-#endif
 
   bool doForces = (forces == "yes") || (forces == "true");
   if (use_DLA == "yes")
@@ -98,12 +91,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
 
   ///create LocalECPotential
-  bool usePBC = !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
+  bool usePBC = !(IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no");
 
 
   if (hasLocalPot)
   {
-    if (IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
+    if (IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
 #ifdef QMC_CUDA
       std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);
@@ -149,7 +142,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
-          nonLocalPot[i]->initVirtualParticle(targetPtcl);
+        {
+          if( !targetPtcl.isSpinor())
+            nonLocalPot[i]->initVirtualParticle(targetPtcl);
+          else
+            throw std::runtime_error("Batched NLPP evaluation not validated with spinors.  Use algorithm=\"non-batched\" in pseudopotential block."); 
+        } 
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
     }
@@ -219,6 +217,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string ionName("none");
       std::string format("xml");
       int nrule = -1;
+      int llocal = -1;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
@@ -226,6 +225,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.add(ionName, "symbol");
       hAttrib.add(format, "format");
       hAttrib.add(nrule, "nrule");
+      hAttrib.add(llocal, "l-local");
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -239,7 +239,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
 
-        ECPComponentBuilder ecp(ionName, myComm, nrule);
+        ECPComponentBuilder ecp(ionName, myComm, nrule, llocal);
         if (format == "xml")
         {
           if (href == "none")
@@ -353,7 +353,7 @@ void ECPotentialBuilder::useSimpleTableFormat()
     RealType rmax(0.0);
     app_log() << "  ECPotential for " << species << std::endl;
     std::unique_ptr<NonLocalECPComponent> mynnloc;
-    typedef OneDimCubicSpline<RealType> CubicSplineFuncType;
+    using CubicSplineFuncType = OneDimCubicSpline<RealType>;
     for (int ij = 0; ij < npotentials; ij++)
     {
       int angmom, npoints;

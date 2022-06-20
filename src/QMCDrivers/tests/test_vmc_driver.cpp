@@ -40,14 +40,14 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
@@ -67,7 +67,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -77,7 +77,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -120,22 +120,22 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0]       = {1.0, 0.0, 0.0};
-  elec.spins[0]   = 0.0;
-  elec.is_spinor_ = true;
+  elec.R[0]     = {1.0, 0.0, 0.0};
+  elec.spins[0] = 0.0;
+  elec.setSpinor(true);
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -148,7 +148,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -158,7 +158,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
@@ -206,22 +206,22 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
   c->setName("test");
-  ParticleSet ions;
-  MCWalkerConfiguration elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  MCWalkerConfiguration elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
   std::vector<int> agroup(1, 1);
   elec.create(agroup);
-  elec.R[0]       = {1.0, 0.0, 0.0};
-  elec.spins[0]   = 0.0;
-  elec.is_spinor_ = true;
+  elec.R[0]     = {1.0, 0.0, 0.0};
+  elec.spins[0] = 0.0;
+  elec.setSpinor(true);
   elec.createWalkers(1);
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -234,7 +234,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-  CloneManager::clear_for_unit_tests();
+  CloneManager::clearClones();
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
@@ -244,7 +244,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy<double>>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this

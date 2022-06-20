@@ -4,15 +4,14 @@ $CXX $0 -o $0x -lboost_unit_test_framework -lboost_timer \
 `#-Wl,-rpath,/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -L/usr/local/Wolfram/Mathematica/12.0/SystemFiles/Libraries/Linux-x86-64 -lmkl_intel_ilp64 -lmkl_intel_thread -lmkl_core -liomp5` \
 &&$0x&&rm $0x;exit
 #endif
-// © Alfredo A. Correa 2019-2020
+// © Alfredo A. Correa 2019-2021
 
 #ifndef MULTI_ADAPTORS_BLAS_SYRK_HPP
 #define MULTI_ADAPTORS_BLAS_SYRK_HPP
 
 #include "../blas/core.hpp"
-
-#include "../blas/numeric.hpp"
 #include "../blas/filling.hpp"
+#include "../blas/numeric.hpp"
 
 namespace boost{
 namespace multi{namespace blas{
@@ -20,15 +19,16 @@ namespace multi{namespace blas{
 using core::syrk;
 
 template<typename AA, typename BB, class A2D, class C2D>
-auto syrk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c)
-->decltype(syrk('\0', '\0', size(c), size(a), alpha, base(a), stride(rotated(a)), beta, base(c), stride(c)), std::forward<C2D>(c)){
+auto syrk(filling c_side, AA alpha, A2D const& a, BB beta, C2D&& c){
+//->decltype(syrk('\0', '\0', size(c), size(a), alpha, base(a), stride(rotated(a)), beta, base(c), stride(c)), std::forward<C2D>(c)){
 	assert( size(c) == size(rotated(c)) );
-	if(stride(a)==1)
-		if(stride(c)==1) syrk(flip(c_side)==filling::upper?'L':'U', 'N', size(c), size(a         ), alpha, base(a), stride(rotated(a)), beta, base(c), stride(rotated(c)));
-		else             syrk(c_side      ==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), alpha, base(a), stride(rotated(a)), beta, base(c), stride(        c ));
-	else
-		if(stride(c)==1) syrk(flip(c_side)==filling::upper?'L':'U', 'T', size(c), size(rotated(a)), alpha, base(a), stride(a), beta, base(c), stride(rotated(c)));
-		else             syrk(c_side      ==filling::upper?'L':'U', 'T', size(c), size(rotated(a)), alpha, base(a), stride(a), beta, base(c), stride(        c ));
+	if(stride(a)==1){
+		if(stride(c)==1){syrk(flip(c_side)==filling::upper?'L':'U', 'N', size(c), size(a         ), &alpha, base(a), stride(rotated(a)), &beta, base(c), stride(rotated(c)));}
+		else            {syrk(c_side      ==filling::upper?'L':'U', 'N', size(c), size(rotated(a)), &alpha, base(a), stride(rotated(a)), &beta, base(c), stride(        c ));}
+	}else{
+		if(stride(c)==1){syrk(flip(c_side)==filling::upper?'L':'U', 'T', size(c), size(rotated(a)), &alpha, base(a), stride(a), &beta, base(c), stride(rotated(c)));}
+		else            {syrk(c_side      ==filling::upper?'L':'U', 'T', size(c), size(rotated(a)), &alpha, base(a), stride(a), &beta, base(c), stride(        c ));}
+	}
 	return std::forward<C2D>(c);
 }
 
@@ -54,13 +54,15 @@ auto syrk(A2D const& A)
 ->decltype(syrk(1., A)){
 	return syrk(1., A);}
 
-}}}
+} // end namespace blas
+} // end namespace multi
+} // end namespace boost
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#if not __INCLUDE_LEVEL__ // _TEST_MULTI_ADAPTORS_BLAS_SYRK
+#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi cuBLAS syrk"
 #define BOOST_TEST_DYN_LINK

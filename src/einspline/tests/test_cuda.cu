@@ -20,6 +20,7 @@
 #include "einspline/multi_bspline_create_cuda.h"
 #include "einspline/multi_bspline_eval_cuda.h"
 #include "einspline/multi_bspline_eval_s.h"
+#include "Platforms/CUDA_legacy/cuda_error.h"
 #include <cassert>
 
 
@@ -31,19 +32,18 @@ void test_multi(multi_UBspline_1d_s *cpuSpline, float *pos, float *vals_cuda)
   float *pos_d;
   float **vals_d;
 
-  cudaMalloc((void**)&(pos_d),     sizeof(float));
-  assert(pos_d != NULL);
-  cudaMemcpy(pos_d,  pos,  sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMalloc((void**)&(pos_d),     sizeof(float)));
+  cudaCheck(cudaMemcpy(pos_d,  pos,  sizeof(float), cudaMemcpyHostToDevice));
 
 
-  cudaMalloc((void**)&(vals_d),  sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&(vals_d),  sizeof(float*)));
   float *valBlock_d;
-  cudaMalloc((void**)&(valBlock_d),    sizeof(float));
+  cudaCheck(cudaMalloc((void**)&(valBlock_d),    sizeof(float)));
   vals[0] = valBlock_d;
 
-  cudaMemcpy(vals_d,  vals,  sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpy(vals_d,  vals,  sizeof(float*), cudaMemcpyHostToDevice));
 
   eval_multi_multi_UBspline_1d_s_cuda(gpuSpline, pos_d, vals_d, 1);
 
-  cudaMemcpy(vals_cuda,  valBlock_d,  sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(vals_cuda,  valBlock_d,  sizeof(float), cudaMemcpyDeviceToHost));
 }

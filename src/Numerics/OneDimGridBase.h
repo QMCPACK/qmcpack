@@ -34,8 +34,8 @@ namespace qmcplusplus
 template<class T, class CT = Vector<T>>
 struct OneDimGridBase
 {
-  typedef T value_type;
-  typedef CT Array_t;
+  using value_type = T;
+  using Array_t    = CT;
 
 
   int GridTag;
@@ -50,7 +50,7 @@ struct OneDimGridBase
   Array_t X;
 
 
-  inline OneDimGridBase() : num_points(0) {}
+  inline OneDimGridBase() : GridTag(0), num_points(0), lower_bound(0), upper_bound(0), Delta(0), DeltaInv(0.) {}
 
   virtual std::unique_ptr<OneDimGridBase<T, CT>> makeClone() const = 0;
 

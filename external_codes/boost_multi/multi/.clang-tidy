@@ -1,0 +1,40 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
+Checks: '*,
+  -readability-magic-numbers,
+  -modernize-use-nodiscard,
+  -altera-id-dependent-backward-branch,
+  -altera-struct-pack-align,
+  -altera-unroll-loops,
+  -cert-err58-cpp,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -fuchsia-default-arguments-calls,
+  -fuchsia-trailing-return,
+  -fuchsia-statically-constructed-objects,
+  -fuchsia-overloaded-operator,
+  -google-runtime-references,
+  -hicpp-vararg,
+  -hicpp-no-array-decay,
+  -llvm-header-guard,
+  -llvmlibc-restrict-system-libc-headers,
+  -llvmlibc-implementation-in-namespace,
+  -llvmlibc-callee-namespace,
+  -modernize-concat-nested-namespaces
+'
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,       value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,           value: lower_case }
+#  - { key: readability-identifier-naming.PrivateMemberPrefix, value: ''         }
+  - { key: readability-identifier-naming.PrivateMemberSufix,  value: _          }
+  - { key: readability-identifier-naming.StructCase,          value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase,        value: lower_case }
+  - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase }
+#  - { key: readability-identifier-naming.VariableCase,        value: lower_case }
+#  - { key: readability-identifier-naming.GlobalConstantCase,  value: UPPER_CASE }
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.'
+AnalyzeTemporaryDtors: false
+FormatStyle: file

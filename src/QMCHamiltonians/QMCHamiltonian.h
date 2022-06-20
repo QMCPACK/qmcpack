@@ -44,16 +44,16 @@ class QMCHamiltonian
   friend class HamiltonianFactory;
 
 public:
-  typedef OperatorBase::Return_t Return_t;
-  typedef OperatorBase::PosType PosType;
-  typedef OperatorBase::TensorType TensorType;
-  typedef OperatorBase::RealType RealType;
-  typedef OperatorBase::ValueType ValueType;
+  using Return_t         = OperatorBase::Return_t;
+  using PosType          = OperatorBase::PosType;
+  using TensorType       = OperatorBase::TensorType;
+  using RealType         = OperatorBase::RealType;
+  using ValueType        = OperatorBase::ValueType;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-  typedef OperatorBase::PropertySetType PropertySetType;
-  typedef OperatorBase::BufferType BufferType;
-  typedef OperatorBase::Walker_t Walker_t;
-  using WP = WalkerProperties::Indexes;
+  using PropertySetType  = OperatorBase::PropertySetType;
+  using BufferType       = OperatorBase::BufferType;
+  using Walker_t         = OperatorBase::Walker_t;
+  using WP               = WalkerProperties::Indexes;
   enum
   {
     DIM = OHMMS_DIM
@@ -95,9 +95,6 @@ public:
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
-
-  // ///collect scalar trace data
-  //void collect_scalar_traces();
 
   ///collect walker trace data
   void collect_walker_traces(Walker_t& walker, int step);
@@ -178,7 +175,7 @@ public:
     copy(first + myIndex, first + myIndex + Observables.size(), Observables.begin());
   }
 
-  void update_source(ParticleSet& s);
+  void updateSource(ParticleSet& s);
 
   ////return the LocalEnergy \f$=\sum_i H^{qmc}_{i}\f$
   inline FullPrecRealType getLocalEnergy() { return LocalEnergy; }
@@ -201,7 +198,7 @@ public:
   inline void setPrimary(bool primary)
   {
     for (int i = 0; i < H.size(); i++)
-      H[i]->UpdateMode.set(OperatorBase::PRIMARY, primary);
+      H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
 
   /////Set Tau inside each of the Hamiltonian elements
@@ -244,8 +241,10 @@ public:
    *  Bugs could easily be created by accessing this scope.
    *  This should be set to static and fixed.
    */
-  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-                                                                   const RefVectorWithLeader<ParticleSet>& p_list);
+  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluate(
+      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+      const RefVectorWithLeader<ParticleSet>& p_list);
 
   /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
@@ -257,6 +256,7 @@ public:
    */
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateWithToperator(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list);
 
 
@@ -275,6 +275,7 @@ public:
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
@@ -283,6 +284,7 @@ public:
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivativesInner(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
@@ -296,10 +298,7 @@ public:
   * @param A finite difference step size if applicable.  Default is to use finite diff with delta=1e-5.
   * @return EGrad.  Function itself returns nothing.
   */
-  void evaluateElecGrad(ParticleSet& P,
-                        TrialWaveFunction& psi,
-                        ParticleSet::ParticlePos_t& EGrad,
-                        RealType delta = 1e-5);
+  void evaluateElecGrad(ParticleSet& P, TrialWaveFunction& psi, ParticleSet::ParticlePos& EGrad, RealType delta = 1e-5);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates.  
   * @param P target particle set (electrons)
@@ -313,9 +312,9 @@ public:
   FullPrecRealType evaluateIonDerivs(ParticleSet& P,
                                      ParticleSet& ions,
                                      TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                     ParticleSet::ParticlePos& hf_terms,
+                                     ParticleSet::ParticlePos& pulay_terms,
+                                     ParticleSet::ParticlePos& wf_grad);
 
   /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
   * @param P target particle set (electrons)
@@ -327,11 +326,11 @@ public:
   * @return Local Energy.
   */
   FullPrecRealType evaluateIonDerivsDeterministic(ParticleSet& P,
-                                     ParticleSet& ions,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet::ParticlePos_t& hf_terms,
-                                     ParticleSet::ParticlePos_t& pulay_terms,
-                                     ParticleSet::ParticlePos_t& wf_grad);
+                                                  ParticleSet& ions,
+                                                  TrialWaveFunction& psi,
+                                                  ParticleSet::ParticlePos& hf_terms,
+                                                  ParticleSet::ParticlePos& pulay_terms,
+                                                  ParticleSet::ParticlePos& wf_grad);
   /** set non local moves options
    * @param cur the xml input
    */
@@ -374,6 +373,7 @@ public:
   }
 
   static std::vector<int> mw_makeNonLocalMoves(const RefVectorWithLeader<QMCHamiltonian>& ham_list,
+                                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                const RefVectorWithLeader<ParticleSet>& p_list);
   /** evaluate energy 
    * @param P quantum particleset
@@ -396,7 +396,7 @@ public:
 
   RealType get_LocalEnergy() const { return LocalEnergy; }
 
-  void setRandomGenerator(RandomGenerator_t* rng);
+  void setRandomGenerator(RandomGenerator* rng);
 
   static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
   static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
@@ -407,14 +407,14 @@ public:
   /** acquire external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void acquireResource(ResourceCollection& collection);
+  static void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
   /** release external resource
    * Note: use RAII ResourceCollectionLock whenever possible
    */
-  void releaseResource(ResourceCollection& collection);
+  static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
-  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi);
 
 #ifdef QMC_CUDA
   ////////////////////////////////////////////
@@ -429,7 +429,7 @@ private:
   /////////////////////
   // Vectorized data //
   /////////////////////
-  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, KineticEnergyVector, AuxEnergyVector;
+  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
 #endif
 
 private:

@@ -32,7 +32,7 @@ template<typename RNG, typename T>
 inline void generate(RNG& rng, T* restrict data, size_t n)
 {
   constexpr T shift(0.5);
-  rng.generate_uniform(data, n);
+  std::generate(data, data + n, rng);
   for (int i = 0; i < n; ++i)
     data[i] -= shift;
 }
@@ -45,12 +45,12 @@ int main(int argc, char** argv)
 #endif
   Communicate* myComm = OHMMS::Controller;
 
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
 #if defined(QMC_COMPLEX)
-  typedef std::complex<OHMMS_PRECISION_FULL> mValueType;
+  using mValueType = std::complex<OHMMS_PRECISION_FULL>;
 #else
-  typedef OHMMS_PRECISION_FULL mValueType;
+  using mValueType = OHMMS_PRECISION_FULL;
 #endif
   //use the global generator
 
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
     }
   }
 
-  Random.init(0, 1, iseed);
+  Random.init(iseed);
 
   //turn off output
   if (omp_get_max_threads() > 1)
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
     const int teamID = ip / ncrews;
     const int crewID = ip % ncrews;
 
-    RandomGenerator<RealType> random_th(myPrimes[ip]);
+    RandomGenerator random_th(myPrimes[ip]);
 
     Matrix<ValueType> psiM(nels, nels), psiM_inv(nels, nels);
     Vector<ValueType> psiV(nels), invRow(nels);

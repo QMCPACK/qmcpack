@@ -39,8 +39,8 @@ public:
   }
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override
   {
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++)
@@ -51,9 +51,9 @@ public:
       }
       G[i] = coeff;
     }
-    L        = 0.0;
-    LogValue = convertValueToLog(v);
-    return LogValue;
+    L          = 0.0;
+    log_value_ = convertValueToLog(v);
+    return log_value_;
   }
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override {}
@@ -74,6 +74,12 @@ public:
   }
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
 };
 
 

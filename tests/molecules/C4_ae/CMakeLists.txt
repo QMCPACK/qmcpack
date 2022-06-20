@@ -22,6 +22,19 @@ if(NOT QMC_CUDA)
       C4_SD_AE_QP_SHORT # VMC
     )
 
+    # Test case where number of orbitals is greater than the number of electrons
+    qmc_run_and_check(
+      short-C4_sd-ae-large-qp-vmc
+      "${qmcpack_SOURCE_DIR}/tests/molecules/C4_ae"
+      qmc_short-SD-C4_AE_Mol_large_QP
+      qmc_short-SD-C4_AE_Mol_large_QP.in.xml
+      1
+      16
+      TRUE
+      0
+      C4_SD_AE_QP_SHORT # VMC
+    )
+
     list(APPEND C4_SD_AE_QP_LONG "totenergy" "-150.95914112726956 0.007790118606")
     list(APPEND C4_SD_AE_QP_LONG "variance" "34.741879231108 0.990741221699")
     list(APPEND C4_SD_AE_QP_LONG "kinetic" "149.744668494694 0.331776551096")
@@ -138,8 +151,8 @@ if(NOT QMC_CUDA)
     #                     )
 
   else()
-    message_verbose("Skipping C4_ae tests because Pure real WF are not supported by complex build (QMC_COMPLEX=1)")
+    message(VERBOSE "Skipping C4_ae tests because Pure real WF are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose("Skipping C4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping C4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

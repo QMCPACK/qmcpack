@@ -5,27 +5,32 @@ include("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
 function(ADD_CONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
-  set(EXE_NAME "${qmcpack_BINARY_DIR}/bin/convert4qmc")
+  set(EXE_NAME $<TARGET_FILE:convert4qmc>)
   if(HAVE_MPI)
     set(EXE_NAME ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 1 ${MPIEXEC_PREFLAGS}
-                 ${qmcpack_BINARY_DIR}/bin/convert4qmc)
+                 $<TARGET_FILE:convert4qmc>)
     string(REPLACE ";" " " EXE_NAME "${EXE_NAME}")
   endif()
   add_test(NAME converter_${test_name}
-           COMMAND "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/converter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-  set_tests_properties(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic")
+  set_tests_properties(converter_${test_name} PROPERTIES 
+                       FAIL_REGULAR_EXPRESSION "  FAIL"
+                       PASS_REGULAR_EXPRESSION "  pass"
+                       TIMEOUT 120 LABELS "converter;deterministic")
 endfunction()
 
 function(ADD_PWCONVERTER_TEST test_name)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/${test_name}"
                           "${CMAKE_CURRENT_BINARY_DIR}/${test_name}")
-  set(EXE_NAME "${qmcpack_BINARY_DIR}/bin/convertpw4qmc")
+  set(EXE_NAME $<TARGET_FILE:convertpw4qmc>)
   add_test(NAME converter_${test_name}
-           COMMAND "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
+           COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/pwconverter_test.py" "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe
                    "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
-  set_tests_properties(converter_${test_name} PROPERTIES TIMEOUT 120 LABELS "converter;deterministic"
-                                                         PASS_REGULAR_EXPRESSION "  pass")
+  set_tests_properties(converter_${test_name} PROPERTIES 
+                       FAIL_REGULAR_EXPRESSION "  FAIL"
+                       PASS_REGULAR_EXPRESSION "  pass" 
+                       TIMEOUT 120 LABELS "converter;deterministic")
 endfunction()
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/converter_test.py"
@@ -42,6 +47,7 @@ add_converter_test(test_aldet6)
 if(HDF5_DIFF_EXECUTABLE)
   add_converter_test(test_HDF5_FeCO6)
   add_converter_test(test_HDF5_Be_ccd)
+  add_converter_test(test_Bi_dirac)
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pwconverter_test.py"
                           "${CMAKE_CURRENT_BINARY_DIR}")
   add_pwconverter_test(test_NaCl_qbox)
@@ -55,3 +61,14 @@ add_converter_test(test_LiH_pyscf)
 add_converter_test(test_LiH_pyscf_UHF)
 add_converter_test(test_LiH_qp)
 add_converter_test(test_C4_MSD_excited)
+add_converter_test(test_diamond2_rmg)
+add_converter_test(test_O_rmg)
+
+if(HAVE_GPAW)
+    include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+    check_python_reqs("numpy;h5py;ase;gpaw" gpaw4qmcpack_test add_tests)
+    if(add_tests)
+      message("Python dependencies met. Adding GPAW4QMCPACK tests")
+      add_subdirectory("gpaw")
+    endif()
+endif()

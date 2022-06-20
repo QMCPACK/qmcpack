@@ -25,8 +25,6 @@
 #include "Message/CommOperators.h"
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
-//#include <boost/archive/binary_oarchive.hpp>
-
 namespace qmcplusplus
 {
 namespace testing
@@ -53,11 +51,11 @@ class WalkerControlBase : public MPIObjectBase
 {
 public:
   ///typedef of Walker_t
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using Walker_t = MCWalkerConfiguration::Walker_t;
   ///typedef of FullPrecRealType
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///typedef of IndexType
-  typedef QMCTraits::IndexType IndexType;
+  using IndexType = QMCTraits::IndexType;
 
   /** An enum to access curData and accumData for reduction
    *
@@ -190,7 +188,7 @@ protected:
   ///filename for dmc.dat
   std::string dmcFname;
   ///file to save energy histogram
-  std::ofstream* dmcStream;
+  std::unique_ptr<std::ofstream> dmcStream;
   ///Number of walkers created by this rank
   IndexType NumWalkersCreated;
   ///context id

@@ -14,7 +14,7 @@
 #include "Configuration.h"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 #include "Utilities/TimerManager.h"
 #include "hdf/hdf_archive.h"
 
@@ -124,7 +124,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
     auto TG                   = TaskGroup_(gTG, std::string("WfnTG"), 1, gTG.getTotalCores());
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
-    RandomGenerator_t rng;
+    RandomGenerator rng;
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
     REQUIRE(okay);

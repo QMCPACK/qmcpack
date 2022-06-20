@@ -2,14 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2021 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
-
 
 /** @file
  *
@@ -33,47 +33,60 @@ template<class T, typename Alloc = std::allocator<T>>
 class Vector
 {
 public:
-  typedef T Type_t;
-  typedef T value_type;
-  typedef T* iterator;
-  typedef const T* const_iterator;
-  typedef typename Alloc::size_type size_type;
-  typedef typename Alloc::pointer pointer;
-  typedef typename Alloc::const_pointer const_pointer;
-  typedef Vector<T, Alloc> This_t;
+  using Type_t         = T;
+  using value_type     = T;
+  using iterator       = T*;
+  using const_iterator = const T*;
+  using size_type      = typename Alloc::size_type;
+  using pointer        = typename Alloc::pointer;
+  using const_pointer  = typename Alloc::const_pointer;
+  using This_t         = Vector<T, Alloc>;
 
   /** constructor with size n*/
-  explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n), nAllocated(0), X(nullptr)
+  explicit inline Vector(size_t n = 0, Type_t val = Type_t()) : nLocal(n)
   {
     if (n)
     {
       resize_impl(n);
-      qmc_allocator_traits<Alloc>::fill_n(X, n, val);
+      construct_fill_elements(X, n, val);
     }
   }
 
   /** constructor with an initialized ref */
-  explicit inline Vector(T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref) {}
+  explicit inline Vector(T* ref, size_t n) : nLocal(n), X(ref) {}
 
   /** copy constructor */
-  Vector(const Vector& rhs) : nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
+  Vector(const Vector& rhs) : nLocal(rhs.nLocal)
   {
     if (nLocal)
     {
-      resize_impl(rhs.nLocal);
-      if (qmc_allocator_traits<Alloc>::is_host_accessible)
-        std::copy_n(rhs.data(), nLocal, X);
-      else
-        qmc_allocator_traits<Alloc>::fill_n(X, nLocal, T());
+      resize_impl(rhs.size());
+      construct_copy_elements(rhs.data(), rhs.size(), X);
     }
   }
 
+  /** This allows construction of a Vector on another containers owned memory that is using a dualspace allocator.
+   *  It can be any span of that memory.
+   *  You're going to get a bunch of compile errors if the Container in questions is not using a the QMCPACK
+   *  realspace dualspace allocator "interface"
+   */
+  template<typename CONTAINER>
+  Vector(CONTAINER& from, T* ref, size_t n) : nLocal(n), X(ref)
+  {
+    qmc_allocator_traits<Alloc>::attachReference(from.mAllocator, mAllocator, from.data(), ref);
+  }
+
+  /** Initializer list constructor that can deal with both POD
+   *  and nontrivial nested elements with move assignment operators.
+   */
+  template<typename Allocator = Alloc, typename = IsHostSafe<Allocator>>
   Vector(std::initializer_list<T> ts)
   {
-    if (qmc_allocator_traits<Alloc>::is_host_accessible)
-      std::copy_n(ts.begin(), ts.size(), X);
-    else
-      throw std::runtime_error("initializer lists are not supported for Vector's inaccessible to the host");
+    if (ts.size())
+    {
+      resize_impl(ts.size());
+      construct_copy_elements(std::data(ts), ts.size(), X);
+    }
   }
 
   // default assignment operator
@@ -129,10 +142,27 @@ public:
     X          = ref;
   }
 
+  /** Attach to pre-allocated memory and propagate the allocator of the owning container.
+   *  Required for sane access to dual space memory
+   */
+  template<typename CONTAINER>
+  inline void attachReference(const CONTAINER& other, T* ref, size_t n)
+  {
+    if (nAllocated)
+    {
+      free();
+    }
+    nLocal     = n;
+    nAllocated = 0;
+    X          = ref;
+    qmc_allocator_traits<Alloc>::attachReference(other.mAllocator, mAllocator, other.data(), ref);
+  }
+
   //! return the current size
   inline size_t size() const { return nLocal; }
 
-  ///resize
+  /// Resize the container. For performance consideration, previous data may or may not get kept.
+  /// Please avoid relying on previous data after resizing.
   inline void resize(size_t n, Type_t val = Type_t())
   {
     static_assert(std::is_same<value_type, typename Alloc::value_type>::value,
@@ -142,16 +172,19 @@ public:
 
     if (n > nAllocated)
     {
+      if (nLocal)
+        destroy_elements(X, nLocal);
       resize_impl(n);
-      qmc_allocator_traits<Alloc>::fill_n(X, n, val);
+      construct_fill_elements(X, n, val);
     }
     else
     {
       if (n > nLocal)
-        qmc_allocator_traits<Alloc>::fill_n(X + nLocal, n - nLocal, val);
+        construct_fill_elements(X + nLocal, n - nLocal, val);
+      if (n < nLocal)
+        destroy_elements(X + n, nLocal - n);
       nLocal = n;
     }
-    return;
   }
 
   ///clear
@@ -164,6 +197,8 @@ public:
   {
     if (nAllocated)
     {
+      if (nLocal)
+        destroy_elements(X, nLocal);
       mAllocator.deallocate(X, nAllocated);
     }
     nLocal     = 0;
@@ -203,15 +238,18 @@ public:
   inline pointer data() { return X; }
   inline const_pointer data() const { return X; }
 
+  /** Return the device_ptr matching X if this is a vector attached or
+   *  owning dual space memory.
+   */
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline pointer device_data()
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
   template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
   inline const_pointer device_data() const
   {
-    return mAllocator.getDevicePtr();
+    return mAllocator.get_device_ptr();
   }
 
   inline pointer first_address() { return X; }
@@ -220,13 +258,25 @@ public:
   inline pointer last_address() { return X + nLocal; }
   inline const_pointer last_address() const { return X + nLocal; }
 
+  // Abstract Dual Space Transfers
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    qmc_allocator_traits<Alloc>::updateTo(mAllocator, X, nLocal);
+  }
+  template<typename Allocator = Alloc, typename = IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    qmc_allocator_traits<Alloc>::updateFrom(mAllocator, X, nLocal);
+  }
+
 private:
   ///size
-  size_t nLocal;
+  size_t nLocal = 0;
   ///The number of allocated
-  size_t nAllocated;
-  ///pointer to the data managed by this object
-  T* X;
+  size_t nAllocated = 0;
+  ///pointer to the data accessed through this object
+  T* X = nullptr;
   ///allocator
   Alloc mAllocator;
 
@@ -240,6 +290,34 @@ private:
     X          = mAllocator.allocate(n);
     nLocal     = n;
     nAllocated = n;
+  }
+
+  inline static void construct_fill_elements(Type_t* ptr, size_t n_elements, const Type_t& val)
+  {
+    if constexpr (std::is_trivial<T>::value)
+      qmc_allocator_traits<Alloc>::fill_n(ptr, n_elements, val);
+    else if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
+      for (size_t i = 0; i < n_elements; i++)
+        new (ptr + i) Type_t(val);
+  }
+
+  inline static void construct_copy_elements(const Type_t* from, size_t n_elements, Type_t* to)
+  {
+    if constexpr (qmc_allocator_traits<Alloc>::is_host_accessible)
+    {
+      if constexpr (std::is_trivial<T>::value)
+        std::copy_n(from, n_elements, to);
+      else
+        for (size_t i = 0; i < n_elements; i++)
+          new (to + i) Type_t(*(from + i));
+    }
+  }
+
+  inline void static destroy_elements(Type_t* ptr, size_t n_elements)
+  {
+    if constexpr (!std::is_trivial<T>::value && qmc_allocator_traits<Alloc>::is_host_accessible)
+      for (size_t i = 0; i < n_elements; i++)
+        (ptr + i)->~Type_t();
   }
 };
 
@@ -256,7 +334,7 @@ namespace qmcplusplus
 template<class T, class C>
 struct CreateLeaf<Vector<T, C>>
 {
-  typedef Reference<Vector<T, C>> Leaf_t;
+  using Leaf_t = Reference<Vector<T, C>>;
   inline static Leaf_t make(const Vector<T, C>& a) { return Leaf_t(a); }
 };
 
@@ -279,7 +357,7 @@ private:
 template<class T>
 struct LeafFunctor<Scalar<T>, SizeLeaf>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Scalar<T>&, const SizeLeaf&)
   {
     // Scalars always conform.
@@ -290,7 +368,7 @@ struct LeafFunctor<Scalar<T>, SizeLeaf>
 template<class T, class C>
 struct LeafFunctor<Vector<T, C>, SizeLeaf>
 {
-  typedef bool Type_t;
+  using Type_t = bool;
   inline static bool apply(const Vector<T, C>& v, const SizeLeaf& s) { return s(v.size()); }
 };
 
@@ -302,7 +380,7 @@ struct LeafFunctor<Vector<T, C>, SizeLeaf>
 template<class T, class C>
 struct LeafFunctor<Vector<T, C>, EvalLeaf1>
 {
-  typedef T Type_t;
+  using Type_t = T;
   inline static Type_t apply(const Vector<T, C>& vec, const EvalLeaf1& f) { return vec[f.val1()]; }
 };
 

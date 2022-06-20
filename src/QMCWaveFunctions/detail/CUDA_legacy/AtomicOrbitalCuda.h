@@ -3,10 +3,12 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -28,19 +30,19 @@ struct cudaTypeTraits;
 template<>
 struct cudaTypeTraits<float>
 {
-  typedef float1 realType1;
-  typedef float2 realType2;
-  typedef float3 realType3;
-  typedef float4 realType4;
+  using realType1 = float1;
+  using realType2 = float2;
+  using realType3 = float3;
+  using realType4 = float4;
 };
 
 template<>
 struct cudaTypeTraits<double>
 {
-  typedef double1 realType1;
-  typedef double2 realType2;
-  typedef double3 realType3;
-  typedef double4 realType4;
+  using realType1 = double1;
+  using realType2 = double2;
+  using realType3 = double3;
+  using realType4 = double4;
 };
 
 
@@ -53,50 +55,50 @@ struct SplineTraits
 template<>
 struct SplineTraits<float, 2>
 {
-  typedef multi_UBspline_2d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_s_cuda;
 };
 
 template<>
 struct SplineTraits<double, 2>
 {
-  typedef multi_UBspline_2d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_d_cuda;
 };
 
 template<>
 struct SplineTraits<std::complex<float>, 2>
 {
-  typedef multi_UBspline_2d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_c_cuda;
 };
 
 template<>
 struct SplineTraits<std::complex<double>, 2>
 {
-  typedef multi_UBspline_2d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_2d_z_cuda;
 };
 
 // 3D
 template<>
 struct SplineTraits<float, 3>
 {
-  typedef multi_UBspline_3d_s_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_s_cuda;
 };
 
 template<>
 struct SplineTraits<double, 3>
 {
-  typedef multi_UBspline_3d_d_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_d_cuda;
 };
 
 template<>
 struct SplineTraits<std::complex<float>, 3>
 {
-  typedef multi_UBspline_3d_c_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_c_cuda;
 };
 
 template<>
 struct SplineTraits<std::complex<double>, 3>
 {
-  typedef multi_UBspline_3d_z_cuda CudaSplineType;
+  using CudaSplineType = multi_UBspline_3d_z_cuda;
 };
 
 

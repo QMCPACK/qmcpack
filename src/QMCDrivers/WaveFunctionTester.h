@@ -59,7 +59,7 @@ public:
 
 private:
   ParticleSetPool& PtclPool;
-  ParticleSet::ParticlePos_t deltaR;
+  ParticleSet::ParticlePos deltaR;
   std::string checkRatio, checkClone, checkHamPbyP, sourceName, wftricks, checkEloc;
   std::string checkBasic, checkRatioV;
   xmlNodePtr myNode;
@@ -89,21 +89,18 @@ private:
   void runDerivCloneTest();
   void runGradSourceTest();
   void runZeroVarianceTest();
-  void runwftricks();
   void runNodePlot();
   void printEloc();
 
   // compute numerical gradient and laplacian
-  void computeNumericalGrad(RealType delta,
-                            ParticleSet::ParticleGradient_t& G_fd,
-                            ParticleSet::ParticleLaplacian_t& L_fd);
+  void computeNumericalGrad(RealType delta, ParticleSet::ParticleGradient& G_fd, ParticleSet::ParticleLaplacian& L_fd);
 
   bool checkGradients(int lower_iat,
                       int upper_iat,
-                      ParticleSet::ParticleGradient_t& G,
-                      ParticleSet::ParticleLaplacian_t& L,
-                      ParticleSet::ParticleGradient_t& G_fd,
-                      ParticleSet::ParticleLaplacian_t& L_fd,
+                      ParticleSet::ParticleGradient& G,
+                      ParticleSet::ParticleLaplacian& L,
+                      ParticleSet::ParticleGradient& G_fd,
+                      ParticleSet::ParticleLaplacian& L_fd,
                       std::stringstream& log,
                       int indent = 0);
 

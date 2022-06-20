@@ -34,13 +34,13 @@ class PWOrbitalBuilder : public WaveFunctionComponentBuilder
 {
 private:
 #if defined(QMC_COMPLEX)
-  typedef PWOrbitalSet SPOSetType;
+  using SPOSetType = PWOrbitalSet;
 #else
-  typedef PWRealOrbitalSet SPOSetType;
+  using SPOSetType = PWRealOrbitalSet;
 #endif
 
   std::map<std::string, SPOSetPtr> spomap;
-  PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10
   void ReadHDFWavefunction(hid_t hfile);
@@ -59,7 +59,7 @@ private:
   //std::map<std::string,SPOSetPtr> PWOSet;
 public:
   ///constructor
-  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
+  PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets);
   ~PWOrbitalBuilder() override;
 
   ///implement vritual function

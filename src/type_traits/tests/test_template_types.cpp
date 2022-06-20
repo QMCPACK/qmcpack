@@ -17,18 +17,44 @@
 namespace qmcplusplus
 {
 
+TEST_CASE("makeRefVector", "[type_traits]")
+{
+  struct Dummy
+  {
+    double d;
+    std::string s;
+  };
+
+  struct DerivedDummy : Dummy
+  {
+    float f;
+  };
+
+  std::vector<DerivedDummy> ddvec;
+  for (int i = 0; i < 3; ++i)
+    ddvec.push_back(DerivedDummy());
+
+  RefVector<Dummy> bdum(makeRefVector<Dummy>(ddvec));
+  auto bdum2 = makeRefVector<Dummy>(ddvec);
+  CHECK(std::is_same<RefVector<Dummy>, decltype(bdum2)>::value);
+
+  auto bdum3 = makeRefVector<decltype(ddvec)::value_type>(ddvec);
+}
+
 TEST_CASE("convertUPtrToRefvector", "[type_traits]")
 {
-  struct Dummy {
+  struct Dummy
+  {
     double d;
     std::string s;
   };
 
   UPtrVector<Dummy> uvec;
-  for(int i = 0; i < 3; ++i)
+  for (int i = 0; i < 3; ++i)
     uvec.emplace_back(std::make_unique<Dummy>());
 
   RefVector<Dummy> rdum(convertUPtrToRefVector(uvec));
+  auto rdum2 = convertUPtrToRefVector(uvec);
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
@@ -51,4 +77,4 @@ TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
   for (int i = 0; i < 5; ++i)
     delete pvec[i];
 }
-}
+} // namespace qmcplusplus

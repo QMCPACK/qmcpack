@@ -23,7 +23,7 @@
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "Numerics/OneDimGridFactory.h"
 #include "Message/MPIObjectBase.h"
 #include "MultiQuinticSpline1D.h"
@@ -62,7 +62,7 @@ struct A2NTransformer : TransformerBase<T>
 
   void convert(grid_type& agrid, FnOut& multiset, int ispline, int order) override
   {
-    typedef OneDimQuinticSpline<OHMMS_PRECISION_FULL> spline_type;
+    using spline_type = OneDimQuinticSpline<OHMMS_PRECISION_FULL>;
     spline_type radorb(agrid.makeClone());
     Transform2GridFunctor<FnIn, spline_type> transform(*m_ref, radorb);
     transform.generate(agrid.rmin(), agrid.rmax(), agrid.size());
@@ -166,7 +166,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
     hin.pop();
   }
   else
-    input_grid.reset(OneDimGridFactory::createGrid(cur));
+    input_grid = OneDimGridFactory::createGrid(cur);
 
   //set zero to use std::max
   m_rcut_safe = 0;
@@ -177,7 +177,7 @@ bool RadialOrbitalSetBuilder<COT>::addGrid(xmlNodePtr cur, const std::string& ra
 template<typename COT>
 bool RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive& hin)
 {
-  app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+  app_log() << "   Grid is created by the input parameters in h5" << std::endl;
 
   std::string gridtype;
   if (myComm->rank() == 0)

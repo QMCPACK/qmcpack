@@ -21,7 +21,6 @@
 #define QMCPLUSPLUS_HAMILTONIAN_FACTORY_H
 
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "QMCWaveFunctions/WaveFunctionFactory.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
@@ -29,11 +28,15 @@ namespace qmcplusplus
 class HamiltonianFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
-  typedef std::map<std::string, WaveFunctionFactory*> PsiPoolType;
+  using PSetMap     = std::map<std::string, const std::unique_ptr<ParticleSet>>;
+  using PsiPoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
   ///constructor
-  HamiltonianFactory(const std::string& hName, ParticleSet& qp, PtclPoolType& pset, PsiPoolType& oset, Communicate* c);
+  HamiltonianFactory(const std::string& hName,
+                     ParticleSet& qp,
+                     const PSetMap& pset,
+                     const PsiPoolType& oset,
+                     Communicate* c);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
@@ -70,10 +73,10 @@ private:
   std::unique_ptr<QMCHamiltonian> targetH;
   ///target ParticleSet
   ParticleSet& targetPtcl;
-  ///reference to the PtclPoolType
-  PtclPoolType& ptclPool;
-  ///reference to the WaveFunctionFactory Pool
-  PsiPoolType& psiPool;
+  ///reference to the PSetMap
+  const PSetMap& ptclPool;
+  ///reference to the TrialWaveFunction Pool
+  const PsiPoolType& psiPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
 

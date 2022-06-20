@@ -36,9 +36,9 @@ namespace qmcplusplus
 template<typename SA>
 struct SplineSetReader : public BsplineReaderBase
 {
-  typedef SA splineset_t;
-  typedef typename splineset_t::DataType DataType;
-  typedef typename splineset_t::SplineType SplineType;
+  using splineset_t = SA;
+  using DataType    = typename splineset_t::DataType;
+  using SplineType  = typename splineset_t::SplineType;
 
   Array<std::complex<double>, 3> FFTbox;
   Array<double, 3> splineData_r, splineData_i;
@@ -78,7 +78,7 @@ struct SplineSetReader : public BsplineReaderBase
     set_grid(bspline->HalfG, xyz_grid, xyz_bc_d);
 
     BCtype_z xyz_bc[3];
-    for (int i = 0; i< 3; i++)
+    for (int i = 0; i < 3; i++)
     {
       xyz_bc[i].lCode = xyz_bc_d[i].lCode;
       xyz_bc[i].rCode = xyz_bc_d[i].rCode;
@@ -88,15 +88,14 @@ struct SplineSetReader : public BsplineReaderBase
     std::unique_ptr<multi_UBspline_3d_z> target;
     target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines / 2));
 
-    if (source->x_grid.num != target->x_grid.num ||
-        source->y_grid.num != target->y_grid.num ||
-        source->z_grid.num != target->z_grid.num )
-     throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent grid dimensions.");
+    if (source->x_grid.num != target->x_grid.num || source->y_grid.num != target->y_grid.num ||
+        source->z_grid.num != target->z_grid.num)
+      throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent grid dimensions.");
 
     if (source->coefs_size != target->coefs_size * 2)
-     throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent coefs_size.");
+      throw std::runtime_error("export_MultiSplineComplexDouble failed for inconsistent coefs_size.");
 
-    std::copy_n(source->coefs, source->coefs_size, (double*) target->coefs);
+    std::copy_n(source->coefs, source->coefs_size, (double*)target->coefs);
 
     return target;
   }
@@ -114,13 +113,12 @@ struct SplineSetReader : public BsplineReaderBase
     std::unique_ptr<multi_UBspline_3d_d> target;
     target.reset(einspline::create(target.get(), xyz_grid, xyz_bc, source->num_splines));
 
-    if (source->x_grid.num != target->x_grid.num ||
-        source->y_grid.num != target->y_grid.num ||
-        source->z_grid.num != target->z_grid.num )
-     throw std::runtime_error("export_MultiSplineDouble failed for inconsistent grid dimensions.");
+    if (source->x_grid.num != target->x_grid.num || source->y_grid.num != target->y_grid.num ||
+        source->z_grid.num != target->z_grid.num)
+      throw std::runtime_error("export_MultiSplineDouble failed for inconsistent grid dimensions.");
 
     if (source->coefs_size != target->coefs_size)
-     throw std::runtime_error("export_MultiSplineDouble failed for inconsistent coefs_size.");
+      throw std::runtime_error("export_MultiSplineDouble failed for inconsistent coefs_size.");
 
     std::copy_n(source->coefs, source->coefs_size, target->coefs);
 
@@ -258,8 +256,15 @@ struct SplineSetReader : public BsplineReaderBase
     fftw_execute(FFTplan);
     if (bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
-                           rotate_phase_i);
+      if (rotate)
+        fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,
+                             rotate_phase_i);
+      else
+      {
+        split_real_components_c2c(FFTbox, splineData_r, splineData_i);
+        rotate_phase_r = 1.0;
+        rotate_phase_i = 0.0;
+      }
       einspline::set(spline_r, splineData_r.data());
       einspline::set(spline_i, splineData_i.data());
     }
@@ -302,7 +307,7 @@ struct SplineSetReader : public BsplineReaderBase
         {
           std::ostringstream msg;
           msg << "SplineSetReader Failed to read band(s) from h5 file. "
-              << "Attemped dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
+              << "Attempted dataset " << s << " with " << cG.size() << " complex numbers." << std::endl;
           throw std::runtime_error(msg.str());
         }
         double total_norm = compute_norm(cG);
@@ -326,7 +331,7 @@ struct SplineSetReader : public BsplineReaderBase
     if (band_group_comm.isGroupLeader())
     {
       now.restart();
-      bspline->gather_tables(band_group_comm.GroupLeaderComm);
+      bspline->gather_tables(band_group_comm.getGroupLeaderComm());
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
     }
     now.restart();

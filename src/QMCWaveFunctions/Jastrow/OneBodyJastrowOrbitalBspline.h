@@ -16,7 +16,7 @@
 #ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 #define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
 
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -37,15 +37,16 @@ private:
   // Mostly QMCTraits here
   using JBase = J1OrbitalSoA<FT>;
   // Duplication that should be removed
-  using RealType      = typename JBase::RealType;
-  using ValueType     = typename JBase::ValueType;
-  using GradType      = typename JBase::GradType;
-  using PosType       = typename JBase::PosType;
-  using GradMatrix_t  = typename JBase::GradMatrix_t;
-  using ValueMatrix_t = typename JBase::ValueMatrix_t;
-  using RealMatrix_t  = typename JBase::RealMatrix_t;
+  using RealType     = typename JBase::RealType;
+  using ValueType    = typename JBase::ValueType;
+  using GradType     = typename JBase::GradType;
+  using PosType      = typename JBase::PosType;
+  using GradMatrix   = typename JBase::GradMatrix;
+  using ValueMatrix  = typename JBase::ValueMatrix;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
+  std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
   int MaxCoefs;
   ParticleSet& ElecRef;
   gpu::device_vector<CTS::RealType> L, Linv;
@@ -77,11 +78,11 @@ private:
   int N;
 
 public:
-  typedef ParticleSet::Walker_t Walker_t;
+  using Walker_t = ParticleSet::Walker_t;
 
   void resetParameters(const opt_variables_type& active) override;
   void checkInVariables(opt_variables_type& active) override;
-  void addFunc(int ig, FT* j, int jg = -1);
+  void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;
@@ -135,7 +136,7 @@ public:
 
   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
   void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) override;
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl) override;
+  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl) override;
   void NLratios(MCWalkerConfiguration& W,
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
@@ -144,8 +145,8 @@ public:
                            const opt_variables_type& optvars,
                            RealMatrix_t& dlogpsi,
                            RealMatrix_t& dlapl_over_psi) override;
-  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs)
-      : J1OrbitalSoA<FT>(obj_name, centers, elecs),
+  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs, bool use_offload)
+      : J1OrbitalSoA<FT>(obj_name, centers, elecs, use_offload),
         ElecRef(elecs),
         L(obj_name + "L"),
         Linv(obj_name + "Linv"),
@@ -164,7 +165,7 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC           = elecs.Lattice.SuperCellEnum;
+    UsePBC           = elecs.getLattice().SuperCellEnum;
     NumElecGroups    = elecs.groups();
     SpeciesSet& sSet = centers.getSpeciesSet();
     NumCenterGroups  = sSet.getTotalNum();
@@ -177,8 +178,8 @@ public:
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.Lattice.b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.getLattice().b(j)[i];
         }
       L    = LHost;
       Linv = LinvHost;
@@ -205,7 +206,7 @@ public:
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C               = C_host;
+    C = C_host;
   }
 };
 } // namespace qmcplusplus

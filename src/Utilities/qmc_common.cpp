@@ -30,10 +30,8 @@ QMCState::QMCState()
   dryrun                 = false;
   io_node                = true;
   mpi_groups             = 1;
-  use_ewald              = false;
   qmc_counter            = 0;
   memory_allocated       = 0;
-  default_accelerator_id = -1;
 }
 
 void QMCState::initialize(int argc, char** argv)
@@ -77,10 +75,6 @@ void QMCState::initialize(int argc, char** argv)
     { //do not print Jastrow or PP
       io_node = false;
     }
-    //else if(c.find("--use_ewald")<c.size())
-    //{
-    //  use_ewald=true;
-    //}
     ++i;
   }
   if (stopit && io_node)

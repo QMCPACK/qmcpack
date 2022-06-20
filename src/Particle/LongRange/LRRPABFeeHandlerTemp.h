@@ -38,8 +38,8 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
   DECLARE_COULOMB_TYPES
 
   //Typedef for the lattice-type.
-  typedef ParticleSet::ParticleLayout_t ParticleLayout_t;
-  typedef BreakupBasis BreakupBasisType;
+  using ParticleLayout   = ParticleSet::ParticleLayout;
+  using BreakupBasisType = BreakupBasis;
 
   bool FirstTime;
   mRealType rs;
@@ -49,13 +49,13 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
 
   //Constructor
   LRRPABFeeHandlerTemp(ParticleSet& ref, mRealType kc_in = -1.0)
-      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.Lattice)
+      : LRHandlerBase(kc_in), FirstTime(true), Basis(ref.getLattice())
   {
     LRHandlerBase::ClassName = "LRRPAFeeHandlerTemp";
     myFunc.reset(ref);
   }
 
-  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.Lattice)
+  //LRHandlerTemp(ParticleSet& ref, mRealType rs, mRealType kc=-1.0): LRHandlerBase(kc), Basis(ref.getLattice())
   //{
   //  myFunc.reset(ref,rs);
   //}
@@ -68,10 +68,10 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
        * References to ParticleSet or ParticleLayoutout_t are not copied.
    */
   LRRPABFeeHandlerTemp(const LRRPABFeeHandlerTemp& aLR, ParticleSet& ref)
-      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.Lattice)
+      : LRHandlerBase(aLR), FirstTime(true), Basis(aLR.Basis, ref.getLattice())
   {
     myFunc.reset(ref);
-    fillFk(ref.SK->KLists);
+    fillFk(ref.getSimulationCell().getKLists());
   }
 
   LRHandlerBase* makeClone(ParticleSet& ref) const override
@@ -81,18 +81,18 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
 
   void initBreakup(ParticleSet& ref) override
   {
-    InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->KLists);
+    InitBreakup(ref.getLattice(), 1);
+    fillFk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
   void Breakup(ParticleSet& ref, mRealType rs_ext) override
   {
-    //ref.Lattice.Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
+    //ref.getLattice().Volume=ref.getTotalNum()*4.0*M_PI/3.0*rs*rs*rs;
     rs = rs_ext;
     myFunc.reset(ref, rs);
-    InitBreakup(ref.Lattice, 1);
-    fillFk(ref.SK->KLists);
+    InitBreakup(ref.getLattice(), 1);
+    fillFk(ref.getSimulationCell().getKLists());
     LR_rc = Basis.get_rc();
   }
 
@@ -132,32 +132,6 @@ struct LRRPABFeeHandlerTemp : public LRHandlerBase
     //       for(int n=0; n<coefs.size(); n++) v -= coefs[n]*Basis.h(n,r);
   }
 
-  /** evaluate \f$\sum_k F_{k} \rho^1_{-{\bf k}} \rho^2_{\bf k}\f$
-   * @param kshell degeneracies of the vectors
-   * @param rk1 starting address of \f$\rho^1_{{\bf k}}\f$
-   * @param rk2 starting address of \f$\rho^2_{{\bf k}}\f$
-   *
-   * Valid for the strictly ordered k and \f$F_{k}\f$.
-   */
-  inline mRealType evaluate(const std::vector<int>& kshell,
-                            const pComplexType* restrict rk1,
-                            const pComplexType* restrict rk2) const
-  {
-    mRealType vk = 0.0;
-    for (int ks = 0, ki = 0; ks < MaxKshell; ks++)
-    {
-      mRealType u = 0;
-      for (; ki < kshell[ks + 1]; ki++, rk1++, rk2++)
-        u += ((*rk1).real() * (*rk2).real() + (*rk1).imag() * (*rk2).imag());
-      vk += Fk_symm[ks] * u;
-    }
-    //for(int ki=0; ki<Fk.size(); ki++) {
-    //  //vk += (rk1[ki]*rk2[minusk[ki]]).real()*Fk[ki];
-    //  vk += (rk1[ki].real()*rk2[ki].real()+rk1[ki].imag()*rk2[ki].imag())*Fk[ki];
-    //} //ki
-    return vk;
-  }
-
   inline mRealType evaluate_vlr_k(mRealType k) const override { return evalFk(k); }
 
 private:
@@ -185,7 +159,7 @@ private:
    * basis and coefs in a usable state.
    * This method can be re-called later if lattice changes shape.
    */
-  void InitBreakup(ParticleLayout_t& ref, int NumFunctions)
+  void InitBreakup(const ParticleLayout& ref, int NumFunctions)
   {
     //First we send the new Lattice to the Basis, in case it has been updated.
     Basis.set_Lattice(ref);
@@ -238,7 +212,7 @@ private:
     }
   }
 
-  void fillFk(KContainer& KList)
+  void fillFk(const KContainer& KList)
   {
     Fk.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);

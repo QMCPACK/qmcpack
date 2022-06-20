@@ -57,7 +57,7 @@ template<class T, unsigned D>
 class SymTensor
 {
 public:
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     ElemDim = 2

@@ -163,8 +163,8 @@ void ForwardWalking::addObservables(PropertySetType& plist)
 
 void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collectables)
 {
-  myIndex = plist.size();
-  int nc  = 0;
+  my_index_ = plist.size();
+  int nc    = 0;
   for (int i = 0; i < nObservables; ++i)
     for (int j = 0; j < walkerLengths[i][1]; ++j, ++nc)
     {
@@ -174,6 +174,6 @@ void ForwardWalking::addObservables(PropertySetType& plist, BufferType& collecta
       //         myIndex=std::min(myIndex,id);
       //app_log() <<" Observables named "<<sstr.str() << " at " << id << std::endl;
     }
-  app_log() << "ForwardWalking::Observables [" << myIndex << ", " << myIndex + nc << ")" << std::endl;
+  app_log() << "ForwardWalking::Observables [" << my_index_ << ", " << my_index_ + nc << ")" << std::endl;
 }
 } // namespace qmcplusplus

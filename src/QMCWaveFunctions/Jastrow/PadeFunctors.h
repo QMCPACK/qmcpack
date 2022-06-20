@@ -20,11 +20,12 @@
  */
 #ifndef QMCPLUSPLUS_PADEFUNCTORS_H
 #define QMCPLUSPLUS_PADEFUNCTORS_H
-#include "Numerics/OptimizableFunctorBase.h"
+#include "OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 // #include <vector>
 #include "OhmmsPETE/TinyVector.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 
 namespace qmcplusplus
@@ -60,7 +61,7 @@ struct PadeFunctor : public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor() :  Opt_A(false), Opt_B(true), A(1.0), B0(1.0),Scale(1.0), ID_A("0"), ID_B("0")  { reset(); }
+  PadeFunctor() : Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0") { reset(); }
 
   void setCusp(real_type cusp) override
   {
@@ -113,6 +114,33 @@ struct PadeFunctor : public OptimizableFunctorBase
     return sum;
   }
 
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const PadeFunctor* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const T* mw_dist,
+                           const int dist_stride,
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    for (int ip = 0; ip < num_pairs; ip++)
+    {
+      mw_vals[ip] = 0;
+      for (int j = 0; j < n_src; j++)
+      {
+        const int ig = grp_ids[j];
+        auto& functor(*functors[ig]);
+        if (j != ref_at[ip])
+          mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+      }
+    }
+  }
+
   inline void evaluateVGL(const int iat,
                           const int iStart,
                           const int iEnd,
@@ -132,6 +160,21 @@ struct PadeFunctor : public OptimizableFunctorBase
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
 
+  static void mw_evaluateVGL(const int iat,
+                             const int num_groups,
+                             const PadeFunctor* const functors[],
+                             const int n_src,
+                             const int* grp_ids,
+                             const int nw,
+                             T* mw_vgl, // [nw][DIM+2]
+                             const int n_padded,
+                             const T* mw_dist, // [nw][DIM+1][n_padded]
+                             T* mw_cur_allu,   // [nw][3][n_padded]
+                             Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    throw std::runtime_error("PadeFunctor mw_evaluateVGL not implemented!");
+  }
+
   inline real_type f(real_type r) override { return evaluate(r) - AoverB; }
 
   inline real_type df(real_type r) override
@@ -139,6 +182,23 @@ struct PadeFunctor : public OptimizableFunctorBase
     real_type dudr, d2udr2;
     real_type res = evaluate(r, dudr, d2udr2);
     return dudr;
+  }
+
+  static void mw_updateVGL(const int iat,
+                           const std::vector<bool>& isAccepted,
+                           const int num_groups,
+                           const PadeFunctor* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int nw,
+                           T* mw_vgl, // [nw][DIM+2]
+                           const int n_padded,
+                           const T* mw_dist, // [nw][DIM+1][n_padded]
+                           T* mw_allUat,     // [nw][DIM+2][n_padded]
+                           T* mw_cur_allu,   // [nw][3][n_padded]
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    throw std::runtime_error("PadeFunctor mw_updateVGL not implemented!");
   }
 
   /// compute derivatives with respect to A and B
@@ -163,7 +223,7 @@ struct PadeFunctor : public OptimizableFunctorBase
   }
 
   /// compute derivatives with respect to A and B
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     int i       = 0;
     real_type u = 1.0 / (1.0 + B * r);
@@ -243,12 +303,10 @@ struct PadeFunctor : public OptimizableFunctorBase
       if (ia > -1)
       {
         int i = 0;
-        if (Opt_A) {
-          A = std::real( myVars[i++] = active[ia++] );
-        }
-        if (Opt_B) {
-          B0 = std::real( myVars[i] = active[ia] );
-        }
+        if (Opt_A)
+          A = std::real(myVars[i++] = active[ia++]);
+        if (Opt_B)
+          B0 = std::real(myVars[i] = active[ia]);
       }
       reset();
     }
@@ -287,25 +345,27 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   void reset() override
   {
     // A = a; B=b; C = c;
-    C2 = 2.0 * C;
+    cutoff_radius = 1.0e4; //some big range
+    C2            = 2.0 * C;
   }
 
   /**@param r the distance
-    @return \f$ u(r) = a*r/(1+b*r) \f$
+    @return \f$ u(r) = \frac{a*r+c*r^2}{1+b*r} \f$
     */
-  inline real_type evaluate(real_type r)
+  inline real_type evaluate(real_type r) const
   {
-    real_type br(B * r);
-    return (A + br) * r / (1.0 + br);
+    real_type u = 1.0 / (1.0 + B * r);
+    real_type v = A * r + C * r * r;
+    return u * v;
   }
 
   /** evaluate the value at r
    * @param r the distance
    @param dudr return value  \f$ du/dr = a/(1+br)^2 \f$
    @param d2udr2 return value  \f$ d^2u/dr^2 = -2ab/(1+br)^3 \f$
-   @return \f$ u(r) = a*r/(1+b*r) \f$
+   @return \f$ u(r) = \frac{a*r+c*r^2}{1+b*r} \f$
    */
-  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
+  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
     real_type u = 1.0 / (1.0 + B * r);
     real_type v = A * r + C * r * r;
@@ -315,7 +375,7 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     return u * v;
   }
 
-  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3)
+  inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
   {
     real_type u = 1.0 / (1.0 + B * r);
     real_type v = A * r + C * r * r;
@@ -326,6 +386,64 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     return u * v;
   }
 
+  inline real_type evaluateV(const int iat,
+                             const int iStart,
+                             const int iEnd,
+                             const T* restrict _distArray,
+                             T* restrict distArrayCompressed) const
+  {
+    real_type sum(0);
+    for (int idx = iStart; idx < iEnd; idx++)
+      if (idx != iat)
+        sum += evaluate(_distArray[idx]);
+    return sum;
+  }
+
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const Pade2ndOrderFunctor* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const T* mw_dist,
+                           const int dist_stride,
+                           T* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    for (int ip = 0; ip < num_pairs; ip++)
+    {
+      mw_vals[ip] = 0;
+      for (int j = 0; j < n_src; j++)
+      {
+        const int ig = grp_ids[j];
+        auto& functor(*functors[ig]);
+        if (j != ref_at[ip])
+          mw_vals[ip] += functor.evaluate(mw_dist[ip * dist_stride + j]);
+      }
+    }
+  }
+
+  inline void evaluateVGL(const int iat,
+                          const int iStart,
+                          const int iEnd,
+                          const T* distArray,
+                          T* restrict valArray,
+                          T* restrict gradArray,
+                          T* restrict laplArray,
+                          T* restrict distArrayCompressed,
+                          int* restrict distIndices) const
+  {
+    for (int idx = iStart; idx < iEnd; idx++)
+    {
+      valArray[idx] = evaluate(distArray[idx], gradArray[idx], laplArray[idx]);
+      gradArray[idx] /= distArray[idx];
+    }
+    if (iat >= iStart && iat < iEnd)
+      valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
+  }
 
   real_type f(real_type r) override { return evaluate(r); }
 
@@ -370,7 +488,7 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   }
 
 
-  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
+  inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) override
   {
     real_type u = 1.0 / (1.0 + B * r);
     int i       = 0;
@@ -396,7 +514,6 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   /** process input xml node
    * @param cur current xmlNode from which the data members are reset
    *
-   * T1 is the type of VarRegistry, typically double.
    * Read in the Pade parameters from the xml input file.
    */
   bool put(xmlNodePtr cur) override
@@ -462,6 +579,9 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
       if (Opt_C)
         myVars.insert(ID_C, C, true, optimize::LOGLINEAR_P);
     }
+    int left_pad_space = 5;
+    app_log() << std::endl;
+    myVars.print(app_log(), left_pad_space, true);
     //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
     return true;
   }
@@ -476,21 +596,21 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     {
       int ia = myVars.where(i);
       if (ia > -1)
-        A = myVars[i] = active[ia];
+        A = std::real(myVars[i] = active[ia]);
       i++;
     }
     if (ID_B != "0")
     {
       int ib = myVars.where(i);
       if (ib > -1)
-        B = myVars[i] = active[ib];
+        B = std::real(myVars[i] = active[ib]);
       i++;
     }
     if (ID_C != "0")
     {
       int ic = myVars.where(i);
       if (ic > -1)
-        C = myVars[i] = active[ic];
+        C = std::real(myVars[i] = active[ic]);
       i++;
     }
     C2 = 2.0 * C;
@@ -569,6 +689,37 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
     return evaluate(r, dudr, d2udr2);
   }
 
+  inline real_type evaluateV(const int iat,
+                             const int iStart,
+                             const int iEnd,
+                             const T* restrict _distArray,
+                             T* restrict distArrayCompressed) const
+  {
+    real_type sum(0);
+    for (int idx = iStart; idx < iEnd; idx++)
+      if (idx != iat)
+        sum += evaluate(_distArray[idx]);
+    return sum;
+  }
+
+  inline void evaluateVGL(const int iat,
+                          const int iStart,
+                          const int iEnd,
+                          const T* distArray,
+                          T* restrict valArray,
+                          T* restrict gradArray,
+                          T* restrict laplArray,
+                          T* restrict distArrayCompressed,
+                          int* restrict distIndices) const
+  {
+    for (int idx = iStart; idx < iEnd; idx++)
+    {
+      valArray[idx] = evaluate(distArray[idx], gradArray[idx], laplArray[idx]);
+      gradArray[idx] /= distArray[idx];
+    }
+    if (iat >= iStart && iat < iEnd)
+      valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
+  }
 
   real_type f(real_type r) override { return evaluate(r); }
 
@@ -670,7 +821,6 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
   /** process input xml node
    * @param cur current xmlNode from which the data members are reset
    *
-   * T1 is the type of VarRegistry, typically double.
    * Read in the Pade parameters from the xml input file.
    */
   bool put(xmlNodePtr cur) override
@@ -754,6 +904,9 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
         myVars.insert(ID_D, D, true, optimize::OTHER_P);
       //myVars.insert(ID_A,A,fcup!="yes");
     }
+    int left_pad_space = 5;
+    app_log() << std::endl;
+    myVars.print(app_log(), left_pad_space, true);
     //LOGMSG("Jastrow (A*r+C*r*r)/(1+Br) = (" << A << "," << B << "," << C << ")")
     return true;
   }
@@ -772,13 +925,13 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
 
     int i = 0;
     if (Opt_A)
-      A = myVars[i++] = active[ia++];
+      A = std::real(myVars[i++] = active[ia++]);
     if (Opt_B)
-      B = myVars[i++] = active[ia++];
+      B = std::real(myVars[i++] = active[ia++]);
     if (Opt_C)
-      C = myVars[i++] = active[ia++];
+      C = std::real(myVars[i++] = active[ia++]);
     if (Opt_D)
-      D = myVars[i++] = active[ia++];
+      D = std::real(myVars[i++] = active[ia++]);
 
     reset();
   }

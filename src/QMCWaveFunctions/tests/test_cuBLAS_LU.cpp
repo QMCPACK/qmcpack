@@ -14,7 +14,7 @@
 #include <memory>
 #include <iostream>
 #include <vector>
-#include "CUDA/cudaError.h"
+#include "CUDA/CUDAruntime.hpp"
 #include "CUDA/cuBLAS.hpp"
 #include "CUDA/CUDAfill.hpp"
 #include "CUDA/CUDAallocator.hpp"
@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-/** Doesn't depend on the resource managment scheme thats out of scope for unit tests */
+/** Doesn't depend on the resource management scheme thats out of scope for unit tests */
 struct CUDAHandles
 {
   // CUDA specific variables

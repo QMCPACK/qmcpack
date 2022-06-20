@@ -16,7 +16,7 @@
 //#include "catch.hpp"
 #include "Configuration.h"
 
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 // Avoid the need to link with other libraries just to get APP_ABORT
 #undef APP_ABORT

@@ -3,11 +3,13 @@
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Modifications Copyright (C) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jakub Kurzak, jakurzak@amd.com, Advanced Micro Devices, Inc.
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -82,7 +84,7 @@ private:
   unsigned int managed_flags;
 
 public:
-  typedef T* pointer;
+  using pointer = T*;
 
   void set_name(std::string n) { name = n; }
 
@@ -226,14 +228,7 @@ public:
       resize(vec.size(), 1.0, managedmem);
     }
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(data_pointer, &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToDevice);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in device_vector::operator=(device_vector):\n  %s\n", cudaGetErrorString(err));
-      fprintf(stderr, "vec.size() = %ld\n", vec.size());
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(data_pointer, &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToDevice));
 #endif
     return *this;
   }
@@ -252,15 +247,7 @@ public:
     // 	      name.c_str());
 #ifdef QMC_CUDA
     if (this->size() != 0)
-    {
-      cudaMemcpy(data_pointer, &(vec[0]), vec.size() * sizeof(T), cudaMemcpyDeviceToDevice);
-      cudaError_t err = cudaGetLastError();
-      if (err != cudaSuccess)
-      {
-        fprintf(stderr, "CUDA error in device_vector::copy constructor:\n  %s\n", cudaGetErrorString(err));
-        abort();
-      }
-    }
+      cudaCheck(cudaMemcpy(data_pointer, &(vec[0]), vec.size() * sizeof(T), cudaMemcpyDeviceToDevice));
 #endif
   }
 
@@ -280,14 +267,7 @@ public:
       resize(vec.size(), 1.0, managedmem);
     }
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(data_pointer, &(vec[0]), this->size() * sizeof(T), cudaMemcpyHostToDevice);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in device_vector::operator (%p)=(std::vector %p):\n  %s\n", data_pointer, &(vec[0]),
-              cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(data_pointer, &(vec[0]), this->size() * sizeof(T), cudaMemcpyHostToDevice));
 #endif
     return *this;
   }
@@ -307,16 +287,7 @@ public:
       resize(vec.size(), 1.0, managedmem);
     }
 #ifdef QMC_CUDA
-    cudaMemcpy(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n", name.c_str(), size(), vec.size());
-      fprintf(stderr, "this pointer = %p  vec pointer=%p\n", data_pointer, &(vec[0]));
-      fprintf(stderr, "CUDA error in device_vector::operator=(const host_vector<T> &vec) for %s:\n  %s\n", name.c_str(),
-              cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpy(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice));
 #endif
     return *this;
   }
@@ -336,16 +307,7 @@ public:
       resize(vec.size(), 1.0, managedmem);
     }
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice, kernelStream);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n", name.c_str(), size(), vec.size());
-      fprintf(stderr, "this pointer = %p  vec pointer=%p\n", data_pointer, &(vec[0]));
-      fprintf(stderr, "CUDA error in device_vector::asyncCopy(const host_vector<T> &vec) for %s:\n  %s\n", name.c_str(),
-              cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice, kernelStream));
 #endif
   }
 
@@ -371,16 +333,7 @@ public:
       resize(len);
     }
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(&((*this)[offset]), vec_ptr, datalen * sizeof(T), cudaMemcpyHostToDevice, kernelStream);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n", name.c_str(), size(), len);
-      fprintf(stderr, "this pointer = %p  vec pointer=%p\n", data_pointer, vec_ptr);
-      fprintf(stderr, "CUDA error in device_vector::asyncCopy(const T* vec_ptr, len, offset, datalen) for %s:\n  %s\n",
-              name.c_str(), cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(&((*this)[offset]), vec_ptr, datalen * sizeof(T), cudaMemcpyHostToDevice, kernelStream));
 #endif
   }
 
@@ -399,17 +352,7 @@ public:
       resize(vec.size(), 1.0, managedmem);
     }
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice, kernelStream);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n", name.c_str(), size(), vec.size());
-      fprintf(stderr, "this pointer = %p  vec pointer=%p\n", data_pointer, &(vec[0]));
-      fprintf(stderr,
-              "CUDA error in device_vector::asyncCopy(const std::vector<T, std::allocator<T> > &vec) for %s:\n  %s\n",
-              name.c_str(), cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(&((*this)[0]), &(vec[0]), vec.size() * sizeof(T), cudaMemcpyHostToDevice, kernelStream));
 #endif
   }
   void copyFromGPU(std::vector<T, std::allocator<T>>& vec)
@@ -419,17 +362,7 @@ public:
       vec.resize(size());
     }
 #ifdef QMC_CUDA
-    cudaMemcpy(&(vec[0]), &((*this)[0]), vec.size() * sizeof(T), cudaMemcpyDeviceToHost);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "In operator=, name=%s, size=%ld  vec.size()=%ld\n", name.c_str(), size(), vec.size());
-      fprintf(stderr, "this pointer = %p  vec pointer=%p\n", data_pointer, &(vec[0]));
-      fprintf(stderr,
-              "CUDA error in device_vector::copyFromGPU(std::vector<T, std::allocator<T> > &vec) for %s:\n  %s\n",
-              name.c_str(), cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpy(&(vec[0]), &((*this)[0]), vec.size() * sizeof(T), cudaMemcpyDeviceToHost));
 #endif
   }
 
@@ -458,8 +391,8 @@ public:
   {
     if (vec.size() != 0)
     {
-      cudaHostAlloc((void**)&data, vec.size() * sizeof(T), 0);
-      cudaMemcpy(data, vec.data, vec.size() * sizeof(T), cudaMemcpyHostToHost);
+      cudaCheck(cudaHostAlloc((void**)&data, vec.size() * sizeof(T), 0));
+      cudaCheck(cudaMemcpy(data, vec.data, vec.size() * sizeof(T), cudaMemcpyHostToHost));
     }
     else
     {
@@ -481,7 +414,7 @@ public:
   {
     if (data)
     {
-      cudaFreeHost(data);
+      cudaCheck(cudaFreeHost(data));
       data         = NULL;
       current_size = 0;
       capacity     = 0;
@@ -495,13 +428,7 @@ public:
     capacity     = 0;
     resize(vec.size());
 #ifdef QMC_CUDA
-    cudaMemcpy(&(data[0]), &(vec[0]), current_size * sizeof(T), cudaMemcpyDeviceToHost);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in host_vector::copy constructor():\n  %s\n", cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpy(&(data[0]), &(vec[0]), current_size * sizeof(T), cudaMemcpyDeviceToHost));
 #endif
   }
 
@@ -511,13 +438,7 @@ public:
     if (this->size() != vec.size())
       this->resize(vec.size());
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyHostToDevice);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in host_vector::operator=(host_vector):\n  %s\n", cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyHostToDevice));
 #endif
     return *this;
   }
@@ -527,14 +448,7 @@ public:
     if (this->size() != vec.size())
       this->resize(vec.size());
 #ifdef QMC_CUDA
-    cudaMemcpy(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in host_vector::operator=(device_vector %p):\n  %s\n", &(vec[0]),
-              cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpy(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost));
 #endif
     return *this;
   }
@@ -544,13 +458,7 @@ public:
     if (this->size() != vec.size())
       resize(vec.size());
 #ifdef QMC_CUDA
-    cudaMemcpyAsync(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost, memoryStream);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in host_vector::asyncCopy:\n  %s\n", cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMemcpyAsync(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost, memoryStream));
 #endif
   }
 
@@ -565,11 +473,11 @@ public:
     // this anticipates the further resizes by pre-allocating an additional
     // 5% above what was requested.
     new_size = 1.05 * new_size;
-    cudaHostAlloc((void**)&new_data, new_size * sizeof(T), 0);
+    cudaCheck(cudaHostAlloc((void**)&new_data, new_size * sizeof(T), 0));
     if (data != NULL)
     {
-      cudaMemcpy(new_data, data, current_size * sizeof(T), cudaMemcpyHostToHost);
-      cudaFreeHost(data);
+      cudaCheck(cudaMemcpy(new_data, data, current_size * sizeof(T), cudaMemcpyHostToHost));
+      cudaCheck(cudaFreeHost(data));
       data = NULL;
     }
     data     = new_data;
@@ -630,13 +538,7 @@ device_vector<T>::device_vector(const host_vector<T>& vec)
 {
   this->resize(vec.size());
 #ifdef QMC_CUDA
-  cudaMemcpy(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost);
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf(stderr, "CUDA error in host_vector::operator=() for %s:\n  %s\n", name.c_str(), cudaGetErrorString(err));
-    abort();
-  }
+  cudaCheck(cudaMemcpy(&((*this)[0]), &(vec[0]), this->size() * sizeof(T), cudaMemcpyDeviceToHost));
 #endif
 }
 

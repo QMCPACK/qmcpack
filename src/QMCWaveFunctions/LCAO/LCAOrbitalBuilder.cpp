@@ -19,8 +19,8 @@
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "MultiQuinticSpline1D.h"
-#include "SoaCartesianTensor.h"
-#include "SoaSphericalTensor.h"
+#include "Numerics/SoaCartesianTensor.h"
+#include "Numerics/SoaSphericalTensor.h"
 #include "SoaAtomicBasisSet.h"
 #include "SoaLocalizedBasisSet.h"
 #include "LCAOrbitalSet.h"
@@ -33,7 +33,7 @@
 #include "hdf/hdf_archive.h"
 #include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "config/stdlib/math.hpp"
+#include "CPU/math.hpp"
 
 namespace qmcplusplus
 {
@@ -132,8 +132,8 @@ LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Commun
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "basisset")
     {
-      XMLAttrString basisset_name_input(element, "name");
-      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input.c_str());
+      std::string basisset_name_input(getXMLAttributeValue(element, "name"));
+      std::string basisset_name(basisset_name_input.empty() ? "LCAOBSet" : basisset_name_input);
       if (basisset_map_.find(basisset_name) != basisset_map_.end())
       {
         std::ostringstream err_msg;
@@ -490,6 +490,15 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #if !defined(QMC_COMPLEX)
   if (doCuspCorrection)
   {
+    // Create a temporary particle set to use for cusp initialization.
+    // The particle coordinates left at the end are unsuitable for further computations.
+    // The coordinates get set to nuclear positions, which leads to zero e-N distance,
+    // which causes a NaN in SoaAtomicBasisSet.h
+    // This problem only appears when the electron positions are specified in the input.
+    // The random particle placement step executes after this part of the code, overwriting
+    // the leftover positions from the cusp initialization.
+    ParticleSet tmp_targetPtcl(targetPtcl);
+
     const int num_centers = sourcePtcl.getTotalNum();
     auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
@@ -513,9 +522,9 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
           broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
 #endif
     if (!valid)
-      generateCuspInfo(orbital_set_size, num_centers, info, targetPtcl, sourcePtcl, lcwc, id, *myComm);
+      generateCuspInfo(orbital_set_size, num_centers, info, tmp_targetPtcl, sourcePtcl, lcwc, id, *myComm);
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, targetPtcl, sourcePtcl, lcwc, id);
+    applyCuspCorrection(info, num_centers, orbital_set_size, tmp_targetPtcl, sourcePtcl, lcwc, id);
   }
 #endif
 
@@ -841,7 +850,7 @@ bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet& spo, xmlNodePtr occ_ptr)
   }
   else
   {
-    const XMLAttrString o(occ_ptr, "mode");
+    const std::string o(getXMLAttributeValue(occ_ptr, "mode"));
     if (!o.empty())
       occ_mode = o;
   }

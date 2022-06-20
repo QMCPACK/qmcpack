@@ -17,7 +17,7 @@
 #include <cassert>
 #include "multi_bspline.h"
 #include "multi_bspline_create_cuda.h"
-
+#include "Platforms/CUDA_legacy/cuda_error.h"
 
 __global__ static void
 eval_multi_multi_UBspline_1d_s_kernel
@@ -80,15 +80,7 @@ eval_multi_multi_UBspline_1d_s_cuda (const multi_UBspline_1d_s_cuda *spline,
   //This would be a good place to assert on bad pos_d >= grid.end
   eval_multi_multi_UBspline_1d_s_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, spline->dim, spline->stride, spline->num_splines);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_1d_s_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 
@@ -171,15 +163,7 @@ eval_multi_multi_UBspline_1d_s_vgl_cuda (const multi_UBspline_1d_s_cuda *spline,
   eval_multi_multi_UBspline_1d_s_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, grads_d, lapl_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_1d_s_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 
@@ -481,15 +465,7 @@ eval_multi_multi_UBspline_3d_s_cuda (const multi_UBspline_3d_s_cuda *spline,
     dimGrid.x++;
   eval_multi_multi_UBspline_3d_s_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, spline->dim, spline->stride, spline->num_splines);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_s_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 extern "C" void
@@ -504,15 +480,7 @@ eval_multi_multi_UBspline_3d_s_sign_cuda (const multi_UBspline_3d_s_cuda *spline
   eval_multi_multi_UBspline_3d_s_sign_kernel<<<dimGrid,dimBlock>>>
   (pos_d, sign_d, spline->gridInv, spline->coefs,
    vals_d, spline->dim, spline->stride, spline->num_splines, 0);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_s_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 extern "C" void
@@ -545,15 +513,7 @@ eval_multi_multi_UBspline_3d_s_vgh_cuda (const multi_UBspline_3d_s_cuda *spline,
   eval_multi_multi_UBspline_3d_s_vgh_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, vals_d, grads_d, hess_d,
    spline->dim, spline->stride, spline->num_splines);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_s_vgh_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 
@@ -726,15 +686,7 @@ eval_multi_multi_UBspline_3d_s_vgl_cuda
   eval_multi_multi_UBspline_3d_s_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_s_vgl_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 
@@ -889,15 +841,7 @@ eval_multi_multi_UBspline_3d_s_vgl_sign_cuda
   eval_multi_multi_UBspline_3d_s_vgl_sign_kernel<<<dimGrid,dimBlock>>>
   (pos_d, sign_d, spline->gridInv, spline->coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride, 0);
-  cudaDeviceSynchronize();
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in eval_multi_multi_UBspline_3d_s_vgl_cuda:\n  %s\n",
-             cudaGetErrorString(err))
-    ;
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
 }
 
 extern "C" void

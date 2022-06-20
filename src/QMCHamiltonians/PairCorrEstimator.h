@@ -40,6 +40,9 @@ public:
   /* evaluate the pair correlation functions */
   Return_t evaluate(ParticleSet& P) override;
 
+  /// generate the unique pair id from the group ids of particle i and j and the number of species
+  static int gen_pair_id(const int ig, const int jg, const int ns);
+
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
   void registerCollectables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;

@@ -19,7 +19,7 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "MultiQuinticSpline1D.h"
 
 namespace qmcplusplus
@@ -31,9 +31,9 @@ namespace qmcplusplus
 template<typename T>
 class CuspCorrectionAtomicBasis
 {
-  using QMCT = QMCTraits;
-  typedef MultiQuinticSpline1D<T> RadialSetType;
-  typedef ParticleSet::PosType PosType;
+  using QMCT          = QMCTraits;
+  using RadialSetType = MultiQuinticSpline1D<T>;
+  using PosType       = ParticleSet::PosType;
 
   QMCT::RealType r_max_ = 100;
   RadialSetType AOs;

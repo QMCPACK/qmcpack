@@ -11,7 +11,13 @@
 
 
 #include "delayed_update_helper.h"
+#include "config.h"
+#ifndef QMC_CUDA2HIP
 #include <cuComplex.h>
+#else
+#include <hip/hip_complex.h>
+#include "ROCm/cuda2hip.h"
+#endif
 #include "subtractOne.cuh"
 
 /** helper kernel for delayed update algorithm

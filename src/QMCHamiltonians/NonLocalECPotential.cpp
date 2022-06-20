@@ -15,7 +15,7 @@
 
 
 #include "NonLocalECPotential.h"
-#include <DistanceTableData.h>
+#include <DistanceTable.h>
 #include <IteratorUtility.h>
 #include <ResourceCollection.h>
 #include "NonLocalECPComponent.h"
@@ -53,11 +53,10 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
       Peln(els),
       ElecNeighborIons(els),
       IonNeighborElecs(ions),
-      UseTMove(TMOVE_OFF),
-      nonLocalOps(els.getTotalNum())
+      UseTMove(TMOVE_OFF)
 {
-  set_energy_domain(potential);
-  two_body_quantum_domain(ions, els);
+  setEnergyDomain(POTENTIAL);
+  twoBodyQuantumDomain(ions, els);
   myTableIndex = els.addTable(ions);
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
@@ -65,7 +64,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   prefix = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
-  UpdateMode.set(NONLOCAL, 1);
+  update_mode_.set(NONLOCAL, 1);
   nlpp_jobs.resize(els.groups());
   for (size_t ig = 0; ig < els.groups(); ig++)
   {
@@ -77,21 +76,21 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
 NonLocalECPotential::~NonLocalECPotential() = default;
 
 #if !defined(REMOVE_TRACEMANAGER)
-void NonLocalECPotential::contribute_particle_quantities() { request.contribute_array(myName); }
+void NonLocalECPotential::contributeParticleQuantities() { request_.contribute_array(name_); }
 
-void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
+void NonLocalECPotential::checkoutParticleQuantities(TraceManager& tm)
 {
-  streaming_particles = request.streaming_array(myName);
-  if (streaming_particles)
+  streaming_particles_ = request_.streaming_array(name_);
+  if (streaming_particles_)
   {
-    Ve_sample = tm.checkout_real<1>(myName, Peln);
-    Vi_sample = tm.checkout_real<1>(myName, IonConfig);
+    Ve_sample = tm.checkout_real<1>(name_, Peln);
+    Vi_sample = tm.checkout_real<1>(name_, IonConfig);
   }
 }
 
-void NonLocalECPotential::delete_particle_quantities()
+void NonLocalECPotential::deleteParticleQuantities()
 {
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     delete Ve_sample;
     delete Vi_sample;
@@ -102,19 +101,20 @@ void NonLocalECPotential::delete_particle_quantities()
 NonLocalECPotential::Return_t NonLocalECPotential::evaluate(ParticleSet& P)
 {
   evaluateImpl(P, false);
-  return Value;
+  return value_;
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateDeterministic(ParticleSet& P)
 {
   evaluateImpl(P, false, true);
-  return Value;
+  return value_;
 }
 
-void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                       const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(O_list, p_list, false);
+  mw_evaluateImpl(o_list, wf_list, p_list, false);
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
@@ -123,28 +123,29 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithToperator(Particl
     evaluateImpl(P, true);
   else
     evaluateImpl(P, false);
-  return Value;
+  return value_;
 }
 
-void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list) const
 {
   if (UseTMove == TMOVE_V0 || UseTMove == TMOVE_V3)
-    mw_evaluateImpl(O_list, p_list, true);
+    mw_evaluateImpl(o_list, wf_list, p_list, true);
   else
-    mw_evaluateImpl(O_list, p_list, false);
+    mw_evaluateImpl(o_list, wf_list, p_list, false);
 }
 
 void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid)
 {
   if (Tmove)
-    nonLocalOps.reset();
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  Value = 0.0;
+    tmove_xy_.clear();
+
+  value_ = 0.0;
 #if !defined(REMOVE_TRACEMANAGER)
   auto& Ve_samp = *Ve_sample;
   auto& Vi_samp = *Vi_sample;
-  if (streaming_particles)
+  if (streaming_particles_)
   {
     Ve_samp = 0.0;
     Vi_samp = 0.0;
@@ -155,7 +156,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
       if (!keepGrid)
         PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -178,8 +179,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
           {
             RealType pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
             if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
+              PP[iat]->contributeTxy(jel, tmove_xy_);
+            value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
           }
@@ -201,11 +202,11 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
           {
             RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
             if (Tmove)
-              PP[iat]->contributeTxy(jel, Txy);
-            Value += pairpot;
+              PP[iat]->contributeTxy(jel, tmove_xy_);
+            value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            if (streaming_particles)
+            if (streaming_particles_)
             {
               Ve_samp(jel) += 0.5 * pairpot;
               Vi_samp(iat) += 0.5 * pairpot;
@@ -216,9 +217,9 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
   }
 
 #if !defined(TRACE_CHECK)
-  if (streaming_particles)
+  if (streaming_particles_)
   {
-    Return_t Vnow  = Value;
+    Return_t Vnow  = value_;
     RealType Visum = Vi_sample->sum();
     RealType Vesum = Ve_sample->sum();
     RealType Vsum  = Vesum + Visum;
@@ -240,40 +241,37 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid
 #endif
 }
 
-void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
+void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           bool Tmove)
 {
-  auto& O_leader           = O_list.getCastedLeader<NonLocalECPotential>();
-  ParticleSet& pset_leader = p_list[0];
-  const size_t ngroups     = pset_leader.groups();
-  const size_t nw          = O_list.size();
-  /// maximal number of jobs per spin
-  std::vector<size_t> max_num_jobs(ngroups, 0);
+  auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
+  ParticleSet& pset_leader = p_list.getLeader();
+  const size_t nw          = o_list.size();
 
-#pragma omp parallel for
+  if (O_leader.ComputeForces)
+    APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
+
   for (size_t iw = 0; iw < nw; iw++)
   {
-    auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
-    ParticleSet& P(p_list[iw]);
+    auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+    const ParticleSet& P(p_list[iw]);
 
     if (Tmove)
-      O.nonLocalOps.reset();
+      O.tmove_xy_.clear();
 
     for (int ipp = 0; ipp < O.PPset.size(); ipp++)
       if (O.PPset[ipp])
         O.PPset[ipp]->randomize_grid(*O.myRNG);
 
     //loop over all the ions
-    const auto& myTable = P.getDistTable(O.myTableIndex);
+    const auto& myTable = P.getDistTableAB(O.myTableIndex);
     // clear all the electron and ion neighbor lists
     for (int iat = 0; iat < O.NumIons; iat++)
       O.IonNeighborElecs.getNeighborList(iat).clear();
     for (int jel = 0; jel < P.getTotalNum(); jel++)
       O.ElecNeighborIons.getNeighborList(jel).clear();
-
-    if (O.ComputeForces)
-      APP_ABORT("NonLocalECPotential::mw_evaluateImpl(): Forces not imlpemented\n");
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
@@ -293,11 +291,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
             joblist.emplace_back(iat, jel, P.R[jel], dist[iat], -displ[iat]);
           }
       }
-      // find the max number of jobs of all the walkers
-      max_num_jobs[ig] = std::max(max_num_jobs[ig], joblist.size());
     }
 
-    O.Value = 0.0;
+    O.value_ = 0.0;
   }
 
   // make this class unit tests friendly without the need of setup resources.
@@ -322,6 +318,11 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
   RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
   RefVectorWithLeader<TrialWaveFunction> psi_list(O_leader.Psi);
+  // we are moving away from internally stored Psi, double check before Psi gets finally removed.
+  assert(&O_leader.Psi == &wf_list.getLeader());
+  for (size_t iw = 0; iw < nw; iw++)
+    assert(&o_list.getCastedElement<NonLocalECPotential>(iw).Psi == &wf_list[iw]);
+
   RefVector<const NLPPJob<RealType>> batch_list;
   std::vector<RealType> pairpots(nw);
 
@@ -331,16 +332,19 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
   psi_list.reserve(nw);
   batch_list.reserve(nw);
 
-  for (int ig = 0; ig < ngroups; ++ig) //loop over species
+  for (int ig = 0; ig < pset_leader.groups(); ++ig) //loop over species
   {
+    TrialWaveFunction::mw_prepareGroup(wf_list, p_list, ig);
+
+    // find the max number of jobs of all the walkers
+    size_t max_num_jobs = 0;
+    for (size_t iw = 0; iw < nw; iw++)
     {
-      psi_list.clear();
-      for (size_t iw = 0; iw < nw; iw++)
-        psi_list.push_back(O_list.getCastedElement<NonLocalECPotential>(iw).Psi);
-      TrialWaveFunction::mw_prepareGroup(psi_list, p_list, ig);
+      const auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
+      max_num_jobs  = std::max(max_num_jobs, O.nlpp_jobs[ig].size());
     }
 
-    for (size_t jobid = 0; jobid < max_num_jobs[ig]; jobid++)
+    for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
     {
       ecp_potential_list.clear();
       ecp_component_list.clear();
@@ -349,15 +353,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       batch_list.clear();
       for (size_t iw = 0; iw < nw; iw++)
       {
-        auto& O = O_list.getCastedElement<NonLocalECPotential>(iw);
-        ParticleSet& P(p_list[iw]);
+        auto& O = o_list.getCastedElement<NonLocalECPotential>(iw);
         if (jobid < O.nlpp_jobs[ig].size())
         {
           const auto& job = O.nlpp_jobs[ig][jobid];
           ecp_potential_list.push_back(O);
           ecp_component_list.push_back(*O.PP[job.ion_id]);
-          pset_list.push_back(P);
-          psi_list.push_back(O.Psi);
+          pset_list.push_back(p_list[iw]);
+          psi_list.push_back(wf_list[iw]);
           batch_list.push_back(job);
         }
       }
@@ -377,10 +380,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
             std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                       << std::abs(check_value - pairpots[j]) << std::endl;
         }
-        ecp_potential_list[j].get().Value += pairpots[j];
+        ecp_potential_list[j].get().value_ += pairpots[j];
         if (Tmove)
-          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id,
-                                              ecp_potential_list[j].get().nonLocalOps.Txy);
+          ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id, ecp_potential_list[j].get().tmove_xy_);
       }
     }
   }
@@ -390,20 +392,19 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
                                             ParticleSet& ions,
                                             TrialWaveFunction& psi,
-                                            ParticleSet::ParticlePos_t& hf_terms,
-                                            ParticleSet::ParticlePos_t& pulay_terms,
+                                            ParticleSet::ParticlePos& hf_terms,
+                                            ParticleSet::ParticlePos& pulay_terms,
                                             bool keepGrid)
 {
   //We're going to ignore psi and use the internal Psi.
   //
   //Dummy vector for now.  Tmoves not implemented
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   bool Tmove = false;
 
   forces    = 0;
   PulayTerm = 0;
 
-  Value = 0.0;
+  value_ = 0.0;
   if (!keepGrid)
   {
     for (int ipp = 0; ipp < PPset.size(); ipp++)
@@ -411,7 +412,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
         PPset[ipp]->randomize_grid(*myRNG);
   }
   //loop over all the ions
-  const auto& myTable = P.getDistTable(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -429,10 +430,10 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
       for (int iat = 0; iat < NumIons; iat++)
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
-          Value +=
+          value_ +=
               PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
           if (Tmove)
-            PP[iat]->contributeTxy(jel, Txy);
+            PP[iat]->contributeTxy(jel, tmove_xy_);
           NeighborIons.push_back(iat);
           IonNeighborElecs.getNeighborList(iat).push_back(jel);
         }
@@ -446,29 +447,28 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivs(ParticleSet& P,
                                                                          ParticleSet& ions,
                                                                          TrialWaveFunction& psi,
-                                                                         ParticleSet::ParticlePos_t& hf_terms,
-                                                                         ParticleSet::ParticlePos_t& pulay_terms)
+                                                                         ParticleSet::ParticlePos& hf_terms,
+                                                                         ParticleSet::ParticlePos& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms);
-  return Value;
+  return value_;
 }
 
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateWithIonDerivsDeterministic(
     ParticleSet& P,
     ParticleSet& ions,
     TrialWaveFunction& psi,
-    ParticleSet::ParticlePos_t& hf_terms,
-    ParticleSet::ParticlePos_t& pulay_terms)
+    ParticleSet::ParticlePos& hf_terms,
+    ParticleSet::ParticlePos& pulay_terms)
 {
   evalIonDerivsImpl(P, ions, psi, hf_terms, pulay_terms, true);
-  return Value;
+  return value_;
 }
 
 void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
-  nonLocalOps.reset();
-  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  const auto& myTable                  = P.getDistTable(myTableIndex);
+  tmove_xy_.clear();
+  const auto& myTable                  = P.getDistTableAB(myTableIndex);
   const std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(ref_elec);
 
   const auto& dist  = myTable.getDistRow(ref_elec);
@@ -477,17 +477,89 @@ void NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_el
   {
     const int iat = NeighborIons[atom_index];
     PP[iat]->evaluateOne(P, iat, Psi, ref_elec, dist[iat], -displ[iat], use_DLA);
-    PP[iat]->contributeTxy(ref_elec, Txy);
+    PP[iat]->contributeTxy(ref_elec, tmove_xy_);
   }
 }
 
+void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
+                                                  const TWFFastDerivWrapper& psi,
+                                                  std::vector<ValueMatrix>& B)
+{
+  bool keepGrid = true;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+  {
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          PP[iat]->evaluateOneBodyOpMatrixContribution(P, iat, psi, jel, dist[iat], -displ[iat], B);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
+  }
+}
+
+void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                                            ParticleSet& source,
+                                                            const TWFFastDerivWrapper& psi,
+                                                            const int iat_source,
+                                                            std::vector<std::vector<ValueMatrix>>& Bforce)
+{
+  bool keepGrid = true;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      if (!keepGrid)
+        PPset[ipp]->randomize_grid(*myRNG);
+  //loop over all the ions
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  // clear all the electron and ion neighbor lists
+  for (int iat = 0; iat < NumIons; iat++)
+    IonNeighborElecs.getNeighborList(iat).clear();
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+    ElecNeighborIons.getNeighborList(jel).clear();
+
+  for (int ig = 0; ig < P.groups(); ++ig) //loop over species
+  {
+    for (int jel = P.first(ig); jel < P.last(ig); ++jel)
+    {
+      const auto& dist               = myTable.getDistRow(jel);
+      const auto& displ              = myTable.getDisplRow(jel);
+      auto& NeighborIons = ElecNeighborIons.getNeighborList(jel);
+      for (int iat = 0; iat < NumIons; iat++)
+        if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        {
+          PP[iat]->evaluateOneBodyOpMatrixdRContribution(P, source, iat, iat_source, psi, jel, dist[iat], -displ[iat],
+                                                         Bforce);
+          NeighborIons.push_back(iat);
+          IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        }
+    }
+  }
+}
 int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
 {
   int NonLocalMoveAccepted = 0;
-  RandomGenerator_t& RandomGen(*myRNG);
+  RandomGenerator& RandomGen(*myRNG);
   if (UseTMove == TMOVE_V0)
   {
-    const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
+    const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
     //make a non-local move
     if (oneTMove)
     {
@@ -513,7 +585,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)
       {
         computeOneElectronTxy(P, iat);
-        const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen());
+        const NonLocalData* oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
         if (oneTMove)
         {
           if (P.makeMoveAndCheck(iat, oneTMove->Delta))
@@ -530,7 +602,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   else if (UseTMove == TMOVE_V3)
   {
     elecTMAffected.assign(P.getTotalNum(), false);
-    nonLocalOps.group_by_elec();
+    nonLocalOps.groupByElectron(P.getTotalNum(), tmove_xy_);
     GradType grad_iat;
     //make a non-local move per particle
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
@@ -543,7 +615,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         {
           // recompute Txy for the given electron effected by Tmoves
           computeOneElectronTxy(P, iat);
-          oneTMove = nonLocalOps.selectMove(RandomGen());
+          oneTMove = nonLocalOps.selectMove(RandomGen(), tmove_xy_);
         }
         else
           oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
@@ -554,7 +626,7 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
             Psi.calcRatioGrad(P, iat, grad_iat);
             Psi.acceptMove(P, iat, true);
             // mark all affected electrons
-            markAffectedElecs(P.getDistTable(myTableIndex), iat);
+            markAffectedElecs(P.getDistTableAB(myTableIndex), iat);
             P.acceptMove(iat);
             NonLocalMoveAccepted++;
           }
@@ -564,12 +636,16 @@ int NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   }
 
   if (NonLocalMoveAccepted > 0)
+  {
     Psi.completeUpdates();
+    // this step also updates electron positions on the device.
+    P.donePbyP(true);
+  }
 
   return NonLocalMoveAccepted;
 }
 
-void NonLocalECPotential::markAffectedElecs(const DistanceTableData& myTable, int iel)
+void NonLocalECPotential::markAffectedElecs(const DistanceTableAB& myTable, int iel)
 {
   std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(iel);
   for (int iat = 0; iat < NumIons; iat++)
@@ -632,17 +708,21 @@ void NonLocalECPotential::createResource(ResourceCollection& collection) const
   auto resource_index = collection.addResource(std::move(new_res));
 }
 
-void NonLocalECPotential::acquireResource(ResourceCollection& collection)
+void NonLocalECPotential::acquireResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  auto res_ptr = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
+  auto res_ptr   = dynamic_cast<NonLocalECPotentialMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("NonLocalECPotential::acquireResource dynamic_cast failed");
-  mw_res_.reset(res_ptr);
+  O_leader.mw_res_.reset(res_ptr);
 }
 
-void NonLocalECPotential::releaseResource(ResourceCollection& collection)
+void NonLocalECPotential::releaseResource(ResourceCollection& collection,
+                                          const RefVectorWithLeader<OperatorBase>& o_list) const
 {
-  collection.takebackResource(std::move(mw_res_));
+  auto& O_leader = o_list.getCastedLeader<NonLocalECPotential>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
 }
 
 std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)

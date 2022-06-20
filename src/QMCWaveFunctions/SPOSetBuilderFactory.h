@@ -18,52 +18,53 @@
 
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
 class SPOSetBuilderFactory : public MPIObjectBase
 {
 public:
-  typedef std::map<std::string, ParticleSet*> PtclPoolType;
+  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using PSetMap = std::map<std::string, const std::unique_ptr<ParticleSet>>;
 
   /** constructor
    * \param comm communicator
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, PtclPoolType& psets);
+  SPOSetBuilderFactory(Communicate* comm, ParticleSet& els, const PSetMap& psets);
 
   ~SPOSetBuilderFactory();
 
-  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
-
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  std::unique_ptr<SPOSetBuilder> createSPOSetBuilder(xmlNodePtr rootNode);
 
   /** returns a named sposet from the pool
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSet* getSPOSet(const std::string& name) const;
+  const SPOSet* getSPOSet(const std::string& name) const;
 
   void buildSPOSetCollection(xmlNodePtr cur);
 
-  bool empty() const { return spo_builders.size() == 0; }
+  bool empty() const { return sposets.empty(); }
+
+  /** add an SPOSet to sposets map.
+   * This is only used to handle legacy SPOSet input styles without using sposet_collection
+   */
+  void addSPOSet(std::unique_ptr<SPOSet>);
+
+  SPOMap&& exportSPOSets() { return std::move(sposets); }
 
 private:
-///writes info about contained sposets to stdout
-void write_spo_builders(const std::string& pad = "") const;
-
-  ///set of basis set builders resolved by type
-  std::map<std::string, std::unique_ptr<SPOSetBuilder>> spo_builders;
-
-  ///store the last builder, use if type not provided
-  SPOSetBuilder* last_builder;
-
   ///reference to the target particle
   ParticleSet& targetPtcl;
 
   ///reference to the particle pool
-  PtclPoolType& ptclPool;
+  const PSetMap& ptclPool;
+
+  /// list of all sposets created by the builders of this factory
+  SPOMap sposets;
 
   static std::string basisset_tag;
 };

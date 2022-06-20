@@ -15,12 +15,11 @@
 
 
 #include "VMC_CUDA.h"
-#include "OhmmsApp/RandomNumberControl.h"
+#include "RandomNumberControl.h"
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
 #include "Utilities/qmc_common.h"
 #ifdef USE_NVTX_API
@@ -60,8 +59,8 @@ bool VMCcuda::checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid
 {
   for (int iw = 0; iw < newpos.size(); iw++)
   {
-    PosType red = W.Lattice.toUnit(newpos[iw]);
-    valid[iw]   = W.Lattice.isValid(red);
+    PosType red = W.getLattice().toUnit(newpos[iw]);
+    valid[iw]   = W.getLattice().isValid(red);
   }
   return true;
 }
@@ -199,15 +198,12 @@ bool VMCcuda::run()
 #endif
   resetRun();
   IndexType block        = 0;
-  IndexType nAcceptTot   = 0;
-  IndexType nRejectTot   = 0;
   IndexType updatePeriod = (qmc_driver_mode[QMC_UPDATE_MODE]) ? Period4CheckProperties : (nBlocks + 1) * nSteps;
   int nat                = W.getTotalNum();
   int nw                 = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType> grad(nw, nat);
-  double Esum;
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, MaxCPUSecs, myComm->getName(), myComm->rank() == 0);
@@ -228,7 +224,6 @@ bool VMCcuda::run()
     vmc_loop.start();
     IndexType step = 0;
     nAccept = nReject = 0;
-    Esum              = 0.0;
     Estimators->startBlock(nSteps);
     do
     {
@@ -302,8 +297,6 @@ bool VMCcuda::run()
     // Psi.evaluateLog(W, logPsi);
     double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
     Estimators->stopBlock(accept_ratio);
-    nAcceptTot += nAccept;
-    nRejectTot += nReject;
     ++block;
     recordBlock(block);
     vmc_loop.stop();
@@ -446,11 +439,9 @@ bool VMCcuda::runWithDrift()
   nvtxRangePushA("VMC:runWithDrift");
 #endif
   resetRun();
-  IndexType block      = 0;
-  IndexType nAcceptTot = 0;
-  IndexType nRejectTot = 0;
-  int nat              = W.getTotalNum();
-  int nw               = W.getActiveWalkers();
+  IndexType block = 0;
+  int nat         = W.getTotalNum();
+  int nw          = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw);
   Matrix<ValueType> lapl(nw, nat);
   Matrix<GradType> grad(nw, nat);
@@ -529,8 +520,6 @@ bool VMCcuda::runWithDrift()
     //      Psi.recompute(W);
     double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
     Estimators->stopBlock(accept_ratio);
-    nAcceptTot += nAccept;
-    nRejectTot += nReject;
     ++block;
     recordBlock(block);
   } while (block < nBlocks);

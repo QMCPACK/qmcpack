@@ -13,7 +13,7 @@ if(NOT QMC_CUDA)
       INPUT_FILE
       H5_FILE
       ADJUST_INPUT)
-      message_verbose("Adding test ${TEST_NAME}")
+      message(VERBOSE "Adding test ${TEST_NAME}")
       set(WDIR "${qmcpack_BINARY_DIR}/tests/performance/C-molecule/${TEST_DIR}")
       set(SDIR "${qmcpack_SOURCE_DIR}/tests/performance/C-molecule/sample/${TEST_SOURCE_DIR}")
 
@@ -36,7 +36,7 @@ if(NOT QMC_CUDA)
 
       separate_arguments(ADJUST_INPUT)
       execute_process(
-        COMMAND ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
+        COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
                 ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/C-molecule")
 
       set(PROCS 1)
@@ -55,7 +55,7 @@ if(NOT QMC_CUDA)
       set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
 
       if(ENABLE_TIMERS)
-        add_test(NAME "${TEST_NAME}-time" COMMAND ../process_perf.py ${INPUT_FILE})
+        add_test(NAME "${TEST_NAME}-time" COMMAND ${Python3_EXECUTABLE} ../process_perf.py ${INPUT_FILE})
         set_tests_properties("${TEST_NAME}-time" PROPERTIES LABELS "performance")
         set_tests_properties("${TEST_NAME}-time" PROPERTIES WORKING_DIRECTORY "${WDIR}")
         set_tests_properties("${TEST_NAME}-time" PROPERTIES DEPENDS ${TEST_NAME})
@@ -63,7 +63,7 @@ if(NOT QMC_CUDA)
     endfunction()
 
     if(NOT QMC_DATA)
-      message_verbose("QMC_DATA not set. Performance tests not added.")
+      message(VERBOSE "QMC_DATA not set. Performance tests not added.")
     elseif(NOT EXISTS ${QMC_DATA}/C-molecule)
       message("C-molecule directory under QMC_DATA does not exist. C-molecule performance tests not added.")
     else()
@@ -76,7 +76,7 @@ if(NOT QMC_CUDA)
             list(REMOVE_ITEM C_SIZES ${SIZE})
           endif()
         endforeach()
-        message_verbose("C-molecule sizes to benchmark: ${C_SIZES}")
+        message(VERBOSE "C-molecule sizes to benchmark: ${C_SIZES}")
       endif()
 
       set(ADJUST_INPUT "-i")
@@ -108,7 +108,7 @@ if(NOT QMC_CUDA)
             add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
                                 "${ADJUST_INPUT} -j ${TEST_DIR}/J123.xml")
           elseif(NOT (SIZE MATCHES "60" AND POTENTIAL_TYPE MATCHES "ae"))
-            message_verbose(
+            message(VERBOSE
               "performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT} not added because the corresponding h5 file not found: ${H5_FULL_PATH}"
             )
           endif()
@@ -117,10 +117,10 @@ if(NOT QMC_CUDA)
 
     endif()
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping C-molecule performance tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose(
+  message(VERBOSE
     "Skipping C-molecule performance tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

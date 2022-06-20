@@ -40,32 +40,42 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
-  void contribute_particle_quantities() override;
-  void checkout_particle_quantities(TraceManager& tm) override;
-  void delete_particle_quantities() override;
+  void contributeParticleQuantities() override;
+  void checkoutParticleQuantities(TraceManager& tm) override;
+  void deleteParticleQuantities() override;
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
   Return_t evaluateDeterministic(ParticleSet& P) override;
-  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& O_list,
-                   const RefVectorWithLeader<ParticleSet>& P_list) const override;
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithToperator(ParticleSet& P) override;
 
-  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& O_list,
-                                const RefVectorWithLeader<ParticleSet>& P_list) const override;
+  void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
-                                 ParticleSet::ParticlePos_t& hf_terms,
-                                 ParticleSet::ParticlePos_t& pulay_terms) override;
+                                 ParticleSet::ParticlePos& hf_terms,
+                                 ParticleSet::ParticlePos& pulay_terms) override;
 
   Return_t evaluateWithIonDerivsDeterministic(ParticleSet& P,
                                               ParticleSet& ions,
                                               TrialWaveFunction& psi,
-                                              ParticleSet::ParticlePos_t& hf_terms,
-                                              ParticleSet::ParticlePos_t& pulay_terms) override;
+                                              ParticleSet::ParticlePos& hf_terms,
+                                              ParticleSet::ParticlePos& pulay_terms) override;
+
+  void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
+
+  void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
+                                         ParticleSet& source,
+                                         const TWFFastDerivWrapper& psi,
+                                         const int iat,
+                                         std::vector<std::vector<ValueMatrix>>& Bforce) override;
 
 
   /** set non local moves options
@@ -106,11 +116,11 @@ public:
 
   /** acquire a shared resource from a collection
    */
-  void acquireResource(ResourceCollection& collection) override;
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   /** return a shared resource to a collection
    */
-  void releaseResource(ResourceCollection& collection) override;
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
@@ -119,7 +129,7 @@ public:
   /** set the internal RNG pointer as the given pointer
    * @param rng input RNG pointer
    */
-  void setRandomGenerator(RandomGenerator_t* rng) override { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator* rng) override { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables) override;
 
@@ -131,11 +141,12 @@ public:
 
   /** Set the flag whether to compute forces or not.
    * @param val The boolean value for computing forces
-   */ 
-  inline void setComputeForces(bool val) override {ComputeForces=val;}
+   */
+  inline void setComputeForces(bool val) override { ComputeForces = val; }
+
 protected:
   ///random number generator
-  RandomGenerator_t* myRNG;
+  RandomGenerator* myRNG;
   ///the set of local-potentials (one for each ion)
   std::vector<NonLocalECPComponent*> PP;
   ///unique NonLocalECPComponent to remove
@@ -167,7 +178,9 @@ private:
   ///non local operator
   NonLocalTOperator nonLocalOps;
   ///Pulay force vector
-  ParticleSet::ParticlePos_t PulayTerm;
+  ParticleSet::ParticlePos PulayTerm;
+  // Tmove data
+  std::vector<NonLocalData> tmove_xy_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal, 1>* Ve_sample;
@@ -186,19 +199,20 @@ private:
   void evaluateImpl(ParticleSet& P, bool Tmove, bool keepGrid = false);
 
   /** the actual implementation for batched walkers, used by mw_evaluate and mw_evaluateWithToperator
-   * @param O_list the list of NonLocalECPotential in a walker batch
-   * @param P_list the list of ParticleSet in a walker batch
+   * @param o_list the list of NonLocalECPotential in a walker batch
+   * @param p_list the list of ParticleSet in a walker batch
    * @param Tmove whether Txy for Tmove is updated
    */
-  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& O_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
                               bool Tmove);
 
   void evalIonDerivsImpl(ParticleSet& P,
                          ParticleSet& ions,
                          TrialWaveFunction& psi,
-                         ParticleSet::ParticlePos_t& hf_terms,
-                         ParticleSet::ParticlePos_t& pulay_terms,
+                         ParticleSet::ParticlePos& hf_terms,
+                         ParticleSet::ParticlePos& pulay_terms,
                          bool keepGrid = false);
   /** compute the T move transition probability for a given electron
    * member variable nonLocalOps.Txy is updated
@@ -212,7 +226,7 @@ private:
    * @param iel reference electron
    * Note this function should be called before acceptMove for a Tmove
    */
-  void markAffectedElecs(const DistanceTableData& myTable, int iel);
+  void markAffectedElecs(const DistanceTableAB& myTable, int iel);
 };
 } // namespace qmcplusplus
 #endif

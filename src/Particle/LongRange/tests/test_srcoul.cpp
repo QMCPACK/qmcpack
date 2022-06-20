@@ -26,7 +26,7 @@ struct EslerCoulomb3D_ForSRCOUL
   inline double operator()(double r, double rinv) const { return rinv; }
   inline double Vk(double k) const { return 1. / (k * k); }
   inline double dVk_dk(double k) const { return -2 * norm / (k * k * k); }
-  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { norm = 4.0 * M_PI / ref.getLRBox().Volume; }
   void reset(ParticleSet& ref, double rs) { reset(ref); } // ignore rs
   inline double df(double r) const { return -1. / (r * r); }
 };
@@ -40,22 +40,24 @@ TEST_CASE("srcoul", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Lattice.Volume == Approx(125));
+  CHECK(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
-  REQUIRE(Approx(Lattice.LR_kc) == 12);
+  CHECK(Approx(Lattice.LR_rc) == 2.5);
+  CHECK(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
+  ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(Approx(handler.LR_rc) == 2.5);
-  REQUIRE(Approx(handler.LR_kc) == 12);
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK(Approx(handler.LR_rc) == 2.5);
+  CHECK(Approx(handler.LR_kc) == 12);
 
   mRealType r, dr, rinv;
   mRealType vsr;
@@ -68,9 +70,9 @@ TEST_CASE("srcoul", "[lrhandler]")
     vsr  = handler.evaluate(r, rinv);
     // short-range part must vanish after rcut
     if (r > 2.5)
-      REQUIRE(vsr == Approx(0.0));
+      CHECK(vsr == Approx(0.0));
     //// !!!! SR values not validated, see "srcoul df" test
-    //REQUIRE(vsr == Approx(rinv));
+    //CHECK(vsr == Approx(rinv));
   }
 }
 
@@ -83,22 +85,24 @@ TEST_CASE("srcoul df", "[lrhandler]")
   Lattice.LR_dim_cutoff = 30.;
   Lattice.R.diagonal(5.0);
   Lattice.reset();
-  REQUIRE(Lattice.Volume == Approx(125));
+  CHECK(Lattice.Volume == Approx(125));
   Lattice.SetLRCutoffs(Lattice.Rv);
   //Lattice.printCutoffs(app_log());
-  REQUIRE(Approx(Lattice.LR_rc) == 2.5);
-  REQUIRE(Approx(Lattice.LR_kc) == 12);
+  CHECK(Approx(Lattice.LR_rc) == 2.5);
+  CHECK(Approx(Lattice.LR_kc) == 12);
 
-  ParticleSet ref;          // handler needs ref.SK.KLists
-  ref.Lattice    = Lattice; // !!!! crucial for access to Volume
-  ref.LRBox      = Lattice; // !!!! crucial for S(k) update
-  ref.SK         = std::make_unique<StructFact>(ref, Lattice.LR_kc);
+  const SimulationCell simulation_cell(Lattice);
+  ParticleSet ref(simulation_cell);       // handler needs ref.getSimulationCell().getKLists()
+  ref.createSK();
   LRHandlerSRCoulomb<EslerCoulomb3D_ForSRCOUL, LPQHISRCoulombBasis> handler(ref);
 
   handler.initBreakup(ref);
-  REQUIRE(handler.MaxKshell == 78);
-  REQUIRE(Approx(handler.LR_rc) == 2.5);
-  REQUIRE(Approx(handler.LR_kc) == 12);
+
+  std::cout << "handler.MaxKshell is " << handler.MaxKshell << std::endl;
+  CHECK( (std::is_same<OHMMS_PRECISION, OHMMS_PRECISION_FULL>::value ?
+     handler.MaxKshell == 78 : handler.MaxKshell >= 117 && handler.MaxKshell <= 128 ));
+  CHECK(Approx(handler.LR_rc) == 2.5);
+  CHECK(Approx(handler.LR_kc) == 12);
 
   EslerCoulomb3D_ForSRCOUL fref;
   fref.reset(ref);
@@ -121,12 +125,12 @@ TEST_CASE("srcoul df", "[lrhandler]")
     vlrp = handler.evaluateLR(rp);
     dvsr = (vsrp - vsrm) / (2 * dr);
     rinv = 1. / r;
-    REQUIRE(handler.srDf(r, rinv) == Approx(dvsr));
+    CHECK(handler.srDf(r, rinv) == Approx(dvsr));
     // test long-range piece
     dvlr = (vlrp - vlrm) / (2 * dr);
-    REQUIRE(handler.lrDf(r) == Approx(dvlr));
+    CHECK(handler.lrDf(r) == Approx(dvlr));
     // test total derivative
-    REQUIRE(dvsr + dvlr == Approx(fref.df(r)));
+    CHECK(dvsr + dvlr == Approx(fref.df(r)));
   }
 }
 

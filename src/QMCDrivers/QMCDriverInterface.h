@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -40,10 +40,10 @@ public:
   virtual void recordBlock(int block) = 0;
 
   ///return the random generators
-  //virtual std::vector<RandomGenerator_t*>& getRng() = 0;
+  //virtual std::vector<RandomGenerator*>& getRng() = 0;
 
   ///return the i-th random generator
-  virtual RandomGenerator_t& getRng(int i) = 0;
+  virtual RandomGenerator& getRng(int i) = 0;
 
   virtual void setStatus(const std::string& aname, const std::string& h5name, bool append) = 0;
 

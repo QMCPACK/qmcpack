@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
 #define QMCPLUSPLUS_ECPCOMPONENT_BUILDER_H
-#include "Particle/DistanceTableData.h"
+#include "Particle/DistanceTable.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/SOECPComponent.h"
@@ -27,10 +27,10 @@ namespace qmcplusplus
 {
 struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
 {
-  typedef LocalECPotential::GridType GridType;
-  typedef ParticleSet::Scalar_t mRealType;
-  typedef OneDimGridBase<mRealType> mGridType;
-  typedef LocalECPotential::RadialPotentialType RadialPotentialType;
+  using GridType            = LocalECPotential::GridType;
+  using mRealType           = ParticleSet::Scalar_t;
+  using mGridType           = OneDimGridBase<mRealType>;
+  using RadialPotentialType = LocalECPotential::RadialPotentialType;
 
   int NumNonLocal;
   int Lmax, Llocal, Nrule, Srule;
@@ -48,7 +48,7 @@ struct ECPComponentBuilder : public MPIObjectBase, public QMCTraits
   std::unique_ptr<L2RadialPotential> pp_L2;
   std::map<std::string, int> angMon;
 
-  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1);
+  ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule = -1, int llocal = -1);
 
   bool parse(const std::string& fname, xmlNodePtr cur);
   bool put(xmlNodePtr cur);

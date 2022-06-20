@@ -9,14 +9,10 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
-
 set(SRC_DIR afqmc_wfn_factory)
 set(UTEST_EXE test_${SRC_DIR})
 
-set(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/afqmc/Wavefunctions)
-
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
+set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(${UTEST_EXE} test_wfn_factory.cpp)
 target_link_libraries(${UTEST_EXE} catch_main afqmc)
@@ -29,7 +25,7 @@ foreach(I RANGE 0 ${ENDP} 2)
   get_filename_component(HAMIL ${HAMIL_FILE} NAME_WE)
   get_filename_component(WFN ${WFN_FILE} NAME_WE)
   set(UTEST_NAME deterministic-unit_test_${SRC_DIR}_${HAMIL}_${WFN})
-  add_unit_test(${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}" "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
+  add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> "--hamil ${HAMIL_FILE}" "--wfn ${WFN_FILE}")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(
     TEST ${UTEST_NAME}
@@ -42,8 +38,7 @@ if(NOT QMC_COMPLEX)
   target_link_libraries(${UTEST_EXE} catch_main afqmc)
   set(UTEST_NAME deterministic-unit_test_afqmc_phmsd)
   add_unit_test(
-    ${UTEST_NAME} 1 1 "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}"
-    "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
+    ${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}> "--hamil ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5 "
     "--wfn ${qmcpack_SOURCE_DIR}/tests/afqmc/Be_sto-3g/qmcpack.h5")
   set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
   set_property(TEST ${UTEST_NAME} APPEND PROPERTY LABELS "afqmc")

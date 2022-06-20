@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/qmcpack/badge/?version=develop)](https://qmcpack.readthedocs.io/en/develop/?badge=develop)
 
 [![GitHub release](https://img.shields.io/github/release/QMCPACK/qmcpack/all.svg)](https://github.com/QMCPACK/qmcpack/releases)
-[![Spack Version](https://img.shields.io/spack/v/qmcpack.svg)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
+[![Spack Version](https://img.shields.io/spack/v/qmcpack)](https://spack.readthedocs.io/en/latest/package_list.html#qmcpack)
 
 [![GitHub Actions CI](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml/badge.svg)](https://github.com/QMCPACK/qmcpack/actions/workflows/ci-github-actions.yaml)
 [![codecov-deterministic](https://codecov.io/gh/QMCPACK/qmcpack/branch/develop/graph/badge.svg?token=35D0u6GlBm)](https://codecov.io/gh/QMCPACK/qmcpack)
@@ -22,18 +22,19 @@ particular emphasis is placed on code quality and reproducibility.
 
 # Prerequisites
 
- * C++ 14 and C99 capable compilers. 
- * CMake v3.14.0 or later, build utility, http://www.cmake.org
- * BLAS/LAPACK, numerical library. Use platform-optimized libraries.
+ * C++ 17 and C99 capable compilers. 
+ * CMake v3.17.0 or later, build utility, http://www.cmake.org
+ * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
  * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
  * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.
  * Python3. Older versions are not supported as of January 2020.
+ * CUDA v11.0 or later. Optional, but required for builds with NVIDIA GPU support.
 
 We aim to support open source compilers and libraries released within two years of each QMCPACK release. Use of software versions
-over two years old may work but is discouraged and untested. Proprietary compilers (Intel, PGI) are generally supported over the
+over two years old may work but is discouraged and untested. Proprietary compilers (Intel, NVHPC) are generally supported over the
 same period but may require use of an exact version. We also aim to support the standard software environments on machines such as
 Summit at OLCF, Theta at ALCF, and Cori at NERSC. Use of the most recently released compilers and library versions is particularly
 encouraged for highest performance and easiest configuration.
@@ -41,20 +42,20 @@ encouraged for highest performance and easiest configuration.
 Nightly testing currently includes the following software versions on x86:
 
 * Compilers
-  * GCC 10.3.0, 8.3.0
-  * Clang/LLVM 11.0.1
-  * Intel 19.1.1.217 configured to use C++ library from GCC 8.3.0 
-  * PGI/NVIDIA HPC SDK 20.9 configured to use C++ library from GCC 8.3.0
-* Boost 1.75.0, 1.68.0
-* HDF5 1.12.0, 1.8.19
-* FFTW 3.3.8, 3.3.4
-* CMake 3.20.0, 3.14.0
+  * GCC 11.2.0, 9.2.0
+  * Clang/LLVM 13.0.0
+  * Intel 19.1.1.217 configured to use C++ library from GCC 9.1.0 
+  * NVIDIA HPC SDK 21.5 configured to use C++ library from GCC 9.1.0
+* Boost 1.77.0, 1.68.0
+* HDF5 1.12.1
+* FFTW 3.3.10, 3.3.8
+* CMake 3.21.1, 3.15.0
 * MPI
-  * OpenMPI 4.1.0, 3.1.6
+  * OpenMPI 4.1.1, 3.1.6
   * Intel MPI 19.1.1.217
-* CUDA 11.2.1
+* CUDA 11.4
 
-Workflow tests are performed with Quantum Espresso v6.7.0 and PySCF v1.7.5. These check trial wavefunction generation and
+Workflow tests are performed with Quantum Espresso v6.8.0 and PySCF v1.7.5. These check trial wavefunction generation and
 conversion through to actual QMC runs.
 
 On a developmental basis we also check the latest Clang and GCC development versions, AMD AOMP and Intel OneAPI compilers.
@@ -166,7 +167,7 @@ make -j 8
                          and use float and double for CUDA base and full precision.
      ENABLE_CUDA         ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                          Production quality for AFQMC. Pre-production quality for real-space.
-                         Use CUDA_ARCH, default sm_70, to set the actual GPU architecture.
+                         Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
      ENABLE_OFFLOAD      ON/OFF(default). Experimental feature. Enable OpenMP target offload for GPU acceleration.
      ENABLE_TIMERS       ON(default)/OFF. Enable fine-grained timers. Timers are on by default but at level coarse
                          to avoid potential slowdown in tiny systems.
@@ -177,6 +178,7 @@ make -j 8
 
 ```
      QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
+     RMG_BIN             Location of RMG binary
      QMC_DATA            Specify data directory for QMCPACK performance and integration tests
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
@@ -185,8 +187,6 @@ make -j 8
                             saving default use of symbolic links for test files. Useful
                             if the build is on a separate filesystem from the source, as
                             required on some HPC systems.
-     QMC_VERBOSE_CONFIGURATION Print additional information during cmake configuration
-                               including details of which tests are enabled.
 ```
 
   * libxml2 related
@@ -236,7 +236,6 @@ below:
 ```
 export CXX=mpic++
 export CC=mpicc
-export ACML_HOME=/opt/acml-5.3.1/gfortran64
 export HDF5_ROOT=/opt/hdf5
 export BOOST_ROOT=/opt/boost
 
@@ -248,7 +247,6 @@ cmake                                               \
   -D LIBXML2_LIBRARY=/usr/lib/x86_64-linux-gnu/libxml2.so \
   -D FFTW_INCLUDE_DIRS=/usr/include                 \
   -D FFTW_LIBRARY_DIRS=/usr/lib/x86_64-linux-gnu    \
-  -D QMC_EXTRA_LIBS="-ldl ${ACML_HOME}/lib/libacml.a -lgfortran" \
   -D QMC_DATA=/projects/QMCPACK/qmc-data            \
   ..
 ```

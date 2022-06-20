@@ -25,9 +25,11 @@
 
 namespace qmcplusplus
 {
-class DistanceTableData;
 class TrialWaveFunction;
-
+namespace testing
+{
+class OEBAccessor;
+}
 /** @ingroup Estimators
  * @brief An abstract class for gridded estimators
  *
@@ -38,19 +40,31 @@ public:
   using QMCT      = QMCTraits;
   using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
 
-  /** the type in this variant changes based on data locality
+  using Data = std::vector<QMCT::RealType>;
+
+  /** locality for accumulation of estimator data.
+   *  This designates the memory scheme used for the estimator
+   *  The default is:
+   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
+   *  Memory Savings Schemes:
+   *  One:
+   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
+   *  One per crowd:
+   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
+   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
    */
-  using Data = UPtr<std::vector<QMCT::RealType>>;
-
-  /// locality for accumulation data
   DataLocality data_locality_;
-
-  ///name of this object
-  std::string myName;
 
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
+  /** Shallow copy constructor!
+   *  This alows us to keep the default copy constructors for derived classes which
+   *  is quite useful to the spawnCrowdClone design.
+   *  Data is likely to be quite large and since the OperatorEstBase design is that the children 
+   *  reduce to the parent it is infact undesirable for them to copy the data the parent has.
+   *  Initialization of Data (i.e. call to resize) if any is the responsibility of the derived class.
+   */
   OperatorEstBase(const OperatorEstBase& oth);
   ///virtual destructor
   virtual ~OperatorEstBase() = default;
@@ -62,8 +76,16 @@ public:
    *  without causing a global sync.
    *  Depending on data locality the accumlation of the result may be different from
    *  the single thread write directly into the OperatorEstimator data.
+   *  \param[in]      walkers
+   *  \param[inout]   pset_target   crowd scope target pset (should be returned to starting state after call)
+   *  \param[in]      psets         per walker psets
+   *  \param[in]      wnfs          per walker TrialWaveFunction
+   *  \param[inout]   rng           crowd scope RandomGenerator
    */
-  virtual void accumulate(const RefVector<MCPWalker>& walkers, const RefVector<ParticleSet>& psets) = 0;
+  virtual void accumulate(const RefVector<MCPWalker>& walkers,
+                          const RefVector<ParticleSet>& psets,
+                          const RefVector<TrialWaveFunction>& wfns,
+                          RandomGenerator& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -78,10 +100,8 @@ public:
   virtual void normalize(QMCT::RealType invToWgt);
 
   virtual void startBlock(int steps) = 0;
-  
-  std::vector<QMCT::RealType>& get_data_ref() { return *data_; }
 
-  Data& get_data() { return data_; };
+  std::vector<QMCT::RealType>& get_data() { return data_; }
 
   /*** create and tie OperatorEstimator's observable_helper hdf5 wrapper to stat.h5 file
    * @param gid hdf5 group to which the observables belong
@@ -91,7 +111,7 @@ public:
    */
   virtual void registerOperatorEstimator(hid_t gid) {}
 
-  virtual OperatorEstBase* clone() = 0;
+  virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 
   /** Write to previously registered observable_helper hdf5 wrapper.
    *
@@ -107,23 +127,25 @@ public:
   /** Return the total walker weight for this block
    */
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+
+  const std::string& get_my_name() const { return my_name_; }
+
+  bool isListenerRequired() { return requires_listener_; }
+
 protected:
+  ///name of this object -- only used for debugging and h5 output
+  std::string my_name_;
+
   QMCT::FullPrecRealType walkers_weight_;
 
-  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator  
+  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
-  /** create the typed data block for the Operator.
-   *
-   *  this is only slightly better than a byte buffer
-   *  it allows easy porting of the legacy implementations
-   *  Which wrote into a shared buffer per walker.
-   *  And it make's datalocality fairly easy but
-   *  more descriptive and safe data structures would be better
-   */
-  static Data createLocalData(size_t size, DataLocality data_locality);
-
   Data data_;
+
+  bool requires_listener_ = false;
+
+  friend testing::OEBAccessor;
 };
 } // namespace qmcplusplus
 #endif

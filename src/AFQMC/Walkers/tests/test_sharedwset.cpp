@@ -26,7 +26,7 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "Utilities/RandomGenerator.h"
-#include "OhmmsApp/ProjectData.h"
+#include "ProjectData.h"
 
 #include "hdf/hdf_multi.h"
 #include "hdf/hdf_archive.h"
@@ -114,7 +114,7 @@ void test_basic_walker_features(bool serial, std::string wtype)
     initA[i][i] = Type(0.22);
   for (int i = 0; i < NAEB; i++)
     initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
@@ -417,7 +417,7 @@ void test_walker_io(std::string wtype)
     initA[i][i] = Type(0.22);
   for (int i = 0; i < NAEB; i++)
     initB[i][i] = Type(0.22);
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   std::string xml_block;
   xml_block = "<WalkerSet name=\"wset0\">  \
@@ -433,8 +433,7 @@ void test_walker_io(std::string wtype)
   wset.resize(nwalkers, initA, initB);
 
   REQUIRE(wset.size() == nwalkers);
-  int cnt           = 0;
-  double tot_weight = 0.0;
+  int cnt = 0;
   for (WalkerSet::iterator it = wset.begin(); it != wset.end(); ++it)
   {
     auto sm = it->SlaterMatrix(Alpha);
@@ -444,7 +443,6 @@ void test_walker_io(std::string wtype)
     *it->E1()      = cnt * 1.0 + 0.5;
     *it->EXX()     = cnt * 1.0 + 0.5;
     *it->EJ()      = cnt * 1.0 + 0.5;
-    tot_weight += cnt * 1.0 + 0.5;
     cnt++;
   }
   REQUIRE(cnt == nwalkers);

@@ -16,12 +16,12 @@
 
 
 #include "kSpaceJastrow.h"
-#include "LongRange/StructFact.h"
-#include "config/stdlib/math.hpp"
-#include "CPU/e2iphi.h"
 #include <sstream>
 #include <algorithm>
-
+#include "LongRange/StructFact.h"
+#include "CPU/math.hpp"
+#include "CPU/e2iphi.h"
+#include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
 {
@@ -69,7 +69,8 @@ void kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType>& gvecs, bool us
   gvecs.clear();
   int maxIndex[OHMMS_DIM];
   for (int i = 0; i < OHMMS_DIM; i++)
-    maxIndex[i] = 2 + (int)std::floor(std::sqrt(dot(Ions.Lattice.a(i), Ions.Lattice.a(i))) * kc / (2.0 * M_PI));
+    maxIndex[i] =
+        2 + (int)std::floor(std::sqrt(dot(Ions.getLattice().a(i), Ions.getLattice().a(i))) * kc / (2.0 * M_PI));
   std::vector<ComplexType> rho_G(NumIonSpecies);
 #if OHMMS_DIM == 3
   for (int i = 0; i <= maxIndex[0]; i++)
@@ -80,7 +81,8 @@ void kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType>& gvecs, bool us
         if (Include(i, j, k))
         {
           PosType G = 2.0 * M_PI *
-              ((RealType)i * Ions.Lattice.Gv[0] + (RealType)j * Ions.Lattice.Gv[1] + (RealType)k * Ions.Lattice.Gv[2]);
+              ((RealType)i * Ions.getLattice().Gv[0] + (RealType)j * Ions.getLattice().Gv[1] +
+               (RealType)k * Ions.getLattice().Gv[2]);
           if (dot(G, G) <= (kc * kc))
           {
             bool notZero(false);
@@ -99,7 +101,7 @@ void kSpaceJastrow::setupGvecs(RealType kc, std::vector<PosType>& gvecs, bool us
       // Omit half the G-vectors because of time-reversal symmetry
       if (Include(i, j))
       {
-        PosType G = 2.0 * M_PI * ((RealType)i * Ions.Lattice.Gv[0] + (RealType)j * Ions.Lattice.Gv[1]);
+        PosType G = 2.0 * M_PI * ((RealType)i * Ions.getLattice().Gv[0] + (RealType)j * Ions.getLattice().Gv[1]);
         if (dot(G, G) <= (kc * kc))
         {
           bool notZero(false);
@@ -238,7 +240,7 @@ kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions,
     : WaveFunctionComponent("kSpaceJastrow", elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
 {
   Optimizable   = true;
-  Prefactor     = 1.0 / elecs.Lattice.Volume;
+  Prefactor     = 1.0 / elecs.getLattice().Volume;
   NumIonSpecies = 0;
   num_elecs     = elecs.getTotalNum();
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -362,8 +364,8 @@ void kSpaceJastrow::setCoefficients(std::vector<RealType>& oneBodyCoefs, std::ve
 ///////////////////////////////////////////////////////////////
 
 kSpaceJastrow::LogValueType kSpaceJastrow::evaluateLog(const ParticleSet& P,
-                                                       ParticleSet::ParticleGradient_t& G,
-                                                       ParticleSet::ParticleLaplacian_t& L)
+                                                       ParticleSet::ParticleGradient& G,
+                                                       ParticleSet::ParticleLaplacian& L)
 {
   RealType J1(0.0), J2(0.0);
   int N = P.getTotalNum();
@@ -480,7 +482,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  const PosType &rnew(P.activePos), &rold(P.R[iat]);
+  const PosType &rnew(P.getActivePos()), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -531,7 +533,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, Gr
 kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  const PosType &rnew(P.activePos), &rold(P.R[iat]);
+  const PosType &rnew(P.getActivePos()), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -570,7 +572,7 @@ kSpaceJastrow::PsiValueType kSpaceJastrow::ratio(ParticleSet& P, int iat)
 void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
 {
   RealType J1new(0.0);
-  const PosType& rnew(P.activePos);
+  const PosType& rnew(P.getActivePos());
   //     Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i = 0; i < nOne; i++)
@@ -627,12 +629,12 @@ void kSpaceJastrow::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 
 void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // eikr.resize(NumPtcls,MaxK);
   // eikr_new.resize(MaxK);
   // delta_eikr.resize(MaxK);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.add(Rhok.first_address(), Rhok.last_address());
   // buf.add(U.first_address(), U.last_address());
   // buf.add(d2U.first_address(), d2U.last_address());
@@ -642,15 +644,15 @@ void kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 
 kSpaceJastrow::LogValueType kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  LogValue = evaluateLog(P, P.G, P.L);
+  log_value_ = evaluateLog(P, P.G, P.L);
   // for(int iat=0; iat<NumPtcls; iat++)
-  //   copy(P.SK->eikr[iat],P.SK->eikr[iat]+MaxK,eikr[iat]);
+  //   copy(P.getSK().eikr[iat],P.getSK().eikr[iat]+MaxK,eikr[iat]);
   // buf.put(Rhok.first_address(), Rhok.last_address());
   // buf.put(U.first_address(), U.last_address());
   // buf.put(d2U.first_address(), d2U.last_address());
   // buf.put(FirstAddressOfdU,LastAddressOfdU);
   // return LogValue;
-  return LogValue;
+  return log_value_;
 }
 
 void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
@@ -864,8 +866,8 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
           {
             //real part of coeff
             dlogpsi[kk] += ValueType(Prefactor * real(z));
-            //convert(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
-            convert(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
+            //convertToReal(dot(OneBodyGvecs[i],P.G[iat]),tmp_dot);
+            convertToReal(dot(P.G[iat], OneBodyGvecs[i]), tmp_dot);
             dhpsioverpsi[kk] += ValueType(0.5 * Prefactor * dot(OneBodyGvecs[i], OneBodyGvecs[i]) * real(z) +
                                           Prefactor * real(z * eye) * tmp_dot);
             //	+ Prefactor*real(z*eye)*real(dot(OneBodyGvecs[i],P.G[iat]));
@@ -913,7 +915,7 @@ void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
         int kk        = myVars.where(TwoBodyVarMap[i]);
         if (kk > 0)
         {
-          convert(dot(P.G[iat], Gvec), tmp_dot);
+          convertToReal(dot(P.G[iat], Gvec), tmp_dot);
           //dhpsioverpsi[kk] -= Prefactor*dot(Gvec,Gvec)*(-real(z*qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) - Prefactor*2.0*real(dot(P.G[iat],Gvec))*imag(qmcplusplus::conj(TwoBody_rhoG[i])*z);
           dhpsioverpsi[kk] -=
               ValueType(Prefactor * dot(Gvec, Gvec) * (-real(z * qmcplusplus::conj(TwoBody_rhoG[i])) + 1.0) -

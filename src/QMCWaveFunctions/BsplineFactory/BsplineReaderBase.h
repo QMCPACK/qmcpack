@@ -44,6 +44,8 @@ struct BsplineReaderBase
   bool checkNorm;
   ///save spline coefficients to storage
   bool saveSplineCoefs;
+  ///apply orbital rotations
+  bool rotate;
   ///map from spo index to band index
   std::vector<std::vector<int>> spo2band;
 
@@ -111,7 +113,7 @@ struct BsplineReaderBase
     for (int iorb = 0; iorb < N; iorb++)
     {
       int ti                       = cur_bands[iorb].TwistIndex;
-      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]); //twist);
+      bspline->kPoints[iorb]       = mybuilder->PrimCell.k_cart(-mybuilder->TwistAngles[ti]);
       bspline->MakeTwoCopies[iorb] = (num < (numOrbs - 1)) && cur_bands[iorb].MakeTwoCopies;
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
@@ -119,11 +121,10 @@ struct BsplineReaderBase
     app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << std::endl;
 
     bspline->HalfG            = 0;
-    TinyVector<int, 3> bconds = mybuilder->TargetPtcl.Lattice.BoxBConds;
+    TinyVector<int, 3> bconds = mybuilder->TargetPtcl.getLattice().BoxBConds;
     if (!bspline->is_complex)
     {
       //no k-point folding, single special k point (G, L ...)
-      //TinyVector<double,3> twist0 = mybuilder->TwistAngles[cur_bands[0].TwistIndex];
       TinyVector<double, 3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
       for (int i = 0; i < 3; i++)
         if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
@@ -179,6 +180,9 @@ struct BsplineReaderBase
   /** Set the checkNorm variable */
   inline void setCheckNorm(bool new_checknorm) { checkNorm = new_checknorm; };
 
+  /** Set the orbital rotation flag. Rotations are applied to balance the real/imaginary components. */
+  inline void setRotate(bool new_rotate) { rotate = new_rotate; };
+
   void initialize_spo2band(int spin,
                            const std::vector<BandInfo>& bigspace,
                            SPOSetInfo& sposet,
@@ -186,7 +190,7 @@ struct BsplineReaderBase
 
   /** export the MultiSpline to the old class EinsplineSetExtended for the GPU calculation*/
   virtual std::unique_ptr<multi_UBspline_3d_z> export_MultiSplineComplexDouble() = 0;
-  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble() = 0;
+  virtual std::unique_ptr<multi_UBspline_3d_d> export_MultiSplineDouble()        = 0;
 };
 
 } // namespace qmcplusplus

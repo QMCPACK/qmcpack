@@ -27,10 +27,10 @@
 #include "Blitz.h"
 #include "../config.h"
 
-typedef TinyVector<int, 3> Int3;
-typedef Array<std::complex<double>, 1> zVec;
-typedef Array<cVec3, 1> zVecVec;
-typedef Array<cMat3, 1> zMatVec;
+using Int3    = TinyVector<int, 3>;
+using zVec    = Array<std::complex<double>, 1>;
+using zVecVec = Array<cVec3, 1>;
+using zMatVec = Array<cMat3, 1>;
 
 #ifdef USE_CBLAS
 extern "C"

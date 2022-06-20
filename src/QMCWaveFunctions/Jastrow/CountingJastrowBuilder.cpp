@@ -47,7 +47,7 @@ std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodeP
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
 
-  auto* C = new RegionType(targetPtcl);
+  auto C = std::make_unique<RegionType>(targetPtcl);
 
   Matrix<RealType> F;
   bool opt_C = true, opt_F = true;
@@ -85,9 +85,9 @@ std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodeP
             oAttrib2.add(fid, "id");
             oAttrib2.put(cur2);
             // get functor, add to function
-            FunctorType* func = new FunctorType(fid);
+            auto func = std::make_unique<FunctorType>(fid);
             func->put(cur2);
-            C->addFunc(func, fid);
+            C->addFunc(std::move(func), fid);
           }
           cur2 = cur2->next;
         }
@@ -127,8 +127,8 @@ std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodeP
           os.str("");
           os << "g" << i;
           std::string fid   = os.str();
-          FunctorType* func = new FunctorType(fid, alpha, gr, opt_g);
-          C->addFunc(func, fid);
+          auto func         = std::make_unique<FunctorType>(fid, alpha, gr, opt_g);
+          C->addFunc(std::move(func), fid);
         }
         // set default F value to all zeroes with appropriate dimension
         if (F.size() == 0)
@@ -203,7 +203,7 @@ std::unique_ptr<WaveFunctionComponent> CountingJastrowBuilder::createCJ(xmlNodeP
     }
     cur = cur->next;
   }
-  auto CJ = std::make_unique<CJOrbitalType>(targetPtcl, C, F);
+  auto CJ = std::make_unique<CJOrbitalType>(targetPtcl, std::move(C), F);
 
   CJ->addDebug(debug_flag, seqlen, period);
   CJ->addOpt(opt_C, opt_F);

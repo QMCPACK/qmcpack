@@ -18,15 +18,20 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_BATCHED_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimizeBatched.h"
+#include "QMCDrivers/QMCDriverNew.h"
+#include "QMCDrivers/QMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCDriverInput.h"
+#include "QMCDrivers/VMC/VMCBatched.h"
 #include "Optimize/NRCOptimization.h"
+#include "Optimize/NRCOptimizationFunctionWrapper.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
-#include "QMCDrivers/WFOpt/OutputMatrix.h"
+#include "OutputMatrix.h"
+#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -37,14 +42,21 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCLinearOptimizeBatched,
-                                            private NRCOptimization<QMCTraits::RealType>
+
+///forward declaration of a cost function
+class QMCCostFunctionBase;
+
+class GradientTest;
+
+
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
 {
 public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       MCWalkerConfiguration& w,
                                       QMCDriverInput&& qmcdriver_input,
+                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
                                       MCPopulation&& population,
                                       SampleStack& samples,
@@ -53,6 +65,10 @@ public:
   ///Destructor
   ~QMCFixedSampleLinearOptimizeBatched() override;
 
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
+
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
+
   ///Run the Optimization algorithm.
   bool run() override;
   ///preprocess xml node
@@ -60,9 +76,28 @@ public:
   ///process xml node value (parameters for both VMC and OPT) for the actual optimization
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
-  RealType Func(RealType dl) override;
+  RealType costFunc(RealType dl);
+
+  ///common operation to start optimization
+  void start();
+
+#ifdef HAVE_LMY_ENGINE
+  using ValueType = QMCTraits::ValueType;
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
+#endif
+
+
+  ///common operation to finish optimization, used by the derived classes
+  void finish();
+
+  void generateSamples();
+
 
 private:
+  NRCOptimizationFunctionWrapper<QMCFixedSampleLinearOptimizeBatched> objFuncWrapper_;
+
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -87,10 +122,19 @@ private:
   // perform optimization using a gradient descent algorithm
   bool descent_run();
 
+  // Previous linear optimizers ("quartic" and "rescale")
+  bool previous_linear_methods_run();
+
+
 #ifdef HAVE_LMY_ENGINE
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -125,17 +169,21 @@ private:
                           const int bi,
                           const bool gu);
 
-  int NumOfVMCWalkers;
+  // ------------------------------------
+  // Used by legacy linear method algos
+
+  std::vector<RealType> optdir, optparam;
+
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
+
+  RealType param_tol;
+  //-------------------------------------
+
+
+  ///Number of iterations maximum before generating new configurations.
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
-  std::string GEVtype, StabilizerMethod, GEVSplit;
-  RealType w_beta;
-  /// number of previous steps to orthogonalize to.
-  int eigCG;
-  /// total number of cg steps per iterations
-  int TotalCGSteps;
+  RealType stabilizerScale, bigChange, exp0;
   /// the previous best identity shift
   RealType bestShift_i;
   /// the previous best overlap shift
@@ -182,10 +230,6 @@ private:
   bool block_third;
 
 
-  /// Number of walkers in each crowd to use to process samples during optimization
-  int crowd_size_;
-  /// Number of crowds to use to process samples during optimization
-  int opt_num_crowds_;
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run
@@ -200,8 +244,14 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
+  // Test parameter gradients
+  bool doGradientTest;
+
   // Output Hamiltonian and overlap matrices
-  bool do_output_matrices_;
+  bool do_output_matrices_csv_;
+
+  // Output Hamiltonian and overlap matrices in HDF format
+  bool do_output_matrices_hdf_;
 
   // Flag to open the files on first pass and print header line
   bool output_matrices_initialized_;
@@ -211,6 +261,33 @@ private:
 
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
+
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
+  Timer t1;
+
+  ///xml node to be dumped
+  xmlNodePtr wfNode;
+
+  ParameterSet m_param;
+
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+
+  ///vmc engine
+  std::unique_ptr<VMCBatched> vmcEngine;
+
+  VMCDriverInput vmcdriver_input_;
+  SampleStack& samples_;
+
+  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
+  // which still takes an MCWalkerConfiguration in the constructor.
+  MCWalkerConfiguration& W;
+  /// This is retained in order to construct and reconstruct the vmcEngine.
+  const std::optional<EstimatorManagerInput> global_emi_;
 };
 } // namespace qmcplusplus
 #endif

@@ -14,7 +14,7 @@
 
 #include "SpinDensityInput.h"
 #include "ValidSpinDensityInput.h"
-#include "SpinDensityTesting.h"
+#include "EstimatorTesting.h"
 #include "ParticleSet.h"
 #include "OhmmsData/Libxml2Doc.h"
 
@@ -26,7 +26,7 @@ namespace qmcplusplus
 TEST_CASE("SpinDensityInput::readXML", "[estimators]")
 {
   using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout_t;
+  using Lattice = POLT::ParticleLayout;
 
   for (auto input_xml : testing::valid_spin_density_input_sections)
   {
@@ -35,8 +35,7 @@ TEST_CASE("SpinDensityInput::readXML", "[estimators]")
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
 
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
 
     Lattice lattice;
     if (sdi.get_cell().explicitly_defined == true)

@@ -44,7 +44,7 @@ struct ParseCase
       : input(in), output(out), extra_split(extra)
   {}
 };
-typedef vector<ParseCase> ParseCaseVector_t;
+using ParseCaseVector_t = vector<ParseCase>;
 
 
 TEST_CASE("parsewords", "[utilities]")

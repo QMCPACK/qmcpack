@@ -1,7 +1,9 @@
 module unload cray-libsci
 module load cray-hdf5-parallel
-module load gcc
-module load cmake/3.16.2
+module load gcc/9.3.0
+module load cmake/3.20.4
+
+module list >& load_modules.txt
 
 export CC=cc
 export CXX=CC

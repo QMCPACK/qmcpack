@@ -741,7 +741,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
         auto alloc_shared_(make_node_allocator<ComplexType>(TGwfn));
         for (auto& v : PsiT)
         {
-          PsiT_.emplace_back(MType({v.size(0), v.size(1)}, alloc_shared_));
+          PsiT_.emplace_back(MType({static_cast<MType::size_type>(v.size(0)), static_cast<MType::size_type>(v.size(1))}, alloc_shared_));
           ma::Matrix2MAREF('N', v, PsiT_.back());
         }
         return Wavefunction(NOMSD<MType>(AFinfo, cur, TGwfn, std::move(SDetOp), std::move(HOps), std::move(ci),
@@ -765,7 +765,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop,
         auto alloc_shared_(make_node_allocator<ComplexType>(TGwfn));
         for (auto& v : PsiT)
         {
-          PsiT_.emplace_back(MType({v.size(0), v.size(1)}, alloc_shared_));
+          PsiT_.emplace_back(MType({static_cast<MType::size_type>(v.size(0)), static_cast<MType::size_type>(v.size(1))}, alloc_shared_));
           ma::Matrix2MAREF('N', v, PsiT_.back());
         }
         return Wavefunction(NOMSD<MType>(AFinfo, cur, TGwfn, std::move(SDetOp), std::move(HOps), std::move(ci),

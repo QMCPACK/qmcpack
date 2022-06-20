@@ -11,6 +11,7 @@
 
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include <PlatformSelector.hpp>
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
@@ -24,24 +25,24 @@
 
 namespace qmcplusplus
 {
-BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep, const std::string& useGPU)
+std::unique_ptr<BsplineReaderBase> createBsplineRealDouble(EinsplineSetBuilder* e,
+                                                           bool hybrid_rep,
+                                                           const std::string& useGPU)
 {
   app_summary() << "    Using real valued spline SPOs with real double precision storage (R2R)." << std::endl;
-#if defined(ENABLE_OFFLOAD)
-  if (useGPU == "yes")
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
     app_summary() << "OpenMP offload has not been implemented to support real valued spline SPOs with real storage!"
                   << std::endl;
-#endif
   app_summary() << "    Running on CPU." << std::endl;
 
-  BsplineReaderBase* aReader = nullptr;
+  std::unique_ptr<BsplineReaderBase> aReader;
   if (hybrid_rep)
   {
     app_summary() << "    Using hybrid orbital representation." << std::endl;
-    aReader = new HybridRepSetReader<HybridRepReal<SplineR2R<double>>>(e);
+    aReader = std::make_unique<HybridRepSetReader<HybridRepReal<SplineR2R<double>>>>(e);
   }
   else
-    aReader = new SplineSetReader<SplineR2R<double>>(e);
+    aReader = std::make_unique<SplineSetReader<SplineR2R<double>>>(e);
   return aReader;
 }
 } // namespace qmcplusplus

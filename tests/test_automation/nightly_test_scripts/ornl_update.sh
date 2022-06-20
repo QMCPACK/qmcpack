@@ -18,12 +18,21 @@ fi
 spack uninstall -y gcc@master
 spack install gcc@master
 
-spack uninstall -y llvm@main
-spack install llvm@main +cuda cuda_arch=70 ^python@${python_version}%gcc@${gcc_vnew}
-
-if [ ! -e `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_112-sm_70.bc ]; then
-    cp `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_110-sm_70.bc `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_112-sm_70.bc
-fi
-
+ourhostname=`hostname|sed 's/\..*//g'`
+case "$ourhostname" in
+    nitrogen )
+	echo Skipping llvm@main install on nitrogen/AMD since libomptarget will fail to build
+	;;
+    * )
+	spack uninstall -y llvm@main
+	spack install llvm@main +cuda cuda_arch=70
+	;;
+esac
+    
+# Old bugfixes/workarounds:
+#spack install llvm@main +cuda cuda_arch=70 ^binutils +plugins
+#if [ ! -e `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_112-sm_70.bc ]; then
+#    cp `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_110-sm_70.bc `spack location -i llvm@main`/lib/libomptarget-nvptx-cuda_112-sm_70.bc
+#fi
 
 echo --- Update Script END `date`

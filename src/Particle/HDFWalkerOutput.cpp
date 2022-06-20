@@ -50,17 +50,15 @@ namespace qmcplusplus
  * the life time of this object. This is necessary so that failures do not lead
  * to unclosed hdf5.
  */
-HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& aroot, Communicate* c)
+HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Communicate* c)
     : appended_blocks(0),
-      number_of_walkers(0),
-      number_of_backups(0),
-      max_number_of_backups(4),
+      number_of_walkers_(0),
+      number_of_particles_(num_ptcls),
       myComm(c),
       currentConfigNumber(0),
       RootName(aroot)
 //       , fw_out(myComm)
 {
-  number_of_particles = W.getTotalNum();
   RemoteData.reserve(4);
   RemoteData.push_back(new BufferType);
   RemoteData.push_back(new BufferType);
@@ -72,7 +70,7 @@ HDFWalkerOutput::HDFWalkerOutput(MCWalkerConfiguration& W, const std::string& ar
   //     int dim=OHMMS_DIM;
   //     fw_out.create(ConfigFileName);
   //     fw_out.write(cur_version.version,hdf::version);
-  //     fw_out.write(number_of_particles,"NumberElectrons");
+  //     fw_out.write(number_of_particles_,"NumberElectrons");
   //     fw_out.write(dim,"DIM");
 }
 
@@ -94,7 +92,7 @@ HDFWalkerOutput::~HDFWalkerOutput()
  *  - walker_partition (int array)
  *  - walkers (nw,np,3)
  */
-bool HDFWalkerOutput::dump(MCWalkerConfiguration& W, int nblock)
+bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
 {
   std::string FileName = myComm->getName() + hdf::config_ext;
   //rotate files
@@ -121,20 +119,20 @@ bool HDFWalkerOutput::dump(MCWalkerConfiguration& W, int nblock)
   return true;
 }
 
-void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive& hout, int nblock)
+void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_archive& hout, int nblock)
 {
-  const int wb = OHMMS_DIM * number_of_particles;
+  const int wb = OHMMS_DIM * number_of_particles_;
   if (nblock > block)
   {
     RemoteData[0]->resize(wb * W.getActiveWalkers());
-    W.putConfigurations(RemoteData[0]->begin());
+    W.putConfigurations(RemoteData[0]->data());
     block = nblock;
   }
 
-  number_of_walkers = W.WalkerOffsets[myComm->size()];
-  hout.write(number_of_walkers, hdf::num_walkers);
+  number_of_walkers_ = W.WalkerOffsets[myComm->size()];
+  hout.write(number_of_walkers_, hdf::num_walkers);
 
-  std::array<size_t, 3> gcounts{number_of_walkers, number_of_particles, OHMMS_DIM};
+  std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
 
   if (hout.is_parallel())
   {
@@ -159,7 +157,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
       hout.write(slab, "walker_partition");
     }
     { // write walker configuration
-      std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles, OHMMS_DIM};
+      std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()]), 0, 0};
       hyperslab_proxy<BufferType, 3> slab(*RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);
@@ -224,7 +222,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 // #if defined(HAVE_MPI)
 //     else
 //     {
-//       const int n3=number_of_particles*OHMMS_DIM;
+//       const int n3=number_of_particles_*OHMMS_DIM;
 //       for (int i=0; i<FWO.ForwardWalkingHistory.size(); i++ )
 //       {
 //         int fwdata_size=FWO.ForwardWalkingHistory[i]->size();
@@ -237,7 +235,7 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 //
 //         std::vector<float> posVecs;
 //         //reserve space to minimize the allocation
-//         posVecs.reserve(FWO.number_of_walkers*n3);
+//         posVecs.reserve(FWO.number_of_walkers_*n3);
 //         std::vector<long> myIDs(fwdata_size),pIDs(fwdata_size);
 //         std::vector<float>::iterator tend(posVecs.begin());
 //         for (int j=0;j<fwdata_size;j++)

@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <complex>
+#include <type_traits>
 #include <cuda.h>
 #include <thrust/complex.h>
 #include <cuda_runtime.h>
@@ -59,10 +60,10 @@ __global__ void kernel_inplace_cast(Size n, thrust::complex<T>* A, thrust::compl
     ni = n - 1 - ni;
     for (Size i = 0; i < n; i += nb, ni -= nb)
     {
-      if (ni >= 0)
+      if (std::is_unsigned<Size>::value || ni >= 0)
         Bi = static_cast<thrust::complex<Q>>(*(A + ni));
       __syncthreads();
-      if (ni >= 0)
+      if (std::is_unsigned<Size>::value || ni >= 0)
         *(B + ni) = Bi;
       //      __syncthreads();
     }

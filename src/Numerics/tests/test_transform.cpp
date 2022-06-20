@@ -26,7 +26,7 @@ namespace qmcplusplus
 class Input
 {
 public:
-  typedef double real_type;
+  using real_type = double;
 
   double f(double r) { return r * r; }
 
@@ -35,8 +35,8 @@ public:
 
 TEST_CASE("transform2gridfunctor", "[numerics]")
 {
-  typedef OneDimGridBase<double> GridType;
-  typedef OneDimQuinticSpline<double> OutputType;
+  using GridType   = OneDimGridBase<double>;
+  using OutputType = OneDimQuinticSpline<double>;
 
   auto agrid = std::make_unique<LogGrid<double>>();
   agrid->set(0.1, 10, 10);

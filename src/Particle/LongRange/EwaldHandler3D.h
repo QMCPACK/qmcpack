@@ -43,7 +43,7 @@ public:
   EwaldHandler3D(ParticleSet& ref, mRealType kc_in = -1.0) : LRHandlerBase(kc_in)
   {
     LRHandlerBase::ClassName = "EwaldHandler3D";
-    Sigma = LR_kc = ref.Lattice.LR_kc;
+    Sigma = LR_kc = ref.getLattice().LR_kc;
   }
 
   /** "copy" constructor
@@ -99,9 +99,9 @@ public:
     return 2.0 * Sigma * std::exp(-Sigma * Sigma * r * r) / (std::sqrt(M_PI) * r) - erf(Sigma * r) * rinv * rinv;
   }
 
-  void fillFk(KContainer& KList);
+  void fillFk(const KContainer& KList);
 
-  void fillYkgstrain(KContainer& KList)
+  void fillYkgstrain(const KContainer& KList)
   {
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
@@ -114,7 +114,7 @@ public:
     }
   }
 
-  void filldFk_dk(KContainer& KList)
+  void filldFk_dk(const KContainer& KList)
   {
     dFk_dstrain.resize(KList.kpts_cart.size());
 

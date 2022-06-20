@@ -49,18 +49,6 @@ if(NOT QMC_CUDA)
       C2_PP_MSDJ_SHORT # VMC
     )
 
-    qmc_run_and_check(
-      short-C2_pp_msdj-XML-traditional-vmc
-      "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
-      C2_TZ_PP_SHORT_XML_MSDJ_TRAD
-      vmc_short_pp_msdj-XML-traditional.xml
-      1
-      16
-      TRUE
-      1
-      C2_PP_MSDJ_SHORT # VMC
-    )
-
     list(APPEND C2_PP_MSDJ_LONG "kinetic" "7.74018 0.0034") # kinetic energy
     list(APPEND C2_PP_MSDJ_LONG "totenergy" "-11.060274 0.00037") # total energy
     list(APPEND C2_PP_MSDJ_LONG "eeenergy" "12.14369 0.0020") # e-e energy
@@ -89,22 +77,10 @@ if(NOT QMC_CUDA)
       C2_PP_MSDJ_LONG # VMC
     )
 
-    qmc_run_and_check(
-      long-C2_pp_msdj-XML-traditional-vmc
-      "${qmcpack_SOURCE_DIR}/tests/molecules/C2_pp"
-      C2_TZ_PP_LONG_XML_MSDJ_TRAD
-      vmc_long_pp_msdj-XML-traditional.xml
-      1
-      16
-      TRUE
-      1
-      C2_PP_MSDJ_LONG # VMC
-    )
-
   else()
-    message_verbose(
+    message(VERBOSE
       "Skipping C2_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
 else()
-  message_verbose("Skipping C2_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+  message(VERBOSE "Skipping C2_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 endif()

@@ -192,13 +192,13 @@ public:
     assert(k >= 0 && k < haj.size());
     assert(k >= 0 && k < Vakbl_view.size());
     if (Gcloc.num_elements() < Gc.size(1) * Vakbl_view[k].size(0))
-      Gcloc.reextent(iextensions<1u>{Vakbl_view[k].size(0) * Gc.size(1)});
+      Gcloc.reextent(iextensions<1u>(Vakbl_view[k].size(0) * Gc.size(1)));
     boost::multi::array_ref<SPComplexType, 2> buff(Gcloc.data(), {long(Vakbl_view[k].size(0)), long(Gc.size(1))});
 
     int nwalk = Gc.size(1);
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix "
                 "dimensions \n");
     for (int n = 0; n < nwalk; n++)
@@ -240,7 +240,7 @@ public:
     {
       using ma::T;
       if (Gcloc.num_elements() < SpvnT[k].size(0) * Gc.size(1))
-        Gcloc.reextent(iextensions<1u>{SpvnT[k].size(0) * Gc.size(1)});
+        Gcloc.reextent(iextensions<1u>(SpvnT[k].size(0) * Gc.size(1)));
       assert(SpvnT_view[k].size(1) == Gc.size(0));
       RealType scl = (walker_type == CLOSED ? 4.0 : 1.0);
       // SpvnT*G
@@ -511,7 +511,7 @@ private:
   {
     if (SM_TMats.num_elements() < N)
     {
-      SM_TMats.reextent(iextensions<1u>{N});
+      SM_TMats.reextent(iextensions<1u>(N));
       using std::fill_n;
       fill_n(SM_TMats.origin(), N, SPComplexType(0.0));
       comm->barrier();

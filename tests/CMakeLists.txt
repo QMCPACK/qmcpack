@@ -1,7 +1,5 @@
 message(STATUS "Adding integration tests for QMCPACK")
-if(NOT QMC_VERBOSE_CONFIGURATION)
-  message("Set QMC_VERBOSE_CONFIGURATION=1 for details of which tests will be enabled.")
-endif()
+message("Use --log-level=VERBOSE CMake option for details of which tests will be enabled.")
 
 add_subdirectory(converter)
 add_subdirectory(estimator)
@@ -11,6 +9,11 @@ add_subdirectory(performance)
 
 if(QE_FOUND)
   add_subdirectory(pw2qmcpack)
+endif()
+
+if(RMG_FOUND)
+  add_subdirectory(rmg)
+  message("adding RMG tests")
 endif()
 
 message("Adding system tests for QMCPACK")
@@ -45,8 +48,7 @@ endif()
 
 if(BUILD_AFQMC)
   include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-  set(afqmctools_python_reqs numpy;h5py;mpi4py;scipy;pyscf)
-  check_python_reqs(afqmctools_python_reqs afqmc_workflow add_tests)
+  check_python_reqs("numpy;h5py;mpi4py;scipy;pyscf" afqmc_workflow add_tests)
   if(add_tests)
     message("Adding tests for AFQMC workflow.")
     add_subdirectory("afqmc/workflow")
@@ -56,8 +58,7 @@ endif()
 if(HAVE_PYSCF)
   if(NOT QMC_COMPLEX)
     include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
-    set(pyscf_python_reqs numpy;h5py;pyscf;PyscfToQmcpack;PyscfToQmcpack_Spline)
-    check_python_reqs(pyscf_python_reqs pyscf_workflow add_tests)
+    check_python_reqs("numpy;h5py;PyscfToQmcpack;PyscfToQmcpack_Spline" pyscf_workflow add_tests)
 
     if(add_tests)
       message("Python dependencies met. Adding PySCF workflow tests")
@@ -65,6 +66,7 @@ if(HAVE_PYSCF)
     endif()
   endif()
 endif()
+
 #
 #
 if(NOT ${QMCAPP_ERR} STREQUAL "")

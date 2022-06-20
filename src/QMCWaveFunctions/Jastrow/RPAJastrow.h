@@ -31,9 +31,9 @@ namespace qmcplusplus
  */
 class RPAJastrow : public WaveFunctionComponent
 {
-  typedef LRHandlerBase HandlerType;
-  typedef BsplineFunctor<RealType> FuncType;
-  typedef LinearGrid<RealType> GridType;
+  using HandlerType = LRHandlerBase;
+  using FuncType    = BsplineFunctor<RealType>;
+  using GridType    = LinearGrid<RealType>;
 
 public:
   RPAJastrow(ParticleSet& target);
@@ -52,7 +52,7 @@ public:
   void makeShortRange();
   void makeLongRange();
 
-  void setHandler(HandlerType* Handler) { myHandler = Handler; };
+  void setHandler(std::unique_ptr<HandlerType> Handler) { myHandler = std::move(Handler); };
 
   /** check out optimizable variables
     */
@@ -71,8 +71,8 @@ public:
   void resetParameters(const opt_variables_type& active) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
-                           ParticleSet::ParticleGradient_t& G,
-                           ParticleSet::ParticleLaplacian_t& L) override;
+                           ParticleSet::ParticleGradient& G,
+                           ParticleSet::ParticleLaplacian& L) override;
 
   PsiValueType ratio(ParticleSet& P, int iat) override;
   GradType evalGrad(ParticleSet& P, int iat) override;
@@ -90,6 +90,12 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& dlogpsi,
+                           std::vector<ValueType>& dhpsioverpsi) override
+  {}
+
 private:
   bool IgnoreSpin;
   bool DropLongRange;
@@ -104,7 +110,7 @@ private:
   ///@}
   /** main handler
    */
-  HandlerType* myHandler;
+  std::unique_ptr<HandlerType> myHandler;
   ///object to handle the long-range part
   kSpaceJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
@@ -115,7 +121,7 @@ private:
   GridType* myGrid;
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
-  std::vector<WaveFunctionComponent*> Psi;
+  UPtrVector<WaveFunctionComponent> Psi;
 };
 } // namespace qmcplusplus
 #endif
