@@ -246,9 +246,6 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   forCostFunc.descentEngine = &descentEngineObj;
   forCostFunc.method = MinMethod;
 
-  std::cout << "check lm engine in engine_start" << std::endl;
-  std::cout << "full init? " << forCostFunc.lmEngine->full_init() << std::endl;
-
   // generate samples
   generate_samples_timer_.start();
   generateSamples();
@@ -1252,11 +1249,22 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************" << std::endl
             << std::endl;
 
+//Apparently the batched drivers are intended to be run only once, which 
+//means that this part of adaptive_three_shift will not work as 
+//calling start or engine_start will lead to vmcEngine being run again.
+//This will lead to a slight difference in behavior compared to the 
+//legacy drivers as those could be run a second time to obtain samples based 
+//on the wave function from the middle shift.
+//It is possible this difference may not make much difference in 
+//practical optimization performance, but that is unexplored.
+
+  /*
   std::string old_name = vmcEngine->getCommunicator()->getName();
   vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
   //start();
   engine_start(EngineObj, *descentEngineObj, MinMethod);
   vmcEngine->getCommunicator()->setName(old_name);
+*/
 
   // say what we are doing
   app_log() << std::endl
