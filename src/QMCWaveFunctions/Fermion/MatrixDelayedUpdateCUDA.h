@@ -526,13 +526,15 @@ public:
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       if (success != 0)
         throw std::runtime_error("ompBLAS::gemv failed.");
-      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+
+      PRAGMA_OFFLOAD("omp target parallel for simd is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      for (int i = 0; i < norb; i++)
       {
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        if (i == 0)
+          temp_ptr[rowchanged] -= cone;
       }
+
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
                              temp_ptr, 1, Ainv_ptr, lda);
       if (success != 0)
