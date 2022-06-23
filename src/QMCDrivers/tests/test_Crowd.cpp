@@ -46,10 +46,10 @@ public:
   CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm), dispatchers_(true)
   {
     auto& pset_elec = *(pools.particle_pool->getParticleSet("e"));
-    auto& twf = *(pools.wavefunction_pool->getPrimary());
-    auto& ham = *(pools.hamiltonian_pool->getPrimary());
-    crowd_ptr    = std::make_unique<Crowd>(em, pset_elec, twf, ham, dispatchers_);
-    Crowd& crowd = *crowd_ptr;
+    auto& twf       = *(pools.wavefunction_pool->getPrimary());
+    auto& ham       = *(pools.hamiltonian_pool->getPrimary());
+    crowd_ptr       = std::make_unique<Crowd>(em, pset_elec, twf, ham, dispatchers_);
+    Crowd& crowd    = *crowd_ptr;
     // To match the minimal particle set
     int num_particles = 2;
     // for testing we update the first position in the walker
@@ -83,7 +83,7 @@ TEST_CASE("Crowd integration", "[drivers]")
   Communicate* comm = OHMMS::Controller;
   using namespace testing;
   SetupPools pools;
-  
+
   EstimatorManagerNew em(*pools.hamiltonian_pool->getPrimary(), comm);
 
   const MultiWalkerDispatchers dispatchers(true);

@@ -441,7 +441,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid = true;
+  IsValid       = true;
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];

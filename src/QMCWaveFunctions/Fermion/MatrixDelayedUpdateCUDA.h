@@ -197,8 +197,8 @@ private:
   static void mw_prepareInvRow(const RefVectorWithLeader<This_t>& engines, const int rowchanged)
   {
     auto& engine_leader              = engines.getLeader();
-    auto hstream                    = engine_leader.cuda_handles_->getStream();
-    auto h_cublas                   = engine_leader.cuda_handles_->getCuBLAS();
+    auto hstream                     = engine_leader.cuda_handles_->getStream();
+    auto h_cublas                    = engine_leader.cuda_handles_->getCuBLAS();
     auto& cminusone_vec              = engine_leader.mw_mem_->cminusone_vec;
     auto& cone_vec                   = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec                  = engine_leader.mw_mem_->czero_vec;
@@ -295,7 +295,7 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto hstream               = engine_leader.cuda_handles_->getStream();
+    auto hstream                = engine_leader.cuda_handles_->getStream();
     auto& updateRow_buffer_H2D  = engine_leader.mw_mem_->updateRow_buffer_H2D;
     auto& mw_temp               = engine_leader.mw_mem_->mw_temp;
     auto& mw_rcopy              = engine_leader.mw_mem_->mw_rcopy;
@@ -449,7 +449,7 @@ public:
     if (!engine_leader.isSM1())
       mw_prepareInvRow(engines, rowchanged);
 
-    auto hstream             = engine_leader.cuda_handles_->getStream();
+    auto hstream              = engine_leader.cuda_handles_->getStream();
     auto& evalGrad_buffer_H2D = engine_leader.mw_mem_->evalGrad_buffer_H2D;
     auto& grads_value_v       = engine_leader.mw_mem_->grads_value_v;
 
@@ -569,7 +569,7 @@ public:
       return;
     }
 
-    auto hstream                     = engine_leader.cuda_handles_->getStream();
+    auto hstream                      = engine_leader.cuda_handles_->getStream();
     auto& cminusone_vec               = engine_leader.mw_mem_->cminusone_vec;
     auto& cone_vec                    = engine_leader.mw_mem_->cone_vec;
     auto& czero_vec                   = engine_leader.mw_mem_->czero_vec;
@@ -696,8 +696,8 @@ public:
     if (delay_count == 0)
       return;
     // update the inverse matrix
-    auto hstream              = engine_leader.cuda_handles_->getStream();
-    auto h_cublas             = engine_leader.cuda_handles_->getCuBLAS();
+    auto hstream               = engine_leader.cuda_handles_->getStream();
+    auto h_cublas              = engine_leader.cuda_handles_->getCuBLAS();
     auto& updateInv_buffer_H2D = engine_leader.mw_mem_->updateInv_buffer_H2D;
     const int norb             = engine_leader.get_psiMinv().rows();
     const int lda              = engine_leader.get_psiMinv().cols();
@@ -826,7 +826,7 @@ public:
   static void mw_transferAinv_D2H(const RefVectorWithLeader<This_t>& engines)
   {
     auto& engine_leader = engines.getLeader();
-    auto hstream       = engine_leader.cuda_handles_->getStream();
+    auto hstream        = engine_leader.cuda_handles_->getStream();
     engine_leader.guard_no_delay();
 
     for (This_t& engine : engines)

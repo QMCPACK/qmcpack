@@ -28,7 +28,7 @@ class CUDALinearAlgebraHandles : public Resource
       {
         cudaErrorCheck(cudaStreamDestroy(*stream_ptr), "cudaStreamDestroy failed!");
         delete stream_ptr;
-	std::cout << "CUDAStream destroyed\n";
+        std::cout << "CUDAStream destroyed\n";
       }
     }
   };
