@@ -28,8 +28,6 @@ set(PARTICLE
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
-    createDistanceTableAAOMPTarget.cpp
-    createDistanceTableABOMPTarget.cpp
     HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
@@ -52,6 +50,34 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
 target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
+
+# Workaround for broken OMP Target debug in clang as of 5d, main is more broken so
+# perhaps this problem is fixed.
+#
+# In the meantime we need to make a new target for just the omp target tainted files
+# so we don't have broken debug for all of ParticleSet.
+
+# this can be put back into qmcparticle when omp target isn't broken.
+set(PARTICLEOMPTARGET
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp)
+
+if(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget OBJECT ${PARTICLEOMPTARGET})
+else(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget ${PARTICLEOMPTARGET})
+endif(USE_OBJECT_TARGET)
+
+target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
+
+if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
+    target_compile_options(qmcparticle_omptarget PRIVATE $<$<CONFIG:DEBUG>:-O3>)
+endif()
+
+target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
+
+# workaround end
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)

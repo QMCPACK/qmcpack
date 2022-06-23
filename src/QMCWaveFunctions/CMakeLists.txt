@@ -58,9 +58,10 @@ set(JASTROW_SRCS
     Jastrow/RPAJastrow.cpp
     Jastrow/J1OrbitalSoA.cpp
     Jastrow/J2OrbitalSoA.cpp
-    Jastrow/J2OMPTarget.cpp
     LatticeGaussianProduct.cpp
     LatticeGaussianProductBuilder.cpp)
+set(JASTROW_OMPTARGET_SRCS
+    Jastrow/J2OMPTarget.cpp)
 
 if(QMC_COMPLEX)
   set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
@@ -102,11 +103,12 @@ if(OHMMS_DIM MATCHES 3)
         BandInfo.cpp
         BsplineFactory/BsplineReaderBase.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp
-                       BsplineFactory/SplineC2COMPTarget.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
+      set(FERMION_OMPTARGET_SRCS BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
-                       BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp BsplineFactory/SplineC2ROMPTarget.cpp)
+        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
+      set(FERMION_OMPTARGET_SRCS BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)
 
   endif(HAVE_EINSPLINE)
@@ -163,6 +165,29 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime)
 target_link_libraries(qmcwfs PRIVATE einspline platform_LA Math::FFTW3)
+
+# Workaround for broken OMP Target debug in clang as of 5d, main is more broken so
+# perhaps this problem is fixed.
+#
+# In the meantime we need to make a new target for just the omp target tainted files
+# so we don't have broken debug for all of QMCWavefunctions
+
+if(USE_OBJECT_TARGET)
+  add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(qmcwfs_omptarget ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
+endif(USE_OBJECT_TARGET)
+# the srcs can be put back into qmcwfs when clang omp target isn't broken.
+
+target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers)
+
+if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
+    target_compile_options(qmcwfs_omptarget PRIVATE $<$<CONFIG:DEBUG>:-O3>)
+endif()
+
+target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
+# end omp target workaround
 
 if(ENABLE_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
