@@ -158,6 +158,8 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
 
     makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
+    crowds_.resize(awc.walkers_per_crowd.size());
+
     // at this point we can finally construct the Crowd objects they create their contexts multi
     // walker resources if applicable.
     if (qmcdriver_input_.areWalkersSerialized())
@@ -177,8 +179,6 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
                                     population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_);
       app_debug() << "Multi walker shared resources creation completed" << std::endl;
     }
-
-    crowds_.resize(awc.walkers_per_crowd.size());
 
     //Now give walkers references to their walkers
     population_.redistributeWalkers(crowds_);
