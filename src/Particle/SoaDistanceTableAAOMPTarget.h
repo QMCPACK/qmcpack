@@ -477,7 +477,6 @@ struct SoaDistanceTableAAOMPTarget : public DTD_BConds<T, D, SC>, public Distanc
     if (!(modes_ & DTModes::NEED_TEMP_DATA_ON_HOST))
       return;
 
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].updatePartial(jat, from_temp[iw]);
   }
