@@ -195,7 +195,6 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   up_spo_leader.mw_evaluateVGL(up_spo_list, P_list, iat, up_psi_v_list, up_dpsi_v_list, up_d2psi_v_list);
   dn_spo_leader.mw_evaluateVGL(dn_spo_list, P_list, iat, dn_psi_v_list, dn_dpsi_v_list, dn_d2psi_v_list);
 
-#pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
@@ -327,7 +326,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   dn_spo_leader.mw_evaluate_notranspose(dn_spo_list, P_list, first, last, dn_logdet_list, dn_dlogdet_list,
                                         dn_d2logdet_list);
 
-#pragma omp parallel for
   for (int iw = 0; iw < nw; iw++)
     for (int iat = 0; iat < nelec; iat++)
     {
