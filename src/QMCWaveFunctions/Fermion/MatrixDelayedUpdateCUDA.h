@@ -60,6 +60,8 @@ public:
   using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -204,11 +206,13 @@ private:
     const int norb                   = engine_leader.get_psiMinv().rows();
     const int nw                     = engines.size();
     int& delay_count                 = engine_leader.delay_count;
-    prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * 7 * nw);
+
+    constexpr size_t num_ptrs_packed = 7; // it must match packing and unpacking
+    prepare_inv_row_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     engine_leader.resize_fill_constant_arrays(nw);
 
     const int lda_Binv = engine_leader.Binv_gpu.cols();
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.data()), 7, nw);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(prepare_inv_row_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];
@@ -269,8 +273,7 @@ private:
    *  \param[in] psiM_g_list        device ptrs
    *  \param[in] psiM_l_list        device ptrs
    *  \param[in] isAccepted         bool but wait some lists are also filtered
-   *  \param[in] phi_vgl_v_dev_ptr  device ptr
-   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
   static void mw_updateRow(const RefVectorWithLeader<This_t>& engines,
@@ -278,8 +281,7 @@ private:
                            const std::vector<Value*>& psiM_g_list,
                            const std::vector<Value*>& psiM_l_list,
                            const std::vector<bool>& isAccepted,
-                           const Value* phi_vgl_v_dev_ptr,
-                           const size_t phi_vgl_stride,
+                           const OffloadMWVGLArray<Value>& phi_vgl_v,
                            const std::vector<Value>& ratios)
   {
     auto& engine_leader = engines.getLeader();
@@ -293,32 +295,35 @@ private:
     if (n_accepted == 0)
       return;
 
-    auto& hstream              = engine_leader.cuda_handles_->hstream;
-    auto& updateRow_buffer_H2D = engine_leader.mw_mem_->updateRow_buffer_H2D;
-    auto& mw_temp              = engine_leader.mw_mem_->mw_temp;
-    auto& mw_rcopy             = engine_leader.mw_mem_->mw_rcopy;
-    auto& cone_vec             = engine_leader.mw_mem_->cone_vec;
-    auto& czero_vec            = engine_leader.mw_mem_->czero_vec;
-    const int norb             = engine_leader.get_ref_psiMinv().rows();
-    const int lda              = engine_leader.get_ref_psiMinv().cols();
+    auto& hstream               = engine_leader.cuda_handles_->hstream;
+    auto& updateRow_buffer_H2D  = engine_leader.mw_mem_->updateRow_buffer_H2D;
+    auto& mw_temp               = engine_leader.mw_mem_->mw_temp;
+    auto& mw_rcopy              = engine_leader.mw_mem_->mw_rcopy;
+    auto& cone_vec              = engine_leader.mw_mem_->cone_vec;
+    auto& czero_vec             = engine_leader.mw_mem_->czero_vec;
+    const int norb              = engine_leader.get_ref_psiMinv().rows();
+    const int lda               = engine_leader.get_ref_psiMinv().cols();
+    const int nw                = engines.size();
+    const size_t phi_vgl_stride = nw * norb;
     mw_temp.resize(norb * n_accepted);
     mw_rcopy.resize(norb * n_accepted);
-    updateRow_buffer_H2D.resize((sizeof(Value*) * 8 + sizeof(Value)) * n_accepted);
+
+    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    updateRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * n_accepted);
 
     // to handle T** of Ainv, psi_v, temp, rcopy
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateRow_buffer_H2D.data()), 8, n_accepted);
-    Value* c_ratio_inv = reinterpret_cast<Value*>(updateRow_buffer_H2D.data() + sizeof(Value*) * 8 * n_accepted);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateRow_buffer_H2D.data()), num_ptrs_packed, n_accepted);
+    Value* c_ratio_inv =
+        reinterpret_cast<Value*>(updateRow_buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * n_accepted);
     for (int iw = 0, count = 0; iw < isAccepted.size(); iw++)
       if (isAccepted[iw])
       {
         ptr_buffer[0][count] = engines[iw].get_ref_psiMinv().device_data();
-        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
+        ptr_buffer[1][count] = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
         ptr_buffer[2][count] = mw_temp.device_data() + norb * count;
         ptr_buffer[3][count] = mw_rcopy.device_data() + norb * count;
         ptr_buffer[4][count] = psiM_g_list[count];
         ptr_buffer[5][count] = psiM_l_list[count];
-        ptr_buffer[6][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[7][count] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
 
         c_ratio_inv[count] = Value(-1) / ratios[iw];
         count++;
@@ -333,7 +338,8 @@ private:
 
     {
       Value** Ainv_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data());
-      Value** phiV_mw_ptr = reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
+      Value** phiVGL_mw_ptr =
+          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted);
       Value** temp_mw_ptr =
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 2);
       Value** rcopy_mw_ptr =
@@ -342,21 +348,18 @@ private:
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 4);
       Value** d2psiM_mw_out =
           reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 5);
-      Value** dpsiM_mw_in =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
-      Value** d2psiM_mw_in =
-          reinterpret_cast<Value**>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 7);
       Value* ratio_inv_mw =
-          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 8);
+          reinterpret_cast<Value*>(updateRow_buffer_H2D.device_data() + sizeof(Value*) * n_accepted * 6);
+
 
       // invoke the Fahy's variant of Sherman-Morrison update.
       cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, norb, cone_vec.device_data(), Ainv_mw_ptr, lda,
-                                              phiV_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted),
+                                              phiVGL_mw_ptr, 1, czero_vec.device_data(), temp_mw_ptr, 1, n_accepted),
                      "cuBLAS_MFs::gemv_batched failed!");
 
       cudaErrorCheck(CUDA::copyAinvRow_saveGL_cuda(hstream, rowchanged, norb, Ainv_mw_ptr, lda, temp_mw_ptr,
-                                                   rcopy_mw_ptr, dpsiM_mw_in, d2psiM_mw_in, dpsiM_mw_out, d2psiM_mw_out,
-                                                   n_accepted),
+                                                   rcopy_mw_ptr, phiVGL_mw_ptr, phi_vgl_stride, dpsiM_mw_out,
+                                                   d2psiM_mw_out, n_accepted),
                      "CUDA::copyAinvRow_saveGL_cuda failed!");
 
 
@@ -450,9 +453,10 @@ public:
     auto& evalGrad_buffer_H2D = engine_leader.mw_mem_->evalGrad_buffer_H2D;
     auto& grads_value_v       = engine_leader.mw_mem_->grads_value_v;
 
-    const int nw = engines.size();
-    evalGrad_buffer_H2D.resize(sizeof(Value*) * 2 * nw);
-    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), 2, nw);
+    const int nw                     = engines.size();
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
+    evalGrad_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
+    Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(evalGrad_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       if (engine_leader.isSM1())
@@ -522,13 +526,15 @@ public:
       int success = ompBLAS::gemv(dummy_handle, 'T', norb, norb, cone, Ainv_ptr, lda, phiV_ptr, 1, czero, temp_ptr, 1);
       if (success != 0)
         throw std::runtime_error("ompBLAS::gemv failed.");
-      PRAGMA_OFFLOAD("omp target is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+
+      PRAGMA_OFFLOAD("omp target parallel for simd is_device_ptr(Ainv_ptr, temp_ptr, rcopy_ptr)")
+      for (int i = 0; i < norb; i++)
       {
-        temp_ptr[rowchanged] -= cone;
-        PRAGMA_OFFLOAD("omp parallel for simd")
-        for (int i = 0; i < norb; i++)
-          rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        rcopy_ptr[i] = Ainv_ptr[rowchanged * lda + i];
+        if (i == 0)
+          temp_ptr[rowchanged] -= cone;
       }
+
       success = ompBLAS::ger(dummy_handle, norb, norb, static_cast<Value>(FullPrecValue(-1) / c_ratio_in), rcopy_ptr, 1,
                              temp_ptr, 1, Ainv_ptr, lda);
       if (success != 0)
@@ -544,8 +550,7 @@ public:
    *  \param[in] psiM_g_list
    *  \param[in] psiM_l_list
    *  \param[in] isAccepted
-   *  \param[in] phi_vgl_v_dev_ptr
-   *  \param[in] phi_vgl_stride     size of each "vector" in phi_vgl_v
+   *  \param[in] phi_vgl_v          multiple walker orbital VGL
    *  \param[inout] ratios
    */
   static void mw_accept_rejectRow(const RefVectorWithLeader<This_t>& engines,
@@ -553,8 +558,7 @@ public:
                                   const std::vector<Value*>& psiM_g_list,
                                   const std::vector<Value*>& psiM_l_list,
                                   const std::vector<bool>& isAccepted,
-                                  const Value* phi_vgl_v_dev_ptr,
-                                  const size_t phi_vgl_stride,
+                                  const OffloadMWVGLArray<Value>& phi_vgl_v,
                                   const std::vector<Value>& ratios)
   {
     auto& engine_leader = engines.getLeader();
@@ -563,8 +567,7 @@ public:
 
     if (engine_leader.isSM1())
     {
-      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v_dev_ptr, phi_vgl_stride,
-                   ratios);
+      mw_updateRow(engines, rowchanged, psiM_g_list, psiM_l_list, isAccepted, phi_vgl_v, ratios);
       return;
     }
 
@@ -579,11 +582,15 @@ public:
     const int lda                     = engine_leader.get_psiMinv().cols();
     const int nw                      = engines.size();
     const int n_accepted              = psiM_g_list.size();
-    accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * 14 + sizeof(Value)) * nw);
+    const size_t phi_vgl_stride       = nw * norb;
+
+    constexpr size_t num_ptrs_packed = 12; // it must match packing and unpacking
+    accept_rejectRow_buffer_H2D.resize((sizeof(Value*) * num_ptrs_packed + sizeof(Value)) * nw);
     engine_leader.resize_fill_constant_arrays(nw);
 
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.data()), 14, nw);
-    Value* c_ratio_inv = reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * 14 * nw);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.data()), num_ptrs_packed, nw);
+    Value* c_ratio_inv =
+        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.data() + sizeof(Value*) * num_ptrs_packed * nw);
     for (int iw = 0, count_accepted = 0, count_rejected = 0; iw < nw; iw++)
     {
       This_t& engine = engines[iw];
@@ -598,11 +605,9 @@ public:
         ptr_buffer[6][count_accepted]  = engine.Binv_gpu.data() + delay_count;
         ptr_buffer[7][count_accepted]  = reinterpret_cast<Value*>(engine.delay_list_gpu.data());
         ptr_buffer[8][count_accepted]  = engine.V_gpu.data() + norb * delay_count;
-        ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v_dev_ptr + norb * iw);
-        ptr_buffer[10][count_accepted] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride + norb * 3 * iw);
-        ptr_buffer[11][count_accepted] = const_cast<Value*>(phi_vgl_v_dev_ptr + phi_vgl_stride * 4 + norb * iw);
-        ptr_buffer[12][count_accepted] = psiM_g_list[count_accepted];
-        ptr_buffer[13][count_accepted] = psiM_l_list[count_accepted];
+        ptr_buffer[9][count_accepted]  = const_cast<Value*>(phi_vgl_v.device_data_at(0, iw, 0));
+        ptr_buffer[10][count_accepted] = psiM_g_list[count_accepted];
+        ptr_buffer[11][count_accepted] = psiM_l_list[count_accepted];
         c_ratio_inv[count_accepted]    = Value(1) / ratios[iw];
         count_accepted++;
       }
@@ -640,18 +645,14 @@ public:
         reinterpret_cast<int**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 7);
     Value** V_row_mw_ptr =
         reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 8);
-    Value** phiV_mw_ptr =
+    Value** phiVGL_mw_ptr =
         reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 9);
-    Value** dpsiM_mw_in =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
-    Value** d2psiM_mw_in =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
     Value** dpsiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 10);
     Value** d2psiM_mw_out =
-        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 13);
+        reinterpret_cast<Value**>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 11);
     Value* ratio_inv_mw_ptr =
-        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 14);
+        reinterpret_cast<Value*>(accept_rejectRow_buffer_H2D.device_data() + sizeof(Value*) * nw * 12);
 
     //std::copy_n(Ainv[rowchanged], norb, V[delay_count]);
     cudaErrorCheck(cuBLAS_MFs::copy_batched(hstream, norb, invRow_mw_ptr, 1, V_row_mw_ptr, 1, nw),
@@ -660,7 +661,7 @@ public:
     // the new Binv is [[X Y] [Z sigma]]
     //BLAS::gemv('T', norb, delay_count + 1, cminusone, V.data(), norb, psiV.data(), 1, czero, p.data(), 1);
     cudaErrorCheck(cuBLAS_MFs::gemv_batched(hstream, 'T', norb, delay_count, cminusone_vec.device_data(), V_mw_ptr,
-                                            norb, phiV_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, n_accepted),
+                                            norb, phiVGL_mw_ptr, 1, czero_vec.device_data(), p_mw_ptr, 1, n_accepted),
                    "cuBLAS_MFs::gemv_batched failed!");
     // Y
     //BLAS::gemv('T', delay_count, delay_count, sigma, Binv.data(), lda_Binv, p.data(), 1, czero, Binv.data() + delay_count,
@@ -677,8 +678,8 @@ public:
                    "cuBLAS_MFs::ger_batched failed!");
     // sigma and Z
     cudaErrorCheck(CUDA::add_delay_list_save_sigma_VGL_batched(hstream, delay_list_mw_ptr, rowchanged, delay_count,
-                                                               Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiV_mw_ptr,
-                                                               dpsiM_mw_in, d2psiM_mw_in, U_row_mw_ptr, dpsiM_mw_out,
+                                                               Binv_mw_ptr, lda_Binv, ratio_inv_mw_ptr, phiVGL_mw_ptr,
+                                                               phi_vgl_stride, U_row_mw_ptr, dpsiM_mw_out,
                                                                d2psiM_mw_out, norb, n_accepted, nw),
                    "CUDA::add_delay_list_save_y_VGL_batched failed!");
     delay_count++;
@@ -703,10 +704,12 @@ public:
     const int norb             = engine_leader.get_psiMinv().rows();
     const int lda              = engine_leader.get_psiMinv().cols();
     const int nw               = engines.size();
-    updateInv_buffer_H2D.resize(sizeof(Value*) * 6 * nw);
+
+    constexpr size_t num_ptrs_packed = 6; // it must match packing and unpacking
+    updateInv_buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     engine_leader.resize_fill_constant_arrays(nw);
 
-    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateInv_buffer_H2D.data()), 6, nw);
+    Matrix<Value*> ptr_buffer(reinterpret_cast<Value**>(updateInv_buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       This_t& engine    = engines[iw];

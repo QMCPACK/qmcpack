@@ -70,8 +70,8 @@ boundary conditions. The parameter expects a single string of three
 characters separated by spaces, *e.g.* “p p p” for purely periodic
 boundary conditions. These characters control the behavior of the
 :math:`x`, :math:`y`, and :math:`z`, axes, respectively. Non periodic
-directions must be placed after the periodic ones. Examples of valid
-include:
+directions must be placed after the periodic ones. The only supported
+combinations are:
 
 **“p p p”** Periodic boundary conditions. Corresponds to a 3D crystal.
 

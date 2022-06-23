@@ -21,14 +21,22 @@ namespace qmcplusplus
 RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(std::move(spos)),
-      params_supplied(false),
-      nel_major_(0)
+      nel_major_(0),
+      params_supplied(false)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
 RotatedSPOs::~RotatedSPOs() {}
+
+
+void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
+{
+  params          = param_list;
+  params_supplied = true;
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
