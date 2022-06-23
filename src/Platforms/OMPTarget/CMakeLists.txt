@@ -20,6 +20,10 @@ else()
 endif()
 target_link_libraries(platform_omptarget_LA PUBLIC platform_omptarget_runtime)
 
+if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
+    target_compile_options(platform_omptarget_LA PRIVATE $<$<CONFIG:DEBUG>:-O3>)
+endif()
+
 if(ENABLE_CUDA AND QMC_OFFLOAD_MEM_ASSOCIATED)
   target_link_libraries(platform_omptarget_runtime PUBLIC platform_cuda_runtime)
 endif()

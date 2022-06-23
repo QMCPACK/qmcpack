@@ -142,6 +142,8 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     platform_LA
     platform_runtime
     utilities_for_test
