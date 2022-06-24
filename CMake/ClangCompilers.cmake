@@ -111,6 +111,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
 # but until we discover how to use the ${OPENMP_OFFLOAD_COMPILE_OPTIONS} more selectively
 # this is the only way to avoid a warning per compilation unit that contains an omp symbol.
 if (NOT OFFLOAD_TARGET MATCHES "nvptx64")
+  message(STATUS "QMCPACK adds -fstandalone-debug for Debug builds")
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
 endif()
