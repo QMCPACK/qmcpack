@@ -1082,6 +1082,9 @@ void MultiSlaterDetTableMethod::mw_prepareGroup(const RefVectorWithLeader<WaveFu
                                                 const RefVectorWithLeader<ParticleSet>& p_list,
                                                 int ig) const
 {
+  if (!use_pre_computing_)
+    return;
+
   auto& det_leader = wfc_list.getCastedLeader<MultiSlaterDetTableMethod>();
   const size_t nw  = wfc_list.size();
   assert(this == &det_leader);
