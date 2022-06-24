@@ -35,9 +35,9 @@ namespace qmcplusplus
 {
 
 /**BsplineFunctor class for the Jastrows
- * MWREAL is the real type used by offload target (and hopefully the mw_resource that should own all that.)
- * It is used to coerce/implicitly convert the Real type inherited OptimizableFunctorBase into the buffer
- * type used by target offload or if offload is off the mercilessly complicated CPU reference code.
+ * MWREAL is the real type used by offload target, it is the correct type for the mw data pointers
+ * and is also used to coerce/implicitly convert the Real type inherited OptimizableFunctorBase into that buffer
+ * if offload is off this happens too but is just an implementation quirk.
  */
 template<typename MWREAL>
 struct BsplineFunctor : public OptimizableFunctorBase
