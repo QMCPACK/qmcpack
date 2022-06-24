@@ -103,7 +103,6 @@ public:
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].evaluate(p_list[iw]);
   }
@@ -117,7 +116,6 @@ public:
                             const RefVectorWithLeader<ParticleSet>& p_list,
                             const std::vector<bool>& recompute) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       if (recompute[iw])
         dt_list[iw].evaluate(p_list[iw]);
@@ -145,7 +143,6 @@ public:
                        const IndexType iat,
                        bool prepare_old = true) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].move(p_list[iw], rnew_list[iw], iat, prepare_old);
   }
@@ -174,7 +171,6 @@ public:
                                 IndexType jat,
                                 const std::vector<bool>& from_temp)
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].updatePartial(jat, from_temp[iw]);
   }
@@ -192,7 +188,6 @@ public:
   virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTable>& dt_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].finalizePbyP(p_list[iw]);
   }

@@ -5,8 +5,11 @@
 #  compute spatial and parameter derivatives
 import autograd.numpy as np
 from autograd import hessian,grad
+from stats import averager
 
-# Values used in test_RotatedSPOs_LCAO.cpp
+# Point values used in test_RotatedSPOs_LCAO.cpp
+# QMC values used to validate tests/molecules/He_param/He_orb_rot_param_grad_legacy
+
 
 def mag(r):
     return np.sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2])
@@ -175,6 +178,10 @@ def print_wf_values(theta1=0.0, theta2=0.0,  use_j=False, B=0.0):
 
     print("")
 
+
+# Generate the wavefunction values for a single set of electron positions
+# used in test_RotatedSPOs_LCAO.cpp
+
 def print_point_values():
     r1 = np.array([1.0, 2.0, 3.0])
     r2 = np.array([0.0, 1.1, 2.2])
@@ -185,7 +192,132 @@ def print_point_values():
 
     print_wf_values(theta1=0.0, theta2=0.0, use_j=True, B=0.1)
 
+def run_qmc(VP):
+    r1 = np.array([1.0, 2.0, 3.0])
+    r2 = np.array([0.0, 1.1, 2.2])
+
+    # Outer loop for statistics
+    nblock = 20
+
+    # Loop to gather data
+    nstep = 100
+
+    # Loop for decorrelation
+    nsubstep = 10
+
+    nelectron = 2
+
+    # Step size for trial move
+    delta = 1.2
+
+    r = np.zeros((2,3))
+    r[0,:] = r1
+    r[1,:] = r2
+
+    r_old = np.zeros(3)
+    r_trial = np.zeros(3)
+
+    block_dp_ave = averager()
+    total_en_ave = averager()
+
+    # Outer loop for statistics
+    for nb in range(nblock):
+
+        naccept = 0
+        en_ave = averager()
+        dpsi_ave = averager()
+        deloc_ave = averager()
+        eloc_dpsi_ave = averager()
+
+        # Loop to gather data
+        for ns in range(nstep):
+            # Loop for decorrelation
+            for nss in range(nsubstep):
+                # Loop over electrons
+                for ne in range(nelectron):
+
+                    wf_old = psi(r[0,:], r[1,:], VP)
+                    r_old[:] = r[ne,:]
+
+                    change = delta*(np.random.rand(3)-0.5)
+
+                    r_trial[:] = r_old[:] + change
+                    r[ne,:] = r_trial[:]
+
+                    wf_new = psi(r[0,:], r[1,:], VP)
+
+                    wf_ratio = (wf_new/wf_old)**2
+
+                    if wf_ratio > np.random.random():
+                        naccept += 1
+                    else:
+                        r[ne,:] = r_old[:]
+
+            eloc = local_energy(r[0,:], r[1,:], VP)
+            en_ave.add_value(eloc)
+
+            psi_val = psi(r[0,:], r[1,:], VP)
+            dpsi_val = dpsi(r[0,:], r[1,:], VP)
+            dpsi_ave.add_value(dpsi_val/psi_val)
+
+            deloc_val = dlocal_energy(r[0,:], r[1,:], VP)
+            deloc_ave.add_value(deloc_val)
+
+            eloc_dpsi_ave.add_value(eloc * dpsi_val/psi_val)
+
+
+        en = en_ave.average()
+        en_err = en_ave.error()
+        ar = naccept/(nstep*nsubstep*nelectron)
+        print('block = ',nb, ' energy = ',en,en_err,' acceptance ratio = ',ar)
+
+        dp = dpsi_ave.average()
+        dp_err = dpsi_ave.error()
+
+        deloc = deloc_ave.average()
+        deloc_err = deloc_ave.error()
+
+        eloc_dpsi = eloc_dpsi_ave.average()
+        eloc_dpsi_err = eloc_dpsi_ave.error()
+
+        # For the parameter derivative formula, see
+        # https://github.com/QMCPACK/qmc_algorithms/blob/master/Variational/Parameter_Optimization.ipynb
+
+        dg = deloc + 2*eloc_dpsi - 2*en*dp
+        block_dp_ave.add_value(dg)
+
+    dg = block_dp_ave.average()
+    dg_err = block_dp_ave.error()
+    print('parameter values = ',VP)
+    print('parameter derivatives = ',dg)
+    print('parameter derivative errors = ',dg_err)
+
+
+def run_qmc_parameter_derivatives():
+    global use_jastrow
+    use_jastrow=False
+    theta1 = 0.1
+    theta2 = 0.1
+    VP = np.array([theta1, theta2])
+
+    run_qmc(VP)
+
+# Some results from run_qmc_parameter_derivatives
+
+# Run took about 10 minutes on laptop
+# nblock=20, nstep=1000, nsubstep=10
+# parameter values =  [0.1 0.1]
+# parameter derivatives =  [-0.20164722 -0.18347461]
+# parameter derivative errors =  [0.01201481 0.01314164]
+
+# Run took about 40 minutes on laptop
+# nblock=40, nstep=2000, nsubstep=10
+# parameter values =  [0.1 0.1]
+# parameter derivatives =  [-0.2204924  -0.21471184]
+# parameter derivative errors =  [0.00493837 0.00571082]
+
 
 if __name__=='__main__':
-    print_point_values()
+    #print_point_values()
+    run_qmc_parameter_derivatives()
 

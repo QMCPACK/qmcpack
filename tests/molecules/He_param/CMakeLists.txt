@@ -78,6 +78,32 @@ if(NOT QMC_CUDA)
   endif()
 
 
+  # Orbital Rotation
+
+  # Two atomic orbitals, no jastrow
+
+  list(APPEND HE_ORB_ROT_PARAM spo-up_orb_rot_0000_0001  -0.218  0.01) # scalar name, value, error
+  list(APPEND HE_ORB_ROT_PARAM spo-down_orb_rot_0000_0001  -0.218  0.01) # scalar name, value, error
+
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    He_orb_rot_param_grad_legacy
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+    PREFIX
+    He_orb_rot_param_grad_legacy.param
+    INPUT_FILE
+    He_orb_rot_param_grad_legacy.xml
+    PROCS
+    1
+    THREADS
+    1
+    SERIES
+    0
+    SCALAR_VALUES
+    HE_ORB_ROT_PARAM)
+
+
   else()
     message(VERBOSE "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")
   endif()
