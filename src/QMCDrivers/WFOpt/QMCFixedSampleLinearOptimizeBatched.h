@@ -150,9 +150,6 @@ private:
   //engine for running various gradient descent based algorithms for optimization
   std::unique_ptr<DescentEngine> descentEngineObj;
 
-  //name of the current optimization method, updated by processOptXML before run
-  std::string MinMethod;
-
   //engine for controlling a optimization using a hybrid combination of linear method and descent
   std::unique_ptr<HybridEngine> hybridEngineObj;
 
@@ -233,9 +230,10 @@ private:
   ///whether to do the third part of block lm
   bool block_third;
 
+  //name of the current optimization method, updated by processOptXML before run
+  std::string MinMethod;
 
   //Variables for alternatives to linear method
-
   
   //type of the previous optimization method, updated by processOptXML before run
   OptimizerType previous_optimizer_type_;
