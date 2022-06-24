@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
+RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos, bool creatingCopy)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(std::move(spos)),
       nel_major_(0),
@@ -26,6 +26,9 @@ RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
+  // Ensure that a copy of the SPO data is only made once
+  if (!creatingCopy)
+    Phi->storeParamsBeforeRotation();
 }
 
 RotatedSPOs::~RotatedSPOs() {}
@@ -113,7 +116,8 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   std::vector<RealType> param(m_act_rot_inds.size());
   for (int i = 0; i < m_act_rot_inds.size(); i++)
     param[i] = myVars[i];
-  apply_rotation(param, false);
+
+  apply_rotation(param, true);
 
   if (!Optimizable)
   {
@@ -1047,7 +1051,8 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 
 std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
 {
-  auto myclone = std::make_unique<RotatedSPOs>(std::unique_ptr<SPOSet>(Phi->makeClone()));
+  bool creatingCopy = true;
+  auto myclone      = std::make_unique<RotatedSPOs>(std::unique_ptr<SPOSet>(Phi->makeClone()), creatingCopy);
 
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;
