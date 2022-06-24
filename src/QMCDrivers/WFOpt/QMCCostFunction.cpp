@@ -168,7 +168,12 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
 
 void QMCCostFunction::getConfigurations(const std::string& aroot)
 {
-  //makeClones(W,Psi,H);
+  // Set all the myVars indices in the wavefunction clones
+  for (int i = 0; i < psiClones.size(); ++i)
+  {
+    psiClones[i]->checkOutVariables(OptVariablesForPsi);
+  }
+
   if (H_KE_Node.empty())
   {
     app_log() << "  QMCCostFunction is created with " << NumThreads << " threads." << std::endl;
@@ -331,7 +336,7 @@ void QMCCostFunction::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid = true;
+  IsValid       = true;
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
@@ -521,7 +526,10 @@ void QMCCostFunction::resetPsi(bool final_reset)
   //cout << "-------------------------------------- " << std::endl;
   Psi.resetParameters(OptVariablesForPsi);
   for (int i = 0; i < psiClones.size(); ++i)
+  {
+    psiClones[i]->checkOutVariables(OptVariablesForPsi);
     psiClones[i]->resetParameters(OptVariablesForPsi);
+  }
 }
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
