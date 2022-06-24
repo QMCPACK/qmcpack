@@ -36,8 +36,8 @@ namespace qmcplusplus
 template<typename REAL>
 struct BsplineFunctor : public OptimizableFunctorBase
 {
-  using Value = REAL; // while there is a value type referenced it was set to real
-  using Real = REAL;
+  using Value              = REAL; // while there is a value type referenced it was set to real
+  using Real               = REAL;
   static constexpr Real A0 = -1.0 / 6.0, A1 = 3.0 / 6.0, A2 = -3.0 / 6.0, A3 = 1.0 / 6.0;
   static constexpr Real A4 = 3.0 / 6.0, A5 = -6.0 / 6.0, A6 = 0.0 / 6.0, A7 = 4.0 / 6.0;
   static constexpr Real A8 = -3.0 / 6.0, A9 = 3.0 / 6.0, A10 = 3.0 / 6.0, A11 = 1.0 / 6.0;
@@ -179,10 +179,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
    * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
    */
   REAL evaluateV(const int iat,
-              const int iStart,
-              const int iEnd,
-              const REAL* restrict _distArray,
-              REAL* restrict distArrayCompressed) const;
+                 const int iStart,
+                 const int iEnd,
+                 const REAL* restrict _distArray,
+                 REAL* restrict distArrayCompressed) const;
 
   /** compute value for target-source particle pair potentials
    * This more than just a batched call of evaluateV
@@ -214,8 +214,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
   {
     r *= DeltaRInv;
     REAL ipart;
-    const REAL t   = std::modf(r, &ipart);
-    const int i = (int)ipart;
+    const REAL t = std::modf(r, &ipart);
+    const int i  = (int)ipart;
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -238,16 +238,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
   inline void evaluateAll(Real r, Real rinv) { Y = evaluate(r, dY, d2Y); }
 
-  inline static Real evaluate_impl(Real r,
-                                        const Real* coefs,
-                                        const Real DeltaRInv,
-                                        Real& dudr,
-                                        Real& d2udr2)
+  inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, Real& dudr, Real& d2udr2)
   {
     r *= DeltaRInv;
     REAL ipart;
-    const REAL t   = std::modf(r, &ipart);
-    const int i = (int)ipart;
+    const REAL t = std::modf(r, &ipart);
+    const int i  = (int)ipart;
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -263,7 +259,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
          sCoef2 * ((dA9 * t + dA10) * t + dA11) + sCoef3 * ((dA13 * t + dA14) * t + dA15));
 
     Real u = (sCoef0 * (((A0 * t + A1) * t + A2) * t + A3) + sCoef1 * (((A4 * t + A5) * t + A6) * t + A7) +
-                   sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
+              sCoef2 * (((A8 * t + A9) * t + A10) * t + A11) + sCoef3 * (((A12 * t + A13) * t + A14) * t + A15));
     return u;
   }
 
@@ -562,7 +558,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
           for (int i = 0; i < numPoints; i++)
           {
             Real r = (Real)i / (Real)numPoints * cutoff_radius;
-            y[i]        = tmp_func.evaluate(r);
+            y[i]   = tmp_func.evaluate(r);
             evaluateDerivatives(r, derivs);
             for (int j = 0; j < NumParams; j++)
               basis(i, j) = derivs[j][0];
@@ -712,10 +708,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
 
 template<typename REAL>
 inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
-                                      const int iStart,
-                                      const int iEnd,
-                                      const REAL* restrict _distArray,
-                                      REAL* restrict distArrayCompressed) const
+                                            const int iStart,
+                                            const int iEnd,
+                                            const REAL* restrict _distArray,
+                                            REAL* restrict distArrayCompressed) const
 {
   const Real* restrict distArray = _distArray + iStart;
 
@@ -732,14 +728,14 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
       distArrayCompressed[iCount++] = distArray[jat];
   }
 
-  Real d = 0.0;
+  Real d      = 0.0;
   auto& coefs = *spline_coefs_;
 #pragma omp simd reduction(+ : d)
   for (int jat = 0; jat < iCount; jat++)
   {
     Real r = distArrayCompressed[jat];
     r *= DeltaRInv;
-    const int i       = (int)r;
+    const int i  = (int)r;
     const Real t = r - Real(i);
     Real d1      = coefs[i + 0] * (((A0 * t + A1) * t + A2) * t + A3);
     Real d2      = coefs[i + 1] * (((A4 * t + A5) * t + A6) * t + A7);
@@ -752,14 +748,14 @@ inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
 
 template<typename REAL>
 inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
-                                           const int iStart,
-                                           const int iEnd,
-                                           const REAL* _distArray,
-                                           REAL* restrict _valArray,
-                                           REAL* restrict _gradArray,
-                                           REAL* restrict _laplArray,
-                                           REAL* restrict distArrayCompressed,
-                                           int* restrict distIndices) const
+                                              const int iStart,
+                                              const int iEnd,
+                                              const REAL* _distArray,
+                                              REAL* restrict _valArray,
+                                              REAL* restrict _gradArray,
+                                              REAL* restrict _laplArray,
+                                              REAL* restrict distArrayCompressed,
+                                              int* restrict distIndices) const
 {
   Real dSquareDeltaRinv = DeltaRInv * DeltaRInv;
   constexpr Real cOne(1);
@@ -768,8 +764,8 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
 
   ASSUME_ALIGNED(distIndices);
   ASSUME_ALIGNED(distArrayCompressed);
-  int iCount                 = 0;
-  int iLimit                 = iEnd - iStart;
+  int iCount            = 0;
+  int iLimit            = iEnd - iStart;
   const REAL* distArray = _distArray + iStart;
   REAL* valArray        = _valArray + iStart;
   REAL* gradArray       = _gradArray + iStart;
@@ -791,12 +787,12 @@ inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
 #pragma omp simd
   for (int j = 0; j < iCount; j++)
   {
-    Real r    = distArrayCompressed[j];
-    int iScatter   = distIndices[j];
-    Real rinv = cOne / r;
+    Real r       = distArrayCompressed[j];
+    int iScatter = distIndices[j];
+    Real rinv    = cOne / r;
     r *= DeltaRInv;
     const int iGather = (int)r;
-    const Real t = r - Real(iGather);
+    const Real t      = r - Real(iGather);
 
     Real sCoef0 = coefs[iGather + 0];
     Real sCoef1 = coefs[iGather + 1];
