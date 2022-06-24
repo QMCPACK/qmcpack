@@ -225,8 +225,10 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
   }
 }
 
+//Blank function, can be removed after this function is removed in the base class
 void QMCCostFunctionBatched::checkConfigurations()
 {}
+
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations(engineData& data)
 {
@@ -398,7 +400,6 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
 
-               std::cout << "taking sample, etmp: " << energy_list[ib] << std::endl;
             #ifdef HAVE_LMY_ENGINE
            if (data.method == "adaptive")
            {
@@ -451,7 +452,6 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
           RecordsOnNode[is][REWEIGHT]     = 1.0;
-        std::cout << "Entered checkConfig without needGrads, etmp: " << etmp << std::endl;
         }
       }
     }
@@ -711,7 +711,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           const int is                  = base_sample_index + ib;
           auto etmp                     = energy_list[ib];
           RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
-            std::cout << "In correlatedSampling, etmp: " << etmp << " RecordsOnNode[is][ENERGY_NEW]: " << RecordsOnNode[is][ENERGY_NEW] << std::endl;
         }
       }
     }

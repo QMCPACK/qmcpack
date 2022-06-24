@@ -20,10 +20,10 @@ namespace qmcplusplus
 #ifdef HAVE_LMY_ENGINE 
 using ValueType = QMCTraits::ValueType; 
     cqmc::engine::LMYEngine<ValueType>* lmEngine;
-    DescentEngine* descentEngine;
   
 #endif
 
+    DescentEngine* descentEngine;
     std::string method;
   };
 } // namespace qmcplusplus

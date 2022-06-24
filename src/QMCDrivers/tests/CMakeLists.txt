@@ -27,7 +27,8 @@ set(DRIVER_TEST_SRC
     test_clone_manager.cpp
     test_fixed_node_branch.cpp
     test_DescentEngine.cpp
-    test_HybridEngine.cpp)
+    test_HybridEngine.cpp
+    test_EngineData.cpp)
 
 if(NOT QMC_CUDA)
   set(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)

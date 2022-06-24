@@ -147,6 +147,8 @@ public:
 
   virtual void checkConfigurations() = 0;
 
+//Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
+//Providing an engineData struct to the batched drivers also both cases to be hanlded in one function
   virtual void checkConfigurations(engineData& data) = 0;
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
