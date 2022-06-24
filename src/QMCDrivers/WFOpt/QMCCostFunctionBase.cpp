@@ -57,7 +57,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
       m_wfPtr(NULL),
       m_doc_out(NULL),
       includeNonlocalH("no"),
-      debug_stream(0)
+      debug_stream(0),
+      do_override_output(false)
 {
   GEVType = "mixed";
   //paramList.resize(10);
