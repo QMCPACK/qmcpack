@@ -51,8 +51,8 @@ target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
 target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
 
-# Workaround for broken OMP Target debug in clang as of 5d, main is more broken so
-# perhaps this problem is fixed.
+# Workaround for broken OMP Target debug in clang as of 5d2ce7663b10c107328a4ae0c678165209e64619
+# but clang 15 main is completely broken for our omptarget code,
 #
 # In the meantime we need to make a new target for just the omp target tainted files
 # so we don't have broken debug for all of ParticleSet.
