@@ -166,18 +166,11 @@ target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime)
 target_link_libraries(qmcwfs PRIVATE einspline platform_LA Math::FFTW3)
 
-# Workaround for broken OMP Target debug in clang as of 5d2ce7663b10c107328a4ae0c678165209e64619
-# but clang 15 main is completely broken for our omptarget code,
-#
-# In the meantime we need to make a new target for just the omp target tainted files
-# so we don't have broken debug for all of QMCWavefunctions
-
 if(USE_OBJECT_TARGET)
   add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
 else(USE_OBJECT_TARGET)
   add_library(qmcwfs_omptarget ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
 endif(USE_OBJECT_TARGET)
-# the srcs can be put back into qmcwfs when clang omp target isn't broken.
 
 target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers)
