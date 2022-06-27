@@ -20,11 +20,7 @@ else()
 endif()
 target_link_libraries(platform_omptarget_LA PUBLIC platform_omptarget_runtime)
 
-# Workaround for broken OMP Target debug in clang as of 5d2ce7663b10c107328a4ae0c678165209e64619
-# but clang 15 main is completely broken for our omptarget code,
-if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
-    target_compile_options(platform_omptarget_LA PRIVATE $<$<CONFIG:DEBUG>:-O3>)
-endif()
+target_compile_options(platform_omptarget_LA PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 if(ENABLE_CUDA AND QMC_OFFLOAD_MEM_ASSOCIATED)
   target_link_libraries(platform_omptarget_runtime PUBLIC platform_cuda_runtime)

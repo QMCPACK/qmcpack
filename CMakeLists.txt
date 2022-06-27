@@ -1,4 +1,4 @@
-######################################################################
+#####################################################################
 # CMake version and policies
 ######################################################################
 cmake_minimum_required(VERSION 3.17.0)
@@ -483,6 +483,23 @@ if(NOT TEST_CXX_COMPILE_MAIN)
   message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
 endif()
+
+
+#--------------------------------------------------------------
+# Workaround for breakage of OMP Target kernels at -O0
+#--------------------------------------------------------------
+# Workaround for failing OMP Target compilation when -O0 in
+# clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619
+# Previous compilers are not suggested for clang offload builds.
+#
+# You can set this option to false on the command line to check
+# if this problem has been fixed.
+
+if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
+  set(ENABLE_OFFLOAD_CLANG_DEBUG_O3 TRUE CACHE BOOL "build OMP target kernels with -O3 in debug")
+endif()
+mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+
 
 ######################################################################
 # Check external libraries.

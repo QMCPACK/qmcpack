@@ -50,30 +50,20 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
 target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
-
-# Workaround for broken OMP Target debug in clang as of 5d2ce7663b10c107328a4ae0c678165209e64619
-# but clang 15 main is completely broken for our omptarget code,
-#
-# In the meantime we need to make a new target for just the omp target tainted files
-# so we don't have broken debug for all of ParticleSet.
-
-# this can be put back into qmcparticle when omp target isn't broken.
-set(PARTICLEOMPTARGET
+set(PARTICLE_OMPTARGET_SRCS
     createDistanceTableAAOMPTarget.cpp
     createDistanceTableABOMPTarget.cpp)
 
 if(USE_OBJECT_TARGET)
-  add_library(qmcparticle_omptarget OBJECT ${PARTICLEOMPTARGET})
+  add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
 else(USE_OBJECT_TARGET)
-  add_library(qmcparticle_omptarget ${PARTICLEOMPTARGET})
+  add_library(qmcparticle_omptarget ${PARTICLE_OMPTARGET_SRCS})
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
 
-if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
-    target_compile_options(qmcparticle_omptarget PRIVATE $<$<CONFIG:DEBUG>:-O3>)
-endif()
+target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 

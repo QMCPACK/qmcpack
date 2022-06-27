@@ -182,12 +182,7 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers)
 
-if(ENABLE_OFFLOAD AND ${COMPILER} MATCHES "Clang")
-    target_compile_options(qmcwfs_omptarget PRIVATE $<$<CONFIG:DEBUG>:-O3>)
-endif()
-#target_compile_options(qmcwfs_omptarget PUBLIC ${OPENMP_OFFLOAD_COMPILE_OPTIONS})
-
-
+target_compile_options(qmcwfs_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 # end omp target workaround
