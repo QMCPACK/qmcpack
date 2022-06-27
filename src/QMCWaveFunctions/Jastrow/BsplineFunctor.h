@@ -35,11 +35,11 @@ namespace qmcplusplus
 {
 
 /**BsplineFunctor class for the Jastrows
- * MWREAL is the real type used by offload target, it is the correct type for the mw data pointers
+ * REAL is the real type used by offload target, it is the correct type for the mw data pointers
  * and is also used to coerce/implicitly convert the Real type inherited OptimizableFunctorBase into that buffer
  * if offload is off this happens too but is just an implementation quirk.
  */
-template<typename MWREAL>
+template<typename REAL>
 struct BsplineFunctor : public OptimizableFunctorBase
 {
   using Real = OptimizableFunctorBase::real_type;
@@ -139,11 +139,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
   void evaluateVGL(const int iat,
                    const int iStart,
                    const int iEnd,
-                   const MWREAL* _distArray,
-                   MWREAL* restrict _valArray,
-                   MWREAL* restrict _gradArray,
-                   MWREAL* restrict _laplArray,
-                   MWREAL* restrict distArrayCompressed,
+                   const REAL* _distArray,
+                   REAL* restrict _valArray,
+                   REAL* restrict _gradArray,
+                   REAL* restrict _laplArray,
+                   REAL* restrict distArrayCompressed,
                    int* restrict distIndices) const;
 
   /** compute value, gradient and laplacian for target particles
@@ -170,10 +170,10 @@ struct BsplineFunctor : public OptimizableFunctorBase
                              const int n_src,
                              const int* grp_ids,
                              const int nw,
-                             MWREAL* mw_vgl, // [nw][DIM+2]
+                             REAL* mw_vgl, // [nw][DIM+2]
                              const int n_padded,
-                             const MWREAL* mw_dist, // [nw][DIM+1][n_padded]
-                             MWREAL* mw_cur_allu,   // [nw][3][n_padded]
+                             const REAL* mw_dist, // [nw][DIM+1][n_padded]
+                             REAL* mw_cur_allu,   // [nw][3][n_padded]
                              Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer);
 
   /** evaluate sum of the pair potentials for [iStart,iEnd)
@@ -184,11 +184,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
    * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
    * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
    */
-  MWREAL evaluateV(const int iat,
-                   const int iStart,
-                   const int iEnd,
-                   const MWREAL* restrict _distArray,
-                   MWREAL* restrict distArrayCompressed) const;
+  REAL evaluateV(const int iat,
+                 const int iStart,
+                 const int iEnd,
+                 const REAL* restrict _distArray,
+                 REAL* restrict distArrayCompressed) const;
 
   /** compute value for target-source particle pair potentials
    * This more than just a batched call of evaluateV
@@ -211,17 +211,17 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            const int* grp_ids,
                            const int num_pairs,
                            const int* ref_at,
-                           const MWREAL* mw_dist,
+                           const REAL* mw_dist,
                            const int dist_stride,
-                           MWREAL* mw_vals,
+                           REAL* mw_vals,
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer);
 
   inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv)
   {
     r *= DeltaRInv;
-    MWREAL ipart;
-    const MWREAL t = std::modf(r, &ipart);
-    const int i    = (int)ipart;
+    REAL ipart;
+    const REAL t = std::modf(r, &ipart);
+    const int i  = (int)ipart;
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -247,9 +247,9 @@ struct BsplineFunctor : public OptimizableFunctorBase
   inline static Real evaluate_impl(Real r, const Real* coefs, const Real DeltaRInv, Real& dudr, Real& d2udr2)
   {
     r *= DeltaRInv;
-    MWREAL ipart;
-    const MWREAL t = std::modf(r, &ipart);
-    const int i    = (int)ipart;
+    REAL ipart;
+    const REAL t = std::modf(r, &ipart);
+    const int i  = (int)ipart;
 
     Real sCoef0 = coefs[i + 0];
     Real sCoef1 = coefs[i + 1];
@@ -361,11 +361,11 @@ struct BsplineFunctor : public OptimizableFunctorBase
                            const int n_src,
                            const int* grp_ids,
                            const int nw,
-                           MWREAL* mw_vgl, // [nw][DIM+2]
+                           REAL* mw_vgl, // [nw][DIM+2]
                            const int n_padded,
-                           const MWREAL* mw_dist, // [nw][DIM+1][n_padded]
-                           MWREAL* mw_allUat,     // [nw][DIM+2][n_padded]
-                           MWREAL* mw_cur_allu,   // [nw][3][n_padded]
+                           const REAL* mw_dist, // [nw][DIM+1][n_padded]
+                           REAL* mw_allUat,     // [nw][DIM+2][n_padded]
+                           REAL* mw_cur_allu,   // [nw][3][n_padded]
                            Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer);
 
   inline bool evaluateDerivatives(Real r, std::vector<TinyVector<Real, 3>>& derivs) override
@@ -553,7 +553,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     << ".  Performing fit:\n";
           // Fit function to new number of parameters
           const int numPoints = 500;
-          BsplineFunctor<MWREAL> tmp_func(CuspValue);
+          BsplineFunctor<REAL> tmp_func(CuspValue);
           tmp_func.cutoff_radius = cutoff_radius;
           tmp_func.resize(params.size());
           tmp_func.Parameters = params;
@@ -605,8 +605,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
   void initialize(int numPoints,
                   std::vector<Real>& x,
                   std::vector<Real>& y,
-                  MWREAL cusp,
-                  MWREAL rcut,
+                  REAL cusp,
+                  REAL rcut,
                   std::string& id,
                   std::string& optimize)
   {
@@ -712,12 +712,12 @@ struct BsplineFunctor : public OptimizableFunctorBase
   }
 };
 
-template<typename MWREAL>
-inline MWREAL BsplineFunctor<MWREAL>::evaluateV(const int iat,
-                                                const int iStart,
-                                                const int iEnd,
-                                                const MWREAL* restrict _distArray,
-                                                MWREAL* restrict distArrayCompressed) const
+template<typename REAL>
+inline REAL BsplineFunctor<REAL>::evaluateV(const int iat,
+                                            const int iStart,
+                                            const int iEnd,
+                                            const REAL* restrict _distArray,
+                                            REAL* restrict distArrayCompressed) const
 {
   const Real* restrict distArray = _distArray + iStart;
 
@@ -752,16 +752,16 @@ inline MWREAL BsplineFunctor<MWREAL>::evaluateV(const int iat,
   return d;
 }
 
-template<typename MWREAL>
-inline void BsplineFunctor<MWREAL>::evaluateVGL(const int iat,
-                                                const int iStart,
-                                                const int iEnd,
-                                                const MWREAL* _distArray,
-                                                MWREAL* restrict _valArray,
-                                                MWREAL* restrict _gradArray,
-                                                MWREAL* restrict _laplArray,
-                                                MWREAL* restrict distArrayCompressed,
-                                                int* restrict distIndices) const
+template<typename REAL>
+inline void BsplineFunctor<REAL>::evaluateVGL(const int iat,
+                                              const int iStart,
+                                              const int iEnd,
+                                              const REAL* _distArray,
+                                              REAL* restrict _valArray,
+                                              REAL* restrict _gradArray,
+                                              REAL* restrict _laplArray,
+                                              REAL* restrict distArrayCompressed,
+                                              int* restrict distIndices) const
 {
   Real dSquareDeltaRinv = DeltaRInv * DeltaRInv;
   constexpr Real cOne(1);
@@ -770,12 +770,12 @@ inline void BsplineFunctor<MWREAL>::evaluateVGL(const int iat,
 
   ASSUME_ALIGNED(distIndices);
   ASSUME_ALIGNED(distArrayCompressed);
-  int iCount              = 0;
-  int iLimit              = iEnd - iStart;
-  const MWREAL* distArray = _distArray + iStart;
-  MWREAL* valArray        = _valArray + iStart;
-  MWREAL* gradArray       = _gradArray + iStart;
-  MWREAL* laplArray       = _laplArray + iStart;
+  int iCount            = 0;
+  int iLimit            = iEnd - iStart;
+  const REAL* distArray = _distArray + iStart;
+  REAL* valArray        = _valArray + iStart;
+  REAL* gradArray       = _gradArray + iStart;
+  REAL* laplArray       = _laplArray + iStart;
 
 #pragma vector always
   for (int jat = 0; jat < iLimit; jat++)
