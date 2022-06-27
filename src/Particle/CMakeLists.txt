@@ -67,8 +67,6 @@ target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_
 
 target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 
-# workaround end
-
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)
     add_library(qmcparticle_cuda accept_kernel.cu)

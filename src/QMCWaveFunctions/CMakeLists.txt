@@ -185,7 +185,6 @@ target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers)
 target_compile_options(qmcwfs_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
 
 target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
-# end omp target workaround
 
 if(ENABLE_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
