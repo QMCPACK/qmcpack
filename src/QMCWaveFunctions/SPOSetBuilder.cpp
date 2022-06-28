@@ -95,6 +95,10 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
+    // At this point in the code we know that orbital rotation is used, so the target SPO
+    // can make a copy of the coefficient matrix.
+    sposet->storeParamsBeforeRotation();
+
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     auto rot_spo     = std::make_unique<RotatedSPOs>(std::move(sposet));
