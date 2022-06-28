@@ -63,6 +63,7 @@ set(JASTROW_SRCS
 set(JASTROW_OMPTARGET_SRCS
     Jastrow/J2OMPTarget.cpp
     Jastrow/BsplineFunctor.cpp)
+set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeParticle.cpp ElectronGas/FreeParticleBuilder.cpp)
 if(QMC_COMPLEX)
   set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
 else(QMC_COMPLEX)
