@@ -59,7 +59,8 @@ void SimulationCell::resetLRBox()
       app_log() << "--------------------------------------- " << std::endl;
     }
 
-    k_lists_.updateKLists(LRBox_, LRBox_.LR_kc, LRBox_.ndim);
+    QMCTraits::PosType twist(0);
+    k_lists_.updateKLists(LRBox_, LRBox_.LR_kc, LRBox_.ndim, twist);
   }
 }
 }
