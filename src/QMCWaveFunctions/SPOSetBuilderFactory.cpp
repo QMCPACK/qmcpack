@@ -18,7 +18,6 @@
 
 #include "SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
-#include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #include "ModernStringUtils.hpp"
 #include "QMCWaveFunctions/ElectronGas/FreeParticleBuilder.h"
