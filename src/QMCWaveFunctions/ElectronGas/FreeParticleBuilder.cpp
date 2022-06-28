@@ -21,7 +21,9 @@ std::unique_ptr<SPOSet> FreeParticleBuilder::createSPOSetFromXML(xmlNodePtr cur)
   attrib.add(twist, "twist");
   attrib.put(cur);
 
-  PosType tvec = targetPtcl.getLattice().k_cart(twist);
+  auto lattice = targetPtcl.getLattice();
+
+  PosType tvec = lattice.k_cart(twist);
 #ifdef QMC_COMPLEX
   npw = norb;
   targetPtcl.setTwist(twist);
@@ -31,20 +33,24 @@ std::unique_ptr<SPOSet> FreeParticleBuilder::createSPOSetFromXML(xmlNodePtr cur)
   npw = std::ceil((norb+1.0)/2);
   for (int ldim=0;ldim<twist.size();ldim++)
   {
-    if (std::abs(twist[ldim]) > 1e-16) throw "no twist for real orbitals";
+    if (std::abs(twist[ldim]) > 1e-16) 
+      throw std::runtime_error("no twist for real orbitals");
   }
 #endif
 
   // extract npw k-points from container
   // kpts_cart is sorted by magnitude
-  // k=0 is not in kpts_cart
   std::vector<PosType> kpts(npw);
+  KContainer klists;
+  RealType kcut = lattice.LR_kc; // to-do: reduce kcut to >~ kf
+  klists.updateKLists(lattice, kcut, lattice.ndim, twist);
+
+  // k0 is not in kpts_cart
   kpts[0] = tvec;
-  const KContainer klists = targetPtcl.getSK().getKLists();
 #ifdef QMC_COMPLEX
   for (int ik=1;ik<npw;ik++)
   {
-    kpts[ik] = tvec+klists.kpts_cart[ik-1];
+    kpts[ik] = klists.kpts_cart[ik-1];
   }
 #else
   const int nktot = klists.kpts.size();
