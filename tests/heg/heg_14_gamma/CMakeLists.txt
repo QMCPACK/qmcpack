@@ -231,7 +231,7 @@ if(NOT QMC_CUDA)
     HEG14GLSJ_DMC_SCALARS # DMC
   )
 
-  if(NOT QMC_COMPLEX)
+  if(QMC_COMPLEX)
     #
     #  HEG14G - Slater-Jastrow-Backflow VMC
     #           Run 16x1, 4x4, 1x16 to test SJB cloning
