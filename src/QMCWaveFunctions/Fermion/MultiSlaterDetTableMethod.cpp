@@ -670,10 +670,10 @@ void MultiSlaterDetTableMethod::restore(int iat)
 }
 
 void MultiSlaterDetTableMethod::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                          const RefVectorWithLeader<ParticleSet>& p_list,
-                          int iat,
-                          const std::vector<bool>& isAccepted,
-                          bool safe_to_delay) const
+                                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                                     int iat,
+                                                     const std::vector<bool>& isAccepted,
+                                                     bool safe_to_delay) const
 {
   ScopedTimer local_timer(AccRejTimer);
   for (size_t iw = 0; iw < isAccepted.size(); iw++)

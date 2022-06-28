@@ -202,9 +202,9 @@ public:
   void restore(int iat) override;
 
   static void mw_accept_rejectMove(const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list,
-                                                 const RefVectorWithLeader<ParticleSet>& p_list,
-                                                 int iat,
-                                                 const std::vector<bool>& isAccepted);
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   int iat,
+                                   const std::vector<bool>& isAccepted);
 
   void createResource(ResourceCollection& collection) const override;
   void acquireResource(ResourceCollection& collection,
