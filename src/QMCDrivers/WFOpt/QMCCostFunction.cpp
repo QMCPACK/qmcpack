@@ -168,7 +168,13 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
 
 void QMCCostFunction::getConfigurations(const std::string& aroot)
 {
-  //makeClones(W,Psi,H);
+  // Set all the myVars indices in the wavefunction clones.
+  // If not set, the parameter derivative pieces in evaluateDerivatives
+  // end up in the wrong indices in dlogpsi and dhpsioverpsi.
+  for (int i = 0; i < psiClones.size(); i++)
+    psiClones[i]->checkOutVariables(OptVariablesForPsi);
+
+
   if (H_KE_Node.empty())
   {
     app_log() << "  QMCCostFunction is created with " << NumThreads << " threads." << std::endl;
