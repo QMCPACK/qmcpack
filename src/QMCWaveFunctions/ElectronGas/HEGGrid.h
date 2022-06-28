@@ -8,6 +8,7 @@
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -17,56 +18,20 @@
 #define QMCPLUSPLUS_HEGGRID_H
 
 #include "Lattice/CrystalLattice.h"
-#include <map>
-#include <optional>
-#include <array>
 
 namespace qmcplusplus
 {
-template<typename T>
-struct kpdata
-{
-  TinyVector<T, OHMMS_DIM> k;
-  T k2;
-  int g;
-};
-
-
-template<typename T>
-bool kpdata_comp(const kpdata<T>& left, const kpdata<T>& right)
-{
-  return left.k2 < right.k2;
-}
 
 //three-d specialization
 template<class T>
 struct HEGGrid
 {
   using PL_t     = CrystalLattice<T, OHMMS_DIM>;
-  using PosType  = typename PL_t::SingleParticlePos;
-  using RealType = typename PL_t::Scalar_t;
 
-  ///number of kpoints of a half sphere excluding gamma
-  int NumKptsHalf;
-  ///maxmim ksq
-  T MaxKsq;
   const PL_t& Lattice;
-  std::map<int, std::vector<PosType>> rs;
-  std::vector<PosType> kpt;
-  std::vector<T> mk2;
-  std::vector<int> deg;
   static constexpr std::array<int, 31> n_within_shell{{1,   7,   19,  27,  33,  57,  81,  93,  123, 147, 171,
                                                        179, 203, 251, 257, 305, 341, 365, 389, 437, 461, 485,
                                                        515, 587, 619, 691, 739, 751, 799, 847, 895}};
-  PosType twist{0.0};
-
-
-  using kpdata_t  = kpdata<T>;
-  using kpoints_t = std::vector<kpdata_t>;
-
-  std::optional<kpoints_t> kpoints_grid;
-  int nctmp{-1};
-
 
   HEGGrid(const PL_t& lat) : Lattice(lat) {}
   ~HEGGrid() = default;
