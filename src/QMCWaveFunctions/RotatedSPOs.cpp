@@ -113,7 +113,7 @@ void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rota
   std::vector<RealType> param(m_act_rot_inds.size());
   for (int i = 0; i < m_act_rot_inds.size(); i++)
     param[i] = myVars[i];
-  apply_rotation(param, false);
+  apply_rotation(param, true);
 
   if (!Optimizable)
   {
