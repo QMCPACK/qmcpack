@@ -1,3 +1,19 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2022 QMCPACK developers.
+//
+// File developed by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
+//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
+//
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
 #ifndef QMCPLUSPLUS_FREE_PARTICLE
 #define QMCPLUSPLUS_FREE_PARTICLE
 
@@ -58,10 +74,10 @@ public:
   // required overrides end ----
   void report(const std::string& pad) const override;
 private:
-  const std::vector<PosType> K; // K vectors
+  const std::vector<PosType> kvecs; // kvecs vectors
   const int mink; // minimum k index
-  const int maxk; // maximum number of K vectors
-  std::vector<RealType> mK2; // minus K^2
+  const int maxk; // maximum number of kvecs vectors
+  std::vector<RealType> k2neg; // minus kvecs^2
 };
 
 } // qmcplusplus
