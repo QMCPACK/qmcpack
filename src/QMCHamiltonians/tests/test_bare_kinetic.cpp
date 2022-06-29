@@ -245,7 +245,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
 
   outputManager.resume();
-
 }
 
 
@@ -345,7 +344,7 @@ TEST_CASE("BareKineticEnergyListener", "[hamiltonian]")
 
   bare_ke.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
   CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(-0.5));
-  outputManager.resume();  
+  outputManager.resume();
 }
 
 } // namespace qmcplusplus

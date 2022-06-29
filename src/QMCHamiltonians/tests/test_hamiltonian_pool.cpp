@@ -36,7 +36,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   c = OHMMS::Controller;
 
   outputManager.pause();
-  
+
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \

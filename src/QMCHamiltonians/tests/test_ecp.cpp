@@ -68,7 +68,7 @@ TEST_CASE("ReadFileBuffer_simple_serial", "[hamiltonian]")
 TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
- 
+
   ReadFileBuffer buf(c);
   bool open_okay = buf.open_file("simple.txt");
   REQUIRE(open_okay == true);
@@ -127,7 +127,7 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     REQUIRE(so_d_val == Approx(so_d_ref));
     REQUIRE(so_f_val == Approx(so_f_ref));
   }
- outputManager.resume();
+  outputManager.resume();
 
   // TODO: add more checks that pseudopotential file was read correctly
 }
@@ -571,7 +571,6 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   REQUIRE(Value1 == Approx(-0.3214176962));
 
   outputManager.resume();
-
 }
 #endif
 

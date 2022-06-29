@@ -18,13 +18,14 @@ namespace testing
 {
 
 template<typename T>
-auto getParticularListener(Matrix<T>& local_pots) {
-  return  [&local_pots](const int walker_index, const std::string& name, const Vector<T>& inputV) {
-    std::copy_n(inputV.begin(),  inputV.size(), local_pots[walker_index]);
+auto getParticularListener(Matrix<T>& local_pots)
+{
+  return [&local_pots](const int walker_index, const std::string& name, const Vector<T>& inputV) {
+    std::copy_n(inputV.begin(), inputV.size(), local_pots[walker_index]);
   };
 }
 
-}
-}
+} // namespace testing
+} // namespace qmcplusplus
 
 #endif
