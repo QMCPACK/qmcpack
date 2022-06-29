@@ -807,12 +807,9 @@ if(ENABLE_ROCM)
     set(CMAKE_CUDA_ARCHITECTURES gfx906)
   endif()
 
-  string(APPEND CMAKE_HIP_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
-  string(APPEND CMAKE_HIP_FLAGS "--gpu-max-threads-per-block=256")
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fPIC -ffast-math --gpu-max-threads-per-block=256")
   # warning suppression
-  string(APPEND CMAKE_HIP_FLAGS "-Wno-vla")
-  string(APPEND CMAKE_HIP_FLAGS "-Wno-deprecated-declarations")
-  string(APPEND CMAKE_HIP_FLAGS "-Wno-unused-command-line-argument")
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -Wno-vla -Wno-deprecated-declarations -Wno-unused-command-line-argument")
 
   if(NOT DEFINED ROCM_ROOT)
     list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
