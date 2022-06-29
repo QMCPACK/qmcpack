@@ -35,6 +35,8 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   Communicate* c;
   c = OHMMS::Controller;
 
+  outputManager.pause();
+  
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
   const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
          <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
@@ -65,6 +67,8 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
 
   // Bare kinetic energy is always added
   REQUIRE(h->size() == 2);
+
+  outputManager.resume();
 }
 
 } // namespace qmcplusplus

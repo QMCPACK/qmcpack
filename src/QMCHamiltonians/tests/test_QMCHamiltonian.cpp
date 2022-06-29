@@ -21,6 +21,8 @@ namespace qmcplusplus
 {
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
+  outputManager.pause();
+
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -37,6 +39,8 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   std::vector<ParticleSet> elecs;
   elecs.emplace_back(*(particle_pool.getParticleSet("e")));
   elecs.emplace_back(*(particle_pool.getParticleSet("e")));
+
+  outputManager.resume();
 
   // TODO: finish initializing the elecs.
   //std::vector<QMCHamiltonian::RealType> local_energies(QMCHamiltonian::flex_evaluate(makeRefVector<QMCHamiltonian>(hamiltonians), makeRefVector<ParticleSet>(elecs)));

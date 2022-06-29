@@ -66,6 +66,8 @@ namespace qmcplusplus
 {
 TEST_CASE("Pair Correlation", "[hamiltonian]")
 {
+  outputManager.pause();
+
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
   using RealType = QMCTraits::RealType;
@@ -199,6 +201,7 @@ TEST_CASE("Pair Correlation", "[hamiltonian]")
   REQUIRE(std::fabs(gofr[283] - 0.0000000) < eps);
 
   std::cout << "test_paircorr:: STOP\n";
+  outputManager.resume();
 }
 
 TEST_CASE("Pair Correlation Pair Index", "[hamiltonian]")

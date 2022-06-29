@@ -68,7 +68,7 @@ TEST_CASE("ReadFileBuffer_simple_serial", "[hamiltonian]")
 TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
-
+ 
   ReadFileBuffer buf(c);
   bool open_okay = buf.open_file("simple.txt");
   REQUIRE(open_okay == true);
@@ -82,6 +82,7 @@ TEST_CASE("ReadFileBuffer_simple_mpi", "[hamiltonian]")
 TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
+  outputManager.pause();
 
   ECPComponentBuilder ecp("test_read_ecp", c, 4, 1);
 
@@ -89,6 +90,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
   REQUIRE(okay);
 
   REQUIRE(ecp.Zeff == 4);
+  outputManager.resume();
 
   // TODO: add more checks that pseudopotential file was read correctly
 }
@@ -96,6 +98,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
+  outputManager.pause();
 
   ECPComponentBuilder ecp("test_read_sorep", c);
 
@@ -124,6 +127,7 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     REQUIRE(so_d_val == Approx(so_d_ref));
     REQUIRE(so_f_val == Approx(so_f_ref));
   }
+ outputManager.resume();
 
   // TODO: add more checks that pseudopotential file was read correctly
 }
@@ -160,6 +164,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
+  outputManager.pause();
 
   //Cell definition:
 
@@ -428,6 +433,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //HFTerm[1][0]+PulayTerm[1][0] =  0.002734064
   //HFTerm[1][1]+PulayTerm[1][1] =  0.0
   //HFTerm[1][2]+PulayTerm[1][2] =  0.0
+
+  outputManager.resume();
 }
 
 #ifdef QMC_COMPLEX
@@ -441,6 +448,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
+  outputManager.pause();
 
   //Cell definition:
 
@@ -561,6 +569,9 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     }
   }
   REQUIRE(Value1 == Approx(-0.3214176962));
+
+  outputManager.resume();
+
 }
 #endif
 
