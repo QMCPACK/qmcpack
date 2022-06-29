@@ -1,22 +1,21 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.17.0)
+# Note that cmake_minimum_required affects policy defaults.
+# All policies known to the running version of CMake and introduced in
+# cmake_minimum_required version or earlier will be set to use NEW behavior
 
-# CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
-# and environment variable in search path.
-# various Find<Package>.cmake modules may not follow this policy
-# CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
-# when doing link check
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0075 NEW)
+if (POLICY CMP0127)
+  cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
+endif()
 
 ######################################################################
 # QMCPACK project
 ######################################################################
 project(
   qmcpack
-  VERSION 3.11.9
+  VERSION 3.14.9
   LANGUAGES C CXX)
 
 #--------------------------------------------------------------------
@@ -55,13 +54,14 @@ option(
   "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
   OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
-if(QMC_CUDA2HIP)
+if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
 endif()
 # explicit HIP source codes only exist in AFQMC.
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -75,6 +75,10 @@ endif(ENABLE_CUDA AND QMC_CUDA)
 if(ENABLE_OFFLOAD AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
 endif()
+
+if(ENABLE_CUDA AND ENABLE_SYCL)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
+endif(ENABLE_CUDA AND ENABLE_SYCL)
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA
@@ -217,7 +221,9 @@ endif()
 #--------------------------------------------------------------------
 option(INSTALL_NEXUS "Install Nexus alongside QMCPACK" ON)
 if(INSTALL_NEXUS)
-  install(CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths ${CMAKE_INSTALL_PREFIX}/bin)")
+  install(
+    CODE "EXECUTE_PROCESS(COMMAND ${qmcpack_SOURCE_DIR}/nexus/install --leave_paths \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/bin)"
+  )
 endif()
 
 ######################################################################
@@ -227,7 +233,6 @@ if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Trying to figure out compiler options ....")
-  set(ENABLE_OPENMP 0)
 
   #------------------------
   # On Cray's machine
@@ -359,7 +364,6 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT OFF)
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
@@ -370,25 +374,11 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     # when using OpenMP offload to AMD GPU together with HIP.
     set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
   endif()
-  if(${COMPILER} MATCHES "Clang" AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn")
-    # As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for
-    # ROCM/AOMP compilers when using OpenMP offload to AMD GPU.
-    set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT ON)
-  endif()
 endif()
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
                        ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM compiler offload bug workaround"
-                       ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
-
-if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
-  message(WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
-                  "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
-                  "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
-                  "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
-endif()
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
@@ -425,7 +415,8 @@ if(QMC_MPI)
   if(NOT MPI_FOUND)
     message(
       FATAL_ERROR
-        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=0' to cmake.")
+        "MPI support not found! Provide MPI compiler wrappers or build without MPI by passing '-DQMC_MPI=OFF' to cmake."
+    )
   endif(NOT MPI_FOUND)
 
   if(${MPI_CXX_LIBRARY_VERSION_STRING} MATCHES "MVAPICH2")
@@ -463,7 +454,7 @@ if(QMC_MPI)
         "Building MPI version without using MPI compiler wrappers.\n"
         "This may not build qmcpack correctly. To ensure the correct version, specify the compiler wrappers to cmake.\n"
         "For example: cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++\n"
-        "To build without MPI, pass '-DQMC_MPI=0' to cmake")
+        "To build without MPI, pass '-DQMC_MPI=OFF' to cmake")
     message(WARNING ${MPI_WARNING_LIST})
   endif()
 
@@ -487,11 +478,28 @@ endif(QMC_MPI)
 #--------------------------------------------------------------
 include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main(){}" TEST_CXX_COMPILE_MAIN)
-if (NOT TEST_CXX_COMPILE_MAIN)
+if(NOT TEST_CXX_COMPILE_MAIN)
   unset(TEST_CXX_COMPILE_MAIN CACHE)
   message(FATAL_ERROR "Failed in compiling a main() function likely due to incorrect compile options. "
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
 endif()
+
+
+#--------------------------------------------------------------
+# Workaround for breakage of OMP Target kernels at -O0 by Clang
+#--------------------------------------------------------------
+# When the build type is Debug, default -O0 compilation is broken by
+# Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
+# Previous compilers are not suggested for clang offload builds.
+#
+# You can set this option to false on the command line to check
+# if this problem has been fixed.
+
+if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
+  option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
+endif()
+mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+
 
 ######################################################################
 # Check external libraries.
@@ -725,14 +733,27 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
-    # a few production machines use CUDA 10 which only supports C++14.
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 14)
+      set(CMAKE_CUDA_STANDARD 17)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
+    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
+    endif()
     enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    if(QMC_CUDA)
+      include(TestCUDAHostCompatibility)
+    endif()
+    find_package(CUDAToolkit 11.0 REQUIRED)
+    if(NOT TARGET CUDA::cublas)
+      message(
+        FATAL_ERROR
+          "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
+          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
+          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
+    endif()
     # Automatically set the default NVCC flags
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
     if(QMC_COMPLEX)
@@ -770,19 +791,23 @@ if(ENABLE_ROCM)
   if(DEFINED ROCM_ROOT)
     message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
     # explicit ROCM_ROOT takes precedence
-    #list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
+    list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
   endif()
+  # use hip package to verify hip runtime can be found
+  #find_package(hip CONFIG REQUIRED)
+  enable_language(HIP)
+  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
 
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
-  # use hip package to verify hip runtime can be found
-  find_package(hip CONFIG REQUIRED)
-  enable_language(HIP)
-  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
+
   # architecture flags
-  set(CMAKE_HIP_ARCHITECTURES "gfx906;gfx908")
-  string(APPEND CMAKE_HIP_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
+  if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES gfx906)
+  endif()
+
+  string(APPEND CMAKE_HIP_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   string(APPEND CMAKE_HIP_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
   string(APPEND CMAKE_HIP_FLAGS "-Wno-vla")
@@ -828,6 +853,27 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE})
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+  if(TARGET MKL::sycl)
+    target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
+  endif()
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 
@@ -885,7 +931,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 #-------------------------------------------------------------------
 # add definitions DO NOT EXPAND
 #-------------------------------------------------------------------
-add_definitions(-DHAVE_CONFIG_H -DUSE_REAL_STRUCT_FACTOR -DADD_)
+add_definitions(-DHAVE_CONFIG_H -DADD_)
 
 #-------------------------------------------------------------------
 # qmcpack.settings
@@ -997,11 +1043,23 @@ include(python)
 # Check if PySCF is available
 #-------------------------------------------------------------------
 if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
-  test_python_module(pyscf HAVE_PYSCF)
-  if(NOT HAVE_PYSCF)
+  check_python_reqs(pyscf "" HAVE_PYSCF)
+  if(NOT ${HAVE_PYSCF})
     message(STATUS "Unable to import PySCF python module. PySCF tests will not be run.")
   else()
     message(STATUS "Successfully imported PySCF python module.")
+  endif()
+endif()
+
+#-------------------------------------------------------------------
+# Check if GPAW is available
+#-------------------------------------------------------------------
+if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
+  check_python_reqs(gpaw "" HAVE_GPAW)
+  if(NOT ${HAVE_GPAW})
+    message(STATUS "Unable to import GPAW python module. GPAW converter tests will not be run.")
+  else()
+    message(STATUS "Successfully imported GPAW python modules.")
   endif()
 endif()
 
@@ -1026,15 +1084,36 @@ if(NOT QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   if(RMG_FOUND)
     message(STATUS "Found and using RMG (rmg-cpu) at ${RMG_CPU_EXE}")
   else(RMG_FOUND)
-    message(
-      STATUS "Did not find RMG (rmg-cpu). RMG tests will not be run.")
+    message(STATUS "Did not find RMG (rmg-cpu). RMG tests will not be run.")
   endif(RMG_FOUND)
+endif()
+
+#-------------------------------------------------------------------
+# If the timestamp of test_labels.py changes, unset any cached values
+#-------------------------------------------------------------------
+
+file(TIMESTAMP ${qmcpack_SOURCE_DIR}/tests/scripts/test_labels.py TIMESTAMP_TEST_LABELS)
+if(NOT DEFINED CACHE_TIMESTAMP_TEST_LABELS)
+  set(CACHE_TIMESTAMP_TEST_LABELS
+      ${TIMESTAMP_TEST_LABELS}
+      CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables")
+endif()
+if(NOT ${TIMESTAMP_TEST_LABELS} STREQUAL ${CACHE_TIMESTAMP_TEST_LABELS})
+  get_cmake_property(_variableNames VARIABLES)
+  list(FILTER _variableNames INCLUDE REGEX "^TEST_LABELS_*")
+  foreach(_variableName ${_variableNames})
+    unset(${_variableName} CACHE)
+  endforeach()
+  set(CACHE_TIMESTAMP_TEST_LABELS
+      ${TIMESTAMP_TEST_LABELS}
+      CACHE INTERNAL "Timestamp used to validate TEST_LABELS_ cache variables" FORCE)
 endif()
 
 ######################################################################
 message(STATUS "Ready to parse QMCPACK source tree")
 ######################################################################
 
+add_subdirectory(external_codes)
 add_subdirectory(src)
 
 if(NOT QMC_BUILD_SANDBOX_ONLY)

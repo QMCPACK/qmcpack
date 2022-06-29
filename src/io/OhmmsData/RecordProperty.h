@@ -40,7 +40,7 @@ struct RecordProperty
 class RecordPropertyList
 {
 public:
-  typedef std::vector<RecordProperty*> RecordList_t;
+  using RecordList_t = std::vector<RecordProperty*>;
 
   RecordPropertyList() {}
   virtual ~RecordPropertyList() { clear(); }

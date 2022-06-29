@@ -25,6 +25,9 @@ else()
   add_library(qmc ${QMCAPPDIR})
 endif()
 target_link_libraries(qmc PUBLIC qmcdriver)
+if(BUILD_AFQMC)
+  target_link_libraries(qmc PUBLIC afqmc)
+endif(BUILD_AFQMC)
 
 ####################################
 # QMCPACK application
@@ -49,16 +52,11 @@ if(USE_OBJECT_TARGET)
     qmcham
     qmcwfs
     qmcparticle
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA)
 endif()
 
-if(BUILD_AFQMC)
-  target_link_libraries(qmcpack afqmc)
-endif(BUILD_AFQMC)
-
-if(BUILD_FCIQMC)
-  target_link_libraries(qmcpack fciqmc)
-endif(BUILD_FCIQMC)
-
+add_test_target_in_output_location(qmcpack bin)
 install(TARGETS qmcpack RUNTIME DESTINATION bin)

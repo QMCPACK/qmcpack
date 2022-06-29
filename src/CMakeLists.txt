@@ -41,8 +41,10 @@ if(IS_GIT_PROJECT)
 
   # Sed flags were once an issue and some HPC have old sed's
   set(SED_FLAG "-E")
-  execute_process(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt" OUTPUT_QUIET
-                  ERROR_VARIABLE SED_ERROR)
+  execute_process(
+    COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    OUTPUT_QUIET
+    ERROR_VARIABLE SED_ERROR)
   if(SED_ERROR MATCHES ".*invalid.*")
     set(SED_FLAG "-r")
     execute_process(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt" OUTPUT_QUIET
@@ -58,7 +60,8 @@ if(IS_GIT_PROJECT)
     message("sed supports -E")
   endif(SED_ERROR MATCHES ".*invalid.*")
 
-  add_custom_target(gitrev
+  add_custom_target(
+    gitrev
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
@@ -69,7 +72,7 @@ if(IS_GIT_PROJECT)
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d "\\n" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
@@ -103,8 +106,6 @@ if(IS_GIT_PROJECT)
   message("Git branch: ${GIT_CONFIG_BRANCH}")
   message("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
 endif()
-
-include_directories("${qmcpack_SOURCE_DIR}/external_codes/boost_multi")
 
 # For unit tests, enable use for the fake RNG
 function(USE_FAKE_RNG TARGET)

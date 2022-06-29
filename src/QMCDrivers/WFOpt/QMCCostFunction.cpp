@@ -65,7 +65,7 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       OptVariables[j] = PM[j];
     resetPsi();
     //evaluate new local energies and derivatives
-    NumWalkersEff = correlatedSampling(true);
+    EffectiveWeight effective_weight = correlatedSampling(true);
     //Estimators::accumulate has been called by correlatedSampling
     curAvg_w = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
     //    Return_t curAvg2_w = curAvg_w*curAvg_w;
@@ -160,14 +160,8 @@ void QMCCostFunction::GradCost(std::vector<Return_rt>& PGradient,
       if (std::abs(w_abs) > 1.0e-10)
         PGradient[j] += w_abs * EDtotals[j];
     }
-    IsValid = true;
-    //         if ((CSWeight/wgtinv) < MinNumWalkers)
-    if (NumWalkersEff < MinNumWalkers * NumSamples)
-    {
-      WARNMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << "Minimum required"
-                                                                         << MinNumWalkers * NumSamples)
-      IsValid = false;
-    }
+
+    IsValid = isEffectiveWeightValid(effective_weight);
   }
 }
 
@@ -229,9 +223,9 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
     dLogPsi.resize(nwtot);
     d2LogPsi.resize(nwtot);
     for (int i = 0; i < nwtot; ++i)
-      dLogPsi[i] = new ParticleGradient_t(nptcl);
+      dLogPsi[i] = new ParticleGradient(nptcl);
     for (int i = 0; i < nwtot; ++i)
-      d2LogPsi[i] = new ParticleLaplacian_t(nptcl);
+      d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
 }
 
@@ -337,9 +331,8 @@ void QMCCostFunction::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-
+  IsValid = true;
   //collect SumValue for computedCost
-  NumWalkersEff           = etemp[1];
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];
   SumValue[SUM_E_WGT]     = etemp[0];
@@ -531,7 +524,7 @@ void QMCCostFunction::resetPsi(bool final_reset)
     psiClones[i]->resetParameters(OptVariablesForPsi);
 }
 
-QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
+QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
 {
   for (int ip = 0; ip < NumThreads; ++ip)
   {
@@ -657,13 +650,7 @@ QMCCostFunction::Return_rt QMCCostFunction::correlatedSampling(bool needGrad)
   }
   //collect everything
   myComm->allreduce(SumValue);
-  //     for (int i=0; i<SumValue.size(); i++) std::cerr <<SumValue[i]<<"  ";
-  //     std::cerr << std::endl;
-  //     app_log()<<"After purge Energy Variance Weight "
-  //      << SumValue[SUM_E_WGT]/SumValue[SUM_WGT] << " "
-  //      << SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT] -(SumValue[SUM_E_WGT]/SumValue[SUM_WGT])*(SumValue[SUM_E_WGT]/SumValue[SUM_WGT]) << " "
-  //      << SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ] << std::endl;
-  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / SumValue[SUM_WGTSQ];
+  return SumValue[SUM_WGT] * SumValue[SUM_WGT] / (SumValue[SUM_WGTSQ] * NumSamples);
 }
 
 
@@ -686,7 +673,6 @@ QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matri
   Left  = 0.0;
 
   //     resetPsi();
-  //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
   curAvg_w            = SumValue[SUM_E_WGT] / SumValue[SUM_WGT];
   Return_rt curAvg2_w = SumValue[SUM_ESQ_WGT] / SumValue[SUM_WGT];
   //    RealType H2_avg = 1.0/curAvg2_w;

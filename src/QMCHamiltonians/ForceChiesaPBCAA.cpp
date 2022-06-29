@@ -76,9 +76,7 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
   SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
   int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
-  int MemberAttribIndxA = tspeciesA.addAttribute("membersize");
   int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-  int MemberAttribIndxB = tspeciesB.addAttribute("membersize");
   NptclA                = PtclA.getTotalNum();
   NptclB                = P.getTotalNum();
   NumSpeciesA           = tspeciesA.TotalNum;

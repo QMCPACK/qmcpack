@@ -25,10 +25,10 @@ namespace qmcplusplus
 {
 TEST_CASE("FS parse Sk file", "[tools]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
+  using RealType                         = QMCTraits::RealType;
+  using PosType                          = QMCTraits::PosType;
   std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
-  std::string filename   = "simple_Sk.dat";
+  std::string filename                   = "simple_Sk.dat";
   skparser->parse(filename);
   std::vector<RealType> sk    = skparser->get_sk_raw();
   std::vector<RealType> skerr = skparser->get_skerr_raw();
@@ -46,16 +46,15 @@ TEST_CASE("FS parse Sk file", "[tools]")
   REQUIRE(grid[last][2] == Approx(75.39822368615503));
   REQUIRE(sk[last] == Approx(0.9999947116274186));
   REQUIRE(skerr[last] == Approx(0.01));
-
 }
 
 TEST_CASE("FS evaluate", "[tools]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::PosType PosType;
+  using RealType = QMCTraits::RealType;
+  using PosType  = QMCTraits::PosType;
 
   std::unique_ptr<SkParserBase> skparser = std::make_unique<SkParserASCII>();
-  std::string filename   = "simple_Sk.dat";
+  std::string filename                   = "simple_Sk.dat";
   skparser->parse(filename);
 
   QMCFiniteSize qfs(skparser.get());

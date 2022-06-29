@@ -87,7 +87,7 @@ QMCCostFunctionBase::~QMCCostFunctionBase()
     delete debug_stream;
 }
 
-void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
+void QMCCostFunctionBase::setRng(RefVector<RandomGenerator> r)
 {
   if (MoverRng.size() < r.size())
   {
@@ -97,7 +97,7 @@ void QMCCostFunctionBase::setRng(RefVector<RandomGenerator_t> r)
   for (int ip = 0; ip < r.size(); ++ip)
     MoverRng[ip] = &r[ip].get();
   for (int ip = 0; ip < r.size(); ++ip)
-    RngSaved[ip] = std::make_unique<RandomGenerator_t>(r[ip].get());
+    RngSaved[ip] = std::make_unique<RandomGenerator>(r[ip].get());
 }
 
 void QMCCostFunctionBase::setTargetEnergy(Return_rt et)
@@ -130,7 +130,8 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   //reset the wave function
   resetPsi();
   //evaluate new local energies
-  NumWalkersEff = correlatedSampling(needGrad);
+  EffectiveWeight effective_weight = correlatedSampling(needGrad);
+  IsValid = isEffectiveWeightValid(effective_weight);
   return computedCost();
 }
 
@@ -154,8 +155,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
   curVar     = SumValue[SUM_ESQ_BARE] * wgtinv - curAvg * curAvg;
   curVar_abs = SumValue[SUM_ABSE_WGT] / SumValue[SUM_WGT];
   // app_log() << "curVar     = " << curVar
-  //     << "   curAvg     = " << curAvg
-  //     << "   NumWalkersEff     = " << NumWalkersEff << std::endl;
+  //     << "   curAvg     = " << curAvg << std::endl;
   // app_log() << "SumValue[SUM_WGT] = " << SumValue[SUM_WGT] << std::endl;
   // app_log() << "SumValue[SUM_WGTSQ] = " << SumValue[SUM_WGTSQ] << std::endl;
   // app_log() << "SumValue[SUM_ABSE_WGT] = " << SumValue[SUM_ABSE_WGT] << std::endl;
@@ -171,21 +171,6 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::computedCost()
     CostValue += w_en * curAvg_w;
   if (std::abs(w_w) > small)
     CostValue += w_w * curVar;
-  //CostValue = w_abs*curVar_abs + w_var*curVar_w + w_en*curAvg_w + w_w*curVar;
-  // app_log() << "CostValue, NumEffW = " << CostValue <<"  " <<NumWalkersEff << std::endl;
-  IsValid = true;
-  if (NumWalkersEff < NumSamples * MinNumWalkers)
-  //    if (NumWalkersEff < MinNumWalkers)
-  {
-    WARNMSG("CostFunction-> Number of Effective Walkers is too small! "
-            << std::endl
-            << "  Number of effective walkers (samples) / total number of samples = "
-            << (1.0 * NumWalkersEff) / NumSamples << std::endl
-            << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
-            << "  If this message appears frequently. You might have to be cautious. " << std::endl
-            << "  Find info about parameter \"minwalkers\" in the user manual!");
-    IsValid = false;
-  }
   return CostValue;
 }
 
@@ -206,8 +191,8 @@ void QMCCostFunctionBase::Report()
     if (msg_stream)
     {
       msg_stream->precision(8);
-      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
-                  << NumWalkersEff << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
+      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue
+                  << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
                   << std::setw(16) << curVar << std::setw(16) << curVar_abs << std::endl;
       *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i = 0; i < OptVariables.size(); i++)
@@ -232,6 +217,10 @@ void QMCCostFunctionBase::reportParameters()
   resetPsi(true);
   if (!myComm->rank())
   {
+    std::ostringstream vp_filename;
+    vp_filename << RootName << ".vp.h5";
+    OptVariables.saveAsHDF(vp_filename.str());
+
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());
     *msg_stream << "  <optVariables href=\"" << newxml << "\">" << std::endl;
@@ -324,21 +313,26 @@ bool QMCCostFunctionBase::checkParameters()
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
-  std::string computeNLPPderiv("no");
+  std::string computeNLPPderiv;
+  std::string output_override_str("no");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
   m_param.add(includeNonlocalH, "nonlocalpp");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv");
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {"yes", "no"});
   m_param.add(w_beta, "beta");
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
+  m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
   m_param.put(q);
 
-  tolower(targetExcitedStr);
-  targetExcited = (targetExcitedStr == "yes");
+  targetExcitedStr = lowerCase(targetExcitedStr);
+  targetExcited    = (targetExcitedStr == "yes");
+
+  if (output_override_str == "yes")
+    do_override_output = true;
 
   if (includeNonlocalH == "yes")
     includeNonlocalH = "NonLocalECP";
@@ -521,16 +515,39 @@ void QMCCostFunctionBase::updateXmlNodes()
   {
     m_doc_out          = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
+    xmlNodePtr wf_root = xmlAddChild(qm_root, xmlCopyNode(m_wfPtr, 1));
     xmlDocSetRootElement(m_doc_out, qm_root);
     xmlXPathContextPtr acontext = xmlXPathNewContext(m_doc_out);
+
+    if (do_override_output)
+    {
+      std::ostringstream vp_filename;
+      vp_filename << RootName << ".vp.h5";
+
+      OhmmsXPathObject vp_file_nodes("//override_variational_parameters", acontext);
+      if (vp_file_nodes.empty())
+      {
+        // Element is not present. Create a new one.
+        xmlNodePtr vp_file_node = xmlNewNode(NULL, BAD_CAST "override_variational_parameters");
+        xmlSetProp(vp_file_node, BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        xmlAddChild(wf_root, vp_file_node);
+      }
+      else
+      {
+        // Element is present. Rewrite the href attribute.
+        for (int iparam = 0; iparam < vp_file_nodes.size(); iparam++)
+        {
+          xmlSetProp(vp_file_nodes[iparam], BAD_CAST "href", BAD_CAST vp_filename.str().c_str());
+        }
+      }
+    }
 
     //check var
     xmlXPathObjectPtr result = xmlXPathEvalExpression((const xmlChar*)"//var", acontext);
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (auto oit = OptVariablesForPsi.find(aname); oit != OptVariablesForPsi.end())
@@ -542,7 +559,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"exponent"); aptr != nullptr)
@@ -562,7 +579,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff");
@@ -577,7 +594,7 @@ void QMCCostFunctionBase::updateXmlNodes()
     for (int iparam = 0; iparam < result->nodesetval->nodeNr; iparam++)
     {
       xmlNodePtr cur = result->nodesetval->nodeTab[iparam];
-      XMLAttrString aname(cur, "id");
+      std::string aname(getXMLAttributeValue(cur, "id"));
       if (aname.empty())
         continue;
       if (xmlAttrPtr aptr = xmlHasProp(cur, (const xmlChar*)"coeff"); aptr != nullptr)
@@ -1017,6 +1034,20 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
   }
 }
 
+bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weight) const
+{
+  app_log() << "Effective weight of all the samples measured by correlated sampling is "
+          << effective_weight << std::endl;
+  if (effective_weight < MinNumWalkers)
+  {
+    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = " << MinNumWalkers << std::endl
+            << "  If this message appears frequently. You might have to be cautious. " << std::endl
+            << "  Find info about parameter \"minwalkers\" in the user manual!");
+    return false;
+  }
+
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  If the LMYEngine is available, returns the cost function calculated by the engine.

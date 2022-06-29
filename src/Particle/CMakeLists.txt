@@ -14,12 +14,14 @@
 ####################################
 set(PARTICLE
     InitMolecularSystem.cpp
+    SimulationCell.cpp
     ParticleSetPool.cpp
     ParticleSet.cpp
     PSdispatcher.cpp
     VirtualParticleSet.cpp
     ParticleSet.BC.cpp
     DynamicCoordinatesBuilder.cpp
+    MCCoords.cpp
     MCWalkerConfiguration.cpp
     WalkerConfigurations.cpp
     SpeciesSet.cpp
@@ -31,25 +33,13 @@ set(PARTICLE
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
-    LongRange/EwaldHandler.cpp
+    LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
+    LongRange/EwaldHandler2D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
-if(ENABLE_OFFLOAD)
-  set(PARTICLE ${PARTICLE} createDistanceTableAAOMPTarget.cpp createDistanceTableABOMPTarget.cpp)
-endif(ENABLE_OFFLOAD)
-
-if(OHMMS_DIM MATCHES 2)
-  set(PARTICLE ${PARTICLE} LongRange/TwoDEwaldHandler.cpp)
-endif(OHMMS_DIM MATCHES 2)
-
-set(PARTICLEIO
-    ParticleTags.cpp
-    ParticleIO/ParticleLayoutIO.cpp
-    ParticleIO/XMLParticleIO.cpp
-    ParticleIO/ParticleIOUtility.cpp
-    HDFWalkerOutput.cpp
-    HDFWalkerInput_0_4.cpp)
+set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp
+               HDFWalkerInput_0_4.cpp)
 
 if(USE_OBJECT_TARGET)
   add_library(qmcparticle OBJECT ${PARTICLE} ${PARTICLEIO})
@@ -60,6 +50,22 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
 target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
+set(PARTICLE_OMPTARGET_SRCS
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp)
+
+if(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget ${PARTICLE_OMPTARGET_SRCS})
+endif(USE_OBJECT_TARGET)
+
+target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
+
+target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
+
+target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)

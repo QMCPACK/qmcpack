@@ -13,11 +13,14 @@ fi
 
 module load cmake
 module load intel-mkl
-module load cuda/10.1
+
+module use /nfs/gce/projects/QMCPACK_dev/spack/share/spack/lmod/linux-ubuntu18.04-x86_64/Core
+module load cuda/11.2.2-lo3x6k7
 
 export TEST_SITE_NAME=bora.alcf.anl.gov
 export N_PROCS=16
 export N_PROCS_BUILD=16
+export N_CONCURRENT_TESTS=16
 
 # run on socket 1
 NUMA_ID=0
@@ -26,7 +29,7 @@ QE_BIN=/scratch/opt/qe-stable/qe-6.4.1/bin
 QMC_DATA=/scratch/opt/h5data
 
 #Must be an absolute path
-place=/scratch/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
+place=/scratch2/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -56,9 +59,11 @@ cd $entry
 
 git checkout $branch
 
-for sys in ClangDev-Offload-CUDA-Real ClangDev-Offload-CUDA-Complex ClangDev-Offload-CUDA-Real-Mixed ClangDev-Offload-CUDA-Complex-Mixed \
-           Intel18-Real Intel18-Real-Mixed Intel18-Complex Intel18-Complex-Mixed \
-           Intel18-Real-Mixed-CUDA2 Intel18-Complex-Mixed-CUDA2 Intel18-Real-Mixed-legacy-CUDA Intel18-Complex-Mixed-legacy-CUDA
+for sys in ROCm-CUDA2HIP-Real ROCm-CUDA2HIP-Complex ROCm-CUDA2HIP-Real-Mixed ROCm-CUDA2HIP-Complex-Mixed \
+           Intel19-Real Intel19-Real-Mixed Intel19-Complex Intel19-Complex-Mixed \
+           ClangDev-Offload-Real ClangDev-Offload-Complex ClangDev-Offload-Real-Mixed ClangDev-Offload-Complex-Mixed \
+           ClangDev-Offload-CUDA-Real ClangDev-Offload-CUDA-Complex ClangDev-Offload-CUDA-Real-Mixed ClangDev-Offload-CUDA-Complex-Mixed \
+           Intel19-CUDA2-Real-Mixed Intel19-CUDA2-Complex-Mixed Intel19-legacy-CUDA-Real-Mixed Intel19-legacy-CUDA-Complex-Mixed
 do
 
 echo --- Building for $sys `date`
@@ -78,41 +83,69 @@ if [[ $sys == *"ClangDev"* ]]; then
   #define and load compiler
   module load llvm/master-latest
   module load openmpi/4.0.2-llvm
-  export CC=mpicc
-  export CXX=mpicxx
 
-  CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-march=skylake -DCMAKE_CXX_FLAGS=-march=skylake"
   if [[ $sys == *"Offload-CUDA"* ]]; then
-    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DCMAKE_CUDA_HOST_COMPILER=`which gcc`;-DQMC_NIO_MAX_SIZE=16'"
-    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES=61"
-    CTEST_LABELS="-L deterministic -LE unstable"
-    export N_CONCURRENT_TESTS=4
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DUSE_OBJECT_TARGET=ON;-DQMC_NIO_MAX_SIZE=8'"
+    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=61 -DBUILD_AFQMC=ON"
+  elif [[ $sys == *"Offload"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DOFFLOAD_ARCH=sm_61;-DUSE_OBJECT_TARGET=ON;-DQMC_NIO_MAX_SIZE=8'"
+    CTEST_FLAGS="$CTEST_FLAGS -DBUILD_AFQMC=ON"
   else
     CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
-    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
-    export N_CONCURRENT_TESTS=16
+  fi
+
+  export LIBOMP_USE_HIDDEN_HELPER_TASK=OFF
+  if [[ $sys == *"Real-Mixed"* ]]; then
+    #CTEST_LABELS="-E 'long|short-LiH|short-bccH_1x1x1|short-H2O_dimer|short-diamondC_1x1x1|short-diamondC_2x1x1_pp-dmc|short-li2_sto|short-NiO_a4_e48_pp'"
+    CTEST_LABELS="-E 'restart|save|long|developer|He_param|example|cpu_limit|short-LiH|short-bccH_1x1x1|short-H2O_dimer|short-diamondC_1x1x1|short-diamondC_2x1x1_pp-dmc|short-li2_sto|short-NiO_a4_e48_pp|short-C'"
+  else
+    CTEST_LABELS="-L 'deterministic|QMCPACK' -LE unstable -E long"
+  fi
+elif [[ $sys == *"ROCm"* ]]; then
+  #define and load compiler
+  module load rocm/afar001-432 aomp/afar001-432
+  module load openmpi/4.0.2-llvm
+
+  if [[ $sys == *"Offload-CUDA2HIP"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DHIP_ARCH=gfx1030;-DENABLE_OFFLOAD=ON;-DQMC_NIO_MAX_SIZE=8'"
+    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON"
+  elif [[ $sys == *"CUDA2HIP"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DHIP_ARCH=gfx1030;-DQMC_NIO_MAX_SIZE=8'"
+    CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON"
+  elif [[ $sys == *"Offload"* ]]; then
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=gfx1030;-DQMC_NIO_MAX_SIZE=8'"
+  else
+    CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
+  fi
+
+  if [[ $sys == *"Real-Mixed"* ]]; then
+    #CTEST_LABELS="-E 'long|short-LiH|short-bccH_1x1x1|short-H2O_dimer|short-diamondC_1x1x1|short-diamondC_2x1x1_pp-dmc|short-li2_sto|short-NiO_a4_e48_pp'"
+    CTEST_LABELS="-E 'restart|save|long|developer|He_param|example|cpu_limit|short-LiH|short-bccH_1x1x1|short-H2O_dimer|short-diamondC_1x1x1|short-diamondC_2x1x1_pp-dmc|short-li2_sto|short-NiO_a4_e48_pp|short-C'"
+  else
+    CTEST_LABELS="-L 'deterministic|QMCPACK' -LE unstable -E long"
   fi
 elif [[ $sys == *"Intel"* ]]; then
   #define and load compiler
-  module load intel/18.4
+  module load intel/20.2
   module load openmpi/4.0.2-intel
-  export CC=mpicc
-  export CXX=mpicxx
 
   CTEST_FLAGS="$CTEST_FLAGS -DCMAKE_C_FLAGS=-xCOMMON-AVX512 -DCMAKE_CXX_FLAGS=-xCOMMON-AVX512"
   if [[ $sys == *"-CUDA2"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DENABLE_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES=61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
-    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
+    CTEST_LABELS="-L 'deterministic|performance' -LE unstable -E long"
     export N_CONCURRENT_TESTS=4
   elif [[ $sys == *"-legacy-CUDA"* ]]; then
     CTEST_FLAGS="$CTEST_FLAGS -DQMC_CUDA=1 -DCMAKE_CUDA_ARCHITECTURES=61 -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
-    CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
+    CTEST_LABELS="-L 'deterministic|performance' -LE unstable -E long"
     export N_CONCURRENT_TESTS=1
   else
     CTEST_FLAGS="$CTEST_FLAGS -DQE_BIN=$QE_BIN"
+    CTEST_LABELS="-E long"
     export N_CONCURRENT_TESTS=16
   fi
 fi
+
+CTEST_FLAGS="-DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $CTEST_FLAGS"
 
 # compiler independent options
 if [[ $sys == *"-Complex"* ]]; then
@@ -132,8 +165,15 @@ fi
 mkdir $folder
 cd $folder
 
+logfile=$place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+echo "$CTEST_FLAGS $CTEST_LABELS" | tee $logfile
+echo PATH=$PATH >> $logfile
+echo OMPI_CXX=${OMPI_CXX} >> $logfile
+mpicxx -v >> $logfile
+echo >> $logfile
+
 numactl -N $NUMA_ID \
-ctest $CTEST_FLAGS $CTEST_LABELS -S $PWD/../CMake/ctest_script.cmake,release -VV -E 'long' --timeout 800 &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+ctest $CTEST_FLAGS $CTEST_LABELS -S $PWD/../CMake/ctest_script.cmake,release -VV --timeout 800 &>> $logfile
 
 cd ..
 echo --- Finished $sys `date`

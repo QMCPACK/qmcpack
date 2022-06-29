@@ -11,7 +11,7 @@
 
 #include "InputSection.h"
 #include "Message/UniformCommunicateError.h"
-
+#include "Utilities/string_utils.h"
 namespace qmcplusplus
 {
 
@@ -21,17 +21,16 @@ void InputSection::readXML(xmlNodePtr cur)
   xmlAttrPtr att = cur->properties;
   while (att != NULL)
   {
-    std::string name = (const char*)(att->name);
-    for (auto& c : name)
-      c = tolower(c);
-    if (!is_attribute(name))
+    // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
+    std::string name{lowerCase(castXMLCharToChar(att->name))};
+    if (!isAttribute(name))
     {
       std::stringstream error;
       error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
       throw UniformCommunicateError(error.str());
     }
-    std::istringstream stream((const char*)(att->children->content));
-    set_from_stream(name, stream);
+    std::istringstream stream(castXMLCharToChar(att->children->content));
+    setFromStream(name, stream);
     att = att->next;
   }
 
@@ -39,31 +38,29 @@ void InputSection::readXML(xmlNodePtr cur)
   xmlNodePtr element = cur->xmlChildrenNode;
   while (element != NULL)
   {
-    std::string ename((const char*)element->name);
-    for (auto& c : ename)
-      c = tolower(c);
+    std::string ename{lowerCase(castXMLCharToChar(element->name))};
     if (ename == "parameter")
     {
-      XMLAttrString name(element, "name");
-      for (auto& c : name)
-        c = tolower(c);
-      if (!is_parameter(name))
+      std::string name(lowerCase(getXMLAttributeValue(element, "name")));
+      if (!isParameter(name))
       {
         std::stringstream error;
         error << "InputSection::readXML name " << name << " is not a parameter of " << section_name << "\n";
         throw UniformCommunicateError(error.str());
       }
       std::istringstream stream(XMLNodeString{element});
-      set_from_stream(name, stream);
+      setFromStream(name, stream);
     }
+    else if (isDelegate(ename))
+    {}
     element = element->next;
   }
 
   // assign default values for optional variables
-  set_defaults();
+  setDefaults();
 
   // check input validity
-  check_valid();
+  checkValid();
   //report();
 }
 
@@ -72,63 +69,63 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
 {
   // assign inputted values
   for (auto& [name, value] : init_values)
-    set_from_value(name, value);
+    setFromValue(name, value);
 
   // assign default values for optional variables
-  set_defaults();
+  setDefaults();
 
   // check input validity
-  check_valid();
+  checkValid();
   //report();
 }
 
 
-void InputSection::set_defaults()
+void InputSection::setDefaults()
 {
   for (auto& [name, default_value] : default_values)
     if (!has(name))
-      set_from_value(name, default_value);
+      setFromValue(name, default_value);
 }
 
-void InputSection::set_from_stream(const std::string& name, std::istringstream& svalue)
+void InputSection::setFromStream(const std::string& name, std::istringstream& svalue)
 {
-  if (is_string(name) || is_enum_string(name))
+  if (isString(name) || isEnumString(name))
   {
     std::string value;
     svalue >> value;
-    values[name] = value;
+    values_[name] = value;
   }
-  else if (is_multi_string(name))
+  else if (isMultiString(name))
   {
     std::vector<std::string> string_values;
     for (std::string value; svalue >> value;)
       string_values.push_back(value);
-    values[name] = string_values;
+    values_[name] = string_values;
   }
-  else if (is_bool(name))
+  else if (isBool(name))
   {
     std::string sval;
     svalue >> sval;
-    bool value   = sval == "yes" || sval == "true" || sval == "1";
-    values[name] = value;
+    bool value    = sval == "yes" || sval == "true" || sval == "1";
+    values_[name] = value;
   }
-  else if (is_integer(name))
+  else if (isInteger(name))
   {
     int value;
     svalue >> value;
-    values[name] = value;
+    values_[name] = value;
   }
-  else if (is_real(name))
+  else if (isReal(name))
   {
     Real value;
     svalue >> value;
-    values[name] = value;
+    values_[name] = value;
   }
-  else if (is_position(name))
+  else if (isPosition(name))
   {
     Position value;
     svalue >> value;
-    values[name] = value;
+    values_[name] = value;
   }
   else
   {
@@ -139,20 +136,20 @@ void InputSection::set_from_stream(const std::string& name, std::istringstream& 
 }
 
 template<typename T>
-void InputSection::set_from_value(const std::string& name, const T& value)
+void InputSection::setFromValue(const std::string& name, const T& value)
 {
-  if (is_string(name) || is_enum_string(name))
-    values[name] = std::any_cast<std::string>(value);
-  else if (is_multi_string(name))
-    values[name] = (std::any_cast<std::vector<std::string>>(value));
-  else if (is_bool(name))
-    values[name] = std::any_cast<bool>(value);
-  else if (is_integer(name))
-    values[name] = std::any_cast<int>(value);
-  else if (is_real(name))
-    values[name] = std::any_cast<Real>(value);
-  else if (is_position(name))
-    values[name] = std::any_cast<Position>(value);
+  if (isString(name) || isEnumString(name))
+    values_[name] = std::any_cast<std::string>(value);
+  else if (isMultiString(name))
+    values_[name] = (std::any_cast<std::vector<std::string>>(value));
+  else if (isBool(name))
+    values_[name] = std::any_cast<bool>(value);
+  else if (isInteger(name))
+    values_[name] = std::any_cast<int>(value);
+  else if (isReal(name))
+    values_[name] = std::any_cast<Real>(value);
+  else if (isPosition(name))
+    values_[name] = std::any_cast<Position>(value);
   else
   {
     std::stringstream error;
@@ -161,7 +158,7 @@ void InputSection::set_from_value(const std::string& name, const T& value)
   }
 }
 
-void InputSection::check_valid()
+void InputSection::checkValid()
 {
   // check that all required inputs are present
   for (auto& name : required)
@@ -180,25 +177,26 @@ void InputSection::report() const
 {
   auto& out = app_log();
   out << "\n" << section_name;
-  for (auto& [name, value] : values)
+  for (auto& [name, value] : values_)
   {
     out << "\n  " << name << " = ";
-    if (is_string(name))
+    if (isString(name))
       out << std::any_cast<std::string>(value);
-    else if (is_bool(name))
+    else if (isBool(name))
       out << std::any_cast<bool>(value);
-    else if (is_integer(name))
+    else if (isInteger(name))
       out << std::any_cast<int>(value);
-    else if (is_real(name))
+    else if (isReal(name))
       out << std::any_cast<Real>(value);
   }
   out << "\n\n";
 }
 
-std::any InputSection::lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map)
+std::any InputSection::lookupAnyEnum(const std::string& enum_name,
+                                     const std::string& enum_value,
+                                     const std::unordered_map<std::string, std::any>& enum_map)
 {
-  std::string enum_value_str(enum_name + "-" + enum_value);
-  tolower(enum_value_str);
+  std::string enum_value_str(lowerCase(enum_name + "-" + enum_value));
   try
   {
     return enum_map.at(enum_value_str);

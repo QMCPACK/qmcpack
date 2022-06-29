@@ -21,6 +21,7 @@ if(NOT QMC_CUDA2HIP)
 else()
   set_source_files_properties(${CUDA_LA_SRCS} PROPERTIES LANGUAGE HIP)
   target_link_libraries(platform_cuda_runtime PUBLIC platform_rocm_runtime)
+  target_link_libraries(platform_cuda_LA PRIVATE qmc_external_thrust)
   target_link_libraries(platform_cuda_LA PUBLIC platform_rocm_LA)
 endif()
 

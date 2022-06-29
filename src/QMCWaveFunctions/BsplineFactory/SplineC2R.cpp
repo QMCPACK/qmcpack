@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #include "SplineC2R.h"
 #include "spline2/MultiBsplineEval.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
@@ -54,7 +54,7 @@ bool SplineC2R<ST>::write_splines(hdf_archive& h5f)
 template<typename ST>
 inline void SplineC2R<ST>::assign_v(const PointType& r,
                                     const vContainer_type& myV,
-                                    ValueVector_t& psi,
+                                    ValueVector& psi,
                                     int first,
                                     int last) const
 {
@@ -93,7 +93,7 @@ inline void SplineC2R<ST>::assign_v(const PointType& r,
 }
 
 template<typename ST>
-void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector_t& psi)
+void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVector& psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -110,8 +110,8 @@ void SplineC2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 
 template<typename ST>
 void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
-                                      ValueVector_t& psi,
-                                      const ValueVector_t& psiinv,
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
                                       std::vector<TT>& ratios)
 {
   const bool need_resize = ratios_private.rows() < VP.getTotalNum();
@@ -158,9 +158,9 @@ void SplineC2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
    */
 template<typename ST>
 inline void SplineC2R<ST>::assign_vgl(const PointType& r,
-                                      ValueVector_t& psi,
-                                      GradVector_t& dpsi,
-                                      ValueVector_t& d2psi,
+                                      ValueVector& psi,
+                                      GradVector& dpsi,
+                                      ValueVector& d2psi,
                                       int first,
                                       int last) const
 {
@@ -239,10 +239,10 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
     const ST lap_i   = lcart_i + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
 
     const size_t psiIndex = first_spo + jr;
-    psi[psiIndex]       = c * val_r - s * val_i;
-    psi[psiIndex + 1]   = c * val_i + s * val_r;
-    d2psi[psiIndex]     = c * lap_r - s * lap_i;
-    d2psi[psiIndex + 1] = c * lap_i + s * lap_r;
+    psi[psiIndex]         = c * val_r - s * val_i;
+    psi[psiIndex + 1]     = c * val_i + s * val_r;
+    d2psi[psiIndex]       = c * lap_r - s * lap_i;
+    d2psi[psiIndex + 1]   = c * lap_i + s * lap_r;
     dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
     dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
     dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
@@ -286,9 +286,9 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGG);
     const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGG);
@@ -301,10 +301,7 @@ inline void SplineC2R<ST>::assign_vgl(const PointType& r,
 /** assign_vgl_from_l can be used when myL is precomputed and myV,myG,myL in cartesian
    */
 template<typename ST>
-inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
-                                             ValueVector_t& psi,
-                                             GradVector_t& dpsi,
-                                             ValueVector_t& d2psi)
+inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   constexpr ST two(2);
   const ST x = r[0], y = r[1], z = r[2];
@@ -408,9 +405,9 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
     const ST gZ_i         = dZ_i - val_r * kZ;
     const size_t psiIndex = first_spo + nComplexBands + j;
     psi[psiIndex]         = c * val_r - s * val_i;
-    dpsi[psiIndex][0] = c * gX_r - s * gX_i;
-    dpsi[psiIndex][1] = c * gY_r - s * gY_i;
-    dpsi[psiIndex][2] = c * gZ_r - s * gZ_i;
+    dpsi[psiIndex][0]     = c * gX_r - s * gX_i;
+    dpsi[psiIndex][1]     = c * gY_r - s * gY_i;
+    dpsi[psiIndex][2]     = c * gZ_r - s * gZ_i;
 
     const ST lap_r  = myL[jr] + mKK[j] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
     const ST lap_i  = myL[ji] + mKK[j] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
@@ -421,9 +418,9 @@ inline void SplineC2R<ST>::assign_vgl_from_l(const PointType& r,
 template<typename ST>
 void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
                                 const int iat,
-                                ValueVector_t& psi,
-                                GradVector_t& dpsi,
-                                ValueVector_t& d2psi)
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                ValueVector& d2psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -440,9 +437,9 @@ void SplineC2R<ST>::evaluateVGL(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2R<ST>::assign_vgh(const PointType& r,
-                               ValueVector_t& psi,
-                               GradVector_t& dpsi,
-                               HessVector_t& grad_grad_psi,
+                               ValueVector& psi,
+                               GradVector& dpsi,
+                               HessVector& grad_grad_psi,
                                int first,
                                int last) const
 {
@@ -665,9 +662,9 @@ void SplineC2R<ST>::assign_vgh(const PointType& r,
 template<typename ST>
 void SplineC2R<ST>::evaluateVGH(const ParticleSet& P,
                                 const int iat,
-                                ValueVector_t& psi,
-                                GradVector_t& dpsi,
-                                HessVector_t& grad_grad_psi)
+                                ValueVector& psi,
+                                GradVector& dpsi,
+                                HessVector& grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));
@@ -683,10 +680,10 @@ void SplineC2R<ST>::evaluateVGH(const ParticleSet& P,
 
 template<typename ST>
 void SplineC2R<ST>::assign_vghgh(const PointType& r,
-                                 ValueVector_t& psi,
-                                 GradVector_t& dpsi,
-                                 HessVector_t& grad_grad_psi,
-                                 GGGVector_t& grad_grad_grad_psi,
+                                 ValueVector& psi,
+                                 GradVector& dpsi,
+                                 HessVector& grad_grad_psi,
+                                 GGGVector& grad_grad_grad_psi,
                                  int first,
                                  int last) const
 {
@@ -1152,10 +1149,10 @@ void SplineC2R<ST>::assign_vghgh(const PointType& r,
 template<typename ST>
 void SplineC2R<ST>::evaluateVGHGH(const ParticleSet& P,
                                   const int iat,
-                                  ValueVector_t& psi,
-                                  GradVector_t& dpsi,
-                                  HessVector_t& grad_grad_psi,
-                                  GGGVector_t& grad_grad_grad_psi)
+                                  ValueVector& psi,
+                                  GradVector& dpsi,
+                                  HessVector& grad_grad_psi,
+                                  GGGVector& grad_grad_grad_psi)
 {
   const PointType& r = P.activeR(iat);
   PointType ru(PrimLattice.toUnit_floor(r));

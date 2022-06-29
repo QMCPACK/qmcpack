@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
@@ -40,12 +40,12 @@ class ObservableHelper;
  */
 struct ScalarEstimatorBase
 {
-  typedef QMCTraits::FullPrecRealType RealType;
-  typedef accumulator_set<RealType> accumulator_type;
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  typedef MCWalkerConfiguration::const_iterator WalkerIterator;
-  typedef RecordNamedProperty<RealType> RecordListType;
+  using RealType         = QMCTraits::FullPrecRealType;
+  using accumulator_type = accumulator_set<RealType>;
+  using Walker_t         = MCWalkerConfiguration::Walker_t;
+  using MCPWalker        = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using WalkerIterator   = MCWalkerConfiguration::const_iterator;
+  using RecordListType   = RecordNamedProperty<RealType>;
 
   ///first index within an record of the first element handled by an object
   int FirstIndex;
@@ -61,6 +61,9 @@ struct ScalarEstimatorBase
 
   virtual ~ScalarEstimatorBase() {}
 
+  /// Is this estimator a main estimator i.e. the estimator required for a particular driver.
+  virtual bool isMainEstimator() const { return false; }
+  
   ///return average of the
   inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }
   ///return a variance
@@ -104,7 +107,7 @@ struct ScalarEstimatorBase
     {
       *first++    = scalars[i].mean();
       *first_sq++ = scalars[i].mean2();
-      // For mixed precision I believe this is where Collectables data goes from Actual QMCT::RealType
+      // For mixed precision this is where data goes from Actual QMCT::RealType
       // to the local RealType which is hard coded to QMCTFullPrecRealType.
       // I think it is a bad idea to have RealType to have a changing meaning,
       // I also feel like having the floating point expension needed to write always to
@@ -162,6 +165,9 @@ struct ScalarEstimatorBase
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;
+
+  /// String representation of the derived type of the ScalarEstimator
+  virtual const std::string& getSubTypeStr() const = 0;
 };
 } // namespace qmcplusplus
 

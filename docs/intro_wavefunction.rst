@@ -124,7 +124,7 @@ determinants.
   :caption: Deprecated input style.
   :name: spo.singledet.old.xml
 
-  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+  <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" source="ion0" meshfactor="1.0" precision="double">
      <slaterdeterminant>
         <determinant id="updet" size="8">
            <occupation mode="ground" spindataset="0"/>
@@ -142,7 +142,7 @@ After updating the input style.
   :name: spo.singledet.xml
 
   <!-- all the attributes are moved from determinantset.-->
-  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+  <sposet_collection type="einspline" href="pwscf.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" source="ion0" meshfactor="1.0" precision="double">
     <!-- all the attributes and contents are moved from determinant.  Change 'id' tag to 'name' tag.
          Need only one sposet for unpolarized calculation.-->
     <sposet name="spo-ud" size="8">
@@ -221,7 +221,7 @@ The input xml block for the spline SPOs is given in :ref:`spline.spo.xml`. A lis
   :name: spline.spo.xml
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                  tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
+                  tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
                   twist="0  0  0" precision="double">
     <sposet name="spo-up" size="208">
       <occupation mode="ground" spindataset="0"/>
@@ -297,9 +297,15 @@ Additional information:
     calculations. Use with caution!
 
 - twistnum
-    If positive, it is the index. We recommend not taking
-    this way since the indexing might show some uncertainty. If negative,
-    the super twist is referred by ``twist``.
+    We recommend not using it in the input because the ordering of orbitals
+    depends on how they are being stored in the h5 file. ``twistnum`` gets
+    ignored if ``twist`` exists in the input. If positive, it is the index.
+    If negative, the super twist is referred by ``twist``. This input
+    parameter is kept only for keeping old input files working.
+
+- twist
+    The twist angle. If neither ``twist`` nor ``twistnum`` is provided,
+    Take Gamma point, (0, 0, 0).
 
 - save_coefs
     If yes, dump the real-space B-spline coefficient
@@ -342,7 +348,7 @@ Additional information:
 .. _spo-lcao:
 
 Linear combination of atomic orbitals (LCAO) with Gaussian and/or Slater-type basis sets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this section we describe the use of localized basis sets to expand the ``sposet``. The general form of a single particle orbital in this case is given by:
 
@@ -637,7 +643,7 @@ To enable hybrid orbital representation, the input XML needs to see the tag ``hy
   :name: Listing 6
 
   <sposet_collection type="bspline" source="i" href="pwscf.h5"
-                tilematrix="1 1 3 1 2 -1 -2 1 0" twistnum="-1" gpu="yes" meshfactor="0.8"
+                tilematrix="1 1 3 1 2 -1 -2 1 0" gpu="yes" meshfactor="0.8"
                 twist="0  0  0" precision="single" hybridrep="yes">
     ...
   </sposet_collection>
@@ -780,7 +786,7 @@ Attribute:
 +-----------------------+----------+----------+---------+-------------------------------------------+
 | ``batch``             | Text     | yes/no   | dep.    | Select the batched walker implementation. |
 +-----------------------+----------+----------+---------+-------------------------------------------+
-| ``matrix_inverter``   | Text     | gpu/host | gpu     | Batched Slater matrix inversion scheme.   |
+| ``matrix_inverter``   | Text     | gpu/host | gpu     | Slater matrix inversion scheme.           |
 +-----------------------+----------+----------+---------+-------------------------------------------+
 
 
@@ -822,12 +828,46 @@ Additional information:
 
 - ``batch`` The default value is ``yes`` if ``gpu=yes`` and ``no`` otherwise.
 
-- ``matrix_inverter`` This option is only effective when ``batch=yes``. If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed. If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
+- ``matrix_inverter`` If the value is ``gpu``, the inversion happens on the GPU and additional GPU memory is needed.
+  If the value is ``host``, the inversion happens on the CPU and doesn't need GPU memory.
 
 .. _multideterminants:
 
 Multideterminant wavefunctions
 ------------------------------
+
+``multideterminant`` element:
+
+
+.. _Table_msd:
+.. table::
+
+     +-----------------+--------------------+
+     | Parent elements | ``determinantset`` |
+     +-----------------+--------------------+
+     | Child elements  | ``detlist``        |
+     +-----------------+--------------------+
+
+Attribute:
+
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| Name                  | Datatype | Values   | Default                  | Description                               |
++=======================+==========+==========+==========================+===========================================+
+| ``optimize``          | Text     | yes/no   | yes                      | Enable optimization.                      |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``spo_up``            | Text     |          |                          | The name of SPO for spin up electrons     |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``spo_down``          | Text     |          |                          | The name of SPO for spin down electrons   |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+| ``algorithm``         | Text     |          | precomputed_table_method | Slater matrix inversion scheme.           |
++-----------------------+----------+----------+--------------------------+-------------------------------------------+
+
+.. centered:: Table 3 Options for the ``multideterminant`` xml-block.
+
+Additional information:
+
+- ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
+  ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
 
 .. code-block::
    :caption: multideterminant set XML element.
@@ -2005,13 +2045,13 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for :math:`r_s` 
 
   parameters:
 
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
-    | **Name**          | **Datatype** | **Values**     | **Default**                                                                                                                                     | **Description**         |
-    +===================+==============+================+=================================================================================================================================================+=========================+
-    | ``rs``:math:`^o`  | rs           | :math:`r_s>0`  | :math:`\tfrac{3\Omega}{4\pi N_e}`                                                                                                               | Avg. elec-elec distance |
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
-    | ``kc``:math:`^o`  | kc           | :math:`k_c>0`  | :math:`2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}`                                                                            | k-space cutoff          |
-    +-------------------+--------------+----------------+-------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------+
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
+    | **Name**          | **Datatype** | **Values**     | **Default**                                                          | **Description**         |
+    +===================+==============+================+======================================================================+=========================+
+    | ``rs``:math:`^o`  | rs           | :math:`r_s>0`  | :math:`\tfrac{3\Omega}{4\pi N_e}`                                    | Avg. elec-elec distance |
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
+    | ``kc``:math:`^o`  | kc           | :math:`k_c>0`  | :math:`2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}` | k-space cutoff          |
+    +-------------------+--------------+----------------+----------------------------------------------------------------------+-------------------------+
 
 .. code-block::
   :caption: Two body RPA Jastrow with long- and short-ranged parts.

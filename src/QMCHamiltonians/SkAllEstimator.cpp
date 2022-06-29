@@ -31,18 +31,14 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   NumIonSpecies = ions->getSpeciesSet().getTotalNum();
   update_mode_.set(COLLECTABLE, 1);
 
-  NumK      = source.SK->getKLists().numk;
+  NumK      = source.getSimulationCell().getKLists().numk;
   OneOverN  = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell    = source.SK->getKLists().kshell;
+  Kshell    = source.getSimulationCell().getKLists().kshell;
   MaxKshell = Kshell.size() - 1;
 
-#if defined(USE_REAL_STRUCT_FACTOR)
   RhokTot_r.resize(NumK);
   RhokTot_i.resize(NumK);
 
-#else
-  RhokTot.resize(NumK);
-#endif
   //for values, we are including e-e structure factor, and e-Ion.  So a total of NumIonSpecies+1 structure factors.
   //+2 for the real and imaginary parts of rho_k^e
   values.resize(3 * NumK);
@@ -50,7 +46,7 @@ SkAllEstimator::SkAllEstimator(ParticleSet& source, ParticleSet& target)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.SK->getKLists().ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().ksq[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
   hdf5_out = false;
@@ -75,7 +71,7 @@ void SkAllEstimator::evaluateIonIon()
 
   for (int k = 0; k < NumK; k++)
   {
-    PosType kvec = ions->SK->getKLists().kpts_cart[k];
+    PosType kvec = ions->getSimulationCell().getKLists().kpts_cart[k];
 
     filebuffer << kvec;
     for (int i = 0; i < NumIonSpecies; i++)
@@ -83,13 +79,8 @@ void SkAllEstimator::evaluateIonIon()
       double rho_i(0.0);
       double rho_r(0.0);
 
-#if defined(USE_REAL_STRUCT_FACTOR)
-      rho_r = ions->SK->rhok_r[i][k];
-      rho_i = ions->SK->rhok_i[i][k];
-#else
-      rho_r = ions->SK->rhok[i][k].real();
-      rho_i = ions->SK->rhok[i][k].imag();
-#endif
+      rho_r = ions->getSK().rhok_r[i][k];
+      rho_i = ions->getSK().rhok_i[i][k];
       filebuffer << " " << rho_r << " " << rho_i;
     }
 
@@ -106,14 +97,13 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
 {
   // Segfaults unless setHistories() is called prior
   RealType w = t_walker_->Weight;
-#if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
-  std::copy(P.SK->rhok_r[0], P.SK->rhok_r[0] + NumK, RhokTot_r.begin());
-  std::copy(P.SK->rhok_i[0], P.SK->rhok_i[0] + NumK, RhokTot_i.begin());
+  std::copy(P.getSK().rhok_r[0], P.getSK().rhok_r[0] + NumK, RhokTot_r.begin());
+  std::copy(P.getSK().rhok_i[0], P.getSK().rhok_i[0] + NumK, RhokTot_i.begin());
   for (int i = 1; i < NumeSpecies; ++i)
-    accumulate_elements(P.SK->rhok_r[i], P.SK->rhok_r[i] + NumK, RhokTot_r.begin());
+    accumulate_elements(P.getSK().rhok_r[i], P.getSK().rhok_r[i] + NumK, RhokTot_r.begin());
   for (int i = 1; i < NumeSpecies; ++i)
-    accumulate_elements(P.SK->rhok_i[i], P.SK->rhok_i[i] + NumK, RhokTot_i.begin());
+    accumulate_elements(P.getSK().rhok_i[i], P.getSK().rhok_i[i] + NumK, RhokTot_i.begin());
 
   for (int k = 0; k < NumK; k++)
     values[k] = w * (RhokTot_r[k] * RhokTot_r[k] + RhokTot_i[k] * RhokTot_i[k]);
@@ -122,7 +112,7 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
   //    {
   //   	 for(int k=0; k<NumK; k++)
   //   	 {
-  //		RealType rhok_A_r(ions->SK->rhok_r[ionSpec][k]), rhok_A_i(ions->SK->rhok_i[ionSpec][k]);
+  //		RealType rhok_A_r(ions->getSK().rhok_r[ionSpec][k]), rhok_A_i(ions->getSK().rhok_i[ionSpec][k]);
   //		values[(ionSpec+1)*NumK+k]=RhokTot_r[k]*rhok_A_r+RhokTot_i[k]*rhok_A_i;
   //   	 }
   //    }
@@ -145,43 +135,6 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
       values[NumK + 2 * k + 1] = w * RhokTot_i[k];
     }
   }
-#else // Is this path ever touched?
-  //sum over species
-  std::copy(P.SK->rhok[0], P.SK->rhok[0] + NumK, RhokTot.begin());
-  for (int i = 1; i < NumeSpecies; ++i)
-    accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
-  for (int k = 0; k < NumK; k++)
-    values[k] = w * (rhok[k].real() * rhok[k].real() + rhok[k].imag() * rhok[k].imag());
-
-  //    for (int ionSpec=0; ionSpec<NumIonSpecies; ionSpec++)
-  //    {
-  //   	 for(int k=0; k<NumK; k++)
-  //   	 {
-  //		RealType rhok_A_r(ions->SK->rhok[ionSpec][k].real()), rhok_A_i(ions->SK->rhok[ionSpec][k].imag());
-  //		values[(ionSpec+1)*NumK+k]=rhok[k].real()*rhok_A_r+rho_k[k].imag()*rhok_A_i;
-  //  	 }
-  //    }
-  if (hdf5_out)
-  {
-    int kc = my_index_;
-    for (int k = 0; k < NumK; k++, kc++)
-      P.Collectables[kc] += values[k];
-    for (int k = 0; k < NumK; k++, kc++)
-      P.Collectables[kc] += w * rhok[k].real();
-    for (int k = 0; k < NumK; k++, kc++)
-      P.Collectables[kc] += w * rhok[k].imag();
-  }
-  else
-  {
-    for (int k = 0, count = 0; k < NumK; k++)
-    {
-      value_[NumK + count] = w * rhok[k].real();
-      count++;
-      value_[NumK + count] = w * rhok[k].imag();
-      count++;
-    }
-  }
-#endif
   return 0.0;
 }
 
@@ -273,13 +226,13 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   if (hdf5_out)
   {
     // Create HDF group in stat.h5 with SkAllEstimator's name
-    hid_t sgid = H5Gcreate(gid, name_.c_str(), 0);
+    hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     // Add k-point information
     h5desc.emplace_back("kpoints");
     auto& ohKPoints = h5desc.back();
     ohKPoints.open(sgid); // add to SkAll hdf group
-    ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->SK->getKLists().kpts_cart), "value");
+    ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value");
 
     // Add electron-electron S(k)
     std::vector<int> ng(1);

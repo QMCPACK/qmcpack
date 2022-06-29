@@ -10,23 +10,23 @@ if(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
 
   function(
-      ADD_RMG_TEST
-      TESTNAME
-      NPROCS
-      NTHREADS
-      TEST_BINARY
-      WORKDIR
-      TEST_INPUT)
+    ADD_RMG_TEST
+    TESTNAME
+    NPROCS
+    NTHREADS
+    TEST_BINARY
+    WORKDIR
+    TEST_INPUT)
     #if(HAVE_MPI)
     #  add_test(NAME ${TESTNAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROCS} ${MPIEXEC_PREFLAGS}
     #                                    ${TEST_BINARY} ${TEST_INPUT})
     #else(HAVE_MPI)
-      add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${TEST_INPUT})
-      #endif(HAVE_MPI)
+    add_test(NAME ${TESTNAME} COMMAND ${TEST_BINARY} ${TEST_INPUT})
+    #endif(HAVE_MPI)
     set_tests_properties(
       ${TESTNAME}
       PROPERTIES ENVIRONMENT
-      "OMP_NUM_THREADS=${NTHREADS};RMG_NUM_THREADS=${NTHREADS}"
+                 "OMP_NUM_THREADS=${NTHREADS};RMG_NUM_THREADS=${NTHREADS}"
                  PROCESSORS
                  ${NPROCS}
                  PROCESSOR_AFFINITY
@@ -39,31 +39,13 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       PROPERTY LABELS "converter;rmg")
   endfunction()
 
-  function(
-      ADD_RMG_CONVERT_TEST
-      TESTNAME
-      PREFIX
-      WORKDIR
-      TEST_INPUT)
+  function(ADD_RMG_CONVERT_TEST TESTNAME PREFIX WORKDIR TEST_INPUT)
     add_test(NAME ${TESTNAME} COMMAND $<TARGET_FILE:convert4qmc> -rmg ${TEST_INPUT} -prefix ${PREFIX})
-    set_tests_properties(
-      ${TESTNAME}
-      PROPERTIES 
-                 WORKING_DIRECTORY
-                 ${WORKDIR})
-    set_property(
-      TEST ${TESTNAME}
-      APPEND
-      PROPERTY LABELS "converter;rmg")
+    set_tests_properties(${TESTNAME} PROPERTIES WORKING_DIRECTORY ${WORKDIR})
+    set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;rmg")
   endfunction()
 
-  function(
-    RUN_RMG_TEST
-    BASE_NAME
-    SRC_DIR
-    NPROCS
-    NTHREADS
-    TEST_NAME)
+  function(RUN_RMG_TEST BASE_NAME SRC_DIR NPROCS NTHREADS TEST_NAME)
     set(FULL_NAME ${BASE_NAME}-np-${NPROCS})
     set(${TEST_NAME}
         ${FULL_NAME}
@@ -85,26 +67,27 @@ function(SOFTLINK_H5_RMG_WAVES SOURCE PREFIX)
   # set(${TEST_NAME}
   #     "LINK_${SOURCE}_h5_Waves"
   #     PARENT_SCOPE)
-    add_test(NAME LINK_${SOURCE}_h5_Waves COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh
-    ${SOURCE}/Waves/wave.out.h5 ${SOURCE}/${PREFIX}.h5)
+  add_test(NAME LINK_${SOURCE}_h5_Waves COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh
+                                                ${SOURCE}/Waves/wave.out.h5 ${SOURCE}/${PREFIX}.h5)
   set_tests_properties(LINK_${SOURCE}_h5_Waves PROPERTIES DEPENDS ${SOURCE}-scf)
   set_property(TEST LINK_${SOURCE}_h5_Waves APPEND PROPERTY LABELS "rmg")
 endfunction()
 
 function(SOFTLINK_RMG_INPUT SOURCE TARGET PREFIX TEST_NAME)
   set(${TEST_NAME}
-    "LINK_${SOURCE}_TO_${TARGET}"
+      "LINK_${SOURCE}_TO_${TARGET}"
       PARENT_SCOPE)
-    add_test(NAME LINK_${SOURCE}_TO_${TARGET} COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh
-                 ${SOURCE}/${PREFIX}.h5 ${SOURCE}-${TARGET}/${PREFIX}.h5)
-               set_tests_properties(LINK_${SOURCE}_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-scf)
-               set_property(TEST LINK_${SOURCE}_TO_${TARGET} APPEND PROPERTY LABELS "rmg")
-    add_test(NAME COPY_${SOURCE}_XML_TO_${TARGET} COMMAND 
-       bash -c "mkdir -p ${SOURCE}-${TARGET}; \
+  add_test(NAME LINK_${SOURCE}_TO_${TARGET} COMMAND ${qmcpack_SOURCE_DIR}/tests/scripts/clean_and_link_h5.sh
+                                                    ${SOURCE}/${PREFIX}.h5 ${SOURCE}-${TARGET}/${PREFIX}.h5)
+  set_tests_properties(LINK_${SOURCE}_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-scf)
+  set_property(TEST LINK_${SOURCE}_TO_${TARGET} APPEND PROPERTY LABELS "rmg")
+  add_test(
+    NAME COPY_${SOURCE}_XML_TO_${TARGET}
+    COMMAND
+      bash -c "mkdir -p ${SOURCE}-${TARGET}; \
                 cp ${SOURCE}/${PREFIX}.structure.xml ${SOURCE}-${TARGET}/${PREFIX}.structure.xml ; \
                 cp ${SOURCE}/${PREFIX}.wfnoj.xml ${SOURCE}-${TARGET}/${PREFIX}.wfnoj.xml ; \
                 cp ${SOURCE}/*.qmcpp.xml ${SOURCE}-${TARGET}/")
-    set_tests_properties(COPY_${SOURCE}_XML_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-scf)
-    set_property(TEST COPY_${SOURCE}_XML_TO_${TARGET} APPEND PROPERTY LABELS "rmg")
+  set_tests_properties(COPY_${SOURCE}_XML_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-scf)
+  set_property(TEST COPY_${SOURCE}_XML_TO_${TARGET} APPEND PROPERTY LABELS "rmg")
 endfunction()
-

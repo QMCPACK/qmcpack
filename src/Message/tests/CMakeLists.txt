@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, mdewing@ganl.gov Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR message)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})

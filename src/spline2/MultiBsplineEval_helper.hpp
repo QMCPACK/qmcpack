@@ -52,8 +52,13 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
   }
   else
   {
+#if defined(__INTEL_LLVM_COMPILER) || defined(__INTEL_CLANG_COMPILER)
+    T ipart = std::floor(x);
+    dx = x - ipart;
+#else
     T ipart;
     dx  = std::modf(x, &ipart);
+#endif
     ind = static_cast<int>(ipart);
     // upper bound
     if (ind > nmax)
@@ -66,7 +71,7 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
 
 /** define computeLocationAndFractional: common to any implementation
  * compute the location of the spline grid point and residual coordinates
- * also it precomputes auxilary array a, b and c
+ * also it precomputes auxiliary array a, b and c
  */
 template<typename T>
 inline void computeLocationAndFractional(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
@@ -91,7 +96,7 @@ inline void computeLocationAndFractional(const typename qmcplusplus::bspline_tra
 
 /** define computeLocationAndFractional: common to any implementation
  * compute the location of the spline grid point and residual coordinates
- * also it precomputes auxilary array (a,b,c) (da,db,dc) (d2a,d2b,d2c)
+ * also it precomputes auxiliary array (a,b,c) (da,db,dc) (d2a,d2b,d2c)
  */
 template<typename T>
 inline void computeLocationAndFractional(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,

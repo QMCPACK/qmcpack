@@ -4,9 +4,132 @@ Notable changes to QMCPACK are documented in this file.
 
 ## [Unreleased]
 
-* C++17 is required [\#3348](https://github.com/QMCPACK/qmcpack/pull/3348).
-* Quantum ESPRESSO (QE) v6.8 support. [\#3301](https://github.com/QMCPACK/qmcpack/pull/3301).
+- Minimum CUDA version increased to 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957) 
+- Legacy CUDA implementation of wavefunction optimization feature removed [\#3984](https://github.com/QMCPACK/qmcpack/pull/3984)
+
+## [3.14.0] - 2022-04-06
+
+This release focuses on performance improvements to the OpenMP target offload version for GPUs as well as ongoing minor
+improvements. The new GPU implementation rivals the legacy CUDA version for performance for broad range of problems
+while offering more functionality, such as three body Jastrow functions. Developers are very interested in feedback from
+users about the new version and will prioritize developments based on comments received. A new driver\_version switch is
+introduced, currently optional, to disambiguate between the versions and their inputs.
+
+- New global driver\_version switch to select between batched and legacy codes. This will become a required input tag in the next major release series of QMCPACK, but remains optional in 3.x versions [\#3897](https://github.com/QMCPACK/qmcpack/pull/3897)
+- Optimization of block sizes in GPU offload kernels [\#3910](https://github.com/QMCPACK/qmcpack/pull/3910)
+- GPU Offload of one-body Jastrow ratio calculation in pseudopotential evaluation [\#3905](https://github.com/QMCPACK/qmcpack/pull/3905) 
+- GPU Offload of some Coulomb potential evaluations [\#3842](https://github.com/QMCPACK/qmcpack/pull/3842)
+- Partial GPU offload of multideterminant evaluation e.g. [\#3892](https://github.com/QMCPACK/qmcpack/pull/3892)
+- Increased performance via more selective distance table computation [\#3846](https://github.com/QMCPACK/qmcpack/pull/3846)
+- Improved performance on AMD GPUs via rocSOLVER integration [\#3756](https://github.com/QMCPACK/qmcpack/issues/3756)
+- HIP build options shown in output [\#3919](https://github.com/QMCPACK/qmcpack/pull/3919)
+- Documentation improvements, particularly relating to installation.
+- Various bug fixes and ongoing cleanup.
+
+### NEXUS
+
+- Nexus: proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
+
+## [3.13.0] - 2022-02-16
+
+### Notes
+
+This release incorporates support for trial wavefunctions from Quantum ESPRESSO 7.0 and adds GPAW support for the first
+time. Non-local pseudopotential derivatives are fully supported in the optimizer and recommended in standard calculations.  
+Numerous minor bug fixes, test and installation improvements have been made. Behind the scenes updates include
+maturation of the OpenMP target offload implementation and the batched drivers, a partial implementation of fast force
+calculations, and ongoing modernization of the code. This is a recommended release for all users.
+
+* Support for Quantum ESPRESSO (QE) 7.0 [\#3683](https://github.com/QMCPACK/qmcpack/pull/3683)
+* Support for GPAW and GPAW to QMCPACK converter [\#3490](https://github.com/QMCPACK/qmcpack/issues/3490)
+* use_nonlocalpp_deriv is fully supported and preferred in optimization [\#3785](https://github.com/QMCPACK/qmcpack/pull/3785) and others.
+* Save and restore of variational parameters during optimization [\#3640](https://github.com/QMCPACK/qmcpack/pull/3640)
+* Twist attribute takes precedence over twistnum. Twist is preferred specification. [\#3799](https://github.com/QMCPACK/qmcpack/pull/3799)
+* Fixed inconsistent twist directions between electron gas and spline wavefunctions [\#1386](https://github.com/QMCPACK/qmcpack/issues/1386)
+* Fixed reported Madelung constant in CoulombPBCAA [\#3806](https://github.com/QMCPACK/qmcpack/pull/3806)
+* More robust computation of reference ion-ion Coulomb energy [\#3763](https://github.com/QMCPACK/qmcpack/pull/3763)
+* Expanded test set, including more coverage of plane-wave basis sets and complex molecules [\#3105](https://github.com/QMCPACK/qmcpack/issues/3105), [\#3822](https://github.com/QMCPACK/qmcpack/issues/3822)
+* More consistent python invocations [\#3680](https://github.com/QMCPACK/qmcpack/issues/3680)
+* Builds with OpenMP disabled (QMC\_OMP=0) again supported [\#3723](https://github.com/QMCPACK/qmcpack/pull/3723)
+* Modernization of HDF5 usage e.g. [\#3705](https://github.com/QMCPACK/qmcpack/pull/3705)
+* Minimum supported Intel classic compiler version is 19.1. [\#3747](https://github.com/QMCPACK/qmcpack/pull/3747)
+* Various minor bug fixes and ongoing code cleanup. 
+
+### NEXUS
+
+* Nexus: Add --user $USER to squeue command [\#3796](https://github.com/QMCPACK/qmcpack/pull/3796) 
+* Nexus: Add Example and tests for qdens-radial tool [\#3676](https://github.com/QMCPACK/qmcpack/pull/3676)
+* Nexus: Add Lowdin example [\#3666](https://github.com/QMCPACK/qmcpack/pull/3666)
+* Nexus: Fixed Nexus 'install' target [\#3720](https://github.com/QMCPACK/qmcpack/issues/3720)
+* Nexus: Harden Nexus excitation checks [\#3729](https://github.com/QMCPACK/qmcpack/pull/3729)
+* Nexus: Small fix to excitation checks [\#3701](https://github.com/QMCPACK/qmcpack/pull/3701)
+* Nexus: Faster configuration time [\#3706](https://github.com/QMCPACK/qmcpack/pull/3706)
+
+## [3.12.0] - 2021-12-08
+
+### Notes
+
+This release incorporates several hundred changes to QMCPACK and the supporting
+ecosystem. It is a recommended release for all users. Note that compilers
+supporting C++17 and CMake version 3.15 or newer are now required. Changes
+include newly added support for the DIRAC quantum chemistry code, the RMG-DFT
+code, and updates for the latest version of Quantum ESPRESSO. Through DIRAC it
+is now possible to perform highly accurate molecular calculations incorporating
+spin-orbit with multideterminant trial wavefunctions. Behind the scenes updates
+include increased checking of inputs, fixes to many edge case bugs, and removal
+of memory leaks in both QMCPACK and the various converters. In readiness for
+transition to the new batched drivers that support both CPU and GPU execution,
+more features are supported and performance improved. Test coverage and
+robustness is improved in all areas. For developers, tests, sanitizers, and code
+coverage are now run on Pull Requests using GitHub Actions. 
+
 * To aid coexistence of real and complex builds, the qmcpack executable is now named qmcpack_complex for builds with QMC_COMPLEX=1
+* Added DIRAC converter and support for MSD wave functions [\#3510](https://github.com/QMCPACK/qmcpack/pull/3510)
+* Spin-Orbit implementation completed [\#1770](https://github.com/QMCPACK/qmcpack/issues/1770)
+* Quantum ESPRESSO (QE) v6.8 support [\#3301](https://github.com/QMCPACK/qmcpack/pull/3301)
+* Support for RMG DFT code [\#3351](https://github.com/QMCPACK/qmcpack/pull/3351)
+* CMake 3.15 minimum required [\#3492](https://github.com/QMCPACK/qmcpack/pull/3492)
+* C++17 is required [\#3348](https://github.com/QMCPACK/qmcpack/pull/3348)
+* CMake CUDA support uses modern FindCUDAToolkit [\#3460](https://github.com/QMCPACK/qmcpack/issues/3460)
+* Support latest Sphinx-contrib BibTeX 2.x [\#3176](https://github.com/QMCPACK/qmcpack/issues/3176)
+* One Body Density Matrices supported in batched drivers [\#3622](https://github.com/QMCPACK/qmcpack/pull/3622)
+* Batched performant Slater matrix inverses [\#3470](https://github.com/QMCPACK/qmcpack/pull/3470)
+* Safeguards for requesting more orbitals than the input h5 provide [\#2341](https://github.com/QMCPACK/qmcpack/issues/2341)
+* Implemented One-body spin-dependent Jastrow [\#3257](https://github.com/QMCPACK/qmcpack/pull/3257)
+* Fixes for low particle counts, such as using a two body Jastrow with more than 2 particle types but only one particle of each type [\#3137](https://github.com/QMCPACK/qmcpack/issues/3137)
+* ppconvert is built by default [\#3143](https://github.com/QMCPACK/qmcpack/pull/3143)
+* Documentation on revised input format where SPO sets are created outside the determinant [\#3456](https://github.com/QMCPACK/qmcpack/issues/3456)
+
+### NEXUS
+
+*  Add Density functionality to qdens tool [\#3541](https://github.com/QMCPACK/qmcpack/pull/3541)
+*  Add new qdens-radial tool for radial analysis of densities [\#3587](https://github.com/QMCPACK/qmcpack/pull/3587)
+*  Radial density of requested species only [\#3099](https://github.com/QMCPACK/qmcpack/pull/3099)
+*  Extend structure plotting capabilities for 2D materials [\#3220](https://github.com/QMCPACK/qmcpack/pull/3220)
+*  Support grand-canonical twist averaging [\#3153](https://github.com/QMCPACK/qmcpack/pull/3153) 
+*  Extend excitations to allow 'lowest' gap [\#3628](https://github.com/QMCPACK/qmcpack/pull/3628)
+*  Allow singlet/triplet excitation types [\#2290](https://github.com/QMCPACK/qmcpack/pull/2290)
+*  Allow bandstructure plotting with custom k-path [\#3293](https://github.com/QMCPACK/qmcpack/pull/3293)
+*  Generate PySCF inputs without a template [\#3550](https://github.com/QMCPACK/qmcpack/pull/3550)
+*  Add punch extension for GAMESS analysis [\#3433](https://github.com/QMCPACK/qmcpack/pull/3433)
+*  Read pseduopotentials in numhf format (Eric Shirley's numerical HF code) [\#3097](https://github.com/QMCPACK/qmcpack/pull/3097)
+*  Add L2 generation functionality [\#3079](https://github.com/QMCPACK/qmcpack/pull/3079)
+*  Support QMCPACK batched drivers [\#2901](https://github.com/QMCPACK/qmcpack/pull/2901)
+*  Make qdens test more informative [\#3593](https://github.com/QMCPACK/qmcpack/pull/3593) 
+*  Resource lock Nexus examples for reliable parallel execution [\#3585](https://github.com/QMCPACK/qmcpack/pull/3585)
+*  Support running tests without mpirun available [\#3584](https://github.com/QMCPACK/qmcpack/pull/3584)
+*  Small fix for custom band plotting [\#3566](https://github.com/QMCPACK/qmcpack/pull/3566)
+*  Improve error handling for bad Jastrow requests [\#3554](https://github.com/QMCPACK/qmcpack/pull/3554)
+*  Fix sizing problem in some single atom workflows [\#3553](https://github.com/QMCPACK/qmcpack/pull/3553)
+*  Fix syntax warnings [\#3497](https://github.com/QMCPACK/qmcpack/pull/3497)
+*  Fix convert4qmc usage [\#3495](https://github.com/QMCPACK/qmcpack/pull/3495)
+*  Verify cif2cell is available before running ntest\_nexus\_structure [\#3511](https://github.com/QMCPACK/qmcpack/pull/3511)
+*  Fix to add\_L2 function in pseudopotential.py [\#3386](https://github.com/QMCPACK/qmcpack/pull/3386)
+*  Expand eshdf features [\#3334](https://github.com/QMCPACK/qmcpack/pull/3334)
+*  Add delay\_rank input [\#3218](https://github.com/QMCPACK/qmcpack/pull/3218)
+*  Add max\_seconds input [\#3159](https://github.com/QMCPACK/qmcpack/pull/3159)
+*  Add Tref \(initial tilematrix\) argument to optimal\_tilematrix [\#3141](https://github.com/QMCPACK/qmcpack/pull/3141)
+*  Use OS environment by default [\#3108](https://github.com/QMCPACK/qmcpack/pull/3108)
 
 ## [3.11.0] - 2021-04-09
 

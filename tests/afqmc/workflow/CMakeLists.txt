@@ -10,7 +10,7 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   set(TESTNAME "converter_test_pyscf_${test_name}")
   add_test(
     NAME ${TESTNAME}
-    COMMAND ${TESTDIR}/scf.py gen_test_data
+    COMMAND ${Python3_EXECUTABLE} ${TESTDIR}/scf.py gen_test_data
     WORKING_DIRECTORY ${TESTDIR})
   set_property(
     TEST ${TESTNAME}
@@ -23,7 +23,7 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   add_test(
     NAME ${TESTNAME}
     COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROC_INT} ${MPIEXEC_PREFLAGS}
-            ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
+            ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
     WORKING_DIRECTORY ${TESTDIR})
   set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_pyscf_${test_name}")
   set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
@@ -32,7 +32,7 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   set(TESTNAME "converter_test_hamiltonian_consistency_${test_name}")
   add_test(
     NAME ${TESTNAME}
-    COMMAND ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
+    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/test_afqmc_input.py --input afqmc.h5
     WORKING_DIRECTORY ${TESTDIR})
   set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_pyscf_to_afqmc_${test_name}")
   set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
@@ -41,7 +41,7 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   set(TESTNAME "converter_test_gen_input_${test_name}")
   add_test(
     NAME ${TESTNAME}
-    COMMAND "${TESTDIR}/gen_input.py"
+    COMMAND ${Python3_EXECUTABLE} ${TESTDIR}/gen_input.py
     WORKING_DIRECTORY ${TESTDIR})
   set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_hamiltonian_consistency_${test_name}")
   set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")
@@ -64,7 +64,7 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
     set(TESTNAME "converter_test_qmcpack_obs_${test_name}")
     add_test(
       NAME ${TESTNAME}
-      COMMAND ${TESTDIR}/reference/test_obs.py
+      COMMAND ${Python3_EXECUTABLE} ${TESTDIR}/reference/test_obs.py
       WORKING_DIRECTORY ${TESTDIR})
     set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_qmcpack_${test_name}-16-1")
     set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")

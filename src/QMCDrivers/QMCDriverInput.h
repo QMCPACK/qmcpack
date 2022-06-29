@@ -12,10 +12,14 @@
 #ifndef QMCPLUSPLUS_QMCDRIVERINPUT_H
 #define QMCPLUSPLUS_QMCDRIVERINPUT_H
 
+#include <optional>
+
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "InputTypes.hpp"
 #include "DriverDebugChecks.h"
+#include "EstimatorManagerInput.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -41,6 +45,9 @@ protected:
   bool scoped_profiling_ = false;
   /// determine additional checks for debugging purpose
   DriverDebugChecks debug_checks_ = DriverDebugChecks::ALL_OFF;
+  /// measure load imbalance (add a barrier) before data aggregation (obvious synchronization)
+  bool measure_imbalance_ = false;
+
   /** @ingroup Input Parameters for QMCDriver base class
    *  @{
    *  All input determined variables should be here
@@ -71,6 +78,7 @@ protected:
   IndexType steps_between_samples_ = 1;
   IndexType samples_per_thread_    = 0;
   RealType tau_                    = 0.1;
+  RealType spin_mass_              = 1.0;
   // call recompute at the end of each block in the full/mixed precision case.
   IndexType blocks_between_recompute_ = std::is_same<RealType, FullPrecisionRealType>::value ? 0 : 1;
   bool append_run_                    = false;
@@ -78,6 +86,10 @@ protected:
   // from QMCDriverFactory
   std::string qmc_method_{"invalid"};
   std::string update_mode_{"pbyp"};
+
+  /** The EstimatorManagerInput for batched version input
+   */
+  std::optional<EstimatorManagerInput> estimator_manager_input_;
 
   // from putQMCInfo
   input::PeriodStride walker_dump_period_{0, 0};
@@ -113,6 +125,7 @@ public:
   IndexType get_steps_between_samples() const { return steps_between_samples_; }
   IndexType get_samples_per_thread() const { return samples_per_thread_; }
   RealType get_tau() const { return tau_; }
+  RealType get_spin_mass() const { return spin_mass_; }
   IndexType get_blocks_between_recompute() const { return blocks_between_recompute_; }
   bool get_append_run() const { return append_run_; }
   input::PeriodStride get_walker_dump_period() const { return walker_dump_period_; }
@@ -125,10 +138,13 @@ public:
   const std::string& get_update_mode() const { return update_mode_; }
   DriverDebugChecks get_debug_checks() const { return debug_checks_; }
   bool get_scoped_profiling() const { return scoped_profiling_; }
-  bool are_walkers_serialized() const { return crowd_serialize_walkers_; }
+  bool areWalkersSerialized() const { return crowd_serialize_walkers_; }
+  bool get_measure_imbalance() const { return measure_imbalance_; }
 
   const std::string get_drift_modifier() const { return drift_modifier_; }
   RealType get_drift_modifier_unr_a() const { return drift_modifier_unr_a_; }
+
+  const std::optional<EstimatorManagerInput>& get_estimator_manager_input() const { return estimator_manager_input_; }
 };
 
 // These will cause a compiler error if the implicit move constructor has been broken

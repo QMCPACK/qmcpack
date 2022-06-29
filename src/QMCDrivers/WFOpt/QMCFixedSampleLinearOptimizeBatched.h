@@ -30,7 +30,8 @@
 #endif
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
-#include "QMCDrivers/WFOpt/OutputMatrix.h"
+#include "OutputMatrix.h"
+#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
@@ -48,13 +49,14 @@ class QMCCostFunctionBase;
 class GradientTest;
 
 
-class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew
+class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
 {
 public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
                                       MCWalkerConfiguration& w,
                                       QMCDriverInput&& qmcdriver_input,
+                                      const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
                                       MCPopulation&& population,
                                       SampleStack& samples,
@@ -110,13 +112,6 @@ private:
                     const std::vector<RealType>& cv,
                     const std::vector<double>& sh,
                     const RealType ic) const;
-
-  //asymmetric generalized EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, Matrix<RealType>& B, std::vector<RealType>& ev);
-  //asymmetric EV
-  RealType getLowestEigenvector(Matrix<RealType>& A, std::vector<RealType>& ev);
-  void getNonLinearRange(int& first, int& last);
-  RealType getNonLinearRescale(std::vector<RealType>& dP, Matrix<RealType>& S);
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
@@ -235,10 +230,6 @@ private:
   bool block_third;
 
 
-  /// Number of walkers in each crowd to use to process samples during optimization
-  int crowd_size_;
-  /// Number of crowds to use to process samples during optimization
-  int opt_num_crowds_;
   //Variables for alternatives to linear method
 
   //name of the current optimization method, updated by processOptXML before run
@@ -280,8 +271,6 @@ private:
 
   ///xml node to be dumped
   xmlNodePtr wfNode;
-  ///xml node for optimizer
-  xmlNodePtr optNode;
 
   ParameterSet m_param;
 
@@ -294,10 +283,11 @@ private:
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
 
-
   // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
   // which still takes an MCWalkerConfiguration in the constructor.
   MCWalkerConfiguration& W;
+  /// This is retained in order to construct and reconstruct the vmcEngine.
+  const std::optional<EstimatorManagerInput> global_emi_;
 };
 } // namespace qmcplusplus
 #endif

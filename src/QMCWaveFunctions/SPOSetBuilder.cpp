@@ -14,6 +14,7 @@
 
 #include "SPOSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
+#include <Message/UniformCommunicateError.h>
 
 #if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/RotatedSPOs.h"
@@ -44,7 +45,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputI
 }
 
 
-SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
+std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
   std::string optimize("no");
@@ -72,10 +73,18 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   // process general sposet construction requests
   //   and preserve legacy interface
   std::unique_ptr<SPOSet> sposet;
-  if (legacy && input_info.legacy_request)
-    sposet = createSPOSetFromXML(cur);
-  else
-    sposet = createSPOSet(cur, input_info);
+
+  try
+  {
+    if (legacy && input_info.legacy_request)
+      sposet = createSPOSetFromXML(cur);
+    else
+      sposet = createSPOSet(cur, input_info);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
 
   if (!sposet)
     myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
@@ -88,15 +97,16 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 #else
     // create sposet with rotation
     auto& sposet_ref = *sposet;
-    auto rot_spo    = std::make_unique<RotatedSPOs>(std::move(sposet));
-    xmlNodePtr tcur = cur->xmlChildrenNode;
+    auto rot_spo     = std::make_unique<RotatedSPOs>(std::move(sposet));
+    xmlNodePtr tcur  = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
       std::string cname((const char*)(tcur->name));
       if (cname == "opt_vars")
       {
-        rot_spo->params_supplied = true;
-        putContent(rot_spo->params, tcur);
+        std::vector<RealType> params;
+        putContent(params, tcur);
+        rot_spo->setRotationParameters(params);
       }
       tcur = tcur->next;
     }
@@ -124,9 +134,7 @@ SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
                   << "   object name: " << sposet->getName() << std::endl;
 
   sposet->checkObject();
-  // builder owns created sposets
-  sposets.push_back(std::move(sposet));
-  return sposets.back().get();
+  return sposet;
 }
 
 } // namespace qmcplusplus

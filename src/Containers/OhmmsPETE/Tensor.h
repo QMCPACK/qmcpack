@@ -55,7 +55,7 @@ template<class T, unsigned D>
 class Tensor
 {
 public:
-  typedef T Type_t;
+  using Type_t = T;
   enum
   {
     ElemDim = 2
@@ -371,7 +371,7 @@ inline T traceAtB(const Tensor<T, D>& a, const Tensor<T, D>& b)
 template<class T1, class T2, unsigned D>
 inline typename BinaryReturn<T1, T2, OpMultiply>::Type_t traceAtB(const Tensor<T1, D>& a, const Tensor<T2, D>& b)
 {
-  typedef typename BinaryReturn<T1, T2, OpMultiply>::Type_t T;
+  using T  = typename BinaryReturn<T1, T2, OpMultiply>::Type_t;
   T result = 0.0;
   for (int i = 0; i < D * D; i++)
     result += a(i) * b(i);
@@ -463,7 +463,7 @@ inline TinyVector<typename BinaryReturn<T1, T2, OpMultiply>::Type_t, D> dot(cons
 //  inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::type,D >
 //  outerProduct(const TinyVector<T1,D>& v1, const TinyVector<T2,D>& v2)
 //  {
-//    typedef typename BinaryReturn<T1,T2,OpMultiply>::Type_t T0;
+//    using T0 = typename BinaryReturn<T1,T2,OpMultiply>::Type_t;
 ////    //#if (defined(POOMA_SGI_CC_721_TYPENAME_BUG) || defined(__MWERKS__))
 ////    //Tensor<T0,D> ret = Tensor<T0,D>::DontInitialize();
 ////    //#else

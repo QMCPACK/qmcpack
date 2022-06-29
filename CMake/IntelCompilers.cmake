@@ -10,14 +10,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
 elseif(INTEL_ONEAPI_COMPILER_FOUND)
   # in this case, the version string reported based on Clang, not accurate enough. just skip check.
 else()
-  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.0.0.20190206)
-    message(FATAL_ERROR "Requires Intel 19 update 3 (19.0.0.20190206) or higher!")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 19.1.0)
+    message(FATAL_ERROR "Requires Intel classic compiler 19.1 or higher!")
   endif()
 endif()
 
 # Enable OpenMP
 if(QMC_OMP)
-  set(ENABLE_OPENMP 1)
   if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM" OR INTEL_ONEAPI_COMPILER_FOUND)
     if(ENABLE_OFFLOAD)
       set(OFFLOAD_TARGET
@@ -127,8 +126,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
       endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
     else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
       # use -march=native
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+      # skipped in OneAPI 2022.0 when using SYCL which caused linking failure.
+      if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 2022.0 AND ENABLE_SYCL))
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+      endif()
     endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   endif()
 

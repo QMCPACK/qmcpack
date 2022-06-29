@@ -30,17 +30,18 @@ namespace qmcplusplus
 {
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create({1});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create(2);
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -90,26 +91,26 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
 TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 {
-  typedef QMCTraits::RealType RealType;
-  typedef QMCTraits::ValueType ValueType;
-  typedef QMCTraits::PosType PosType;
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+  using PosType   = QMCTraits::PosType;
 
   Communicate* c = OHMMS::Controller;
 
   //Cell definition:
 
-  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> Lattice;
-  Lattice.BoxBConds = true; // periodic
-  Lattice.R.diagonal(20);
-  Lattice.LR_dim_cutoff = 15;
-  Lattice.reset();
+  CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
+  lattice.BoxBConds = true; // periodic
+  lattice.R.diagonal(20);
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
 
-
-  ParticleSet ions;
-  ParticleSet elec;
+  const SimulationCell simulation_cell(lattice);
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
 
   ions.setName("ion0");
-  ions.create(2);
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
@@ -124,11 +125,8 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   int iatnumber                 = ion_species.addAttribute("atomic_number");
   ion_species(pChargeIdx, pIdx) = 1;
   ion_species(iatnumber, pIdx)  = 11;
-  ions.Lattice                  = Lattice;
   ions.createSK();
 
-
-  elec.Lattice = Lattice;
   elec.setName("e");
   std::vector<int> agroup(2, 1);
   elec.create(agroup);
@@ -223,7 +221,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   //This is validated against an alternate code path (waveefunction tester for local energy).
   REQUIRE(keval == Approx(-0.147507745));
 
-  ParticleSet::ParticlePos_t HFTerm, PulayTerm;
+  ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
   PulayTerm.resize(ions.getTotalNum());
 

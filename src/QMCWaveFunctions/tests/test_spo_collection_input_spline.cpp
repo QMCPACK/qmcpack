@@ -28,16 +28,30 @@ namespace qmcplusplus
 {
 void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  Communicate* c = OHMMS::Controller;
 
-  auto ions_uptr = std::make_unique<ParticleSet>();
-  auto elec_uptr = std::make_unique<ParticleSet>();
+  // diamondC_2x1x1
+  ParticleSet::ParticleLayout lattice;
+  lattice.R(0, 0) = 6.7463223;
+  lattice.R(0, 1) = 6.7463223;
+  lattice.R(0, 2) = 0.0;
+  lattice.R(1, 0) = 0.0;
+  lattice.R(1, 1) = 3.37316115;
+  lattice.R(1, 2) = 3.37316115;
+  lattice.R(2, 0) = 3.37316115;
+  lattice.R(2, 1) = 0.0;
+  lattice.R(2, 2) = 3.37316115;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
   ions_.setName("ion");
-  ions_.create(4);
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions_.create({4});
   ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
@@ -53,7 +67,8 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
 
   elec_.setName("elec");
-  elec_.create(2);
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec_.create({2});
   elec_.R[0][0] = 0.0;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -61,27 +76,10 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   elec_.R[1][1] = 1.0;
   elec_.R[1][2] = 0.0;
 
-  // diamondC_2x1x1
-  elec_.Lattice.R(0, 0) = 6.7463223;
-  elec_.Lattice.R(0, 1) = 6.7463223;
-  elec_.Lattice.R(0, 2) = 0.0;
-  elec_.Lattice.R(1, 0) = 0.0;
-  elec_.Lattice.R(1, 1) = 3.37316115;
-  elec_.Lattice.R(1, 2) = 3.37316115;
-  elec_.Lattice.R(2, 0) = 3.37316115;
-  elec_.Lattice.R(2, 1) = 0.0;
-  elec_.Lattice.R(2, 2) = 3.37316115;
-
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
-
-  // Need 1 electron and 1 proton, somehow
-  //ParticleSet target = ParticleSet();
-  ParticleSetPool ptcl = ParticleSetPool(c);
-  ptcl.addParticleSet(std::move(elec_uptr));
-  ptcl.addParticleSet(std::move(ions_uptr));
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml_string);
@@ -89,17 +87,15 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  WaveFunctionFactory wf_factory("psi0", elec_, ptcl.getPool(), c);
-  wf_factory.put(ein_xml);
+  WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
+  auto twf_ptr = wf_factory.buildTWF(ein_xml);
 
-  SPOSet* spo_ptr(wf_factory.getSPOSet("spo"));
-  REQUIRE(spo_ptr);
-  std::unique_ptr<SPOSet> spo(spo_ptr->makeClone());
+  std::unique_ptr<SPOSet> spo(twf_ptr->getSPOSet("spo").makeClone());
 
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)

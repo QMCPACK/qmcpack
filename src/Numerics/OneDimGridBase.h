@@ -34,8 +34,8 @@ namespace qmcplusplus
 template<class T, class CT = Vector<T>>
 struct OneDimGridBase
 {
-  typedef T value_type;
-  typedef CT Array_t;
+  using value_type = T;
+  using Array_t    = CT;
 
 
   int GridTag;

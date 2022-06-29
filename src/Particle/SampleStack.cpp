@@ -11,7 +11,6 @@
 
 
 #include "SampleStack.h"
-#include "Particle/HDFWalkerOutput.h"
 #include "Particle/MCSample.h"
 #include "Utilities/IteratorUtility.h"
 
@@ -73,23 +72,6 @@ void SampleStack::loadSample(ParticleSet& pset, size_t iw) const
 {
   pset.R     = sample_vector_[iw]->R;
   pset.spins = sample_vector_[iw]->spins;
-}
-
-bool SampleStack::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput& out, int np, int nBlock)
-{
-  MCWalkerConfiguration wtemp;
-  wtemp.resize(0, total_num_);
-  wtemp.loadEnsemble(others, false);
-  int w = wtemp.getActiveWalkers();
-  if (w == 0)
-    return false;
-  std::vector<int> nwoff(np + 1, 0);
-  for (int ip = 0; ip < np; ++ip)
-    nwoff[ip + 1] = nwoff[ip] + w;
-  wtemp.setGlobalNumWalkers(nwoff[np]);
-  wtemp.setWalkerOffsets(nwoff);
-  out.dump(wtemp, nBlock);
-  return true;
 }
 
 void SampleStack::clearEnsemble()

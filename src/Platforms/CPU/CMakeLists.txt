@@ -9,7 +9,6 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 add_library(platform_cpu_runtime INTERFACE)
 target_link_libraries(platform_cpu_runtime INTERFACE Math::scalar_vector_functions)
 

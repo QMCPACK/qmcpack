@@ -53,13 +53,13 @@ int main(int argc, char** argv)
   myComm->setName("restart");
   myComm->barrier();
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
-  typedef RandomGenerator_t::uint_type uint_type;
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
+  using RealType    = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
+  using uint_type   = RandomGenerator::uint_type;
+  using Walker_t    = MCWalkerConfiguration::Walker_t;
 
   //use the global generator
 
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
   nwtot = std::abs(AverageWalkersPerNode + myComm->rank() % 5 - 2);
   FairDivideLow(nwtot, NumThreads, wPerNode);
 
-  //Random.init(0,1,iseed);
+  //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output
@@ -121,14 +121,14 @@ int main(int argc, char** argv)
   int nptcl = 0;
   double t0 = 0.0, t1 = 0.0;
 
-  RandomNumberControl::make_seeds();
-  std::vector<RandomGenerator_t> myRNG(NumThreads);
-  std::vector<uint_type> mt(Random.state_size(), 0);
-  std::vector<MCWalkerConfiguration> elecs(NumThreads);
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
+  ParticleSet ions(super_lattice);
+  tile_cell(ions, tmat);
 
-  ParticleSet ions;
-  OHMMS_PRECISION scale = 1.0;
-  tile_cell(ions, tmat, scale);
+  RandomNumberControl::make_seeds();
+  std::vector<RandomGenerator> myRNG(NumThreads);
+  std::vector<uint_type> mt(Random.state_size(), 0);
+  std::vector<MCWalkerConfiguration> elecs(NumThreads, MCWalkerConfiguration(super_lattice));
 
 #pragma omp parallel reduction(+ : t0)
   {
@@ -137,8 +137,8 @@ int main(int argc, char** argv)
     MCWalkerConfiguration& els = elecs[ip];
 
     //create generator within the thread
-    myRNG[ip]                    = *RandomNumberControl::Children[ip];
-    RandomGenerator_t& random_th = myRNG[ip];
+    myRNG[ip]                  = *RandomNumberControl::Children[ip];
+    RandomGenerator& random_th = myRNG[ip];
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -148,16 +148,11 @@ int main(int argc, char** argv)
     nptcl = nels;
 
     { //create up/down electrons
-      els.Lattice.BoxBConds = 1;
-      els.Lattice           = ions.Lattice;
-      vector<int> ud(2);
-      ud[0] = nels / 2;
-      ud[1] = nels - ud[0];
-      els.create(ud);
+      els.create({nels / 2, nels - nels / 2});
       els.R.InUnit = PosUnit::Lattice;
-      random_th.generate_uniform(&els.R[0][0], nels3);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
       els.convert2Cart(els.R); // convert to Cartiesian
-      els.setCoordinates(els.R);
+      els.update();
     }
 
     if (!ip)
@@ -192,8 +187,8 @@ int main(int argc, char** argv)
 // flush random seeds to zero
 #pragma omp parallel
   {
-    int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = *RandomNumberControl::Children[ip];
+    int ip                     = omp_get_thread_num();
+    RandomGenerator& random_th = *RandomNumberControl::Children[ip];
     std::vector<uint_type> vt(random_th.state_size(), 0);
     random_th.load(vt);
   }
@@ -211,8 +206,8 @@ int main(int argc, char** argv)
   int mismatch_count = 0;
 #pragma omp parallel reduction(+ : mismatch_count)
   {
-    int ip                       = omp_get_thread_num();
-    RandomGenerator_t& random_th = myRNG[ip];
+    int ip                     = omp_get_thread_num();
+    RandomGenerator& random_th = myRNG[ip];
     std::vector<uint_type> vt_orig(random_th.state_size());
     std::vector<uint_type> vt_load(random_th.state_size());
     random_th.save(vt_orig);
@@ -238,7 +233,7 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0], "restart", myComm);
+  HDFWalkerOutput wOut(elecs[0].getTotalNum(), "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs[0], 1);
@@ -265,7 +260,7 @@ int main(int argc, char** argv)
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
   HDFVersion in_version(0, 4);
-  HDFWalkerInput_0_4 wIn(elecs[0], myComm, in_version);
+  HDFWalkerInput_0_4 wIn(elecs[0], elecs[0].getTotalNum(), myComm, in_version);
   myComm->barrier();
   h5clock.restart(); //start timer
   wIn.put(restart_leaf);
@@ -317,13 +312,13 @@ int main(int argc, char** argv)
     if (subComm->getGroupID() == 0)
     {
       elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
-      HDFWalkerInput_0_4 subwIn(elecs[0], subComm, in_version);
+      HDFWalkerInput_0_4 subwIn(elecs[0], elecs[0].getTotalNum(), subComm, in_version);
       subwIn.put(restart_leaf);
       subComm->barrier();
       if (!subComm->rank())
         std::cout << "Walkers are loaded again by the subgroup!\n";
       setWalkerOffsets(elecs[0], subComm);
-      HDFWalkerOutput subwOut(elecs[0], "XXXX", subComm);
+      HDFWalkerOutput subwOut(elecs[0].getTotalNum(), "XXXX", subComm);
       subwOut.dump(elecs[0], 1);
       if (!subComm->rank())
         std::cout << "Walkers are dumped again by the subgroup!\n";

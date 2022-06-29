@@ -11,6 +11,7 @@
 
 
 #include "QMCWaveFunctions/BsplineFactory/createBsplineReader.h"
+#include <PlatformSelector.hpp>
 #include "CPU/e2iphi.h"
 #include "CPU/SIMD/vmath.hpp"
 #include "Utilities/ProgressReportEngine.h"
@@ -18,10 +19,8 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2R.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2C.h"
-#if defined(ENABLE_OFFLOAD)
 #include "QMCWaveFunctions/BsplineFactory/SplineC2ROMPTarget.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2COMPTarget.h"
-#endif
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCplx.h"
 #include <fftw3.h>
 #include "QMCWaveFunctions/einspline_helper.hpp"
@@ -35,13 +34,12 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
                                                               bool hybrid_rep,
                                                               const std::string& useGPU)
 {
-  typedef OHMMS_PRECISION RealType;
+  using RealType = OHMMS_PRECISION;
   std::unique_ptr<BsplineReaderBase> aReader;
 
 #if defined(QMC_COMPLEX)
   app_summary() << "    Using complex valued spline SPOs with complex double precision storage (C2C)." << std::endl;
-#if defined(ENABLE_OFFLOAD)
-  if (useGPU == "yes")
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
   {
     if (hybrid_rep)
     {
@@ -52,12 +50,11 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     }
     else
     {
-      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
       aReader = std::make_unique<SplineSetReader<SplineC2COMPTarget<double>>>(e);
     }
   }
   else
-#endif
   {
     app_summary() << "    Running on CPU." << std::endl;
     if (hybrid_rep)
@@ -70,8 +67,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
   }
 #else //QMC_COMPLEX
   app_summary() << "    Using real valued spline SPOs with complex double precision storage (C2R)." << std::endl;
-#if defined(ENABLE_OFFLOAD)
-  if (useGPU == "yes")
+  if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
   {
     if (hybrid_rep)
     {
@@ -82,12 +78,11 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexDouble(EinsplineSetBuilde
     }
     else
     {
-      app_summary() << "    Running on an accelerator via OpenMP offload." << std::endl;
+      app_summary() << "    Running OpenMP offload code path." << std::endl;
       aReader = std::make_unique<SplineSetReader<SplineC2ROMPTarget<double>>>(e);
     }
   }
   else
-#endif
   {
     app_summary() << "    Running on CPU." << std::endl;
     if (hybrid_rep)

@@ -57,33 +57,6 @@ struct HDFAttribIO<std::string>: public HDFAttribIOBase {
   }
   };*/
 
-
-/** Specialization for hsize_t */
-template<>
-struct HDFAttribIO<hsize_t> : public HDFAttribIOBase
-{
-  hsize_t& ref;
-
-  HDFAttribIO<hsize_t>(hsize_t& a) : ref(a) {}
-
-  inline void write(hid_t grp, const char* name) override
-  {
-    hsize_t dim     = 1;
-    hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-    hid_t dataset   = H5Dcreate(grp, name, H5T_NATIVE_INT, dataspace, H5P_DEFAULT);
-    hid_t ret       = H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
-    H5Sclose(dataspace);
-    H5Dclose(dataset);
-  }
-
-  inline void read(hid_t grp, const char* name) override
-  {
-    hid_t h1  = H5Dopen(grp, name);
-    hid_t ret = H5Dread(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
-    H5Dclose(h1);
-  }
-};
-
 template<>
 struct HDFAttribIO<unsigned long> : public HDFAttribIOBase
 {
@@ -132,8 +105,7 @@ struct HDFAttribIO<int> : public HDFAttribIOBase
   {
     if (replace)
     //herr_t status = H5Eset_auto(NULL, NULL);
-    //status = H5Gget_objinfo (grp, name, 0, NULL);
-    //if(status == 0)
+    //if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &ref);
@@ -202,7 +174,7 @@ struct HDFAttribIO<double> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<TinyVector<double, D>> : public HDFAttribIOBase
 {
-  typedef TinyVector<double, D> data_type;
+  using data_type = TinyVector<double, D>;
 
   data_type& ref;
   bool replace;
@@ -247,7 +219,7 @@ struct HDFAttribIO<TinyVector<double, D>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<Tensor<double, D>> : public HDFAttribIOBase
 {
-  typedef Tensor<double, D> data_type;
+  using data_type = Tensor<double, D>;
 
   data_type& ref;
   bool replace;
@@ -285,7 +257,7 @@ struct HDFAttribIO<Tensor<double, D>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<TinyVector<int, D>> : public HDFAttribIOBase
 {
-  typedef TinyVector<int, D> data_type;
+  using data_type = TinyVector<int, D>;
   data_type& ref;
   bool replace;
 
@@ -328,7 +300,7 @@ struct HDFAttribIO<TinyVector<int, D>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
 {
-  typedef std::vector<TinyVector<int, D>> data_type;
+  using data_type = std::vector<TinyVector<int, D>>;
 
   data_type& ref;
 
@@ -373,7 +345,7 @@ struct HDFAttribIO<std::vector<TinyVector<int, D>>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
 {
-  typedef std::vector<TinyVector<double, D>> data_type;
+  using data_type = std::vector<TinyVector<double, D>>;
 
   data_type& ref;
 
@@ -423,7 +395,7 @@ struct HDFAttribIO<std::vector<TinyVector<double, D>>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<Vector<double>> : public HDFAttribIOBase
 {
-  typedef Vector<double> ArrayType_t;
+  using ArrayType_t = Vector<double>;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
@@ -459,7 +431,7 @@ struct HDFAttribIO<Vector<double>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<Vector<std::complex<double>>> : public HDFAttribIOBase
 {
-  typedef Vector<std::complex<double>> ArrayType_t;
+  using ArrayType_t = Vector<std::complex<double>>;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
@@ -503,7 +475,7 @@ struct HDFAttribIO<Vector<std::complex<double>>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<Vector<int>> : public HDFAttribIOBase
 {
-  typedef Vector<int> ArrayType_t;
+  using ArrayType_t = Vector<int>;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
@@ -539,7 +511,7 @@ struct HDFAttribIO<Vector<int>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<Vector<TinyVector<double, D>>> : public HDFAttribIOBase
 {
-  typedef Vector<TinyVector<double, D>> ArrayType_t;
+  using ArrayType_t = Vector<TinyVector<double, D>>;
   ArrayType_t& ref;
 
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
@@ -576,7 +548,7 @@ struct HDFAttribIO<Vector<TinyVector<double, D>>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
 {
-  typedef Matrix<int> ArrayType_t;
+  using ArrayType_t = Matrix<int>;
   ArrayType_t& ref;
   bool replace;
 
@@ -586,8 +558,7 @@ struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
-    //  status = H5Gget_objinfo (grp, name, 0, NULL);
-    //  if(status == 0)
+    //  if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -619,7 +590,7 @@ struct HDFAttribIO<Matrix<int>> : public HDFAttribIOBase
 template<>
 struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
 {
-  typedef Matrix<double> ArrayType_t;
+  using ArrayType_t = Matrix<double>;
   ArrayType_t& ref;
   bool replace;
 
@@ -629,8 +600,7 @@ struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
   {
     if (replace)
     //  herr_t status = H5Eset_auto(NULL, NULL);
-    //  status = H5Gget_objinfo (grp, name, 0, NULL);
-    //  if(status == 0)
+    //  if(H5Lexists(grp, name, H5P_DEFAULT) == true)
     {
       hid_t h1  = H5Dopen(grp, name);
       hid_t ret = H5Dwrite(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
@@ -661,8 +631,8 @@ struct HDFAttribIO<Matrix<double>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
 {
-  typedef TinyVector<double, D> Component_t;
-  typedef Matrix<Component_t> ArrayType_t;
+  using Component_t = TinyVector<double, D>;
+  using ArrayType_t = Matrix<Component_t>;
   ArrayType_t& ref;
   bool replace;
 
@@ -744,7 +714,7 @@ struct HDFAttribIO<Matrix<TinyVector<double, D>>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
 {
-  typedef Array<double, D> ArrayType_t;
+  using ArrayType_t = Array<double, D>;
   ArrayType_t& ref;
   HDFAttribIO<ArrayType_t>(ArrayType_t& a) : ref(a) {}
   inline void write(hid_t grp, const char* name) override
@@ -771,8 +741,8 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
     if (h1 > 0)
     {
       hid_t dataspace = H5Dget_space(h1);
-      hsize_t dims[D];
-      H5Sget_simple_extent_dims(dataspace, dims, NULL);
+      std::array<hsize_t, D> dims;
+      H5Sget_simple_extent_dims(dataspace, dims.data(), NULL);
       ref.resize(dims); //[0], dims[1], dims[2]);
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
       H5Sclose(dataspace);
@@ -786,7 +756,7 @@ struct HDFAttribIO<Array<double, D>> : public HDFAttribIOBase
 template<unsigned D>
 struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
 {
-  typedef Array<std::complex<double>, D> ArrayType_t;
+  using ArrayType_t = Array<std::complex<double>, D>;
 
   ArrayType_t& ref;
   bool replace;
@@ -825,7 +795,9 @@ struct HDFAttribIO<Array<std::complex<double>, D>> : public HDFAttribIOBase
       hid_t dataspace = H5Dget_space(h1);
       hsize_t dims[D + 1];
       H5Sget_simple_extent_dims(dataspace, dims, NULL);
-      ref.resize(dims);
+      std::array<size_t, D> dims_cplx;
+      std::copy_n(std::cbegin(dims), D, dims_cplx.begin());
+      ref.resize(dims_cplx);
       hid_t ret = H5Dread(h1, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, ref.data());
       H5Sclose(dataspace);
       H5Dclose(h1);

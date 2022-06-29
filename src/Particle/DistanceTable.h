@@ -103,7 +103,6 @@ public:
   virtual void mw_evaluate(const RefVectorWithLeader<DistanceTable>& dt_list,
                            const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].evaluate(p_list[iw]);
   }
@@ -117,7 +116,6 @@ public:
                             const RefVectorWithLeader<ParticleSet>& p_list,
                             const std::vector<bool>& recompute) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       if (recompute[iw])
         dt_list[iw].evaluate(p_list[iw]);
@@ -142,10 +140,9 @@ public:
   virtual void mw_move(const RefVectorWithLeader<DistanceTable>& dt_list,
                        const RefVectorWithLeader<ParticleSet>& p_list,
                        const std::vector<PosType>& rnew_list,
-                       const IndexType iat = 0,
-                       bool prepare_old    = true) const
+                       const IndexType iat,
+                       bool prepare_old = true) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].move(p_list[iw], rnew_list[iw], iat, prepare_old);
   }
@@ -174,7 +171,6 @@ public:
                                 IndexType jat,
                                 const std::vector<bool>& from_temp)
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].updatePartial(jat, from_temp[iw]);
   }
@@ -192,26 +188,8 @@ public:
   virtual void mw_finalizePbyP(const RefVectorWithLeader<DistanceTable>& dt_list,
                                const RefVectorWithLeader<ParticleSet>& p_list) const
   {
-#pragma omp parallel for
     for (int iw = 0; iw < dt_list.size(); iw++)
       dt_list[iw].finalizePbyP(p_list[iw]);
-  }
-
-  /** build a compact list of a neighbor for the iat source
-   * @param iat source particle id
-   * @param rcut cutoff radius
-   * @param jid compressed index
-   * @param dist compressed distance
-   * @param displ compressed displacement
-   * @return number of target particles within rcut
-   */
-  virtual size_t get_neighbors(int iat,
-                               RealType rcut,
-                               int* restrict jid,
-                               RealType* restrict dist,
-                               PosType* restrict displ) const
-  {
-    return 0;
   }
 
   /** find the first nearest neighbor
@@ -224,7 +202,10 @@ public:
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const = 0;
 
-  inline void print(std::ostream& os) { throw std::runtime_error("DistanceTable::print is not supported"); }
+  [[noreturn]] inline void print(std::ostream& os)
+  {
+    throw std::runtime_error("DistanceTable::print is not supported");
+  }
 
   /// initialize a shared resource and hand it to a collection
   virtual void createResource(ResourceCollection& collection) const {}
@@ -306,10 +287,19 @@ public:
    */
   const DisplRow& getOldDispls() const { return old_dr_; }
 
+  virtual size_t get_num_particls_stored() const { return 0; }
+
   /// return multi walker temporary pair distance table data pointer
-  virtual const RealType* getMultiWalkerTempDataPtr() const
+  [[noreturn]] virtual const RealType* getMultiWalkerTempDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer for temp not supported");
+  }
+
+  virtual const RealType* mw_evalDistsInRange(const RefVectorWithLeader<DistanceTable>& dt_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              size_t range_begin,
+                                              size_t range_end) const
+  {
     return nullptr;
   }
 };
@@ -365,17 +355,15 @@ public:
   const DisplRow& getTempDispls() const { return temp_dr_; }
 
   /// return multi-walker full (all pairs) distance table data pointer
-  virtual const RealType* getMultiWalkerDataPtr() const
+  [[noreturn]] virtual const RealType* getMultiWalkerDataPtr() const
   {
     throw std::runtime_error(name_ + " multi walker data pointer not supported");
-    return nullptr;
   }
 
   /// return stride of per target pctl data. full table data = stride * num of target particles
-  virtual size_t getPerTargetPctlStrideSize() const
+  [[noreturn]] virtual size_t getPerTargetPctlStrideSize() const
   {
     throw std::runtime_error(name_ + " getPerTargetPctlStrideSize not supported");
-    return 0;
   }
 };
 } // namespace qmcplusplus

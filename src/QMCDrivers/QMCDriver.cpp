@@ -34,7 +34,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
@@ -226,7 +226,7 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->put(cur);
   Estimators->put(H, cur);
   if (!wOut)
-    wOut = std::make_unique<HDFWalkerOutput>(W, RootName, myComm);
+    wOut = std::make_unique<HDFWalkerOutput>(W.getTotalNum(), RootName, myComm);
   branchEngine->start(RootName);
   branchEngine->write(RootName);
   //use new random seeds
@@ -267,7 +267,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return;
   int nfile = wset.size();
-  HDFWalkerInputManager W_in(W, myComm);
+  HDFWalkerInputManager W_in(W, W.getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5FileRoot = W_in.getFileRoot();
@@ -554,7 +554,7 @@ xmlNodePtr QMCDriver::getQMCNode()
     std::string cname((const char*)(cur->name));
     if (cname == "parameter")
     {
-      const XMLAttrString name(cur, "name");
+      const std::string name(getXMLAttributeValue(cur, "name"));
       if (name == "current")
         current_ptr = cur;
     }

@@ -22,9 +22,9 @@ SkPot::SkPot(ParticleSet& source)
 {
   sourcePtcl = &source;
   NumSpecies = source.getSpeciesSet().getTotalNum();
-  NumK       = source.SK->getKLists().numk;
+  NumK       = source.getSimulationCell().getKLists().numk;
   OneOverN   = 1.0 / static_cast<RealType>(source.getTotalNum());
-  Kshell     = source.SK->getKLists().kshell;
+  Kshell     = source.getSimulationCell().getKLists().kshell;
   MaxKshell  = Kshell.size() - 1;
   RhokTot.resize(NumK);
   Fk.resize(NumK);
@@ -32,7 +32,7 @@ SkPot::SkPot(ParticleSet& source)
   OneOverDnk.resize(MaxKshell);
   for (int ks = 0; ks < MaxKshell; ks++)
   {
-    Kmag[ks]       = std::sqrt(source.SK->getKLists().ksq[Kshell[ks]]);
+    Kmag[ks]       = std::sqrt(source.getSimulationCell().getKLists().ksq[Kshell[ks]]);
     OneOverDnk[ks] = 1.0 / static_cast<RealType>(Kshell[ks + 1] - Kshell[ks]);
   }
 }
@@ -41,19 +41,8 @@ void SkPot::resetTargetParticleSet(ParticleSet& P) { sourcePtcl = &P; }
 
 SkPot::Return_t SkPot::evaluate(ParticleSet& P)
 {
-#if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("SkPot::evaluate(ParticleSet& P)");
-#else
-  //sum over species
-  copy(P.SK->rhok[0], P.SK->rhok[0] + NumK, RhokTot.begin());
-  for (int i = 1; i < NumSpecies; ++i)
-    accumulate_elements(P.SK->rhok[i], P.SK->rhok[i] + NumK, RhokTot.begin());
-  Vector<ComplexType>::const_iterator iit(RhokTot.begin()), iit_end(RhokTot.end());
-  value_ = 0.0;
-  for (int i = 0; iit != iit_end; ++iit, ++i)
-    value_ += Fk[i] * ((*iit).real() * (*iit).real() + (*iit).imag() * (*iit).imag());
-#endif
-  return value_;
+  throw std::runtime_error("SkPot::evaluate not implemented. There was an implementation with"
+                           " complex-valued storage that may be resurrected using real-valued storage.");
 }
 
 bool SkPot::put(xmlNodePtr cur)

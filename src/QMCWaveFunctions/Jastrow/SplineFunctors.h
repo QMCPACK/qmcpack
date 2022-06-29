@@ -20,6 +20,7 @@
 #include "Numerics/CubicBspline.h"
 #include "OptimizableFunctorBase.h"
 #include "Message/Communicate.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -30,18 +31,18 @@ namespace qmcplusplus
  * - RT real data type
  * - FNOUT final numerical functor
  *  An example is in CBSOBuilder.h which uses CubicBspline
- *  typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
- *  typedef CubicSplineSingle<RealType,SplineEngineType> RadialOrbitalType;
+ *  using SplineEngineType = CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>;
+ *  using RadialOrbitalType = CubicSplineSingle<RealType,SplineEngineType>;
  */
 template<typename RT, typename FNOUT>
 struct CubicSplineSingle : public OptimizableFunctorBase
 {
   ///typedef for the value_type
-  typedef RT value_type;
+  using value_type = RT;
   ///typedef of the source functor
-  typedef OptimizableFunctorBase FNIN;
+  using FNIN = OptimizableFunctorBase;
   ///typedef for the grid
-  typedef OneDimGridBase<real_type> grid_type;
+  using grid_type = OneDimGridBase<real_type>;
 
   // mmorales: until I figure out how to go around this
   int NumParams;
@@ -132,6 +133,23 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     return real_type(0);
   }
 
+  /** evaluate sum of the pair potentials FIXME
+   * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
+   */
+  static void mw_evaluateV(const int num_groups,
+                           const CubicSplineSingle* const functors[],
+                           const int n_src,
+                           const int* grp_ids,
+                           const int num_pairs,
+                           const int* ref_at,
+                           const RT* mw_dist,
+                           const int dist_stride,
+                           RT* mw_vals,
+                           Vector<char, OffloadPinnedAllocator<char>>& transfer_buffer)
+  {
+    throw std::runtime_error("mw_evaluateV not implemented!");
+  }
+
   inline void evaluateVGL(const int iat,
                           const int iStart,
                           const int iEnd,
@@ -218,11 +236,11 @@ template<typename RT>
 struct CubicSplineBasisSet : public OptimizableFunctorBase
 {
   ///typedef of the source functor
-  typedef OptimizableFunctorBase FNIN;
+  using FNIN = OptimizableFunctorBase;
   ///typedef for the argument
-  typedef CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS> FNOUT;
+  using FNOUT = CubicBspline<RT, LINEAR_1DGRID, FIRSTDERIV_CONSTRAINTS>;
   ///typedef for the grid
-  typedef OneDimGridBase<real_type> grid_type;
+  using grid_type = OneDimGridBase<real_type>;
 
   FNIN* InFunc;
   FNOUT* OutFunc;

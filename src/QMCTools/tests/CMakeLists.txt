@@ -9,7 +9,6 @@
 #// File created by: Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 set(SRC_DIR tools)
 set(UTEST_EXE test_${SRC_DIR})
@@ -24,7 +23,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/si
 add_executable(${UTEST_EXE} ${SRCS})
 target_link_libraries(${UTEST_EXE} catch_main fstool)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} qmcparticle qmcutil)
+  target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcutil)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
@@ -37,20 +36,26 @@ if(HAVE_MPI)
 else()
   add_test(NAME check-affinity_runs COMMAND $<TARGET_FILE:qmc-check-affinity>)
 endif()
-set_tests_properties(
-  check-affinity_runs
-  PROPERTIES TIMEOUT
-             120
-             LABELS
-             "deterministic"
-             PASS_REGULAR_EXPRESSION
-             "OpenMP"
-             PROCESSORS
-             1
-             ENVIRONMENT
-             OMP_NUM_THREADS=3
-             PROCESSOR_AFFINITY
-             TRUE)
+
+if(QMC_OMP)
+  set_tests_properties(
+    check-affinity_runs
+    PROPERTIES TIMEOUT
+               120
+               LABELS
+               "deterministic"
+               PASS_REGULAR_EXPRESSION
+               "OpenMP"
+               PROCESSORS
+               1
+               ENVIRONMENT
+               OMP_NUM_THREADS=3
+               PROCESSOR_AFFINITY
+               TRUE)
+else()
+  message(STATUS "Check-affinity-runs without OpenMP")
+  set_tests_properties(check-affinity_runs PROPERTIES TIMEOUT 120 LABELS "deterministic" PROCESSORS 1)
+endif()
 
 # Basic test for qmc-get-supercell. Cubic primitive vectors, request what should optimally be a 2x2x2 tiling
 if(HAVE_MPI)

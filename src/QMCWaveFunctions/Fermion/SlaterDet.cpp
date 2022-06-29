@@ -23,14 +23,17 @@ namespace qmcplusplus
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
-SlaterDet::SlaterDet(ParticleSet& targetPtcl, std::vector<std::unique_ptr<Determinant_t>> dets, const std::string& class_name) : WaveFunctionComponent(class_name), Dets(std::move(dets))
+SlaterDet::SlaterDet(ParticleSet& targetPtcl,
+                     std::vector<std::unique_ptr<Determinant_t>> dets,
+                     const std::string& class_name)
+    : WaveFunctionComponent(class_name), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
   is_fermionic = true;
 
   Optimizable = false;
-  for(const auto& det : Dets)
+  for (const auto& det : Dets)
     Optimizable = Optimizable || det->Optimizable;
 
   Last.resize(targetPtcl.groups());
@@ -101,8 +104,8 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
-                                               ParticleSet::ParticleGradient_t& G,
-                                               ParticleSet::ParticleLaplacian_t& L)
+                                               ParticleSet::ParticleGradient& G,
+                                               ParticleSet::ParticleLaplacian& L)
 {
   log_value_ = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
@@ -112,8 +115,8 @@ SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
 
 void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
-                               const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                               const RefVector<ParticleSet::ParticleLaplacian_t>& L_list) const
+                               const RefVector<ParticleSet::ParticleGradient>& G_list,
+                               const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   constexpr LogValueType czero(0);
 
@@ -130,8 +133,8 @@ void SlaterDet::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>&
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
-                                              ParticleSet::ParticleGradient_t& G,
-                                              ParticleSet::ParticleLaplacian_t& L,
+                                              ParticleSet::ParticleGradient& G,
+                                              ParticleSet::ParticleLaplacian& L,
                                               bool from_scratch)
 {
   log_value_ = 0.0;
@@ -142,8 +145,8 @@ SlaterDet::LogValueType SlaterDet::evaluateGL(const ParticleSet& P,
 
 void SlaterDet::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
-                              const RefVector<ParticleSet::ParticleGradient_t>& G_list,
-                              const RefVector<ParticleSet::ParticleLaplacian_t>& L_list,
+                              const RefVector<ParticleSet::ParticleGradient>& G_list,
+                              const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                               bool fromscratch) const
 {
   constexpr LogValueType czero(0);
@@ -177,10 +180,10 @@ void SlaterDet::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& w
   }
 }
 
-void SlaterDet::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
+void SlaterDet::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   grad_grad_psi.resize(P.getTotalNum());
-  HessVector_t tmp;
+  HessVector tmp;
   tmp.resize(P.getTotalNum());
   for (int i = 0; i < Dets.size(); ++i)
   {
@@ -199,7 +202,8 @@ void SlaterDet::createResource(ResourceCollection& collection) const
     Dets[i]->createResource(collection);
 }
 
-void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void SlaterDet::acquireResource(ResourceCollection& collection,
+                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {
@@ -208,7 +212,8 @@ void SlaterDet::acquireResource(ResourceCollection& collection, const RefVectorW
   }
 }
 
-void SlaterDet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void SlaterDet::releaseResource(ResourceCollection& collection,
+                                const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   for (int i = 0; i < Dets.size(); ++i)
   {
@@ -251,6 +256,14 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   auto myclone = std::make_unique<SlaterDet>(tqp, std::move(dets));
   assert(myclone->Optimizable == Optimizable);
   return myclone;
+}
+
+void SlaterDet::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
+{
+  for (int i = 0; i < Dets.size(); ++i)
+  {
+    Dets[i]->registerTWFFastDerivWrapper(P, twf);
+  }
 }
 
 } // namespace qmcplusplus

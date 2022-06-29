@@ -27,7 +27,7 @@ namespace qmcplusplus
 TEST_CASE("OneBodyDensityMatricesInput::from_xml", "[estimators]")
 {
   using POLT    = PtclOnLatticeTraits;
-  using Lattice = POLT::ParticleLayout_t;
+  using Lattice = POLT::ParticleLayout;
   using namespace testing::onebodydensitymatrices;
   for (auto input_xml : valid_one_body_density_matrices_input_sections)
   {

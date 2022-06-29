@@ -13,37 +13,36 @@
 
 #include "BlasThreadingEnv.h"
 #include "config.h"
-#include "Message/OpenMP.h"
+#include "Concurrency/OpenMP.h"
 #ifdef HAVE_MKL
 #include <mkl_service.h>
 #endif
 
 namespace qmcplusplus
 {
-
 BlasThreadingEnv::BlasThreadingEnv(int num_threads)
-  {
+{
 #ifdef HAVE_MKL
-    old_state_ = mkl_set_num_threads_local(num_threads);
+  old_state_ = mkl_set_num_threads_local(num_threads);
 #else
-    old_state_ = 0;
+  old_state_ = 0;
 #endif
-  }
+}
 
 BlasThreadingEnv::~BlasThreadingEnv()
-  {
+{
 #ifdef HAVE_MKL
-    mkl_set_num_threads_local(old_state_);
+  mkl_set_num_threads_local(old_state_);
 #endif
-  }
+}
 
-  bool BlasThreadingEnv::NestedThreadingSupported()
-  {
+bool BlasThreadingEnv::NestedThreadingSupported()
+{
 #ifdef HAVE_MKL
-    return true;
+  return true;
 #else
-    return false;
+  return false;
 #endif
-  }
+}
 
 } // namespace qmcplusplus

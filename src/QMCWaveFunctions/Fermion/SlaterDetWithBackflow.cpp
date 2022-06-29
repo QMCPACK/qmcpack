@@ -46,8 +46,8 @@ void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
 }
 
 SlaterDetWithBackflow::LogValueType SlaterDetWithBackflow::evaluateLog(const ParticleSet& P,
-                                                                       ParticleSet::ParticleGradient_t& G,
-                                                                       ParticleSet::ParticleLaplacian_t& L)
+                                                                       ParticleSet::ParticleGradient& G,
+                                                                       ParticleSet::ParticleLaplacian& L)
 {
   BFTrans->evaluate(P);
   log_value_ = 0.0;
@@ -106,8 +106,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   std::vector<RealType> dhpsi;
   dlogpsi.resize(Nvars);
   dhpsi.resize(Nvars);
-  ParticleSet::ParticleGradient_t G0, G1, G2;
-  ParticleSet::ParticleLaplacian_t L0, L1, L2;
+  ParticleSet::ParticleGradient G0, G1, G2;
+  ParticleSet::ParticleLaplacian L0, L1, L2;
   G0.resize(P.getTotalNum());
   G1.resize(P.getTotalNum());
   G2.resize(P.getTotalNum());
@@ -159,7 +159,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     BFTrans->evaluate(P);
     for (int k = 0; k < Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P, G2, L2);
-    ParticleSet::SingleParticleValue_t tmp = 0.0;
+    ParticleSet::SingleParticleValue tmp = 0.0;
     for (int q = 0; q < P.getTotalNum(); q++)
       tmp += (L1[q] - L2[q]) / (2.0 * dh);
     app_log() << i << "\n"

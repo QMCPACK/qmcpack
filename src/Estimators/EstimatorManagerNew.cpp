@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -12,6 +12,7 @@
 #include <functional>
 #include <numeric>
 #include <algorithm>
+#include <variant>
 
 #include "EstimatorManagerNew.h"
 #include "SpinDensityNew.h"
@@ -24,7 +25,6 @@
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "Estimators/RMCLocalEnergyEstimator.h"
-#include "Estimators/CollectablesEstimator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
@@ -32,22 +32,95 @@
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
+#include "type_traits/variant_help.hpp"
 
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
 namespace qmcplusplus
 {
-//initialize the name of the primary estimator
-EstimatorManagerNew::EstimatorManagerNew(Communicate* c)
-    : MainEstimatorName("LocalEnergy"), RecordCount(0), my_comm_(c), Collectables(0), max4ascii(8), FieldWidth(20)
-{}
 
-EstimatorManagerNew::~EstimatorManagerNew()
+using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+
+EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
+    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
 {
-  if (Collectables)
-    delete Collectables;
+  app_log() << " Legacy constructor adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+  max4ascii = ham.sizeOfObservables() + 3;
+  addMainEstimator(std::make_unique<LocalEnergyEstimator>(ham, true));
 }
+
+bool EstimatorManagerNew::areThereListeners() const
+{
+  return std::any_of(operator_ests_.begin(), operator_ests_.end(),
+                     [](auto& oper_est) { return oper_est->isListenerRequired(); });
+}
+  
+template<class EstInputType, typename... Args>
+bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
+{
+  if (has<EstInputType>(input))
+  {
+    operator_ests_.push_back(std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)),
+                                                                               std::forward<Args>(args)...));
+    return true;
+  }
+  else
+    return false;
+}
+
+template<class EstInputType, typename... Args>
+bool EstimatorManagerNew::createScalarEstimator(ScalarEstimatorInput& input, Args&&... args)
+{
+  if (has<EstInputType>(input))
+  {
+    auto estimator = std::make_unique<typename EstInputType::Consumer>(std::move(std::get<EstInputType>(input)),
+                                                                       std::forward<Args>(args)...);
+    if (estimator->isMainEstimator())
+      addMainEstimator(std::move(estimator));
+    else
+      scalar_ests_.push_back(std::move(estimator));
+    return true;
+  }
+  else
+    return false;
+}
+
+//initialize the name of the primary estimator
+EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
+                                         EstimatorManagerInput&& emi,
+                                         const QMCHamiltonian& H,
+                                         const ParticleSet& pset,
+                                         const TrialWaveFunction& twf)
+    : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)
+{
+  for (auto& est_input : emi.get_estimator_inputs())
+    if (!(createEstimator<SpinDensityInput>(est_input, pset.getLattice(), pset.getSpeciesSet()) ||
+          createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
+                                                     pset.getLattice()) ||
+          createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
+                                                       twf.getSPOMap(), pset)))
+      throw UniformCommunicateError(std::string(error_tag_) +
+                                    "cannot construct an estimator from estimator input object.");
+
+  for (auto& scalar_input : emi.get_scalar_estimator_inputs())
+    if (!(createScalarEstimator<LocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<CSLocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H)))
+      throw UniformCommunicateError(std::string(error_tag_) +
+                                    "cannot construct a scalar estimator from scalar estimator input object.");
+
+  if (main_estimator_ == nullptr)
+  {
+    app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+    max4ascii = H.sizeOfObservables() + 3;
+    addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
+  }
+
+  makeConfigReport(app_log());
+}
+
+EstimatorManagerNew::~EstimatorManagerNew() = default;
 
 /** reset names of the properties
  *
@@ -56,6 +129,8 @@ EstimatorManagerNew::~EstimatorManagerNew()
  * 
  * The number of estimators and their order can vary from the previous state.
  * reinitialized properties before setting up a new BlockAverage data list.
+ *
+ * The object is still not completely valid.
  *
  */
 void EstimatorManagerNew::reset()
@@ -66,9 +141,31 @@ void EstimatorManagerNew::reset()
   cpuInd         = BlockProperties.add("BlockCPU");
   acceptRatioInd = BlockProperties.add("AcceptRatio");
   BlockAverages.clear(); //cleaup the records
-  for (int i = 0; i < Estimators.size(); i++)
-    Estimators[i]->add2Record(BlockAverages);
+  // Side effect of this is that BlockAverages becomes size to number of scalar values tracked by all the
+  // scalar estimators
+  main_estimator_->add2Record(BlockAverages);
+  for (int i = 0; i < scalar_ests_.size(); i++)
+    scalar_ests_[i]->add2Record(BlockAverages);
+  // possibly redundant variable
   max4ascii += BlockAverages.size();
+}
+
+void EstimatorManagerNew::makeConfigReport(std::ostream& os) const
+{
+  os << "EstimatorManager setup for this section:\n"
+     << "  Main Estimator:  " << main_estimator_->getSubTypeStr() << '\n';
+  if (scalar_ests_.size() > 0)
+  {
+    os << "  ScalarEstimators:\n";
+    for (auto& scalar_est : scalar_ests_)
+      os << "    " << scalar_est->getSubTypeStr() << '\n';
+  }
+  if (operator_ests_.size() > 0)
+  {
+    os << "  General Estimators:\n";
+    for (auto& est : operator_ests_)
+      os << "    " << est->get_my_name() << '\n';
+  }
 }
 
 void EstimatorManagerNew::addHeader(std::ostream& o)
@@ -97,11 +194,11 @@ void EstimatorManagerNew::startDriverRun()
   RecordCount = 0;
   energyAccumulator.clear();
   varAccumulator.clear();
-  int nc = (Collectables) ? Collectables->size() : 0;
   BlockAverages.setValues(0.0);
-  // \todo Collectables should just have its own data structures not change the EMBS layout.
-  AverageCache.resize(BlockAverages.size() + nc);
+  AverageCache.resize(BlockAverages.size());
   PropertyCache.resize(BlockProperties.size());
+  // Now Estimatormanager New is actually valid i.e. in the state you would expect after the constructor.
+  // Until the put is dropped this isn't feasible to fix.
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
   if (!DebugArchive)
   {
@@ -124,8 +221,9 @@ void EstimatorManagerNew::startDriverRun()
     fname  = my_comm_->getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
-    for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->registerObservables(h5desc, h_file->getFileID());
+    main_estimator_->registerObservables(h5desc, h_file->getFileID());
+    for (int i = 0; i < scalar_ests_.size(); i++)
+      scalar_ests_[i]->registerObservables(h5desc, h_file->getFileID());
     for (auto& uope : operator_ests_)
       uope->registerOperatorEstimator(h_file->getFileID());
   }
@@ -153,11 +251,27 @@ void EstimatorManagerNew::stopBlock(unsigned long accept, unsigned long reject, 
   RecordCount++;
 }
 
-void EstimatorManagerNew::collectScalarEstimators(const RefVector<ScalarEstimatorBase>& estimators)
+void EstimatorManagerNew::collectMainEstimators(const RefVector<ScalarEstimatorBase>& main_estimators)
 {
   AverageCache = 0.0;
-  for (ScalarEstimatorBase& est : estimators)
+  for (ScalarEstimatorBase& est : main_estimators)
     est.addAccumulated(AverageCache.begin());
+}
+
+void EstimatorManagerNew::collectScalarEstimators(const std::vector<RefVector<ScalarEstimatorBase>>& crowd_scalar_ests)
+{
+  assert(crowd_scalar_ests[0].size() == scalar_ests_.size());
+  for (int iop = 0; iop < scalar_ests_.size(); ++iop)
+  {
+    RefVector<ScalarEstimatorBase> this_scalar_est_for_all_crowds;
+    for (int icrowd = 0; icrowd < crowd_scalar_ests.size(); ++icrowd)
+      this_scalar_est_for_all_crowds.emplace_back(crowd_scalar_ests[icrowd][iop]);
+    // There is actually state in each Scalar estimator that tells it what it's "first" index in the AverageCache
+    // is, It's quite unclear to me if that would really work so I'm doing this in anticipation of having to rework that
+    // if we don't drop multiple scalar estimators per crowd all together.
+    for (ScalarEstimatorBase& est : this_scalar_est_for_all_crowds)
+      est.addAccumulated(AverageCache.begin());
+  }
 }
 
 void EstimatorManagerNew::collectOperatorEstimators(const std::vector<RefVector<OperatorEstBase>>& crowd_op_ests)
@@ -321,20 +435,12 @@ void EstimatorManagerNew::getApproximateEnergyVariance(RealType& e, RealType& va
   var = tmp[2] / tmp[0] - e * e;
 }
 
-EstimatorManagerNew::EstimatorType* EstimatorManagerNew::getEstimator(const std::string& a)
-{
-  std::map<std::string, int>::iterator it = EstimatorMap.find(a);
-  if (it == EstimatorMap.end())
-    return nullptr;
-  else
-    return Estimators[(*it).second].get();
-}
-
-bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, const WaveFunctionFactory& wf_factory, xmlNodePtr cur)
+bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const TrialWaveFunction& twf, xmlNodePtr cur)
 {
   std::vector<std::string> extra_types;
   std::vector<std::string> extra_names;
   cur = cur->children;
+  std::string MainEstimatorName("LocalEnergy");
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));
@@ -351,7 +457,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
       if ((est_name == MainEstimatorName) || (est_name == "elocal"))
       {
         max4ascii = H.sizeOfObservables() + 3;
-        add(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"), MainEstimatorName);
+        addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"));
       }
       else if (est_name == "RMC")
       {
@@ -360,7 +466,7 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         hAttrib.add(nobs, "nobs");
         hAttrib.put(cur);
         max4ascii = nobs * H.sizeOfObservables() + 3;
-        add(std::make_unique<RMCLocalEnergyEstimator>(H, nobs), MainEstimatorName);
+        addMainEstimator(std::make_unique<RMCLocalEnergyEstimator>(H, nobs));
       }
       else if (est_name == "CSLocalEnergy")
       {
@@ -368,39 +474,36 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         int nPsi = 1;
         hAttrib.add(nPsi, "nPsi");
         hAttrib.put(cur);
-        add(std::make_unique<CSEnergyEstimator>(H, nPsi), MainEstimatorName);
-        app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+        addMainEstimator(std::make_unique<CSEnergyEstimator>(H, nPsi));
+        app_log() << "  Adding a CSLocalEnergy estimator for the MainEstimator " << std::endl;
       }
       else if (est_name == "SpinDensityNew")
       {
-        SpinDensityInput spdi;
-        spdi.readXML(cur);
+        SpinDensityInput spdi(cur);
         DataLocality dl = DataLocality::crowd;
         if (spdi.get_save_memory())
           dl = DataLocality::rank;
         if (spdi.get_cell().explicitly_defined)
-          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.mySpecies, dl));
+          operator_ests_.emplace_back(std::make_unique<SpinDensityNew>(std::move(spdi), pset.getSpeciesSet(), dl));
         else
           operator_ests_.emplace_back(
-              std::make_unique<SpinDensityNew>(std::move(spdi), pset.Lattice, pset.mySpecies, dl));
+              std::make_unique<SpinDensityNew>(std::move(spdi), pset.getLattice(), pset.getSpeciesSet(), dl));
       }
       else if (est_type == "MomentumDistribution")
       {
-        MomentumDistributionInput mdi;
-        mdi.readXML(cur);
+        MomentumDistributionInput mdi(cur);
         DataLocality dl = DataLocality::crowd;
-        operator_ests_.emplace_back(
-          std::make_unique<MomentumDistribution>(std::move(mdi), 
-            pset.getTotalNum(), pset.getTwist(), pset.Lattice, dl));
+        operator_ests_.emplace_back(std::make_unique<MomentumDistribution>(std::move(mdi), pset.getTotalNum(),
+                                                                           pset.getTwist(), pset.getLattice(), dl));
       }
       else if (est_type == "OneBodyDensityMatrices")
       {
         OneBodyDensityMatricesInput obdmi(cur);
         // happens once insures golden particle set is not abused.
         ParticleSet pset_target(pset);
-        operator_ests_.emplace_back(
-          std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), 
-                                                   pset.Lattice, pset.getSpeciesSet(), wf_factory, pset_target));
+        operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
+                                                                             pset.getSpeciesSet(), twf.getSPOMap(),
+                                                                             pset_target));
       }
       else
       {
@@ -410,25 +513,18 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
     }
     cur = cur->next;
   }
-  if (Estimators.empty())
+  if (main_estimator_ == nullptr)
   {
-    app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
+    app_log() << " ::put Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
-    add(std::make_unique<LocalEnergyEstimator>(H, true), MainEstimatorName);
+    addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
   }
-  //Collectables is special and should not be added to Estimators
-  if (Collectables == 0 && H.sizeOfCollectables())
-  {
-    app_log() << "  Using CollectablesEstimator for collectables, e.g. sk, gofr, density " << std::endl;
-    Collectables = new CollectablesEstimator(H);
-  }
-  // Unrecognized estimators are not allowed
   if (!extra_types.empty())
   {
     app_log() << "\nUnrecognized estimators in input:" << std::endl;
-    for (int i=0; i<extra_types.size(); i++)
+    for (int i = 0; i < extra_types.size(); i++)
     {
-      app_log() << "  type: "<<extra_types[i]<<"     name: "<<extra_names[i]<<std::endl;
+      app_log() << "  type: " << extra_types[i] << "     name: " << extra_names[i] << std::endl;
     }
     app_log() << std::endl;
     throw UniformCommunicateError("Unrecognized estimators encountered in input.  See log message for more details.");
@@ -436,22 +532,18 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
   return true;
 }
 
-int EstimatorManagerNew::add(std::unique_ptr<EstimatorType> newestimator, const std::string& aname)
+void EstimatorManagerNew::addMainEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)
 {
-  std::map<std::string, int>::iterator it = EstimatorMap.find(aname);
-  int n                                   = Estimators.size();
-  if (it == EstimatorMap.end())
-  {
-    Estimators.push_back(std::move(newestimator));
-    EstimatorMap[aname] = n;
-  }
-  else
-  {
-    n = (*it).second;
-    app_log() << "  EstimatorManagerNew::add replace " << aname << " estimator." << std::endl;
-    Estimators[n] = std::move(newestimator);
-  }
-  return n;
+  if (main_estimator_ != nullptr)
+    app_log() << "  EstimatorManagerNew replaced its main estimator with " << estimator->getSubTypeStr()
+              << " estimator." << std::endl;
+  main_estimator_ = std::move(estimator);
+}
+
+int EstimatorManagerNew::addScalarEstimator(std::unique_ptr<ScalarEstimatorBase>&& estimator)
+{
+  scalar_ests_.push_back(std::move(estimator));
+  return scalar_ests_.size() - 1;
 }
 
 } // namespace qmcplusplus

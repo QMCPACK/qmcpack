@@ -31,7 +31,9 @@ void test_cartesian_ao()
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     elec.setName("e");
@@ -43,9 +45,10 @@ void test_cartesian_ao()
     int massIdx              = tspecies.addAttribute("mass");
     tspecies(massIdx, upIdx) = 1.0;
 
-    ParticleSet ions;
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int hIdx             = ispecies.addSpecies("H");
@@ -59,26 +62,26 @@ void test_cartesian_ao()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-    particle_set_map["e"]    = &elec;
-    particle_set_map["ion0"] = &ions;
-
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
     SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.1, -0.3, 0.2);
+    ParticleSet::SingleParticlePos newpos(0.1, -0.3, 0.2);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);
@@ -97,7 +100,9 @@ void test_dirac_ao()
   {
     Communicate* c = OHMMS::Controller;
 
-    ParticleSet elec;
+    const SimulationCell simulation_cell;
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
     std::vector<int> agroup(2);
     agroup[0] = 1;
     elec.setName("e");
@@ -109,9 +114,10 @@ void test_dirac_ao()
     int massIdx              = tspecies.addAttribute("mass");
     tspecies(massIdx, upIdx) = 1.0;
 
-    ParticleSet ions;
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
     ions.setName("ion0");
-    ions.create(1);
+    ions.create({1});
     ions.R[0]            = 0.0;
     SpeciesSet& ispecies = ions.getSpeciesSet();
     int hIdx             = ispecies.addSpecies("H");
@@ -125,9 +131,9 @@ void test_dirac_ao()
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
-    particle_set_map["e"]    = &elec;
-    particle_set_map["ion0"] = &ions;
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
 
     SPOSetBuilderFactory bf(c, elec, particle_set_map);
@@ -135,16 +141,17 @@ void test_dirac_ao()
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    auto& bb = bf.createSPOSetBuilder(MO_base[0]);
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    SPOSet* sposet = bb.createSPOSet(slater_base[0]);
+    auto sposet = bb.createSPOSet(slater_base[0]);
 
-    SPOSet::ValueVector_t values;
+    SPOSet::ValueVector values;
     values.resize(1);
 
     // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos_t newpos(0.1, -0.3, 0.2);
+    ParticleSet::SingleParticlePos newpos(0.1, -0.3, 0.2);
     elec.makeMove(0, newpos);
 
     sposet->evaluateValue(elec, 0, values);

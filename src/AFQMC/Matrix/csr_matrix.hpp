@@ -773,7 +773,7 @@ public:
     *this = csr;
   }
   // right now, this routine is limited to transfers from host-host, or host-device.
-  // Will fail if transfering device-to-host, since I need to use to_address on source
+  // Will fail if transferring device-to-host, since I need to use to_address on source
   template<class ValType_,
            class IndxType_,
            class IntType_,

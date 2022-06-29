@@ -22,18 +22,18 @@ namespace qmcplusplus
 class MinimalHamiltonianPool
 {
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
-  const char* hamiltonian_xml = R"(
+  static constexpr const char* const hamiltonian_xml = R"(
 <hamiltonian name="h0" type="generic" target="e"> 
   <pairpot type="coulomb" name="ElecElec" source="e" target="e"/> 
 </hamiltonian>
   )";
 
 public:
-  MinimalHamiltonianPool() : comm_(nullptr) {}
-  HamiltonianPool operator()(Communicate* comm, ParticleSetPool& particle_pool, WaveFunctionPool& wavefunction_pool)
+  static HamiltonianPool make_hamWithEE(Communicate* comm,
+                                        ParticleSetPool& particle_pool,
+                                        WaveFunctionPool& wavefunction_pool)
   {
-    comm_ = comm;
-    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm_);
+    HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
     Libxml2Document doc;
     doc.parseFromString(hamiltonian_xml);
 
@@ -42,9 +42,6 @@ public:
 
     return hpool;
   }
-
-private:
-  Communicate* comm_;
 };
 
 } // namespace qmcplusplus

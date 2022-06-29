@@ -17,7 +17,7 @@
 
 #include "Particle/MCWalkerConfiguration.h"
 #include "ParticleBase/ParticleUtility.h"
-#include "ParticleBase/RandomSeqGenerator.h"
+#include "ParticleBase/RandomSeqGeneratorGlobal.h"
 #include "Message/Communicate.h"
 #include "WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -101,7 +101,7 @@ bool WaveFunctionTester::run()
 
   put(qmcNode);
 
-  auto Rng1 = std::make_unique<RandomGenerator_t>();
+  auto Rng1 = std::make_unique<RandomGenerator>();
   H.setRandomGenerator(Rng1.get());
   // Add to Rng so the object is eventually deleted
   Rng.emplace_back(std::move(Rng1));
@@ -132,7 +132,7 @@ bool WaveFunctionTester::run()
   else if (checkRatio == "derivclone")
     runDerivCloneTest();
   else if (wftricks == "rotate")
-    runwftricks();
+    throw std::runtime_error("orbitalutility \"rotation\" has been removed.");
   else if (wftricks == "plot")
     runNodePlot();
   else if (checkBasic == "yes")
@@ -202,11 +202,10 @@ void WaveFunctionTester::runCloneTest()
 void WaveFunctionTester::printEloc()
 {
   app_log() << " ===== printEloc =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   if (pit == PtclPool.getPool().end())
     APP_ABORT("Unknown source \"" + sourceName + "\" in printEloc in WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
@@ -312,8 +311,8 @@ public:
     int index; // particle index
     PosType r;
   };
-  typedef std::vector<PositionChange> PosChangeVector;
-  typedef std::vector<ValueType> ValueVector;
+  using PosChangeVector = std::vector<PositionChange>;
+  using ValueVector     = std::vector<ValueType>;
 
 
   /** Generate points to evaluate */
@@ -323,20 +322,20 @@ public:
   void computeFiniteDiff(RealType delta,
                          PosChangeVector& positions,
                          ValueVector& values,
-                         ParticleSet::ParticleGradient_t& G_fd,
-                         ParticleSet::ParticleLaplacian_t& L_fd);
+                         ParticleSet::ParticleGradient& G_fd,
+                         ParticleSet::ParticleLaplacian& L_fd);
 
   void computeFiniteDiffLowOrder(RealType delta,
                                  PosChangeVector& positions,
                                  ValueVector& values,
-                                 ParticleSet::ParticleGradient_t& G_fd,
-                                 ParticleSet::ParticleLaplacian_t& L_fd);
+                                 ParticleSet::ParticleGradient& G_fd,
+                                 ParticleSet::ParticleLaplacian& L_fd);
 
   void computeFiniteDiffRichardson(RealType delta,
                                    PosChangeVector& positions,
                                    ValueVector& values,
-                                   ParticleSet::ParticleGradient_t& G_fd,
-                                   ParticleSet::ParticleLaplacian_t& L_fd);
+                                   ParticleSet::ParticleGradient& G_fd,
+                                   ParticleSet::ParticleLaplacian& L_fd);
 };
 
 
@@ -389,8 +388,8 @@ void FiniteDifference::finiteDifferencePoints(RealType delta, MCWalkerConfigurat
 void FiniteDifference::computeFiniteDiff(RealType delta,
                                          PosChangeVector& positions,
                                          ValueVector& values,
-                                         ParticleSet::ParticleGradient_t& G_fd,
-                                         ParticleSet::ParticleLaplacian_t& L_fd)
+                                         ParticleSet::ParticleGradient& G_fd,
+                                         ParticleSet::ParticleLaplacian& L_fd)
 {
   assert(positions.size() == values.size());
   if (positions.size() == 0)
@@ -411,8 +410,8 @@ void FiniteDifference::computeFiniteDiff(RealType delta,
 void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
                                                  PosChangeVector& positions,
                                                  ValueVector& values,
-                                                 ParticleSet::ParticleGradient_t& G_fd,
-                                                 ParticleSet::ParticleLaplacian_t& L_fd)
+                                                 ParticleSet::ParticleGradient& G_fd,
+                                                 ParticleSet::ParticleLaplacian& L_fd)
 {
   ValueType logpsi = values[0];
 
@@ -453,8 +452,8 @@ void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
 void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
                                                    PosChangeVector& positions,
                                                    ValueVector& values,
-                                                   ParticleSet::ParticleGradient_t& G_fd,
-                                                   ParticleSet::ParticleLaplacian_t& L_fd)
+                                                   ParticleSet::ParticleGradient& G_fd,
+                                                   ParticleSet::ParticleLaplacian& L_fd)
 {
   RealType tol     = 1e-7;
   ValueType logpsi = values[0];
@@ -578,8 +577,8 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 
 // Compute numerical gradient and Laplacian
 void WaveFunctionTester::computeNumericalGrad(RealType delta,
-                                              ParticleSet::ParticleGradient_t& G_fd, // finite difference
-                                              ParticleSet::ParticleLaplacian_t& L_fd)
+                                              ParticleSet::ParticleGradient& G_fd, // finite difference
+                                              ParticleSet::ParticleLaplacian& L_fd)
 {
   FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
   //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
@@ -617,10 +616,10 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
 // upper_iat = nat
 bool WaveFunctionTester::checkGradients(int lower_iat,
                                         int upper_iat,
-                                        ParticleSet::ParticleGradient_t& G,
-                                        ParticleSet::ParticleLaplacian_t& L,
-                                        ParticleSet::ParticleGradient_t& G_fd,
-                                        ParticleSet::ParticleLaplacian_t& L_fd,
+                                        ParticleSet::ParticleGradient& G,
+                                        ParticleSet::ParticleLaplacian& L,
+                                        ParticleSet::ParticleGradient& G_fd,
+                                        ParticleSet::ParticleLaplacian& L_fd,
                                         std::stringstream& log,
                                         int indent /* = 0 */)
 {
@@ -710,8 +709,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
                                                       bool& ignore)
 {
   int nat = W.getTotalNum();
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  ParticleSet::ParticleGradient G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian L(nat), L1(nat);
 
   W.loadWalker(*W1, true);
 
@@ -776,8 +775,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   {
     auto& orb = Psi.getOrbitals()[iorb];
 
-    ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
-    ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+    ParticleSet::ParticleGradient G(nat), tmpG(nat), G1(nat);
+    ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
 
 
     LogValueType logpsi1 = orb->evaluateLog(W, G, L);
@@ -791,7 +790,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       PosType r0     = W.R[it->index];
       W.R[it->index] = it->r;
       W.update();
-      ParticleSet::SingleParticlePos_t zeroR;
+      ParticleSet::SingleParticlePos zeroR;
       W.makeMove(it->index, zeroR);
 
       LogValueType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
@@ -823,8 +822,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     {
       for (int isd = 0; isd < sd->Dets.size(); isd++)
       {
-        ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
-        ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+        ParticleSet::ParticleGradient G(nat), tmpG(nat), G1(nat);
+        ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase& det = *sd->Dets[isd];
         LogValueType logpsi2      = det.evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det.getFirstIndex() << " to "
@@ -872,8 +871,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
           fail_log << " orbital set size = " << spo->size();
           fail_log << " basis set size = " << spo->getBasisSetSize() << std::endl;
 
-          ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
-          ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
+          ParticleSet::ParticleGradient G(nat), tmpG(nat), G1(nat);
+          ParticleSet::ParticleLaplacian L(nat), tmpL(nat), L1(nat);
           RealType logpsi3 = det.evaluateLog(W, G, L);
           FiniteDifference::ValueVector logpsi_vals;
           FiniteDifference::PosChangeVector::iterator it;
@@ -882,10 +881,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
             PosType r0 = W.R[it->index];
             W.R[it->index] = it->r;
             W.update();
-            ParticleSet::SingleParticlePos_t zeroR;
+            ParticleSet::SingleParticlePos zeroR;
             W.makeMove(it->index,zeroR);
 
-            SPOSet::ValueVector_t psi(spo->size());
+            SPOSet::ValueVector psi(spo->size());
 
             spo->evaluate(W, it->index, psi);
             ValueType logpsi = psi[0];
@@ -985,8 +984,8 @@ void WaveFunctionTester::runBasicTest()
       dout << "# Particle = " << iat << " Gradient component = " << ig << std::endl;
       dout << "#" << std::setw(11) << "delta" << std::setw(14) << "G_err_rel" << std::setw(14) << "L_err_rel"
            << std::endl;
-      ParticleSet::ParticleGradient_t G(nat), G1(nat);
-      ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+      ParticleSet::ParticleGradient G(nat), G1(nat);
+      ParticleSet::ParticleLaplacian L(nat), L1(nat);
       for (int i = 0; i < 20; i++)
       {
         // compute analytic values
@@ -1071,8 +1070,8 @@ void WaveFunctionTester::runRatioTest()
 {
 #if 0
   int nat = W.getTotalNum();
-  ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
-  ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
+  ParticleSet::ParticleGradient Gp(nat), dGp(nat);
+  ParticleSet::ParticleLaplacian Lp(nat), dLp(nat);
   bool checkHam=(checkHamPbyP == "yes");
   Tau=0.025;
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
@@ -1266,8 +1265,8 @@ void WaveFunctionTester::runRatioTest2()
 {
   app_log() << " ===== runRatioTest2 =====\n";
   int nat = W.getTotalNum();
-  ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
-  ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
+  ParticleSet::ParticleGradient Gp(nat), dGp(nat);
+  ParticleSet::ParticleLaplacian Lp(nat), dLp(nat);
   Tau = 0.025;
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   for (; it != it_end; ++it)
@@ -1306,12 +1305,12 @@ void WaveFunctionTester::runRatioTest2()
       RealType eold(thisWalker.Properties(WP::LOCALENERGY));
       RealType logpsi(thisWalker.Properties(WP::LOGPSI));
       Psi.evaluateLog(W);
-      ParticleSet::ParticleGradient_t realGrad(W.G);
+      ParticleSet::ParticleGradient realGrad(W.G);
       makeGaussRandom(deltaR);
       //mave a move
       for (int iat = 0; iat < nat; iat++)
       {
-        TinyVector<ParticleSet::SingleParticleValue_t, OHMMS_DIM> grad_now = Psi.evalGrad(W, iat);
+        TinyVector<ParticleSet::SingleParticleValue, OHMMS_DIM> grad_now = Psi.evalGrad(W, iat);
         GradType grad_new;
         for (int sds = 0; sds < 3; sds++)
           fout << realGrad[iat][sds] - grad_now[sds] << " ";
@@ -1363,7 +1362,7 @@ void WaveFunctionTester::runRatioV()
   DistanceTable* dt_ie=W.DistTables[1];
   double Rmax=2.0;
 
-  ParticleSet::ParticlePos_t sphere(8);
+  ParticleSet::ParticlePos sphere(8);
   std::vector<RealType> ratio_1(8), ratio_v(8);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   while (it != it_end)
@@ -1413,11 +1412,10 @@ void WaveFunctionTester::runRatioV()
 void WaveFunctionTester::runGradSourceTest()
 {
   app_log() << " ===== runGradSourceTest =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
@@ -1426,7 +1424,7 @@ void WaveFunctionTester::runGradSourceTest()
   ValueType c1        = 1.0 / delta / 2.0;
   ValueType c2        = 1.0 / delta / delta;
   int nat             = W.getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
+  ParticleSet::ParticlePos deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
@@ -1446,8 +1444,8 @@ void WaveFunctionTester::runGradSourceTest()
   for (int i = 0; i < H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  ParticleSet::ParticleGradient G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian L(nat), L1(nat);
   G = W.G;
   L = W.L;
 
@@ -1455,7 +1453,7 @@ void WaveFunctionTester::runGradSourceTest()
   // by finite difference.  Results are saved in grad_ion and grad_ion_FD respectively.
   // GRAD TEST COMPUTATION
   int nions = source.getTotalNum();
-  ParticleSet::ParticleGradient_t grad_ion(nions), grad_ion_FD(nions);
+  ParticleSet::ParticleGradient grad_ion(nions), grad_ion_FD(nions);
   for (int iat = 0; iat < nions; iat++)
   {
     grad_ion[iat] = Psi.evalGradSource(W, source, iat);
@@ -1487,10 +1485,10 @@ void WaveFunctionTester::runGradSourceTest()
 
   for (int isrc = 0; isrc < 1 /*source.getTotalNum()*/; isrc++)
   {
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad;
-    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_FD;
-    TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_FD;
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad;
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad;
+    TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad_FD;
+    TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad_FD;
     for (int dim = 0; dim < OHMMS_DIM; dim++)
     {
       grad_grad[dim].resize(nat);
@@ -1564,17 +1562,16 @@ void WaveFunctionTester::runGradSourceTest()
 void WaveFunctionTester::runZeroVarianceTest()
 {
   app_log() << " ===== runZeroVarianceTest =====\n";
-  ParticleSetPool::PoolType::iterator p;
-  for (p = PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
-    app_log() << "ParticelSet = " << p->first << std::endl;
+  for (auto& [key, value] : PtclPool.getPool())
+    app_log() << "ParticelSet = " << key << std::endl;
   // Find source ParticleSet
-  ParticleSetPool::PoolType::iterator pit(PtclPool.getPool().find(sourceName));
+  auto pit(PtclPool.getPool().find(sourceName));
   app_log() << pit->first << std::endl;
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
   int nat             = W.getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
+  ParticleSet::ParticlePos deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties(0, 0, 1, WP::MAXPROPERTIES);
   ;
   //pick the first walker
@@ -1590,8 +1587,8 @@ void WaveFunctionTester::runZeroVarianceTest()
   ValueType logpsi = Psi.evaluateLog(W);
   RealType eloc    = H.evaluate(W);
   //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  ParticleSet::ParticleGradient G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian L(nat), L1(nat);
   G = W.G;
   L = W.L;
   PosType r1(5.0, 2.62, 2.55);
@@ -1607,10 +1604,10 @@ void WaveFunctionTester::runZeroVarianceTest()
   char fname[32];
   sprintf(fname, "ZVtest.%03d.dat", OHMMS::Controller->rank());
   FILE* fzout = fopen(fname, "w");
-  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
-  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad;
-  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad_FD;
-  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM> lapl_grad_FD;
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad;
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> grad_grad_FD;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> lapl_grad_FD;
   for (int dim = 0; dim < OHMMS_DIM; dim++)
   {
     grad_grad[dim].resize(nat);
@@ -1703,8 +1700,8 @@ void WaveFunctionTester::runDerivTest()
   for (int i = 0; i < H.sizeOfObservables(); i++)
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
   //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  ParticleSet::ParticleGradient G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian L(nat), L1(nat);
   G = W.G;
   L = W.L;
   fout << "Gradients" << std::endl;
@@ -1812,8 +1809,8 @@ void WaveFunctionTester::runDerivNLPPTest()
     app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
 
   //RealType psi = Psi.evaluateLog(W);
-  ParticleSet::ParticleGradient_t G(nat), G1(nat);
-  ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
+  ParticleSet::ParticleGradient G(nat), G1(nat);
+  ParticleSet::ParticleLaplacian L(nat), L1(nat);
   G = W.G;
   L = W.L;
   nlout << "Gradients" << std::endl;
@@ -1902,8 +1899,8 @@ void WaveFunctionTester::runDerivCloneTest()
 {
   app_log() << " ===== runDerivCloneTest =====\n";
   app_log() << " Testing derivatives clone" << std::endl;
-  auto Rng1      = std::make_unique<RandomGenerator_t>();
-  auto Rng2      = std::make_unique<RandomGenerator_t>();
+  auto Rng1      = std::make_unique<RandomGenerator>();
+  auto Rng2      = std::make_unique<RandomGenerator>();
   (*Rng1)        = (*Rng2);
   auto w_clone   = std::make_unique<MCWalkerConfiguration>(W);
   auto psi_clone = Psi.makeClone(*w_clone);
@@ -1914,7 +1911,7 @@ void WaveFunctionTester::runDerivCloneTest()
   Rng.emplace_back(std::move(Rng1));
   h_clone->setPrimary(true);
   int nat = W.getTotalNum();
-  ParticleSet::ParticlePos_t deltaR(nat);
+  ParticleSet::ParticlePos deltaR(nat);
   //pick the first walker
   const MCWalkerConfiguration::Walker_t& awalker = **W.begin();
   //   MCWalkerConfiguration::Walker_t* bwalker = *(w_clone->begin());
@@ -2031,237 +2028,6 @@ void WaveFunctionTester::runDerivCloneTest()
     fout << i << "  " << HGradient[i] << "  " << std::real(HDsaved[i]) << "  "
          << (HGradient[i] - std::real(HDsaved[i])) / HGradient[i] << std::endl;
 }
-void WaveFunctionTester::runwftricks()
-{
-  auto& Orbitals = Psi.getOrbitals();
-  app_log() << " Total of " << Orbitals.size() << " orbitals." << std::endl;
-  int SDindex(0);
-  for (int i = 0; i < Orbitals.size(); i++)
-    if ("SlaterDet" == Orbitals[i]->ClassName)
-      SDindex = i;
-  SPOSetPtr Phi   = dynamic_cast<SlaterDet*>(Orbitals[SDindex].get())->getPhi();
-  int NumOrbitals = Phi->getBasisSetSize();
-  app_log() << "Basis set size: " << NumOrbitals << std::endl;
-  std::vector<int> SPONumbers(0, 0);
-  std::vector<int> irrepRotations(0, 0);
-  std::vector<int> Grid(0, 0);
-  xmlNodePtr kids = myNode->children;
-  std::string doProj("yes");
-  std::string doRotate("yes");
-  std::string sClass("C2V");
-  ParameterSet aAttrib;
-  aAttrib.add(doProj, "projection");
-  aAttrib.add(doRotate, "rotate");
-  aAttrib.put(myNode);
-  while (kids != NULL)
-  {
-    std::string cname((const char*)(kids->name));
-    if (cname == "orbitals")
-    {
-      putContent(SPONumbers, kids);
-    }
-    else if (cname == "representations")
-    {
-      putContent(irrepRotations, kids);
-    }
-    else if (cname == "grid")
-      putContent(Grid, kids);
-    kids = kids->next;
-  }
-  ParticleSet::ParticlePos_t R_cart(1);
-  R_cart.setUnit(PosUnit::Cartesian);
-  ParticleSet::ParticlePos_t R_unit(1);
-  R_unit.setUnit(PosUnit::Lattice);
-  //       app_log()<<" My crystals basis set is:"<< std::endl;
-  //       std::vector<std::vector<RealType> > BasisMatrix(3, std::vector<RealType>(3,0.0));
-  //
-  //       for (int i=0;i<3;i++)
-  //       {
-  //         R_unit[0][0]=0;
-  //         R_unit[0][1]=0;
-  //         R_unit[0][2]=0;
-  //         R_unit[0][i]=1;
-  //         W.convert2Cart(R_unit,R_cart);
-  //         app_log()<<"basis_"<<i<<":  ("<<R_cart[0][0]<<", "<<R_cart[0][1]<<", "<<R_cart[0][2]<<")"<< std::endl;
-  //         for (int j=0;j<3;j++) BasisMatrix[j][i]=R_cart[0][j];
-  //       }
-  int Nrotated(SPONumbers.size());
-  app_log() << " Projected orbitals: ";
-  for (int i = 0; i < Nrotated; i++)
-    app_log() << SPONumbers[i] << " ";
-  app_log() << std::endl;
-  //indexing trick
-  //       for(int i=0;i<Nrotated;i++) SPONumbers[i]-=1;
-  SymmetryBuilder SO;
-  SO.put(myNode);
-  SymmetryGroup symOp(*SO.getSymmetryGroup());
-  //       SO.changeBasis(InverseBasisMatrix);
-  OrbitalSetTraits<ValueType>::ValueVector_t values;
-  values.resize(NumOrbitals);
-  RealType overG0(1.0 / Grid[0]);
-  RealType overG1(1.0 / Grid[1]);
-  RealType overG2(1.0 / Grid[2]);
-  std::vector<RealType> NormPhi(Nrotated, 0.0);
-  int totsymops = symOp.getSymmetriesSize();
-  Matrix<RealType> SymmetryOrbitalValues;
-  SymmetryOrbitalValues.resize(Nrotated, totsymops);
-  int ctabledim = symOp.getClassesSize();
-  Matrix<double> projs(Nrotated, ctabledim);
-  Matrix<double> orthoProjs(Nrotated, Nrotated);
-  std::vector<RealType> brokenSymmetryCharacter(totsymops);
-  for (int k = 0; k < Nrotated; k++)
-    for (int l = 0; l < totsymops; l++)
-      brokenSymmetryCharacter[l] += irrepRotations[k] * symOp.getsymmetryCharacter(l, irrepRotations[k] - 1);
-  //       app_log()<<"bsc: ";
-  //       for(int l=0;l<totsymops;l++) app_log()<<brokenSymmetryCharacter[l]<<" ";
-  //       app_log()<< std::endl;
-  //       for(int l=0;l<totsymops;l++) brokenSymmetryCharacter[l]+=0.5;
-  if ((doProj == "yes") || (doRotate == "yes"))
-  {
-    OrbitalSetTraits<ValueType>::ValueVector_t identityValues(values.size());
-    //Loop over grid
-    for (int i = 0; i < Grid[0]; i++)
-      for (int j = 0; j < Grid[1]; j++)
-        for (int k = 0; k < Grid[2]; k++)
-        {
-          //Loop over symmetry classes and small group operators
-          for (int l = 0; l < totsymops; l++)
-          {
-            R_unit[0][0] = overG0 * RealType(i); // R_cart[0][0]=0;
-            R_unit[0][1] = overG1 * RealType(j); // R_cart[0][1]=0;
-            R_unit[0][2] = overG2 * RealType(k); // R_cart[0][2]=0;
-            //                 for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
-            W.convert2Cart(R_unit, R_cart);
-            symOp.TransformSinglePosition(R_cart, l);
-            W.R[0] = R_cart[0];
-            values = 0.0;
-            //evaluate orbitals
-            //                 Phi->evaluate(W,0,values);
-            Psi.evaluateLog(W);
-            // YYYY: is the following two lines still maintained?
-            //for(int n=0; n<NumOrbitals; n++)
-            //  values[n] = Phi->t_logpsi(0,n);
-            if (l == 0)
-            {
-              identityValues = values;
-#if defined(QMC_COMPLEX)
-              for (int n = 0; n < Nrotated; n++)
-                NormPhi[n] += totsymops * real(values[SPONumbers[n]] * values[SPONumbers[n]]);
-#else
-              for (int n = 0; n < Nrotated; n++)
-                NormPhi[n] += totsymops * (values[SPONumbers[n]] * values[SPONumbers[n]]);
-#endif
-            }
-            //now we have phi evaluated at the rotated/inverted/whichever coordinates
-            for (int n = 0; n < Nrotated; n++)
-            {
-              int N = SPONumbers[n];
-#if defined(QMC_COMPLEX)
-              RealType phi2 = real(values[N] * identityValues[N]);
-#else
-              RealType phi2 = (values[N] * identityValues[N]);
-#endif
-              SymmetryOrbitalValues(n, l) += phi2;
-            }
-            for (int n = 0; n < Nrotated; n++)
-              for (int p = 0; p < Nrotated; p++)
-              {
-                int N = SPONumbers[n];
-                int P = SPONumbers[p];
-#if defined(QMC_COMPLEX)
-                orthoProjs(n, p) += 0.5 * real(identityValues[N] * values[P] + identityValues[P] * values[N]) *
-                    brokenSymmetryCharacter[l];
-#else
-                orthoProjs(n, p) +=
-                    0.5 * (identityValues[N] * values[P] + identityValues[P] * values[N]) * brokenSymmetryCharacter[l];
-#endif
-              }
-          }
-        }
-    for (int n = 0; n < Nrotated; n++)
-      for (int l = 0; l < totsymops; l++)
-        SymmetryOrbitalValues(n, l) /= NormPhi[n];
-    for (int n = 0; n < Nrotated; n++)
-      for (int l = 0; l < Nrotated; l++)
-        orthoProjs(n, l) /= std::sqrt(NormPhi[n] * NormPhi[l]);
-    //       if (true){
-    //         app_log()<< std::endl;
-    //         for(int n=0;n<Nrotated;n++) {
-    //           for(int l=0;l<totsymops;l++) app_log()<<SymmetryOrbitalValues(n,l)<<" ";
-    //           app_log()<< std::endl;
-    //         }
-    //       app_log()<< std::endl;
-    //       }
-    for (int n = 0; n < Nrotated; n++)
-    {
-      if (false)
-        app_log() << " orbital #" << SPONumbers[n] << std::endl;
-      for (int i = 0; i < ctabledim; i++)
-      {
-        double proj(0);
-        for (int j = 0; j < totsymops; j++)
-          proj += symOp.getsymmetryCharacter(j, i) * SymmetryOrbitalValues(n, j);
-        if (false)
-          app_log() << "  Rep " << i << ": " << proj;
-        projs(n, i) = proj < 1e-4 ? 0 : proj;
-      }
-      if (false)
-        app_log() << std::endl;
-    }
-    if (true)
-    {
-      app_log() << "Printing Projection Matrix" << std::endl;
-      for (int n = 0; n < Nrotated; n++)
-      {
-        for (int l = 0; l < ctabledim; l++)
-          app_log() << projs(n, l) << " ";
-        app_log() << std::endl;
-      }
-      app_log() << std::endl;
-    }
-    if (true)
-    {
-      app_log() << "Printing Coefficient Matrix" << std::endl;
-      for (int n = 0; n < Nrotated; n++)
-      {
-        for (int l = 0; l < ctabledim; l++)
-          app_log() << std::sqrt(projs(n, l)) << " ";
-        app_log() << std::endl;
-      }
-      app_log() << std::endl;
-    }
-    if (doRotate == "yes")
-    {
-      //         app_log()<<"Printing Broken Symmetry Projection Matrix"<< std::endl;
-      //           for(int n=0;n<Nrotated;n++) {
-      //             for(int l=0;l<Nrotated;l++) app_log()<<orthoProjs(n,l)<<" ";
-      //             app_log()<< std::endl;
-      //           }
-      char JOBU('A');
-      char JOBVT('A');
-      int vdim = Nrotated;
-      Vector<double> Sigma(vdim);
-      Matrix<double> U(vdim, vdim);
-      Matrix<double> VT(vdim, vdim);
-      int lwork = 8 * Nrotated;
-      std::vector<double> work(lwork, 0);
-      int info(0);
-      LAPACK::gesvd(JOBU, JOBVT, vdim, vdim, orthoProjs.data(), vdim, Sigma.data(), U.data(), vdim, VT.data(), vdim,
-                    &(work[0]), lwork, info);
-      app_log() << "Printing Rotation Matrix" << std::endl;
-      for (int n = 0; n < vdim; n++)
-      {
-        for (int l = 0; l < vdim; l++)
-          app_log() << VT(l, n) << " ";
-        app_log() << std::endl;
-      }
-      app_log() << std::endl << "Printing Eigenvalues" << std::endl;
-      for (int n = 0; n < vdim; n++)
-        app_log() << Sigma[n] << " ";
-      app_log() << std::endl;
-    }
-  }
-}
 
 void WaveFunctionTester::runNodePlot()
 {
@@ -2279,9 +2045,9 @@ void WaveFunctionTester::runNodePlot()
       putContent(Grid, kids);
     kids = kids->next;
   }
-  ParticleSet::ParticlePos_t R_cart(1);
+  ParticleSet::ParticlePos R_cart(1);
   R_cart.setUnit(PosUnit::Cartesian);
-  ParticleSet::ParticlePos_t R_unit(1);
+  ParticleSet::ParticlePos R_unit(1);
   R_unit.setUnit(PosUnit::Lattice);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker, true);

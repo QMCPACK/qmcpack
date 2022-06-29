@@ -23,7 +23,7 @@
 template<class T>
 struct GaussianTimesRN : public OptimizableFunctorBase
 {
-  typedef T value_type;
+  using value_type = T;
   real_type Y, dY, d2Y;
 
   struct BasicGaussian
@@ -88,7 +88,7 @@ struct GaussianTimesRN : public OptimizableFunctorBase
       T v = exp(MinusSigma * rr);
       if (Power == 0)
       {
-        du  += CoeffP * r * v;
+        du += CoeffP * r * v;
         d2u += (CoeffP + CoeffPP * rr) * v;
         return Coeff * v;
       }
@@ -235,8 +235,9 @@ void GaussianTimesRN<T>::reset()
 template<class T>
 bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
 {
-  const XMLAttrString t(cur, "basePower");
-  if (!t.empty()) basePower = std::stoi(t);
+  const std::string t(getXMLAttributeValue(cur, "basePower"));
+  if (!t.empty())
+    basePower = std::stoi(t);
   basePower += baseOff;
   cur = cur->children;
   while (cur != NULL)

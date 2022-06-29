@@ -406,7 +406,8 @@ inline void rotateHijkl(std::string& type,
       disp[i] = cnt;
       cnt += cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(), nkbounds.size(), MPI_INT, Qksizes.data(), cnts.data(), disp.data(), MPI_INT, comm.get());
+    MPI_Allgatherv(nkbounds.data(), nkbounds.size(), MPI_INT, Qksizes.data(), cnts.data(), disp.data(), MPI_INT,
+                   comm.get());
   }
 
   MPI_Bcast(Qknum.data(), comm.size(), MPI_INT, 0, TG.Node().get());
@@ -476,8 +477,10 @@ inline void rotateHijkl(std::string& type,
       assert(nkcum + K0_ == M_split[nn + nn0]);
       if (M_split[nn + nn0 + 1] == M_split[nn + nn0])
         continue;
-      int nblk       = Qknum[nn];
+      int nblk = Qknum[nn];
+#ifndef NDEBUG
       long ntermscum = 0;
+#endif
       for (int bi = 0; bi < nblk; bi++, nb++)
       {
         int nterms = Qksizes[2 * nb];     // number of terms in block
@@ -522,8 +525,10 @@ inline void rotateHijkl(std::string& type,
             comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()), nterms, nn);
           }
           TG.node_barrier();
+#ifndef NDEBUG
           // for safety, keep track of sum
           ntermscum += static_cast<long>(nterms);
+#endif
         }
         else
         {
@@ -597,8 +602,10 @@ inline void rotateHijkl(std::string& type,
     assert(nkcum + K0_ == M_split[nn + nn0]);
     if (M_split[nn + nn0 + 1] == M_split[nn + nn0])
       continue;
-    int nblk       = Qknum[nn];
+    int nblk = Qknum[nn];
+#ifndef NDEBUG
     long ntermscum = 0;
+#endif
     for (int bi = 0; bi < nblk; bi++, nb++)
     {
       int nterms = Qksizes[2 * nb];     // number of terms in block
@@ -643,8 +650,10 @@ inline void rotateHijkl(std::string& type,
           comm.broadcast_n(to_address(SptQk.non_zero_indices2_data()), nterms, nn);
         }
         TG.node_barrier();
+#ifndef NDEBUG
         // for safety, keep track of sum
         ntermscum += static_cast<long>(nterms);
+#endif
       }
       else
       {

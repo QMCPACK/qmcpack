@@ -53,7 +53,7 @@ TimerNameList_t<WC_Timers> WalkerControlTimerNames = {{WC_branch, "WalkerControl
                                                       {WC_send, "WalkerControl::send"},
                                                       {WC_recv, "WalkerControl::recv"}};
 
-WalkerControl::WalkerControl(Communicate* c, RandomGenerator_t& rng, bool use_fixed_pop)
+WalkerControl::WalkerControl(Communicate* c, RandomGenerator& rng, bool use_fixed_pop)
     : MPIObjectBase(c),
       rng_(rng),
       use_fixed_pop_(use_fixed_pop),

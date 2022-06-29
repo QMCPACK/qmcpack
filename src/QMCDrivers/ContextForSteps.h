@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2019 developers.
+// Copyright (c) 2019 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -33,42 +33,12 @@ namespace qmcplusplus
 class ContextForSteps
 {
 public:
-  using ParticlePositions = PtclOnLatticeTraits::ParticlePos_t;
-  using PosType           = QMCTraits::PosType;
-  using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType          = QMCTraits::RealType;
+  ContextForSteps(RandomGenerator& random_gen);
 
-  ContextForSteps(int num_walkers,
-                  int num_particles,
-                  std::vector<std::pair<int, int>> particle_group_indexes,
-                  RandomGenerator_t& random_gen);
-
-  int get_num_groups() const { return particle_group_indexes_.size(); }
-  RandomGenerator_t& get_random_gen() { return random_gen_; }
-
-  void nextDeltaRs(size_t num_rs)
-  {
-    // hate to repeat this pattern, this should never resize.
-    walker_deltas_.resize(num_rs);
-    makeGaussRandomWithEngine(walker_deltas_, random_gen_);
-  }
-
-  std::vector<PosType>& get_walker_deltas() { return walker_deltas_; }
-  auto deltaRsBegin() { return walker_deltas_.begin(); };
-
-  int getPtclGroupStart(int group) const { return particle_group_indexes_[group].first; }
-  int getPtclGroupEnd(int group) const { return particle_group_indexes_[group].second; }
+  RandomGenerator& get_random_gen() { return random_gen_; }
 
 protected:
-  std::vector<PosType> walker_deltas_;
-
-  /** indexes of start and stop of each particle group;
-   *
-   *  Seems like these should be iterators but haven't thought through the implications.
-   */
-  std::vector<std::pair<int, int>> particle_group_indexes_;
-
-  RandomGenerator_t& random_gen_;
+  RandomGenerator& random_gen_;
 };
 
 } // namespace qmcplusplus

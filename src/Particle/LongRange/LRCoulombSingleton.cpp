@@ -18,12 +18,11 @@
  * @brief Define a LRHandler with two template parameters
  */
 #include "LRCoulombSingleton.h"
-#if OHMMS_DIM == 3
-#include "LongRange/EwaldHandler.h"
+#include "LongRange/LRHandlerTemp.h"
+#include "LongRange/LRHandlerSRCoulomb.h"
+#include "LongRange/EwaldHandlerQuasi2D.h"
 #include "LongRange/EwaldHandler3D.h"
-#elif OHMMS_DIM == 2
-#include "LongRange/TwoDEwaldHandler.h"
-#endif
+#include "LongRange/EwaldHandler2D.h"
 #include <numeric>
 namespace qmcplusplus
 {
@@ -39,14 +38,13 @@ LRCoulombSingleton::lr_type LRCoulombSingleton::this_lr_type = ESLER;
  * - Fk(T k, T rc)
  * - Xk(T k, T rc)
  */
-#if OHMMS_DIM == 3
 template<class T = double>
 struct CoulombFunctor
 {
   T NormFactor;
   inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.LRBox.Volume; }
+  void reset(ParticleSet& ref) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
+  void reset(ParticleSet& ref, T rs) { NormFactor = 4.0 * M_PI / ref.getLRBox().Volume; }
   inline T operator()(T r, T rinv) const { return rinv; }
   inline T df(T r) const { return -1.0 / (r * r); }
   inline T Vk(T k) const { return NormFactor / (k * k); }
@@ -58,66 +56,40 @@ struct CoulombFunctor
 
   inline T integrate_r2(T r) const { return 0.5 * r * r; }
 };
-#elif OHMMS_DIM == 2
-template<class T = double>
-struct CoulombFunctor
-{
-  T NormFactor;
-  inline CoulombFunctor() {}
-  void reset(ParticleSet& ref) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  void reset(ParticleSet& ref, T rs) { NormFactor = 2.0 * M_PI / ref.LRBox.Volume; }
-  inline T operator()(T r, T rinv) const { return rinv; }
-  inline T df(T r) const { return -1.0 / (r * r); }
-  inline T Fk(T k, T rc) const { return NormFactor / k * std::cos(k * rc); }
-  inline T Xk(T k, T rc) const { return -NormFactor / k * std::cos(k * rc); }
-
-
-  inline T integrate_r2(T r) const { return 0.5 * r * r; }
-};
-#endif
-
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandler(ParticleSet& ref)
 {
   if (CoulombHandler == 0)
   {
-#if OHMMS_DIM == 3
-    if (ref.SK->SuperCellEnum == SUPERCELL_SLAB)
+    if (this_lr_type == ESLER)
+    {
+      app_log() << "\n  Creating CoulombHandler with the Esler Optimized Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>>(ref);
+    }
+    else if (this_lr_type == EWALD)
+    {
+      app_log() << "\n  Creating CoulombHandler with the 3D Ewald Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<EwaldHandler3D>(ref);
+    }
+    else if (this_lr_type == NATOLI)
+    {
+      app_log() << "\n  Creating CoulombHandler with the Natoli Optimized Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
+    }
+    else if (this_lr_type == STRICT2D)
+    {
+      app_log() << "\n  Creating CoulombHandler with the 2D Ewald Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<EwaldHandler2D>(ref);
+    }
+    else if (this_lr_type == QUASI2D)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-      CoulombHandler = std::make_unique<EwaldHandler>(ref);
+      CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
     }
-    else //if(ref.LRBox.SuperCellEnum == SUPERCELL_BULK)
+    else
     {
-      if (this_lr_type == ESLER)
-      {
-        app_log() << "\n  Creating CoulombHandler with the Esler Optimized Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>>(ref);
-      }
-      else if (this_lr_type == EWALD)
-      {
-        app_log() << "\n  Creating CoulombHandler with the 3D Ewald Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<EwaldHandler3D>(ref);
-      }
-      else if (this_lr_type == NATOLI)
-      {
-        app_log() << "\n  Creating CoulombHandler with the Natoli Optimized Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
-      }
-      else
-      {
-        APP_ABORT("\n  Long range breakup method not recognized.\n");
-      }
+      APP_ABORT("\n  Long range breakup method not recognized.\n");
     }
-//        else if(ref.LRBox.SuperCellEnum == SUPERCELL_SLAB)
-//        {
-//          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-//          CoulombHandler= new EwaldHandler(ref);
-//        }
-#elif OHMMS_DIM == 2
-    app_log() << "\n   Creating CoulombHandler using 2D Ewald method. " << std::endl;
-    CoulombHandler = std::make_unique<TwoDEwaldHandler>(ref);
-#endif
     CoulombHandler->initBreakup(ref);
     return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }
@@ -130,9 +102,6 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 
 std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
 {
-#if OHMMS_DIM != 3
-  APP_ABORT("energy derivative implemented for 3D only");
-#endif
   //APP_ABORT("SR Coulomb Basis Handler has cloning issues.  Stress also has some kinks");
   if (CoulombDerivHandler == 0)
   {
@@ -165,7 +134,9 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getDerivH
 }
 
 template<typename T>
-std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, const LinearGrid<T>* agrid)
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(const LRHandlerBase* aLR,
+                                                              T rcut,
+                                                              const LinearGrid<T>* agrid)
 {
   using func_type = OneDimCubicSpline<T>;
   std::unique_ptr<LinearGrid<T>> agrid_local;
@@ -194,7 +165,7 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVs_temp(LRHandlerBase* aLR
 }
 
 template<typename T>
-std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR,
+std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(const LRHandlerBase* aLR,
                                                                    T rcut,
                                                                    const LinearGrid<T>* agrid)
 {
@@ -231,16 +202,17 @@ std::unique_ptr<OneDimCubicSpline<T>> createSpline4RbyVsDeriv_temp(LRHandlerBase
 }
 
 
-std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR,
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVs(const LRHandlerType* aLR,
                                                                                            mRealType rcut,
                                                                                            const GridType* agrid)
 {
   return createSpline4RbyVs_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }
 
-std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVsDeriv(LRHandlerType* aLR,
-                                                                                                mRealType rcut,
-                                                                                                const GridType* agrid)
+std::unique_ptr<LRCoulombSingleton::RadFunctorType> LRCoulombSingleton::createSpline4RbyVsDeriv(
+    const LRHandlerType* aLR,
+    mRealType rcut,
+    const GridType* agrid)
 {
   return createSpline4RbyVsDeriv_temp(aLR, static_cast<pRealType>(rcut), agrid);
 }

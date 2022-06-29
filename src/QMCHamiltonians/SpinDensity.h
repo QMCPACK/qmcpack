@@ -22,9 +22,9 @@ namespace qmcplusplus
 class SpinDensity : public OperatorBase
 {
 public:
-  typedef ParticleSet::ParticleLayout_t Lattice_t;
-  typedef std::vector<RealType> dens_t;
-  typedef std::vector<PosType> pts_t;
+  using Lattice_t = ParticleSet::ParticleLayout;
+  using dens_t    = std::vector<RealType>;
+  using pts_t     = std::vector<PosType>;
 
   ParticleSet* Ptmp;
 

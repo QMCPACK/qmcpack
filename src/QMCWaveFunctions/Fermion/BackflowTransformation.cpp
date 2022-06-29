@@ -388,8 +388,7 @@ void BackflowTransformation::evaluateDerivatives(const ParticleSet& P)
   Bmat_full = 0.0;
   Cmat      = 0.0;
   Ymat      = 0.0;
-  for (int i = 0; i < Xmat.size(); i++)
-    Xmat(i) = 0;
+  std::fill_n(Xmat.data(), Xmat.size(), 0);
   for (int i = 0; i < NumTargets; i++)
   {
     QP.R[i] = P.R[i];
@@ -414,9 +413,7 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
   Bmat_full = 0.0;
   Cmat      = 0.0;
   Ymat      = 0.0;
-  //       Xmat=DummyHess;
-  for (int i = 0; i < Xmat.size(); i++)
-    Xmat(i) = 0;
+  std::fill_n(Xmat.data(), Xmat.size(), 0);
   for (int i = 0; i < NumTargets; i++)
   {
     QP.R[i] = P.R[i];
@@ -424,13 +421,13 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
   }
   for (int i = 0; i < bfFuns.size(); i++)
     bfFuns[i]->evaluateWithDerivatives(P, QP, Bmat_full, Amat, Cmat, Ymat, Xmat);
-  ParticleSet::ParticlePos_t qp_0;
-  ParticleSet::ParticlePos_t qp_1;
-  ParticleSet::ParticlePos_t qp_2;
-  GradMatrix_t Bmat_full_1;
-  HessMatrix_t Amat_1;
-  GradMatrix_t Bmat_full_2;
-  HessMatrix_t Amat_2;
+  ParticleSet::ParticlePos qp_0;
+  ParticleSet::ParticlePos qp_1;
+  ParticleSet::ParticlePos qp_2;
+  GradMatrix Bmat_full_1;
+  HessMatrix Amat_1;
+  GradMatrix Bmat_full_2;
+  HessMatrix Amat_2;
   RealType dh = 0.00001;
   qp_0.resize(NumTargets);
   qp_1.resize(NumTargets);
@@ -551,13 +548,13 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
 
 void BackflowTransformation::testPbyP(ParticleSet& P)
 {
-  GradMatrix_t Bmat_full_0;
-  HessMatrix_t Amat_0;
-  GradMatrix_t Bmat_full_1;
-  HessMatrix_t Amat_1;
-  ParticleSet::ParticlePos_t qp_0;
-  ParticleSet::ParticlePos_t qp_1;
-  ParticleSet::ParticlePos_t qp_2, qp_3;
+  GradMatrix Bmat_full_0;
+  HessMatrix Amat_0;
+  GradMatrix Bmat_full_1;
+  HessMatrix Amat_1;
+  ParticleSet::ParticlePos qp_0;
+  ParticleSet::ParticlePos qp_1;
+  ParticleSet::ParticlePos qp_2, qp_3;
   qp_0.resize(NumTargets);
   qp_1.resize(NumTargets);
   qp_2.resize(NumTargets);

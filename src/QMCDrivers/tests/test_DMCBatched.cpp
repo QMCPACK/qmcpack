@@ -16,6 +16,7 @@
 #include "QMCDrivers/DMC/DMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
 #include "QMCDrivers/tests/SetupDMCTest.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
 #include "Concurrency/UtilityFunctions.hpp"
 #include "Platforms/Host/OutputManager.h"
@@ -45,6 +46,7 @@ private:
 /** Since we check the DMC only feature of reserve walkers perhaps this should be
  *  a DMC integration test.
  */
+#ifdef _OPENMP
 TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
 {
   using namespace testing;
@@ -61,22 +63,16 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   qmcdriver_input.readXML(node);
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(node);
-  MinimalParticlePool mpp;
-  ParticleSetPool particle_pool = mpp(comm);
-  MinimalWaveFunctionPool wfp;
-  WaveFunctionPool wavefunction_pool = wfp(comm, particle_pool);
-  wavefunction_pool.setPrimary(wavefunction_pool.getWaveFunction("psi0"));
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
 
-  MinimalHamiltonianPool mhp;
-  HamiltonianPool hamiltonian_pool = mhp(comm, particle_pool, wavefunction_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   SampleStack samples;
   WalkerConfigurations walker_confs;
   ProjectData test_project;
-  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::move(dmcdriver_input),
-                       MCPopulation(1, comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
-                                    wavefunction_pool.getPrimary(),
-                                    wavefunction_pool.getWaveFunctionFactory("wavefunction"),
-                                    hamiltonian_pool.getPrimary()),
+  DMCBatched dmcdriver(test_project, std::move(qmcdriver_input), std::nullopt, std::move(dmcdriver_input),
+                       MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool.getParticleSet("e"),
+                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
                        comm);
 
   // setStatus must be called before process
@@ -95,6 +91,6 @@ TEST_CASE("DMCDriver+QMCDriverNew integration", "[drivers]")
   CHECK(reserved_walkers == 10);
   // What else should we expect after process
 }
-
+#endif
 
 } // namespace qmcplusplus

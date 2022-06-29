@@ -9,7 +9,6 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
 set(SRC_DIR io_hdf5)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
@@ -18,12 +17,14 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(UTEST_SRC test_hdf_archive.cpp test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
-if(BUILD_AFQMC)
-  set(UTEST_SRC ${UTEST_SRC} test_hdf_multiarray.cpp)
-endif(BUILD_AFQMC)
 
 add_executable(${UTEST_EXE} ${UTEST_SRC})
 target_link_libraries(${UTEST_EXE} catch_main qmcio)
+
+if(BUILD_AFQMC)
+  target_sources(${UTEST_EXE} PUBLIC test_hdf_multiarray.cpp)
+  target_link_libraries(${UTEST_EXE} qmc_external_multi)
+endif(BUILD_AFQMC)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
 set_tests_properties(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})

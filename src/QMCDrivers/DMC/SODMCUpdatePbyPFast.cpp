@@ -19,7 +19,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
-typedef int TraceManager;
+using TraceManager = int;
 #endif
 //#define TEST_INNERBRANCH
 
@@ -39,7 +39,7 @@ TimerNameList_t<SODMCTimers> SODMCTimerNames = {{SODMC_buffer, "SODMCUpdatePbyP:
 SODMCUpdatePbyPWithRejectionFast::SODMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
                                                                    TrialWaveFunction& psi,
                                                                    QMCHamiltonian& h,
-                                                                   RandomGenerator_t& rg)
+                                                                   RandomGenerator& rg)
     : QMCUpdateBase(w, psi, h, rg)
 {
   setup_timers(myTimers, SODMCTimerNames, timer_level_medium);
@@ -110,8 +110,8 @@ void SODMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool 
           //Use the force of the particle iat
           DriftModifier->getDrift(tauovermass, grad_iat, dr);
           DriftModifier->getDrift(tauovermass / spinMass, spingrad_iat, ds);
-          dr                     = W.R[iat] - W.activePos - dr;
-          ds                     = W.spins[iat] - W.activeSpinVal - ds;
+          dr                     = W.R[iat] - W.getActivePos() - dr;
+          ds                     = W.spins[iat] - W.getActiveSpinVal() - ds;
           FullPrecRealType logGb = -oneover2tau * dot(dr, dr);
           logGb += -spinMass * oneover2tau * ds * ds;
           RealType prob    = std::norm(ratio) * std::exp(logGb - logGf);

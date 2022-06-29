@@ -18,19 +18,20 @@
 
 #include <vector>
 #include "Configuration.h"
-#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
-#include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration.h"
-#include "QMCWaveFunctions/Fermion/ci_configuration2.h"
-#include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
+#include "WaveFunctionComponentBuilder.h"
+#include <hdf/hdf_archive.h>
 
 namespace qmcplusplus
 {
 class TrialWaveFunction;
 class BackflowTransformation;
+class DiracDeterminantBase;
+class MultiSlaterDetTableMethod;
+struct CSFData;
+class SPOSet;
+class SPOSetBuilder;
+class SPOSetBuilderFactory;
+struct ci_configuration;
 
 /** derived class from WaveFunctionComponentBuilder
  *
@@ -39,7 +40,6 @@ class BackflowTransformation;
 class SlaterDetBuilder : public WaveFunctionComponentBuilder
 {
 public:
-  typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
@@ -49,7 +49,7 @@ public:
                    SPOSetBuilderFactory& factory,
                    ParticleSet& els,
                    TrialWaveFunction& psi,
-                   PtclPoolType& psets);
+                   const PSetMap& psets);
 
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
@@ -62,31 +62,26 @@ private:
   SPOSetBuilderFactory& sposet_builder_factory_;
   ///reference to TrialWaveFunction, should go away as the CUDA code.
   TrialWaveFunction& targetPsi;
-  ///reference to a PtclPoolType
-  PtclPoolType& ptclPool;
+  ///reference to a PSetMap
+  const PSetMap& ptclPool;
 
   /** process a determinant element
    * @param cur xml node
-   * @param firstIndex index of the determinant
-   * @return firstIndex+number of orbitals
+   * @param spin_group the spin group of the created determinant
+   * @return legacy_input_sposet_builder an sposet builder to handle legacy input
+   * @return BFTrans backflow transformations
    */
-  std::unique_ptr<DiracDeterminantBase> putDeterminant(xmlNodePtr cur,
-                                                       int spin_group,
-                                                       const std::unique_ptr<BackflowTransformation>& BFTrans);
+  std::unique_ptr<DiracDeterminantBase> putDeterminant(
+      xmlNodePtr cur,
+      int spin_group,
+      const std::unique_ptr<SPOSetBuilder>& legacy_input_sposet_builder,
+      const std::unique_ptr<BackflowTransformation>& BFTrans);
 
-  bool createMSD(MultiSlaterDeterminant& multiSD, xmlNodePtr cur, BackflowTransformation* const BFTrans) const;
-
-  bool createMSDFast(std::vector<std::unique_ptr<MultiDiracDeterminant>>& Dets,
-                     std::vector<std::vector<size_t>>& C2node,
-                     std::vector<ValueType>& C,
-                     std::vector<ValueType>& CSFcoeff,
-                     std::vector<size_t>& DetsPerCSF,
-                     std::vector<RealType>& CSFexpansion,
-                     bool& usingCSF,
-                     opt_variables_type& myVars,
-                     bool& Optimizable,
-                     bool& CI_Optimizable,
-                     xmlNodePtr cur) const;
+  std::unique_ptr<MultiSlaterDetTableMethod> createMSDFast(xmlNodePtr cur,
+                                                           ParticleSet& target_ptcl,
+                                                           std::vector<std::unique_ptr<SPOSet>>&& spo_clones,
+                                                           const bool spinor,
+                                                           const bool use_precompute) const;
 
 
   bool readDetList(xmlNodePtr cur,
@@ -96,10 +91,7 @@ private:
                    std::vector<ValueType>& coeff,
                    bool& optimizeCI,
                    std::vector<int>& nptcls,
-                   std::vector<ValueType>& CSFcoeff,
-                   std::vector<size_t>& DetsPerCSF,
-                   std::vector<RealType>& CSFexpansion,
-                   bool& usingCSF) const;
+                   std::unique_ptr<CSFData>& csf_data_ptr) const;
 
   bool readDetListH5(xmlNodePtr cur,
                      std::vector<std::vector<ci_configuration>>& uniqueConfgs,
@@ -124,7 +116,7 @@ private:
       extVar = "Coeff_" + std::to_string(ext_level);
 
     if (!hin.readEntry(ci_coeff, extVar))
-      APP_ABORT("Could not read CI coefficients from HDF5");
+      throw std::runtime_error("Could not read CI coefficients from HDF5");
   }
 
   template<typename VT,
@@ -151,7 +143,7 @@ private:
 
 
     if (!hin.readEntry(CIcoeff_real, extVar))
-      APP_ABORT("Could not read CI coefficients from HDF5")
+      throw std::runtime_error("Could not read CI coefficients from HDF5");
 
     extVar = extVar + "_imag";
     if (!hin.readEntry(CIcoeff_imag, extVar))

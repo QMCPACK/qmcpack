@@ -28,6 +28,7 @@
 #include "CPU/math.hpp"
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
+#include "type_traits/template_types.hpp"
 
 namespace qmcplusplus
 {
@@ -184,8 +185,8 @@ inline void InvertWithLog(T* restrict x, int n, int m, T* restrict work, int* re
 template<class MatrixA>
 inline typename MatrixA::value_type invert_matrix(MatrixA& M, bool getdet = true)
 {
-  typedef typename MatrixA::value_type value_type;
-  const int n = M.rows();
+  using value_type = typename MatrixA::value_type;
+  const int n      = M.rows();
   std::vector<int> pivot(n);
   std::vector<value_type> work(n);
   LUFactorization(n, n, M.data(), n, pivot.data());
@@ -240,13 +241,13 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<class MatA, class VecT>
-inline void InverseUpdateByRow(MatA& Minv,
-                               VecT& newrow,
-                               VecT& rvec,
-                               VecT& rvecinv,
+template<typename T, typename ALLOC>
+inline void InverseUpdateByRow(Matrix<T, ALLOC>& Minv,
+                               Vector<T, ALLOC>& newrow,
+                               Vector<T, ALLOC>& rvec,
+                               Vector<T, ALLOC>& rvecinv,
                                int rowchanged,
-                               typename MatA::value_type c_ratio)
+                               T c_ratio)
 {
   //using gemv+ger
   det_row_update(Minv.data(), newrow.data(), Minv.cols(), rowchanged, c_ratio, rvec.data(), rvecinv.data());
@@ -262,13 +263,13 @@ inline void InverseUpdateByRow(MatA& Minv,
   //for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 }
 
-template<typename MatA, typename VecT>
-inline void InverseUpdateByColumn(MatA& Minv,
-                                  VecT& newcol,
-                                  VecT& rvec,
-                                  VecT& rvecinv,
+template<typename T, typename ALLOC>
+inline void InverseUpdateByColumn(Matrix<T, ALLOC>& Minv,
+                                  Vector<T, ALLOC>& newcol,
+                                  Vector<T, ALLOC>& rvec,
+                                  Vector<T, ALLOC>& rvecinv,
                                   int colchanged,
-                                  typename MatA::value_type c_ratio)
+                                  T c_ratio)
 {
   det_col_update(Minv.data(), newcol.data(), Minv.rows(), colchanged, c_ratio, rvec.data(), rvecinv.data());
   //int nrows=Minv.rows();
@@ -282,6 +283,5 @@ inline void InverseUpdateByColumn(MatA& Minv,
   //}
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
 }
-
 } // namespace qmcplusplus
 #endif

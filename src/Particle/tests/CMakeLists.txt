@@ -9,17 +9,23 @@
 #// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 #//////////////////////////////////////////////////////////////////////////////////////
 
-
-
 set(SRC_DIR particle)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_particle.cpp test_distance_table.cpp test_walker.cpp test_particle_pool.cpp
-                            test_sample_stack.cpp test_DTModes.cpp test_SoaDistanceTableAA.cpp)
+add_executable(
+  ${UTEST_EXE}
+  test_particle.cpp
+  test_distance_table.cpp
+  test_walker.cpp
+  test_particle_pool.cpp
+  test_sample_stack.cpp
+  test_DTModes.cpp
+  test_SoaDistanceTableAA.cpp
+  test_MCCoords.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(${UTEST_EXE} qmcutil)
+  target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)
 endif()
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)

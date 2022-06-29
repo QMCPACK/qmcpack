@@ -37,19 +37,19 @@ struct VPMultiWalkerMem : public Resource
   Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : refPS(p)
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.getSimulationCell()), refPS(p)
 {
   setName("virtual");
 
   //initialize local data structure
-  Lattice  = p.Lattice;
   TotalNum = nptcl;
   R.resize(nptcl);
+  spins.resize(nptcl);
   coordinates_->resize(nptcl);
 
   //create distancetables
   for (int i = 0; i < refPS.getNumDistTables(); ++i)
-    if (refPS.getDistTable(i).getModes() & DTModes::NEED_TEMP_DATA_ON_HOST)
+    if (refPS.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
       addTable(refPS.getDistTable(i).get_origin());
     else
       addTable(refPS.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);

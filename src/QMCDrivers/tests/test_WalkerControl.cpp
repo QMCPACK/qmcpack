@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,8 +15,10 @@
 
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
+#include "ParticleSetPool.h"
+#include "WaveFunctionPool.h"
+#include "HamiltonianPool.h"
 #include "QMCDrivers/MCPopulation.h"
-#include "QMCDrivers/QMCDriverInput.h"
 #include "Utilities/MPIExceptionWrapper.hpp"
 #include "Platforms/Host/OutputManager.h"
 
@@ -33,11 +35,10 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   int num_ranks = dpools_.comm->size();
   if (num_ranks != 3)
     throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
-  pop_ = std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
-                                        dpools_.particle_pool->getParticleSet("e"),
-                                        dpools_.wavefunction_pool->getPrimary(),
-                                        dpools_.wavefunction_pool->getWaveFunctionFactory("wavefunction"),
-                                        dpools_.hamiltonian_pool->getPrimary());
+  pop_ =
+      std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
+                                     dpools_.particle_pool->getParticleSet("e"),
+                                     dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
 
   pop_->createWalkers(1);
 }

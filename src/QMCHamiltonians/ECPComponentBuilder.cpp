@@ -27,10 +27,11 @@
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
+      Llocal(llocal),
       Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
@@ -60,7 +61,7 @@ ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* 
 
 bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
 {
-  const XMLAttrString cutoff_str(cur, "cutoff");
+  const std::string cutoff_str(getXMLAttributeValue(cur, "cutoff"));
   if (!cutoff_str.empty())
     RcutMax = std::stod(cutoff_str);
 
@@ -172,8 +173,8 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if (cname == "header")
     {
-      Zeff         = std::stoi(XMLAttrString{cur, "zval"});
-      AtomicNumber = std::stoi(XMLAttrString{cur, "atomic-number"});
+      Zeff         = std::stoi(getXMLAttributeValue(cur, "zval"));
+      AtomicNumber = std::stoi(getXMLAttributeValue(cur, "atomic-number"));
     }
     else if (cname == "grid")
     {

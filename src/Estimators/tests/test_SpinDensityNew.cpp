@@ -50,6 +50,7 @@ public:
 
 void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
+  const SimulationCell simulation_cell;
   for (int iops = 0; iops < ncrowds; ++iops)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -64,9 +65,9 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
 
     for (int iw = 0; iw < nwalkers; ++iw)
     {
-      psets.emplace_back();
+      psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
       pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
     }
@@ -77,7 +78,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -85,6 +86,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
 
 void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVector<OperatorEstBase>& crowd_sdns)
 {
+  const SimulationCell simulation_cell;
   for (auto& uptr_crowd_sdn : crowd_sdns)
   {
     std::vector<OperatorEstBase::MCPWalker> walkers;
@@ -101,9 +103,9 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     auto it_rng_reals = rng_reals.begin();
     for (int iw = 0; iw < nwalkers; ++iw)
     {
-      psets.emplace_back();
+      psets.emplace_back(simulation_cell);
       ParticleSet& pset = psets.back();
-      pset.create(2);
+      pset.create({2});
       pset.R[0] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
       pset.R[1] = ParticleSet::PosType(*it_rng_reals++, *it_rng_reals++, *it_rng_reals++);
     }
@@ -114,7 +116,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
     auto ref_psets   = makeRefVector<ParticleSet>(psets);
     auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-    RandomGenerator_t rng;
+    RandomGenerator rng;
 
     crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
   }
@@ -126,8 +128,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_grid]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -135,7 +136,6 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
   SpinDensityInput sdi_copy         = sdi;
   SpinDensityNew(std::move(sdi), species_set);
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  CHECK_THROWS(SpinDensityNew(std::move(sdi_copy), lattice, species_set));
 }
 
 TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[estimators]")
@@ -144,8 +144,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -166,8 +165,7 @@ TEST_CASE("SpinDensityNew::spawnCrowdClone()", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -189,8 +187,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies = species_set.addSpecies("u");
   ispecies     = species_set.addSpecies("d");
@@ -207,11 +204,12 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 
   std::vector<ParticleSet> psets;
 
+  const SimulationCell simulation_cell;
   for (int iw = 0; iw < nwalkers; ++iw)
   {
-    psets.emplace_back();
+    psets.emplace_back(simulation_cell);
     ParticleSet& pset = psets.back();
-    pset.create(2);
+    pset.create({2});
     pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
     pset.R[1] = ParticleSet::PosType(1.68658058, 1.68658058, 1.68658058);
   }
@@ -222,7 +220,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   auto ref_psets   = makeRefVector<ParticleSet>(psets);
   auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
 
-  RandomGenerator_t rng;
+  RandomGenerator rng;
 
   sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
 
@@ -243,8 +241,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
     bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
     SpeciesSet species_set;
     int ispecies = species_set.addSpecies("u");
     ispecies     = species_set.addSpecies("d");
@@ -281,8 +278,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
     bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
     SpeciesSet species_set;
     int ispecies = species_set.addSpecies("u");
     ispecies     = species_set.addSpecies("d");
@@ -320,8 +316,7 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies = species_set.addSpecies("u");
   ispecies     = species_set.addSpecies("d");

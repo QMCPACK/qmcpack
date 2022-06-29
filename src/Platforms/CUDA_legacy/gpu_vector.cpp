@@ -27,29 +27,19 @@ void* cuda_memory_manager_type::allocate(size_t bytes, std::string name)
   // Make sure size is a multiple of 16
   bytes = (((bytes + 15) / 16) * 16);
   void* p;
-  cudaMalloc((void**)&p, bytes);
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
+  cudaCheckMalloc(cudaMalloc((void**)&p, bytes), bytes, name.c_str());
+  gpu_pointer_map[p] = std::pair<std::string, size_t>(name, bytes);
+  std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
+  if (iter == gpu_mem_map.end())
   {
-    fprintf(stderr, "Failed to allocate %ld bytes for object %s:\n  %s\n", bytes, name.c_str(),
-            cudaGetErrorString(err));
-    abort();
+    gpu_mem_object obj(bytes);
+    gpu_mem_map[name] = obj;
   }
   else
   {
-    gpu_pointer_map[p]                                   = std::pair<std::string, size_t>(name, bytes);
-    std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
-    if (iter == gpu_mem_map.end())
-    {
-      gpu_mem_object obj(bytes);
-      gpu_mem_map[name] = obj;
-    }
-    else
-    {
-      gpu_mem_object& obj = iter->second;
-      obj.num_objects++;
-      obj.total_bytes += bytes;
-    }
+    gpu_mem_object& obj = iter->second;
+    obj.num_objects++;
+    obj.total_bytes += bytes;
   }
   return p;
 }
@@ -59,29 +49,19 @@ void* cuda_memory_manager_type::allocate_managed(size_t bytes, std::string name,
   // Make sure size is a multiple of 16
   bytes = (((bytes + 15) / 16) * 16);
   void* p;
-  cudaMallocManaged((void**)&p, bytes, flags);
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
+  cudaCheckMalloc(cudaMallocManaged((void**)&p, bytes, flags), bytes, name.c_str());
+  gpu_pointer_map[p] = std::pair<std::string, size_t>(name, bytes);
+  std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
+  if (iter == gpu_mem_map.end())
   {
-    fprintf(stderr, "Failed to allocate %ld bytes for object %s:\n  %s\n", bytes, name.c_str(),
-            cudaGetErrorString(err));
-    abort();
+    gpu_mem_object obj(bytes);
+    gpu_mem_map[name] = obj;
   }
   else
   {
-    gpu_pointer_map[p]                                   = std::pair<std::string, size_t>(name, bytes);
-    std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
-    if (iter == gpu_mem_map.end())
-    {
-      gpu_mem_object obj(bytes);
-      gpu_mem_map[name] = obj;
-    }
-    else
-    {
-      gpu_mem_object& obj = iter->second;
-      obj.num_objects++;
-      obj.total_bytes += bytes;
-    }
+    gpu_mem_object& obj = iter->second;
+    obj.num_objects++;
+    obj.total_bytes += bytes;
   }
   return p;
 }
@@ -100,7 +80,7 @@ void cuda_memory_manager_type::deallocate(void* p)
   // fprintf (stderr, "Deallocating %s from GPU memory of size %ld at pointer %p.\n",
   //  	     name.c_str(), bytes, p);
   gpu_pointer_map.erase(piter);
-  cudaFree(p);
+  cudaCheck(cudaFree(p));
   std::map<std::string, gpu_mem_object>::iterator iter = gpu_mem_map.find(name);
   if (iter == gpu_mem_map.end())
   {

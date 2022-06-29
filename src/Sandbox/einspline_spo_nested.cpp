@@ -15,6 +15,7 @@
  */
 #include <Configuration.h>
 #include "Particle/ParticleSet.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "random.hpp"
 #include "mpi/collectives.h"
 #include "Sandbox/input.hpp"
@@ -39,11 +40,11 @@ int main(int argc, char** argv)
     outputManager.shutOff();
   }
 
-  typedef QMCTraits::RealType RealType;
-  typedef ParticleSet::ParticlePos_t ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType TensorType;
-  typedef ParticleSet::PosType PosType;
+  using RealType    = QMCTraits::RealType;
+  using ParticlePos = ParticleSet::ParticlePos;
+  using LatticeType = ParticleSet::ParticleLayout;
+  using TensorType  = ParticleSet::TensorType;
+  using PosType     = ParticleSet::PosType;
 
   //use the global generator
 
@@ -83,7 +84,7 @@ int main(int argc, char** argv)
     }
   }
 
-  //Random.init(0,1,iseed);
+  //Random.init(iseed);
   Tensor<int, 3> tmat(na, 0, 0, 0, nb, 0, 0, 0, nc);
 
   //turn off output
@@ -101,20 +102,19 @@ int main(int argc, char** argv)
   spo_type spo_main;
   int nTiles = 1;
 
+  auto super_lattice(createSuperLattice(create_prim_lattice(), tmat));
   {
-    Tensor<OHMMS_PRECISION, 3> lattice_b;
-    ParticleSet ions;
-    OHMMS_PRECISION scale = 1.0;
-    lattice_b             = tile_cell(ions, tmat, scale);
-    const int nions       = ions.getTotalNum();
-    const int nels        = count_electrons(ions) / 2;
-    tileSize              = (tileSize > 0) ? tileSize : nels;
-    nTiles                = nels / tileSize;
+    ParticleSet ions(super_lattice);
+    tile_cell(ions, tmat);
+    const int nions = ions.getTotalNum();
+    const int nels  = count_electrons(ions) / 2;
+    tileSize        = (tileSize > 0) ? tileSize : nels;
+    nTiles          = nels / tileSize;
     if (ionode)
       cout << "\nNumber of orbitals/splines = " << nels << " and Tile size = " << tileSize
            << " and Number of tiles = " << nTiles << " and Iterations = " << nsteps << endl;
     spo_main.set(nx, ny, nz, nels, nTiles);
-    spo_main.Lattice.set(lattice_b);
+    spo_main.Lattice.set(super_lattice.R);
   }
 
   double tInit = 0.0;
@@ -132,11 +132,10 @@ int main(int argc, char** argv)
     const int ip = omp_get_thread_num();
 
     //create generator within the thread
-    RandomGenerator<RealType> random_th(MakeSeed(ip, np));
+    RandomGenerator random_th(MakeSeed(ip, np));
 
-    ParticleSet ions, els;
-    const OHMMS_PRECISION scale = 1.0;
-    tile_cell(ions, tmat, scale);
+    ParticleSet ions(super_lattice), els(super_lattice);
+    tile_cell(ions, tmat);
 
     const int nions = ions.getTotalNum();
     const int nels  = count_electrons(ions);
@@ -149,14 +148,9 @@ int main(int argc, char** argv)
     }
 
     { //create up/down electrons
-      els.Lattice.BoxBConds = 1;
-      els.Lattice           = ions.Lattice;
-      vector<int> ud(2);
-      ud[0] = nels / 2;
-      ud[1] = nels - ud[0];
-      els.create(ud);
+      els.create({nels / 2, nels - nels / 2});
       els.R.InUnit = PosUnit::Lattice;
-      random_th.generate_uniform(&els.R[0][0], nels3);
+      std::generate(&els.R[0][0], &els.R[0][0] + nels3, random_th);
       els.convert2Cart(els.R); // convert to Cartiesian
     }
 
@@ -183,18 +177,18 @@ int main(int argc, char** argv)
       const RealType Rmax(1.7);
       const RealType tau = 2.0;
 
-      RandomGenerator<RealType> my_random(random_th);
+      RandomGenerator my_random(random_th);
       NonLocalPP<OHMMS_PRECISION> ecp(random_th);
 
       const int nknots(ecp.size());
-      ParticlePos_t delta(nels);
-      ParticlePos_t rOnSphere(nknots);
+      ParticlePos delta(nels);
+      ParticlePos rOnSphere(nknots);
 
       RealType sqrttau = 2.0;
       RealType accept  = 0.5;
 
       vector<RealType> ur(nels);
-      random_th.generate_uniform(ur.data(), nels);
+      std::generate(ur.begin(), ur.end(), random_th);
       const double zval = 2.0 * static_cast<double>(nels) / static_cast<double>(nions);
 
       Timer clock;
@@ -205,8 +199,8 @@ int main(int argc, char** argv)
 
       for (int mc = 0; mc < nsteps; ++mc)
       {
-        my_random.generate_normal(&delta[0][0], nels3);
-        my_random.generate_uniform(ur.data(), nels);
+        assignGaussRand(&delta[0][0], nels3, random_th);
+        std::generate(ur.begin(), ur.end(), random_th);
 
         //drift-diffusion stage
         for (int iel = 0; iel < nels; ++iel)
@@ -228,7 +222,7 @@ int main(int argc, char** argv)
 
 #pragma omp barrier
 
-        my_random.generate_uniform(ur.data(), nels);
+        std::generate(ur.begin(), ur.end(), random_th);
         ecp.randomize(rOnSphere); // pick random sphere
         for (int iat = 0, kat = 0; iat < nions; ++iat)
         {
@@ -282,7 +276,7 @@ int main(int argc, char** argv)
   ///////////////////////
 
   //collect timing and normalized by the number of ranks
-  typedef TinyVector<double, 4> timer_type;
+  using timer_type = TinyVector<double, 4>;
   timer_type global_t(t0, vgh_t, val_t, 0.0);
   timer_type global_t_1(tInit, tBigClock, 0.0, 0.0);
 
