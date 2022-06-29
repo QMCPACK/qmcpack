@@ -11,7 +11,7 @@ public:
   FreeParticleBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
   ~FreeParticleBuilder(){}
 
-  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur);
+  std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 private:
   ParticleSet& targetPtcl;
   bool in_list(const int j, const std::vector<int> l);
