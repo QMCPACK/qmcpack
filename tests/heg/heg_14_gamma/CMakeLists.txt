@@ -231,7 +231,6 @@ if(NOT QMC_CUDA)
     HEG14GLSJ_DMC_SCALARS # DMC
   )
 
-  if(QMC_COMPLEX)
     #
     #  HEG14G - Slater-Jastrow-Backflow VMC
     #           Run 16x1, 4x4, 1x16 to test SJB cloning
@@ -325,7 +324,6 @@ if(NOT QMC_CUDA)
       list(APPEND DET_HEG14GSSJB_SCALARS "totenergy" "-0.92845399  0.000001")
       list(APPEND DET_HEG14GSSJB_SCALARS "kinetic" "0.76941751  0.000001")
       list(APPEND DET_HEG14GSSJB_SCALARS "potential" "-1.69787150 0.000001")
-    endif()
 
     qmc_run_and_check(
       deterministic-heg_14_gamma-sjb
