@@ -90,8 +90,8 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
 
-  /** Evaluate the contribution of this component of multiple walkers reporting
-   *  to registerd listeners from Estimators.
+  /** Evaluate the contribution of this component for multiple walkers reporting
+   *  to registered listeners from Estimators.
    */
   void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -99,6 +99,18 @@ public:
                               const std::vector<ListenerVector<RealType>>& listeners,
                               const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
+  /** For BareKineticEnergy since it does override any Toperator evals this needs to decay to
+   *  mw_evaluatePerParticle.
+   *
+   *  This method must be overrideen since the default behavior is to decay to mw_evaluateWithToperator
+   *  and its default behavior is to call mw_evaluate.
+   */
+  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+					   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+					   const RefVectorWithLeader<ParticleSet>& p_list,
+					   const std::vector<ListenerVector<RealType>>& listeners,
+					   const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
+  
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
  *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this
