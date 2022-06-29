@@ -16,7 +16,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-
+#include "QMCHamiltonians/tests/TestListenerFunction.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
@@ -28,6 +28,10 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+using QMCT = QMCTraits;
+using Real = QMCT::RealType;
+
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
   const SimulationCell simulation_cell;
@@ -236,4 +240,92 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
 }
+
+
+TEST_CASE("BareKineticEnergyListener", "[hamiltonian]")
+{
+  using testing::getParticularListener;
+
+  const SimulationCell simulation_cell;
+  ParticleSet ions(simulation_cell);
+  ParticleSet elec(simulation_cell);
+
+  ions.setName("ion");
+  ions.create({1});
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  elec.setName("elec");
+  elec.create({2});
+  elec.R[0][0] = 0.0;
+  elec.R[0][1] = 1.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 1.0;
+  elec.R[1][1] = 1.0;
+  elec.R[1][2] = 0.0;
+
+  SpeciesSet& tspecies     = elec.getSpeciesSet();
+  int upIdx                = tspecies.addSpecies("u");
+  int massIdx              = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx) = 1.0;
+
+  elec.addTable(ions);
+  elec.update();
+
+  ParticleSet elec2(elec);
+  elec2.R[1][2] = 1.0;
+  elec2.update();
+
+  RefVector<ParticleSet> ptcls{elec, elec2};
+  RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
+
+  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke2(elec);
+  RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
+  RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);
+  elec.L[0]  = 1.0;
+  elec.L[1]  = 0.0;
+  elec2.L[0] = 1.0;
+  elec2.L[1] = 0.0;
+
+  TrialWaveFunction psi, psi_clone;
+  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
+
+  Matrix<Real> kinetic_energies(2);
+
+  ResourceCollection bare_ke_res("test_bare_ke_res");
+  bare_ke.createResource(bare_ke_res);
+  ResourceCollectionTeamLock<OperatorBase> bare_ke_lock(bare_ke_res, o_list);
+
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+
+  std::vector<ListenerVector<Real>> listeners;
+  listeners.emplace_back("kinetic", getParticularListener(kinetic_energies));
+
+  std::vector<ListenerVector<Real>> ion_listeners;
+
+  bare_ke.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);
+  CHECK(bare_ke.getValue() == Approx(-0.5));
+  CHECK(bare_ke2.getValue() == Approx(-0.5));
+  // Check that the sum of the particle energies is consistent with the total.
+  CHECK(std::accumulate(kinetic_energies.begin(), kinetic_energies.begin() + kinetic_energies.cols(), 0.0) ==
+        Approx(bare_ke.getValue());
+  // check a single particle 
+  CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(-0.5));
+
+  elec.L[0]  = 2.0;
+  elec.L[1]  = 1.0;
+  elec2.L[0] = 2.0;
+  elec2.L[1] = 1.0;
+
+  bare_ke.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);	
+  CHECK(std::accumulate(kinetic_energies.begin(), kinetic_energies.begin() + kinetic_energies.cols(), 0.0) ==
+        Approx(bare_ke.getValue());
+  CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(-0.5));
+  
+}
+
 } // namespace qmcplusplus

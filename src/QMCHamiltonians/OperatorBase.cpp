@@ -2,18 +2,19 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file OperatorBase.cpp
+/**@file
  *@brief Definition of OperatorBase
  */
 #include "Message/Communicate.h"
@@ -112,6 +113,16 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     o_list[iw].evaluate(p_list[iw]);
 }
 
+void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const std::vector<ListenerVector<RealType>>& listeners,
+                                          const std::vector<ListenerVector<RealType>>& listeners_ions) const
+{
+  this->mw_evaluate(o_list, wf_list, p_list);
+}
+
+
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
@@ -145,7 +156,21 @@ void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBa
                                             const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                             const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluate(o_list, wf_list, p_list);
+  for (int iw = 0; iw < o_list.size(); iw++)
+    o_list[iw].evaluateWithToperator(p_list[iw]);
+}
+
+void OperatorBase::mw_evaluatePerParticleWithToperator(
+    const RefVectorWithLeader<OperatorBase>& o_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const std::vector<ListenerVector<RealType>>& listeners,
+    const std::vector<ListenerVector<RealType>>& listeners_ions) const
+{
+  // This may or may not be what is expected.
+  // It the responsibility of the derived type to override this if the
+  // desired behavior is instead to call mw_evaluatePerParticle
+  this->mw_evaluateWithToperator(o_list, wf_list, p_list);
 }
 
 OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
@@ -232,6 +257,7 @@ bool OperatorBase::getMode(const int i) const noexcept { return update_mode_[i];
 
 bool OperatorBase::isNonLocal() const noexcept { return update_mode_[NONLOCAL]; }
 
+bool OperatorBase::hasListener() const noexcept { return has_listener_; }
 
 #if !defined(REMOVE_TRACEMANAGER)
 

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: D. Das, University of Illinois at Urbana-Champaign
 //                    John R. Gergely,  University of Illinois at Urbana-Champaign
@@ -11,12 +11,13 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file OperatorBase.h
+/**@file
  *@brief Declaration of OperatorBase
  */
 #ifndef QMCPLUSPLUS_HAMILTONIANBASE_H
@@ -31,6 +32,7 @@
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
+#include "QMCHamiltonians/Listener.hpp"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include <bitset>
 #include <memory> // std::unique_ptr
@@ -247,6 +249,22 @@ public:
                            const RefVectorWithLeader<ParticleSet>& p_list) const;
 
   /**
+   * @brief Evaluate the contribution of this component of multiple walkers per particle and report
+   * to registerd listeners from objects in Estimators
+   *
+   * Base class implementation decays to the mw_evaluate so if not overridden the estimator doesn't
+   * hear from this operator.
+   *
+   * specialized versions of this should take advantage of multiwalker resources
+   * to reduce the resource cost of collecting these values. 
+   */
+  virtual void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& listeners_ions) const;
+
+  /**
    * @brief TODO: add docs
 
    * @param o_list 
@@ -287,6 +305,22 @@ public:
   virtual void mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
                                         const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                         const RefVectorWithLeader<ParticleSet>& p_list) const;
+
+    /**
+   * @brief Evaluate the contribution of this component of multiple walkers per particle and report
+   * to registerd listeners from objects in Estimators
+   *
+   * default implementation decays to the mw_evaluatePerParticle.
+   *
+   * specialized versions of this should take advantage of multiwalker resources
+   * to reduce the resource cost of collecting these values. 
+   */
+  virtual void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& listeners_ions) const;
+
 
   /**
    * @brief Evaluate value and derivatives wrt the optimizables. Default uses evaluate.
@@ -434,6 +468,8 @@ public:
                          std::vector<RealType>& LocalEnergy,
                          std::vector<std::vector<NonLocalData>>& Txy);
 
+  virtual void informOfPerParticleListener() { has_listener_ = true; }
+
   bool isClassical() const noexcept;
   bool isQuantum() const noexcept;
   bool isClassicalClassical() const noexcept;
@@ -454,7 +490,7 @@ public:
    */
   bool isNonLocal() const noexcept;
 
-
+  bool hasListener() const noexcept;  
 #if !defined(REMOVE_TRACEMANAGER)
 
   /**
@@ -569,6 +605,11 @@ private:
   ///array to store sample value
   Array<RealType, 1>* value_sample_;
 #endif
+  
+  /** Is there a per particle listener
+   *  sadly this is necessary due to state machines
+   */
+  bool has_listener_ = false;
 
   ///quantum_domain_ of the (particle) operator, default = no_quantum_domain
   QuantumDomains quantum_domain_;
