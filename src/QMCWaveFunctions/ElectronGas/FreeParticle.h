@@ -68,7 +68,7 @@ public:
     GGGMatrix& d3phi_mat) override;
 
   // ---- begin required overrides
-  std::unique_ptr<SPOSet> makeClone() const {return std::make_unique<FreeParticle>(*this);}
+  std::unique_ptr<SPOSet> makeClone() const override {return std::make_unique<FreeParticle>(*this);}
   void resetParameters(const opt_variables_type& optVariables) override {} //called by BFTrans}
   void setOrbitalSetSize(int norbs) override {APP_ABORT("not implemented")};
   // required overrides end ----
