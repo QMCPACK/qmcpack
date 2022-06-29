@@ -324,6 +324,7 @@ if(NOT QMC_CUDA)
       list(APPEND DET_HEG14GSSJB_SCALARS "totenergy" "-0.92845399  0.000001")
       list(APPEND DET_HEG14GSSJB_SCALARS "kinetic" "0.76941751  0.000001")
       list(APPEND DET_HEG14GSSJB_SCALARS "potential" "-1.69787150 0.000001")
+    endif()
 
     qmc_run_and_check(
       deterministic-heg_14_gamma-sjb
@@ -367,10 +368,6 @@ if(NOT QMC_CUDA)
       )
 
     endif()
-
-  else()
-    message(VERBOSE "Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
-  endif()
 else()
   message(VERBOSE "Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()
