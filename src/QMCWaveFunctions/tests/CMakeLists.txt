@@ -59,7 +59,7 @@ endforeach()
 
 if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
-    set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp)
+    set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp test_RotatedSPOs_LCAO.cpp)
     if(NOT QMC_MIXED_PRECISION)
       set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
     endif()
@@ -142,12 +142,14 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     platform_LA
     platform_runtime
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget qmcutil platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
@@ -173,7 +175,7 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle qmcparticle_omptarget qmcwfs_omptarget platform_omptarget_LA)
   endif()
   #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")

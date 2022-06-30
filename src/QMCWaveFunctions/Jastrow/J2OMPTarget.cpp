@@ -715,7 +715,6 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
 {
   auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   assert(this == &wfc_leader);
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (recompute[iw])
       wfc_list[iw].recompute(p_list[iw]);

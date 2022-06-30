@@ -82,6 +82,8 @@ public:
   inline typename Container_t::const_iterator begin() const { return X.begin(); }
   inline typename Container_t::const_iterator end() const { return X.end(); }
 
+  ///@{
+  /// access the container data pointer
   inline Type_t* data() { return X.data(); }
   inline const Type_t* data() const { return X.data(); }
   template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
@@ -94,14 +96,70 @@ public:
   {
     return X.device_data();
   }
+  ///@}
 
-  inline const Type_t* first_address() const { return &(X[0]); }
+  ///@{
+  /// access the data pointer at {index_1, ..., index_D}
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  Type_t* data_at(const std::array<SIZET, D>& indices)
+  {
+    return X.data() + compute_offset(indices);
+  }
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  const Type_t* data_at(const std::array<SIZET, D>& indices) const
+  {
+    return X.data() + compute_offset(indices);
+  }
+  template<typename SIZET     = size_t,
+           typename           = std::is_integral<SIZET>,
+           typename Allocator = ALLOC,
+           typename           = qmcplusplus::IsDualSpace<Allocator>>
+  Type_t* device_data_at(const std::array<SIZET, D>& indices)
+  {
+    return X.device_data() + compute_offset(indices);
+  }
+  template<typename SIZET     = size_t,
+           typename           = std::is_integral<SIZET>,
+           typename Allocator = ALLOC,
+           typename           = qmcplusplus::IsDualSpace<Allocator>>
+  const Type_t* device_data_at(const std::array<SIZET, D>& indices) const
+  {
+    return X.device_data() + compute_offset(indices);
+  }
 
-  inline const Type_t* last_address() const { return &(X[0]) + X.size(); }
+  template<typename... Args>
+  Type_t* data_at(Args... indices)
+  {
+    static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
+    return data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  template<typename... Args>
+  const Type_t* data_at(Args... indices) const
+  {
+    static_assert(sizeof...(Args) == D, "data arguments must match dimensionality of Array");
+    return data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  Type_t* device_data_at(Args... indices)
+  {
+    static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
+    return device_data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  template<typename... Args, typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  const Type_t* device_data_at(Args... indices) const
+  {
+    static_assert(sizeof...(Args) == D, "device_data arguments must match dimensionality of Array");
+    return device_data_at({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  ///@}
 
-  inline Type_t* first_address() { return &(X[0]); }
+  inline const Type_t* first_address() const { return X.data(); }
 
-  inline Type_t* last_address() { return &(X[0]) + X.size(); }
+  inline const Type_t* last_address() const { return X.data() + X.size(); }
+
+  inline Type_t* first_address() { return X.data(); }
+
+  inline Type_t* last_address() { return X.data() + X.size(); }
 
   This_t& operator=(const T& rhs)
   {
@@ -127,22 +185,31 @@ public:
     return *this;
   }
 
-  // Get and Set Operations
-  inline Type_t& operator()(size_t i) { return X[i]; }
-
-  inline Type_t operator()(size_t i) const { return X[i]; }
-  inline Type_t& operator()(size_t i, size_t j) { return X[j + Length[1] * i]; }
-  inline Type_t operator()(size_t i, size_t j) const { return X[j + Length[1] * i]; }
-  inline Type_t& operator()(size_t i, size_t j, size_t k) { return X[k + Length[2] * (j + Length[1] * i)]; }
-  inline Type_t operator()(size_t i, size_t j, size_t k) const { return X[k + Length[2] * (j + Length[1] * i)]; }
-  inline Type_t& operator()(size_t i, size_t j, size_t k, size_t l)
+  ///@{
+  /// access the element at {index_1, ..., index_D}
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  Type_t& operator()(const std::array<SIZET, D>& indices)
   {
-    return X[l + Length[3] * (k + Length[2] * (j + Length[1] * i))];
+    return X[compute_offset(indices)];
   }
-  inline Type_t operator()(size_t i, size_t j, size_t k, size_t l) const
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  const Type_t& operator()(const std::array<SIZET, D>& indices) const
   {
-    return X[l + Length[3] * (k + Length[2] * (j + Length[1] * i))];
+    return X[compute_offset(indices)];
   }
+  template<typename... Args>
+  Type_t& operator()(Args... indices)
+  {
+    static_assert(sizeof...(Args) == D, "operator() arguments must match dimensionality of Array");
+    return operator()({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  template<typename... Args>
+  const Type_t& operator()(Args... indices) const
+  {
+    static_assert(sizeof...(Args) == D, "operator() arguments must match dimensionality of Array");
+    return operator()({static_cast<std::size_t>(std::forward<Args>(indices))...});
+  }
+  ///@}
 
   inline Type_t sum() const
   {
@@ -150,6 +217,18 @@ public:
     for (int i = 0; i < X.size(); ++i)
       s += X[i];
     return s;
+  }
+
+  // Abstract Dual Space Transfers
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void updateTo()
+  {
+    X.updateTo();
+  }
+  template<typename Allocator = ALLOC, typename = qmcplusplus::IsDualSpace<Allocator>>
+  void updateFrom()
+  {
+    X.updateFrom();
   }
 
 private:
@@ -162,6 +241,15 @@ private:
     for (int i = 1; i < dims.size(); i++)
       total *= dims[i];
     return total;
+  }
+
+  template<typename SIZET = size_t, typename = std::is_integral<SIZET>>
+  SIZET compute_offset(const std::array<SIZET, D>& indices) const
+  {
+    SIZET offset = indices[0];
+    for (int i = 1; i < indices.size(); i++)
+      offset = offset * Length[i] + indices[i];
+    return offset;
   }
 };
 

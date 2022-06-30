@@ -231,13 +231,21 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"ROCm-Clang13-NoMPI-Legacy-CUDA2HIP"*)
+      *"ROCm-Clang13-MPI-Legacy-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+
+        export OMPI_CC=/opt/rocm/llvm/bin/clang
+        export OMPI_CXX=/opt/rocm/llvm/bin/clang++
+
+        # Make current environment variables available to subsequent steps
+        echo "OMPI_CC=/opt/rocm/llvm/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/rocm/llvm/bin/clang++" >> $GITHUB_ENV
+
         cmake -GNinja \
-              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
-              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
+              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DQMC_CUDA=1 \
-              -DQMC_MPI=0 \
               -DQMC_CUDA2HIP=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \

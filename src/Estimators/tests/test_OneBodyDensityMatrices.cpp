@@ -140,7 +140,7 @@ public:
       auto* test_data = reinterpret_cast<std::complex<Real>*>(test_in);
       for (size_t id = 0; id < size; id += 2)
 #if defined(MIXED_PRECISION)
-        CHECK(ref_data[id] == ComplexApprox(test_data[id]).epsilon(1e-4));
+        CHECK(ref_data[id] == ComplexApprox(test_data[id]).epsilon(6e-4));
 #else
         CHECK(ref_data[id] == ComplexApprox(test_data[id]));
 #endif

@@ -52,7 +52,6 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
   {
     Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
@@ -78,7 +77,6 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
@@ -89,7 +87,6 @@ void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVector<ValueVector>& psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
@@ -103,7 +100,6 @@ void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<ValueVector>& dspin_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateVGL_spin(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw], dspin_v_list[iw]);
 }
@@ -112,24 +108,34 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
                                             const RefVectorWithLeader<ParticleSet>& P_list,
                                             int iat,
                                             const std::vector<const ValueType*>& invRow_ptr_list,
-                                            VGLVector& phi_vgl_v,
+                                            OffloadMWVGLArray& phi_vgl_v,
                                             std::vector<ValueType>& ratios,
                                             std::vector<GradType>& grads) const
 {
   assert(this == &spo_list.getLeader());
+  assert(phi_vgl_v.size(0) == DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
   const size_t nw             = spo_list.size();
-  const size_t norb_requested = phi_vgl_v.size() / nw;
-#pragma omp parallel for
+  const size_t norb_requested = phi_vgl_v.size(2);
+  GradVector dphi_v(norb_requested);
   for (int iw = 0; iw < nw; iw++)
   {
-    ValueVector phi_v(phi_vgl_v.data() + norb_requested * iw, norb_requested);
-    GradVector dphi_v(reinterpret_cast<GradType*>(phi_vgl_v.data(1)) + norb_requested * iw, norb_requested);
-    ValueVector d2phi_v(phi_vgl_v.data(4) + norb_requested * iw, norb_requested);
+    ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
+    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
     spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
 
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
     grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
+
+    // transpose the array of gradients to SoA in phi_vgl_v
+    for (size_t idim = 0; idim < DIM; idim++)
+    {
+      ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
+      for (size_t iorb = 0; iorb < norb_requested; iorb++)
+        phi_g[iorb] = dphi_v[iorb][idim];
+    }
   }
+  phi_vgl_v.updateTo();
 }
 
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
@@ -158,7 +164,6 @@ void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list
                                      const RefVector<ValueMatrix>& d2logdet_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
 }
