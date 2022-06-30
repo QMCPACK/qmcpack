@@ -162,7 +162,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 }
 
 // No Jastrow, rotation angle of 0
-TEST_CASE("Rotated LCAO WF zero angle", "[qmcapp]")
+TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -267,7 +267,7 @@ TEST_CASE("Rotated LCAO WF zero angle", "[qmcapp]")
 }
 
 // Rotation angle of 0 and add Jastrow factory
-TEST_CASE("Rotated LCAO WF with jastrow", "[qmcapp]")
+TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -364,9 +364,9 @@ TEST_CASE("Rotated LCAO WF with jastrow", "[qmcapp]")
 
 // Test the case where the rotation has already been applied to
 // the MO coefficients in the input file.
-// Should give the same results as the "Rotated LCAO WF zero angle" test case
+// Should give the same results as the "Rotated LCAO WF1 zero angle" test case
 
-TEST_CASE("Rotated LCAO WF, MO coeff rotated, zero angle", "[qmcapp]")
+TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -455,9 +455,9 @@ TEST_CASE("Rotated LCAO WF, MO coeff rotated, zero angle", "[qmcapp]")
 // Test the case where half the rotation has already been applied to
 // the MO coefficients in the input file and half the rotation is
 // applied through the input.
-// Should give the same results as the "Rotated LCAO WF zero angle" test case
+// Should give the same results as the "Rotated LCAO WF1 zero angle" test case
 
-TEST_CASE("Rotated LCAO WF, MO coeff rotated, half angle", "[qmcapp]")
+TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
