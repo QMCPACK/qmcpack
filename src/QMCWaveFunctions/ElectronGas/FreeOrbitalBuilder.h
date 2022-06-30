@@ -1,15 +1,15 @@
-#ifndef QMCPLUSPLUS_FREE_PARTICLE_BUILDER_H
-#define QMCPLUSPLUS_FREE_PARTICLE_BUILDER_H
+#ifndef QMCPLUSPLUS_FREE_ORBITAL_BUILDER_H
+#define QMCPLUSPLUS_FREE_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {
-class FreeParticleBuilder : public SPOSetBuilder
+class FreeOrbitalBuilder : public SPOSetBuilder
 {
 public:
-  FreeParticleBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
-  ~FreeParticleBuilder(){}
+  FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
+  ~FreeOrbitalBuilder(){}
 
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
 private:

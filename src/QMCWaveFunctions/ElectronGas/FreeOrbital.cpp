@@ -1,9 +1,9 @@
-#include "FreeParticle.h"
+#include "FreeOrbital.h"
 
 namespace qmcplusplus
 {
 
-FreeParticle::FreeParticle(const std::vector<PosType>& kpts_cart)
+FreeOrbital::FreeOrbital(const std::vector<PosType>& kpts_cart)
  : kvecs(kpts_cart), 
 #ifdef QMC_COMPLEX
   mink(0), // first k at twist may not be 0
@@ -24,9 +24,9 @@ FreeParticle::FreeParticle(const std::vector<PosType>& kpts_cart)
   }
 }
 
-FreeParticle::~FreeParticle(){}
+FreeOrbital::~FreeOrbital(){}
 
-void FreeParticle::evaluateVGL(
+void FreeOrbital::evaluateVGL(
   const ParticleSet& P,
   int iat,
   ValueVector& pvec,
@@ -60,7 +60,7 @@ void FreeParticle::evaluateVGL(
 #endif
 }
 
-void FreeParticle::evaluateValue(
+void FreeOrbital::evaluateValue(
   const ParticleSet& P,
   int iat,
   ValueVector& pvec)
@@ -84,7 +84,7 @@ void FreeParticle::evaluateValue(
 #endif
 }
 
-void FreeParticle::evaluate_notranspose(
+void FreeOrbital::evaluate_notranspose(
   const ParticleSet& P,
   int first,
   int last,
@@ -101,7 +101,7 @@ void FreeParticle::evaluate_notranspose(
   }
 }
 
-void FreeParticle::evaluate_notranspose(
+void FreeOrbital::evaluate_notranspose(
   const ParticleSet& P,
   int first,
   int last,
@@ -165,7 +165,7 @@ void FreeParticle::evaluate_notranspose(
   }
 }
 
-void FreeParticle::evaluate_notranspose(
+void FreeOrbital::evaluate_notranspose(
   const ParticleSet& P,
   int first,
   int last,
@@ -264,14 +264,14 @@ void FreeParticle::evaluate_notranspose(
   }
 }
 
-void FreeParticle::report(const std::string& pad) const
+void FreeOrbital::report(const std::string& pad) const
 {
-  app_log() << pad << "FreeParticle report" << std::endl;
+  app_log() << pad << "FreeOrbital report" << std::endl;
   for (int ik=0;ik<kvecs.size();ik++)
   {
     app_log() << pad << ik << " " << kvecs[ik] << std::endl;
   }
-  app_log() << pad << "end FreeParticle report" << std::endl;
+  app_log() << pad << "end FreeOrbital report" << std::endl;
   app_log().flush();
 }
 } // qmcplusplus

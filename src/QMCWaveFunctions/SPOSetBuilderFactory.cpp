@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #include "ModernStringUtils.hpp"
-#include "QMCWaveFunctions/ElectronGas/FreeParticleBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/FreeOrbitalBuilder.h"
 #if OHMMS_DIM == 3
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 
@@ -98,7 +98,7 @@ std::unique_ptr<SPOSetBuilder> SPOSetBuilderFactory::createSPOSetBuilder(xmlNode
   else if (type == "jellium" || type == "heg" || type == "free")
   {
     app_log() << "Free-particle SPO set" << std::endl;
-    bb = std::make_unique<FreeParticleBuilder>(targetPtcl, myComm, rootNode);
+    bb = std::make_unique<FreeOrbitalBuilder>(targetPtcl, myComm, rootNode);
   }
   else if (type == "sho")
   {

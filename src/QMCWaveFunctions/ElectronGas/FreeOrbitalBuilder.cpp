@@ -1,18 +1,18 @@
 #include "OhmmsData/AttributeSet.h"
 #include "LongRange/StructFact.h"
 #include "LongRange/KContainer.h"
-#include "QMCWaveFunctions/ElectronGas/FreeParticle.h"
-#include "QMCWaveFunctions/ElectronGas/FreeParticleBuilder.h"
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
+#include "QMCWaveFunctions/ElectronGas/FreeOrbitalBuilder.h"
 
 namespace qmcplusplus
 {
 
-FreeParticleBuilder::FreeParticleBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur)
+FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur)
   : SPOSetBuilder("PW", comm),
     targetPtcl(els)
 {}
 
-std::unique_ptr<SPOSet> FreeParticleBuilder::createSPOSetFromXML(xmlNodePtr cur)
+std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int npw, norb;
   PosType twist(0.0);
@@ -68,12 +68,12 @@ std::unique_ptr<SPOSet> FreeParticleBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if (ik >= npw) break;
   }
 #endif
-  auto sposet = std::make_unique<FreeParticle>(kpts);
+  auto sposet = std::make_unique<FreeOrbital>(kpts);
   sposet->report("  ");
   return sposet;
 }
 
-bool FreeParticleBuilder::in_list(const int j, const std::vector<int> l)
+bool FreeOrbitalBuilder::in_list(const int j, const std::vector<int> l)
 {
   for (int i=0;i<l.size();i++)
   {

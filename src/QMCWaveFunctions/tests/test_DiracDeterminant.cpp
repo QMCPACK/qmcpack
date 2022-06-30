@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
-#include "QMCWaveFunctions/ElectronGas/FreeParticle.h"
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 
 #include <stdio.h>
@@ -540,8 +540,8 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   kdn[1] = PosType(-0.1, 0.2, -0.3);
   kdn[2] = PosType(0.4, -0.5, 0.6);
 
-  auto spo_up = std::make_unique<FreeParticle>(kup);
-  auto spo_dn = std::make_unique<FreeParticle>(kdn);
+  auto spo_up = std::make_unique<FreeOrbital>(kup);
+  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
 
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));

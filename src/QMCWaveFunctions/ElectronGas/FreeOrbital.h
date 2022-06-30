@@ -14,19 +14,19 @@
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_FREE_PARTICLE
-#define QMCPLUSPLUS_FREE_PARTICLE
+#ifndef QMCPLUSPLUS_FREE_ORBITAL
+#define QMCPLUSPLUS_FREE_ORBITAL
 
 #include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
 
-class FreeParticle : public SPOSet
+class FreeOrbital : public SPOSet
 {
 public:
-  FreeParticle(const std::vector<PosType>& kpts_cart);
-  ~FreeParticle();
+  FreeOrbital(const std::vector<PosType>& kpts_cart);
+  ~FreeOrbital();
 
   // phi[i][j] is phi_j(r_i), i.e. electron i in orbital j
   //  i \in [first, last)
@@ -68,7 +68,7 @@ public:
     GGGMatrix& d3phi_mat) override;
 
   // ---- begin required overrides
-  std::unique_ptr<SPOSet> makeClone() const override {return std::make_unique<FreeParticle>(*this);}
+  std::unique_ptr<SPOSet> makeClone() const override {return std::make_unique<FreeOrbital>(*this);}
   void resetParameters(const opt_variables_type& optVariables) override {} //called by BFTrans}
   void setOrbitalSetSize(int norbs) override {APP_ABORT("not implemented")};
   // required overrides end ----

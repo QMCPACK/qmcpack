@@ -36,7 +36,7 @@
 #include "LongRange/EwaldHandler3D.h"
 
 //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/FreeParticle.h"
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 
 namespace qmcplusplus
 {
@@ -503,8 +503,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
 
-  auto spo_up = std::make_unique<FreeParticle>(kup);
-  auto spo_dn = std::make_unique<FreeParticle>(kdn);
+  auto spo_up = std::make_unique<FreeOrbital>(kup);
+  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
 
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
