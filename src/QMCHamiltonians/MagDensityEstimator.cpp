@@ -56,8 +56,8 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 
 
   std::complex<RealType> eye(0,1.0);
-
   RealType wgt = t_walker_->Weight;
+ // app_log()<<"wgt = "<<wgt<<std::endl;
   if (Periodic)
   {
     for (int ig = 0; ig < P.groups(); ++ig)
@@ -78,24 +78,24 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         ValueType sz(0.0);
         makeUniformRandom(dS);
         dS=dS*TWOPI; //We want the spin delta to go from 0-2pi.
-        
+       // app_log()<<"iat="<<iat<<" s="<<P.spins[iat]<<std::endl;
         for(int samp=0; samp<Nsamps; samp++)
         {
           P.makeMoveWithSpin(iat, 0.0, dS[samp]);
           ratios[samp] = refPsi.calcRatio(P, iat);
           P.rejectMove(iat); //reject the move
           refPsi.resetPhaseDiff();
-          sx+=   2.0*std::cos(P.spins[iat]+dS[samp])*ratios[samp];
-          sy+=  -2.0*std::sin(P.spins[iat]+dS[samp])*ratios[samp];
-          sz+=  -2.0*eye*std::sin(-dS[samp])*ratios[samp];
+          sx+=   2.0*std::cos(2.0*P.spins[iat]+dS[samp])*ratios[samp];
+          sy+=  -2.0*std::sin(2.0*P.spins[iat]+dS[samp])*ratios[samp];
+          sz+=  2.0*eye*std::sin(dS[samp])*ratios[samp];
         }
         sx=sx/RealType(Nsamps);
         sy=sy/RealType(Nsamps);
         sz=sz/RealType(Nsamps);
-
-        P.Collectables[getMagGridIndex(i, j, k, 0)] += std::real(sx); //1.0;
-        P.Collectables[getMagGridIndex(i, j, k, 1)] += std::real(sy); //1.0;
-        P.Collectables[getMagGridIndex(i, j, k, 2)] += std::real(sz); //1.0;
+        //app_log()<<" sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
+        P.Collectables[getMagGridIndex(i, j, k, 0)] += wgt*std::real(sx); //1.0;
+        P.Collectables[getMagGridIndex(i, j, k, 1)] += wgt*std::real(sy); //1.0;
+        P.Collectables[getMagGridIndex(i, j, k, 2)] += wgt*std::real(sz); //1.0;
      
  
         }
