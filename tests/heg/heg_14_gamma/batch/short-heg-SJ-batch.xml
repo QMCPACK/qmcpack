@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="short_heg_SJ_batched" series="0">
+   <project id="short_heg_SJ_batch" series="0">
      <parameter name="driver_version">batch</parameter>
    </project>
    <qmcsystem>
