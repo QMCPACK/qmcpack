@@ -38,6 +38,8 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("BSpline functor zero", "[wavefunction]")
 {
+  // What is being tested here is different depending on QMC_MIXED_PRECISION
+  // double with either match the real_type of the OptimizableFunctorBase or not
   BsplineFunctor<double> bf;
 
   double r = 1.2;

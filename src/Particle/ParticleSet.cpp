@@ -380,11 +380,8 @@ void ParticleSet::mw_update(const RefVectorWithLeader<ParticleSet>& p_list, bool
   }
 
   if (!skipSK && p_leader.structure_factor_)
-  {
-#pragma omp parallel for
     for (int iw = 0; iw < p_list.size(); iw++)
       p_list[iw].structure_factor_->updateAllPart(p_list[iw]);
-  }
 }
 
 void ParticleSet::makeMove(Index_t iat, const SingleParticlePos& displ, bool maybe_accept)
@@ -852,7 +849,6 @@ void ParticleSet::mw_loadWalker(const RefVectorWithLeader<ParticleSet>& p_list,
     pset.spins = awalker.spins;
     pset.coordinates_->setAllParticlePos(pset.R);
   };
-#pragma omp parallel for
   for (int iw = 0; iw < p_list.size(); ++iw)
     if (recompute[iw])
       loadWalkerConfig(p_list[iw], walkers[iw]);

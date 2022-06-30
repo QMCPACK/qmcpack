@@ -517,6 +517,19 @@ void MultiDiracDeterminant::restore(int iat)
   */
 }
 
+void MultiDiracDeterminant::mw_accept_rejectMove(const RefVectorWithLeader<MultiDiracDeterminant>& wfc_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 int iat,
+                                                 const std::vector<bool>& isAccepted)
+{
+  // TODO to be expanded to serve offload needs without relying on calling acceptMove and restore
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+    if (isAccepted[iw])
+      wfc_list[iw].acceptMove(p_list[iw], iat, false);
+    else
+      wfc_list[iw].restore(iat);
+}
+
 // this has been fixed
 MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
     : WaveFunctionComponent(s),

@@ -30,7 +30,7 @@ add_executable(
 
 target_link_libraries(convert4qmc PUBLIC qmcparticle)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(convert4qmc PUBLIC qmcutil)
+  target_link_libraries(convert4qmc PUBLIC qmcutil qmcparticle_omptarget)
 endif()
 
 add_executable(qmc-extract-eshdf-kvectors qmc-extract-eshdf-kvectors.cpp)
@@ -55,7 +55,7 @@ target_link_libraries(fstool PUBLIC qmc qmcparticle qmcwfs)
 add_executable(qmcfinitesize qmcfinitesize.cpp)
 target_link_libraries(qmcfinitesize fstool)
 if(USE_OBJECT_TARGET)
-  target_link_libraries(qmcfinitesize qmcparticle qmcutil)
+  target_link_libraries(qmcfinitesize qmcparticle qmcparticle_omptarget qmcutil)
 endif()
 
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gpaw4qmcpack.py ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/gpaw4qmcpack.py SYMBOLIC)
