@@ -47,7 +47,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create({2});
+  elec.create({1,1});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -279,7 +279,7 @@ void testElecCase(double mass_up,
   ParticleSet elec(simulation_cell);
 
   elec.setName("elec");
-  elec.create({2});
+  elec.create({1,1});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -385,7 +385,7 @@ TEST_CASE("BareKineticEnergyListener", "[hamiltonian]")
 {
   outputManager.pause();
   testElecCase(1.0, 1.0, getTestCaseForWeights(-0.5, -1.5, -0.5));
-  testElecCase(0.5, 1.0, getTestCaseForWeights(-1.0, -3.0, -1.0));
+  testElecCase(0.5, 1.0, getTestCaseForWeights(-1.0, -2.5, -1.0));
   outputManager.resume();
 }
 
