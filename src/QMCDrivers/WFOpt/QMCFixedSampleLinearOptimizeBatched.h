@@ -32,7 +32,6 @@
 #include "QMCDrivers/Optimizers/HybridEngine.h"
 #include "OutputMatrix.h"
 #include "LinearMethod.h"
-#include "EngineData.h"
 
 namespace qmcplusplus
 {

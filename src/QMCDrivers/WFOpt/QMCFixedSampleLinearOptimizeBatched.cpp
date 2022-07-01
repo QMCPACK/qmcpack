@@ -244,7 +244,6 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   std::unique_ptr<EngineHandle> handle;
    if (MinMethod == "descent")
      handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
-     //handle = std::make_unique<DescentEngineHandle>(*EngineObj, descentEngineObj);
    else if (MinMethod == "adaptive")
      handle = std::make_unique<LMYEngineHandle>(*EngineObj);
    else

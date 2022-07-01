@@ -4,16 +4,16 @@
 //
 // Copyright (c) 2022 QMCPACK developers.
 //
-// File developed by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+// File developed by: Leon Otis, leon_otis@berkeley.edu, University of California Berkeley
 //
-// File created by: Leon Otis, leon_otis@berkeley.edu University, University of California Berkeley
+// File created by: Leon Otis, leon_otis@berkeley.edu, University of California Berkeley
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
-#include "QMCDrivers/WFOpt/EngineData.h"
+#include "QMCDrivers/WFOpt/EngineHandle.h"
 #include "Configuration.h"
 #include "Message/Communicate.h"
 
@@ -38,21 +38,19 @@ TEST_CASE("EngineData construction", "[drivers]")
   xmlNodePtr fakeXML = doc.getRoot();
 
   DescentEngine descentEngineObj = DescentEngine(c,fakeXML);
-  DescentEngine* descentEnginePtr = &descentEngineObj;
 
-  descentEnginePtr->processXML(fakeXML);
+  descentEngineObj.processXML(fakeXML);
 
-  std::string name = "descent";
+  app_log() << "Test of DescentEngineHandle construction" << std::endl;
+  std::unique_ptr<DescentEngineHandle> handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
 
-  app_log() << "Test of engineData construction" << std::endl;
-  engineData testData;
 
-  testData.descentEngine = descentEnginePtr;
-  testData.method = name;
+  int fake_num = 5;
+  handle->prepareSampling(fake_num);
+  std::vector<ValueType> test_der_rat_samp = handle->getVector();
 
-  bool test_val = testData.descentEngine->targetingExcited();
-  REQUIRE(testData.method=="descent");
-  REQUIRE(test_val==false);
+  REQUIRE(test_der_rat_samp.size()==6);
+  REQUIRE(test_der_rat_samp[0]==0.0);
 
 
 }

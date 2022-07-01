@@ -234,17 +234,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
 
     handle.prepareSampling(NumOptimizables);
-/*
-    #ifdef HAVE_LMY_ENGINE
-  if ( data.method == "descent")
-  {
-    //Seem to need this line to get non-zero derivatives for traditional Jastrow parameters when using descent.
-    OptVariablesForPsi.setRecompute();
-    //Reset vectors and scalars from any previous iteration
-    data.descentEngine->prepareStorage(omp_get_max_threads(), NumOptimizables);
-  } 
-  #endif
-*/
 
   ScopedTimer tmp_timer(check_config_timer_);
 
@@ -378,15 +367,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
-            /*
-            #ifdef HAVE_LMY_ENGINE
-            std::vector<Return_t> der_rat_samp(nparam + 1, 0.0);
-            std::vector<Return_t> le_der_samp(nparam + 1, 0.0);
-            
-            der_rat_samp.at(0) = 1.0;
-            le_der_samp.at(0) = energy_list[ib];
-            #endif
-            */
 
           const int is = base_sample_index + ib;
           for (int j = 0; j < nparam; j++)
@@ -394,35 +374,11 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
             HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
 
-            /*
-            #ifdef HAVE_LMY_ENGINE
-            auto etmp    = energy_list[ib];
-            der_rat_samp.at(j+1) = std::real(dlogpsi_array.getValue(j, ib));
-            le_der_samp.at(j+1) = std::real(dhpsioverpsi_array.getValue(j, ib)) +etmp*std::real(dlogpsi_array.getValue(j, ib));
-            #endif
-            */
-
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
 
           handle.takeSample(energy_list,dlogpsi_array,dhpsioverpsi_array,ib);
-
-          /*
-            #ifdef HAVE_LMY_ENGINE
-           if (data.method == "adaptive")
-           {
-              //Engines take 1.0 for weights until modified guiding function can be implemented  
-              // pass into engine
-              data.lmEngine->take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
-            }
-           else if (data.method == "descent")
-            {
-                int ip = omp_get_thread_num();
-                data.descentEngine->takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
-            }
-            #endif
-            */
 
         }
 
@@ -494,26 +450,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   app_log() << "  Total weights = " << etemp[1] << std::endl;
 
   handle.finishSampling();
-/*
- #ifdef HAVE_LMY_ENGINE
-  // engine finish taking samples
-  if (data.method == "adaptive")
-  {
-     //Only call sample_finish now if samples are not being stored
-    data.lmEngine->sample_finish();
-
-    if (data.lmEngine->block_first())
-    {
-      OptVariablesForPsi.setComputed();
-      app_log() << "calling setComputed function" << std::endl;
-    }
-  }
-  else if (data.method == "descent")
-  {
-    data.descentEngine->sample_finish();
-  }
-#endif
-*/
 
   app_log().flush();
   setTargetEnergy(Etarget);
