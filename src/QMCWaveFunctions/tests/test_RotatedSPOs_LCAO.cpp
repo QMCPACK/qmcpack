@@ -70,6 +70,95 @@ void setupParticleSetPool(ParticleSetPool& pp)
   pp.put(part_elec);
 }
 
+std::string setupRotationXML(const std::string& rot_angle_up,
+                             const std::string& rot_angle_down,
+                             const std::string& coeff_up,
+                             const std::string& coeff_down)
+{
+  // Replace with std::format when minimum standard is switched to C++20
+
+  const std::string wf_input1 = R"(<wavefunction target='e'>
+    <sposet_collection type="MolecularOrbital">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
+          <basisGroup rid="R0" l="0" m="0" type="Slater">
+             <radfunc n="1" exponent="2.0"/>
+          </basisGroup>
+          <basisGroup rid="R1" l="0" m="0" type="Slater">
+             <radfunc n="2" exponent="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+     <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">)";
+
+  // Opt vars for up determinant
+  //       <opt_vars>0.1</opt_vars>
+  const std::string opt_vars_start_tag("<opt_vars>");
+  const std::string opt_vars_end_tag("</opt_vars>");
+
+  std::string rot_angle_up_element = opt_vars_start_tag + rot_angle_up + opt_vars_end_tag + "\n";
+
+  // Construct the coefficient matrix XML element for the up determinant
+  //       <coefficient id="updetC" type="Array" size="2">
+  //         1.0 0.0
+  //         0.0 1.0
+  //       </coefficient>
+  const std::string wf_input_coeff_up_start = R"(<coefficient id="updetC" type="Array" size="2">)";
+
+  const std::string wf_input_coeff_up_end("</coefficient>");
+
+  std::string coeff_up_element = wf_input_coeff_up_start + coeff_up + wf_input_coeff_up_end;
+
+  // Middle part of XML input block
+  const std::string wf_input2 = R"(
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">)";
+
+  // Opt vars for down determinant
+  //   <opt_vars>0.2</opt_vars>
+  std::string rot_angle_down_element = opt_vars_start_tag + rot_angle_down + opt_vars_end_tag + "\n";
+
+  // Construct the coefficient matrix XML element for the down determinant
+  //       <coefficient id="downdetC" type="Array" size="2">
+  //         1.0 0.0
+  //         0.0 1.0
+  //       </coefficient>
+  const std::string wf_input_coeff_down_start = R"(<coefficient id="downdetC" type="Array" size="2">)";
+
+  const std::string wf_input_coeff_down_end("</coefficient>");
+
+  std::string coeff_down_element = wf_input_coeff_down_start + coeff_down + wf_input_coeff_down_end;
+
+  const std::string wf_input3 = R"(
+      </sposet>
+    </sposet_collection>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <slaterdeterminant>
+        <determinant id="spo-up" spin="1" size="2"/>
+        <determinant id="spo-down" spin="-1" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+   </wavefunction>)";
+
+
+  // clang-format off
+  std::string wf_input = std::string(wf_input1) + "\n" +
+                         (rot_angle_up.empty() ? std::string() : rot_angle_up_element) +
+                         coeff_up_element +
+                         wf_input2 + "\n" +
+                         (rot_angle_down.empty() ? std::string() : rot_angle_down_element) +
+                         coeff_down_element +
+                         std::string(wf_input3);
+  // clang-format on
+
+  return wf_input;
+}
+
+const std::string identity_coeff = R"(
+            1.0 0.0
+            0.0 1.0
+          )";
 
 // No Jastrow, rotation angle of 0. Identity coefficients.
 TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
@@ -85,39 +174,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   REQUIRE(wp.empty() == true);
 
 
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-          <coefficient id="updetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-          <coefficient id="downdetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
+  std::string wf_input = setupRotationXML("", "", identity_coeff, identity_coeff);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
@@ -190,41 +247,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   REQUIRE(wp.empty() == true);
 
 
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-           <opt_vars>0.1</opt_vars>
-          <coefficient id="updetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-           <opt_vars>0.2</opt_vars>
-          <coefficient id="downdetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
+  std::string wf_input = setupRotationXML("0.1", "0.2", identity_coeff, identity_coeff);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
@@ -366,6 +389,16 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 // the MO coefficients in the input file.
 // Should give the same results as the "Rotated LCAO WF1 zero angle" test case
 
+const std::string coeff_rot_by_point1 = R"(
+            0.995004165278026 0.0998334166468282
+           -0.0998334166468282 0.995004165278026
+    )";
+
+const std::string coeff_rot_by_point2 = R"(
+             0.980066577841242  0.198669330795061
+            -0.198669330795061  0.980066577841242
+    )";
+
 TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 {
   Communicate* c;
@@ -378,40 +411,7 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 
   REQUIRE(wp.empty() == true);
 
-
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-          <coefficient id="updetC" type="Array" size="2">
-            0.995004165278026 0.0998334166468282
-            -0.0998334166468282 0.995004165278026
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-          <coefficient id="downdetC" type="Array" size="2">
-             0.980066577841242  0.198669330795061
-             -0.198669330795061  0.980066577841242
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
+  std::string wf_input = setupRotationXML("", "", coeff_rot_by_point1, coeff_rot_by_point2);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
@@ -457,6 +457,11 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
 // applied through the input.
 // Should give the same results as the "Rotated LCAO WF1 zero angle" test case
 
+const std::string coeff_rot_by_point05 = R"(
+             0.998750260394966 0.0499791692706783
+            -0.0499791692706783 0.998750260394966
+    )";
+
 TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 {
   Communicate* c;
@@ -469,42 +474,7 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 
   REQUIRE(wp.empty() == true);
 
-
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-          <opt_vars>0.05</opt_vars>
-          <coefficient id="updetC" type="Array" size="2">
-             0.998750260394966 0.0499791692706783
-            -0.0499791692706783 0.998750260394966
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-          <opt_vars>0.1</opt_vars>
-          <coefficient id="downdetC" type="Array" size="2">
-            0.995004165278026 0.0998334166468282
-            -0.0998334166468282 0.995004165278026
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
+  std::string wf_input = setupRotationXML("0.05", "0.1", coeff_rot_by_point05, coeff_rot_by_point1);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
