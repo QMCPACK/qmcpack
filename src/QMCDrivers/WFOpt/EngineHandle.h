@@ -25,14 +25,15 @@
 
 namespace qmcplusplus
 {
-using ValueType = QMCTraits::ValueType;
 class EngineHandle
 {
 public:
+  using ValueType = QMCTraits::ValueType;
+
   virtual void prepareSampling(int num_params) = 0;
-  virtual void takeSample(std::vector<ValueType> energy_list,
-                          RecordArray<ValueType> dlogpsi_array,
-                          RecordArray<ValueType> dhpsioverpsi_array,
+  virtual void takeSample(const std::vector<ValueType>& energy_list,
+                          const RecordArray<ValueType>& dlogpsi_array,
+                          const RecordArray<ValueType>& dhpsioverpsi_array,
                           int ib)              = 0;
   virtual void finishSampling()                = 0;
 };
@@ -41,9 +42,9 @@ class NullEngineHandle : public EngineHandle
 {
 public:
   void prepareSampling(int num_params) override {}
-  void takeSample(std::vector<ValueType> energy_list,
-                  RecordArray<ValueType> dlogpsi_array,
-                  RecordArray<ValueType> dhpsioverpsi_array,
+  void takeSample(const std::vector<ValueType>& energy_list,
+                  const RecordArray<ValueType>& dlogpsi_array,
+                  const RecordArray<ValueType>& dhpsioverpsi_array,
                   int ib) override
   {}
   void finishSampling() override {}
@@ -70,9 +71,9 @@ public:
     le_der_samp.resize(num_params + 1, 0.0);
   }
 
-  void takeSample(std::vector<ValueType> energy_list,
-                  RecordArray<ValueType> dlogpsi_array,
-                  RecordArray<ValueType> dhpsioverpsi_array,
+  void takeSample(const std::vector<ValueType>& energy_list,
+                  const RecordArray<ValueType>& dlogpsi_array,
+                  const RecordArray<ValueType>& dhpsioverpsi_array,
                   int ib) override
   {
     der_rat_samp[0] = 1.0;
@@ -108,9 +109,9 @@ public:
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
   }
-  void takeSample(std::vector<ValueType> energy_list,
-                  RecordArray<ValueType> dlogpsi_array,
-                  RecordArray<ValueType> dhpsioverpsi_array,
+  void takeSample(const std::vector<ValueType>& energy_list,
+                  const RecordArray<ValueType>& dlogpsi_array,
+                  const RecordArray<ValueType>& dhpsioverpsi_array,
                   int ib) override
   {
     der_rat_samp[0] = 1.0;
