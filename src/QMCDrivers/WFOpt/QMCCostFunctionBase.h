@@ -31,7 +31,7 @@
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
-#include "EngineData.h"
+#include "EngineHandle.h"
 namespace qmcplusplus
 {
 class MCWalkerConfiguration;
@@ -148,8 +148,8 @@ public:
   virtual void checkConfigurations() = 0;
 
 //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
-//Providing an engineData struct to the batched drivers also both cases to be hanlded in one function
-  virtual void checkConfigurations(engineData& data) = 0;
+//Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
+  virtual void checkConfigurations(EngineHandle& handle) = 0;
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,

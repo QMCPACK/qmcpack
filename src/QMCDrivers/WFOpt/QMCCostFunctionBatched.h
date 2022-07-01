@@ -18,7 +18,7 @@
 #include "QMCDrivers/WFOpt/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "EngineData.h"
+//#include "EngineData.h"
 
 namespace qmcplusplus
 {
@@ -53,7 +53,7 @@ public:
 
   void getConfigurations(const std::string& aroot) override;
   void checkConfigurations() override;
-  void checkConfigurations(engineData& data) override;
+  void checkConfigurations(EngineHandle& handle) override;
 #ifdef HAVE_LMY_ENGINE
   void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                   DescentEngine& descentEngineObj,

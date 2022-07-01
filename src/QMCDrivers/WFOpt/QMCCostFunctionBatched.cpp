@@ -230,9 +230,11 @@ void QMCCostFunctionBatched::checkConfigurations()
 {}
 
 /** evaluate everything before optimization */
-void QMCCostFunctionBatched::checkConfigurations(engineData& data)
+void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
 
+    handle.prepareSampling(NumOptimizables);
+/*
     #ifdef HAVE_LMY_ENGINE
   if ( data.method == "descent")
   {
@@ -242,7 +244,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
     data.descentEngine->prepareStorage(omp_get_max_threads(), NumOptimizables);
   } 
   #endif
-
+*/
 
   ScopedTimer tmp_timer(check_config_timer_);
 
@@ -302,7 +304,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH, engineData& data) {
+                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH, EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -376,6 +378,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
+            /*
             #ifdef HAVE_LMY_ENGINE
             std::vector<Return_t> der_rat_samp(nparam + 1, 0.0);
             std::vector<Return_t> le_der_samp(nparam + 1, 0.0);
@@ -383,6 +386,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
             der_rat_samp.at(0) = 1.0;
             le_der_samp.at(0) = energy_list[ib];
             #endif
+            */
 
           const int is = base_sample_index + ib;
           for (int j = 0; j < nparam; j++)
@@ -390,16 +394,21 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
             DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
             HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
 
+            /*
             #ifdef HAVE_LMY_ENGINE
             auto etmp    = energy_list[ib];
             der_rat_samp.at(j+1) = std::real(dlogpsi_array.getValue(j, ib));
             le_der_samp.at(j+1) = std::real(dhpsioverpsi_array.getValue(j, ib)) +etmp*std::real(dlogpsi_array.getValue(j, ib));
             #endif
+            */
 
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
 
+          handle.takeSample(energy_list,dlogpsi_array,dhpsioverpsi_array,ib);
+
+          /*
             #ifdef HAVE_LMY_ENGINE
            if (data.method == "adaptive")
            {
@@ -413,6 +422,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
                 data.descentEngine->takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
             }
             #endif
+            */
 
         }
 
@@ -460,7 +470,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH, data);
+              compute_nlpp, includeNonlocalH, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -483,6 +493,8 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
   app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
 
+  handle.finishSampling();
+/*
  #ifdef HAVE_LMY_ENGINE
   // engine finish taking samples
   if (data.method == "adaptive")
@@ -501,7 +513,7 @@ void QMCCostFunctionBatched::checkConfigurations(engineData& data)
     data.descentEngine->sample_finish();
   }
 #endif
-
+*/
 
   app_log().flush();
   setTargetEnergy(Etarget);
