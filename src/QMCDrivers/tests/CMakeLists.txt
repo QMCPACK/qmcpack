@@ -56,6 +56,8 @@ if(USE_OBJECT_TARGET)
     qmcham_unit
     qmcwfs
     qmcparticle
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA)
 endif()
@@ -98,6 +100,8 @@ if(NOT QMC_CUDA)
       qmcham_unit
       qmcwfs
       qmcparticle
+      qmcwfs_omptarget
+      qmcparticle_omptarget
       qmcutil
       platform_omptarget_LA)
   endif()
@@ -120,6 +124,8 @@ if(NOT QMC_CUDA)
         qmcham_unit
         qmcwfs
         qmcparticle
+	qmcwfs_omptarget
+	qmcparticle_omptarget
         qmcutil
         platform_omptarget_LA)
     endif()

@@ -484,6 +484,23 @@ if(NOT TEST_CXX_COMPILE_MAIN)
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
 endif()
 
+
+#--------------------------------------------------------------
+# Workaround for breakage of OMP Target kernels at -O0 by Clang
+#--------------------------------------------------------------
+# When the build type is Debug, default -O0 compilation is broken by
+# Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
+# Previous compilers are not suggested for clang offload builds.
+#
+# You can set this option to false on the command line to check
+# if this problem has been fixed.
+
+if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
+  option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
+endif()
+mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+
+
 ######################################################################
 # Check external libraries.
 ######################################################################

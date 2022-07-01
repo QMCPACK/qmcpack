@@ -58,10 +58,11 @@ set(JASTROW_SRCS
     Jastrow/RPAJastrow.cpp
     Jastrow/J1OrbitalSoA.cpp
     Jastrow/J2OrbitalSoA.cpp
-    Jastrow/J2OMPTarget.cpp
     LatticeGaussianProduct.cpp
     LatticeGaussianProductBuilder.cpp)
-
+set(JASTROW_OMPTARGET_SRCS
+    Jastrow/J2OMPTarget.cpp
+    Jastrow/BsplineFunctor.cpp)
 if(QMC_COMPLEX)
   set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
 else(QMC_COMPLEX)
@@ -101,12 +102,14 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/HybridRepCenterOrbitals.cpp
         BandInfo.cpp
         BsplineFactory/BsplineReaderBase.cpp)
+      set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp)
     if(QMC_COMPLEX)
-      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp
-                       BsplineFactory/SplineC2COMPTarget.cpp)
+      set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
     else(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} BsplineFactory/createRealSingle.cpp BsplineFactory/createRealDouble.cpp
-                       BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp BsplineFactory/SplineC2ROMPTarget.cpp)
+        BsplineFactory/SplineC2R.cpp BsplineFactory/SplineR2R.cpp)
+      set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2ROMPTarget.cpp)
     endif(QMC_COMPLEX)
 
   endif(HAVE_EINSPLINE)
@@ -128,12 +131,10 @@ endif(OHMMS_DIM MATCHES 3)
 set(FERMION_SRCS
     ${FERMION_SRCS}
     Fermion/DiracDeterminant.cpp
-    Fermion/DiracDeterminantBatched.cpp
-    Fermion/SlaterDet.cpp
-    Fermion/SlaterDetBuilder.cpp
-    Fermion/MultiSlaterDetTableMethod.cpp
     Fermion/MultiDiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.2.cpp
+    Fermion/SlaterDet.cpp
+    Fermion/SlaterDetBuilder.cpp
     Fermion/BackflowBuilder.cpp
     Fermion/BackflowTransformation.cpp
     Fermion/DiracDeterminantWithBackflow.cpp
@@ -144,6 +145,7 @@ set(FERMION_SRCS
     TWFFastDerivWrapper.cpp
     TWFGrads.cpp
     WaveFunctionFactory.cpp)
+set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTableMethod.cpp)
 
 if(QMC_CUDA)
   set(FERMION_SRCS ${FERMION_SRCS} EinsplineSetCuda.cpp Fermion/DiracDeterminantCUDA.cpp Fermion/SlaterDetCUDA.cpp
@@ -161,8 +163,21 @@ else(USE_OBJECT_TARGET)
 endif(USE_OBJECT_TARGET)
 
 target_include_directories(qmcwfs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime)
-target_link_libraries(qmcwfs PRIVATE einspline platform_LA Math::FFTW3)
+target_link_libraries(qmcwfs PUBLIC qmcutil qmcparticle platform_runtime platform_LA)
+target_link_libraries(qmcwfs PRIVATE einspline Math::FFTW3)
+
+if(USE_OBJECT_TARGET)
+  add_library(qmcwfs_omptarget OBJECT ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(qmcwfs_omptarget ${JASTROW_OMPTARGET_SRCS} ${FERMION_OMPTARGET_SRCS})
+endif(USE_OBJECT_TARGET)
+
+target_include_directories(qmcwfs_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcwfs_omptarget PUBLIC qmcutil qmcparticle containers platform_LA)
+
+target_compile_options(qmcwfs_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
+
+target_link_libraries(qmcwfs PUBLIC qmcwfs_omptarget)
 
 if(ENABLE_CUDA)
   target_link_libraries(qmcwfs PRIVATE qmcwfs_cuda)
