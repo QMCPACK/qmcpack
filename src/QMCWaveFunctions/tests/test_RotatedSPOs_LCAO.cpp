@@ -71,97 +71,7 @@ void setupParticleSetPool(ParticleSetPool& pp)
 }
 
 
-// No Jastrow, rotation angle theta1=0.1 and theta2=0.2
-TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
-{
-  Communicate* c;
-  c = OHMMS::Controller;
-
-  ParticleSetPool pp(c);
-  setupParticleSetPool(pp);
-
-  WaveFunctionPool wp(pp, c);
-
-  REQUIRE(wp.empty() == true);
-
-
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-           <opt_vars>0.1</opt_vars>
-          <coefficient id="updetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-           <opt_vars>0.2</opt_vars>
-          <coefficient id="downdetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-
-  wp.put(root);
-
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
-
-  opt_variables_type opt_vars;
-  psi->checkInVariables(opt_vars);
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
-
-  ParticleSet* elec = pp.getParticleSet("e");
-  elec->update();
-
-
-  double logval = psi->evaluateLog(*elec);
-  CHECK(logval == Approx(-9.26625670653773));
-
-  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
-  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
-  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
-
-  using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
-
-
-  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
-  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
-  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
-  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
-}
-
-// No Jastrow, rotation angle of 0
+// No Jastrow, rotation angle of 0. Identity coefficients.
 TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 {
   Communicate* c;
@@ -264,6 +174,96 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(dlogpsi_list.getValue(1, 0) == ValueApprox(5.87482925187464));
   CHECK(dhpsi_over_psi_list.getValue(0, 0) == ValueApprox(46.0088643114103));
   CHECK(dhpsi_over_psi_list.getValue(1, 0) == ValueApprox(7.84119772047731));
+}
+
+// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
+TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
+{
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+
+  const char* wf_input = R"(<wavefunction target='e'>
+    <sposet_collection type="MolecularOrbital">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
+          <basisGroup rid="R0" l="0" m="0" type="Slater">
+             <radfunc n="1" exponent="2.0"/>
+          </basisGroup>
+          <basisGroup rid="R1" l="0" m="0" type="Slater">
+             <radfunc n="2" exponent="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
+           <opt_vars>0.1</opt_vars>
+          <coefficient id="updetC" type="Array" size="2">
+            1.0 0.0
+            0.0 1.0
+          </coefficient>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
+           <opt_vars>0.2</opt_vars>
+          <coefficient id="downdetC" type="Array" size="2">
+            1.0 0.0
+            0.0 1.0
+          </coefficient>
+      </sposet>
+    </sposet_collection>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <slaterdeterminant>
+        <determinant id="spo-up" spin="1" size="2"/>
+        <determinant id="spo-down" spin="-1" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+   </wavefunction>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-9.26625670653773));
+
+  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
+  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
+  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(2);
+  std::vector<ValueType> dhpsioverpsi(2);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+
+  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
+  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
+  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
+  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
 }
 
 // Rotation angle of 0 and add Jastrow factory
