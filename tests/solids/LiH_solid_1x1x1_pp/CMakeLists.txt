@@ -274,9 +274,9 @@ qmc_run_and_check(
 )
 
 # Minimal test of ensemble run
-# No check on results yet
+# No check on results
 # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
-# Should abort if number of MPI taks is not an integer multiple of number of inputs in ensemble
+# Should abort if number of MPI tasks is smaller than ensemble
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
   "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
