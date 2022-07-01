@@ -76,6 +76,13 @@ function(COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
   symlink_list_of_files("${FILE_FOLDER_NAMES}" "${DST_DIR}")
   list(TRANSFORM ARGN PREPEND "${SRC_DIR}/")
   symlink_list_of_files("${ARGN}" "${DST_DIR}")
+# Special handling for .txt input files; assumed to be an ensemble run. Link referenced ensemble inputs
+  if ( ${ARGN} MATCHES ".txt")
+    message(STATUS "PKDEBUG Ensemble")
+    file(STRINGS ${ARGN} ENSEMBLE_INPUTS)
+    list(TRANSFORM ENSEMBLE_INPUTS PREPEND "${SRC_DIR}/")   
+    symlink_list_of_files("${ENSEMBLE_INPUTS}" "${DST_DIR}")
+  endif()
 endfunction()
 
 # Control copy vs. symlink with top-level variable
