@@ -34,8 +34,6 @@ using Real = QMCT::RealType;
 
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
-  outputManager.pause();
-
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
   ParticleSet elec(simulation_cell);
@@ -47,7 +45,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   ions.R[0][2] = 0.0;
 
   elec.setName("elec");
-  elec.create({1,1});
+  elec.create({2});
   elec.R[0][0] = 0.0;
   elec.R[0][1] = 1.0;
   elec.R[0][2] = 0.0;
@@ -93,7 +91,6 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.G[1][2] = 0.0;
   v            = bare_ke.evaluate(elec);
   REQUIRE(v == -0.5);
-  outputManager.resume();
 }
 
 TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
@@ -104,7 +101,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   Communicate* c = OHMMS::Controller;
 
-  outputManager.pause();
   //Cell definition:
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -243,8 +239,6 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
-
-  outputManager.resume();
 }
 
 /** Provide a test scope parameterized on electron species mass that then can run a set of tests using

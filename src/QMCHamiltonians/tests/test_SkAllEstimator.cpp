@@ -39,7 +39,6 @@ namespace qmcplusplus
 {
 TEST_CASE("SkAll", "[hamiltonian]")
 {
-  outputManager.pause();
   // Boiler plate setup
   std::cout << std::fixed;
   std::cout << std::setprecision(8);
@@ -336,7 +335,5 @@ TEST_CASE("SkAll", "[hamiltonian]")
   REQUIRE(std::fabs(rhok[52 + 25] - 0.30687) < eps);
 
   std::cout << "test_SkAllEstimator:: STOP\n";
-
-  outputManager.resume();
 }
 } // namespace qmcplusplus

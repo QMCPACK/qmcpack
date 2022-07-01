@@ -24,9 +24,6 @@
 namespace qmcplusplus
 {
 
-template<typename T>
-class ListenerVector;
-
 /** @ingroup hamiltonian
   @brief Evaluate the kinetic energy with a single mass
 

@@ -25,7 +25,6 @@
 #include "Particle/MCWalkerConfiguration.h"
 #endif
 #include "type_traits/ConvertToReal.h"
-#include "Listener.hpp"
 
 namespace qmcplusplus
 {

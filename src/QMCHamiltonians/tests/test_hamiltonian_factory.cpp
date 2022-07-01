@@ -43,7 +43,6 @@ std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCell& sim
 TEST_CASE("HamiltonianFactory", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
-  outputManager.pause();
 
   const SimulationCell simulation_cell;
   auto elec_ptr = createElectronParticleSet(simulation_cell);
@@ -127,8 +126,6 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
 
   xmlNodePtr root = doc.getRoot();
   hf.put(root);
-
-  outputManager.resume();
 }
 
 } // namespace qmcplusplus
