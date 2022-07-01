@@ -145,10 +145,8 @@ public:
 
   virtual void getConfigurations(const std::string& aroot) = 0;
 
-  virtual void checkConfigurations() = 0;
-
-//Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
-//Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
+  //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
+  //Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
   virtual void checkConfigurations(EngineHandle& handle) = 0;
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,

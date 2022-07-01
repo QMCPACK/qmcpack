@@ -26,7 +26,6 @@ public:
   void resetPsi(bool final_reset = false) override {}
   Return_rt fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left, Matrix<Return_rt>& Right) override { return 0; }
   void getConfigurations(const std::string& aroot) override {}
-  void checkConfigurations() override {}
   void checkConfigurations(EngineHandle& handle) override {}
   EffectiveWeight correlatedSampling(bool needGrad = true) override { return 0; }
 

@@ -228,11 +228,9 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
       d2LogPsi[i] = new ParticleLaplacian(nptcl);
   }
 }
-void QMCCostFunction::checkConfigurations(EngineHandle& handle)
-{}
 
 /** evaluate everything before optimization */
-void QMCCostFunction::checkConfigurations()
+void QMCCostFunction::checkConfigurations(EngineHandle& handle)
 {
   RealType et_tot = 0.0;
   RealType e2_tot = 0.0;
@@ -333,7 +331,7 @@ void QMCCostFunction::checkConfigurations()
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid = true;
+  IsValid       = true;
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];
   SumValue[SUM_WGTSQ]     = etemp[1];

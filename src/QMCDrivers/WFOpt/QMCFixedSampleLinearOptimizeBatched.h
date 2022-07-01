@@ -232,8 +232,6 @@ private:
   //name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //Variables for alternatives to linear method
-  
   //type of the previous optimization method, updated by processOptXML before run
   OptimizerType previous_optimizer_type_;
 
