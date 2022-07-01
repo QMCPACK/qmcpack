@@ -28,12 +28,13 @@ namespace qmcplusplus
 class EngineHandle
 {
 public:
-  using ValueType = QMCTraits::ValueType;
+  using Real  = QMCTraits::RealType;
+  using Value = QMCTraits::ValueType;
 
   virtual void prepareSampling(int num_params) = 0;
-  virtual void takeSample(const std::vector<ValueType>& energy_list,
-                          const RecordArray<ValueType>& dlogpsi_array,
-                          const RecordArray<ValueType>& dhpsioverpsi_array,
+  virtual void takeSample(const std::vector<Real>& energy_list,
+                          const RecordArray<Value>& dlogpsi_array,
+                          const RecordArray<Value>& dhpsioverpsi_array,
                           int ib)              = 0;
   virtual void finishSampling()                = 0;
 };
@@ -42,9 +43,9 @@ class NullEngineHandle : public EngineHandle
 {
 public:
   void prepareSampling(int num_params) override {}
-  void takeSample(const std::vector<ValueType>& energy_list,
-                  const RecordArray<ValueType>& dlogpsi_array,
-                  const RecordArray<ValueType>& dhpsioverpsi_array,
+  void takeSample(const std::vector<Real>& energy_list,
+                  const RecordArray<Value>& dlogpsi_array,
+                  const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
   {}
   void finishSampling() override {}
@@ -54,14 +55,14 @@ class DescentEngineHandle : public EngineHandle
 {
 private:
   DescentEngine& engine_;
-  std::vector<ValueType> der_rat_samp;
-  std::vector<ValueType> le_der_samp;
+  std::vector<Value> der_rat_samp;
+  std::vector<Value> le_der_samp;
 
 public:
   DescentEngineHandle(DescentEngine& engine) : engine_(engine) {}
 
   //Retrieve der_rat_samp vector for testing
-  std::vector<ValueType> getVector() {return der_rat_samp;}
+  std::vector<Value> getVector() { return der_rat_samp; }
 
   void prepareSampling(int num_params) override
   {
@@ -71,9 +72,9 @@ public:
     le_der_samp.resize(num_params + 1, 0.0);
   }
 
-  void takeSample(const std::vector<ValueType>& energy_list,
-                  const RecordArray<ValueType>& dlogpsi_array,
-                  const RecordArray<ValueType>& dhpsioverpsi_array,
+  void takeSample(const std::vector<Real>& energy_list,
+                  const RecordArray<Value>& dlogpsi_array,
+                  const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
   {
     der_rat_samp[0] = 1.0;
@@ -97,21 +98,21 @@ class LMYEngineHandle : public EngineHandle
 {
 #ifdef HAVE_LMY_ENGINE
 private:
-  cqmc::engine::LMYEngine<ValueType>& lm_engine_;
-  std::vector<ValueType> der_rat_samp;
-  std::vector<ValueType> le_der_samp;
+  cqmc::engine::LMYEngine<Value>& lm_engine_;
+  std::vector<Value> der_rat_samp;
+  std::vector<Value> le_der_samp;
 
 public:
-  LMYEngineHandle(cqmc::engine::LMYEngine<ValueType>& lmyEngine) : lm_engine_(lmyEngine){};
+  LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
 
   void prepareSampling(int num_params) override
   {
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
   }
-  void takeSample(const std::vector<ValueType>& energy_list,
-                  const RecordArray<ValueType>& dlogpsi_array,
-                  const RecordArray<ValueType>& dhpsioverpsi_array,
+  void takeSample(const std::vector<Real>& energy_list,
+                  const RecordArray<Value>& dlogpsi_array,
+                  const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
   {
     der_rat_samp[0] = 1.0;
