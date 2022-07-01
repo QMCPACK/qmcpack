@@ -28,11 +28,13 @@ namespace qmcplusplus
 class EngineHandle
 {
 public:
-  using Real  = QMCTraits::RealType;
-  using Value = QMCTraits::ValueType;
+  using Real          = QMCTraits::RealType;
+  using Value         = QMCTraits::ValueType;
+  using FullPrecReal  = QMCTraits::FullPrecRealType;
+  using FullPrecValue = QMCTraits::FullPrecValueType;
 
   virtual void prepareSampling(int num_params) = 0;
-  virtual void takeSample(const std::vector<Real>& energy_list,
+  virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
                           const RecordArray<Value>& dhpsioverpsi_array,
                           int ib)              = 0;
@@ -43,7 +45,7 @@ class NullEngineHandle : public EngineHandle
 {
 public:
   void prepareSampling(int num_params) override {}
-  void takeSample(const std::vector<Real>& energy_list,
+  void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
@@ -55,14 +57,14 @@ class DescentEngineHandle : public EngineHandle
 {
 private:
   DescentEngine& engine_;
-  std::vector<Value> der_rat_samp;
-  std::vector<Value> le_der_samp;
+  std::vector<FullPrecValue> der_rat_samp;
+  std::vector<FullPrecValue> le_der_samp;
 
 public:
   DescentEngineHandle(DescentEngine& engine) : engine_(engine) {}
 
   //Retrieve der_rat_samp vector for testing
-  std::vector<Value> getVector() { return der_rat_samp; }
+  const std::vector<FullPrecValue>& getVector() const { return der_rat_samp; }
 
   void prepareSampling(int num_params) override
   {
@@ -72,7 +74,7 @@ public:
     le_der_samp.resize(num_params + 1, 0.0);
   }
 
-  void takeSample(const std::vector<Real>& energy_list,
+  void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
@@ -83,9 +85,9 @@ public:
     int num_params = der_rat_samp.size() - 1;
     for (int j = 0; j < num_params; j++)
     {
-      der_rat_samp[j + 1] = std::real(dlogpsi_array.getValue(j, ib));
-      le_der_samp[j + 1] =
-          std::real(dhpsioverpsi_array.getValue(j, ib)) + le_der_samp[0] * std::real(dlogpsi_array.getValue(j, ib));
+      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
+      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, ib)) +
+          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
     }
     int ip = omp_get_thread_num();
     engine_.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
@@ -99,8 +101,8 @@ class LMYEngineHandle : public EngineHandle
 #ifdef HAVE_LMY_ENGINE
 private:
   cqmc::engine::LMYEngine<Value>& lm_engine_;
-  std::vector<Value> der_rat_samp;
-  std::vector<Value> le_der_samp;
+  std::vector<FullPrecValue> der_rat_samp;
+  std::vector<FullPrecValue> le_der_samp;
 
 public:
   LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
@@ -110,7 +112,7 @@ public:
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
   }
-  void takeSample(const std::vector<Real>& energy_list,
+  void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
                   int ib) override
@@ -121,9 +123,9 @@ public:
     int num_params = der_rat_samp.size() - 1;
     for (int j = 0; j < num_params; j++)
     {
-      der_rat_samp[j + 1] = std::real(dlogpsi_array.getValue(j, ib));
-      le_der_samp[j + 1] =
-          std::real(dhpsioverpsi_array.getValue(j, ib)) + le_der_samp[0] * std::real(dlogpsi_array.getValue(j, ib));
+      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
+      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, ib)) +
+          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
     }
 
     lm_engine_.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);

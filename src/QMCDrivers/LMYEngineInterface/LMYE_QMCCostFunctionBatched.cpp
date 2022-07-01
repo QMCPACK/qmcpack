@@ -22,17 +22,18 @@ namespace qmcplusplus
 {
 int QMCCostFunctionBatched::total_samples()
 {
-    return samples_.getGlobalNumSamples();
+  return samples_.getGlobalNumSamples();
   // for the unfamiliar, the [] starts a lambda function
- // return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, 0,
- //                        [](int x, const auto& p) { return x + p->numSamples(); });
+  // return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, 0,
+  //                        [](int x, const auto& p) { return x + p->numSamples(); });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Computes the cost function using the LMYEngine
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)
+QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::LMYEngineCost_detail(
+    cqmc::engine::LMYEngine<Return_t>* EngineObj)
 {
   // get total number of samples
   const int m = this->total_samples();

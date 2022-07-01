@@ -37,7 +37,7 @@ TEST_CASE("EngineData construction", "[drivers]")
 
   xmlNodePtr fakeXML = doc.getRoot();
 
-  DescentEngine descentEngineObj = DescentEngine(c,fakeXML);
+  DescentEngine descentEngineObj = DescentEngine(c, fakeXML);
 
   descentEngineObj.processXML(fakeXML);
 
@@ -47,11 +47,9 @@ TEST_CASE("EngineData construction", "[drivers]")
 
   int fake_num = 5;
   handle->prepareSampling(fake_num);
-  std::vector<ValueType> test_der_rat_samp = handle->getVector();
+  auto& test_der_rat_samp = handle->getVector();
 
-  REQUIRE(test_der_rat_samp.size()==6);
-  REQUIRE(test_der_rat_samp[0]==0.0);
-
-
+  REQUIRE(test_der_rat_samp.size() == 6);
+  REQUIRE(test_der_rat_samp[0] == 0.0);
 }
 } // namespace qmcplusplus
