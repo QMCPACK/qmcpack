@@ -194,6 +194,10 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
+  
+  // ------------------------------------
+  // Parameters in this section are used by one or more of the adaptive LM, descent, or hybrid optimizers
+
   /// number of shifts we will try
   int num_shifts;
   /// the maximum relative change in the cost function for the adaptive three-shift scheme
@@ -240,6 +244,8 @@ private:
 
   //whether to use hybrid method
   bool doHybrid;
+
+  // ------------------------------------
 
   // Test parameter gradients
   bool doGradientTest;

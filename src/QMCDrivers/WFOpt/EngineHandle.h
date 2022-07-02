@@ -33,11 +33,25 @@ public:
   using FullPrecReal  = QMCTraits::FullPrecRealType;
   using FullPrecValue = QMCTraits::FullPrecValueType;
 
+  /** Function for preparing derivative ratio vectors used by optimizer engines
+   *
+   *\param[in] num_params           Number of optimizable parameters
+   */
   virtual void prepareSampling(int num_params) = 0;
+  /** Function for passing derivative ratios to optimizer engines
+   *
+   * \param[in] energy_list         Vector of local energy values
+   * \param[in] dlogpsi_array       Parameter derivatives of log psi
+   * \param[in] dhpsioverpsi_array  Parameter derivatives of local energy
+   * \param[in] ib                  Sample index
+   *
+   */
   virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
                           const RecordArray<Value>& dhpsioverpsi_array,
                           int ib)              = 0;
+  /** Function for having optimizer engines execute their sample_finish functions
+   */
   virtual void finishSampling()                = 0;
 };
 

@@ -23,8 +23,8 @@ namespace qmcplusplus
 using FullPrecValueType = qmcplusplus::QMCTraits::FullPrecValueType;
 using ValueType         = qmcplusplus::QMCTraits::ValueType;
 
-///This provides a basic test of constructing an EngineData struct and checking information in it
-TEST_CASE("EngineData construction", "[drivers]")
+///This provides a basic test of constructing an EngineHandle object and checking information in it
+TEST_CASE("EngineHandle construction", "[drivers]")
 {
   Communicate* c = OHMMS::Controller;
 

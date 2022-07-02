@@ -268,8 +268,6 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
   optTarget->checkConfigurations(*handle);
-  //optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
-  //                                      MinMethod); // computes derivative ratios and pass into engine
 
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
@@ -1194,7 +1192,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************************************************"
             << std::endl
             << std::endl;
-  //const Return_t starting_cost = this->optTarget->LMYEngineCost(true);
 
   // prepare wavefunction update which does nothing if we do not use block lm
   EngineObj->wfn_update_prep();
@@ -1289,22 +1286,15 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << std::endl;
 
   //Apparently the batched drivers are intended to be run only once, which
-  //means that this part of adaptive_three_shift will not work as
-  //calling start or engine_start will lead to vmcEngine being run again.
+  //means that the origianl version of adaptive_three_shift will not work as
+  //calling start or engine_start at this point will lead to vmcEngine being run again.
   //This will lead to a slight difference in behavior compared to the
   //legacy drivers as those could be run a second time to obtain samples based
   //on the wave function from the middle shift.
   //It is possible this difference may not make much difference in
   //practical optimization performance, but that is unexplored.
 
-  /*
-  std::string old_name = vmcEngine->getCommunicator()->getName();
-  vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
-  //start();
-  engine_start(EngineObj, *descentEngineObj, MinMethod);
-  vmcEngine->getCommunicator()->setName(old_name);
-*/
-
+  
   // say what we are doing
   app_log() << std::endl
             << "******************************************************************" << std::endl
@@ -1614,7 +1604,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
-  //start();
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
