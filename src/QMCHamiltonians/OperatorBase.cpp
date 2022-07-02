@@ -119,7 +119,7 @@ void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const std::vector<ListenerVector<RealType>>& listeners,
                                           const std::vector<ListenerVector<RealType>>& listeners_ions) const
 {
-  this->mw_evaluate(o_list, wf_list, p_list);
+  mw_evaluate(o_list, wf_list, p_list);
 }
 
 
@@ -156,8 +156,10 @@ void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBa
                                             const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                             const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  for (int iw = 0; iw < o_list.size(); iw++)
-    o_list[iw].evaluateWithToperator(p_list[iw]);
+  // Only in NLPP evaluateWithToperator doesn't decay to evaluate. All other derived classes don't
+  // provide evaluateWithToperator specialization but may provide mw_evaluate optimization.
+  // Thus decaying to mw_evaluate is better than decalying to a loop over evaluateWithToperator
+  mw_evaluate(o_list, wf_list, p_list);
 }
 
 void OperatorBase::mw_evaluatePerParticleWithToperator(
@@ -170,7 +172,7 @@ void OperatorBase::mw_evaluatePerParticleWithToperator(
   // This may or may not be what is expected.
   // It the responsibility of the derived type to override this if the
   // desired behavior is instead to call mw_evaluatePerParticle
-  this->mw_evaluateWithToperator(o_list, wf_list, p_list);
+  mw_evaluateWithToperator(o_list, wf_list, p_list);
 }
 
 OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
