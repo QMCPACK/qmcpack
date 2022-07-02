@@ -16,11 +16,11 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-
+#include "QMCHamiltonians/tests/TestListenerFunction.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 
-
+#include <functional>
 #include <stdio.h>
 #include <string>
 
@@ -28,6 +28,10 @@ using std::string;
 
 namespace qmcplusplus
 {
+
+using QMCT = QMCTraits;
+using Real = QMCT::RealType;
+
 TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 {
   const SimulationCell simulation_cell;
@@ -236,4 +240,147 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   REQUIRE(PulayTerm[1][1] == Approx(0.0));
   REQUIRE(PulayTerm[1][2] == Approx(0.0));
 }
+
+/** Provide a test scope parameterized on electron species mass that then can run a set of tests using
+ *  its objects.
+ *  I couldn't see a easier solution to deal with all the setup to get both coverage of this
+ *  interesting feature considering various approaches to copy constructors the objects in the testing
+ *  scope take.
+ */
+void testElecCase(double mass_up,
+                  double mass_dn,
+                  std::function<void(RefVectorWithLeader<OperatorBase>& o_list,
+                                     RefVectorWithLeader<TrialWaveFunction>& twf_list,
+                                     RefVectorWithLeader<ParticleSet>& p_list,
+                                     Matrix<Real>& kinetic_energies,
+                                     std::vector<ListenerVector<Real>>& listeners,
+                                     std::vector<ListenerVector<Real>>& ion_listeners)> tests)
+{
+  using testing::getParticularListener;
+
+  const SimulationCell simulation_cell;
+
+  ParticleSet ions(simulation_cell);
+
+  ions.setName("ion");
+  ions.create({1});
+  ions.R[0][0] = 0.0;
+  ions.R[0][1] = 0.0;
+  ions.R[0][2] = 0.0;
+
+  Matrix<Real> kinetic_energies(2);
+
+  ParticleSet elec(simulation_cell);
+
+  elec.setName("elec");
+  elec.create({1,1});
+  elec.R[0][0] = 0.0;
+  elec.R[0][1] = 1.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 1.0;
+  elec.R[1][1] = 1.0;
+  elec.R[1][2] = 0.0;
+
+  SpeciesSet& tspecies         = elec.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  int massIdx                  = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx)   = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+  tspecies(massIdx, upIdx)     = mass_up;
+  tspecies(massIdx, downIdx)   = mass_dn;
+
+  elec.addTable(ions);
+  elec.update();
+
+  ParticleSet elec2(elec);
+  elec2.R[1][2] = 1.0;
+  elec2.update();
+
+  RefVector<ParticleSet> ptcls{elec, elec2};
+  RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
+
+  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke2(elec);
+
+  RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
+  RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);
+  elec.L[0]  = 1.0;
+  elec.L[1]  = 0.0;
+  elec2.L[0] = 1.0;
+  elec2.L[1] = 0.0;
+
+  TrialWaveFunction psi;
+  TrialWaveFunction psi_clone;
+
+  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
+
+  ResourceCollection bare_ke_res("test_bare_ke_res");
+  bare_ke.createResource(bare_ke_res);
+  ResourceCollectionTeamLock<OperatorBase> bare_ke_lock(bare_ke_res, o_list);
+
+  ResourceCollection pset_res("test_pset_res");
+  elec.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+
+  std::vector<ListenerVector<Real>> listeners;
+  listeners.emplace_back("kinetic", getParticularListener(kinetic_energies));
+
+  std::vector<ListenerVector<Real>> ion_listeners;
+
+  tests(o_list, twf_list, p_list, kinetic_energies, listeners, ion_listeners);
+}
+
+/** just set the values to test the electron weights */
+auto getTestCaseForWeights(Real value1, Real value2, Real value3)
+{
+  return [value1, value2,
+          value3](RefVectorWithLeader<OperatorBase>& o_list, RefVectorWithLeader<TrialWaveFunction>& twf_list,
+                  RefVectorWithLeader<ParticleSet>& p_list, Matrix<Real>& kinetic_energies,
+                  std::vector<ListenerVector<Real>>& listeners, std::vector<ListenerVector<Real>>& ion_listeners) {
+    auto& bare_ke = o_list[0];
+    bare_ke.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);
+    CHECK(bare_ke.getValue() == Approx(value1));
+    auto& bare_ke2 = o_list[1];
+    CHECK(bare_ke2.getValue() == Approx(value1));
+    // Check that the sum of the particle energies is consistent with the total.
+    CHECK(std::accumulate(kinetic_energies.begin(), kinetic_energies.begin() + kinetic_energies.cols(), 0.0) ==
+          Approx(bare_ke.getValue()));
+    // check a single particle
+    CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(value1));
+
+    auto& elec  = p_list[0];
+    elec.L[0]   = 2.0;
+    elec.L[1]   = 1.0;
+    auto& elec2 = p_list[1];
+    elec2.L[0]  = 2.0;
+    elec2.L[1]  = 1.0;
+
+    bare_ke.mw_evaluatePerParticle(o_list, twf_list, p_list, listeners, ion_listeners);
+    CHECK(std::accumulate(kinetic_energies.begin(), kinetic_energies.begin() + kinetic_energies.cols(), 0.0) ==
+          Approx(bare_ke.getValue()));
+    CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(value2));
+
+    // test that mw_evaluatePerParticleWithToperator decays to mw_evaluatePerParticle
+    // If mw_evaluatePerParticle follows the standard behavior in OperatorBase the Listner will not receive a report
+    // and tis values will remain as in the previous check.
+    elec.L[0]  = 1.0;
+    elec.L[1]  = 0.0;
+    elec2.L[0] = 1.0;
+    elec2.L[1] = 0.0;
+
+    bare_ke.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
+    CHECK(std::accumulate(kinetic_energies[1], kinetic_energies[1] + kinetic_energies.cols(), 0.0) == Approx(value3));
+  };
+}
+
+TEST_CASE("BareKineticEnergyListener", "[hamiltonian]")
+{
+  outputManager.pause();
+  testElecCase(1.0, 1.0, getTestCaseForWeights(-0.5, -1.5, -0.5));
+  testElecCase(0.5, 1.0, getTestCaseForWeights(-1.0, -2.5, -1.0));
+  outputManager.resume();
+}
+
 } // namespace qmcplusplus

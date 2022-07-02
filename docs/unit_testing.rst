@@ -32,9 +32,11 @@ Some of the tests reference input files. The unit test CMake setup places those 
 
 Command line options are available on the unit test executables.  Some of the more useful ones are
 
--  List command line options.
+-  ``-h`` List command line options.
 
--  List all the tests in the executable.
+-  ``-l`` List all the tests in the executable.
+
+-  ``--turn-on-printout`` See all the QMCPACK printouts which are suppressed by default in unit tests.
 
 A test name can be given on the command line to execute just that test.  This is useful when iterating
 on a particular test or when running in the debugger.   Test names often contain spaces, so most command line environments require enclosing the test name in single or double quotes.
