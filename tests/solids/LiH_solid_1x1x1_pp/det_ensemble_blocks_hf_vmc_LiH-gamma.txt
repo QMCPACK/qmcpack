@@ -1,0 +1,4 @@
+det_ensemble_blocks_hf_vmc_LiH-gamma_0.xml
+det_ensemble_blocks_hf_vmc_LiH-gamma_1.xml
+det_ensemble_blocks_hf_vmc_LiH-gamma_2.xml
+det_ensemble_blocks_hf_vmc_LiH-gamma_3.xml
