@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="det_ensemble_blocks_vmc_msdj" series="0"/>
+  <random seed="77"/>
+  <include href="LiH.structure.xml"/>
+  <include href="LiH.wfj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">    1 </parameter>
+    <parameter name="substeps">  2 </parameter>
+    <parameter name="warmupSteps">  3 </parameter>
+    <parameter name="steps">  3 </parameter>
+    <parameter name="blocks">  3 </parameter>
+    <parameter name="timestep">  0.4 </parameter>
+    <parameter name="usedrift">   no </parameter>
+  </qmc>
+</simulation>
