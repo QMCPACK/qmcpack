@@ -21,7 +21,7 @@
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, PosType twist, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, const PosType& twist, bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
