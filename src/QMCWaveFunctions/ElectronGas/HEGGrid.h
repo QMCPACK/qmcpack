@@ -21,12 +21,11 @@
 
 namespace qmcplusplus
 {
-
 //three-d specialization
 template<class T>
 struct HEGGrid
 {
-  using PL_t     = CrystalLattice<T, OHMMS_DIM>;
+  using PL_t = CrystalLattice<T, OHMMS_DIM>;
 
   const PL_t& Lattice;
   static constexpr std::array<int, 31> n_within_shell{{1,   7,   19,  27,  33,  57,  81,  93,  123, 147, 171,
@@ -64,7 +63,6 @@ struct HEGGrid
    * @param rs_in rs
    */
   inline T getCellLength(int nptcl, T rs_in) const { return std::pow(4.0 * M_PI * nptcl / 3.0, 1.0 / 3.0) * rs_in; }
-
 };
 
 } // namespace qmcplusplus

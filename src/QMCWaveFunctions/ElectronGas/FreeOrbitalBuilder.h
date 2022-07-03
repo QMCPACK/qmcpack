@@ -9,12 +9,13 @@ class FreeOrbitalBuilder : public SPOSetBuilder
 {
 public:
   FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur);
-  ~FreeOrbitalBuilder(){}
+  ~FreeOrbitalBuilder() {}
 
   std::unique_ptr<SPOSet> createSPOSetFromXML(xmlNodePtr cur) override;
+
 private:
   ParticleSet& targetPtcl;
   bool in_list(const int j, const std::vector<int> l);
 };
-} // qmcplusplus
+} // namespace qmcplusplus
 #endif

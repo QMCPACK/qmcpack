@@ -72,9 +72,14 @@ public:
    * @param kc cutoff radius in the K
    * @param useSphere if true, use the |K|
    */
-  void updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, const PosType& twist=PosType(), bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice,
+                    RealType kc,
+                    unsigned ndim,
+                    const PosType& twist = PosType(),
+                    bool useSphere       = true);
 
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
+
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell

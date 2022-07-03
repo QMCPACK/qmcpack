@@ -6,10 +6,8 @@
 
 namespace qmcplusplus
 {
-
 FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlNodePtr cur)
-  : SPOSetBuilder("PW", comm),
-    targetPtcl(els)
+    : SPOSetBuilder("PW", comm), targetPtcl(els)
 {}
 
 std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -30,10 +28,10 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   app_log() << "twist fraction = " << twist << std::endl;
   app_log() << "twist cartesian = " << tvec << std::endl;
 #else
-  npw = std::ceil((norb+1.0)/2);
-  for (int ldim=0;ldim<twist.size();ldim++)
+  npw = std::ceil((norb + 1.0) / 2);
+  for (int ldim = 0; ldim < twist.size(); ldim++)
   {
-    if (std::abs(twist[ldim]) > 1e-16) 
+    if (std::abs(twist[ldim]) > 1e-16)
       throw std::runtime_error("no twist for real orbitals");
   }
 #endif
@@ -48,24 +46,26 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // k0 is not in kpts_cart
   kpts[0] = tvec;
 #ifdef QMC_COMPLEX
-  for (int ik=1;ik<npw;ik++)
+  for (int ik = 1; ik < npw; ik++)
   {
-    kpts[ik] = klists.kpts_cart[ik-1];
+    kpts[ik] = klists.kpts_cart[ik - 1];
   }
 #else
   const int nktot = klists.kpts.size();
   std::vector<int> mkidx(npw, 0);
   int ik = 1;
-  for (int jk=0;jk<nktot;jk++)
+  for (int jk = 0; jk < nktot; jk++)
   {
     // check if -k is already chosen
     const int jmk = klists.minusk[jk];
-    if (in_list(jk, mkidx)) continue;
+    if (in_list(jk, mkidx))
+      continue;
     // if not, then add this kpoint
-    kpts[ik] = klists.kpts_cart[jk];
+    kpts[ik]  = klists.kpts_cart[jk];
     mkidx[ik] = jmk; // keep track of its minus
     ik++;
-    if (ik >= npw) break;
+    if (ik >= npw)
+      break;
   }
 #endif
   auto sposet = std::make_unique<FreeOrbital>(kpts);
@@ -75,11 +75,12 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
 bool FreeOrbitalBuilder::in_list(const int j, const std::vector<int> l)
 {
-  for (int i=0;i<l.size();i++)
+  for (int i = 0; i < l.size(); i++)
   {
-    if (j == l[i]) return true;
+    if (j == l[i])
+      return true;
   }
   return false;
 }
 
-} // qmcplusplus
+} // namespace qmcplusplus

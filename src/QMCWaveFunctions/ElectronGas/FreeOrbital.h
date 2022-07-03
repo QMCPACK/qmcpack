@@ -21,7 +21,6 @@
 
 namespace qmcplusplus
 {
-
 class FreeOrbital : public SPOSet
 {
 public:
@@ -30,55 +29,46 @@ public:
 
   // phi[i][j] is phi_j(r_i), i.e. electron i in orbital j
   //  i \in [first, last)
-  void evaluate_notranspose(
-    const ParticleSet& P,
-    int first,
-    int last,
-    ValueMatrix& phi,
-    GradMatrix& dphi,
-    ValueMatrix& d2phi) override;
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& phi,
+                            GradMatrix& dphi,
+                            ValueMatrix& d2phi) override;
 
   // plug r_i into all orbitals
-  void evaluateVGL(
-    const ParticleSet& P,
-    int i,
-    ValueVector& pvec,
-    GradVector& dpvec,
-    ValueVector& d2pvec
-  ) override;
+  void evaluateVGL(const ParticleSet& P, int i, ValueVector& pvec, GradVector& dpvec, ValueVector& d2pvec) override;
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& pvec) override;
 
   // hessian matrix is needed by backflow
-  void evaluate_notranspose(
-    const ParticleSet& P,
-    int first,
-    int last,
-    ValueMatrix& phi,
-    GradMatrix& dphi,
-    HessMatrix& d2phi_mat) override;
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& phi,
+                            GradMatrix& dphi,
+                            HessMatrix& d2phi_mat) override;
 
   // derivative of hessian is needed to optimize backflow
-  void evaluate_notranspose(
-    const ParticleSet& P,
-    int first,
-    int last,
-    ValueMatrix& phi,
-    GradMatrix& dphi,
-    HessMatrix& d2phi_mat,
-    GGGMatrix& d3phi_mat) override;
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& phi,
+                            GradMatrix& dphi,
+                            HessMatrix& d2phi_mat,
+                            GGGMatrix& d3phi_mat) override;
 
   void report(const std::string& pad) const override;
   // ---- begin required overrides
-  std::unique_ptr<SPOSet> makeClone() const override {return std::make_unique<FreeOrbital>(*this);}
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<FreeOrbital>(*this); }
   void resetParameters(const opt_variables_type& optVariables) override {} //called by BFTrans}
-  void setOrbitalSetSize(int norbs) override {throw std::runtime_error("not implemented");}
+  void setOrbitalSetSize(int norbs) override { throw std::runtime_error("not implemented"); }
   // required overrides end ----
 private:
   const std::vector<PosType> kvecs; // kvecs vectors
-  const int mink; // minimum k index
-  const int maxk; // maximum number of kvecs vectors
-  std::vector<RealType> k2neg; // minus kvecs^2
+  const int mink;                   // minimum k index
+  const int maxk;                   // maximum number of kvecs vectors
+  std::vector<RealType> k2neg;      // minus kvecs^2
 };
 
-} // qmcplusplus
+} // namespace qmcplusplus
 #endif

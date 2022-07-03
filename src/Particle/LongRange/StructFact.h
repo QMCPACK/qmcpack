@@ -22,7 +22,6 @@
 
 namespace qmcplusplus
 {
-
 class KContainer;
 /** @ingroup longrange
  *\brief Calculates the structure-factor for a particle set

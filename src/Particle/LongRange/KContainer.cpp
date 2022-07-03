@@ -21,7 +21,11 @@
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, const PosType& twist, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout& lattice,
+                              RealType kc,
+                              unsigned ndim,
+                              const PosType& twist,
+                              bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
@@ -125,7 +129,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, PosType twist, bool 
           if (i == 0 && j == 0 && k == 0)
             continue;
           //Convert kvec to Cartesian
-          kvec_cart = lattice.k_cart(kvec+twist);
+          kvec_cart = lattice.k_cart(kvec + twist);
           //Find modk
           modk2 = dot(kvec_cart, kvec_cart);
           if (modk2 > kcut2)
