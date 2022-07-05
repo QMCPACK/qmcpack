@@ -25,12 +25,16 @@ add_executable(
   test_infostream.cpp
   test_project_data.cpp
   test_rng_control.cpp
-  test_output_manager.cpp
   test_ModernStringUtils.cpp
   test_StlPrettyPrint.cpp
   test_StdRandom.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcutil)
 
 add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
+
+set(UTEST_EXE test_utilities_output_manager)
+add_executable(${UTEST_EXE} test_output_manager.cpp)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil)
+add_unit_test(deterministic-unit_${UTEST_EXE} 1 1 $<TARGET_FILE:${UTEST_EXE}> --turn-on-printout)
 
 subdirs(for_testing)

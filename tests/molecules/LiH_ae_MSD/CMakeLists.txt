@@ -134,6 +134,40 @@ if(NOT QMC_CUDA)
       LiH_ae_MSD_OPT_CI_SCALARS # VMC
     )
 
+    # Minimal test of ensemble run
+    # No check on results
+    # Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
+    # Should abort if number of MPI tasks is smaller than ensemble
+    qmc_run_and_check(
+      deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_ensemble_blocks_vmc_msdj
+      det_ensemble_blocks_vmc_msdj.txt
+      4
+      1
+      TRUE
+     )
+    
+    qmc_run_and_check(
+      deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_ensemble_blocks_vmc_msdj
+      det_ensemble_blocks_vmc_msdj.txt
+      3
+      1
+      FALSE
+     )
+    
+    qmc_run_and_check(
+      deterministic-ensemble_blocks_LiH_ae-vmc_msdj
+      "${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD"
+      det_ensemble_blocks_vmc_msdj
+      det_ensemble_blocks_vmc_msdj.txt
+      5
+      1
+      TRUE
+     )
+
   else()
     message(VERBOSE
       "Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
