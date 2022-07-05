@@ -221,7 +221,8 @@ void QMCFixedSampleLinearOptimizeBatched::start()
   initialize_timer_.start();
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
-  optTarget->checkConfigurations();
+  NullEngineHandle handle;
+  optTarget->checkConfigurations(handle);
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -237,6 +238,15 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
                                                        std::string MinMethod)
 {
   app_log() << "entering engine_start function" << std::endl;
+
+  std::unique_ptr<EngineHandle> handle;
+  if (MinMethod == "descent")
+    handle = std::make_unique<DescentEngineHandle>(descentEngineObj);
+  else if (MinMethod == "adaptive")
+    handle = std::make_unique<LMYEngineHandle>(*EngineObj);
+  else
+    handle = std::make_unique<NullEngineHandle>();
+
 
   // generate samples
   generate_samples_timer_.start();
@@ -257,8 +267,8 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   initialize_timer_.start();
   optTarget->getConfigurations("");
   optTarget->setRng(vmcEngine->getRngRefs());
-  optTarget->engine_checkConfigurations(EngineObj, descentEngineObj,
-                                        MinMethod); // computes derivative ratios and pass into engine
+  optTarget->checkConfigurations(*handle);
+
   initialize_timer_.stop();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
@@ -636,24 +646,47 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 
 
   doHybrid = false;
-
   if (MinMethod == "hybrid")
   {
     doHybrid = true;
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
+    hybridEngineObj->incrementStepCounter();
+
+    //Overwrite sampling information with input from selected optimizer block of a hybrid run
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+
+    qmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+    vmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+
+
     processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+
+
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
+                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
+                                qmcdriver_input_copy.get_num_crowds());
+    QMCDriverNew::startup(q, awc);
   }
   else
+  {
+    //Also need to overwrite input information again in case this method was preceded by hybrid method optimization
+    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
+    qmcdriver_input_copy.readXML(q);
+
     processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
 
-  auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
-  // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
-  QMCDriverNew::AdjustedWalkerCounts awc =
-      adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input.get_total_walkers(),
-                              qmcdriver_input.get_walkers_per_rank(), 1.0, qmcdriver_input.get_num_crowds());
-  QMCDriverNew::startup(q, awc);
+    auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
+    // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
+    QMCDriverNew::AdjustedWalkerCounts awc =
+        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
+                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
+                                qmcdriver_input_copy.get_num_crowds());
+    QMCDriverNew::startup(q, awc);
+  }
 }
 
 bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
@@ -678,8 +711,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
     descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE)
-    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive");
+  if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE &&
+      current_optimizer_type_ != OptimizerType::DESCENT)
+    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
@@ -732,8 +766,21 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   vmcEngine.reset(nullptr);
 
   // Explicitly copy the driver input objects since they will be used to instantiate the VMCEngine repeatedly.
+  //Overwriting input information is also done here to account for the hybrid method
   QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
   VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
+
+  if (MinMethod == "hybrid")
+  {
+    qmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+    vmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
+  }
+  else
+  {
+    qmcdriver_input_copy.readXML(opt_xml);
+    vmcdriver_input_copy.readXML(opt_xml);
+  }
+
 
   // create VMC engine
   vmcEngine =
@@ -1145,7 +1192,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************************************************"
             << std::endl
             << std::endl;
-  //const Return_t starting_cost = this->optTarget->LMYEngineCost(true);
 
   // prepare wavefunction update which does nothing if we do not use block lm
   EngineObj->wfn_update_prep();
@@ -1239,11 +1285,16 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             << "*************************************************************" << std::endl
             << std::endl;
 
-  std::string old_name = vmcEngine->getCommunicator()->getName();
-  vmcEngine->getCommunicator()->setName(old_name + ".middleShift");
-  start();
-  vmcEngine->getCommunicator()->setName(old_name);
+  //Apparently the batched drivers are intended to be run only once, which
+  //means that the origianl version of adaptive_three_shift will not work as
+  //calling start or engine_start at this point will lead to vmcEngine being run again.
+  //This will lead to a slight difference in behavior compared to the
+  //legacy drivers as those could be run a second time to obtain samples based
+  //on the wave function from the middle shift.
+  //It is possible this difference may not make much difference in
+  //practical optimization performance, but that is unexplored.
 
+  
   // say what we are doing
   app_log() << std::endl
             << "******************************************************************" << std::endl
@@ -1553,7 +1604,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
-  start();
 
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
@@ -1608,6 +1658,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     //of vectors to the BLM engine.
     if (previous_optimizer_type_ == OptimizerType::DESCENT)
     {
+      descentEngineObj->resetStorageCount();
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 #if !defined(QMC_COMPLEX)
       //FIXME once complex is fixed in BLM engine
