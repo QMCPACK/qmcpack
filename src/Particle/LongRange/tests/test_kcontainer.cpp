@@ -116,7 +116,7 @@ TEST_CASE("kcontainer at gamma in 2D", "[longrange]")
     for (int ldim = 0; ldim < ndim; ldim++)
     {
       CHECK(klists.kpts[ik][ldim] == gvecs[ik][ldim]);
-      CHECK(klists.kpts[ik][ldim] * blat == klists.kpts_cart[ik][ldim]);
+      CHECK(klists.kpts[ik][ldim] * blat == Approx(klists.kpts_cart[ik][ldim]));
     }
   }
 }
