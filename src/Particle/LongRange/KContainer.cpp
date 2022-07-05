@@ -102,7 +102,7 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
     mmax[1] = 0;
 }
 
-void KContainer::BuildKLists(const ParticleLayout& lattice, PosType twist, bool useSphere)
+void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist, bool useSphere)
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;

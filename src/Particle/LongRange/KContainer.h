@@ -70,6 +70,7 @@ public:
   /** update k-vectors 
    * @param sc supercell
    * @param kc cutoff radius in the K
+   * @param twist shifts the center of the grid of k-vectors
    * @param useSphere if true, use the |K|
    */
   void updateKLists(const ParticleLayout& lattice,
@@ -86,7 +87,7 @@ private:
    */
   void findApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
-  void BuildKLists(const ParticleLayout& lattice, PosType twist, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, const PosType& twist, bool useSphere);
 
   /** K-vector in Cartesian coordinates in SoA layout
    */

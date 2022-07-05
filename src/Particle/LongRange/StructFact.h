@@ -71,7 +71,7 @@ public:
   bool isStorePerParticle() const { return StorePerParticle; }
 
   /// accessor of k_lists_
-  const KContainer getKLists() const { return k_lists_; }
+  const KContainer& getKLists() const { return k_lists_; }
 
 private:
   /// Compute all rhok elements from the start
