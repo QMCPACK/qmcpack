@@ -272,3 +272,37 @@ qmc_run_and_check(
   0
   DET_LIH_GAMMA_SCALARS # VMC
 )
+
+# Minimal test of ensemble run
+# No check on results
+# Arrange for "imbalanced" ensemble and assume will crash or hang/timeout on major error
+# Should abort if number of MPI tasks is smaller than ensemble
+qmc_run_and_check(
+  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  det_ensemble_blocks_hf_vmc_LiH-gamma
+  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  4
+  1
+  TRUE
+ )
+
+qmc_run_and_check(
+  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  det_ensemble_blocks_hf_vmc_LiH-gamma
+  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  3
+  1
+  FALSE
+ )
+
+qmc_run_and_check(
+  deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
+  "${qmcpack_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+  det_ensemble_blocks_hf_vmc_LiH-gamma
+  det_ensemble_blocks_hf_vmc_LiH-gamma.txt
+  5
+  1
+  TRUE
+ )
