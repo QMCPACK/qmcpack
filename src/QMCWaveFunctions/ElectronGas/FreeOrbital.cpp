@@ -18,9 +18,7 @@ FreeOrbital::FreeOrbital(const std::vector<PosType>& kpts_cart)
 #endif
   k2neg.resize(maxk);
   for (int ik = 0; ik < maxk; ik++)
-  {
     k2neg[ik] = -dot(kvecs[ik], kvecs[ik]);
-  }
 }
 
 FreeOrbital::~FreeOrbital() {}
@@ -118,11 +116,11 @@ void FreeOrbital::evaluate_notranspose(const ParticleSet& P,
       dp[ik] = ValueType(-sinkr, coskr) * kvecs[ik];
       for (int la = 0; la < OHMMS_DIM; la++)
       {
-        (hess[ik])(la, la) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[ik](la, la) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[la];
         for (int lb = la + 1; lb < OHMMS_DIM; lb++)
         {
-          (hess[ik])(la, lb) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[ik])(lb, la) = (hess[ik])(la, lb);
+          hess[ik](la, lb) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[ik](lb, la) = hess[ik](la, lb);
         }
       }
 #else
@@ -134,14 +132,14 @@ void FreeOrbital::evaluate_notranspose(const ParticleSet& P,
       dp[j2]       = coskr * kvecs[ik];
       for (int la = 0; la < OHMMS_DIM; la++)
       {
-        (hess[j1])(la, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
-        (hess[j2])(la, la) = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j1](la, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j2](la, la) = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
         for (int lb = la + 1; lb < OHMMS_DIM; lb++)
         {
-          (hess[j1])(la, lb) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[j2])(la, lb) = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[j1])(lb, la) = (hess[j1])(la, lb);
-          (hess[j2])(lb, la) = (hess[j2])(la, lb);
+          hess[j1](la, lb) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j2](la, lb) = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j1](lb, la) = hess[j1](la, lb);
+          hess[j2](lb, la) = hess[j2](la, lb);
         }
       }
 #endif
@@ -182,11 +180,11 @@ void FreeOrbital::evaluate_notranspose(const ParticleSet& P,
       dp[ik]   = compi * phi_of_r * kvecs[ik];
       for (int la = 0; la < OHMMS_DIM; la++)
       {
-        (hess[ik])(la, la) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[ik](la, la) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[la];
         for (int lb = la + 1; lb < OHMMS_DIM; lb++)
         {
-          (hess[ik])(la, lb) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[ik])(lb, la) = (hess[ik])(la, lb);
+          hess[ik](la, lb) = -phi_of_r * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[ik](lb, la) = hess[ik](la, lb);
         }
       }
       for (int la = 0; la < OHMMS_DIM; la++)
@@ -202,42 +200,42 @@ void FreeOrbital::evaluate_notranspose(const ParticleSet& P,
       dp[j2]       = coskr * kvecs[ik];
       for (int la = 0; la < OHMMS_DIM; la++)
       {
-        (hess[j1])(la, la)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
-        (hess[j2])(la, la)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
-        ((ggg[j1])[la])(la, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
-        ((ggg[j2])[la])(la, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j1](la, la)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j2](la, la)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        ggg[j1][la](la, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
+        ggg[j2][la](la, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
         for (int lb = la + 1; lb < OHMMS_DIM; lb++)
         {
-          (hess[j1])(la, lb)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[j2])(la, lb)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          (hess[j1])(lb, la)      = (hess[j1])(la, lb);
-          (hess[j2])(lb, la)      = (hess[j2])(la, lb);
-          ((ggg[j1])[la])(lb, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
-          ((ggg[j2])[la])(lb, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
-          ((ggg[j1])[la])(la, lb) = ((ggg[j1])[la])(lb, la);
-          ((ggg[j2])[la])(la, lb) = ((ggg[j2])[la])(lb, la);
-          ((ggg[j1])[lb])(la, la) = ((ggg[j1])[la])(lb, la);
-          ((ggg[j2])[lb])(la, la) = ((ggg[j2])[la])(lb, la);
-          ((ggg[j1])[la])(lb, lb) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lb];
-          ((ggg[j2])[la])(lb, lb) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lb];
-          ((ggg[j1])[lb])(la, lb) = ((ggg[j1])[la])(lb, lb);
-          ((ggg[j2])[lb])(la, lb) = ((ggg[j2])[la])(lb, lb);
-          ((ggg[j1])[lb])(lb, la) = ((ggg[j1])[la])(lb, lb);
-          ((ggg[j2])[lb])(lb, la) = ((ggg[j2])[la])(lb, lb);
+          hess[j1](la, lb)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j2](la, lb)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j1](lb, la)      = hess[j1](la, lb);
+          hess[j2](lb, la)      = hess[j2](la, lb);
+          ggg[j1][la](lb, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
+          ggg[j2][la](lb, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
+          ggg[j1][la](la, lb) = ggg[j1][la](lb, la);
+          ggg[j2][la](la, lb) = ggg[j2][la](lb, la);
+          ggg[j1][lb](la, la) = ggg[j1][la](lb, la);
+          ggg[j2][lb](la, la) = ggg[j2][la](lb, la);
+          ggg[j1][la](lb, lb) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lb];
+          ggg[j2][la](lb, lb) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lb];
+          ggg[j1][lb](la, lb) = ggg[j1][la](lb, lb);
+          ggg[j2][lb](la, lb) = ggg[j2][la](lb, lb);
+          ggg[j1][lb](lb, la) = ggg[j1][la](lb, lb);
+          ggg[j2][lb](lb, la) = ggg[j2][la](lb, lb);
           for (int lc = lb + 1; lc < OHMMS_DIM; lc++)
           {
-            ((ggg[j1])[la])(lb, lc) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lc];
-            ((ggg[j2])[la])(lb, lc) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lc];
-            ((ggg[j1])[la])(lc, lb) = ((ggg[j1])[la])(lb, lc);
-            ((ggg[j2])[la])(lc, lb) = ((ggg[j2])[la])(lb, lc);
-            ((ggg[j1])[lb])(la, lc) = ((ggg[j1])[la])(lb, lc);
-            ((ggg[j2])[lb])(la, lc) = ((ggg[j2])[la])(lb, lc);
-            ((ggg[j1])[lb])(lc, la) = ((ggg[j1])[la])(lb, lc);
-            ((ggg[j2])[lb])(lc, la) = ((ggg[j2])[la])(lb, lc);
-            ((ggg[j1])[lc])(la, lb) = ((ggg[j1])[la])(lb, lc);
-            ((ggg[j2])[lc])(la, lb) = ((ggg[j2])[la])(lb, lc);
-            ((ggg[j1])[lc])(lb, la) = ((ggg[j1])[la])(lb, lc);
-            ((ggg[j2])[lc])(lb, la) = ((ggg[j2])[la])(lb, lc);
+            ggg[j1][la](lb, lc) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lc];
+            ggg[j2][la](lb, lc) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[lc];
+            ggg[j1][la](lc, lb) = ggg[j1][la](lb, lc);
+            ggg[j2][la](lc, lb) = ggg[j2][la](lb, lc);
+            ggg[j1][lb](la, lc) = ggg[j1][la](lb, lc);
+            ggg[j2][lb](la, lc) = ggg[j2][la](lb, lc);
+            ggg[j1][lb](lc, la) = ggg[j1][la](lb, lc);
+            ggg[j2][lb](lc, la) = ggg[j2][la](lb, lc);
+            ggg[j1][lc](la, lb) = ggg[j1][la](lb, lc);
+            ggg[j2][lc](la, lb) = ggg[j2][la](lb, lc);
+            ggg[j1][lc](lb, la) = ggg[j1][la](lb, lc);
+            ggg[j2][lc](lb, la) = ggg[j2][la](lb, lc);
           }
         }
       }
