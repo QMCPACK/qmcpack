@@ -18,11 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/tests/FakeSPO.h"
-
-#ifdef QMC_COMPLEX //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#endif
-
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 
 #include <stdio.h>
@@ -539,26 +535,13 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   kup[1] = PosType(0.1, 0.2, 0.3);
   kup[2] = PosType(0.4, 0.5, 0.6);
 
-  k2up.resize(nelec);
-  //For some goofy reason, EGOSet needs to be initialized with:
-  //1.) A k-vector list (fine).
-  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.
-  k2up[0] = -dot(kup[0], kup[0]);
-  k2up[1] = -dot(kup[1], kup[1]);
-  k2up[2] = -dot(kup[2], kup[2]);
-
   kdn.resize(nelec);
   kdn[0] = PosType(0, 0, 0);
   kdn[1] = PosType(-0.1, 0.2, -0.3);
   kdn[2] = PosType(0.4, -0.5, 0.6);
 
-  k2dn.resize(nelec);
-  k2dn[0] = -dot(kdn[0], kdn[0]);
-  k2dn[1] = -dot(kdn[1], kdn[1]);
-  k2dn[2] = -dot(kdn[2], kdn[2]);
-
-  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
-  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
+  auto spo_up = std::make_unique<FreeOrbital>(kup);
+  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
 
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));

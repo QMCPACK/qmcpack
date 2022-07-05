@@ -63,12 +63,7 @@ set(JASTROW_SRCS
 set(JASTROW_OMPTARGET_SRCS
     Jastrow/J2OMPTarget.cpp
     Jastrow/BsplineFunctor.cpp)
-if(QMC_COMPLEX)
-  set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
-else(QMC_COMPLEX)
-  set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasOrbitalBuilder.cpp)
-
-endif(QMC_COMPLEX)
+set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalBuilder.cpp)
 
 # wavefunctions only availbale to 3-dim problems
 if(OHMMS_DIM MATCHES 3)

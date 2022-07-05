@@ -6,7 +6,7 @@ Sample qmc run for Hartree-Fock HEG.
 </application>
 </project>
 <include href="heg.ptcl.xml"/>
-<include href="heg.hf.wfs.xml"/>
+<include href="heg.ni.wfs.xml"/>
 <include href="heg.H.xml"/>
 <qmc method="vmc" move="pbyp">
 <parameter name="warmupsteps">200</parameter>

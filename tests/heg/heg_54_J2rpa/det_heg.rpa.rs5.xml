@@ -23,7 +23,15 @@ xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
-      <determinantset type="electron-gas" shell="3" twist="0.22 0.23 0.24"/>
+      <sposet_builder type="free">
+        <sposet name="spo-ud" size="27" twist="0.22 0.23 0.24"/>
+      </sposet_builder>
+      <determinantset>
+      <slaterdeterminant>
+        <determinant id="updet" sposet="spo-ud"/>
+        <determinant id="dndet" sposet="spo-ud"/>
+      </slaterdeterminant>
+      </determinantset>
       <jastrow name="Jee" type="Two-Body" spin="yes" function="rpa">
       </jastrow>
     </wavefunction>
