@@ -21,7 +21,11 @@
 
 namespace qmcplusplus
 {
-void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsigned ndim, bool useSphere)
+void KContainer::updateKLists(const ParticleLayout& lattice,
+                              RealType kc,
+                              unsigned ndim,
+                              const PosType& twist,
+                              bool useSphere)
 {
   kcutoff = kc;
   if (kcutoff <= 0.0)
@@ -29,7 +33,7 @@ void KContainer::updateKLists(const ParticleLayout& lattice, RealType kc, unsign
     APP_ABORT("  Illegal cutoff for KContainer");
   }
   findApproxMMax(lattice, ndim);
-  BuildKLists(lattice, useSphere);
+  BuildKLists(lattice, twist, useSphere);
 
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
   app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
@@ -98,7 +102,7 @@ void KContainer::findApproxMMax(const ParticleLayout& lattice, unsigned ndim)
     mmax[1] = 0;
 }
 
-void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
+void KContainer::BuildKLists(const ParticleLayout& lattice, const PosType& twist, bool useSphere)
 {
   TinyVector<int, DIM + 1> TempActualMax;
   TinyVector<int, DIM> kvec;
@@ -125,7 +129,7 @@ void KContainer::BuildKLists(const ParticleLayout& lattice, bool useSphere)
           if (i == 0 && j == 0 && k == 0)
             continue;
           //Convert kvec to Cartesian
-          kvec_cart = lattice.k_cart(kvec);
+          kvec_cart = lattice.k_cart(kvec + twist);
           //Find modk
           modk2 = dot(kvec_cart, kvec_cart);
           if (modk2 > kcut2)

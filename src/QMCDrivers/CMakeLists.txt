@@ -90,6 +90,7 @@ endif(HAVE_MPI)
 # if using the LMYEngine interface, make sure we add the necessary functions
 if(BUILD_LMYENGINE_INTERFACE)
   set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunction.cpp)
+  set(QMCDRIVERS ${QMCDRIVERS} LMYEngineInterface/LMYE_QMCCostFunctionBatched.cpp)
 endif(BUILD_LMYENGINE_INTERFACE)
 
 ####################################
