@@ -85,8 +85,8 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
           ratios[samp] = refPsi.calcRatio(P, iat);
           P.rejectMove(iat); //reject the move
           refPsi.resetPhaseDiff();
-          sx+=   2.0*std::cos(2.0*P.spins[iat]+dS[samp])*ratios[samp];
-          sy+=  -2.0*std::sin(2.0*P.spins[iat]+dS[samp])*ratios[samp];
+          sx+=  2.0*std::cos(2.0*P.spins[iat]+dS[samp])*ratios[samp];
+          sy+=  2.0*std::sin(2.0*P.spins[iat]+dS[samp])*ratios[samp];
           sz+=  2.0*eye*std::sin(dS[samp])*ratios[samp];
         }
         sx=sx/RealType(Nsamps);
