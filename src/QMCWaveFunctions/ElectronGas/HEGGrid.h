@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_HEGGRID_H
 
 #include "Lattice/CrystalLattice.h"
+#include <array>
 
 namespace qmcplusplus
 {
@@ -28,9 +29,9 @@ struct HEGGrid
   using PL_t = CrystalLattice<T, OHMMS_DIM>;
 
   const PL_t& Lattice;
-  static constexpr std::array<int, 31> n_within_shell{{1,   7,   19,  27,  33,  57,  81,  93,  123, 147, 171,
-                                                       179, 203, 251, 257, 305, 341, 365, 389, 437, 461, 485,
-                                                       515, 587, 619, 691, 739, 751, 799, 847, 895}};
+  static constexpr std::array<int, 31> n_within_shell{1,   7,   19,  27,  33,  57,  81,  93,  123, 147, 171,
+                                                      179, 203, 251, 257, 305, 341, 365, 389, 437, 461, 485,
+                                                      515, 587, 619, 691, 739, 751, 799, 847, 895};
 
   HEGGrid(const PL_t& lat) : Lattice(lat) {}
   ~HEGGrid() = default;
