@@ -33,6 +33,7 @@ public:
   using FullPrecReal  = QMCTraits::FullPrecRealType;
   using FullPrecValue = QMCTraits::FullPrecValueType;
 
+  virtual ~EngineHandle() = default;
   /** Function for preparing derivative ratio vectors used by optimizer engines
    *
    *\param[in] num_params           Number of optimizable parameters
@@ -49,10 +50,10 @@ public:
   virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
                           const RecordArray<Value>& dhpsioverpsi_array,
-                          int ib)              = 0;
+                          int ib) = 0;
   /** Function for having optimizer engines execute their sample_finish functions
    */
-  virtual void finishSampling()                = 0;
+  virtual void finishSampling() = 0;
 };
 
 class NullEngineHandle : public EngineHandle
