@@ -81,12 +81,8 @@ private:
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
   std::string prefix;
-  ///density
-  //Array<RealType,OHMMS_DIM> density, Vavg;
-  /** resize the internal data
-   *
-   * The argument list is not completed
-   */
+  int nSamples_;
+
   void resize();
 
 };

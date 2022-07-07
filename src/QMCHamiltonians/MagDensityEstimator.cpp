@@ -31,7 +31,7 @@ using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 MagDensityEstimator::MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi):
-refPsi(psi)
+refPsi(psi),nSamples_(5)
 {
   update_mode_.set(COLLECTABLE, 1);
   Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
@@ -46,23 +46,20 @@ void MagDensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 {
-  int Nsamps=5;
   std::vector<ValueType> ratios;
-  ratios.resize(Nsamps);
+  ratios.resize(nSamples_);
   ParticleSet::ParticleScalar dS;
   const PosType dr(0.0); //Integration over spin variable doesn't change particle position.  
 			 //This is the argument for the calcRatio calls, which require both.
-  dS.resize(Nsamps);
+  dS.resize(nSamples_);
 
 
   std::complex<RealType> eye(0,1.0);
   RealType wgt = t_walker_->Weight;
- // app_log()<<"wgt = "<<wgt<<std::endl;
   if (Periodic)
   {
     for (int ig = 0; ig < P.groups(); ++ig)
     {
-    //  refPsi.prepareGroup(P,ig);
       for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
       {
         PosType ru;
@@ -79,7 +76,7 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         makeUniformRandom(dS);
         dS=dS*TWOPI; //We want the spin delta to go from 0-2pi.
        // app_log()<<"iat="<<iat<<" s="<<P.spins[iat]<<std::endl;
-        for(int samp=0; samp<Nsamps; samp++)
+        for(int samp=0; samp<nSamples_; samp++)
         {
           P.makeMoveWithSpin(iat, 0.0, dS[samp]);
           ratios[samp] = refPsi.calcRatio(P, iat);
@@ -89,9 +86,9 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
           sy+=  2.0*std::sin(2.0*P.spins[iat]+dS[samp])*ratios[samp];
           sz+=  2.0*eye*std::sin(dS[samp])*ratios[samp];
         }
-        sx=sx/RealType(Nsamps);
-        sy=sy/RealType(Nsamps);
-        sz=sz/RealType(Nsamps);
+        sx=sx/RealType(nSamples_);
+        sy=sy/RealType(nSamples_);
+        sz=sz/RealType(nSamples_);
         //app_log()<<" sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
         P.Collectables[getMagGridIndex(i, j, k, 0)] += wgt*std::real(sx); //1.0;
         P.Collectables[getMagGridIndex(i, j, k, 1)] += wgt*std::real(sy); //1.0;
@@ -204,6 +201,7 @@ bool MagDensityEstimator::put(xmlNodePtr cur)
   attrib.add(density_max[0], "x_max");
   attrib.add(density_max[1], "y_max");
   attrib.add(density_max[2], "z_max");
+  attrib.add(nSamples_, "nsamples");
   attrib.add(Delta, "delta");
   attrib.put(cur);
   if (!Periodic)
