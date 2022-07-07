@@ -21,9 +21,6 @@
 #include "determineDefaultDeviceNum.h"
 #if defined(_OPENMP)
 #include <omp.h>
-#include <CL/sycl/backend.hpp>
-#include <level_zero/ze_api.h>
-#include <CL/sycl/backend/level_zero.hpp>
 #endif
 
 namespace qmcplusplus

@@ -226,8 +226,10 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 }
 
 /** evaluate everything before optimization */
-void QMCCostFunctionBatched::checkConfigurations()
+void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
+  handle.prepareSampling(NumOptimizables);
+
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
@@ -286,7 +288,8 @@ void QMCCostFunctionBatched::checkConfigurations()
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH) {
+                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH,
+                          EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -368,6 +371,8 @@ void QMCCostFunctionBatched::checkConfigurations()
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
+
+          handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, ib);
         }
 
         for (int ib = 0; ib < current_batch_size; ib++)
@@ -414,7 +419,7 @@ void QMCCostFunctionBatched::checkConfigurations()
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH);
+              compute_nlpp, includeNonlocalH, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -436,10 +441,13 @@ void QMCCostFunctionBatched::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2] / etemp[1] - Etarget * Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
+
+  handle.finishSampling();
+
   app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter = 0;
-  IsValid = true;
+  IsValid       = true;
 
   //collect SumValue for computedCost
   SumValue[SUM_WGT]       = etemp[1];

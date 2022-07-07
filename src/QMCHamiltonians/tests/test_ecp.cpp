@@ -35,9 +35,8 @@
 #include "Particle/ParticleSet.h"
 #include "LongRange/EwaldHandler3D.h"
 
-#ifdef QMC_COMPLEX //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#endif
+//This is for the spinor test.
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 
 namespace qmcplusplus
 {
@@ -501,20 +500,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   kup.resize(nelec);
   kup[0] = PosType(1, 1, 1);
 
-  k2up.resize(nelec);
-  //For some goofy reason, EGOSet needs to be initialized with:
-  //1.) A k-vector list (fine).
-  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.
-  k2up[0] = -dot(kup[0], kup[0]);
-
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
 
-  k2dn.resize(nelec);
-  k2dn[0] = -dot(kdn[0], kdn[0]);
-
-  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
-  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
+  auto spo_up = std::make_unique<FreeOrbital>(kup);
+  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
 
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
