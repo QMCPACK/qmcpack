@@ -214,16 +214,21 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
     read_rank_0(hin, comm);
 }
 
-//switch between write functions
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
+{
+  write(convertUPtrToRefVector(Children), fname, comm);
+}
+
+//switch between write functions
+void RandomNumberControl::write(const RefVector<RandomGenerator>& rng, const std::string& fname, Communicate* comm)
 {
   std::string h5name = fname + ".random.h5";
   hdf_archive hout(comm, true); //attempt to write in parallel
   hout.create(h5name);
   if (hout.is_parallel())
-    write_parallel(hout, comm);
+    write_parallel(rng, hout, comm);
   else
-    write_rank_0(hout, comm);
+    write_rank_0(rng, hout, comm);
 }
 
 //Parallel read
@@ -284,7 +289,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 }
 
 //Parallel write
-void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
+void RandomNumberControl::write_parallel(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
@@ -299,7 +304,7 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
   for (int ip = 0; ip < nthreads; ++ip)
   {
     std::vector<uint_type> c;
-    Children[ip]->save(c);
+    rng[ip].get().save(c);
     vt.insert(vt.end(), c.begin(), c.end()); //get nums from each thread into buffer
   }
   Random.save(mt); //get nums for single random object (no threads)
@@ -397,7 +402,7 @@ void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_rank_0(hdf_archive& hout, Communicate* comm)
+void RandomNumberControl::write_rank_0(const RefVector<RandomGenerator>& rng, hdf_archive& hout, Communicate* comm)
 {
   // cast integer to size_t
   const size_t nthreads  = static_cast<size_t>(omp_get_max_threads());
@@ -413,7 +418,7 @@ void RandomNumberControl::write_rank_0(hdf_archive& hout, Communicate* comm)
   for (int i = 0; i < nthreads; ++i)
   {
     std::vector<uint_type> c;
-    Children[i]->save(c);
+    rng[i].get().save(c);
     vt.insert(vt.end(), c.begin(), c.end()); //copy children[nthreads] seeds to buffer
   }
   Random.save(mt); //copy random_th seeds to buffer

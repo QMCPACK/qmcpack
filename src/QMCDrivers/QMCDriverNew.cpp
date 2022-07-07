@@ -250,7 +250,9 @@ void QMCDriverNew::recordBlock(int block)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
     wOut->dump(population_.getWalkerConfigsRef(), block);
-    RandomNumberControl::write(root_name_, myComm);
+#ifndef USE_FAKE_RNG
+    RandomNumberControl::write(getRngRefs(), root_name_, myComm);
+#endif
   }
 }
 
@@ -266,8 +268,10 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   infoSummary.flush();
   infoLog.flush();
 
+#ifndef USE_FAKE_RNG
   if (DumpConfig)
-    RandomNumberControl::write(root_name_, myComm);
+    RandomNumberControl::write(getRngRefs(), root_name_, myComm);
+#endif
 
   return true;
 }
