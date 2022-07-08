@@ -136,7 +136,7 @@ void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 
 void Communicate::finalize() {}
 
-void Communicate::abort() const { std::abort(); }
+void Communicate::abort() const { std::_Exit(EXIT_FAILURE); }
 
 void Communicate::barrier() const {}
 
