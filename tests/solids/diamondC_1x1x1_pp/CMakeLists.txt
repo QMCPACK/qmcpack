@@ -2251,80 +2251,80 @@ endif()
 # Basic input file checking tests: malformed, missing input, missing files
 #
 qmc_run_and_check(
-    deterministic-input_check1
+    deterministic-input_check_broken_xml
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check1
-    det_qmc_input_check1.in.xml
+    det_qmc_input_check_broken_xml
+    det_qmc_input_check_broken_xml.in.xml
     1
     1
     FALSE
 )
 
 qmc_run_and_check(
-    deterministic-input_check2
+    deterministic-input_check_no_ham
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check2
-    det_qmc_input_check2.in.xml
+    det_qmc_input_check_no_ham
+    det_qmc_input_check_no_ham.in.xml
     1
     1
     FALSE
 )
 
 qmc_run_and_check(
-    deterministic-input_check3
+    deterministic-input_check_no_pp
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check3
-    det_qmc_input_check3.in.xml
+    det_qmc_input_check_no_pp
+    det_qmc_input_check_no_pp.in.xml
     1
     1
     FALSE
 )
 
 qmc_run_and_check(
-    deterministic-input_check4
+    deterministic-input_check_no_pset
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check4
-    det_qmc_input_check4.in.xml
+    det_qmc_input_check_no_pset
+    det_qmc_input_check_no_pset.in.xml
     1
     1
     FALSE
 )
 
 qmc_run_and_check(
-    deterministic-input_check5
+    deterministic-input_check_no_qmc
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check5
-    det_qmc_input_check5.in.xml
-    1
-    1
-    FALSE
-)
-
-qmc_run_and_check(
-    deterministic-input_check6
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check6
-    det_qmc_input_check6.in.xml
-    1
-    1
-    FALSE
-)
-
-qmc_run_and_check(
-    deterministic-input_check7
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check7
-    det_qmc_input_check7.in.xml
+    det_qmc_input_check_no_qmc
+    det_qmc_input_check_no_qmc.in.xml
     1
     1
     TRUE
 )
 
 qmc_run_and_check(
-    deterministic-input_check8
+    deterministic-input_check_no_splineh5
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-    det_qmc_input_check8
-    det_qmc_input_check8.in.xml
+    det_qmc_input_check_no_splineh5
+    det_qmc_input_check_no_splineh5.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_wf
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_wf
+    det_qmc_input_check_no_wf.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_not_xml
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_not_xml
+    det_qmc_input_check_not_xml.in.xml
     1
     1
     FALSE

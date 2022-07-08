@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="det_qmc_input_check7" series="0">
+   <project id="det_qmc_input_check_no_splineh5" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="71"/>
@@ -39,7 +39,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
+         <determinantset type="einspline" href="intentionallymissingpwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
             <slaterdeterminant>
                <determinant id="updet" size="4">
                   <occupation mode="ground" spindataset="0"/>
@@ -81,3 +81,14 @@
          <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>         
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
+   </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    3               </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    3               </parameter>
+   </qmc>
+</simulation>
