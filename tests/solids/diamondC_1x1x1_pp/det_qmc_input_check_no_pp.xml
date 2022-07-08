@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<!-- Pseudopotential file is not present -->
 <simulation>
    <project id="det_qmc_input_check_no_ham" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>

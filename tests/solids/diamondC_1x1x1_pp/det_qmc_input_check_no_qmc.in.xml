@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<!-- No QMC sections in the input (OK) -->
 <simulation>
    <project id="det_qmc_input_check_no_qmc" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>

@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<!-- No wavefunction section -->
 <simulation>
    <project id="det_qmc_input_check_no_wf" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
