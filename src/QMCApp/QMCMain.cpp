@@ -454,11 +454,7 @@ bool QMCMain::validateXML()
   {
     std::string cname((const char*)cur->name);
     bool inputnode = true;
-    if (cname == "parallel")
-    {
-      putCommunicator(cur);
-    }
-    else if (cname == "particleset")
+    if (cname == "particleset")
     {
       ptclPool->put(cur);
     }

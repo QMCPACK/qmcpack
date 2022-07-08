@@ -69,9 +69,6 @@ struct QMCMainState : public MPIObjectBase
   /** default constructor **/
   QMCMainState(Communicate* c);
 
-  /** set the active qmcDriver */
-  void putCommunicator(xmlNodePtr cur);
-
   ///Global estimators defined outside of <qmc> nodes
   std::optional<EstimatorManagerInput> estimator_manager_input_;
 
