@@ -47,6 +47,24 @@ void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_i
       rot_indices.push_back(std::pair<int, int>(i, j));
 }
 
+void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                               const std::vector<ValueType>& param,
+                                               ValueMatrix& rot_mat)
+{
+  assert(rot_indices.size() == param.size());
+  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+
+  for (int i = 0; i < rot_indices.size(); i++)
+  {
+    const int p      = rot_indices[i].first;
+    const int q      = rot_indices[i].second;
+    const RealType x = param[i];
+
+    rot_mat[q][p] = x;
+    rot_mat[p][q] = -x;
+  }
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -142,16 +160,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   ValueMatrix rot_mat(nmo, nmo);
   rot_mat = ValueType(0);
 
-  // read out the parameters that define the rotation into an antisymmetric matrix
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    const int p      = m_act_rot_inds[i].first;
-    const int q      = m_act_rot_inds[i].second;
-    const RealType x = param[i];
-
-    rot_mat[q][p] = x;
-    rot_mat[p][q] = -x;
-  }
+  constructAntiSymmetricMatrix(m_act_rot_inds, param, rot_mat);
 
   /*
     rot_mat is now an anti-hermitian matrix. Now we convert

@@ -35,6 +35,14 @@ public:
   // Create list of active rotation parameter indices
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
+  // Fill in anti-symmetric matrix from the list of rotation parameter indices
+  // and a list of parameter values.
+  // This function assumes rot_mat is properly sized upon input and is set to zero.
+  static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                           const std::vector<ValueType>& param,
+                                           ValueMatrix& rot_mat);
+
+
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
