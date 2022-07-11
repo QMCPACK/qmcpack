@@ -233,16 +233,37 @@ private:
   ///whether to do the third part of block lm
   bool block_third;
 
-  //name of the current optimization method, updated by processOptXML before run
+  ///whether to filter parameters for the lm
+  bool filter_param_;
+
+  ///whether to filter parameters for the lm
+  std::string filter_paramStr;
+
+  ///whether to filter parameters for the lm
+  bool filter_info_;
+
+  ///whether to filter parameters for the lm
+  std::string filter_infoStr;
+
+  ///threshold for filtering parameters for the lm
+  double ratio_threshold_;
+
+  ///whether to store samples for the lm
+  bool store_samples_;
+
+  ///whether to store samples for the lm
+  std::string store_samplesStr;
+
+  ///name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //type of the previous optimization method, updated by processOptXML before run
+  ///type of the previous optimization method, updated by processOptXML before run
   OptimizerType previous_optimizer_type_;
 
-  //type of the current optimization method, updated by processOptXML before run
+  ///type of the current optimization method, updated by processOptXML before run
   OptimizerType current_optimizer_type_;
 
-  //whether to use hybrid method
+  ///whether to use hybrid method
   bool doHybrid;
 
   // ------------------------------------

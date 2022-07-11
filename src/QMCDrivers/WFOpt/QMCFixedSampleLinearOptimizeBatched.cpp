@@ -140,6 +140,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(cost_increase_tol, "cost_increase_tol");
   m_param.add(target_shift_i, "target_shift_i");
   m_param.add(param_tol, "alloweddifference");
+  m_param.add(filter_paramStr, "filter_param");
+  m_param.add(ratio_threshold_, "deriv_threshold");
+  m_param.add(store_samplesStr, "store_samples");
+  m_param.add(filter_infoStr, "filter_info");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -700,6 +704,15 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   block_lmStr = lowerCase(block_lmStr);
   block_lm    = (block_lmStr == "yes");
+
+  filter_paramStr = lowerCase(filter_paramStr);
+  filter_param_ = (filter_paramStr == "yes");
+
+  filter_infoStr = lowerCase(filter_infoStr);
+  filter_info_ = (filter_infoStr == "yes");
+
+  store_samplesStr = lowerCase(store_samplesStr);
+  store_samples_ = (store_samplesStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
