@@ -508,7 +508,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   //This is going to be slow an painful for now.
   for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
   {
-    pulay_ref[jat] = psi.evalGradSource(W, ions, jat);
+    convertToReal(psi.evalGradSource(W, ions, jat), pulay_ref[jat]);
     gradpotterm_   = 0;
     for (size_t j = 0; j < nknot; j++)
     {
@@ -524,10 +524,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
 
       iongradtmp_ = psi.evalGradSource(W, ions, jat);
       iongradtmp_ *= psiratio[j];
-#ifdef QMC_COMPLEX
       convertToReal(iongradtmp_, pulay_quad[j][jat]);
-#endif
-      pulay_quad[j][jat] = iongradtmp_;
       //And move the particle back.
       deltaV[j] = dr - r * rrotsgrid_m[j];
 
