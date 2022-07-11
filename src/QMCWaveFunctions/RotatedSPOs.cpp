@@ -52,7 +52,7 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
     const size_t nmo = Phi->getOrbitalSetSize();
 
     // create active rotation parameter indices
-    std::vector<std::pair<int, int>> created_m_act_rot_inds;
+    RotationIndices created_m_act_rot_inds;
 
     // only core->active rotations created
     for (int i = 0; i < nel; i++)
@@ -64,7 +64,7 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
 #endif
 }
 
-void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
+void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
