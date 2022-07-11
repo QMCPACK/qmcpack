@@ -8,6 +8,15 @@ list(APPEND SHO_SCALARS "kinetic" "0.225 0.0028")
 list(APPEND SHO_SCALARS "potential" "0.225 0.0028")
 list(APPEND SHO_SCALARS "latdev" "1.0   0.013")
 
+if(QMC_MIXED_PRECISION)
+  list(APPEND DET_SHO_SCALARS "totenergy" "0.45  0.00000004")
+else()
+  list(APPEND DET_SHO_SCALARS "totenergy" "0.45  4.0e-14")
+endif()
+list(APPEND DET_SHO_SCALARS "kinetic" "0.115 0.01")
+list(APPEND DET_SHO_SCALARS "potential" "0.335 0.01")
+list(APPEND DET_SHO_SCALARS "latdev" "1.49   0.01")
+
 # The errors on the total energy are statistical errors
 if(QMC_MIXED_PRECISION)
   list(APPEND GEP_SCALARS "totenergy" "0.45  1e-6")
@@ -31,7 +40,20 @@ if(NOT QMC_CUDA)
     SHO_SCALARS # VMC
   )
 
-  simple_run_and_check(short-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
+  qmc_run_and_check(
+    deterministic-sho-vmc
+    "${qmcpack_SOURCE_DIR}/tests/models/sho"
+    m5
+    det_vmc_sho.xml
+    1
+    16
+    TRUE
+    0
+    DET_SHO_SCALARS # VMC
+  )
+
+
+  simple_run_and_check(deterministic-sho-grad_lap "${qmcpack_SOURCE_DIR}/tests/models/sho" grad_lap.xml 1 1 check_grad_lap.py)
 
   qmc_run_and_check(
     short-grid_ext_pot-vmc
