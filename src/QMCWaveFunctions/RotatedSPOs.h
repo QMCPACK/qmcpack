@@ -32,6 +32,9 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
+  // Create list of active rotation parameter indices
+  static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
+
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 

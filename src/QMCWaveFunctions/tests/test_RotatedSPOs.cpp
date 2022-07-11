@@ -293,4 +293,26 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 #endif
 }
 
+TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
+{
+  // No active-active or virtual-virtual rotations
+  // Only active-virtual
+  RotatedSPOs::RotationIndices rot_ind;
+  int nel = 1;
+  int nmo = 3;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+
+  CHECK(rot_ind.size() == 2);
+
+  nel = 2;
+  RotatedSPOs::RotationIndices rot_ind2;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
+  CHECK(rot_ind2.size() == 2);
+
+  nmo = 4;
+  RotatedSPOs::RotationIndices rot_ind3;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
+  CHECK(rot_ind3.size() == 4);
+}
+
 } // namespace qmcplusplus
