@@ -1907,6 +1907,9 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
 
   //Either the adaptive BLM or descent optimization is run
 
+  //Ensure LM engine knows it is being used as part of a hybrid run
+   EngineObj->setOnHybrid(true);
+
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
     //If the optimization just switched to using the BLM, need to transfer a set
