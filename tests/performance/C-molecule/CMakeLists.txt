@@ -102,22 +102,22 @@ if(NOT QMC_CUDA)
           set(H5_FULL_PATH "${QMC_DATA}/C-molecule/${H5_FILE}")
           if(EXISTS ${H5_FULL_PATH})
             set(DRIVER_TYPE cpu_driver)
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-${POTENTIAL_TYPE}-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-${POTENTIAL_TYPE})
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
             add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
             # J3
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-${POTENTIAL_TYPE}-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-J3-${DRIVER_TYPE}-${POTENTIAL_TYPE})
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
             add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
                                 "${ADJUST_INPUT} -w ${WALKER_COUNT} -j ${TEST_DIR}/J123.xml")
             # Batched-driver
             set(DRIVER_TYPE batched_driver)
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-${POTENTIAL_TYPE}-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-${POTENTIAL_TYPE})
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
             add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")
             # J3
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-${POTENTIAL_TYPE}-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-J3-${DRIVER_TYPE}-${POTENTIAL_TYPE})
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
             add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
                                 "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched -j ${TEST_DIR}/J123.xml")
 
