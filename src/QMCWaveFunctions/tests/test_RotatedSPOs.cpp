@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/RotatedSPOs.h"
+#include "checkMatrix.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -36,7 +37,7 @@ namespace qmcplusplus
 TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 {
   using RealType = QMCTraits::RealType;
-  
+
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
@@ -291,6 +292,56 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   CHECK(std::real(d2psiM_rot[1][0]) == Approx(lap2).epsilon(0.0001));
 
 #endif
+}
+
+TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
+{
+  // No active-active or virtual-virtual rotations
+  // Only active-virtual
+  RotatedSPOs::RotationIndices rot_ind;
+  int nel = 1;
+  int nmo = 3;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+
+  CHECK(rot_ind.size() == 2);
+
+  nel = 2;
+  RotatedSPOs::RotationIndices rot_ind2;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
+  CHECK(rot_ind2.size() == 2);
+
+  nmo = 4;
+  RotatedSPOs::RotationIndices rot_ind3;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
+  CHECK(rot_ind3.size() == 4);
+}
+
+TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  RotatedSPOs::RotationIndices rot_ind;
+  int nel = 1;
+  int nmo = 3;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+
+  ValueMatrix m3(nmo, nmo);
+  m3                            = ValueType(0);
+  std::vector<ValueType> params = {0.1, 0.2};
+
+  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params, m3);
+
+  // clang-format off
+  std::vector<ValueType> expected_data = { 0.0,  -0.1, -0.2,
+                                           0.1,   0.0,  0.0,
+                                           0.2,   0.0,  0.0 };
+  // clang-format on
+
+  ValueMatrix expected_m3(expected_data.data(), 3, 3);
+
+  CheckMatrixResult check_matrix_result = checkMatrix(m3, expected_m3, true);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
 } // namespace qmcplusplus
