@@ -37,14 +37,11 @@ void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
   params_supplied = true;
 }
 
-// Construct a list of the matrix indices for non-zero rotation parameters
-//  (The structure for a sparse representation of the matrix)
-// Only core->active rotations are created.
 void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_indices)
 {
   for (int i = 0; i < nel; i++)
     for (int j = nel; j < nmo; j++)
-      rot_indices.push_back(std::pair<int, int>(i, j));
+      rot_indices.emplace_back(i, j);
 }
 
 void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indices,

@@ -32,7 +32,9 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
-  // Create list of active rotation parameter indices
+  // Construct a list of the matrix indices for non-zero rotation parameters.
+  // (The structure for a sparse representation of the matrix)
+  // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
   // Fill in anti-symmetric matrix from the list of rotation parameter indices
