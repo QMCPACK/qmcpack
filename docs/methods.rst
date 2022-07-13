@@ -725,6 +725,14 @@ block-wise directions.
   +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
   | ``nkept``                 | integer      | :math:`> 0`             |             | Number of eigenvectors to keep per block in BLM                                                 |
   +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``store_samples``         | text         | yes, no                 | no          | Whether to store derivative ratios from each sample in the LM engine (required for filtering)   |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``filter_param``          | text         | yes, no                 | no          | Whether to turn off optimization of parameters with noisy gradients                             |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``deriv_threshold``       | real         | :math:`> 0`             | 0.0         | Threshold on the ratio of the parameter gradient mean and standard deviation                    |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``filter_info``           | text         | yes, no                 | no          | Whether to print out details on which parameters are turned on or off                           |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
 
 Additional information:
 
@@ -761,6 +769,11 @@ Additional information:
    becomes equivalent to the standard LM. Retaining five or fewer
    directions per block is often sufficient.
 
+-  ``deriv_threshold`` This is a threshold on the ratio of the (absolute) mean value of a 
+   parameter derivative to the standard deviation of that derivative. Parameters 
+   with a ratio less than the chosen threshold will be turned off when using parameter 
+   filtration.
+
 Recommendations:
 
 -  Default ``shift_i``, ``shift_s`` should be fine.
@@ -773,6 +786,14 @@ Recommendations:
    and a handful of and often provide a good balance between memory use
    and accuracy. In general, using fewer blocks should be more accurate
    but would require more memory.
+
+-  When using parameter filtration, setting ``deriv_threshold`` to 1.0
+    is an effective choice that generally leads to roughly a third of the 
+    parameters being turned off on any given LM iteration. The precise 
+    number and identity of those parameters will vary from iteration to 
+    iteration. Using the hybrid method (see below) is recommended when parameter 
+    filtration is on so that accelerated descent can be used to optimize
+    parameters that the LM leaves untouched. :cite:`Otis2021`
 
 ::
 
