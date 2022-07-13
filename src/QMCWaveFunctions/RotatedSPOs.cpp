@@ -69,8 +69,11 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
    * nel_major_ will be set Nup.
+   *
+   * Use the size of myVars as a flag to avoid building the rotation parameters again
+   * when a clone is made (the DiracDeterminant constructor calls buildOptVariables)
    */
-  if (nel > nel_major_)
+  if (nel > nel_major_ && myVars.size() == 0)
   {
     nel_major_ = nel;
 
