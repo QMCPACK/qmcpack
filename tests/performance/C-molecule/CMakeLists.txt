@@ -8,6 +8,8 @@ if(NOT QMC_CUDA)
     function(
       ADD_C_MOLECULE_TEST
       TEST_NAME
+      PROCS
+      THREADS
       TEST_DIR
       TEST_SOURCE_DIR
       INPUT_FILE
@@ -39,8 +41,7 @@ if(NOT QMC_CUDA)
         COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
                 ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/C-molecule")
 
-      set(PROCS 1)
-      set(THREADS 16)
+      set(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
       math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
       if(HAVE_MPI)
         add_test(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
@@ -102,23 +103,23 @@ if(NOT QMC_CUDA)
           set(H5_FULL_PATH "${QMC_DATA}/C-molecule/${H5_FILE}")
           if(EXISTS ${H5_FULL_PATH})
             set(DRIVER_TYPE cpu_driver)
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT})
             set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
+            add_c_molecule_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
             # J3
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
             set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
+            add_c_molecule_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
                                 "${ADJUST_INPUT} -w ${WALKER_COUNT} -j ${TEST_DIR}/J123.xml")
             # Batched-driver
             set(DRIVER_TYPE batched_driver)
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT})
             set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")
+            add_c_molecule_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")
             # J3
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT}-1-16)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
             set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
+            add_c_molecule_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
                                 "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched -j ${TEST_DIR}/J123.xml")
 
           elseif(NOT (SIZE MATCHES "60" AND POTENTIAL_TYPE MATCHES "ae"))
