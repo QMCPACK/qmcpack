@@ -1612,7 +1612,7 @@ class VaspInput(SimulationInput,Vobj):
         else:
             pseudo_map = obj()
             for ppname in pseudos:
-                element = ppname[0:2].strip('.')
+                element = ppname[0:2].strip('._')
                 pseudo_map[element] = ppname
             #end for
             ordered_pseudos = []
