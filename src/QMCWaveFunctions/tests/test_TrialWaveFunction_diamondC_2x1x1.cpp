@@ -369,11 +369,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
 
 #if defined(QMC_COMPLEX)
   CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)).epsilon(5e-4));
-#if defined(MIXED_PRECISION)
   CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)).epsilon(5e-5));
-#else
-  CHECK(ratios[1] == ComplexApprox(PsiValueType(0.12487384604679, 0)));
-#endif
 #else
   CHECK(ratios[0] == Approx(1).epsilon(5e-5));
 #if defined(MIXED_PRECISION)
