@@ -228,7 +228,7 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
-  handle.prepareSampling(NumOptimizables);
+  handle.prepareSampling(NumOptimizables,samples_.getNumSamples());
 
   ScopedTimer tmp_timer(check_config_timer_);
 

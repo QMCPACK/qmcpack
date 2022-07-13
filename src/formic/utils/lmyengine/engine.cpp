@@ -1712,11 +1712,11 @@ template<typename S>
  std::vector<double> denomHistory;
 
 
- double numerVal;
- double denomVal;
+ double numerVal=0.0;
+ double denomVal=0.0;
 
- double numerSigma;
- double denomSigma;
+ double numerSigma=0.0;
+ double denomSigma=0.0;
 
  for(int j = 0; j < num_samples; j++)
  {
@@ -1725,7 +1725,7 @@ template<typename S>
      double vgs = vgs_history[j];
 
      temp_e_list.push_back(etmp*vgs);
-
+    
  if(!_ground)
  {
      double numer_val = (_hd_lm_shift - etmp)*vgs;
@@ -1755,7 +1755,6 @@ template<typename S>
      denomSigma = denomResults[1];
 
  }
-
 
  for(int i = 1; i< num_all_params+1; i ++)
  {

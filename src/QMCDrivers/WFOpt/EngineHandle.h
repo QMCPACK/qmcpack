@@ -38,7 +38,7 @@ public:
    *
    *\param[in] num_params           Number of optimizable parameters
    */
-  virtual void prepareSampling(int num_params) = 0;
+  virtual void prepareSampling(int num_params,int num_samples) = 0;
   /** Function for passing derivative ratios to optimizer engines
    *
    * \param[in] energy_list         Vector of local energy values
@@ -59,7 +59,7 @@ public:
 class NullEngineHandle : public EngineHandle
 {
 public:
-  void prepareSampling(int num_params) override {}
+  void prepareSampling(int num_params,int num_samples) override {}
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
@@ -81,7 +81,7 @@ public:
   //Retrieve der_rat_samp vector for testing
   const std::vector<FullPrecValue>& getVector() const { return der_rat_samp; }
 
-  void prepareSampling(int num_params) override
+  void prepareSampling(int num_params,int num_samples) override
   {
     engine_.prepareStorage(omp_get_max_threads(), num_params);
 
@@ -118,14 +118,20 @@ private:
   cqmc::engine::LMYEngine<Value>& lm_engine_;
   std::vector<FullPrecValue> der_rat_samp;
   std::vector<FullPrecValue> le_der_samp;
+  int sample_count;
 
 public:
   LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
 
-  void prepareSampling(int num_params) override
+  void prepareSampling(int num_params,int num_samples) override
   {
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
+    if(lm_engine_.getStoringSamples())
+    {
+        sample_count = 0;
+        lm_engine_.setUpStorage(num_params,num_samples);
+    }
   }
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
@@ -143,9 +149,20 @@ public:
           le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
     }
 
+    if(lm_engine_.getStoringSamples())
+    {
+        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,sample_count);
+        sample_count++;
+    }
+    else
+    {
     lm_engine_.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
+    }
   }
-  void finishSampling() override { lm_engine_.sample_finish(); }
+  void finishSampling() override 
+  { if(!lm_engine_.getStoringSamples())
+      lm_engine_.sample_finish(); 
+  }
 #endif
 };
 
