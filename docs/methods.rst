@@ -266,10 +266,11 @@ Additional information:
 - ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
   files.
 
-- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction
-  from scratch: =1 by default when using mixed precision. =0 (no
-  recompute) by default when not using mixed precision. Recomputing
-  introduces a performance penalty dependent on system size.
+- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
+  default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
+  and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
+  dependent on system size, but protects against the accumulation of numerical error, particularly in the inverses of
+  the Slater determinants. These have a cubic-scaling cost to recompute.
 
 - ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
@@ -400,10 +401,11 @@ Additional information:
 - ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
   files.
 
-- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction
-  from scratch: =1 by default when using mixed precision. =0 (no
-  recompute) by default when not using mixed precision. Recomputing
-  introduces a performance penalty dependent on system size.
+- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
+  default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
+  and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
+  dependent on system size, but protects against the accumulation of numerical error, particularly in the inverses of
+  the Slater determinants. These have a cubic-scaling cost to recompute.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
