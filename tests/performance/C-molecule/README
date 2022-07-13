@@ -52,9 +52,30 @@ the following link
 
 https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
-This link will be updated when a longer term storage host is
-identified. You only need to download the sizes you would like to
-include in your benchmarking runs.
+Or directly download files in the command line via curl -L -O -J <URL>
+
+# C12-e48-pp.h5
+https://m.box.com/file/474121722881/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C12-e72-ae.h5
+https://m.box.com/file/474099607858/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C18-e72-pp.h5
+https://m.box.com/file/474099751699/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C18-e108-ae.h5
+https://m.box.com/file/474116479642/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C24-e96-pp.h5
+https://m.box.com/file/474116394246/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C24-e144-ae.h5
+https://m.box.com/file/474086364543/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C30-e120-pp.h5
+https://m.box.com/file/474084269761/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C30-e180-ae.h5
+https://m.box.com/file/474119243687/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+# C60-e240-pp.h5
+https://m.box.com/file/474117801956/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
+
+The above direct links were verified in July 2022 but may be fragile.
+
+Only the specific problem sizes needed for the intended benchmarking runs need to be downloaded.
 
 Please check the md5 value of h5 files before starting any
 benchmarking.
