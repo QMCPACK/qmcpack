@@ -227,9 +227,9 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update1, det_update1);
   PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddb.get_log_value());
 #ifdef DUMP_INFO
-  std::cout << "det 0 = " << std::exp(ddb.get_log_value()) << std::endl;
-  std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
-  std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
+  app_log() << "det 0 = " << std::exp(ddb.get_log_value()) << std::endl;
+  app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
+  app_log() << "det ratio 1 = " << det_ratio1 << std::endl;
 #endif
   //double det_ratio1 = 0.178276269185;
 
@@ -244,9 +244,9 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update2, det_update2);
   PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
-  std::cout << "det 1 = " << std::exp(ddb.get_log_value()) << std::endl;
-  std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
-  std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
+  app_log() << "det 1 = " << std::exp(ddb.get_log_value()) << std::endl;
+  app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
+  app_log() << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
   REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
@@ -260,9 +260,9 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update3, det_update3);
   PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
-  std::cout << "det 2 = " << std::exp(ddb.get_log_value()) << std::endl;
-  std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
-  std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
+  app_log() << "det 2 = " << std::exp(ddb.get_log_value()) << std::endl;
+  app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
+  app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
@@ -273,10 +273,10 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, orig_a, det_update3);
 
 #ifdef DUMP_INFO
-  std::cout << "original " << std::endl;
-  std::cout << orig_a << std::endl;
-  std::cout << "block update " << std::endl;
-  std::cout << ddb.psiM << std::endl;
+  app_log() << "original " << std::endl;
+  app_log() << orig_a << std::endl;
+  app_log() << "block update " << std::endl;
+  app_log() << ddb.psiM << std::endl;
 #endif
 
   check_matrix(orig_a, ddb.psiM);
@@ -370,9 +370,9 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update1, det_update1);
   PsiValueType det_ratio1 = LogToValue<ValueType>::convert(det_update1 - ddc.get_log_value());
 #ifdef DUMP_INFO
-  std::cout << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
-  std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
-  std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
+  app_log() << "det 0 = " << std::exp(ddc.get_log_value()) << std::endl;
+  app_log() << "det 1 = " << std::exp(det_update1) << std::endl;
+  app_log() << "det ratio 1 = " << det_ratio1 << std::endl;
 #endif
   //double det_ratio1 = 0.178276269185;
 
@@ -394,9 +394,9 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update2, det_update2);
   PsiValueType det_ratio2_val = LogToValue<ValueType>::convert(det_update2 - det_update1);
 #ifdef DUMP_INFO
-  std::cout << "det 1 = " << std::exp(ddc.get_log_value()) << std::endl;
-  std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
-  std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
+  app_log() << "det 1 = " << std::exp(ddc.get_log_value()) << std::endl;
+  app_log() << "det 2 = " << std::exp(det_update2) << std::endl;
+  app_log() << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
@@ -414,9 +414,9 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, a_update3, det_update3);
   PsiValueType det_ratio3_val = LogToValue<ValueType>::convert(det_update3 - det_update2);
 #ifdef DUMP_INFO
-  std::cout << "det 2 = " << std::exp(ddc.get_log_value()) << std::endl;
-  std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
-  std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
+  app_log() << "det 2 = " << std::exp(ddc.get_log_value()) << std::endl;
+  app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
+  app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
   // check ratio computed directly and the one computed by ddc with 1 delay
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
@@ -431,10 +431,10 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   dm.invert_transpose(scratchT, orig_a, det_update3);
 
 #ifdef DUMP_INFO
-  std::cout << "original " << std::endl;
-  std::cout << orig_a << std::endl;
-  std::cout << "delayed update " << std::endl;
-  std::cout << ddc.psiM << std::endl;
+  app_log() << "original " << std::endl;
+  app_log() << orig_a << std::endl;
+  app_log() << "delayed update " << std::endl;
+  app_log() << ddc.psiM << std::endl;
 #endif
 
   // compare all the elements of psiM in ddc and orig_a

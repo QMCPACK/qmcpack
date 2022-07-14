@@ -103,6 +103,24 @@ if(NOT QMC_CUDA)
     SCALAR_VALUES
     HE_ORB_ROT_PARAM)
 
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    He_orb_rot_param_grad_legacy
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+    PREFIX
+    He_orb_rot_param_grad_legacy.param
+    INPUT_FILE
+    He_orb_rot_param_grad_legacy.xml
+    PROCS
+    1
+    THREADS
+    16
+    SERIES
+    0
+    SCALAR_VALUES
+    HE_ORB_ROT_PARAM)
+
 
   else()
     message(VERBOSE "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")

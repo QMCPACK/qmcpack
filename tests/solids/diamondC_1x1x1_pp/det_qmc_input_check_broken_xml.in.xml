@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
+<!-- Simulation and qmcsystem tags are not closed -->
 <simulation>
-   <project id="qmc_short" series="0">
+   <project id="det_qmc_input_check_broken_xml" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
-   <random seed="49154"/>
+   <random seed="71"/>
    <qmcsystem>
       <simulationcell>
          <parameter name="lattice" units="bohr">
@@ -39,7 +40,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="double">
             <slaterdeterminant>
                <determinant id="updet" size="4">
                   <occupation mode="ground" spindataset="0"/>
@@ -78,23 +79,6 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
+         <pairpot name="MPC" type="MPC" source="e" target="e" ecut="60.0" physical="false"/>         
          <estimator type="flux" name="Flux"/>
       </hamiltonian>
-   </qmcsystem>
-   <qmc method="vmc" move="pbyp" checkpoint="0">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    3               </parameter>
-      <parameter name="steps"               >    8               </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    10              </parameter>
-   </qmc>
-   <qmc method="vmc" move="pbyp" checkpoint="-1">
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    1               </parameter>
-      <parameter name="steps"               >    1               </parameter>
-      <parameter name="subSteps"            >    1               </parameter>
-      <parameter name="timestep"            >    0.0             </parameter>
-      <parameter name="warmupSteps"         >    0               </parameter>
-   </qmc>
-</simulation>

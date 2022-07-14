@@ -26,8 +26,24 @@ public:
   //destructor
   ~RotatedSPOs() override;
 
-  //vector that contains active orbital rotation parameter indices
-  std::vector<std::pair<int, int>> m_act_rot_inds;
+  // Vector of rotation matrix indices
+  using RotationIndices = std::vector<std::pair<int, int>>;
+
+  // Active orbital rotation parameter indices
+  RotationIndices m_act_rot_inds;
+
+  // Construct a list of the matrix indices for non-zero rotation parameters.
+  // (The structure for a sparse representation of the matrix)
+  // Only core->active rotations are created.
+  static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
+
+  // Fill in anti-symmetric matrix from the list of rotation parameter indices
+  // and a list of parameter values.
+  // This function assumes rot_mat is properly sized upon input and is set to zero.
+  static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                           const std::vector<ValueType>& param,
+                                           ValueMatrix& rot_mat);
+
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
@@ -62,9 +78,10 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t nel) override;
+  void buildOptVariables(size_t nel) override;
+
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations) override;
 
 
   void evaluateDerivatives(ParticleSet& P,

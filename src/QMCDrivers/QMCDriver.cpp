@@ -138,7 +138,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   else if (typeid(CTS::RealType) == typeid(double))
   {
     // gpu double precision
-    nBlocksBetweenRecompute = 0;
+    nBlocksBetweenRecompute = 10;
   }
 #else
 #ifdef MIXED_PRECISION
@@ -146,7 +146,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nBlocksBetweenRecompute = 1;
 #else
   // cpu double precision
-  nBlocksBetweenRecompute = 0;
+  nBlocksBetweenRecompute = 10;
 #endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");

@@ -30,7 +30,12 @@ LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
 }
 
 LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
-    : SPOSet(in), myBasisSet(in.myBasisSet->makeClone()), C(in.C), BasisSetSize(in.BasisSetSize), Identity(in.Identity)
+    : SPOSet(in),
+      myBasisSet(in.myBasisSet->makeClone()),
+      C(in.C),
+      BasisSetSize(in.BasisSetSize),
+      C_copy(in.C_copy),
+      Identity(in.Identity)
 {
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);

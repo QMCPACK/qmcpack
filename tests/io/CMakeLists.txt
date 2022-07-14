@@ -82,7 +82,7 @@ function(
 endfunction()
 
 run_restart_and_check(
-  restart
+  deterministic-restart
   "${qmcpack_SOURCE_DIR}/tests/io/restart"
   qmc_short
   8
@@ -90,7 +90,7 @@ run_restart_and_check(
   check.sh
   false)
 run_restart_and_check(
-  restart
+  deterministic-restart
   "${qmcpack_SOURCE_DIR}/tests/io/restart"
   qmc_short
   1
@@ -116,16 +116,16 @@ restart_batch
   true)
 
 run_restart_and_check(
-  save_coefs
-  "${qmcpack_SOURCE_DIR}/tests/io/save_coefs"
+  deterministic-save_spline_coefs
+  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   qmc_short
   8
   2
   check.sh
   false)
 run_restart_and_check(
-  save_coefs
-  "${qmcpack_SOURCE_DIR}/tests/io/save_coefs"
+  deterministic-save_spline_coefs
+  "${qmcpack_SOURCE_DIR}/tests/io/save_spline_coefs"
   qmc_short
   1
   16

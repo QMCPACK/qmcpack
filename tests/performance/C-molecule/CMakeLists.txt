@@ -8,6 +8,8 @@ if(NOT QMC_CUDA)
     function(
       ADD_C_MOLECULE_TEST
       TEST_NAME
+      PROCS
+      THREADS
       TEST_DIR
       TEST_SOURCE_DIR
       INPUT_FILE
@@ -39,8 +41,7 @@ if(NOT QMC_CUDA)
         COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
                 ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/C-molecule")
 
-      set(PROCS 1)
-      set(THREADS 16)
+      set(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
       math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
       if(HAVE_MPI)
         add_test(NAME ${TEST_NAME} COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${MPIEXEC_PREFLAGS}
@@ -69,6 +70,7 @@ if(NOT QMC_CUDA)
     else()
 
       set(C_SIZES 12 18 24 30 60)
+      set(WALKER_COUNTS 256 128 64 32 16)
 
       if(QMC_C_MAX_SIZE)
         foreach(SIZE IN LISTS C_SIZES)
@@ -88,6 +90,7 @@ if(NOT QMC_CUDA)
       foreach(INDEX RANGE ${LENGTH_MAX})
         foreach(POTENTIAL_TYPE "ae" "pp")
           list(GET C_SIZES ${INDEX} SIZE)
+          list(GET WALKER_COUNTS ${INDEX} WALKER_COUNT)
           math(EXPR ATOM_COUNT "${SIZE}")
           if(POTENTIAL_TYPE MATCHES "ae")
             math(EXPR ELECTRON_COUNT "${SIZE} * 6")
@@ -99,14 +102,26 @@ if(NOT QMC_CUDA)
           set(H5_FILE C${SIZE}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}.h5)
           set(H5_FULL_PATH "${QMC_DATA}/C-molecule/${H5_FILE}")
           if(EXISTS ${H5_FULL_PATH})
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE})
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT}")
+            set(DRIVER_TYPE cpu_driver)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT})
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
+            add_c_molecule_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
             # J3
-            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-1-16)
-            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3)
-            add_c_molecule_test(${PERF_TEST} ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
-                                "${ADJUST_INPUT} -j ${TEST_DIR}/J123.xml")
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
+            add_c_molecule_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
+                                "${ADJUST_INPUT} -w ${WALKER_COUNT} -j ${TEST_DIR}/J123.xml")
+            # Batched-driver
+            set(DRIVER_TYPE batched_driver)
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE}-w${WALKER_COUNT})
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-${DRIVER_TYPE})
+            add_c_molecule_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")
+            # J3
+            set(PERF_TEST performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
+            set(TEST_DIR dmc-C${ATOM_COUNT}-e${ELECTRON_COUNT}-${POTENTIAL_TYPE}-J3-${DRIVER_TYPE})
+            add_c_molecule_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE}
+                                "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched -j ${TEST_DIR}/J123.xml")
+
           elseif(NOT (SIZE MATCHES "60" AND POTENTIAL_TYPE MATCHES "ae"))
             message(VERBOSE
               "performance-C-molecule-C${ATOM_COUNT}-e${ELECTRON_COUNT} not added because the corresponding h5 file not found: ${H5_FULL_PATH}"

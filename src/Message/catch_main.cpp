@@ -18,6 +18,7 @@
 #include "Message/Communicate.h"
 #endif
 #include "Host/OutputManager.h"
+#include "MemoryUsage.h"
 
 // Replacement unit test main function to ensure that MPI is finalized once
 // (and only once) at the end of the unit test.
@@ -40,15 +41,11 @@ int main(int argc, char* argv[])
   session.cli(cli);
   // Parse arguments.
   int parser_err = session.applyCommandLine(argc, argv);
-  if (!turn_on_output)
-  {
-    qmcplusplus::app_log() << "QMCPACK printout is suppressed. Use --turn-on-printout to see all the printout."
-                           << std::endl;
-    outputManager.shutOff();
-  }
 #ifdef CATCH_MAIN_HAVE_MPI
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
+  if (OHMMS::Controller->rank())
+    outputManager.shutOff();
   Communicate node_comm;
   node_comm.initializeAsNodeComm(*OHMMS::Controller);
   // assign accelerators within a node
@@ -56,6 +53,13 @@ int main(int argc, char* argv[])
 #else
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(0, 1);
 #endif
+  if (!turn_on_output)
+  {
+    qmcplusplus::app_log() << "QMCPACK printout is suppressed. Use --turn-on-printout to see all the printout."
+                           << std::endl;
+    outputManager.shutOff();
+  }
+  qmcplusplus::print_mem("Before running tests", qmcplusplus::app_log());
   // Run the tests.
   int result = session.run(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI
