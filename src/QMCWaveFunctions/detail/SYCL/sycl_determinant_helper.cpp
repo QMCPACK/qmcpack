@@ -86,4 +86,52 @@ template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                         const int ndelay,
                                         std::complex<double>* restrict V_gpu,
                                         const std::complex<double>* restrict Ainv);
+
+
+template<typename T, typename TMAT, typename INDEX>
+std::complex<T> computeLogDet_sycl(sycl::queue& aq,
+                                   int n,
+                                   int lda,
+                                   const TMAT* restrict a,
+                                   const INDEX* restrict pivot,
+                                   const std::vector<cl::sycl::event>& dependencies)
+{
+  constexpr size_t COLBS = 128;
+
+  std::complex<T> result{};
+  {
+    sycl::buffer<std::complex<T>, 1> abuff(&result, {1});
+    aq.submit([&](sycl::handler& cgh) {
+      cgh.depends_on(dependencies);
+
+      size_t n_max = ((n + COLBS - 1) / COLBS) * COLBS;
+      sycl::global_ptr<const TMAT> A{a};
+      sycl::global_ptr<const INDEX> Pivot{pivot};
+      cgh.parallel_for(sycl::range<1>{n_max}, sycl::reduction(abuff, cgh, {T{}, T{}}, std::plus<std::complex<T>>()),
+                       [=](sycl::id<1> i, auto& sum) {
+                         std::complex<T> val{};
+                         //if(i<n) val= std::log(std::complex<T>((Pivot[i] == i + 1) ? A[i*lda+i] : -A[i*lda+i]));
+                         if (i < n)
+                           val = (Pivot[i] == i + 1) ? std::log(std::complex<T>(A[i * lda + i]))
+                                                     : std::log(std::complex<T>(-A[i * lda + i]));
+                         sum.combine(val);
+                       });
+    });
+  } //synchronous
+  return result;
+}
+
+template std::complex<double> computeLogDet_sycl(sycl::queue& aq,
+                                                 int n,
+                                                 int lda,
+                                                 const double* restrict a,
+                                                 const std::int64_t* restrict pivot,
+                                                 const std::vector<cl::sycl::event>& dependencies);
+
+template std::complex<double> computeLogDet_sycl(sycl::queue& aq,
+                                                 int n,
+                                                 int lda,
+                                                 const std::complex<double>* restrict a,
+                                                 const std::int64_t* restrict pivot,
+                                                 const std::vector<cl::sycl::event>& dependencies);
 } // namespace qmcplusplus
