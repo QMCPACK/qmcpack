@@ -23,8 +23,6 @@
 #include "Utilities/OhmmsObject.h"
 #include "PosUnit.h"
 
-#include <memory>
-
 namespace qmcplusplus
 {
 /** Attaches a unit to a Vector for IO
@@ -97,13 +95,13 @@ public:
 template<class T, unsigned D>
 inline T* get_first_address(ParticleAttrib<TinyVector<T, D>>& a)
 {
-  return std::addressof(a[0][0]);
+  return &(a[0][0]);
 }
 
 template<class T, unsigned D>
 inline T* get_last_address(ParticleAttrib<TinyVector<T, D>>& a)
 {
-  return std::addressof(a[0][0]) + D * a.size();
+  return &(a[0][0]) + D * a.size();
 }
 
 } // namespace qmcplusplus
