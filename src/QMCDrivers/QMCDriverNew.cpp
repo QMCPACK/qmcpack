@@ -262,7 +262,6 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
   auto& W         = population_.getWalkerConfigsRef();
 
   if (DumpConfig && dumpwalkers) {
-    std::cout << "myComm.size()? " << myComm->size() << std::endl;  
     wOut->dump(W, block);
   }
   infoSummary.flush();

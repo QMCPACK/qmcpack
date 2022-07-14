@@ -97,14 +97,7 @@ void ProjectData::reset()
   else
     length = sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
 
-  /*std::cout << "woof? ";
-  for(int i = 0 ; i < asdf ; i ++ ){
-	  std::cout << fileroot[i] ;
-  }
-  std::cout << std::endl;
-  exit(1);*/
-  
-  m_projectmain = std::string(fileroot,length);
+  m_projectmain = std::string(fileroot, length);
   //set the communicator name
   myComm->setName(fileroot);
   if (no_gtag)
