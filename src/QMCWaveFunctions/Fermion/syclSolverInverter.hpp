@@ -77,9 +77,11 @@ public:
     }
     catch (cl::sycl::exception const& ex)
     {
-      std::cout << "\t\tCaught synchronous SYCL exception during getrf:\n"
-                << ex.what() << "  status: " << ex.code() << std::endl;
-      abort();
+      std::ostringstream err;
+      err << "\t\tCaught synchronous SYCL exception during getrf:\n"
+          << ex.what() << "  status: " << ex.code() << std::endl;
+      std::cerr << err.str();
+      throw std::runtime_error(err.str());
     }
 
     log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Ainv_gpu.cols(), Ainv_gpu.data(), ipiv.data());
@@ -116,9 +118,11 @@ public:
     }
     catch (cl::sycl::exception const& ex)
     {
-      std::cout << "\t\tCaught synchronous SYCL exception during getrf:\n"
-                << ex.what() << "  status: " << ex.code() << std::endl;
-      abort();
+      std::ostringstream err;
+      err << "\t\tCaught synchronous SYCL exception during getrf:\n"
+          << ex.what() << "  status: " << ex.code() << std::endl;
+      std::cerr << err.str();
+      throw std::runtime_error(err.str());
     }
 
     log_value = computeLogDet_sycl<TREAL>(m_queue, norb, Mat1_gpu.cols(), Mat1_gpu.data(), ipiv.data());

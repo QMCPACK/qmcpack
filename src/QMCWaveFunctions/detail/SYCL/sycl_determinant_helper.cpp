@@ -110,7 +110,6 @@ std::complex<T> computeLogDet_sycl(sycl::queue& aq,
       cgh.parallel_for(sycl::range<1>{n_max}, sycl::reduction(abuff, cgh, {T{}, T{}}, std::plus<std::complex<T>>()),
                        [=](sycl::id<1> i, auto& sum) {
                          std::complex<T> val{};
-                         //if(i<n) val= std::log(std::complex<T>((Pivot[i] == i + 1) ? A[i*lda+i] : -A[i*lda+i]));
                          if (i < n)
                            val = (Pivot[i] == i + 1) ? std::log(std::complex<T>(A[i * lda + i]))
                                                      : std::log(std::complex<T>(-A[i * lda + i]));
