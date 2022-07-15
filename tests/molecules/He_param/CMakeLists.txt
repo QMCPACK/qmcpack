@@ -9,7 +9,7 @@ if(NOT QMC_CUDA)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    He_param_grad
+    short-He_param_grad
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     PREFIX
@@ -28,7 +28,7 @@ if(NOT QMC_CUDA)
   # Check the parameter gradient code for the legacy driver
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    He_param_grad_legacy_driver
+    short-He_param_grad_legacy_driver
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     PREFIX
@@ -87,7 +87,7 @@ if(NOT QMC_CUDA)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    He_orb_rot_param_grad_legacy
+    short-He_orb_rot_param_grad_legacy
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     PREFIX
@@ -105,13 +105,49 @@ if(NOT QMC_CUDA)
 
   qmc_run_and_check_custom_scalar(
     BASE_NAME
-    He_orb_rot_param_grad_legacy
+    short-He_orb_rot_param_grad_legacy
     BASE_DIR
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
     PREFIX
     He_orb_rot_param_grad_legacy.param
     INPUT_FILE
     He_orb_rot_param_grad_legacy.xml
+    PROCS
+    1
+    THREADS
+    16
+    SERIES
+    0
+    SCALAR_VALUES
+    HE_ORB_ROT_PARAM)
+
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    short-He_orb_rot_param_grad_batch
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+    PREFIX
+    He_orb_rot_param_grad_batch.param
+    INPUT_FILE
+    He_orb_rot_param_grad_batch.xml
+    PROCS
+    1
+    THREADS
+    1
+    SERIES
+    0
+    SCALAR_VALUES
+    HE_ORB_ROT_PARAM)
+
+  qmc_run_and_check_custom_scalar(
+    BASE_NAME
+    short-He_orb_rot_param_grad_batch
+    BASE_DIR
+    "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+    PREFIX
+    He_orb_rot_param_grad_batch.param
+    INPUT_FILE
+    He_orb_rot_param_grad_batch.xml
     PROCS
     1
     THREADS
