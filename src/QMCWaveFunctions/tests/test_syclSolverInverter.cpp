@@ -49,17 +49,20 @@ void test_inverse(const std::int64_t N)
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
-TEST_CASE("OmpSYCL syclSolverInverter", "[SYCL]")
+TEMPLATE_TEST_CASE("syclSolverInverter", "[wavefunction][fermion]", double, float)
 {
-  const int N = 911;
-
-#ifdef MIXED_PRECISION
-  std::cout << "Testing Inverse for mixed precision " << std::endl;
-  test_inverse<float, double>(N);
+  // TestType is defined by Catch. It is the type in each instantiation of the templated test case.
+#ifdef QMC_COMPLEX
+  using FullPrecValue = std::complex<double>;
+  using Value         = std::complex<TestType>;
 #else
-  std::cout << "Testing Inverse for double double " << std::endl;
-  test_inverse<double, double>(N);
+  using FullPrecValue = double;
+  using Value         = TestType;
 #endif
+
+  SECTION("N=117") { test_inverse<Value, FullPrecValue>(117); }
+
+  SECTION("N=911") { test_inverse<Value, FullPrecValue>(911); }
 }
 
 } // namespace qmcplusplus
