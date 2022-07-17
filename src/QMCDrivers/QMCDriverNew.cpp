@@ -217,31 +217,33 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
  */
 void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 {
-  // if (wset.empty())
-  //   return;
-  // int nfile = wset.size();
-  // HDFWalkerInputManager W_in(W, myComm);
-  // for (int i = 0; i < wset.size(); i++)
-  //   if (W_in.put(wset[i]))
-  //     h5FileRoot = W_in.getFileRoot();
-  // //clear the walker set
-  // wset.clear();
-  // int nwtot = W.getActiveWalkers();
-  // myComm->bcast(nwtot);
-  // if (nwtot)
-  // {
-  //   int np = myComm->size();
-  //   std::vector<int> nw(np, 0), nwoff(np + 1, 0);
-  //   nw[myComm->rank()] = W.getActiveWalkers();
-  //   myComm->allreduce(nw);
-  //   for (int ip = 0; ip < np; ++ip)
-  //     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  //   W.setGlobalNumWalkers(nwoff[np]);
-  //   W.setWalkerOffsets(nwoff);
-  //   qmc_common.is_restart = true;
-  // }
-  // else
-  //   qmc_common.is_restart = false;
+  if (wset.empty())
+    return;
+  int nfile = wset.size();
+
+  auto& W         = population_.getWalkerConfigsRef();
+  HDFWalkerInputManager W_in(W, population_.get_golden_electrons()->getTotalNum(), myComm);
+  for (int i = 0; i < wset.size(); i++)
+    if (W_in.put(wset[i]))
+      h5_file_root_ = W_in.getFileRoot();
+  //clear the walker set
+  wset.clear();
+  int nwtot = W.getActiveWalkers();
+  myComm->bcast(nwtot);
+  if (nwtot)
+  {
+    int np = myComm->size();
+    std::vector<int> nw(np, 0), nwoff(np + 1, 0);
+    nw[myComm->rank()] = W.getActiveWalkers();
+    myComm->allreduce(nw);
+    for (int ip = 0; ip < np; ++ip)
+      nwoff[ip + 1] = nwoff[ip] + nw[ip];
+    W.setGlobalNumWalkers(nwoff[np]);
+    W.setWalkerOffsets(nwoff);
+    qmc_common.is_restart = true;
+  }
+  else
+    qmc_common.is_restart = false;
 }
 
 void QMCDriverNew::recordBlock(int block)
