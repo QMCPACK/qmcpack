@@ -39,8 +39,18 @@ def orb2(R):
     snorm2 = sto_norm2(zeta)
     return snorm2* y00 * r* np.exp(-zeta*r)
 
+# Return the 2x2 rotation matrix
+def rot_mat_size2(theta):
+    return np.array([[ np.cos(theta), np.sin(theta) ],
+                     [ -np.sin(theta), np.cos(theta) ]])
+
 def rot_orb(R, theta):
-    return orb1(R) * np.cos(theta) + orb2(R) * np.sin(theta)
+    global Coeff
+    c00 = Coeff[0,0] * np.cos(theta) + Coeff[1,0] * np.sin(theta)
+    c01 = Coeff[0,1] * np.cos(theta) + Coeff[1,1] * np.sin(theta)
+    return orb1(R) * c00 + orb2(R) * c01
+
+    #return orb1(R) * np.cos(theta) + orb2(R) * np.sin(theta)
 
 
 def jastrow(r12, B):
@@ -269,7 +279,8 @@ def run_qmc(VP):
         en = en_ave.average()
         en_err = en_ave.error()
         ar = naccept/(nstep*nsubstep*nelectron)
-        print('block = ',nb, ' energy = ',en,en_err,' acceptance ratio = ',ar)
+        print('block = ',nb, ' energy = ',en,en_err,' acceptance ratio = ',ar, flush=True)
+
 
         dp = dpsi_ave.average()
         dp_err = dpsi_ave.error()
@@ -294,11 +305,23 @@ def run_qmc(VP):
 
 
 def run_qmc_parameter_derivatives():
-    global use_jastrow
-    use_jastrow=False
-    theta1 = 0.1
-    theta2 = 0.1
-    VP = np.array([theta1, theta2])
+    global use_jastrow, Coeff
+    use_jastrow=True
+
+    theta = 0.1
+    Coeff = rot_mat_size2(theta)
+
+    print("Initial rotation matrix coefficients for theta = ",theta)
+    print(Coeff)
+
+    # Apply the rotation to the coefficients, then compute the derivative at zero angle
+    # to match how QMCPACK computes the derivative of the rotation parameters.
+    # Doesn't matter for 2x2 case, but will matter for larger sizes.
+    theta1 = 0.0
+    theta2 = 0.0
+    #VP = np.array([theta1, theta2])
+    beta = 0.2
+    VP = np.array([theta1, theta2, beta])
 
     run_qmc(VP)
 
@@ -315,6 +338,14 @@ def run_qmc_parameter_derivatives():
 # parameter values =  [0.1 0.1]
 # parameter derivatives =  [-0.2204924  -0.21471184]
 # parameter derivative errors =  [0.00493837 0.00571082]
+
+# Run took about 20 minutes on laptop
+# nblock=20, nstep=1000, nsubstep=10
+# Initial rotation matrix coefficients from theta =  0.1
+# parameter values =  [0.  0.  0.2]
+# parameter derivatives =  [ 0.10530185  0.08058737 -0.11595301]
+# parameter derivative errors =  [0.02598407 0.02115345 0.01133443]
+
 
 
 if __name__=='__main__':
