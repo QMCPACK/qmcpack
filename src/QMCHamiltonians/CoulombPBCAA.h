@@ -129,6 +129,10 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
+  /** Call to inform objects associated with this operator of per particle listeners must be called
+   *  before createResources is called and it is assumed it is called on each walker operator not
+   *  just on the golden particle set.
+   */
   void informOfPerParticleListener() override;
 
 #if !defined(REMOVE_TRACEMANAGER)

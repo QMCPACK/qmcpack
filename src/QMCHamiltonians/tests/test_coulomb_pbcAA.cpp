@@ -11,22 +11,23 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "catch.hpp"
+#include <catch.hpp>
 
-#include "QMCHamiltonians/CoulombPBCAA.h"
+#include <CoulombPBCAA.h>
+
 #include <algorithm>
 #include <numeric>
-#include <stdio.h>
 #include <string>
 
-#include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsPETE/OhmmsMatrix.h"
-#include "Particle/ParticleSet.h"
-#include <ResourceCollection.h>
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Listener.hpp"
-#include "TestListenerFunction.h"
+#include <checkMatrix.hpp>
 #include "Configuration.h"
+#include <Listener.hpp>
+#include <OhmmsData/Libxml2Doc.h>
+#include <OhmmsPETE/OhmmsMatrix.h>
+#include <ParticleSet.h>
+#include <ResourceCollection.h>
+#include "TestListenerFunction.h"
+#include <TrialWaveFunction.h>
 
 using std::string;
 
@@ -278,7 +279,7 @@ TEST_CASE("Coulomb PBC A-A BCC 3 particles", "[hamiltonian]")
 }
 
 
-TEST_CASE("CoulombAAListener", "[hamiltonian]")
+TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
 {
   using testing::getParticularListener;
   LRCoulombSingleton::CoulombHandler = 0;
@@ -307,9 +308,11 @@ TEST_CASE("CoulombAAListener", "[hamiltonian]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(massIdx, upIdx)   = 1.0;
 
+  // The XMLParticleParser always calls createSK on particle sets it creates.
+  // Since most code assumes a valid particle set is as created by XMLParticleParser,
+  // we must call createSK().
   elec.createSK();
   elec.update();
-  elec.turnOnPerParticleSK();
 
   ParticleSet elec2(elec);
 
@@ -326,6 +329,7 @@ TEST_CASE("CoulombAAListener", "[hamiltonian]")
   CoulombPBCAA caa2(elec2, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
   RefVector<OperatorBase> caas{caa, caa2};
   RefVectorWithLeader<OperatorBase> o_list(caa, caas);
+
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.myConst;
   CHECK(consts == Approx(-6.3314780332));
@@ -335,10 +339,8 @@ TEST_CASE("CoulombAAListener", "[hamiltonian]")
   TrialWaveFunction psi, psi_clone;
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
-  Matrix<Real> local_pots(2);
-  Matrix<Real> local_pots2(2);
-
-  caa.informOfPerParticleListener();
+  for (typename decltype(caas)::value_type::type & cpbc_aa : caas)
+    cpbc_aa.informOfPerParticleListener();
   ResourceCollection caa_res("test_caa_res");
   caa.createResource(caa_res);
   ResourceCollectionTeamLock<OperatorBase> caa_lock(caa_res, o_list);
@@ -346,6 +348,12 @@ TEST_CASE("CoulombAAListener", "[hamiltonian]")
   ResourceCollection pset_res("test_pset_res");
   elec.createResource(pset_res);
   ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
+
+  // The test Listener emitted by getParticularListener binds a Matrix
+  // it will write the reported data into it with each walker's particle values
+  // in a row.
+  Matrix<Real> local_pots(2);
+  Matrix<Real> local_pots2(2);
 
   std::vector<ListenerVector<Real>> listeners;
   listeners.emplace_back("localenergy", getParticularListener(local_pots));
@@ -360,6 +368,9 @@ TEST_CASE("CoulombAAListener", "[hamiltonian]")
   // Check that the sum of the particle energies == the total
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-2.9332312765));
   CHECK(std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0) == Approx(-3.4537460926));
+  // Check that the second listener received the same data
+  auto check_matrix_result = checkMatrix(local_pots, local_pots2);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
 }
 
 } // namespace qmcplusplus
