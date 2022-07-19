@@ -284,6 +284,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   using testing::getParticularListener;
   LRCoulombSingleton::CoulombHandler = 0;
 
+  // Constructing a mock "golden" set of walker elements
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
   lattice.R.diagonal(1.0);
@@ -313,7 +314,20 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   // we must call createSK().
   elec.createSK();
   elec.update();
+  // golden particle set valid (enough for this test)
 
+  DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS;
+  // golden CoulombPBCAA
+  CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
+
+  // mock golden wavefunction, only needed to satisfy APIs
+  TrialWaveFunction psi;
+  
+  // informOfPerParticleListener should be called on the golden instance of this operator if there
+  // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
+  caa.informOfPerParticleListener();
+
+  // Now we can make a clone of the mock walker
   ParticleSet elec2(elec);
 
   elec2.R[0][0] = 0.0;
@@ -324,11 +338,12 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   elec2.R[1][2] = -0.1;
   elec2.update();
 
-  DynamicCoordinateKind kind = DynamicCoordinateKind::DC_POS;
-  CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
   CoulombPBCAA caa2(elec2, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
   RefVector<OperatorBase> caas{caa, caa2};
   RefVectorWithLeader<OperatorBase> o_list(caa, caas);
+
+  TrialWaveFunction psi_clone;
+  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.myConst;
@@ -336,11 +351,6 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  TrialWaveFunction psi, psi_clone;
-  RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
-
-  for (typename decltype(caas)::value_type::type & cpbc_aa : caas)
-    cpbc_aa.informOfPerParticleListener();
   ResourceCollection caa_res("test_caa_res");
   caa.createResource(caa_res);
   ResourceCollectionTeamLock<OperatorBase> caa_lock(caa_res, o_list);
