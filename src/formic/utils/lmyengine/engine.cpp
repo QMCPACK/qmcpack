@@ -616,7 +616,7 @@ void cqmc::engine::LMYEngine<S>::take_sample(int nbasis, std::vector<S> & one_rd
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename S>
 void cqmc::engine::LMYEngine<S>::sample_finish() {
-  
+ 
   int my_rank = formic::mpi::rank();
 
   // get total number of threads
@@ -1532,12 +1532,19 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
 //Function for setting the size of the derivative ratio histories according to the total number of optimizable parameters and the number of samples per process
  template<typename S>
- void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams,int numSamples)
+ void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams, int numSamples, int numThreads)
  {
 
-     le_der_rat_history.reset(numSamples, numParams+1);
-     der_rat_history.reset(numSamples, numParams+1);
+     le_der_rat_history.resize(numThreads);
+     der_rat_history.resize(numThreads);
+     vgs_history.resize(numThreads);
+     weight_history.resize(numThreads);
 
+     for(int i = 0; i < le_der_rat_history.size();i++)
+     {
+        le_der_rat_history.at(i).reset(numSamples, numParams+1);
+        der_rat_history.at(i).reset(numSamples, numParams+1);
+     }
  }
 
 //Function for storing a sample (local energy and the sets of derivative ratios)
@@ -1545,18 +1552,17 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
  void cqmc::engine::LMYEngine<S>::store_sample(std::vector<S> & der_rat_samp,std::vector<S> & le_der_samp,std::vector<S> & ls_der_samp,double vgs_samp,double weight_samp,int sample_count)
  {
 
+    int myThread = omp_get_thread_num();
 
-
-     int my_rank = formic::mpi::rank();
      for(int i = 0; i < le_der_samp.size();i++)
      {
-         le_der_rat_history.at(sample_count,i) = le_der_samp[i];
-         der_rat_history.at(sample_count,i) = der_rat_samp[i];
+         le_der_rat_history.at(myThread).at(sample_count,i) = le_der_samp[i];
+         der_rat_history.at(myThread).at(sample_count,i) = der_rat_samp[i];
      }
 
 
-     vgs_history.push_back(vgs_samp);
-     weight_history.push_back(weight_samp);
+     vgs_history.at(myThread).push_back(vgs_samp);
+     weight_history.at(myThread).push_back(weight_samp);
  }
 
 //Function for constructing matrices form stored samples
@@ -1566,11 +1572,15 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
  void cqmc::engine::LMYEngine<S>::buildMatricesFromDerivatives()
  {
      //Number of samples on a process
+     int num_samples = der_rat_history[0].rows();
+     int der_vec_len = der_rat_history[0].cols();
 
-     int num_samples = der_rat_history.rows();
-     int der_vec_len = der_rat_history.cols();
-     int my_rank = formic::mpi::rank();
+     int num_threads = omp_get_max_threads();
+     int myThread = omp_get_thread_num();
 
+
+     for(int k = 0; k < num_threads; k++)
+     {
 
      for(int i = 0; i < num_samples; i++)
      {
@@ -1579,12 +1589,12 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
          for(int j = 0;j < der_vec_len;j++)
          {
-             der_rat_samp.push_back(der_rat_history.at(i,j));
-             le_der_samp.push_back(le_der_rat_history.at(i,j));
+             der_rat_samp.push_back(der_rat_history.at(k).at(i,j));
+             le_der_samp.push_back(le_der_rat_history.at(k).at(i,j));
          }
 
-         double vgs = vgs_history[i];
-         double weight = weight_history[i];
+         double vgs = vgs_history.at(k).at(i);
+         double weight = weight_history.at(k).at(i);
 
          if(filter_param_)
          {
@@ -1613,6 +1623,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
              }
 
 
+     }
      }
      this->sample_finish();
 
@@ -1696,8 +1707,8 @@ template<typename S>
      std::cout << "Filtering parameters based on the noise of their gradients." << std::endl;
  }
 
- int num_samples = der_rat_history.rows();
- int num_all_params = der_rat_history.cols()-1;
+ int num_samples = der_rat_history[0].rows();
+ int num_all_params = der_rat_history[0].cols()-1;
 
  parameterSettings.resize(num_all_params);
 
@@ -1710,7 +1721,8 @@ template<typename S>
  std::vector<double> temp_e_list;
  std::vector<double> numerHistory;
  std::vector<double> denomHistory;
-
+ std::vector<double> full_weight_history;
+ std::vector<double> full_vgs_history;
 
  double numerVal=0.0;
  double denomVal=0.0;
@@ -1718,14 +1730,25 @@ template<typename S>
  double numerSigma=0.0;
  double denomSigma=0.0;
 
+ int num_threads = le_der_rat_history.size();
+
+//loop over all stored local energies and associated weights
+ for(int i = 0; i < num_threads;i++)
+ {
  for(int j = 0; j < num_samples; j++)
  {
-     double etmp = formic::real(le_der_rat_history.at(j,0));
+     double etmp = formic::real(le_der_rat_history.at(i).at(j,0));
 
-     double vgs = vgs_history[j];
+     double vgs = vgs_history.at(i).at(j);
+     double weight = weight_history.at(i).at(j);
 
      temp_e_list.push_back(etmp*vgs);
-    
+
+   //Full histories should be 1D with values from each thread's vector in the original histories  
+     full_vgs_history.push_back(vgs);
+     full_weight_history.push_back(weight);
+
+ //For excited state, compute corresponding contributations to numerator and denominator of target function
  if(!_ground)
  {
      double numer_val = (_hd_lm_shift - etmp)*vgs;
@@ -1733,20 +1756,21 @@ template<typename S>
 
      numerHistory.push_back(numer_val);
      denomHistory.push_back(denom_val);
-
+     
  }
 
  }
 
- std::vector<double> energy_results = computeSigma_helper(weight_history, temp_e_list, vgs_history);
+ }
+ std::vector<double> energy_results = computeSigma_helper(full_weight_history, temp_e_list, full_vgs_history);
 
  double mean_energy = energy_results[0];
 
  if(!_ground)
  {
-     std::vector<double> numerResults = computeSigma_helper(weight_history,numerHistory,vgs_history);
-     std::vector<double> denomResults = computeSigma_helper(weight_history,denomHistory,vgs_history);
-     std::vector<double> targetResults = computeSigma_helper(weight_history,numerHistory,denomHistory);
+     std::vector<double> numerResults = computeSigma_helper(full_weight_history,numerHistory,full_vgs_history);
+     std::vector<double> denomResults = computeSigma_helper(full_weight_history,denomHistory,full_vgs_history);
+     std::vector<double> targetResults = computeSigma_helper(full_weight_history,numerHistory,denomHistory);
 
      numerVal = numerResults[0];
      denomVal = denomResults[0];
@@ -1756,20 +1780,24 @@ template<typename S>
 
  }
 
- for(int i = 1; i< num_all_params+1; i ++)
+ //Now loop over parameter derivative ratios
+ 
+ for(int i = 1; i< num_all_params+1; i++)
  {
 
- std::vector<double> param_numer_history;
- std::vector<double> param_denom_history;
- int sample_counter = 0;
+    std::vector<double> param_numer_history;
+    std::vector<double> param_denom_history;
+
+    for(int k = 0; k < num_threads;k++)
+    {
 
 
      for(int j = 0; j < num_samples; j++)
      {
-         double param_le_der = formic::real(le_der_rat_history.at(j,i));
-         double param_der_rat = formic::real(der_rat_history.at(j,i));
-         double vgs = vgs_history[j];
-         double etmp = formic::real(le_der_rat_history.at(j,0));
+         double param_le_der = formic::real(le_der_rat_history.at(k).at(j,i));
+         double param_der_rat = formic::real(der_rat_history.at(k).at(j,i));
+         double vgs = vgs_history.at(k).at(j);
+         double etmp = formic::real(le_der_rat_history.at(k).at(j,0));
 
          if(_ground)
          {
@@ -1791,7 +1819,7 @@ template<typename S>
 
 
      }
-
+ }
      //After loop over samples, compute average mean and sigma for the parameter derivative
             double mean_deriv;
              double deriv_sigma;
@@ -1799,8 +1827,8 @@ template<typename S>
          if(_ground)
          {
 
-             std::vector<double> first_term_results = computeSigma_helper(weight_history, param_numer_history, vgs_history);
-             std::vector<double> second_term_results = computeSigma_helper(weight_history, param_denom_history, vgs_history);
+             std::vector<double> first_term_results = computeSigma_helper(full_weight_history, param_numer_history, full_vgs_history);
+             std::vector<double> second_term_results = computeSigma_helper(full_weight_history, param_denom_history, full_vgs_history);
 
              mean_deriv = first_term_results[0] - mean_energy*second_term_results[0];
 
@@ -1819,8 +1847,8 @@ template<typename S>
  //Excited State Case
          else
          {
-             std::vector<double> results = computeSigma_helper(weight_history, param_numer_history, vgs_history);
-             std::vector<double> secondResults = computeSigma_helper(weight_history, param_denom_history, vgs_history);
+             std::vector<double> results = computeSigma_helper(full_weight_history, param_numer_history, full_vgs_history);
+             std::vector<double> secondResults = computeSigma_helper(full_weight_history, param_denom_history, full_vgs_history);
 
 
              double derivNumer = results[0]*denomVal - secondResults[0]*numerVal;
@@ -1863,7 +1891,6 @@ template<typename S>
          parameterSettings[i-1] = true;
          new_param_num++;
      }
-
 
 
 
@@ -1930,8 +1957,6 @@ template<typename S>
      }
 
  }
-
-
 
 
  resetParamNumber(new_param_num);

@@ -269,17 +269,17 @@ private:
   /// \brief [in]output stream
   std::ostream & output;
 
-  std::vector<formic::ColVec<double> > temp_old_updates;
+  std::vector< formic::ColVec<double> > temp_old_updates;
 
   bool before_first_block_sample = true;
 
-  formic::Matrix<S> der_rat_history;
+  std::vector< formic::Matrix<S> > der_rat_history;
 
-  formic::Matrix<S> le_der_rat_history;
+  std::vector< formic::Matrix<S> > le_der_rat_history;
 
-  std::vector<double> vgs_history;
+  std::vector< std::vector<double> > vgs_history;
 
-  std::vector<double> weight_history;
+  std::vector< std::vector<double> > weight_history;
 
   bool prev_descent_;
 
@@ -459,7 +459,7 @@ public:
                     int sample_count);
 
 
-   void setUpStorage(int numParams,int numSamples);
+   void setUpStorage(int numParams, int numSamples, int numThreads);
 
    /// Selection parameters to leave on
    void selectParameters();

@@ -118,19 +118,21 @@ private:
   cqmc::engine::LMYEngine<Value>& lm_engine_;
   std::vector<FullPrecValue> der_rat_samp;
   std::vector<FullPrecValue> le_der_samp;
-  int sample_count;
+  std::vector <int> sample_count;
 
 public:
   LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
 
   void prepareSampling(int num_params,int num_samples) override
   {
+      int num_threads = omp_get_max_threads();
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
     if(lm_engine_.getStoringSamples())
     {
-        sample_count = 0;
-        lm_engine_.setUpStorage(num_params,num_samples);
+        sample_count.resize(num_threads,0);
+
+        lm_engine_.setUpStorage(num_params,num_samples,omp_get_max_threads());
     }
   }
   void takeSample(const std::vector<FullPrecReal>& energy_list,
@@ -149,10 +151,12 @@ public:
           le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
     }
 
+    int ip = omp_get_thread_num();
+
     if(lm_engine_.getStoringSamples())
     {
-        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,sample_count);
-        sample_count++;
+        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,sample_count[ip]);
+        sample_count[ip]++;
     }
     else
     {

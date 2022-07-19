@@ -228,7 +228,6 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
-  handle.prepareSampling(NumOptimizables,samples_.getNumSamples());
 
   ScopedTimer tmp_timer(check_config_timer_);
 
@@ -282,6 +281,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
+
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
@@ -289,13 +289,14 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
                           bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH,
-                          EngineHandle& handle) {
+                          EngineHandle& handle, int NumOptimizables) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
     int num_batches;
     int final_batch_size;
 
+    handle.prepareSampling(NumOptimizables,local_samples);
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
 
     for (int inb = 0; inb < num_batches; inb++)
@@ -419,7 +420,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH, handle);
+              compute_nlpp, includeNonlocalH, handle, NumOptimizables);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
