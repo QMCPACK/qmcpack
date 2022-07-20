@@ -89,7 +89,7 @@ cqmc::engine::LMYEngine<S>::LMYEngine(const formic::VarDeps* dep_ptr,
       _block_lm(block_lm),
       _num_samp(num_samp),
       _num_params(num_params),
-      total_num_params_(num_params),
+      on_hybrid_(false),
       _lm_krylov_iter(lm_krylov_iter),
       _lm_spam_inner_iter(lm_spam_inner_iter),
       _appro_degree(appro_degree),
@@ -1647,17 +1647,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
  }
 
-template<typename S>
- void cqmc::engine::LMYEngine<S>::copyParameterSettings(std::vector<bool> inputSettings)
- {
-     parameterSettings.clear();
- for(int i = 0; i < inputSettings.size(); i++)
- {
-     parameterSettings.push_back(inputSettings[i]);
-
- }
- }
-
 //Function for changing the parameter number used by the engine
  template<typename S>
  void cqmc::engine::LMYEngine<S>::resetParamNumber(int new_num)
@@ -1686,12 +1675,12 @@ template<typename S>
  }
 
 template<typename S>
- void cqmc::engine::LMYEngine<S>::store_blocked_lm_info(int nblock,int nkeps,std::vector<formic::ColVec<double> > & old_updates)
+ void cqmc::engine::LMYEngine<S>::store_blocked_lm_info(int nblock,int nkeps)
  {
  _nblocks = nblock;
  _nkeps = nkeps;
 
- temp_old_updates = old_updates;
+// temp_old_updates = old_updates;
 
  }
 

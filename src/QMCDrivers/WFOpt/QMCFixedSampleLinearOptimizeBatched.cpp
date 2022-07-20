@@ -1218,7 +1218,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   {
 
       app_log() << "Skipping initialization at first" << std::endl;
-   EngineObj->store_blocked_lm_info(nblocks,nkept,previous_update);
+   EngineObj->store_blocked_lm_info(nblocks,nkept);
   }
 
   // initialize the engine if we do not use block lm or it's the first part of block lm

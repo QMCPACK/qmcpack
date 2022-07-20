@@ -113,13 +113,16 @@ private:
   int _num_params;
 
   /// \brief total number of optimizable parameters, constant over an optimization even with parameter filtering
-  int total_num_params_;
+  //int total_num_params_;
 
   /// \brief threshold for parameter filtration
   double ratio_threshold_;
 
   /// \brief whether each parameter is being optimized on the current iteration
   std::vector<bool> parameterSettings;
+
+  /// \brief Whether LM is being used as part of a hybrid optimization
+  bool on_hybrid_;
 
   /// \brief [in]maximum number of iteration allowed in the davidson solver
   int _lm_krylov_iter;
@@ -269,22 +272,18 @@ private:
   /// \brief [in]output stream
   std::ostream & output;
 
-  std::vector< formic::ColVec<double> > temp_old_updates;
-
-  bool before_first_block_sample = true;
-
+  /// \brief History of <n|Psi_i>/<n|Psi> ratios
   std::vector< formic::Matrix<S> > der_rat_history;
 
+  /// \brief History of <n|H|Psi_i>/<n|Psi> ratios
   std::vector< formic::Matrix<S> > le_der_rat_history;
 
+  /// \brief History of |<n|value_fn>/<n|guiding_fn>|^2 values
   std::vector< std::vector<double> > vgs_history;
 
+  /// \brief History of sample weights
   std::vector< std::vector<double> > weight_history;
-
-  bool prev_descent_;
-
-  bool on_hybrid_ = false;
-
+  
 public:
   
   /////////////////////////////////////////////////////////////////////////////////
@@ -459,16 +458,19 @@ public:
                     int sample_count);
 
 
+   /// \brief Function for sizing history vectors
    void setUpStorage(int numParams, int numSamples, int numThreads);
 
-   /// Selection parameters to leave on
+   /// \brief Function for selecting parameters to be optimized by LM
    void selectParameters();
 
+   /// \brief Helper function for computing mean and standard deviation of parameter derivatives
    std::vector<double> computeSigma_helper(std::vector<double> weights, std::vector<double> numerSamples, std::vector<double> denomSamples);
 
-   /// Plug into existing engine matrix construction, taking samples from stored history
+   /// \brief Function for constructing LM matrices from stored histories of derivative ratios
    void buildMatricesFromDerivatives();
 
+   /// \brief Function for clearing histories of derivative ratios
    void clear_histories();
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -588,53 +590,41 @@ public:
   //function that transfers vectors from descent to the LMBlocker object
   void setHybridBLM_Input(std::vector< std::vector<double> >& from_descent);
   
-  bool getPrevStepDescent() {return prev_descent_;}
-
-  void setPrevStepDescent(bool input) {prev_descent_ = input;}
-
+  /// \brief Returns whether LM is part of hybrid optimization
   bool getOnHybrid() {return on_hybrid_;}
 
+  /// \brief Sets whether LM is being used as part of hybrid optimization
   void setOnHybrid(bool input) {on_hybrid_ = input;}
 
+  /// \brief Returns whether derivative ratios are being stored
   bool getStoringSamples() {return store_samples_;}
 
-  ///function that returns whether noisy parameters are being turned off
+  /// \brief Returns whether noisy parameters are being turned off
   bool getParameterFiltering() {return filter_param_;}
 
-   /// \brief function that returns whether block linear method is being used
+   /// \brief Returns whether block linear method is being used
   bool use_blm() {return _block_lm;}
 
+  /// \brief Sets whether samples and derivative ratios are being stored
   void setStoringSamples(bool storing) {store_samples_ = storing;}
 
+  /// \brief Sets whether parameters are being filtered
   void setFiltering(bool use_filtering) {filter_param_ = use_filtering;}
 
+  /// \brief Sets whether to print out details on which parameters are turned off
   void setFilterInfo(bool print_info) {filter_info_ = print_info;}
 
+  /// \brief Sets the threshold used for parameter filtrations
   void setThreshold(double thres) {ratio_threshold_ = thres;}
 
-  double getThreshold() {return ratio_threshold_;}
-
-  void copyParameterSettings(std::vector<bool> inputSettings);
-
+  /// \brief Returns whether a particular parameter is on or off
   bool getParameterSetting(int i) {return parameterSettings[i];}
 
+  /// \brief Resets the number of parameters optimized by the LM engine.
   void resetParamNumber(int new_num);
 
-  bool getGround() {return _ground;}
-
-  void store_blocked_lm_info(int nblock,int nkeps,std::vector<formic::ColVec<double> > & old_updates);
-
-  std::vector<formic::ColVec<double> > get_temp_old_updates() {return  temp_old_updates;}
-
-  int get_nblocks() {return _nblocks;}
-  int get_nkept() {return _nkeps;}
-
-  void completed_first_block_sample() {before_first_block_sample = false;}
-  bool get_before_first_block_sample() {return before_first_block_sample;}
-
-  int getParamNum() {return _num_params;}
-
-  int getTotalParamNum() {return total_num_params_;}
+  /// \brief Stores blocking information used by blocked LM
+  void store_blocked_lm_info(int nblock,int nkeps);
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
