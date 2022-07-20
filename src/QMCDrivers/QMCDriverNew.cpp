@@ -219,7 +219,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 {
   if (wset.empty())
     return;
-  int nfile = wset.size();
+  const int nfile = wset.size();
 
   auto& W         = population_.getWalkerConfigsRef();
   HDFWalkerInputManager W_in(W, population_.get_golden_electrons()->getTotalNum(), myComm);
@@ -260,11 +260,11 @@ void QMCDriverNew::recordBlock(int block)
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  bool DumpConfig = qmcdriver_input_.get_dump_config();
-  auto& W         = population_.getWalkerConfigsRef();
+  setWalkerOffsets();
 
+  const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers) {
-    wOut->dump(W, block);
+    wOut->dump(population_.getWalkerConfigsRef(), block);
   }
   infoSummary.flush();
   infoLog.flush();
@@ -307,7 +307,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
     setNonLocalMoveHandler_(*ham);
 
-  this->setWalkerOffsets();
+  setWalkerOffsets();
   // ////update the global number of walkers
   auto& W = population_.getWalkerConfigsRef();
   int nw = W.getActiveWalkers();
