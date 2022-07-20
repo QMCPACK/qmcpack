@@ -185,9 +185,6 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  ///set global offsets of the walkers
-  void setWalkerOffsets();
-
   inline RefVector<RandomGenerator> getRngRefs() const
   {
     RefVector<RandomGenerator> RngRefs;

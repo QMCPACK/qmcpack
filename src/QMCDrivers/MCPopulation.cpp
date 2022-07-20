@@ -52,12 +52,7 @@ MCPopulation::MCPopulation(int num_ranks,
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
 }
 
-MCPopulation::~MCPopulation()
-{
-  // if there are active walkers, save them to lightweight walker configuration list.
-  if (walkers_.size())
-    saveWalkerConfigurations();
-}
+MCPopulation::~MCPopulation() = default;
 
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 {
@@ -307,11 +302,20 @@ void MCPopulation::checkIntegrity() const
     throw std::runtime_error("dead_walker_hamiltonians_ has inconsistent size");
 }
 
-void MCPopulation::saveWalkerConfigurations()
+void MCPopulation::saveWalkerConfigurations(Communicate* comm)
 {
+  std::cout << "calling saveWalkerConfigurations" << std::endl;
   walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+  std::vector<int> nw(comm->size(), 0), nwoff(comm->size() + 1, 0);
+  nw[comm->rank()] = walker_configs_ref_.getActiveWalkers();
+  comm->allreduce(nw);
+  for (int ip = 0; ip < comm->size(); ip++) {
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
+  }
+  walker_configs_ref_.setGlobalNumWalkers(nwoff[comm->size()]);
+  walker_configs_ref_.setWalkerOffsets(nwoff);
 }
 
 

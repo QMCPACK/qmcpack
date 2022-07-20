@@ -240,7 +240,7 @@ public:
   WalkerConfigurations& getWalkerConfigsRef() { return walker_configs_ref_; }
 
   // save walker configurations to walker_configs_ref_
-  void saveWalkerConfigurations();
+  void saveWalkerConfigurations(Communicate* comm);
 };
 
 } // namespace qmcplusplus

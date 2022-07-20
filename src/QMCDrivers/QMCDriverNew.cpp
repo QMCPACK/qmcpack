@@ -260,7 +260,7 @@ void QMCDriverNew::recordBlock(int block)
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  setWalkerOffsets();
+  population_.saveWalkerConfigurations(myComm);
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers) {
@@ -306,12 +306,6 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   // For the dead ones too. Since this should be on construction but...
   for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
     setNonLocalMoveHandler_(*ham);
-
-  setWalkerOffsets();
-  // ////update the global number of walkers
-  auto& W = population_.getWalkerConfigsRef();
-  int nw = W.getActiveWalkers();
-  myComm->allreduce(nw);
 }
 
 /** Creates Random Number generators for crowds and step contexts
@@ -403,28 +397,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);
-}
-
-void QMCDriverNew::setWalkerOffsets()
-{
-  std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  population_.saveWalkerConfigurations();
-  auto& W = population_.getWalkerConfigsRef();
-  nw[myComm->rank()] = W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++) {
-    nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  }
-    W.setGlobalNumWalkers(nwoff[myComm->size()]);
-    W.setWalkerOffsets(nwoff);
-  long id = nwoff[myComm->rank()];
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
-  {
-        W[iw]->ID       = id;
-        W[iw]->ParentID = id;
-  }
-  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
