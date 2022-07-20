@@ -186,7 +186,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
 QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 {
   // should be deleted and update reference numbers.
-  population_.saveWalkerConfigurations(myComm);
+  population_.saveWalkerConfigurations();
 #ifdef HAVE_LMY_ENGINE
   delete EngineObj;
 #endif

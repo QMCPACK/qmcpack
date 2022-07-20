@@ -232,14 +232,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   myComm->bcast(nwtot);
   if (nwtot)
   {
-    int np = myComm->size();
-    std::vector<int> nw(np, 0), nwoff(np + 1, 0);
-    nw[myComm->rank()] = W.getActiveWalkers();
-    myComm->allreduce(nw);
-    for (int ip = 0; ip < np; ++ip)
-      nwoff[ip + 1] = nwoff[ip] + nw[ip];
-    W.setGlobalNumWalkers(nwoff[np]);
-    W.setWalkerOffsets(nwoff);
+    population_.setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
     qmc_common.is_restart = true;
   }
   else
@@ -260,7 +253,8 @@ void QMCDriverNew::recordBlock(int block)
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  population_.saveWalkerConfigurations(myComm);
+  population_.saveWalkerConfigurations();
+  population_.setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers) {
