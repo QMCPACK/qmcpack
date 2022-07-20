@@ -29,14 +29,18 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   using Base = QMCDriverNew;
-  QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
+  QMCDriverNewTestWrapper(QMCDriverInput&& input,
+                          MCPopulation&& population,
+                          SampleStack samples,
+                          Communicate* comm,
+                          ProjectData test_project = ProjectData("", ProjectData::DriverVersion::BATCH))
       : QMCDriverNew(test_project,
                      std::move(input),
                      std::nullopt,
                      std::move(population),
                      "QMCDriverTestWrapper::",
                      comm,
-                     "QMCDriverNewTestWrapper"), test_project("",ProjectData::DriverVersion::BATCH)
+                     "QMCDriverNewTestWrapper")
   {}
 
   ~QMCDriverNewTestWrapper() override {}
@@ -132,9 +136,6 @@ public:
   };
 
   void testMeasureImbalance() { measureImbalance("Test"); }
-
-private:
-  ProjectData test_project;
 };
 
 template<class CONCURRENCY>

@@ -53,7 +53,6 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     : MPIObjectBase(comm),
       qmcdriver_input_(std::move(input)),
       QMCType(QMC_driver_type),
-      root_name_(project_data.CurrentMainRoot()),
       population_(std::move(population)),
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
@@ -94,7 +93,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
     max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
 
-  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons()->getTotalNum(), root_name_, myComm);
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons()->getTotalNum(), get_root_name(), myComm);
 }
 
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
@@ -197,7 +196,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << project_data_.CurrentMainRoot();
+            << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -246,7 +245,7 @@ void QMCDriverNew::recordBlock(int block)
     ScopedTimer local_timer(timers_.checkpoint_timer);
     wOut->dump(population_.getWalkerConfigsRef(), block);
 #ifndef USE_FAKE_RNG
-    RandomNumberControl::write(getRngRefs(), root_name_, myComm);
+    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
 #endif
   }
 }
@@ -265,7 +264,7 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 
 #ifndef USE_FAKE_RNG
   if (DumpConfig)
-    RandomNumberControl::write(getRngRefs(), root_name_, myComm);
+    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
 #endif
 
   return true;

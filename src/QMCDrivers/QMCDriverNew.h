@@ -400,8 +400,6 @@ protected:
 
   ///type of qmc: assigned by subclasses
   const std::string QMCType;
-  ///root of all the output files
-  std::string root_name_;
 
   /** the entire (on node) walker population
    * it serves VMCBatch and DMCBatch right now but will be polymorphic
