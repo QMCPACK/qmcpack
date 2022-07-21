@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="C-graphite-S256-dmc" series="0"/>
+  <project id="C-graphite-S16-dmc" series="0"/>
   <random seed="11"/>
   <qmcsystem>
   <simulationcell>
