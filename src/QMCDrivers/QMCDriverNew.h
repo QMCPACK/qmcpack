@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
+#include "Particle/HDFWalkerIO.h"
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
@@ -49,7 +50,6 @@ class Communicate;
 namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
-class HDFWalkerOutput;
 class TraceManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
@@ -184,9 +184,6 @@ public:
   void createRngsStepContexts(int num_crowds);
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
-
-  ///set global offsets of the walkers
-  void setWalkerOffsets();
 
   inline RefVector<RandomGenerator> getRngRefs() const
   {
@@ -403,8 +400,6 @@ protected:
 
   ///type of qmc: assigned by subclasses
   const std::string QMCType;
-  ///root of all the output files
-  std::string root_name_;
 
   /** the entire (on node) walker population
    * it serves VMCBatch and DMCBatch right now but will be polymorphic
@@ -429,7 +424,7 @@ protected:
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
