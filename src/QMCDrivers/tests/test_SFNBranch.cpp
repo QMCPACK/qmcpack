@@ -34,9 +34,9 @@ namespace testing
 class SetupSFNBranch
 {
 public:
-  SetupSFNBranch(Communicate* comm) { comm_ = comm; }
+  SetupSFNBranch(Communicate* comm) : comm_{comm} {}
 
-  SetupSFNBranch() { comm_ = OHMMS::Controller; }
+  SetupSFNBranch() : comm_{OHMMS::Controller} {}
 
   std::unique_ptr<SFNBranch> operator()(ParticleSet& pset, TrialWaveFunction& twf, QMCHamiltonian& ham)
   {
