@@ -34,26 +34,29 @@ namespace qmcplusplus
 using std::placeholders::_1;
 using WP = WalkerProperties::Indexes;
 
-// clang-format off
 /** Constructor maintains proper ownership of input parameters
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-		       const std::optional<EstimatorManagerInput>& global_emi,
+                       const std::optional<EstimatorManagerInput>& global_emi,
                        DMCDriverInput&& input,
+                       WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        Communicate* comm)
-  : QMCDriverNew(project_data, std::move(qmcdriver_input), global_emi, std::move(pop),
-                   "DMCBatched::", comm,
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   global_emi,
+                   wc,
+                   std::move(pop),
+                   "DMCBatched::",
+                   comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input),
       dmc_timers_("DMCBatched::")
-{
-}
-// clang-format on
+{}
 
 DMCBatched::~DMCBatched() = default;
 
@@ -358,7 +361,7 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
   const bool accumulate_this_step = true;
-  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
                                          recompute_this_step, accumulate_this_step);
@@ -474,7 +477,7 @@ bool DMCBatched::run()
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now = walker_controller_->branch(iter, population_, iter == 0);
         branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
-                                                   population_.get_golden_electrons()->getTotalNum());
+                                                   population_.get_golden_electrons().getTotalNum());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 
