@@ -279,7 +279,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
               "Please use full precision build instead.");
 #endif
     QMCFixedSampleLinearOptimizeBatched* opt =
-        QMCWFOptLinearFactoryNew(cur, project_data_, emi, qmc_system,
+        QMCWFOptLinearFactoryNew(cur, project_data_, emi,
                                  MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
                                               primaryH),
                                  qmc_system.getSampleStack(), comm);

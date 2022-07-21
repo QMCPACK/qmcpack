@@ -177,8 +177,8 @@ public:
   //const Properties& get_properties() const { return properties_; }
 
   // accessor to the gold copy
-  const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
-  ParticleSet* get_golden_electrons() { return elec_particle_set_; }
+  const ParticleSet& get_golden_electrons() const { return *elec_particle_set_; }
+  ParticleSet& get_golden_electrons() { return *elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
   TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
   // TODO: the fact this is needed is sad remove need for its existence.

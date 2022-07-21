@@ -79,7 +79,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       std::make_unique<EstimatorManagerNew>(comm,
                                             makeEstimatorManagerInput(global_emi,
                                                                       qmcdriver_input_.get_estimator_manager_input()),
-                                            population_.get_golden_hamiltonian(), *population.get_golden_electrons(),
+                                            population_.get_golden_hamiltonian(), population.get_golden_electrons(),
                                             population.get_golden_twf());
 
   drift_modifier_.reset(
@@ -89,11 +89,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   max_disp_sq_ = input.get_max_disp_sq();
   if (max_disp_sq_ < 0)
   {
-    auto& lattice = population.get_golden_electrons()->getLattice();
+    auto& lattice = population.get_golden_electrons().getLattice();
     max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
 
-  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons()->getTotalNum(), get_root_name(), myComm);
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
@@ -167,7 +167,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
   else
   {
     app_debug() << "Creating multi walker shared resources" << std::endl;
-    population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
+    population_.get_golden_electrons().createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
     population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
@@ -222,7 +222,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   const int nfile = wset.size();
 
   auto& W = population_.getWalkerConfigsRef();
-  HDFWalkerInputManager W_in(W, population_.get_golden_electrons()->getTotalNum(), myComm);
+  HDFWalkerInputManager W_in(W, population_.get_golden_electrons().getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5_file_root_ = W_in.getFileRoot();
