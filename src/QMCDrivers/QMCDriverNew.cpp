@@ -233,7 +233,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   myComm->bcast(nwtot);
   if (nwtot)
   {
-    MCPopulation::setWalkerOffsets(walker_configs_ref_, myComm);
+    setWalkerOffsets(walker_configs_ref_, myComm);
     qmc_common.is_restart = true;
   }
   else
@@ -255,7 +255,7 @@ void QMCDriverNew::recordBlock(int block)
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
-  MCPopulation::setWalkerOffsets(walker_configs_ref_, myComm);
+  setWalkerOffsets(walker_configs_ref_, myComm);
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers)
@@ -606,6 +606,19 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
               << "    max wait at rank " << std::distance(barrier_time_all_ranks.begin(), max_it)
               << ", seconds = " << *max_it << std::endl;
   }
+}
+
+void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
+{
+  std::vector<int> nw(comm->size(), 0);
+  std::vector<int> nwoff(comm->size() + 1, 0);
+  nw[comm->rank()] = walker_configs.getActiveWalkers();
+  comm->allreduce(nw);
+  for (int ip = 0; ip < comm->size(); ip++)
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
+
+  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
+  walker_configs.setWalkerOffsets(nwoff);
 }
 
 } // namespace qmcplusplus

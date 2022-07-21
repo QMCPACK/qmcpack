@@ -298,17 +298,4 @@ void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs[iw]);
 }
-
-void MCPopulation::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
-{
-  std::vector<int> nw(comm->size(), 0);
-  std::vector<int> nwoff(comm->size() + 1, 0);
-  nw[comm->rank()] = walker_configs.getActiveWalkers();
-  comm->allreduce(nw);
-  for (int ip = 0; ip < comm->size(); ip++)
-    nwoff[ip + 1] = nwoff[ip] + nw[ip];
-
-  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
-  walker_configs.setWalkerOffsets(nwoff);
-}
 } // namespace qmcplusplus

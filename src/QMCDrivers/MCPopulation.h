@@ -235,9 +235,6 @@ public:
 
   /// save walker configurations to walker_configs_ref_
   void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
-
-  /// update the global offsets of walker configurations after active walkers being touched.
-  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
 };
 
 } // namespace qmcplusplus
