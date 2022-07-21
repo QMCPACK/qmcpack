@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="C-graphite-S256-dmc" series="0"/>
+  <project id="C-graphite-S16-dmc" series="0"/>
   <random seed="11"/>
   <qmcsystem>
   <simulationcell>
@@ -163,6 +163,7 @@
   </qmc>
   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
     <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">                1 </parameter>
     <!--parameter name="targetwalkers">  32000 </parameter-->
     <!--parameter name="max_walkers">   0    </parameter-->
     <parameter name="debug_disable_branching">      yes </parameter>
