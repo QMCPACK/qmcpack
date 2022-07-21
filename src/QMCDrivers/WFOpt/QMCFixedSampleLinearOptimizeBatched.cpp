@@ -51,6 +51,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
     QMCDriverInput&& qmcdriver_input,
     const std::optional<EstimatorManagerInput>& global_emi,
     VMCDriverInput&& vmcdriver_input,
+    WalkerConfigurations& wc,
     MCPopulation&& population,
     SampleStack& samples,
     Communicate* comm)
@@ -59,6 +60,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
           std::move(qmcdriver_input),
           std::
               nullopt, // this class is not a real QMCDriverNew as far as I can tell so we don't give it the actual global_emi_
+          wc,
           std::move(population),
           "QMCLinearOptimizeBatched::",
           comm,
@@ -184,7 +186,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
 QMCFixedSampleLinearOptimizeBatched::~QMCFixedSampleLinearOptimizeBatched()
 {
   // should be deleted and update reference numbers.
-  population_.saveWalkerConfigurations();
+  population_.saveWalkerConfigurations(walker_configs_ref_);
 #ifdef HAVE_LMY_ENGINE
   delete EngineObj;
 #endif
@@ -785,10 +787,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   // create VMC engine
   vmcEngine =
       std::make_unique<VMCBatched>(project_data_, std::move(qmcdriver_input_copy), global_emi_,
-                                   std::move(vmcdriver_input_copy),
-                                   MCPopulation(myComm->size(), myComm->rank(), population_.getWalkerConfigsRef(),
-                                                &population_.get_golden_electrons(), &population_.get_golden_twf(),
-                                                &population_.get_golden_hamiltonian()),
+                                   std::move(vmcdriver_input_copy), walker_configs_ref_,
+                                   MCPopulation(myComm->size(), myComm->rank(), &population_.get_golden_electrons(),
+                                                &population_.get_golden_twf(), &population_.get_golden_hamiltonian()),
                                    samples_, myComm);
 
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
@@ -808,9 +809,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
 
   bool success = true;
   //allways reset optTarget
-  optTarget =
-      std::make_unique<QMCCostFunctionBatched>(population_.get_golden_electrons(), population_.get_golden_twf(), population_.get_golden_hamiltonian(),
-                                               samples_, awc.walkers_per_crowd, myComm);
+  optTarget = std::make_unique<QMCCostFunctionBatched>(population_.get_golden_electrons(), population_.get_golden_twf(),
+                                                       population_.get_golden_hamiltonian(), samples_,
+                                                       awc.walkers_per_crowd, myComm);
   optTarget->setStream(&app_log());
   if (reportH5)
     optTarget->reportH5 = true;
@@ -1294,7 +1295,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   //It is possible this difference may not make much difference in
   //practical optimization performance, but that is unexplored.
 
-  
+
   // say what we are doing
   app_log() << std::endl
             << "******************************************************************" << std::endl
@@ -1604,7 +1605,6 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
 //Function for optimizing using gradient descent
 bool QMCFixedSampleLinearOptimizeBatched::descent_run()
 {
-
   //Compute Lagrangian derivatives needed for parameter updates with engine_checkConfigurations, which is called inside engine_start
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 

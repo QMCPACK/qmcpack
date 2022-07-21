@@ -45,6 +45,7 @@ namespace qmcplusplus
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
                            const std::optional<EstimatorManagerInput>& global_emi,
+                           WalkerConfigurations& wc,
                            MCPopulation&& population,
                            const std::string timer_prefix,
                            Communicate* comm,
@@ -60,6 +61,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
+      walker_configs_ref_(wc),
       setNonLocalMoveHandler_(snlm_handler)
 {
   // This is done so that the application level input structures reflect the actual input to the code.
@@ -221,18 +223,17 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
     return;
   const int nfile = wset.size();
 
-  auto& W = population_.getWalkerConfigsRef();
-  HDFWalkerInputManager W_in(W, population_.get_golden_electrons().getTotalNum(), myComm);
+  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
       h5_file_root_ = W_in.getFileRoot();
   //clear the walker set
   wset.clear();
-  int nwtot = W.getActiveWalkers();
+  int nwtot = walker_configs_ref_.getActiveWalkers();
   myComm->bcast(nwtot);
   if (nwtot)
   {
-    MCPopulation::setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
+    MCPopulation::setWalkerOffsets(walker_configs_ref_, myComm);
     qmc_common.is_restart = true;
   }
   else
@@ -244,7 +245,7 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
-    wOut->dump(population_.getWalkerConfigsRef(), block);
+    wOut->dump(walker_configs_ref_, block);
 #ifndef USE_FAKE_RNG
     RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
 #endif
@@ -253,12 +254,12 @@ void QMCDriverNew::recordBlock(int block)
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  population_.saveWalkerConfigurations();
-  MCPopulation::setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
+  population_.saveWalkerConfigurations(walker_configs_ref_);
+  MCPopulation::setWalkerOffsets(walker_configs_ref_, myComm);
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers)
-    wOut->dump(population_.getWalkerConfigsRef(), block);
+    wOut->dump(walker_configs_ref_, block);
 
   infoSummary.flush();
   infoLog.flush();
@@ -276,9 +277,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
-  {
-    population_.createWalkers(nwalkers, reserve);
-  }
+    population_.createWalkers(nwalkers, walker_configs_ref_, reserve);
   else if (population_.get_walkers().size() < nwalkers)
   {
     throw std::runtime_error("Unexpected walker count resulting in dangerous spawning");

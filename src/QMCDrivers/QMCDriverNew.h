@@ -123,6 +123,7 @@ public:
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                const std::optional<EstimatorManagerInput>& global_emi,
+               WalkerConfigurations& wc,
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
@@ -465,6 +466,9 @@ protected:
 
   /// project info for accessing global fileroot and series id
   const ProjectData& project_data_;
+
+  // reference to the captured WalkerConfigurations
+  WalkerConfigurations& walker_configs_ref_;
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

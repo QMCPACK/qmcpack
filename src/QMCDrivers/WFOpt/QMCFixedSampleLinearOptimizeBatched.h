@@ -57,6 +57,7 @@ public:
                                       QMCDriverInput&& qmcdriver_input,
                                       const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
+                                      WalkerConfigurations& wc,
                                       MCPopulation&& population,
                                       SampleStack& samples,
                                       Communicate* comm);
@@ -193,7 +194,7 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
-  
+
   // ------------------------------------
   // Parameters in this section are used by one or more of the adaptive LM, descent, or hybrid optimizers
 

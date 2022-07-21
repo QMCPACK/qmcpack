@@ -34,26 +34,29 @@ namespace qmcplusplus
 using std::placeholders::_1;
 using WP = WalkerProperties::Indexes;
 
-// clang-format off
 /** Constructor maintains proper ownership of input parameters
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
-		       const std::optional<EstimatorManagerInput>& global_emi,
+                       const std::optional<EstimatorManagerInput>& global_emi,
                        DMCDriverInput&& input,
+                       WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        Communicate* comm)
-  : QMCDriverNew(project_data, std::move(qmcdriver_input), global_emi, std::move(pop),
-                   "DMCBatched::", comm,
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   global_emi,
+                   wc,
+                   std::move(pop),
+                   "DMCBatched::",
+                   comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input),
       dmc_timers_("DMCBatched::")
-{
-}
-// clang-format on
+{}
 
 DMCBatched::~DMCBatched() = default;
 
