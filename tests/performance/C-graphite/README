@@ -41,11 +41,14 @@ Download the necessary C-graphite h5 orbital file from the following link
 
 https://anl.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
-This link will be updated when a longer term storage host is
-identified.
+Or directly download the file in the command line via
+
+curl -L -O -J https://m.box.com/file/224522610118/download?shared_link=https%3A%2F%2Fanl.box.com%2Fs%2Fyxz1ic4kxtdtgpva5hcmlom9ixfl3v3c
 
 $ md5sum *.h5
 30323351a2636ba4987e216be5c383a1  lda.pwscf.h5
+
+The above direct link was verified in July 2022 but may be fragile.
 
 $ ls -l *.h5
 3187556652 lda.pwscf.h5

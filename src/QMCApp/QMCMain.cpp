@@ -320,6 +320,7 @@ bool QMCMain::execute()
     else
     {
       xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
     }
     saveXml();
   }
