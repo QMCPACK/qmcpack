@@ -48,8 +48,8 @@ public:
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
-  //helper function to apply_rotation
-  void exponentiate_antisym_matrix(ValueMatrix& mat);
+  // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
+  static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
