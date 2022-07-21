@@ -137,6 +137,10 @@ else()
     endforeach()
     message("NiO sizes to benchmark: ${NIO_SIZES}")
   endif()
+  
+  if(QMC_NIO_MAX_SIZE)
+    message(FATAL_ERROR "Variable QMC_NIO_MAX_SIZE has been renamed to QMC_PERFORMANCE_NIO_MAX_ATOMS")
+  endif()
 
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
