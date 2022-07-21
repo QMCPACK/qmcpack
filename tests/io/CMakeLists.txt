@@ -99,7 +99,7 @@ run_restart_and_check(
   true)
 
 run_restart_and_check(
-restart_batch
+  deterministic-restart_batch
   "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
   qmc_short_batch
   8
@@ -107,7 +107,7 @@ restart_batch
   check.sh
   false)
 run_restart_and_check(
-restart_batch
+  deterministic-restart_batch
   "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
   qmc_short_batch
   1

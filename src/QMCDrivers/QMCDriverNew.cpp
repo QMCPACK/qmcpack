@@ -160,8 +160,9 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   if (qmcdriver_input_.areWalkersSerialized())
   {
-    if(estimator_manager_->areThereListeners())
-      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are incompatible with estimators requiring per particle listeners");
+    if (estimator_manager_->areThereListeners())
+      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are "
+                                    "incompatible with estimators requiring per particle listeners");
   }
   else
   {
@@ -220,7 +221,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
     return;
   const int nfile = wset.size();
 
-  auto& W         = population_.getWalkerConfigsRef();
+  auto& W = population_.getWalkerConfigsRef();
   HDFWalkerInputManager W_in(W, population_.get_golden_electrons()->getTotalNum(), myComm);
   for (int i = 0; i < wset.size(); i++)
     if (W_in.put(wset[i]))
@@ -231,7 +232,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   myComm->bcast(nwtot);
   if (nwtot)
   {
-    population_.setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
+    MCPopulation::setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
     qmc_common.is_restart = true;
   }
   else
@@ -253,12 +254,12 @@ void QMCDriverNew::recordBlock(int block)
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations();
-  population_.setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
+  MCPopulation::setWalkerOffsets(population_.getWalkerConfigsRef(), myComm);
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
-  if (DumpConfig && dumpwalkers) {
+  if (DumpConfig && dumpwalkers)
     wOut->dump(population_.getWalkerConfigsRef(), block);
-  }
+
   infoSummary.flush();
   infoLog.flush();
 

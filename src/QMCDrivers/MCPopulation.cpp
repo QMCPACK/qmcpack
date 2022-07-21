@@ -42,7 +42,7 @@ MCPopulation::MCPopulation(int num_ranks,
   ptclgrp_inv_mass_.resize(num_groups);
   for (int ig = 0; ig < num_groups; ++ig)
   {
-    ptclgrp_mass_[ig] = elecs->Mass[elecs->first(ig)];
+    ptclgrp_mass_[ig]     = elecs->Mass[elecs->first(ig)];
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
   }
 
@@ -315,9 +315,9 @@ void MCPopulation::setWalkerOffsets(WalkerConfigurations& walker_configs, Commun
   std::vector<int> nwoff(comm->size() + 1, 0);
   nw[comm->rank()] = walker_configs.getActiveWalkers();
   comm->allreduce(nw);
-  for (int ip = 0; ip < comm->size(); ip++) {
+  for (int ip = 0; ip < comm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  }
+
   walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
   walker_configs.setWalkerOffsets(nwoff);
 }
