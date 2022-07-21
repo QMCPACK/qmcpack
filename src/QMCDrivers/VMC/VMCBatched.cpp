@@ -30,12 +30,14 @@ VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
                        const std::optional<EstimatorManagerInput>& global_emi,
                        VMCDriverInput&& input,
+                       WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        SampleStack& samples,
                        Communicate* comm)
     : QMCDriverNew(project_data,
                    std::move(qmcdriver_input),
                    global_emi,
+                   wc,
                    std::move(pop),
                    "VMCBatched::",
                    comm,
@@ -244,7 +246,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
-  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
                                          accumulate_this_step);
@@ -323,7 +325,7 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+      const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
       if (spin_move)
         advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
                                              accumulate_this_step);

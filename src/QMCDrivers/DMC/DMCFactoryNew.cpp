@@ -18,6 +18,7 @@ namespace qmcplusplus
 {
 QMCDriverInterface* DMCFactoryNew::create(const ProjectData& project_data,
                                           const std::optional<EstimatorManagerInput> global_emi,
+                                          WalkerConfigurations& wc,
                                           MCPopulation&& pop,
                                           Communicate* comm)
 {
@@ -35,7 +36,7 @@ QMCDriverInterface* DMCFactoryNew::create(const ProjectData& project_data,
   DMCDriverInput dmcdriver_input;
   dmcdriver_input.readXML(input_node_);
   QMCDriverInterface* qmc = new DMCBatched(project_data, std::move(qmcdriver_input), global_emi,
-                                           std::move(dmcdriver_input), std::move(pop), comm);
+                                           std::move(dmcdriver_input), wc, std::move(pop), comm);
   // This can probably be eliminated completely since we only support PbyP
   qmc->setUpdateMode(dmc_mode_ & 1);
   return qmc;

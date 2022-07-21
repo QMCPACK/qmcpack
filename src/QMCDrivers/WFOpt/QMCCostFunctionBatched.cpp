@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBatched::QMCCostFunctionBatched(MCWalkerConfiguration& w,
+QMCCostFunctionBatched::QMCCostFunctionBatched(ParticleSet& w,
                                                TrialWaveFunction& psi,
                                                QMCHamiltonian& h,
                                                SampleStack& samples,
