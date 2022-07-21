@@ -58,7 +58,7 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DENABLE_CUDA=ON \
       -DQMC_CUDA2HIP=ON \
       -DQMC_COMPLEX=0 \
-      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_NIO_MAX_SIZE=8'"
+      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_PERFORMANCE_NIO_MAX_ATOMS=32'"
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
@@ -82,7 +82,7 @@ CTEST_FLAGS="-DCMAKE_C_COMPILER=gcc \
       -DENABLE_CUDA=ON \
       -DQMC_CUDA2HIP=ON \
       -DQMC_COMPLEX=1 \
-      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_NIO_MAX_SIZE=8'"
+      -DQMC_OPTIONS='-DQMC_DATA=${qmc_data_dir};-DQMC_PERFORMANCE_NIO_MAX_ATOMS=32'"
 
 ctest ${CTEST_FLAGS} \
       -S $(pwd)/../CMake/ctest_script.cmake,release \
