@@ -29,7 +29,11 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   using Base = QMCDriverNew;
-  QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
+  QMCDriverNewTestWrapper(const ProjectData& test_project,
+                          QMCDriverInput&& input,
+                          MCPopulation&& population,
+                          SampleStack samples,
+                          Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
                      std::nullopt,
@@ -132,9 +136,6 @@ public:
   };
 
   void testMeasureImbalance() { measureImbalance("Test"); }
-
-private:
-  ProjectData test_project;
 };
 
 template<class CONCURRENCY>

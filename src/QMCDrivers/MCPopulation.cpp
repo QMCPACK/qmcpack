@@ -42,7 +42,7 @@ MCPopulation::MCPopulation(int num_ranks,
   ptclgrp_inv_mass_.resize(num_groups);
   for (int ig = 0; ig < num_groups; ++ig)
   {
-    ptclgrp_mass_[ig] = elecs->Mass[elecs->first(ig)];
+    ptclgrp_mass_[ig]     = elecs->Mass[elecs->first(ig)];
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
   }
 
@@ -52,12 +52,7 @@ MCPopulation::MCPopulation(int num_ranks,
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
 }
 
-MCPopulation::~MCPopulation()
-{
-  // if there are active walkers, save them to lightweight walker configuration list.
-  if (walkers_.size())
-    saveWalkerConfigurations();
-}
+MCPopulation::~MCPopulation() = default;
 
 void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
 {
@@ -314,5 +309,16 @@ void MCPopulation::saveWalkerConfigurations()
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
 }
 
+void MCPopulation::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
+{
+  std::vector<int> nw(comm->size(), 0);
+  std::vector<int> nwoff(comm->size() + 1, 0);
+  nw[comm->rank()] = walker_configs.getActiveWalkers();
+  comm->allreduce(nw);
+  for (int ip = 0; ip < comm->size(); ip++)
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
+  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
+  walker_configs.setWalkerOffsets(nwoff);
+}
 } // namespace qmcplusplus

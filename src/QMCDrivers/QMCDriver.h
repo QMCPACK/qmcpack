@@ -34,7 +34,6 @@
 #include "QMCDrivers/QMCDriverInterface.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-#include "QMCDrivers/BranchIO.h"
 class Communicate;
 
 namespace qmcplusplus
