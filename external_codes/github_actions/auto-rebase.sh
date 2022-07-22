@@ -138,7 +138,7 @@ COMMIT_SHA=$(git rev-parse --verify HEAD)
 REVIEW_URI="${URI}/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews"
 UPDATE_PARAMETERS=$(jq --null-input \
             --arg commit_sha "${COMMIT_SHA}" \
-            '{"commit_id" : "$commit_sha", "body":"AUTOMATED REVIEW: Reapprove after rebase", "event":"APPROVE"}')
+            '{"commit_id" : $commit_sha, "body":"AUTOMATED REVIEW: Reapprove after rebase", "event":"APPROVE"}')
 
 
 RESULT=$(curl -X POST -H "${AUTH_HEADER}" -H "${API_HEADER}" \
