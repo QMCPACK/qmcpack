@@ -158,6 +158,48 @@ if(NOT QMC_CUDA)
       SCALAR_VALUES
       HE_ORB_ROT_PARAM)
 
+    # Two atomic orbitals, with jastrow
+
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM spo-up_orb_rot_0000_0001    0.078  0.02)  # scalar name, value, error
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM spo-down_orb_rot_0000_0001  0.078  0.02)
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM jud_b                      -0.106  0.013)
+
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      short-He_orb_rot_jastrow_param_grad_legacy
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+      PREFIX
+      He_orb_rot_jastrow_param_grad_legacy.param
+      INPUT_FILE
+      He_orb_rot_jastrow_param_grad_legacy.xml
+      PROCS
+      1
+      THREADS
+      16
+      SERIES
+      0
+      SCALAR_VALUES
+      HE_ORB_ROT_JASTROW_PARAM)
+
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      short-He_orb_rot_jastrow_param_grad_batch
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+      PREFIX
+      He_orb_rot_jastrow_param_grad_batch.param
+      INPUT_FILE
+      He_orb_rot_jastrow_param_grad_batch.xml
+      PROCS
+      1
+      THREADS
+      16
+      SERIES
+      0
+      SCALAR_VALUES
+      HE_ORB_ROT_JASTROW_PARAM)
+
     else()
       message(VERBOSE "Skipping He_orb_rot_param_grad tests because orbital rotation optimization is not supported by complex build (QMC_COMPLEX=1)")
     endif()
