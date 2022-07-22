@@ -136,7 +136,10 @@ COMMIT_SHA=$(git rev-parse --verify HEAD)
 # so if someone tried to commit something on top and "steal" this review,
 # it shouldn't work because it would have a different SHA
 REVIEW_URI="${URI}/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews"
-UPDATE_PARAMETERS='{"commit_id" : "' + "${COMMIT_SHA}" + '", "body":"AUTOMATED REVIEW: Reapprove after rebase", "event":"APPROVE"}'
+UPDATE_PARAMETERS=$(jq --null-input \
+            --arg commit_sha "${COMMIT_SHA}" \
+            '{"commit_id" : "$commit_sha", "body":"AUTOMATED REVIEW: Reapprove after rebase", "event":"APPROVE"}')
+
 
 RESULT=$(curl -X POST -H "${AUTH_HEADER}" -H "${API_HEADER}" \
             -d "${UPDATE_PARAMETERS}" \
