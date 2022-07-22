@@ -128,3 +128,16 @@ git rebase origin/$BASE_BRANCH
 
 # push back
 git push --force-with-lease fork fork/$HEAD_BRANCH:$HEAD_BRANCH
+
+COMMIT_SHA=$(git rev-parse --verify HEAD)
+
+# EDIT TO ORIGINAL SCRIPT:  Reapprove PR after push
+# NOTE: Submits a review appoving the SHA it just sent, 
+# so if someone tried to commit something on top and "steal" this review,
+# it shouldn't work because it would have a different SHA
+REVIEW_URI="${URI}/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews"
+UPDATE_PARAMETERS='{"commit_id" : "' + "${COMMIT_SHA}" + '", "body":"AUTOMATED REVIEW: Reapprove after rebase", "event":"APPROVE"}'
+
+RESULT=$(curl -X POST -H "${AUTH_HEADER}" -H "${API_HEADER}" \
+            -d "${UPDATE_PARAMETERS}" \
+            "${REVIEW_URI}")
