@@ -120,8 +120,9 @@ public:
   Array<TraceReal, 1> Ve_const;
   Array<TraceReal, 1> Vi_const;
 #endif
-  // FIXME: Coulomb class is walker agnositic, it should not record a particular electron particle set.
-  // kept for the trace manager.
+  // \todo Coulomb class is walker agnositic, it should not record a particular electron particle set.
+  // kept for the trace manager. Delete this particle set reference when support for TraceManager is permanently
+  // removed which should coincide with the removal of the legacy drivers.
   ParticleSet& Peln;
 
   CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces = false);
@@ -214,6 +215,9 @@ public:
    */
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
+  /** Call to inform objects associated with this operator of per particle listeners.
+   *  should be called before createResources
+   */
   void informOfPerParticleListener() override;
 
 private:
