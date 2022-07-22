@@ -2,20 +2,22 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
-#define QMCPLUSPLUS_COULOMBPBCAB_TEMP_H
+#ifndef QMCPLUSPLUS_COULOMBPBCAB_H
+#define QMCPLUSPLUS_COULOMBPBCAB_H
+#include <ResourceHandle.h>
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/ForceBase.h"
 #include "LongRange/LRCoulombSingleton.h"
@@ -24,6 +26,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "Particle/DistanceTable.h"
+
 namespace qmcplusplus
 {
 /** @ingroup hamiltonian
@@ -32,15 +35,14 @@ namespace qmcplusplus
  * Functionally identical to CoulombPBCAB but uses a templated version of
  * LRHandler.
  */
-struct CoulombPBCAB : public OperatorBase, public ForceBase
+class CoulombPBCAB : public OperatorBase, public ForceBase
 {
+public:
   using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
   using GridType       = LRCoulombSingleton::GridType;
   using RadFunctorType = LRCoulombSingleton::RadFunctorType;
   using mRealType      = LRHandlerType::mRealType;
 
-  ///source particle set
-  ParticleSet& PtclA;
   ///long-range Handler. Should be const LRHandlerType eventually
   std::shared_ptr<LRHandlerType> AB;
   ///long-range derivative handler
@@ -118,7 +120,6 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
   Array<TraceReal, 1> Ve_const;
   Array<TraceReal, 1> Vi_const;
 #endif
-  ParticleSet& Pion;
   // FIXME: Coulomb class is walker agnositic, it should not record a particular electron particle set.
   // kept for the trace manager.
   ParticleSet& Peln;
@@ -142,6 +143,17 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
 
 
   Return_t evaluate(ParticleSet& P) override;
+
+  /** Evaluate the contribution of this component of multiple walkers per particle reporting
+   *  to registered listeners from Estimators.
+   */
+  void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              const std::vector<ListenerVector<RealType>>& listeners,
+                              const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
+
+
   Return_t evaluateWithIonDerivs(ParticleSet& P,
                                  ParticleSet& ions,
                                  TrialWaveFunction& psi,
@@ -153,14 +165,11 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
 
   bool get(std::ostream& os) const override
   {
-    os << "CoulombPBCAB potential source: " << PtclA.getName();
+    os << "CoulombPBCAB potential source: " << pset_ions_.getName();
     return true;
   }
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
-
-  ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
-  void initBreakup(ParticleSet& P);
 
   ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
@@ -190,6 +199,54 @@ struct CoulombPBCAB : public OperatorBase, public ForceBase
     if (ComputeForces)
       setParticleSetF(plist, offset);
   }
+
+  const ParticleSet& getSourcePSet() const { return pset_ions_; }
+
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  void informOfPerParticleListener() override;
+
+private:
+  ///source particle set
+  ParticleSet& pset_ions_;
+
+  struct CoulombPBCABMultiWalkerResource : public Resource
+  {
+    CoulombPBCABMultiWalkerResource() : Resource("CoulombPBCAB") {}
+    Resource* makeClone() const override { return new CoulombPBCABMultiWalkerResource(*this); }
+
+    /// a walkers worth of per ion AB potential values
+    Vector<RealType> pp_samples_src;
+    /// a walkers worth of per electron AB potential values
+    Vector<RealType> pp_samples_trg;
+    /// constant values for the source particles aka ions aka A
+    Vector<RealType> pp_consts_src;
+    /// constant values for the target particles aka electrons aka B
+    Vector<RealType> pp_consts_trg;
+  };
+
+  ResourceHandle<CoulombPBCABMultiWalkerResource> mw_res_;
+
+  /** Compute the const part of the per particle coulomb AB potential.
+   *  \param[out]  pp_consts_src   constant values for the source particles aka ions aka A   
+   *  \param[out]  pp_consts_trg   constant values for the target particles aka electrons aka B
+   */
+  void evalPerParticleConsts(Vector<RealType>& pp_consts_src, Vector<RealType>& pp_consts_trg) const;
+
+  /** Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
+   *  this is just constructor code factored out
+   */
+  void initBreakup(ParticleSet& P);
 };
 
 } // namespace qmcplusplus

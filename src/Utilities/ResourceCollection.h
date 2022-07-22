@@ -15,6 +15,7 @@
 #include <string>
 #include <memory>
 #include <cstddef>
+#include <cassert>
 #include <vector>
 #include "Resource.h"
 #include "type_traits/RefVectorWithLeader.h"
