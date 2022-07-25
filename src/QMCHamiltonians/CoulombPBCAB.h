@@ -220,6 +220,13 @@ public:
    */
   void informOfPerParticleListener() override;
 
+protected:
+  /** Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
+   *  this is just constructor code factored out.
+   *  It is called by the derived class CoulombPBCAB_CUDA
+   */
+  void initBreakup(ParticleSet& P);
+
 private:
   ///source particle set
   ParticleSet& pset_ions_;
@@ -246,11 +253,6 @@ private:
    *  \param[out]  pp_consts_trg   constant values for the target particles aka electrons aka B
    */
   void evalPerParticleConsts(Vector<RealType>& pp_consts_src, Vector<RealType>& pp_consts_trg) const;
-
-  /** Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
-   *  this is just constructor code factored out
-   */
-  void initBreakup(ParticleSet& P);
 };
 
 } // namespace qmcplusplus
