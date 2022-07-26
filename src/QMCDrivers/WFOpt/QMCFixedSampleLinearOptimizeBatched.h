@@ -54,10 +54,10 @@ class QMCFixedSampleLinearOptimizeBatched : public QMCDriverNew, LinearMethod
 public:
   ///Constructor.
   QMCFixedSampleLinearOptimizeBatched(const ProjectData& project_data,
-                                      MCWalkerConfiguration& w,
                                       QMCDriverInput&& qmcdriver_input,
                                       const std::optional<EstimatorManagerInput>& global_emi,
                                       VMCDriverInput&& vmcdriver_input,
+                                      WalkerConfigurations& wc,
                                       MCPopulation&& population,
                                       SampleStack& samples,
                                       Communicate* comm);
@@ -194,7 +194,7 @@ private:
   std::bitset<2> accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
-  
+
   // ------------------------------------
   // Parameters in this section are used by one or more of the adaptive LM, descent, or hybrid optimizers
 
@@ -286,9 +286,6 @@ private:
   VMCDriverInput vmcdriver_input_;
   SampleStack& samples_;
 
-  // Need to keep this around, unfortunately, since QMCCostFunctionBatched uses QMCCostFunctionBase,
-  // which still takes an MCWalkerConfiguration in the constructor.
-  MCWalkerConfiguration& W;
   /// This is retained in order to construct and reconstruct the vmcEngine.
   const std::optional<EstimatorManagerInput> global_emi_;
 };

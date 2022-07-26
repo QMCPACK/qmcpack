@@ -56,6 +56,23 @@ sycl::event gemm(sycl::queue& handle,
                  const int ldc,
                  const std::vector<sycl::event>& events = {});
 
+template<typename T1, typename T2>
+sycl::event transpose(sycl::queue& q,
+                      const T1* in,
+                      int m,
+                      int lda,
+                      T2* out,
+                      int n,
+                      int ldb,
+                      const std::vector<sycl::event>& events = {});
+
+template<typename T1, typename T2>
+sycl::event copy_n(sycl::queue& aq,
+                   const T1* VA,
+                   size_t array_size,
+                   T2* VC,
+                   const std::vector<sycl::event>& events = {});
+
 } // namespace syclBLAS
 
 } // namespace qmcplusplus

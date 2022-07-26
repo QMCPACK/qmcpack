@@ -91,12 +91,13 @@ void ProjectData::reset()
   char fileroot[256], nextroot[256];
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
+  int length{0};
   if (no_gtag) //qnproc_g == nproc)
-    sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
+    length = sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
   else
-    sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
+    length = sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
 
-  m_projectmain = fileroot;
+  m_projectmain = std::string(fileroot, length);
   //set the communicator name
   myComm->setName(fileroot);
   if (no_gtag)

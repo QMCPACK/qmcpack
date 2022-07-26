@@ -11,7 +11,7 @@ namespace qmcplusplus
 QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
                                                               const ProjectData& project_data,
                                                               const std::optional<EstimatorManagerInput>& global_emi,
-                                                              MCWalkerConfiguration& w,
+                                                              WalkerConfigurations& wc,
                                                               MCPopulation&& pop,
                                                               SampleStack& samples,
                                                               Communicate* comm)
@@ -27,8 +27,8 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
   vmcdriver_input.readXML(cur);
 
   QMCFixedSampleLinearOptimizeBatched* opt =
-      new QMCFixedSampleLinearOptimizeBatched(project_data, w, std::move(qmcdriver_input), global_emi,
-                                              std::move(vmcdriver_input), std::move(pop), samples, comm);
+      new QMCFixedSampleLinearOptimizeBatched(project_data, std::move(qmcdriver_input), global_emi,
+                                              std::move(vmcdriver_input), wc, std::move(pop), samples, comm);
   return opt;
 }
 

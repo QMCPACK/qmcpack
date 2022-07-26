@@ -37,6 +37,31 @@ void RotatedSPOs::setRotationParameters(const std::vector<RealType>& param_list)
   params_supplied = true;
 }
 
+void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_indices)
+{
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      rot_indices.emplace_back(i, j);
+}
+
+void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                               const std::vector<ValueType>& param,
+                                               ValueMatrix& rot_mat)
+{
+  assert(rot_indices.size() == param.size());
+  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+
+  for (int i = 0; i < rot_indices.size(); i++)
+  {
+    const int p      = rot_indices[i].first;
+    const int q      = rot_indices[i].second;
+    const RealType x = param[i];
+
+    rot_mat[q][p] = x;
+    rot_mat[p][q] = -x;
+  }
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -44,27 +69,27 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
   /* Only rebuild optimized variables if more after-rotation orbitals are needed
    * Consider ROHF, there is only one set of SPO for both spin up and down Nup > Ndown.
    * nel_major_ will be set Nup.
+   *
+   * Use the size of myVars as a flag to avoid building the rotation parameters again
+   * when a clone is made (the DiracDeterminant constructor calls buildOptVariables)
    */
-  if (nel > nel_major_)
+  if (nel > nel_major_ && myVars.size() == 0)
   {
     nel_major_ = nel;
 
     const size_t nmo = Phi->getOrbitalSetSize();
 
     // create active rotation parameter indices
-    std::vector<std::pair<int, int>> created_m_act_rot_inds;
+    RotationIndices created_m_act_rot_inds;
 
-    // only core->active rotations created
-    for (int i = 0; i < nel; i++)
-      for (int j = nel; j < nmo; j++)
-        created_m_act_rot_inds.push_back(std::pair<int, int>(i, j));
+    createRotationIndices(nel, nmo, created_m_act_rot_inds);
 
     buildOptVariables(created_m_act_rot_inds);
   }
 #endif
 }
 
-void RotatedSPOs::buildOptVariables(const std::vector<std::pair<int, int>>& rotations)
+void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
@@ -135,16 +160,7 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   ValueMatrix rot_mat(nmo, nmo);
   rot_mat = ValueType(0);
 
-  // read out the parameters that define the rotation into an antisymmetric matrix
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    const int p      = m_act_rot_inds[i].first;
-    const int q      = m_act_rot_inds[i].second;
-    const RealType x = param[i];
-
-    rot_mat[q][p] = x;
-    rot_mat[p][q] = -x;
-  }
+  constructAntiSymmetricMatrix(m_act_rot_inds, param, rot_mat);
 
   /*
     rot_mat is now an anti-hermitian matrix. Now we convert
