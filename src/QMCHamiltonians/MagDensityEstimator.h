@@ -58,7 +58,12 @@ public:
     return potentialIndex + dim + OHMMS_DIM*(k + NumGrids[2] * (j + NumGrids[1] * i));
   }
 
-
+  ParticleSet::ParticleScalar generateUniformGrid(RealType start, RealType stop, int nGridPoints);
+    
+  ParticleSet::ParticleScalar generateRandomGrid(RealType start, RealType stop, int nSamples);
+  RealType integrateBySimpsonsRule(const std::vector<RealType>& fgrid, RealType gridDx);
+  RealType integrateByTrapzRule(const std::vector<RealType>& fgrid, RealType gridDx);
+  RealType average(const std::vector<RealType>& fgrid);
 private:
   ///reference to the trial wavefunction for ratio evaluations
   TrialWaveFunction& refPsi;

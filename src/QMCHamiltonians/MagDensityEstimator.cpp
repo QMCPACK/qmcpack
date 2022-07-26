@@ -44,18 +44,90 @@ refPsi(psi),nSamples_(5)
 
 void MagDensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
+ParticleSet::ParticleScalar MagDensityEstimator::generateUniformGrid(RealType start, RealType stop, int nGridPoints)
+{
+  ParticleSet::ParticleScalar sgrid;
+  sgrid.resize(nGridPoints);
+  RealType delta=(stop-start)/(nGridPoints-1.0);
+  for(int i=0; i<nGridPoints; i++)
+    sgrid[i]=start+i*delta;
+  return sgrid;
+}
+    
+ParticleSet::ParticleScalar MagDensityEstimator::generateRandomGrid(RealType start, RealType stop, int nSamples)
+{
+  ParticleSet::ParticleScalar sgrid;
+  sgrid.resize(nSamples);
+  makeUniformRandom(sgrid); //returns random number between [0,1)
+  //scale and shift the random grid to be between [start,stop)
+  sgrid=(stop-start)*sgrid;  
+  sgrid=sgrid+start;
+  return sgrid;
+}
+
+MagDensityEstimator::RealType MagDensityEstimator::integrateBySimpsonsRule(const std::vector<RealType>& fgrid, RealType gridDx)
+{
+  RealType sint(0.0);
+  int gridsize=fgrid.size();
+  for (int is = 1; is < gridsize - 1; is += 2)
+  {
+    sint += RealType(4. / 3.) * gridDx * fgrid[is];
+    app_log()<<"A is="<<is<<" s="<<gridDx<<std::endl;
+  }
+  for (int is = 2; is < gridsize - 1; is += 2)
+  {
+    sint += RealType(2. / 3.) * gridDx * fgrid[is];
+    app_log()<<"B is="<<is<<" s="<<gridDx<<std::endl;
+  }
+  sint += RealType(1. / 3.) * gridDx * fgrid[0];
+  sint += RealType(1. / 3.) * gridDx * fgrid[gridsize-1];
+  app_log()<<"Final indices are 0 and "<<gridsize-1<<" at 0 and "<<(gridsize-1)*gridDx<<std::endl;
+  return sint;
+}
+
+MagDensityEstimator::RealType MagDensityEstimator::integrateByTrapzRule(const std::vector<RealType>& fgrid, RealType gridDx)
+{
+  RealType sint(0.0);
+  int gridsize=fgrid.size();
+  for (int is = 1; is < gridsize - 1; is++)
+  {
+    sint +=  gridDx * fgrid[is];
+    app_log()<<"A is="<<is<<" s="<<gridDx<<std::endl;
+  }
+  sint += 0.5 * gridDx * fgrid[0];
+  sint += 0.5 * gridDx * fgrid[gridsize-1];
+  app_log()<<"Final indices are 0 and "<<gridsize-1<<" at 0 and "<<(gridsize-1)*gridDx<<std::endl;
+  return sint;
+}
+
+MagDensityEstimator::RealType MagDensityEstimator::average(const std::vector<RealType>& fgrid)
+{
+  int gridsize=fgrid.size();
+  RealType sum(0.0);
+  for (int i = 0; i < gridsize; i++)
+    sum+=fgrid[i];
+
+  return sum/RealType(gridsize);
+}
+
 MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 {
-  std::vector<ValueType> ratios;
-  ratios.resize(nSamples_);
-  ParticleSet::ParticleScalar dS;
+  ParticleSet::ParticleScalar sgrid;
+  sgrid.resize(nSamples_);
+  std::vector<RealType> sxgrid;
+  std::vector<RealType> sygrid;
+  std::vector<RealType> szgrid;
+  sxgrid.resize(nSamples_);
+  sygrid.resize(nSamples_);
+  szgrid.resize(nSamples_);
   const PosType dr(0.0); //Integration over spin variable doesn't change particle position.  
 			 //This is the argument for the calcRatio calls, which require both.
-  dS.resize(nSamples_);
-
 
   std::complex<RealType> eye(0,1.0);
   RealType wgt = t_walker_->Weight;
+
+  app_log()<<"wgt = "<<wgt<<std::endl;
+  app_log()<<" Periodic = "<<Periodic<<std::endl;
   if (Periodic)
   {
     for (int ig = 0; ig < P.groups(); ++ig)
@@ -67,29 +139,43 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
         int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-     
+        app_log()<<"P.R[iat] = "<<P.R[iat]<<std::endl;  
         //This has to be complex type for spinors.  If not true, other part of code will
         //handle it.
         ValueType sx(0.0);
         ValueType sy(0.0);
         ValueType sz(0.0);
-        makeUniformRandom(dS);
-        dS=dS*TWOPI; //We want the spin delta to go from 0-2pi.
+
+        //sgrid=generateRandomGrid(0,TWOPI,nSamples_);
+        sgrid=generateUniformGrid(0,TWOPI,nSamples_);
        // app_log()<<"iat="<<iat<<" s="<<P.spins[iat]<<std::endl;
         for(int samp=0; samp<nSamples_; samp++)
         {
-          P.makeMoveWithSpin(iat, 0.0, dS[samp]);
-          ratios[samp] = refPsi.calcRatio(P, iat);
+          ValueType ratio;
+          RealType ds=sgrid[samp]-P.spins[iat]; 
+          P.makeMoveWithSpin(iat, 0.0, ds);
+          ratio = refPsi.calcRatio(P, iat);
           P.rejectMove(iat); //reject the move
           refPsi.resetPhaseDiff();
-          sx+=  2.0*std::cos(2.0*P.spins[iat]+dS[samp])*ratios[samp];
-          sy+=  2.0*std::sin(2.0*P.spins[iat]+dS[samp])*ratios[samp];
-          sz+=  2.0*eye*std::sin(dS[samp])*ratios[samp];
+          sxgrid[samp] = std::real(2.0*std::cos(sgrid[samp]+P.spins[iat])*ratio);
+          sygrid[samp] = std::real(2.0*std::sin(sgrid[samp]+P.spins[iat])*ratio);
+          szgrid[samp] = std::real(-2.0*eye*std::sin(ds)*ratio);
         }
-        sx=sx/RealType(nSamples_);
-        sy=sy/RealType(nSamples_);
-        sz=sz/RealType(nSamples_);
-        //app_log()<<" sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
+        if(false)
+        {
+          sx=average(sxgrid);
+          sy=average(sygrid);
+          sz=average(szgrid);
+        }
+        else
+        {
+          RealType gridDs=TWOPI/(nSamples_ - 1.0);
+        
+          sx=integrateBySimpsonsRule(sxgrid,gridDs)/TWOPI;
+          sy=integrateBySimpsonsRule(sygrid,gridDs)/TWOPI;
+          sz=integrateBySimpsonsRule(szgrid,gridDs)/TWOPI;
+        }
+        app_log()<<" sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
         P.Collectables[getMagGridIndex(i, j, k, 0)] += wgt*std::real(sx); //1.0;
         P.Collectables[getMagGridIndex(i, j, k, 1)] += wgt*std::real(sy); //1.0;
         P.Collectables[getMagGridIndex(i, j, k, 2)] += wgt*std::real(sz); //1.0;
