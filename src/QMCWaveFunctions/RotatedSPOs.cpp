@@ -314,7 +314,7 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
     {
       if (mat_cd[i + n * j].imag() > 1e-12)
       {
-        app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j
+        app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
       mat[i][j] = mat_cd[i + n * j].real();
