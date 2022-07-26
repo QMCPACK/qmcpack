@@ -1548,9 +1548,15 @@ srun test.x''',
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123
 #SBATCH -N 2
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=12
 #SBATCH -t 06:30:00
 #SBATCH -o test.out
 #SBATCH -e test.err
+#SBATCH --partition=normal
+#SBATCH --constraint=gpu
+#SBATCH --hint=nomultithread
+#SBATCH --ntasks-per-core=1
 
 cd $SLURM_SUBMIT_DIR
 
@@ -1561,6 +1567,9 @@ echo List of nodes assigned to the job: $SLURM_NODELIST
 
 export ENV_VAR=1
 export OMP_NUM_THREADS=1
+export CRAY_CUDA_MPS=1
+ulimit -s unlimited\n
+
 srun -N 2 -n 64 test.x''',
         eclipse = '''#!/bin/bash
 #SBATCH -p batch

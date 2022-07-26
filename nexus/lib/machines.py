@@ -3334,11 +3334,13 @@ class Daint(Supercomputer):
         elif job.gpus == 1 and job.processes_per_node is None:
             job.threads = 12  # OpenMP thread(s)
             job.processes_per_node = 1 # MPI rank(s) 
+            job.hyperthreads = 1
         elif job.gpus > 1:
             self.warn('!!! ATTENTION !!!\n  there is only 1 GPU/node in Daint. It is not possible to set gpus={}'.format(job.gpus))
         if job.processes_per_node is None:
             job.threads = 1 # OpenMP thread(s)
             job.processes_per_node = 12 # MPI rank(s)
+            job.hyperthreads = 1
         #end if
     #end def post_process_job
 
