@@ -44,6 +44,7 @@
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/qmc_common.h"
+#include "MemoryUsage.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -154,7 +155,9 @@ QMCMain::QMCMain(Communicate* c)
                 << timer_manager.get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
-  app_summary().flush();
+
+  print_mem("when QMCPACK starts", app_summary());
+  app_summary() << std::endl;
 }
 
 ///destructor
@@ -320,6 +323,7 @@ bool QMCMain::execute()
     else
     {
       xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
     }
     saveXml();
   }
@@ -454,11 +458,7 @@ bool QMCMain::validateXML()
   {
     std::string cname((const char*)cur->name);
     bool inputnode = true;
-    if (cname == "parallel")
-    {
-      putCommunicator(cur);
-    }
-    else if (cname == "particleset")
+    if (cname == "particleset")
     {
       ptclPool->put(cur);
     }

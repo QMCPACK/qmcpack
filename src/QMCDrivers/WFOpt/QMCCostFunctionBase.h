@@ -31,9 +31,9 @@
 #include "formic/utils/lmyengine/engine.h"
 #endif
 
+#include "EngineHandle.h"
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class DescentEngine;
 
 /** @ingroup QMCDrivers
@@ -71,7 +71,7 @@ public:
   using EffectiveWeight = QMCTraits::QTFull::RealType;
 
   ///Constructor.
-  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionBase() override;
@@ -144,8 +144,9 @@ public:
 
   virtual void getConfigurations(const std::string& aroot) = 0;
 
-  virtual void checkConfigurations() = 0;
-
+  //Legacy drivers currently use both checkConfigurations and engine_checkConfigurations with duplicated code
+  //Providing an EngineHandle object to the batched drivers allows both cases to be handled in one function
+  virtual void checkConfigurations(EngineHandle& handle) = 0;
 #ifdef HAVE_LMY_ENGINE
   virtual void engine_checkConfigurations(cqmc::engine::LMYEngine<Return_t>* EngineObj,
                                           DescentEngine& descentEngineObj,
@@ -172,10 +173,10 @@ public:
   }
 
 protected:
-  ///walker ensemble
-  MCWalkerConfiguration& W;
+  ///Particle set
+  ParticleSet& W;
 
-  ///trial function
+  ///Trial function
   TrialWaveFunction& Psi;
 
   ///Hamiltonian

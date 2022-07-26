@@ -44,7 +44,6 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
                                            const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
@@ -62,7 +61,6 @@ void WaveFunctionComponent::mw_recompute(const RefVectorWithLeader<WaveFunctionC
                                          const std::vector<bool>& recompute) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (recompute[iw])
       wfc_list[iw].recompute(p_list[iw]);
@@ -73,7 +71,6 @@ void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFuncti
                                             int ig) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].prepareGroup(p_list[iw], ig);
 }
@@ -96,7 +93,6 @@ void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionCo
                                         std::vector<GradType>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     grad_now[iw] = wfc_list[iw].evalGrad(p_list[iw], iat);
 }
@@ -108,7 +104,6 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
                                                 std::vector<ComplexType>& spingrad_now) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
 }
@@ -119,7 +114,6 @@ void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<PsiValueType>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratio(p_list[iw], iat);
 }
@@ -151,7 +145,6 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGrad(p_list[iw], iat, grad_new[iw]);
 }
@@ -164,7 +157,6 @@ void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveF
                                                  std::vector<ComplexType>& spingrad_new) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
@@ -176,7 +168,6 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
                                                  bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (isAccepted[iw])
       wfc_list[iw].acceptMove(p_list[iw], iat, safe_to_delay);
@@ -187,7 +178,6 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
 void WaveFunctionComponent::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].completeUpdates();
 }
@@ -207,7 +197,6 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
                                           bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
@@ -248,7 +237,6 @@ void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunc
                                               std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateRatios(vp_list[iw], ratios[iw]);
 }

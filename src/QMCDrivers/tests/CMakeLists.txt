@@ -27,7 +27,8 @@ set(DRIVER_TEST_SRC
     test_clone_manager.cpp
     test_fixed_node_branch.cpp
     test_DescentEngine.cpp
-    test_HybridEngine.cpp)
+    test_HybridEngine.cpp
+    test_EngineHandle.cpp)
 
 if(NOT QMC_CUDA)
   set(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_driver.cpp test_dmc_driver.cpp)
@@ -55,6 +56,8 @@ if(USE_OBJECT_TARGET)
     qmcham_unit
     qmcwfs
     qmcparticle
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA)
 endif()
@@ -97,6 +100,8 @@ if(NOT QMC_CUDA)
       qmcham_unit
       qmcwfs
       qmcparticle
+      qmcwfs_omptarget
+      qmcparticle_omptarget
       qmcutil
       platform_omptarget_LA)
   endif()
@@ -119,6 +124,8 @@ if(NOT QMC_CUDA)
         qmcham_unit
         qmcwfs
         qmcparticle
+	qmcwfs_omptarget
+	qmcparticle_omptarget
         qmcutil
         platform_omptarget_LA)
     endif()

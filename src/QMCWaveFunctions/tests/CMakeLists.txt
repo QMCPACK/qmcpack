@@ -128,6 +128,9 @@ endif(ENABLE_CUDA)
 if(ENABLE_CUDA AND QMC_CUDA2HIP)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_rocSolverInverter.cpp)
 endif()
+if(ENABLE_SYCL)
+  set(DETERMINANT_SRC ${DETERMINANT_SRC} test_syclSolverInverter.cpp)
+endif()
 if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
@@ -142,12 +145,14 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     ${UTEST_EXE}
     catch_main
     qmcwfs
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     platform_LA
     platform_runtime
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcparticle qmcutil platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcparticle qmcparticle_omptarget qmcwfs_omptarget qmcutil platform_omptarget_LA)
   endif()
 
   add_unit_test(${UTEST_NAME} 1 1 $<TARGET_FILE:${UTEST_EXE}>)
@@ -173,7 +178,7 @@ if(ENABLE_CUDA AND BUILD_MICRO_BENCHMARKS)
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)
-    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle platform_omptarget_LA)
+    target_link_libraries(${UTEST_EXE} qmcutil qmcparticle qmcparticle_omptarget qmcwfs_omptarget platform_omptarget_LA)
   endif()
   #  target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../..")
   target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/..")

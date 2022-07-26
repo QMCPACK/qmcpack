@@ -52,7 +52,6 @@ void SPOSet::mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
                                   std::vector<std::vector<ValueType>>& ratios_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
   {
     Vector<ValueType> invRow(const_cast<ValueType*>(invRow_ptr_list[iw]), psi_list[iw].get().size());
@@ -78,7 +77,6 @@ void SPOSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVector<ValueVector>& d2psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
@@ -89,7 +87,6 @@ void SPOSet::mw_evaluateValue(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVector<ValueVector>& psi_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateValue(P_list[iw], iat, psi_v_list[iw]);
 }
@@ -103,7 +100,6 @@ void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<ValueVector>& dspin_v_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluateVGL_spin(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw], dspin_v_list[iw]);
 }
@@ -168,7 +164,6 @@ void SPOSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_list
                                      const RefVector<ValueMatrix>& d2logdet_list) const
 {
   assert(this == &spo_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < spo_list.size(); iw++)
     spo_list[iw].evaluate_notranspose(P_list[iw], first, last, logdet_list[iw], dlogdet_list[iw], d2logdet_list[iw]);
 }

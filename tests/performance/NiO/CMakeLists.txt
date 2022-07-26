@@ -89,17 +89,17 @@ else()
 
   # Size is number of supercells. Multiply by 4 to get the number of atoms.
   set(NIO_SIZES
-      1
-      2
       4
       8
       16
-      24
       32
-      48
       64
+      96
       128
-      256)
+      192
+      256
+      512
+      1024)
   set(DELAY_RANKS
       8
       16
@@ -129,13 +129,17 @@ else()
       16
       16)
 
-  if(QMC_NIO_MAX_SIZE)
+  if(QMC_PERFORMANCE_NIO_MAX_ATOMS)
     foreach(SIZE IN LISTS NIO_SIZES)
-      if(SIZE GREATER QMC_NIO_MAX_SIZE)
+      if(SIZE GREATER QMC_PERFORMANCE_NIO_MAX_ATOMS)
         list(REMOVE_ITEM NIO_SIZES ${SIZE})
       endif()
     endforeach()
     message("NiO sizes to benchmark: ${NIO_SIZES}")
+  endif()
+  
+  if(QMC_NIO_MAX_SIZE)
+    message(FATAL_ERROR "Variable QMC_NIO_MAX_SIZE has been renamed to QMC_PERFORMANCE_NIO_MAX_ATOMS")
   endif()
 
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -143,9 +147,9 @@ else()
   list(LENGTH NIO_SIZES LENGTH_MAX)
   math(EXPR LENGTH_MAX "${LENGTH_MAX} - 1")
   foreach(INDEX RANGE ${LENGTH_MAX})
-    list(GET NIO_SIZES ${INDEX} SIZE)
-    math(EXPR ATOM_COUNT "${SIZE} * 4")
-    math(EXPR ELECTRON_COUNT "${SIZE} * 48")
+    list(GET NIO_SIZES ${INDEX} ATOM_COUNT)
+    math(EXPR SIZE "${ATOM_COUNT} / 4")
+    math(EXPR ELECTRON_COUNT "${ATOM_COUNT} * 12")
     set(TEST_SOURCE_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-cpu)
     set(INPUT_FILE NiO-fcc-S${SIZE}-dmc.xml)
     set(H5_FILE NiO-fcc-supertwist111-supershift000-S${SIZE}.h5)
@@ -156,8 +160,8 @@ else()
       if(NOT QMC_CUDA)
         # CPU driver
         set(DRIVER_TYPE cpu_driver)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-SM1)
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE}-w${WALKER_COUNT})
+        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
           1
@@ -169,8 +173,8 @@ else()
           "${ADJUST_INPUT} -w ${WALKER_COUNT} -d 1")
         ## delayed update
         list(GET DELAY_RANKS ${INDEX} NDELAY)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-DU${NDELAY})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-DU${NDELAY})
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
+        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
           1
@@ -181,8 +185,8 @@ else()
           ${H5_FILE}
           "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY}")
         ## J3
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-J3)
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-J3)
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
+        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
           1
@@ -191,13 +195,13 @@ else()
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
-          "${ADJUST_INPUT} -w ${WALKER_COUNT} -j ${TEST_DIR}/J123.xml")
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -j ${TEST_DIR}/J123.xml")
 
         # Batched driver
         set(DRIVER_TYPE batched_driver)
         ## delayed update
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT}-DU${NDELAY})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-DU${NDELAY})
+        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
+        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
         add_nio_test(
           ${PERF_TEST}
           1

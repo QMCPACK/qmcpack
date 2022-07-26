@@ -33,6 +33,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
+#include "Platforms/Host/OutputManager.h"
 #include <iostream>
 
 
@@ -242,7 +243,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       app_summary() << std::endl;
 
-      if (is_manager())
+      if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
         char fname[32];
         sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
@@ -274,7 +275,7 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
   RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
   FILE* fout          = 0;
-  if (is_manager())
+  if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
   {
     char fname[16];
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
@@ -404,7 +405,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
                     << (speciesB.empty() ? targetPtcl.getName() : speciesB) << std::endl;
       functor->put(kids);
       app_summary() << std::endl;
-      if (is_manager())
+      if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
         char fname[128];
         if (speciesB.size())
@@ -417,7 +418,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
             std::is_same<RadFuncType, Pade2ndOrderFunctor<RealType>>::value)
         {
           double plotextent = 10.0;
-          print(*functor.get(), os, plotextent);
+          print(*functor.get(), os, plotextent);  
         }
         else
         {

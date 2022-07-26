@@ -1,7 +1,15 @@
 <?xml version="1.0"?>
 <qmcsystem>
   <wavefunction name="psi0" target="e">
-<determinantset type="electron-gas" shell="1" randomize="true"/>
+    <sposet_builder type="free">
+      <sposet name="spo-ud" size="7"/>
+    </sposet_builder>
+    <determinantset>
+    <slaterdeterminant>
+      <determinant id="updet" sposet="spo-ud"/>
+      <determinant id="dndet" sposet="spo-ud"/>
+    </slaterdeterminant>
+    </determinantset>
 <jastrow name="J2" type="Two-Body" function="Bspline" optimize="yes">
 <correlation speciesA="u" speciesB="u" size="5">
 <coefficients id="uu" type="Array" optimize="yes"> 1.082858193 0.6653279375 0.4358910287 0.2243616172 0.1102948764</coefficients>

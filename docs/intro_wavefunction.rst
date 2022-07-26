@@ -706,14 +706,11 @@ Plane-wave basis sets
 Homogeneous electron gas
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The interacting Fermi liquid has its own special ``determinantset`` for filling up a
-Fermi surface.  The shell number can be specified separately for both spin-up and spin-down.
-This determines how many electrons to include of each time; only closed shells are currently
-implemented.  The shells are filled according to the rules of a square box; if other lattice
-vectors are used, the electrons might not fill up a complete shell.
+The interacting Fermi liquid can be created using a determinant of free-particle orbitals.
+The lowest-energy plane-wave states compatible with the boundary condition are occupied.
 
 This following example can also be used for Helium simulations by specifying the
-proper pair interaction in the Hamiltonian section.
+proper pair interaction in the Hamiltonian section and using a bosonic wavefunction.
 
 .. code-block::
   :caption: 2D Fermi liquid example: particle specification
@@ -740,7 +737,14 @@ proper pair interaction in the Hamiltonian section.
   :name: Listing 9
 
   <wavefunction name="psi0" target="e">
-    <determinantset type="electron-gas" shell="7" shell2="7" randomize="true">
+  <sposet_builder type="free">
+    <sposet name="spo-ud" size="37" twist="0 0 0"/>
+  </sposet_builder>
+  <determinantset>
+    <slaterdeterminant>
+      <determinant id="updet" sposet="spo-ud"/>
+      <determinant id="dndet" sposet="spo-ud"/>
+    </slaterdeterminant>
   </determinantset>
   <jastrow name="J2" type="Two-Body" function="Bspline" print="no">
     <correlation speciesA="u" speciesB="u" size="8" cusp="0">

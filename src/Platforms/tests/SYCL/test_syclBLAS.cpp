@@ -63,7 +63,7 @@ void test_gemv(const int M_b, const int N_b, const char trans)
   // when trans == 'N', the actual calculation is B^T * A[M] = C[N]
   //ompBLAS::gemv(handle, trans, N_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1);
 
-  syclBLAS::gemv(handle, trans, M_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1)
+  syclBLAS::gemv(handle, trans, N_b, M_b, alpha, B.device_data(), N_b, A.device_data(), 1, beta, C.device_data(), 1)
       .wait();
 
   C.updateFrom();

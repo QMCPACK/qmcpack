@@ -2246,3 +2246,86 @@ if(NOT QMC_CUDA)
       DET_DIAMOND_PARAM_LEGACY)
   endif()
 endif()
+
+#
+# Basic input file checking tests: malformed, missing input, missing files
+#
+qmc_run_and_check(
+    deterministic-input_check_broken_xml
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_broken_xml
+    det_qmc_input_check_broken_xml.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_ham
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_ham
+    det_qmc_input_check_no_ham.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_pp
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_pp
+    det_qmc_input_check_no_pp.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_pset
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_pset
+    det_qmc_input_check_no_pset.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_qmc
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_qmc
+    det_qmc_input_check_no_qmc.in.xml
+    1
+    1
+    TRUE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_splineh5
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_splineh5
+    det_qmc_input_check_no_splineh5.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_no_wf
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_no_wf
+    det_qmc_input_check_no_wf.in.xml
+    1
+    1
+    FALSE
+)
+
+qmc_run_and_check(
+    deterministic-input_check_not_xml
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    det_qmc_input_check_not_xml
+    det_qmc_input_check_not_xml.in.xml
+    1
+    1
+    FALSE
+)

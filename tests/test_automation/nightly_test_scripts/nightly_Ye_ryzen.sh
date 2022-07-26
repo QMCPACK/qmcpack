@@ -78,9 +78,9 @@ if [[ $sys == *"AOMP"* ]]; then
   export CXX=mpicxx
 
   if [[ $sys == *"Offload"* ]]; then
-    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=gfx906;-DQMC_NIO_MAX_SIZE=16'"
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DENABLE_OFFLOAD=ON;-DOFFLOAD_TARGET=amdgcn-amd-amdhsa;-DOFFLOAD_ARCH=gfx906;-DQMC_PERFORMANCE_NIO_MAX_ATOMS=64'"
   else
-    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
+    CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DQMC_PERFORMANCE_NIO_MAX_ATOMS=64'"
   fi
 
   CTEST_LABELS="-L 'deterministic|performance' -LE unstable"
@@ -89,7 +89,7 @@ elif [[ $sys == *"GCC"* ]]; then
   export CC=mpicc
   export CXX=mpicxx
 
-  CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DQMC_NIO_MAX_SIZE=16'"
+  CTEST_FLAGS="$CTEST_FLAGS -DQMC_OPTIONS='-DQMC_PERFORMANCE_NIO_MAX_ATOMS=64'"
   CTEST_LABELS="-L 'deterministic' -LE unstable"
   export N_CONCURRENT_TESTS=16
 fi

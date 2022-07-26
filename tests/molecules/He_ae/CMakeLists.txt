@@ -93,11 +93,11 @@ else()
 
   # Test batched version of optimizer
 
-  list(APPEND He_batch_VMC_SCALARS "totenergy" "-2.2273099 0.000001")
+  list(APPEND He_batch_VMC_SCALARS "totenergy" "-3.25291030 0.000001")
 
-  list(APPEND He_batch_VMC_MWALKERS_1-16_SCALARS "totenergy" "-2.87692635 0.000001")
+  list(APPEND He_batch_VMC_MWALKERS_1-16_SCALARS "totenergy" "-2.82592127 0.000001")
 
-  list(APPEND He_batch_VMC_MWALKERS_2-3_SCALARS "totenergy" "-2.91802793 0.000001")
+  list(APPEND He_batch_VMC_MWALKERS_2-3_SCALARS "totenergy" "-2.92537421 0.000001")
 
   simple_run_and_check(
     deterministic-He_ae-opt-batch

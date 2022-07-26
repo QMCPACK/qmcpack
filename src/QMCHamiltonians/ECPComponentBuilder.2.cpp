@@ -474,7 +474,7 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
                                     RealType rmax,
                                     mRealType Vprefactor)
 {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(QMC_CUDA2HIP)
   int device;
   cudaCheck(cudaGetDevice(&device));
   cudaDeviceProp deviceProp;

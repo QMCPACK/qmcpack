@@ -8,10 +8,10 @@ Sample qmc run for Slater-Jastrow-Backflow HEG.
 <include href="heg.ptcl.xml"/>
 <include href="heg.sjb.wfs.xml"/>
 <include href="heg.H.xml"/>
-<qmc method="vmc" move="pbyp">
+<qmc method="vmc" move="npbyp">
 <parameter name="warmupsteps">200</parameter>
 <parameter name="blocks">800</parameter>
 <parameter name="steps">40</parameter>
-<parameter name="tau">5.0</parameter>
+<parameter name="tau">1.0</parameter>
 </qmc>
 </simulation>

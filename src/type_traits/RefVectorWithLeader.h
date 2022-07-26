@@ -13,6 +13,7 @@
 #ifndef QMCPLUSPLUS_REFVECTORWITHLEADER_H
 #define QMCPLUSPLUS_REFVECTORWITHLEADER_H
 
+#include <cassert>
 #include <vector>
 #include <memory>
 
@@ -38,9 +39,7 @@ public:
   CASTTYPE& getCastedLeader() const
   {
     static_assert(std::is_const<T>::value == std::is_const<CASTTYPE>::value, "Unmatched const type qualifier!");
-#ifndef NDEBUG
     assert(dynamic_cast<CASTTYPE*>(&leader_.get()) != nullptr);
-#endif
     return static_cast<CASTTYPE&>(leader_.get());
   }
 
@@ -48,9 +47,7 @@ public:
   CASTTYPE& getCastedElement(size_t i) const
   {
     static_assert(std::is_const<T>::value == std::is_const<CASTTYPE>::value, "Unmatched const type qualifier!");
-#ifndef NDEBUG
     assert(dynamic_cast<CASTTYPE*>(&(*this)[i]) != nullptr);
-#endif
     return static_cast<CASTTYPE&>((*this)[i]);
   }
 

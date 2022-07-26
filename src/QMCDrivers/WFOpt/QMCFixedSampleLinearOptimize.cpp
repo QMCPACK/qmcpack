@@ -1517,7 +1517,8 @@ void QMCFixedSampleLinearOptimize::start()
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRngRefs());
-    optTarget->checkConfigurations();
+    NullEngineHandle handle;
+    optTarget->checkConfigurations(handle);
     // check recomputed variance against VMC
     auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];
     auto sigma2_check = optTarget->getVariance();

@@ -159,6 +159,12 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   void restore(int iat) override;
 
+  void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) const override;
+
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;

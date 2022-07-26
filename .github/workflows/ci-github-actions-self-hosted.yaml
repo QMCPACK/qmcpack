@@ -222,10 +222,10 @@ jobs:
             ROCm-Clang13-NoMPI-CUDA2HIP-Real,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex,
-            ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Real-Mixed,
-            ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Real,
-            ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Complex-Mixed,
-            ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Complex,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real-Mixed,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex-Mixed,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex,
           ]
 
     steps:

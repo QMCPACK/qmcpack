@@ -70,22 +70,14 @@ void setupParticleSetPool(ParticleSetPool& pp)
   pp.put(part_elec);
 }
 
-
-// No Jastrow, rotation angle theta1=0.1 and theta2=0.2
-TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
+std::string setupRotationXML(const std::string& rot_angle_up,
+                             const std::string& rot_angle_down,
+                             const std::string& coeff_up,
+                             const std::string& coeff_down)
 {
-  Communicate* c;
-  c = OHMMS::Controller;
+  // Replace with std::format when minimum standard is switched to C++20
 
-  ParticleSetPool pp(c);
-  setupParticleSetPool(pp);
-
-  WaveFunctionPool wp(pp, c);
-
-  REQUIRE(wp.empty() == true);
-
-
-  const char* wf_input = R"(<wavefunction target='e'>
+  const std::string wf_input1 = R"(<wavefunction target='e'>
     <sposet_collection type="MolecularOrbital">
       <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
       <basisset keyword="STO" transform="no">
@@ -98,19 +90,47 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-           <opt_vars>0.1</opt_vars>
-          <coefficient id="updetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
+     <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">)";
+
+  // Opt vars for up determinant
+  //       <opt_vars>0.1</opt_vars>
+  const std::string opt_vars_start_tag("<opt_vars>");
+  const std::string opt_vars_end_tag("</opt_vars>");
+
+  std::string rot_angle_up_element = opt_vars_start_tag + rot_angle_up + opt_vars_end_tag + "\n";
+
+  // Construct the coefficient matrix XML element for the up determinant
+  //       <coefficient id="updetC" type="Array" size="2">
+  //         1.0 0.0
+  //         0.0 1.0
+  //       </coefficient>
+  const std::string wf_input_coeff_up_start = R"(<coefficient id="updetC" type="Array" size="2">)";
+
+  const std::string wf_input_coeff_up_end("</coefficient>");
+
+  std::string coeff_up_element = wf_input_coeff_up_start + coeff_up + wf_input_coeff_up_end;
+
+  // Middle part of XML input block
+  const std::string wf_input2 = R"(
       </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-           <opt_vars>0.2</opt_vars>
-          <coefficient id="downdetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
+      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">)";
+
+  // Opt vars for down determinant
+  //   <opt_vars>0.2</opt_vars>
+  std::string rot_angle_down_element = opt_vars_start_tag + rot_angle_down + opt_vars_end_tag + "\n";
+
+  // Construct the coefficient matrix XML element for the down determinant
+  //       <coefficient id="downdetC" type="Array" size="2">
+  //         1.0 0.0
+  //         0.0 1.0
+  //       </coefficient>
+  const std::string wf_input_coeff_down_start = R"(<coefficient id="downdetC" type="Array" size="2">)";
+
+  const std::string wf_input_coeff_down_end("</coefficient>");
+
+  std::string coeff_down_element = wf_input_coeff_down_start + coeff_down + wf_input_coeff_down_end;
+
+  const std::string wf_input3 = R"(
       </sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
@@ -121,48 +141,27 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
     </determinantset>
    </wavefunction>)";
 
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(wf_input);
-  REQUIRE(okay);
 
-  xmlNodePtr root = doc.getRoot();
+  // clang-format off
+  std::string wf_input = std::string(wf_input1) + "\n" +
+                         (rot_angle_up.empty() ? std::string() : rot_angle_up_element) +
+                         coeff_up_element +
+                         wf_input2 + "\n" +
+                         (rot_angle_down.empty() ? std::string() : rot_angle_down_element) +
+                         coeff_down_element +
+                         std::string(wf_input3);
+  // clang-format on
 
-  wp.put(root);
-
-  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
-  REQUIRE(psi != nullptr);
-  REQUIRE(psi->getOrbitals().size() == 1);
-
-  opt_variables_type opt_vars;
-  psi->checkInVariables(opt_vars);
-  psi->checkOutVariables(opt_vars);
-  psi->resetParameters(opt_vars);
-
-  ParticleSet* elec = pp.getParticleSet("e");
-  elec->update();
-
-
-  double logval = psi->evaluateLog(*elec);
-  CHECK(logval == Approx(-9.26625670653773));
-
-  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
-  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
-  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
-
-  using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
-  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
-
-
-  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
-  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
-  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
-  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
+  return wf_input;
 }
 
-// No Jastrow, rotation angle of 0
-TEST_CASE("Rotated LCAO WF zero angle", "[qmcapp]")
+const std::string identity_coeff = R"(
+            1.0 0.0
+            0.0 1.0
+          )";
+
+// No Jastrow, rotation angle of 0. Identity coefficients.
+TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -175,39 +174,7 @@ TEST_CASE("Rotated LCAO WF zero angle", "[qmcapp]")
   REQUIRE(wp.empty() == true);
 
 
-  const char* wf_input = R"(<wavefunction target='e'>
-    <sposet_collection type="MolecularOrbital">
-      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
-      <basisset keyword="STO" transform="no">
-        <atomicBasisSet type="STO" elementType="He" normalized="no">
-          <basisGroup rid="R0" l="0" m="0" type="Slater">
-             <radfunc n="1" exponent="2.0"/>
-          </basisGroup>
-          <basisGroup rid="R1" l="0" m="0" type="Slater">
-             <radfunc n="2" exponent="1.0"/>
-          </basisGroup>
-        </atomicBasisSet>
-      </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-          <coefficient id="updetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-          <coefficient id="downdetC" type="Array" size="2">
-            1.0 0.0
-            0.0 1.0
-          </coefficient>
-      </sposet>
-    </sposet_collection>
-    <determinantset type="MO" key="STO" transform="no" source="ion0">
-      <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
-      </slaterdeterminant>
-    </determinantset>
-   </wavefunction>)";
+  std::string wf_input = setupRotationXML("", "", identity_coeff, identity_coeff);
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
@@ -266,8 +233,64 @@ TEST_CASE("Rotated LCAO WF zero angle", "[qmcapp]")
   CHECK(dhpsi_over_psi_list.getValue(1, 0) == ValueApprox(7.84119772047731));
 }
 
+// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
+TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
+{
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+
+  std::string wf_input = setupRotationXML("0.1", "0.2", identity_coeff, identity_coeff);
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-9.26625670653773));
+
+  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
+  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
+  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(2);
+  std::vector<ValueType> dhpsioverpsi(2);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+
+  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
+  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
+  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
+  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
+}
+
 // Rotation angle of 0 and add Jastrow factory
-TEST_CASE("Rotated LCAO WF with jastrow", "[qmcapp]")
+TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
 {
   Communicate* c;
   c = OHMMS::Controller;
@@ -360,5 +383,136 @@ TEST_CASE("Rotated LCAO WF with jastrow", "[qmcapp]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.462519534916666));
   CHECK(dhpsioverpsi[1] == ValueApprox(10.047601212881027));
   CHECK(dhpsioverpsi[2] == ValueApprox(2.0820644399551895));
+}
+
+// Test the case where the rotation has already been applied to
+// the MO coefficients in the input file.
+// Should give the same results as the "Rotated LCAO WF1 zero angle" test case
+
+const std::string coeff_rot_by_point1 = R"(
+            0.995004165278026 0.0998334166468282
+           -0.0998334166468282 0.995004165278026
+    )";
+
+const std::string coeff_rot_by_point2 = R"(
+             0.980066577841242  0.198669330795061
+            -0.198669330795061  0.980066577841242
+    )";
+
+TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
+{
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+  std::string wf_input = setupRotationXML("", "", coeff_rot_by_point1, coeff_rot_by_point2);
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  opt_vars.resetIndex();
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-9.26625670653773));
+
+  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
+  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
+  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(2);
+  std::vector<ValueType> dhpsioverpsi(2);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+
+  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
+  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
+  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
+  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
+}
+// Test the case where half the rotation has already been applied to
+// the MO coefficients in the input file and half the rotation is
+// applied through the input.
+// Should give the same results as the "Rotated LCAO WF1 zero angle" test case
+
+const std::string coeff_rot_by_point05 = R"(
+             0.998750260394966 0.0499791692706783
+            -0.0499791692706783 0.998750260394966
+    )";
+
+TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
+{
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+  std::string wf_input = setupRotationXML("0.05", "0.1", coeff_rot_by_point05, coeff_rot_by_point1);
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  opt_variables_type opt_vars;
+  psi->checkInVariables(opt_vars);
+  opt_vars.resetIndex();
+  psi->checkOutVariables(opt_vars);
+  psi->resetParameters(opt_vars);
+
+  ParticleSet* elec = pp.getParticleSet("e");
+  elec->update();
+
+  double logval = psi->evaluateLog(*elec);
+  CHECK(logval == Approx(-9.26625670653773));
+
+  CHECK(elec->G[0][0] == ValueApprox(-0.2758747113720909));
+  CHECK(elec->L[0] == ValueApprox(-0.316459652026054));
+  CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
+
+  using ValueType = QMCTraits::ValueType;
+  std::vector<ValueType> dlogpsi(2);
+  std::vector<ValueType> dhpsioverpsi(2);
+  psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
+
+
+  CHECK(dlogpsi[0] == ValueApprox(7.58753078998516));
+  CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
+  CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
+  CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
 }
 } // namespace qmcplusplus

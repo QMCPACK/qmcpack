@@ -27,7 +27,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w,
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
                                          TrialWaveFunction& psi,
                                          QMCHamiltonian& h,
                                          Communicate* comm)

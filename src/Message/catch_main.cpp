@@ -17,9 +17,14 @@
 #ifdef CATCH_MAIN_HAVE_MPI
 #include "Message/Communicate.h"
 #endif
+#include "Host/OutputManager.h"
+#include "MemoryUsage.h"
 
 // Replacement unit test main function to ensure that MPI is finalized once
 // (and only once) at the end of the unit test.
+
+// turn on QMCPACK printout
+bool turn_on_output = false;
 
 // AFQMC specific unit test arguments.
 std::string UTEST_HAMIL, UTEST_WFN;
@@ -31,13 +36,16 @@ int main(int argc, char* argv[])
   // Build command line parser.
   auto cli = session.cli() |
       Opt(UTEST_HAMIL, "UTEST_HAMIL")["--hamil"]("Hamiltonian file to be used by unit test if applicable.") |
-      Opt(UTEST_WFN, "UTEST_WFN")["--wfn"]("Wavefunction file to be used by unit test if applicable.");
+      Opt(UTEST_WFN, "UTEST_WFN")["--wfn"]("Wavefunction file to be used by unit test if applicable.") |
+      Opt(turn_on_output)["--turn-on-printout"]("Turn on QMCPACK output manager printout");
   session.cli(cli);
   // Parse arguments.
   int parser_err = session.applyCommandLine(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI
   mpi3::environment env(argc, argv);
   OHMMS::Controller->initialize(env);
+  if (OHMMS::Controller->rank())
+    outputManager.shutOff();
   Communicate node_comm;
   node_comm.initializeAsNodeComm(*OHMMS::Controller);
   // assign accelerators within a node
@@ -45,6 +53,13 @@ int main(int argc, char* argv[])
 #else
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(0, 1);
 #endif
+  if (!turn_on_output)
+  {
+    qmcplusplus::app_log() << "QMCPACK printout is suppressed. Use --turn-on-printout to see all the printout."
+                           << std::endl;
+    outputManager.shutOff();
+  }
+  qmcplusplus::print_mem("Before running tests", qmcplusplus::app_log());
   // Run the tests.
   int result = session.run(argc, argv);
 #ifdef CATCH_MAIN_HAVE_MPI

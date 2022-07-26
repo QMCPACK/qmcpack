@@ -87,6 +87,7 @@
    <qmc method="vmc" move="pbyp">
       <parameter name="total_walkers"       >    1              </parameter>
       <parameter name="blocks"              >    3              </parameter>
+      <parameter name="blocks_between_recompute" > 2            </parameter>
       <parameter name="steps"               >    3              </parameter>
       <parameter name="subSteps"            >    2              </parameter>
       <parameter name="timestep"            >    0.3            </parameter>

@@ -22,27 +22,17 @@ namespace qmcplusplus
 {
 MCPopulation::MCPopulation(int num_ranks,
                            int this_rank,
-                           WalkerConfigurations& mcwc,
                            ParticleSet* elecs,
                            TrialWaveFunction* trial_wf,
                            QMCHamiltonian* hamiltonian)
-    : trial_wf_(trial_wf),
-      elec_particle_set_(elecs),
-      hamiltonian_(hamiltonian),
-      num_ranks_(num_ranks),
-      rank_(this_rank),
-      walker_configs_ref_(mcwc)
+    : trial_wf_(trial_wf), elec_particle_set_(elecs), hamiltonian_(hamiltonian), num_ranks_(num_ranks), rank_(this_rank)
 {
-  num_global_walkers_ = mcwc.getGlobalNumWalkers();
-  num_local_walkers_  = mcwc.getActiveWalkers();
-
-  // MCWalkerConfiguration doesn't give actual number of groups
   const auto num_groups = elecs->groups();
   ptclgrp_mass_.resize(num_groups);
   ptclgrp_inv_mass_.resize(num_groups);
   for (int ig = 0; ig < num_groups; ++ig)
   {
-    ptclgrp_mass_[ig] = elecs->Mass[elecs->first(ig)];
+    ptclgrp_mass_[ig]     = elecs->Mass[elecs->first(ig)];
     ptclgrp_inv_mass_[ig] = 1.0 / ptclgrp_mass_[ig];
   }
 
@@ -52,14 +42,9 @@ MCPopulation::MCPopulation(int num_ranks,
       ptcl_inv_mass_[iat] = ptclgrp_inv_mass_[ig];
 }
 
-MCPopulation::~MCPopulation()
-{
-  // if there are active walkers, save them to lightweight walker configuration list.
-  if (walkers_.size())
-    saveWalkerConfigurations();
-}
+MCPopulation::~MCPopulation() = default;
 
-void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
+void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve)
 {
   IndexType num_walkers_plus_reserve = static_cast<IndexType>(num_walkers * reserve);
 
@@ -90,8 +75,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, RealType reserve)
     walkers_[iw]->registerData();
     walkers_[iw]->DataSet.allocate();
 
-    if (iw < walker_configs_ref_.WalkerList.size())
-      *walkers_[iw] = *walker_configs_ref_[iw];
+    if (iw < walker_configs.WalkerList.size())
+      *walkers_[iw] = *walker_configs[iw];
 
     walker_elec_particle_sets_[iw]  = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw] = trial_wf_->makeClone(*walker_elec_particle_sets_[iw]);
@@ -307,12 +292,10 @@ void MCPopulation::checkIntegrity() const
     throw std::runtime_error("dead_walker_hamiltonians_ has inconsistent size");
 }
 
-void MCPopulation::saveWalkerConfigurations()
+void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs)
 {
-  walker_configs_ref_.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
+  walker_configs.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
-    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs_ref_[iw]);
+    walker_elec_particle_sets_[iw]->saveWalker(*walker_configs[iw]);
 }
-
-
 } // namespace qmcplusplus
