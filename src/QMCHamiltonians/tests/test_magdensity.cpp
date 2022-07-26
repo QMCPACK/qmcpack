@@ -28,7 +28,7 @@
 //for nonlocal moves
 #include "QMCHamiltonians/NonLocalTOperator.h"
 
-
+#include "QMCWaveFunctions/ConstantSPOSet.h"
 //for Hamiltonian manipulations.
 #include "Particle/ParticleSet.h"
 #include "LongRange/EwaldHandler3D.h"
@@ -68,7 +68,10 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   lattice.R(2, 0) = -6.49690625;
   lattice.R(2, 1) = 0.00000000;
   lattice.R(2, 2) = 7.08268015;
-
+  
+  lattice.BoxBConds = true; //periodic
+  lattice.LR_dim_cutoff = 15; 
+  lattice.reset();
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   const SimulationCell simulation_cell(lattice);
   ParticleSet ions_(simulation_cell);
@@ -76,6 +79,7 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   ions_.setName("ion");
   ions_.create({2});
 
+  //ConstantSPOSet dnchannel(
   ions_.R[0][0] = 0.00000000;
   ions_.R[0][1] = 0.00000000;
   ions_.R[0][2] = 1.08659253;
@@ -85,15 +89,16 @@ TEST_CASE("MagDensity", "[hamiltonian]")
 
   elec_.setName("elec");
   elec_.create({2});
-  elec_.R[0][0] = 0.1;
-  elec_.R[0][1] = -0.3;
-  elec_.R[0][2] = 1.0;
-  elec_.R[1][0] = -0.1;
-  elec_.R[1][1] = 0.3;
-  elec_.R[1][2] = 1.0;
 
-  elec_.spins[0] = 0.0;
-  elec_.spins[1] = 0.2;
+  elec_.R[0][0] = 0;
+  elec_.R[0][1] = 0;
+  elec_.R[0][2] = 0;
+  elec_.R[1][0] = 5;
+  elec_.R[1][1] = 0;
+  elec_.R[1][2] = 0;
+
+  elec_.spins[0] = 1.9;
+  elec_.spins[1] = 2.5410;
   elec_.setSpinor(true);
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
@@ -111,20 +116,43 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   //Our test case is going to be three electron gas orbitals distinguished by 3 different kpoints.
   //Independent SPO's for the up and down channels.
   //
+ /*
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
 
 
   kup.resize(nelec);
-  kup[0] = PosType(0, 0, 0);
+  kup[0] = PosType(0.25, 0.25, 0.25);
   kup[1] = PosType(0.1, 0.2, 0.3);
 
   kdn.resize(nelec);
-  kdn[0] = PosType(0, 0, 0);
-  kdn[1] = PosType(-0.1, 0.2, -0.3);
+  kdn[0] = PosType(0.25, 0.25, 0.25);
+  kdn[1] = PosType(0.1, 0.2, 0.3);
 
   auto spo_up = std::make_unique<FreeOrbital>(kup);
   auto spo_dn = std::make_unique<FreeOrbital>(kdn);
+
+  */
+  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
+  ValueVector uprow0{ValueType(0.92387953,0),ValueType(0.92387953,0.)};
+  ValueVector dnrow0{ValueType(0.27059805,0.27059805),ValueType(0.27059805,0.27059805)};
+  ValueVector uprow1{ValueType(0.29131988,0.87674747),ValueType(0.81078057,0.44293144)};
+  ValueVector dnrow1{ValueType(-0.17146777,0.342119),ValueType(0.10774051,0.36720375)};
+
+  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
+  ValueMatrix mup,mdn;
+  mup.resize(nelec,nelec);
+  mdn.resize(nelec,nelec);
+
+  for(int iorb=0; iorb<nelec; iorb++)
+  {
+    mup(0,iorb)=uprow0[iorb];
+    mdn(0,iorb)=dnrow0[iorb];
+    mup(1,iorb)=uprow1[iorb];
+    mdn(1,iorb)=dnrow1[iorb];
+  }
+  auto spo_up = std::make_unique<ConstantSPOSet>(mup);
+  auto spo_dn = std::make_unique<ConstantSPOSet>(mdn);
 
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
@@ -135,11 +163,11 @@ TEST_CASE("MagDensity", "[hamiltonian]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::move(dd));
-
+  app_log()<<"psi_val = "<<psi.evaluateLog(elec_)<<std::endl;
   MagDensityEstimator magdensity(elec_, psi);
 
   const char* magtxt = "<tmp> \
-  <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" nsamps=\"50\"/> \
+  <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" nsamples=\"9\"/> \
   </tmp> \
   ";
 
