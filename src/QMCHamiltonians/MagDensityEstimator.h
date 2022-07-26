@@ -28,6 +28,8 @@ using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 class MagDensityEstimator : public OperatorBase
 {
 public:
+  enum MD_Integrator{MD_INT_SIMPSONS, MD_INT_TRAP, MD_INT_MC};
+
   MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi);
   int potentialIndex;
   void resetTargetParticleSet(ParticleSet& P) override;
@@ -67,7 +69,6 @@ public:
 private:
   ///reference to the trial wavefunction for ratio evaluations
   TrialWaveFunction& refPsi;
-    
   ///true if any direction of a supercell is periodic
   bool Periodic;
   ///normalization factor
@@ -87,6 +88,7 @@ private:
   ///name of the density data
   std::string prefix;
   int nSamples_;
+  MD_Integrator integrator_;  
 
   void resize();
 

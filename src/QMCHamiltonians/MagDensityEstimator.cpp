@@ -23,6 +23,7 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/ParticleBase/RandomSeqGeneratorGlobal.h"
+#include "Utilities/ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -31,7 +32,7 @@ using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
 MagDensityEstimator::MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi):
-refPsi(psi),nSamples_(5)
+refPsi(psi),nSamples_(9),integrator_(MD_INT_SIMPSONS)
 {
   update_mode_.set(COLLECTABLE, 1);
   Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
@@ -145,10 +146,13 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         ValueType sx(0.0);
         ValueType sy(0.0);
         ValueType sz(0.0);
-
-        //sgrid=generateRandomGrid(0,TWOPI,nSamples_);
-        sgrid=generateUniformGrid(0,TWOPI,nSamples_);
-       // app_log()<<"iat="<<iat<<" s="<<P.spins[iat]<<std::endl;
+        
+        //If Monte Carlo, we generate a random s grid between 0 and 2pi.,     
+        if( integrator_ == MD_INT_MC )
+          sgrid=generateRandomGrid(0,TWOPI,nSamples_);
+        else //Otherwise evenly divide the interval.
+          sgrid=generateUniformGrid(0,TWOPI,nSamples_);
+        
         for(int samp=0; samp<nSamples_; samp++)
         {
           ValueType ratio;
@@ -161,8 +165,9 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
           sygrid[samp] = std::real(2.0*std::sin(sgrid[samp]+P.spins[iat])*ratio);
           szgrid[samp] = std::real(-2.0*eye*std::sin(ds)*ratio);
         }
-        if(false)
+        if(integrator_ == MD_INT_MC )
         {
+          //Monte Carlo, so the 2pi normalization is already handled.
           sx=average(sxgrid);
           sy=average(sygrid);
           sz=average(szgrid);
@@ -181,7 +186,7 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         P.Collectables[getMagGridIndex(i, j, k, 2)] += wgt*std::real(sz); //1.0;
      
  
-        }
+      }
     }
   }
   else
@@ -278,6 +283,7 @@ bool MagDensityEstimator::put(xmlNodePtr cur)
   std::vector<double> delta;
   std::string debug("no");
   std::string potential("no");
+  std::string integrator_string("simpson");
   OhmmsAttributeSet attrib;
   attrib.add(debug, "debug");
   attrib.add(potential, "potential");
@@ -288,8 +294,39 @@ bool MagDensityEstimator::put(xmlNodePtr cur)
   attrib.add(density_max[1], "y_max");
   attrib.add(density_max[2], "z_max");
   attrib.add(nSamples_, "nsamples");
+  attrib.add(integrator_string,"spin_integral");
   attrib.add(Delta, "delta");
   attrib.put(cur);
+
+  std::string tmp = lowerCase(integrator_string);
+  size_t found = tmp.find("simp");
+  if (tmp.find("simp") != std::string::npos)
+  {
+    app_log()<<"Setting up Simpson's 3/8 spin integration rule.\n";
+    if (nSamples_%2 == 0)
+    {
+      nSamples_++;
+      app_log()<<"Simpson's rule requires odd number of integration points.  Incrementing nSamples up by one.\n";
+      integrator_=MD_INT_SIMPSONS; 
+    }
+  }
+  else if(tmp.find("trap") != std::string::npos)
+  {
+    app_log()<<"Setting up Trapezoidal spin integration rule.\n";
+    integrator_=MD_INT_TRAP;
+  }
+  else if (tmp.find("mc") != std::string::npos)
+  {
+    app_log()<<"Setting up Monte Carlo integration rule.\n";
+    integrator_=MD_INT_MC;
+  }
+  else
+  {
+    APP_ABORT("DIE");
+  }
+   
+  //trap
+  //mc
   if (!Periodic)
   {
     for (int dim = 0; dim < OHMMS_DIM; ++dim)
