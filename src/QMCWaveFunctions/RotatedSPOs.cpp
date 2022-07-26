@@ -290,7 +290,7 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
     {
       auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
       mat_cd[i + j * n] = tmp;
-      //std::cout << "mat_cd " << i << " " << j <<  "  " << mat_cd[i + n*j] << std::endl;
+
       if (eval_i[j] > 0.0)
       {
         mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
