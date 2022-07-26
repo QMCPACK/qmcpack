@@ -342,6 +342,11 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 
   CheckMatrixResult check_matrix_result = checkMatrix(m3, expected_m3, true);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  std::vector<ValueType> params_out(2);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, m3, params_out);
+  CHECK(params_out[0] == Approx(0.1));
+  CHECK(params_out[1] == Approx(0.2));
 }
 
 // Expected values of the matrix exponential come from gen_matrix_ops.py
@@ -393,6 +398,86 @@ TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
 
   CheckMatrixResult check_matrix_result3 = checkMatrix(m3, expected_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+}
+
+TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  std::vector<SPOSet::ValueType> mat1_data = {1.0};
+  SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
+  RotatedSPOs::log_antisym_matrix(m1);
+  // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
+  CHECK(m1(0, 0) == ValueApprox(0.0));
+
+  // clang-format off
+  std::vector<ValueType> start_rot2 = {  0.995004165278026,  -0.0998334166468282,
+                                         0.0998334166468282,  0.995004165278026 };
+
+  std::vector<SPOSet::ValueType> mat2_data = { 0.0, -0.1,
+                                               0.1,  0.0 };
+  // clang-format on
+
+  ValueMatrix rot_m2(start_rot2.data(), 2, 2);
+  RotatedSPOs::log_antisym_matrix(rot_m2);
+
+  SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, rot_m2, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+  // clang-format off
+  std::vector<ValueType> start_rot3 = {  0.950580617906092, -0.302932713402637, -0.0680313164049401,
+                                         0.283164960565074,  0.935754803277919, -0.210191705950743,
+                                         0.127334574917630,  0.180540076694398,  0.975290308953046 };
+
+  std::vector<ValueType> m3_input_data = { 0.0,  -0.3, -0.1,
+                                           0.3,   0.0, -0.2,
+                                           0.1,   0.2,  0.0 };
+  // clang-format on
+  ValueMatrix rot_m3(start_rot3.data(), 3, 3);
+  RotatedSPOs::log_antisym_matrix(rot_m3);
+
+  SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
+  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, rot_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+}
+
+// Test round trip A -> exp(A) -> log(exp(A))
+// The log is multi-valued so this test may fail if the rotation parameters are too large.
+// The exponentials will be the same, though
+//   exp(log(exp(A))) == exp(A)
+TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  RotatedSPOs::RotationIndices rot_ind;
+  int nel = 2;
+  int nmo = 4;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+
+  ValueMatrix rot_m4(nmo, nmo);
+  rot_m4 = ValueType(0);
+
+  std::vector<ValueType> params4 = {-1.1, 1.5, 0.2, -0.15};
+
+  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
+  ValueMatrix orig_rot_m4 = rot_m4;
+
+  RotatedSPOs::exponentiate_antisym_matrix(rot_m4);
+
+  RotatedSPOs::log_antisym_matrix(rot_m4);
+
+  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, orig_rot_m4, true);
+  CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
+
+  std::vector<ValueType> params4out(4);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, rot_m4, params4out);
+  for (int i = 0; i < params4.size(); i++)
+  {
+    CHECK(params4[i] == Approx(params4out[i]));
+  }
 }
 
 

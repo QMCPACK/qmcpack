@@ -62,6 +62,20 @@ void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indice
   }
 }
 
+void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                                       const ValueMatrix& rot_mat,
+                                                       std::vector<ValueType>& param)
+{
+  assert(rot_indices.size() == param.size());
+  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+
+  for (int i = 0; i < rot_indices.size(); i++)
+  {
+    const int p = rot_indices[i].first;
+    const int q = rot_indices[i].second;
+    param[i]    = rot_mat[q][p];
+  }
+}
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -232,6 +246,78 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
                   << "), im = " << mat_d[i + n * j].imag() << std::endl;
       }
       mat[j][i] = mat_d[i + n * j].real();
+    }
+}
+
+void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
+{
+  const int n = mat.rows();
+  std::vector<RealType> mat_h(n * n, 0);
+  std::vector<RealType> eval_r(n, 0);
+  std::vector<RealType> eval_i(n, 0);
+  std::vector<RealType> mat_l(n * n, 0);
+  std::vector<RealType> work(4 * n, 0);
+
+  std::vector<std::complex<RealType>> mat_cd(n * n, 0);
+  std::vector<std::complex<RealType>> mat_cl(n * n, 0);
+  std::vector<std::complex<RealType>> mat_ch(n * n, 0);
+
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+      mat_h[i + n * j] = mat[i][j];
+
+  // diagonalize the matrix
+  char JOBL('V');
+  char JOBR('N');
+  int N(n);
+  int LDA(n);
+  int LWORK(4 * n);
+  int info = 0;
+  LAPACK::geev(&JOBL, &JOBR, &N, &mat_h.at(0), &LDA, &eval_r.at(0), &eval_i.at(0), &mat_l.at(0), &LDA, nullptr, &LDA,
+               &work.at(0), &LWORK, &info);
+  if (info != 0)
+  {
+    std::ostringstream msg;
+    msg << "heev failed with info = " << info << " in MultiSlaterDetTableMethod::exponentiate_antisym_matrix";
+    app_log() << msg.str() << std::endl;
+    APP_ABORT(msg.str());
+  }
+
+  // iterate through diagonal matrix, take log
+  for (int i = 0; i < n; ++i)
+  {
+    for (int j = 0; j < n; ++j)
+    {
+      auto tmp = (i == j) ? std::log(std::complex<RealType>(eval_r[i], eval_i[i])) : std::complex<RealType>(0.0, 0.0);
+      mat_cd[i + j * n] = tmp;
+      //std::cout << "mat_cd " << i << " " << j <<  "  " << mat_cd[i + n*j] << std::endl;
+      if (eval_i[j] > 0.0)
+      {
+        mat_cl[i + j * n]       = std::complex<RealType>(mat_l[i + j * n], mat_l[i + (j + 1) * n]);
+        mat_cl[i + (j + 1) * n] = std::complex<RealType>(mat_l[i + j * n], -mat_l[i + (j + 1) * n]);
+      }
+      else if (!(eval_i[j] < 0.0))
+      {
+        mat_cl[i + j * n] = std::complex<RealType>(mat_l[i + j * n], 0.0);
+      }
+    }
+  }
+
+  RealType one(1.0);
+  RealType zero(0.0);
+  BLAS::gemm('N', 'N', n, n, n, one, &mat_cl.at(0), n, &mat_cd.at(0), n, zero, &mat_ch.at(0), n);
+  BLAS::gemm('N', 'C', n, n, n, one, &mat_ch.at(0), n, &mat_cl.at(0), n, zero, &mat_cd.at(0), n);
+
+
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < n; ++j)
+    {
+      if (mat_cd[i + n * j].imag() > 1e-12)
+      {
+        app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j
+                  << "), im = " << mat_cd[i + n * j].imag() << std::endl;
+      }
+      mat[i][j] = mat_cd[i + n * j].real();
     }
 }
 
