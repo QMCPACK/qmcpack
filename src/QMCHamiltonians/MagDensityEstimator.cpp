@@ -73,16 +73,13 @@ MagDensityEstimator::RealType MagDensityEstimator::integrateBySimpsonsRule(const
   for (int is = 1; is < gridsize - 1; is += 2)
   {
     sint += RealType(4. / 3.) * gridDx * fgrid[is];
-    app_log()<<"A is="<<is<<" s="<<gridDx<<std::endl;
   }
   for (int is = 2; is < gridsize - 1; is += 2)
   {
     sint += RealType(2. / 3.) * gridDx * fgrid[is];
-    app_log()<<"B is="<<is<<" s="<<gridDx<<std::endl;
   }
   sint += RealType(1. / 3.) * gridDx * fgrid[0];
   sint += RealType(1. / 3.) * gridDx * fgrid[gridsize-1];
-  app_log()<<"Final indices are 0 and "<<gridsize-1<<" at 0 and "<<(gridsize-1)*gridDx<<std::endl;
   return sint;
 }
 
@@ -93,11 +90,9 @@ MagDensityEstimator::RealType MagDensityEstimator::integrateByTrapzRule(const st
   for (int is = 1; is < gridsize - 1; is++)
   {
     sint +=  gridDx * fgrid[is];
-    app_log()<<"A is="<<is<<" s="<<gridDx<<std::endl;
   }
   sint += 0.5 * gridDx * fgrid[0];
   sint += 0.5 * gridDx * fgrid[gridsize-1];
-  app_log()<<"Final indices are 0 and "<<gridsize-1<<" at 0 and "<<(gridsize-1)*gridDx<<std::endl;
   return sint;
 }
 
@@ -140,7 +135,6 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
         int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-        app_log()<<"P.R[iat] = "<<P.R[iat]<<std::endl;  
         //This has to be complex type for spinors.  If not true, other part of code will
         //handle it.
         ValueType sx(0.0);
