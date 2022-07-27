@@ -1728,6 +1728,10 @@ in the hundreds of electrons up to low thousands of electrons are representative
 research runs performed in 2017. The largest runs target
 future machines and require very large memory.
 
+All system sizes in the table below will be tested as a default, but you will be able to define the maximum size of
+the system by setting ``-DQMC_PERFORMANCE_NIO_MAX_ATOMS = NUMBER_OF_ATOMS`` in order to run the test only
+the systems possessing number of atoms below ``NUMBER_OF_ATOMS``.
+
 .. table:: System sizes and names for NiO performance tests. GPU performance
     tests are named similarly but have different walker counts.
 
