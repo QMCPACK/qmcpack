@@ -45,6 +45,7 @@ public:
                                            ValueMatrix& rot_mat);
 
   // Extract the list of rotation parameters from the entries in an antisymmetric matrix
+  // This function expects rot_indices and param are the same length.
   static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                                    const ValueMatrix& rot_mat,
                                                    std::vector<ValueType>& param);
