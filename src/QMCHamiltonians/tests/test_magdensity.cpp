@@ -74,28 +74,17 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   lattice.reset();
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   const SimulationCell simulation_cell(lattice);
-  ParticleSet ions_(simulation_cell);
   ParticleSet elec_(simulation_cell);
-  ions_.setName("ion");
-  ions_.create({2});
-
-  //ConstantSPOSet dnchannel(
-  ions_.R[0][0] = 0.00000000;
-  ions_.R[0][1] = 0.00000000;
-  ions_.R[0][2] = 1.08659253;
-  ions_.R[1][0] = 0.00000000;
-  ions_.R[1][1] = 0.00000000;
-  ions_.R[1][2] = -1.08659253;
 
   elec_.setName("elec");
   elec_.create({2});
 
-  elec_.R[0][0] = 0;
+  elec_.R[0][0] = 5;
   elec_.R[0][1] = 0;
   elec_.R[0][2] = 0;
-  elec_.R[1][0] = 5;
+  elec_.R[1][0] = 2.22798;
   elec_.R[1][1] = 0;
-  elec_.R[1][2] = 0;
+  elec_.R[1][2] = 4.249609;
 
   elec_.spins[0] = 1.9;
   elec_.spins[1] = 2.5410;
@@ -106,33 +95,14 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
 
-  elec_.addTable(ions_);
+  //elec_.addTable(ions_);
   elec_.resetGroups();
   elec_.update();
   // </steal>
 
 
   const auto nelec = elec_.R.size();
-  //Our test case is going to be three electron gas orbitals distinguished by 3 different kpoints.
-  //Independent SPO's for the up and down channels.
-  //
- /*
-  std::vector<PosType> kup, kdn;
-  std::vector<RealType> k2up, k2dn;
 
-
-  kup.resize(nelec);
-  kup[0] = PosType(0.25, 0.25, 0.25);
-  kup[1] = PosType(0.1, 0.2, 0.3);
-
-  kdn.resize(nelec);
-  kdn[0] = PosType(0.25, 0.25, 0.25);
-  kdn[1] = PosType(0.1, 0.2, 0.3);
-
-  auto spo_up = std::make_unique<FreeOrbital>(kup);
-  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
-
-  */
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
   ValueVector uprow0{ValueType(0.92387953,0),ValueType(0.92387953,0.)};
   ValueVector dnrow0{ValueType(0.27059805,0.27059805),ValueType(0.27059805,0.27059805)};
@@ -157,17 +127,15 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   auto spinor_set = std::make_unique<SpinorSet>();
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  app_log() << " nelec=" << nelec << std::endl;
-
   auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
 
   TrialWaveFunction psi;
   psi.addComponent(std::move(dd));
-  app_log()<<"psi_val = "<<psi.evaluateLog(elec_)<<std::endl;
+  psi.evaluateLog(elec_);
   MagDensityEstimator magdensity(elec_, psi);
 
   const char* magtxt = "<tmp> \
-  <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" nsamples=\"9\"/> \
+  <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" spin_integral=\"simpson\" nsamples=\"9\"/> \
   </tmp> \
   ";
 
@@ -189,7 +157,50 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   app_log()<<"Collectables = \n";
   for (int i=0; i<elec_.Collectables.size(); i++) 
     app_log()<<i<<" "<<elec_.Collectables[i]<<std::endl;
+  
+  //Spin of first grid point.
+  REQUIRE(elec_.Collectables[0] == Approx(-0.97448154));
+  REQUIRE(elec_.Collectables[1] == Approx(-0.37462387));
+  REQUIRE(elec_.Collectables[2] == Approx( 2.36817514));
+  //Spin of last grid point.
+  REQUIRE(elec_.Collectables[21] == Approx(1.20557377));
+  REQUIRE(elec_.Collectables[22] == Approx(-0.60536469));
+  REQUIRE(elec_.Collectables[23] == Approx(0.98980165));
 
+  //All other grid points should have zero spin, because there are no electrons there.  
+  for(int i=3; i<21; i++)
+  {
+    REQUIRE(elec_.Collectables[i] == Approx(0.0));
+  }
+
+  //This concludes the correctness test of the estimator.  Now to test cloning:
+  elec_.Collectables[0]=0;
+  elec_.Collectables[1]=0;
+  elec_.Collectables[2]=0;
+
+  elec_.Collectables[21]=0;
+  elec_.Collectables[22]=0;
+  elec_.Collectables[23]=0;
+
+  std::unique_ptr<OperatorBase> magclone = magdensity.makeClone(elec_,psi);
+  magdensity.evaluate(elec_);
+
+  //Spin of first grid point.
+  REQUIRE(elec_.Collectables[0] == Approx(-0.97448154));
+  REQUIRE(elec_.Collectables[1] == Approx(-0.37462387));
+  REQUIRE(elec_.Collectables[2] == Approx( 2.36817514));
+  //Spin of last grid point.
+  REQUIRE(elec_.Collectables[21] == Approx(1.20557377));
+  REQUIRE(elec_.Collectables[22] == Approx(-0.60536469));
+  REQUIRE(elec_.Collectables[23] == Approx(0.98980165));
+
+  //All other grid points should have zero spin, because there are no electrons there.  
+  for(int i=3; i<21; i++)
+  {
+    REQUIRE(elec_.Collectables[i] == Approx(0.0));
+  }
+
+  
 }
 #endif
 }

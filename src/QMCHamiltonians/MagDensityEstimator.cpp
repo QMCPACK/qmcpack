@@ -122,8 +122,6 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
   std::complex<RealType> eye(0,1.0);
   RealType wgt = t_walker_->Weight;
 
-  app_log()<<"wgt = "<<wgt<<std::endl;
-  app_log()<<" Periodic = "<<Periodic<<std::endl;
   if (Periodic)
   {
     for (int ig = 0; ig < P.groups(); ++ig)
@@ -207,7 +205,7 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
 
 void MagDensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
 {
-  int nw = W.WalkerList.size();
+/*  int nw = W.WalkerList.size();
   int N  = W.getTotalNum();
   if (Periodic)
   {
@@ -229,7 +227,7 @@ void MagDensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealTy
         W.Collectables[getGridIndex(i, j, k)] += weight;
       }
     }
-  }
+  }*/
 }
 
 void MagDensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
@@ -341,6 +339,16 @@ std::unique_ptr<OperatorBase> MagDensityEstimator::makeClone(ParticleSet& qp, Tr
   //default constructor is sufficient
   std::unique_ptr<MagDensityEstimator> myClone = std::make_unique<MagDensityEstimator>(qp,psi);
   myClone->NumGrids = NumGrids;
+  myClone->nSamples_ = nSamples_;
+  myClone->integrator_ = integrator_;
+  myClone->Delta = Delta;
+  myClone->DeltaInv = DeltaInv;
+  myClone->ScaleFactor = ScaleFactor;
+  myClone->density_min = density_min;
+  myClone->density_max = density_max;
+  myClone->Norm = Norm;
+  myClone->Periodic = Periodic;
+  myClone->prefix = prefix;
   return myClone;
 }
 
