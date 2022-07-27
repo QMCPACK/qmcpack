@@ -31,11 +31,12 @@ public:
   enum MD_Integrator{MD_INT_SIMPSONS, MD_INT_TRAP, MD_INT_MC};
 
   MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi);
-  int potentialIndex;
+  
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
+  // We'll let the base class throw an error if this gets touched.
+  //void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
@@ -46,26 +47,16 @@ public:
   bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-  inline int getGridIndex(int i, int j, int k) const { return my_index_ + k + NumGrids[2] * (j + NumGrids[1] * i); }
- 
-  // index of grid point i=x, j=y, k=z, and vector component dim
+  // index of grid point i=x, j=y, k=z, and vector component dim.
   inline int getMagGridIndex(int i, int j, int k, int dim) const {return my_index_ + dim + OHMMS_DIM*(k + NumGrids[2] * (j+NumGrids[1] * i));}
-  inline int getGridIndexPotential(int i, int j, int k) const
-  {
-    return potentialIndex + k + NumGrids[2] * (j + NumGrids[1] * i);
-  }
 
-  inline int getMagGridIndexPotential(int i, int j, int k, int dim) const
-  {
-    return potentialIndex + dim + OHMMS_DIM*(k + NumGrids[2] * (j + NumGrids[1] * i));
-  }
-
+  
   ParticleSet::ParticleScalar generateUniformGrid(RealType start, RealType stop, int nGridPoints);
-    
   ParticleSet::ParticleScalar generateRandomGrid(RealType start, RealType stop, int nSamples);
   RealType integrateBySimpsonsRule(const std::vector<RealType>& fgrid, RealType gridDx);
   RealType integrateByTrapzRule(const std::vector<RealType>& fgrid, RealType gridDx);
   RealType average(const std::vector<RealType>& fgrid);
+
 private:
   ///reference to the trial wavefunction for ratio evaluations
   TrialWaveFunction& refPsi;
@@ -86,8 +77,11 @@ private:
   ///upper bound
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
+  
   std::string prefix;
+  //Number of MC samples or grid points to perform spin integration.
   int nSamples_;
+  //Enum to type of integration to be performed for spin integral.
   MD_Integrator integrator_;  
 
   void resize();
