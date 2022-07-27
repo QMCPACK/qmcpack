@@ -529,9 +529,13 @@ finished.
 
 .. _user-limit-queue:
 
-Limiting the number of submitted job
+Limiting the number of submitted jobs
 -------------
-In certain cases, when many calculations are present within the same project, e.g. various geometries or twists, Nexus will submit all jobs at the same time unless told otherwise. While this is fine on local resources, it might break the rules at computing centers such as ALCF where only 20 jobs can be submitted at the same time. In such case, it is possible to specify the the size of the queue in Nexus to avoid monopolizing the resources.
+Nexus will submit all eligible jobs at the same time unless told otherwise. This can be a large number when many calculations are present within the
+same project, e.g. various geometries or twists.  While this is fine on local resources, it might break the rules at computing centers such as ALCF
+where only 20 jobs can be submitted at the same time. In such cases, it is possible to specify the the size of the queue in Nexus to avoid monopolizing
+the resources.
+
 ::
 
   from nexus import get_machine
