@@ -813,16 +813,17 @@ Additional information:
     </parameter>
   </estimator>
 
-Magnetization Density estimator
+Magnetization density estimator
 ~~~~~~~~~~~~~~~~~
 
-The particle number density operator is given by
+The magnetization density operator is given by
 
 .. math::
   :label: eq32
 
   \hat{\mathbf{m}}_r = \sum_i\delta(r-r_i)\hat{\sigma_i}\:.
 
+Here, :math:`\hat{\sigma}=(\hat{\sigma_x},\hat{\sigma_y},\hat{\sigma_z})` is the vector spin operator. 
 The ``magdensity`` estimator accumulates the spin per electron on a uniform
 histogram grid over the simulation cell. The value obtained for a grid
 cell :math:`c` with volume :math:`\Omega_c` is then the average of the spin
@@ -914,6 +915,11 @@ Additional information:
    - ``spin_integral="simpsons"``: Uses Simpson's 3/8 rule.
    - ``spin_integral="trapezoid"``: Uses the trapezoidal rule.
    - ``spin_integral="mc"``: Uses uniform Monte Carlo sampling to perform the spin integral.
+
+-  ``nsamples``: Determines number of points used to evaluate the integral.  If using
+   Simpson's or trapezoid rule, this will form a uniform grid between :math:`[0,2\pi)`, 
+   whereas if Monte Carlo sampling, these points will be uniform randomly distributed
+   over the same interval.  
 
 .. code-block::
   :caption: QMCPXML,caption=Magnetization density estimator (uniform grid).
