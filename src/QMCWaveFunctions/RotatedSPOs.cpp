@@ -119,7 +119,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
   if (params_supplied)
     if (nparams_active != params.size())
-      APP_ABORT("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
+      throw std::runtime_error("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
                 "expansion. \n");
 
   myVars.clear();
@@ -219,9 +219,8 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
   if (info != 0)
   {
     std::ostringstream msg;
-    msg << "heev failed with info = " << info << " in MultiSlaterDetTableMethod::exponentiate_antisym_matrix";
-    app_log() << msg.str() << std::endl;
-    APP_ABORT(msg.str());
+    msg << "heev failed with info = " << info << " in RotatedSPOs::exponentiate_antisym_matrix";
+    throw std::runtime_error(msg.str());
   }
   // iterate through diagonal matrix, exponentiate terms
   for (int i = 0; i < n; ++i)
@@ -278,9 +277,8 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
   if (info != 0)
   {
     std::ostringstream msg;
-    msg << "heev failed with info = " << info << " in MultiSlaterDetTableMethod::exponentiate_antisym_matrix";
-    app_log() << msg.str() << std::endl;
-    APP_ABORT(msg.str());
+    msg << "heev failed with info = " << info << " in RotatedSPOs::log_antisym_matrix";
+    throw std::runtime_error(msg.str());
   }
 
   // iterate through diagonal matrix, take log
