@@ -2,15 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Bryan Clark, bclark@Princeton.edu, Princeton University
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Raymond Clay, Sandia National Laboratories
 //
-// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
+// File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -47,14 +43,51 @@ public:
   bool get(std::ostream& os) const override;
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-  // index of grid point i=x, j=y, k=z, and vector component dim.
+  /** Returns flattened array index of grid point i=x, j=y, k=z, and vector component dim.
+   * \param[in] i x index.
+   * \param[in] j y index.
+   * \param[in] k z index.
+   * \param[in] dim xyz vector component.
+   * \return index in flattened array.
+   */  
   inline int getMagGridIndex(int i, int j, int k, int dim) const {return my_index_ + dim + OHMMS_DIM*(k + NumGrids[2] * (j+NumGrids[1] * i));}
 
-  
+  /** Returns a uniform grid with nGridPoints between start and stop.
+   * \param[in] start start of interval.
+   * \param[in] stop end of interval.
+   * \param[in] nGridPoints number of grid points.  
+   * \return ParticleScalar array of grid points.
+   */ 
   ParticleSet::ParticleScalar generateUniformGrid(RealType start, RealType stop, int nGridPoints);
+
+  /** Returns a random (uniformly distributed) grid with nGridPoints between start and stop.
+   * \param[in] start start of interval.
+   * \param[in] stop end of interval.
+   * \param[in] nGridPoints number of grid points.  
+   * \return ParticleScalar array of grid points.
+   */ 
   ParticleSet::ParticleScalar generateRandomGrid(RealType start, RealType stop, int nSamples);
+ 
+  /** Takes a discretized function fgrid with uniform grid spacing and integrates the function with
+   *   Simpson's 3/8 rule.
+   * \param[in] fgrid discretized function to integrate
+   * \param[in] gridDx uniform grid spacing
+   * \return  Value of int f(x).
+   */ 
   RealType integrateBySimpsonsRule(const std::vector<RealType>& fgrid, RealType gridDx);
+ 
+  /** Takes a discretized function fgrid with uniform grid spacing and integrates the function with
+   *   Trapezoidal rule.
+   * \param[in] fgrid discretized function to integrate
+   * \param[in] gridDx uniform grid spacing
+   * \return  Value of int f(x).
+   */ 
   RealType integrateByTrapzRule(const std::vector<RealType>& fgrid, RealType gridDx);
+
+  /** Returns the average of an array fgrid.  Used for MC integration. 
+   * \param[in] fgrid discretized function to integrate
+   * \return  Average of fgrid.
+   */ 
   RealType average(const std::vector<RealType>& fgrid);
 
 private:
@@ -64,7 +97,7 @@ private:
   bool Periodic;
   ///normalization factor
   RealType Norm;
-  ///number of grids
+  ///number of grids.  +1 is for the additional vector index.
   TinyVector<int, OHMMS_DIM + 1> NumGrids;
   ///bin size
   TinyVector<RealType, OHMMS_DIM> Delta;
@@ -77,7 +110,6 @@ private:
   ///upper bound
   TinyVector<RealType, OHMMS_DIM> density_max;
   ///name of the density data
-  
   std::string prefix;
   //Number of MC samples or grid points to perform spin integration.
   int nSamples_;

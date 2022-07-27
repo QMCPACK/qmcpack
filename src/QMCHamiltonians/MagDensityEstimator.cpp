@@ -126,13 +126,6 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
   {
     for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
     {
-     // PosType ru;
-     // ru    = P.getLattice().toUnit(P.R[iat]);
-     // int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-     // int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-     // int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-      //This has to be complex type for spinors.  If not true, other part of code will
-      //handle it.
       ValueType sx(0.0);
       ValueType sy(0.0);
       ValueType sz(0.0);
@@ -156,7 +149,8 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         sygrid[samp] = std::real(2.0*std::sin(sgrid[samp]+P.spins[iat])*ratio);
         szgrid[samp] = std::real(-2.0*eye*std::sin(ds)*ratio);
       }
-      //Now we integrate.  These if statements handle 
+      //Now we integrate.  These if statements handle the three user options.
+      //Monte Carlo integration 
       if(integrator_ == MD_INT_MC )
       {
         //Monte Carlo, so the 2pi normalization is already handled.
@@ -164,6 +158,7 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         sy=average(sygrid);
         sz=average(szgrid);
       }
+      //Simpson's integration.
       else if( integrator_ == MD_INT_SIMPSONS)
       {
         RealType gridDs=TWOPI/(nSamples_ - 1.0);
@@ -172,6 +167,7 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
         sy=integrateBySimpsonsRule(sygrid,gridDs)/TWOPI;
         sz=integrateBySimpsonsRule(szgrid,gridDs)/TWOPI;
       }
+      //Trapezoid integration.
       else if( integrator_ == MD_INT_TRAP)
       {
         RealType gridDs=TWOPI/(nSamples_ - 1.0);
@@ -226,9 +222,6 @@ void MagDensityEstimator::addObservables(PropertySetType& plist, BufferType& col
   app_log()<<"addObservables = "<<NumGrids[OHMMS_DIM]<<std::endl;
   std::vector<RealType> tmp(OHMMS_DIM*NumGrids[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
-  //potentialIndex=collectables.current();
-  //vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
-  //collectables.add(tmp2.begin(),tmp2.end());
 }
 
 void MagDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
@@ -246,18 +239,12 @@ void MagDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5
 
 void MagDensityEstimator::setObservables(PropertySetType& plist)
 {
-  //std::copy(density.first_address(),density.last_address(),plist.begin()+myDebugIndex);
 }
 
 void MagDensityEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 {
-  //std::copy(density.first_address(),density.last_address(),plist.begin()+myDebugIndex+offset);
 }
 
-/** check xml elements
- *
- * <estimator name="density" debug="no" delta="0.1 0.1 0.1"/>
- */
 bool MagDensityEstimator::put(xmlNodePtr cur)
 {
   Delta = 0.1;
@@ -323,7 +310,6 @@ bool MagDensityEstimator::get(std::ostream& os) const
 
 std::unique_ptr<OperatorBase> MagDensityEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  //default constructor is sufficient
   std::unique_ptr<MagDensityEstimator> myClone = std::make_unique<MagDensityEstimator>(qp,psi);
   myClone->NumGrids = NumGrids;
   myClone->nSamples_ = nSamples_;
