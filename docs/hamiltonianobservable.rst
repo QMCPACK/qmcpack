@@ -823,15 +823,22 @@ The particle number density operator is given by
 
   \hat{\mathbf{m}}_r = \sum_i\delta(r-r_i)\hat{\sigma_i}\:.
 
-The ``magdensity`` estimator accumulates the number density on a uniform
+The ``magdensity`` estimator accumulates the spin per electron on a uniform
 histogram grid over the simulation cell. The value obtained for a grid
-cell :math:`c` with volume :math:`\Omega_c` is then the average number
+cell :math:`c` with volume :math:`\Omega_c` is then the average of the spin
 of particles in that cell:
 
 .. math::
   :label: eq33
 
-  n_c = \int dR \left|{\Psi}\right|^2 \int_{\Omega_c}dr \sum_i\delta(r-r_i)\:.
+  \mathbf{m}_c = \int d\mathbf{X} \left|{\Psi(\mathbf{X})}\right|^2 \int_{\Omega_c}d\mathbf{r} \sum_i\delta(\mathbf{r}-\hat{\mathbf{r}}_i)\int_0^{2\pi} \frac{ds'_i}{2\pi} \frac{\Psi(\ldots \mathbf{r}_i s'_i \ldots )}{\Psi(\ldots \mathbf{r}_i s_i \ldots)}\langle s_i | \hat{\sigma} | s'_i \rangle  \:.
+
+Note that for each walker coordinate :math:`\mathbf{X} = (\mathbf{r}_1 s_1,\ldots,\mathbf{r}_N s_N)`, 
+there will be an additional integration over each spin variable.  This estimator provides the user with
+the ability to numerically integrate this term with Simpson's 3/8 rule or the trapezoid rule.  Noting 
+the form of the integral, it is also possible to estimate it with Monte Carlo sampling, and this functionality
+is also provided.  Which method is computationally most efficient in realistic applications is an open
+question, so the user is invited to experiment.
 
 ``estimator type=density`` element:
 
@@ -903,10 +910,10 @@ Additional information:
    :math:`L`).
 
 -  ``spin_integral``: This selects the method used to perform the spin integral.
-    Several choices have been provided for user experimentation.  
-   ``spin_integral="simpsons"``: Uses Simpson's 3/8 rule.
-   ``spin_integral="trapezoid"``: Uses the trapezoidal rule.
-   ``spin_integral="mc"``: Uses uniform Monte Carlo sampling to perform the spin integral.
+    Several choices have been provided for user experimentation.
+   - ``spin_integral="simpsons"``: Uses Simpson's 3/8 rule.
+   - ``spin_integral="trapezoid"``: Uses the trapezoidal rule.
+   - ``spin_integral="mc"``: Uses uniform Monte Carlo sampling to perform the spin integral.
 
 .. code-block::
   :caption: QMCPXML,caption=Magnetization density estimator (uniform grid).
