@@ -122,83 +122,99 @@ MagDensityEstimator::Return_t MagDensityEstimator::evaluate(ParticleSet& P)
   std::complex<RealType> eye(0,1.0);
   RealType wgt = t_walker_->Weight;
 
-  if (Periodic)
+  for (int ig = 0; ig < P.groups(); ++ig)
   {
-    for (int ig = 0; ig < P.groups(); ++ig)
+    for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
     {
-      for (int iat = P.first(ig); iat < P.last(ig); ++iat)  
+     // PosType ru;
+     // ru    = P.getLattice().toUnit(P.R[iat]);
+     // int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
+     // int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
+     // int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+      //This has to be complex type for spinors.  If not true, other part of code will
+      //handle it.
+      ValueType sx(0.0);
+      ValueType sy(0.0);
+      ValueType sz(0.0);
+      
+      //If Monte Carlo, we generate a random s grid between 0 and 2pi.,     
+      if( integrator_ == MD_INT_MC )
+        sgrid=generateRandomGrid(0,TWOPI,nSamples_);
+      else //Otherwise evenly divide the interval.
+        sgrid=generateUniformGrid(0,TWOPI,nSamples_);
+     
+      //For the provided grid, compute ratios and matrix elements at all grid points. 
+      for(int samp=0; samp<nSamples_; samp++)
+      {
+        ValueType ratio;
+        RealType ds=sgrid[samp]-P.spins[iat]; 
+        P.makeMoveWithSpin(iat, 0.0, ds);
+        ratio = refPsi.calcRatio(P, iat);
+        P.rejectMove(iat); //reject the move
+        refPsi.resetPhaseDiff();
+        sxgrid[samp] = std::real(2.0*std::cos(sgrid[samp]+P.spins[iat])*ratio);
+        sygrid[samp] = std::real(2.0*std::sin(sgrid[samp]+P.spins[iat])*ratio);
+        szgrid[samp] = std::real(-2.0*eye*std::sin(ds)*ratio);
+      }
+      //Now we integrate.  These if statements handle 
+      if(integrator_ == MD_INT_MC )
+      {
+        //Monte Carlo, so the 2pi normalization is already handled.
+        sx=average(sxgrid);
+        sy=average(sygrid);
+        sz=average(szgrid);
+      }
+      else if( integrator_ == MD_INT_SIMPSONS)
+      {
+        RealType gridDs=TWOPI/(nSamples_ - 1.0);
+      
+        sx=integrateBySimpsonsRule(sxgrid,gridDs)/TWOPI;
+        sy=integrateBySimpsonsRule(sygrid,gridDs)/TWOPI;
+        sz=integrateBySimpsonsRule(szgrid,gridDs)/TWOPI;
+      }
+      else if( integrator_ == MD_INT_TRAP)
+      {
+        RealType gridDs=TWOPI/(nSamples_ - 1.0);
+      
+        sx=integrateByTrapzRule(sxgrid,gridDs)/TWOPI;
+        sy=integrateByTrapzRule(sygrid,gridDs)/TWOPI;
+        sz=integrateByTrapzRule(szgrid,gridDs)/TWOPI;
+      }
+      else
+      {
+        throw std::runtime_error("MagDensityEstimator::evaluate().  Invalid integrator option.\n");
+      }
+
+      //Now to figure out which bin the spin expectation value goes in.  Periodic and open BC's handled 
+      //differently.
+      if(Periodic)
       {
         PosType ru;
         ru    = P.getLattice().toUnit(P.R[iat]);
         int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
         int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
         int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-        //This has to be complex type for spinors.  If not true, other part of code will
-        //handle it.
-        ValueType sx(0.0);
-        ValueType sy(0.0);
-        ValueType sz(0.0);
-        
-        //If Monte Carlo, we generate a random s grid between 0 and 2pi.,     
-        if( integrator_ == MD_INT_MC )
-          sgrid=generateRandomGrid(0,TWOPI,nSamples_);
-        else //Otherwise evenly divide the interval.
-          sgrid=generateUniformGrid(0,TWOPI,nSamples_);
-        
-        for(int samp=0; samp<nSamples_; samp++)
-        {
-          ValueType ratio;
-          RealType ds=sgrid[samp]-P.spins[iat]; 
-          P.makeMoveWithSpin(iat, 0.0, ds);
-          ratio = refPsi.calcRatio(P, iat);
-          P.rejectMove(iat); //reject the move
-          refPsi.resetPhaseDiff();
-          sxgrid[samp] = std::real(2.0*std::cos(sgrid[samp]+P.spins[iat])*ratio);
-          sygrid[samp] = std::real(2.0*std::sin(sgrid[samp]+P.spins[iat])*ratio);
-          szgrid[samp] = std::real(-2.0*eye*std::sin(ds)*ratio);
-        }
-        if(integrator_ == MD_INT_MC )
-        {
-          //Monte Carlo, so the 2pi normalization is already handled.
-          sx=average(sxgrid);
-          sy=average(sygrid);
-          sz=average(szgrid);
-        }
-        else
-        {
-          RealType gridDs=TWOPI/(nSamples_ - 1.0);
-        
-          sx=integrateBySimpsonsRule(sxgrid,gridDs)/TWOPI;
-          sy=integrateBySimpsonsRule(sygrid,gridDs)/TWOPI;
-          sz=integrateBySimpsonsRule(szgrid,gridDs)/TWOPI;
-        }
-        app_log()<<" sx="<<sx<<" sy="<<sy<<" sz="<<sz<<std::endl;
         P.Collectables[getMagGridIndex(i, j, k, 0)] += wgt*std::real(sx); //1.0;
         P.Collectables[getMagGridIndex(i, j, k, 1)] += wgt*std::real(sy); //1.0;
         P.Collectables[getMagGridIndex(i, j, k, 2)] += wgt*std::real(sz); //1.0;
-     
- 
+      }
+      else
+      {
+        PosType ru;
+        for (int dim = 0; dim < OHMMS_DIM; dim++)
+          ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
+        
+        if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
+        {
+          int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
+          int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
+          int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+          P.Collectables[getMagGridIndex(i, j, k, 0)] += wgt*std::real(sx); //1.0;
+          P.Collectables[getMagGridIndex(i, j, k, 1)] += wgt*std::real(sy); //1.0;
+          P.Collectables[getMagGridIndex(i, j, k, 2)] += wgt*std::real(sz); //1.0;
+        }
       }
     }
-  }
-  else
-  {
-//    for (int iat = 0; iat < P.getTotalNum(); ++iat)
-//    {
-//      PosType ru;
-//      for (int dim = 0; dim < OHMMS_DIM; dim++)
-//      {
-//        ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
-//      }
-//      if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
-//      {
-//        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-//        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-//        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
-//        for( int idim = 0; idim < OHMMS_DIM; idim++)
-//          P.Collectables[getMagGridIndex(i, j, k, idim)] += wgt; //1.0;
-//      }
-//    }
   }
   return 0.0;
 }
@@ -314,11 +330,9 @@ bool MagDensityEstimator::put(xmlNodePtr cur)
   }
   else
   {
-    APP_ABORT("DIE");
+    throw std::runtime_error("MagDensityEstimator::put().  Invalid integrator option.\n");
   }
    
-  //trap
-  //mc
   if (!Periodic)
   {
     for (int dim = 0; dim < OHMMS_DIM; ++dim)
@@ -348,7 +362,7 @@ std::unique_ptr<OperatorBase> MagDensityEstimator::makeClone(ParticleSet& qp, Tr
   myClone->density_max = density_max;
   myClone->Norm = Norm;
   myClone->Periodic = Periodic;
-  myClone->prefix = prefix;
+  myClone->prefix = prefix; 
   return myClone;
 }
 
