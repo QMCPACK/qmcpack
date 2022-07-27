@@ -270,9 +270,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "magdensity")
       {
-          std::unique_ptr<MagDensityEstimator> apot = std::make_unique<MagDensityEstimator>(targetPtcl,*targetPsi);
-          apot->put(cur);
-          targetH->addOperator(std::move(apot), potName, false);
+        std::unique_ptr<MagDensityEstimator> apot = std::make_unique<MagDensityEstimator>(targetPtcl, *targetPsi);
+        apot->put(cur);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "structurefactor")
       {
@@ -314,8 +314,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        std::unique_ptr<DensityMatrices1B> apot =
-            std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
+        std::unique_ptr<DensityMatrices1B> apot = std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }

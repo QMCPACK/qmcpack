@@ -24,10 +24,15 @@ using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 class MagDensityEstimator : public OperatorBase
 {
 public:
-  enum MD_Integrator{MD_INT_SIMPSONS, MD_INT_TRAP, MD_INT_MC};
+  enum MD_Integrator
+  {
+    MD_INT_SIMPSONS,
+    MD_INT_TRAP,
+    MD_INT_MC
+  };
 
   MagDensityEstimator(ParticleSet& elns, TrialWaveFunction& psi);
-  
+
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
@@ -49,15 +54,18 @@ public:
    * \param[in] k z index.
    * \param[in] dim xyz vector component.
    * \return index in flattened array.
-   */  
-  inline int getMagGridIndex(int i, int j, int k, int dim) const {return my_index_ + dim + OHMMS_DIM*(k + NumGrids[2] * (j+NumGrids[1] * i));}
+   */
+  inline int getMagGridIndex(int i, int j, int k, int dim) const
+  {
+    return my_index_ + dim + OHMMS_DIM * (k + NumGrids[2] * (j + NumGrids[1] * i));
+  }
 
   /** Returns a uniform grid with nGridPoints between start and stop.
    * \param[in] start start of interval.
    * \param[in] stop end of interval.
    * \param[in] nGridPoints number of grid points.  
    * \return ParticleScalar array of grid points.
-   */ 
+   */
   ParticleSet::ParticleScalar generateUniformGrid(RealType start, RealType stop, int nGridPoints);
 
   /** Returns a random (uniformly distributed) grid with nGridPoints between start and stop.
@@ -65,29 +73,29 @@ public:
    * \param[in] stop end of interval.
    * \param[in] nGridPoints number of grid points.  
    * \return ParticleScalar array of grid points.
-   */ 
+   */
   ParticleSet::ParticleScalar generateRandomGrid(RealType start, RealType stop, int nSamples);
- 
+
   /** Takes a discretized function fgrid with uniform grid spacing and integrates the function with
    *   Simpson's 3/8 rule.
    * \param[in] fgrid discretized function to integrate
    * \param[in] gridDx uniform grid spacing
    * \return  Value of int f(x).
-   */ 
+   */
   RealType integrateBySimpsonsRule(const std::vector<RealType>& fgrid, RealType gridDx);
- 
+
   /** Takes a discretized function fgrid with uniform grid spacing and integrates the function with
    *   Trapezoidal rule.
    * \param[in] fgrid discretized function to integrate
    * \param[in] gridDx uniform grid spacing
    * \return  Value of int f(x).
-   */ 
+   */
   RealType integrateByTrapzRule(const std::vector<RealType>& fgrid, RealType gridDx);
 
   /** Returns the average of an array fgrid.  Used for MC integration. 
    * \param[in] fgrid discretized function to integrate
    * \return  Average of fgrid.
-   */ 
+   */
   RealType average(const std::vector<RealType>& fgrid);
 
 private:
@@ -114,10 +122,9 @@ private:
   //Number of MC samples or grid points to perform spin integration.
   int nSamples_;
   //Enum to type of integration to be performed for spin integral.
-  MD_Integrator integrator_;  
+  MD_Integrator integrator_;
 
   void resize();
-
 };
 
 } // namespace qmcplusplus

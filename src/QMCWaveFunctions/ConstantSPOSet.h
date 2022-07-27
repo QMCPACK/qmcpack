@@ -30,14 +30,13 @@ namespace qmcplusplus
 struct ConstantSPOSet : public SPOSet
 {
 public:
-
   ConstantSPOSet(){};
   ConstantSPOSet(ValueMatrix& vals)
   {
-    psi_=vals; 
-    OrbitalSetSize=psi_.cols();
+    psi_           = vals;
+    OrbitalSetSize = psi_.cols();
   }
-  std::unique_ptr<SPOSet> makeClone() const override{ return std::make_unique<ConstantSPOSet>();};
+  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<ConstantSPOSet>(); };
 
 
   void checkInVariables(opt_variables_type& active) override
@@ -58,37 +57,33 @@ public:
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
-  void setOrbitalSetSize(int norbs) override 
-  {
-    APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()");
-  }
+  void setOrbitalSetSize(int norbs) override { APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
 
 
-  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override 
+  void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     if (psi.size() != OrbitalSetSize)
       APP_ABORT("Borked");
-    for(int iorb=0; iorb<OrbitalSetSize; iorb++)
-      psi[iorb]=psi_(iat,iorb);
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      psi[iorb] = psi_(iat, iorb);
   };
 
-  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override 
+  void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
-    for(int iorb=0; iorb<OrbitalSetSize; iorb++)
-      psi[iorb]=psi_(iat,iorb);
-    dpsi=0.0;
-    d2psi=0.0;
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      psi[iorb] = psi_(iat, iorb);
+    dpsi  = 0.0;
+    d2psi = 0.0;
   };
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
                             ValueMatrix& logdet,
                             GradMatrix& dlogdet,
-                            ValueMatrix& d2logdet) override 
+                            ValueMatrix& d2logdet) override
   {
-    logdet=psi_ ;
+    logdet = psi_;
   };
-
 
 
 protected:
