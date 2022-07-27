@@ -531,6 +531,8 @@ section (e.g., during VMC only).
   +------------------+------------------+-----------------------------------------------------------+
   |                  | spindensity      | Spin density on a grid                                    |
   +------------------+------------------+-----------------------------------------------------------+
+  |                  | magdensity       | Magnetization density on a grid (spin QMC only)           |
+  +------------------+------------------+-----------------------------------------------------------+
   |                  | gofr             | Pair correlation function (quantum species)               |
   +------------------+------------------+-----------------------------------------------------------+
   |                  | sk               | Static structure factor                                   |
@@ -810,6 +812,107 @@ Additional information:
        0.0  0.0 10.0
     </parameter>
   </estimator>
+
+Magnetization Density estimator
+~~~~~~~~~~~~~~~~~
+
+The particle number density operator is given by
+
+.. math::
+  :label: eq32
+
+  \hat{\mathbf{m}}_r = \sum_i\delta(r-r_i)\hat{\sigma_i}\:.
+
+The ``magdensity`` estimator accumulates the number density on a uniform
+histogram grid over the simulation cell. The value obtained for a grid
+cell :math:`c` with volume :math:`\Omega_c` is then the average number
+of particles in that cell:
+
+.. math::
+  :label: eq33
+
+  n_c = \int dR \left|{\Psi}\right|^2 \int_{\Omega_c}dr \sum_i\delta(r-r_i)\:.
+
+``estimator type=density`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian, qmc`` |
+  +------------------+----------------------+
+  | child elements:  | *None*               |
+  +------------------+----------------------+
+
+attributes:
+
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | **Name**                   | **Datatype**  | **Values**                                | **Default**                              | **Description**                          |
+  +============================+===============+===========================================+==========================================+==========================================+
+  | ``type``:math:`^r`         | text          | **density**                               |                                          | Must be density                          |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``name``:math:`^r`         | text          | *anything*                                | any                                      | Unique name for estimator                |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``delta``:math:`^o`        | real array(3) | :math:`0\le v_i \le 1`                    | 0.1 0.1 0.1                              | Grid cell spacing, unit coords           |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``x_min``:math:`^o`        | real          | :math:`>0`                                | 0                                        | Grid starting point in x (Bohr)          |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``x_max``:math:`^o`        | real          | :math:`>0`                                | :math:`|` ``lattice[0]`` :math:`|`       | Grid ending point in x (Bohr)            |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``y_min``:math:`^o`        | real          | :math:`>0`                                | 0                                        | Grid starting point in y (Bohr)          |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``y_max``:math:`^o`        | real          | :math:`>0`                                | :math:`|` ``lattice[1]`` :math:`|`       | Grid ending point in y (Bohr)            |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``z_min``:math:`^o`        | real          | :math:`>0`                                | 0                                        | Grid starting point in z (Bohr)          |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``z_max``:math:`^o`        | real          | :math:`>0`                                | :math:`|` ``lattice[2]`` :math:`|`       | Grid ending point in z (Bohr)            |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``spin_integral``:math:`^o`| text          | ``simpsons/trapezoid/mc``                 | ``simpsons``                             | Method used to evaluate spin integral.   |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+  | ``nsamples``:math:`^o`     | int           | :math:`>0`                                | 9                                        | *No current function*                    |
+  +----------------------------+---------------+-------------------------------------------+------------------------------------------+------------------------------------------+
+
+Additional information:
+
+-  ``name``: The name provided will be used as a label in the
+   ``stat.h5`` file for the blocked output data. Postprocessing tools
+   expect ``name="Density."``
+
+-  ``delta``: This sets the histogram grid size used to accumulate the
+   density:
+   ``delta="0.1 0.1 0.05"``\ :math:`\rightarrow 10\times 10\times 20`
+   grid,
+   ``delta="0.01 0.01 0.01"``\ :math:`\rightarrow 100\times 100\times 100`
+   grid. The density grid is written to a ``stat.h5`` file at the end of
+   each MC block. If you request many :math:`blocks` in a ``<qmc/>``
+   element, or select a large grid, the resulting ``stat.h5`` file could
+   be many gigabytes in size.
+
+-  ``*_min/*_max``: Can be used to select a subset of the simulation
+   cell for the density histogram grid. For example if a (cubic)
+   simulation cell is 20 Bohr on a side, setting ``*_min=5.0`` and
+   ``*_max=15.0`` will result in a density histogram grid spanning a
+   :math:`10\times 10\times 10` Bohr cube about the center of the box.
+   Use of ``x_min, x_max, y_min, y_max, z_min, z_max`` is only
+   appropriate for orthorhombic simulation cells with open boundary
+   conditions.
+
+-  When open boundary conditions are used, a ``<simulationcell/>``
+   element must be explicitly provided as the first subelement of
+   ``<qmcsystem/>`` for the density estimator to work. In this case the
+   molecule should be centered around the middle of the simulation cell
+   (:math:`L/2`) and not the origin (:math:`0` since the space within
+   the cell, and hence the density grid, is defined from :math:`0` to
+   :math:`L`).
+
+-  ``spin_integral``: This selects the method used to perform the spin integral.
+    Several choices have been provided for user experimentation.  
+   ``spin_integral="simpsons"``: Uses Simpson's 3/8 rule.
+   ``spin_integral="trapezoid"``: Uses the trapezoidal rule.
+   ``spin_integral="mc"``: Uses uniform Monte Carlo sampling to perform the spin integral.
+
+.. code-block::
+  :caption: QMCPXML,caption=Magnetization density estimator (uniform grid).
+  :name: Listing 24
+
+     <estimator name="MagDensity" type="magdensity" delta="0.05 0.05 0.05" spin_integral="simpsons" nsamples="9"/>
 
 Pair correlation function, :math:`g(r)`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
