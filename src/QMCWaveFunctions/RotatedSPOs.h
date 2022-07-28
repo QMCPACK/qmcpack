@@ -37,19 +37,27 @@ public:
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
-  // Fill in anti-symmetric matrix from the list of rotation parameter indices
+  // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
   static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                            const std::vector<ValueType>& param,
                                            ValueMatrix& rot_mat);
 
+  // Extract the list of rotation parameters from the entries in an antisymmetric matrix
+  // This function expects rot_indices and param are the same length.
+  static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                                   const ValueMatrix& rot_mat,
+                                                   std::vector<ValueType>& param);
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
+
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix
+  static void log_antisym_matrix(ValueMatrix& mat);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
