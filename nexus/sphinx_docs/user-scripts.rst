@@ -527,6 +527,24 @@ the list to ``run_project`` as follows:
 When the ``run_project`` function returns, all simulation runs should be
 finished.
 
+.. _user-limit-queue:
+
+Limiting the number of submitted jobs
+-------------
+Nexus will submit all eligible jobs at the same time unless told otherwise. This can be a large number when many calculations are present within the
+same project, e.g. various geometries or twists.  While this is fine on local resources, it might break the rules at computing centers such as ALCF
+where only 20 jobs can be submitted at the same time. In such cases, it is possible to specify the the size of the queue in Nexus to avoid monopolizing
+the resources.
+
+::
+
+  from nexus import get_machine
+  theta = get_machine('theta')
+  theta.queue_size = 10
+
+In this case, Nexus will never submit more than 10 jobs at a time, even if more jobs are ready to be submitted, or resources on the local machine are available.
+Having the option of limiting the number of jobs running at the same time can be useful even on local workstations (to avoid taking over all the available resources). In such a case, a simpler strategy is possible by claiming fewer available cores in ``settings``, e.g. machine='ws8' vs 'ws4' vs 'ws2' etc.
+
 .. _user-data-analysis:
 
 Data analysis
