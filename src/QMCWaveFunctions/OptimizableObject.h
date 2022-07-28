@@ -43,16 +43,16 @@ private:
   bool is_optimized_ = false;
 
 public:
-  /** check in optimizable parameters
+  /** check in variational parameters to the global list of parameters used by the optimizer.
    * @param active a super set of optimizable variables
    *
-   * Add the paramemters this WaveFunctionComponent manage to active.
+   * This is a query function and should never be implemented as a feature blocker.
+   * If an SPOSet derived class doesn't support optimization, use the base class fallback.
    */
   virtual void checkInVariables(opt_variables_type& active) {}
 
-  /** check out optimizable variables
-   *
-   * Update myVars index map
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
    */
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
