@@ -37,11 +37,11 @@ public:
    *  \param[in]   global_emi     optional global estimator manager input passed by value to insure copy,
    *                              a global input should not be consumed by driver.
    */
-  QMCDriverInterface* create(const ProjectData& project_data,
-                             const std::optional<EstimatorManagerInput> global_emi,
-                             WalkerConfigurations& wc,
-                             MCPopulation&& pop,
-                             Communicate* comm);
+  std::unique_ptr<QMCDriverInterface> create(const ProjectData& project_data,
+                                             const std::optional<EstimatorManagerInput> global_emi,
+                                             WalkerConfigurations& wc,
+                                             MCPopulation&& pop,
+                                             Communicate* comm);
 };
 } // namespace qmcplusplus
 
