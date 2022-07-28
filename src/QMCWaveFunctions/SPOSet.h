@@ -24,6 +24,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OptimizableObject.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
