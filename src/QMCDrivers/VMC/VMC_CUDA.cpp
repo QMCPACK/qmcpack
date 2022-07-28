@@ -36,10 +36,7 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
                  bool enable_profiling)
     : QMCDriver(w, psi, h, comm, "VMCcuda", enable_profiling),
       UseDrift("yes"),
-      myPeriod4WalkerDump(0),
-      w_beta(0.0),
-      w_alpha(0.0),
-      GEVtype("mixed")
+      myPeriod4WalkerDump(0)
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -47,9 +44,6 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
   m_param.add(UseDrift, "useDrift");
   m_param.add(UseDrift, "usedrift");
   m_param.add(nTargetSamples, "targetWalkers");
-  m_param.add(w_beta, "beta");
-  m_param.add(w_alpha, "alpha");
-  m_param.add(GEVtype, "GEVMethod");
 
   H.setRandomGenerator(&Random);
 }
@@ -564,105 +558,6 @@ bool VMCcuda::put(xmlNodePtr q)
   app_log().flush();
   //nothing to add
   return true;
-}
-
-VMCcuda::RealType VMCcuda::fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM)
-{
-  RealType b1, b2;
-  if (GEVtype == "H2")
-  {
-    b1 = w_beta;
-    b2 = w_alpha;
-  }
-  else
-  {
-    b2 = w_beta;
-    b1 = 0;
-  }
-  std::vector<RealType> g_stats(5, 0);
-  g_stats[0] = sE;
-  g_stats[1] = sE2;
-  g_stats[2] = sE4;
-  g_stats[3] = sW;
-  g_stats[4] = sN;
-  myComm->allreduce(g_stats);
-  RealType g_nrm  = 1.0 / g_stats[3];
-  E_avg           = g_nrm * g_stats[0];
-  RealType E_avg2 = E_avg * E_avg;
-  RealType E2_avg = g_nrm * g_stats[1];
-  V_avg           = E2_avg - E_avg2;
-  myComm->allreduce(Ham2);
-  Ham2 *= g_nrm;
-  myComm->allreduce(Ham);
-  Ham *= g_nrm;
-  myComm->allreduce(Olp);
-  Olp *= g_nrm;
-  myComm->allreduce(D_E);
-  myComm->allreduce(D);
-  myComm->allreduce(HD);
-  myComm->allreduce(HD2);
-  for (int i = 0; i < numParams; i++)
-  {
-    D_E[i] *= g_nrm;
-    D[i] *= g_nrm;
-    HD[i] *= g_nrm;
-    HD2[i] *= g_nrm;
-  }
-  for (int i = 0; i < numParams; i++)
-    for (int j = 0; j < numParams; j++)
-      Ham(i, j) += -D[i] * (HD[j] + D_E[j] - D[j] * E_avg) - D[j] * D_E[i];
-  for (int i = 0; i < numParams; i++)
-    for (int j = 0; j < numParams; j++)
-      Olp(i, j) -= D[i] * D[j];
-  for (int i = 0; i < numParams; i++)
-    for (int j = 0; j < numParams; j++)
-      Ham2(i, j) += D[i] * D[j] * E2_avg - D[i] * HD2[j] - D[j] * HD2[i] - E_avg * (Ham(i, j) + Ham(j, i)) +
-          2.0 * E_avg2 * Olp(i, j);
-  RealType b1_rat = b1 / E_avg2;
-  for (int i = 1; i < numParams + 1; i++)
-    for (int j = 1; j < numParams + 1; j++)
-    {
-      LeftM(i, j)  = (1 - b2) * Ham(i - 1, j - 1) + b2 * (Ham2(i - 1, j - 1) - E_avg2 * Olp(i - 1, j - 1));
-      RightM(i, j) = (1.0 - b1) * Olp(i - 1, j - 1) + b1_rat * Ham2(i - 1, j - 1);
-    }
-  RightM(0, 0) = 1.0 - b1 + b1_rat * E_avg2;
-  LeftM(0, 0)  = (1 - b2) * E_avg + b2 * V_avg;
-  for (int i = 1; i < numParams + 1; i++)
-  {
-    RightM(0, i) = RightM(i, 0) =
-        b1_rat * (HD2[i - 1] - E_avg * (HD[i - 1] + 2.0 * (D_E[i - 1] - D[i - 1] * E_avg)) - D[i - 1] * E2_avg);
-    //       RightM(0,i)= RightM(i,0) = b1_rat*(HD2[i-1] -  E_avg*HD[i-1] -  D[i-1]*E2_avg  - 2.0*E_avg*(D_E[i-1]-D[i-1]*E_avg ));
-    LeftM(i, 0) = (1 - b2) * (D_E[i - 1] - E_avg * D[i - 1]) +
-        b2 * (HD2[i - 1] - E_avg * (HD[i - 1] + 2.0 * (D_E[i - 1] - D[i - 1] * E_avg)) - D[i - 1] * E2_avg);
-    LeftM(0, i) = (1 - b2) * (HD[i - 1] + D_E[i - 1] - E_avg * D[i - 1]) +
-        b2 * (HD2[i - 1] - E_avg * (HD[i - 1] + 2.0 * (D_E[i - 1] - D[i - 1] * E_avg)) - D[i - 1] * E2_avg);
-  }
-  /*
-      for (int i=0; i<numParams; i++) app_log()<<D[i]<<" ";
-      app_log()<< std::endl;
-      for (int i=0; i<numParams; i++) app_log()<<D_E[i]<<" ";
-      app_log()<< std::endl;
-      for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
-      app_log()<< std::endl;
-      for (int i=0; i<numParams; i++) app_log()<<HD2[i]<<" ";
-      app_log()<< std::endl;
-
-      for (int i=0; i<numParams+1; i++)
-      {
-        for (int j=0; j<numParams+1; j++)
-          app_log()<<LeftM(i,j)<<" ";
-        app_log()<< std::endl;
-      }
-      app_log()<< std::endl;
-      for (int i=0; i<numParams+1; i++)
-      {
-        for (int j=0; j<numParams+1; j++)
-          app_log()<<RightM(i,j)<<" ";
-        app_log()<< std::endl;
-      }
-      app_log()<< std::endl;
-  */
-  return 1.0;
 }
 
 } // namespace qmcplusplus
