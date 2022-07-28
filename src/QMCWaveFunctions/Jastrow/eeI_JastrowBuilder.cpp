@@ -112,7 +112,6 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
   }
   //check that each ion species has up and down components
   J3.check_complete();
-  J3.setOptimizable(true);
   return true;
 }
 
@@ -135,7 +134,7 @@ std::unique_ptr<WaveFunctionComponent> eeI_JastrowBuilder::buildComponent(xmlNod
     if (ftype == "polynomial")
     {
       using J3Type = JeeIOrbitalSoA<PolynomialFunctor3D>;
-      auto J3      = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl, true);
+      auto J3      = std::make_unique<J3Type>(jname, *sourcePtcl, targetPtcl);
       putkids(kids, *J3);
       return J3;
     }

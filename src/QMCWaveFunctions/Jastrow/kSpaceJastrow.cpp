@@ -237,9 +237,11 @@ kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : WaveFunctionComponent("kSpaceJastrow", elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : WaveFunctionComponent("kSpaceJastrow", elecs.getName(), true),
+      Ions(ions),
+      OneBodyID(onebodyid),
+      TwoBodyID(twobodyid)
 {
-  Optimizable   = true;
   Prefactor     = 1.0 / elecs.getLattice().Volume;
   NumIonSpecies = 0;
   num_elecs     = elecs.getTotalNum();
@@ -697,11 +699,7 @@ void kSpaceJastrow::checkInVariables(opt_variables_type& active)
   }
 }
 
-void kSpaceJastrow::checkOutVariables(const opt_variables_type& active)
-{
-  myVars.getIndex(active);
-  //Optimizable=myVars.is_optimizable();
-}
+void kSpaceJastrow::checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
 
 void kSpaceJastrow::reportStatus(std::ostream& os) {}
 
@@ -780,7 +778,7 @@ std::unique_ptr<WaveFunctionComponent> kSpaceJastrow::makeClone(ParticleSet& tqp
 /** constructor to initialize Ions
  */
 kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions)
-    : WaveFunctionComponent("kSpaceJastrow", ions.getName()), Ions(ions)
+    : WaveFunctionComponent("kSpaceJastrow", ions.getName(), true), Ions(ions)
 {}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
@@ -812,7 +810,6 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
   TwoBodyID         = old.TwoBodyID;
   //copy the variable map
   myVars        = old.myVars;
-  Optimizable   = old.Optimizable;
   TwoBodyVarMap = old.TwoBodyVarMap;
   OneBodyVarMap = old.OneBodyVarMap;
   Prefactor     = old.Prefactor;

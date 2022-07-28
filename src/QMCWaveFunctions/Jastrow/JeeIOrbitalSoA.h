@@ -145,7 +145,7 @@ public:
   ///alias FuncType
   using FuncType = FT;
 
-  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
+  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs)
       : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
         ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
@@ -158,7 +158,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
-    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs, false);
+    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)
@@ -177,8 +177,7 @@ public:
     // Ye: I don't like the following memory allocated by default.
     eeIcopy->myVars.clear();
     eeIcopy->myVars.insertFrom(myVars);
-    eeIcopy->VarOffset   = VarOffset;
-    eeIcopy->Optimizable = Optimizable;
+    eeIcopy->VarOffset = VarOffset;
     return eeIcopy;
   }
 
@@ -359,7 +358,7 @@ public:
   ///reset the value of all the unique Two-Body Jastrow functions
   void resetParameters(const opt_variables_type& active) override
   {
-    if (!Optimizable)
+    if (!isOptimizable())
       return;
 
     for (auto& ftPair : J3Unique)

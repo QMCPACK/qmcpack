@@ -91,7 +91,7 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-      : WaveFunctionComponent("J1Spin", obj_name),
+      : WaveFunctionComponent("J1Spin", obj_name, true),
         myTableID(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Nions(ions.getTotalNum()),
         Nelec(els.getTotalNum()),
@@ -107,7 +107,7 @@ struct J1Spin : public WaveFunctionComponent
   J1Spin(const J1Spin& rhs) = delete;
 
   J1Spin(const J1Spin& rhs, ParticleSet& tqp)
-      : WaveFunctionComponent("J1Spin", rhs.myName),
+      : WaveFunctionComponent("J1Spin", rhs.myName, true),
         myTableID(rhs.myTableID),
         Nions(rhs.Nions),
         Nelec(rhs.Nelec),
@@ -115,7 +115,6 @@ struct J1Spin : public WaveFunctionComponent
         NumTargetGroups(rhs.NumTargetGroups),
         Ions(rhs.Ions)
   {
-    Optimizable = rhs.Optimizable;
     initialize(tqp);
     for (int i = 0; i < NumGroups; i++)
       for (int j = 0; j < NumTargetGroups; j++)
@@ -584,7 +583,6 @@ struct J1Spin : public WaveFunctionComponent
         }
       }
     }
-    Optimizable = myVars.is_optimizable();
     for (auto& J1UniqueFunctor : J1UniqueFunctors)
       if (J1UniqueFunctor != nullptr)
         J1UniqueFunctor->checkOutVariables(active);
@@ -592,7 +590,7 @@ struct J1Spin : public WaveFunctionComponent
 
   void resetParameters(const opt_variables_type& active) override
   {
-    if (!Optimizable)
+    if (!isOptimizable())
       return;
     for (auto& J1UniqueFunctor : J1UniqueFunctors)
       if (J1UniqueFunctor != nullptr)

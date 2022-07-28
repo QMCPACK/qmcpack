@@ -96,11 +96,6 @@ public:
   // the value type for psi(r')/psi(r)
   using PsiValueType = QTFull::ValueType;
 
-  /** boolean to set optimization
-   *
-   * If true, this object is actively modified during optimization
-   */
-  bool Optimizable;
   /** true, if this component is fermionic */
   bool is_fermionic;
 
@@ -135,8 +130,6 @@ public:
   WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "", bool optimizable = false);
   ///default destructor
   virtual ~WaveFunctionComponent();
-
-  inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }

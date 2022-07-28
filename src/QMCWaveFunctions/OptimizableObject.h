@@ -25,24 +25,23 @@ using opt_variables_type = optimize::VariableSet;
 class OptimizableObject
 {
 public:
-   OptimizableObject(const std::string& name, bool optimizable)
-     : name_(name), optimizable_(optimizable) {}
+  OptimizableObject(const std::string& name, bool optimizable) : name_(name), optimizable_(optimizable) {}
 
-   bool isOptimized() const { return is_optimized_; }
+  const std::string& getName() const { return name_; }
+  bool isOptimized() const { return is_optimized_; }
+  bool isOptimizable() const { return optimizable_; }
 
-   const std::string& getName() const { return name_; }
-protected:
+private:
   /** Name of the optimizable object
    */
   const std::string name_;
+  /** If true, this object and/or its underlying components is optimizable_
+   */
+  const bool optimizable_;
   /** If true, this object is actively modified during WFOpt
    */
   bool is_optimized_ = false;
-  /** boolean to set optimization
-   *
-   * If true, this object is actively modified during optimization
-   */
-  const bool optimizable_;
+
 public:
   /** check in optimizable parameters
    * @param active a super set of optimizable variables

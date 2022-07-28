@@ -91,8 +91,16 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, std::unique_ptr<RegionType> c, const Matrix<RealType>& f)
-      : WaveFunctionComponent("CountingJastrow"), F(f), C(std::move(c))
+  CountingJastrow(ParticleSet& P,
+                  std::unique_ptr<RegionType> c,
+                  const Matrix<RealType>& f,
+                  bool opt_C_flag,
+                  bool opt_F_flag)
+      : WaveFunctionComponent("CountingJastrow", "", opt_C_flag || opt_F_flag),
+        F(f),
+        C(std::move(c)),
+        opt_F(opt_F_flag),
+        opt_C(opt_C_flag)
   {
     num_els = P.getTotalNum();
   }
@@ -457,9 +465,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto cjc = std::make_unique<CountingJastrow>(tqp, C->makeClone(), F);
-    cjc->setOptimizable(opt_C || opt_F);
-    cjc->addOpt(opt_C, opt_F);
+    auto cjc = std::make_unique<CountingJastrow>(tqp, C->makeClone(), F, opt_C, opt_F);
     cjc->addDebug(debug, debug_seqlen, debug_period);
     cjc->initialize();
     return cjc;
@@ -668,12 +674,6 @@ public:
       deriv_print_index++;
     }
 #endif
-  }
-
-  void addOpt(bool opt_C_flag, bool opt_F_flag)
-  {
-    opt_F = opt_F_flag;
-    opt_C = opt_C_flag;
   }
 
   void addDebug(bool debug_flag, int seqlen, int period)

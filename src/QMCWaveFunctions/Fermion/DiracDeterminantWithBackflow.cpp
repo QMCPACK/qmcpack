@@ -34,7 +34,6 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSe
                                                            int last)
     : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first, last), BFTrans_(BF)
 {
-  Optimizable  = true;
   is_fermionic = true;
   NumParticles = BFTrans_.QP.getTotalNum();
   NP           = 0;

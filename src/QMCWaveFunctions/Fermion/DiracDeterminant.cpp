@@ -42,7 +42,7 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 {
   resize(NumPtcls, NumPtcls);
 
-  if (Optimizable)
+  if (isOptimizable())
     Phi->buildOptVariables(NumPtcls);
 
   if (Phi->getOrbitalSetSize() < NumPtcls)

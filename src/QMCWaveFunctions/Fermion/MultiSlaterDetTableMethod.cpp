@@ -23,7 +23,7 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDetTableMethod"),
+    : WaveFunctionComponent("MultiSlaterDetTableMethod", "", true),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
@@ -35,8 +35,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  //Optimizable=true;
-  Optimizable  = false;
   is_fermionic = true;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
@@ -62,7 +60,6 @@ void MultiSlaterDetTableMethod::initialize(std::unique_ptr<std::vector<std::vect
   C              = std::move(C_in);
   myVars         = std::move(myVars_in);
   csf_data_      = std::move(csf_data_in);
-  Optimizable    = optimizable;
   CI_Optimizable = CI_optimizable;
 }
 
@@ -81,8 +78,7 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
   clone->C              = C;
   clone->myVars         = myVars;
 
-  clone->Optimizable = Optimizable;
-  clone->csf_data_   = csf_data_;
+  clone->csf_data_ = csf_data_;
 
   return clone;
 }
@@ -737,8 +733,6 @@ void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
   {
     if (myVars->size())
       active.insertFrom(*myVars);
-    else
-      Optimizable = false;
   }
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)

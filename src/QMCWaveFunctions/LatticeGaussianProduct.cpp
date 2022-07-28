@@ -24,7 +24,6 @@ using PsiValueType = LatticeGaussianProduct::PsiValueType;
 LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
     : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
 {
-  Optimizable    = false;
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID      = ptcls.addTable(CenterRef);

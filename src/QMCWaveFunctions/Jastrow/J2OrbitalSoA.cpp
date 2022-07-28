@@ -71,7 +71,7 @@ void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
 template<typename FT>
 void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
   for (auto& [key, functor] : J2Unique)
     functor->resetParameters(active);
@@ -175,7 +175,7 @@ typename J2OrbitalSoA<FT>::posT J2OrbitalSoA<FT>::accumulateG(const valT* restri
 
 template<typename FT>
 J2OrbitalSoA<FT>::J2OrbitalSoA(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OrbitalSoA", obj_name),
+    : WaveFunctionComponent("J2OrbitalSoA", obj_name, true),
       my_table_ID_(p.addTable(p, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       j2_ke_corr_helper(p, F)
 {
@@ -262,8 +262,7 @@ std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& 
         j2copy->addFunc(ig, jg, std::move(fc));
       }
     }
-  j2copy->KEcorr      = KEcorr;
-  j2copy->Optimizable = Optimizable;
+  j2copy->KEcorr = KEcorr;
 
   j2copy->myVars.clear();
   j2copy->myVars.insertFrom(myVars);

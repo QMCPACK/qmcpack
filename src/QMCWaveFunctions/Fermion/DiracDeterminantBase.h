@@ -38,7 +38,7 @@ public:
    *@param last index of last particle
    */
   DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : WaveFunctionComponent(class_name),
+      : WaveFunctionComponent(class_name, "", spos->isOptimizable()),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
         InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
@@ -51,7 +51,6 @@ public:
         NumOrbitals(last - first),
         NumPtcls(last - first)
   {
-    Optimizable  = Phi->isOptimizable();
     is_fermionic = true;
   }
 
