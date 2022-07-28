@@ -45,7 +45,6 @@ public:
 
   bool put(xmlNodePtr cur) override;
   RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
-  inline void setOpt(bool o) { forOpt = o; };
 
 private:
   using CTS = CUDAGlobalTypes;
@@ -74,7 +73,6 @@ private:
   RealType w_beta, w_alpha;
   RealType E_avg, V_avg;
   std::string GEVtype;
-  bool forOpt;
 
   ///These are the values we collect to build the Matrices GLOBAL
   Matrix<RealType> Olp, Ham, Ham2;

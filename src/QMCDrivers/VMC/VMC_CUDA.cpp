@@ -39,8 +39,7 @@ VMCcuda::VMCcuda(MCWalkerConfiguration& w,
       myPeriod4WalkerDump(0),
       w_beta(0.0),
       w_alpha(0.0),
-      GEVtype("mixed"),
-      forOpt(false)
+      GEVtype("mixed")
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);
@@ -248,51 +247,6 @@ bool VMCcuda::run()
     } while (step < nSteps);
     if (nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0)
       Psi.recompute(W);
-    if (forOpt)
-    {
-      d_logpsi_dalpha      = 0.0;
-      d_hpsioverpsi_dalpha = 0.0;
-      W.copyWalkerGradToGPU();
-      Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
-      std::vector<RealType> g_stats(5, 0);
-      for (int ip = 0; ip < nw; ip++)
-      {
-        RealType E_L  = LocalEnergy[ip];
-        RealType E_L2 = E_L * E_L;
-        sE += E_L;
-        sE2 += E_L2;
-        sE4 += E_L2 * E_L2;
-        sW += 1;
-        sN += 1;
-        for (int i = 0; i < numParams; i++)
-        {
-          RealType di  = d_logpsi_dalpha(ip, i);
-          RealType hdi = d_hpsioverpsi_dalpha(ip, i);
-          //             vectors
-          D_E[i] += di * E_L;
-          HD[i] += hdi;
-          HD2[i] += E_L * (hdi + di * E_L);
-          D[i] += di;
-          for (int j = 0; j < numParams; j++)
-          {
-            RealType dj  = d_logpsi_dalpha(ip, j);
-            RealType hdj = d_hpsioverpsi_dalpha(ip, j);
-            Olp(i, j) += di * dj;
-            Ham(i, j) += di * (hdj + dj * E_L);
-            Ham2(i, j) += (hdj + dj * E_L) * (hdi + di * E_L);
-          }
-        }
-      }
-      g_stats[0] = sE;
-      g_stats[1] = sE2;
-      g_stats[2] = sE4;
-      g_stats[3] = sW;
-      g_stats[4] = sN;
-      myComm->allreduce(g_stats);
-      RealType nrm = 1.0 / g_stats[3];
-      E_avg        = nrm * g_stats[0];
-      V_avg        = nrm * g_stats[1] - E_avg * E_avg;
-    }
     // std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
     // Psi.evaluateLog(W, logPsi);
     double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
@@ -470,53 +424,6 @@ bool VMCcuda::runWithDrift()
     } while (step < nSteps);
     if (nBlocksBetweenRecompute && (1 + block) % nBlocksBetweenRecompute == 0)
       Psi.recompute(W);
-    if (forOpt)
-    {
-      d_logpsi_dalpha      = 0.0;
-      d_hpsioverpsi_dalpha = 0.0;
-      W.copyWalkerGradToGPU();
-      Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
-      std::vector<RealType> g_stats(5, 0);
-      for (int ip = 0; ip < nw; ip++)
-      {
-        RealType E_L  = LocalEnergy[ip];
-        RealType E_L2 = E_L * E_L;
-        sE += E_L;
-        sE2 += E_L2;
-        sE4 += E_L2 * E_L2;
-        sW += 1;
-        sN += 1;
-        for (int i = 0; i < numParams; i++)
-        {
-          RealType di  = d_logpsi_dalpha(ip, i);
-          RealType hdi = d_hpsioverpsi_dalpha(ip, i);
-          //             vectors
-          D_E[i] += di * E_L;
-          HD[i] += hdi;
-          HD2[i] += E_L * (hdi + di * E_L);
-          D[i] += di;
-          for (int j = 0; j < numParams; j++)
-          {
-            RealType dj  = d_logpsi_dalpha(ip, j);
-            RealType hdj = d_hpsioverpsi_dalpha(ip, j);
-            Olp(i, j) += di * dj;
-            Ham(i, j) += di * (hdj + dj * E_L);
-            Ham2(i, j) += (hdj + dj * E_L) * (hdi + di * E_L);
-          }
-        }
-      }
-      g_stats[0] = sE;
-      g_stats[1] = sE2;
-      g_stats[2] = sE4;
-      g_stats[3] = sW;
-      g_stats[4] = sN;
-      myComm->allreduce(g_stats);
-      RealType nrm = 1.0 / g_stats[3];
-      E_avg        = nrm * g_stats[0];
-      V_avg        = nrm * g_stats[1] - E_avg * E_avg;
-      //for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
-      //  app_log()<< std::endl;
-    }
     //      Psi.recompute(W);
     double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
     Estimators->stopBlock(accept_ratio);
@@ -596,20 +503,6 @@ void VMCcuda::resetRun()
     samples_this_node += 1;
   app_log() << "  Node zero will generate " << samples_this_node << " samples.\n";
   W.setNumSamples(samples_this_node);
-  if (forOpt)
-  {
-    dummy.clear();
-    Psi.checkInVariables(dummy);
-    dummy.resetIndex();
-    Psi.checkOutVariables(dummy);
-    numParams = dummy.size();
-    resizeForOpt(numParams);
-    int nw = W.getActiveWalkers();
-    d_logpsi_dalpha.resize(nw, numParams);
-    d_hpsioverpsi_dalpha.resize(nw, numParams);
-    d_logpsi_dalpha      = 0.0;
-    d_hpsioverpsi_dalpha = 0.0;
-  }
 }
 
 bool VMCcuda::put(xmlNodePtr q)
