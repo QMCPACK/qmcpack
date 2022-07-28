@@ -119,8 +119,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override = 0;
 
-  void resetParameters(const opt_variables_type& active) override {}
-
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
   void evaluate_notranspose(const ParticleSet& P,

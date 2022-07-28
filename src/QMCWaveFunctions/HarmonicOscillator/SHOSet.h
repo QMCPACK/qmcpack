@@ -110,7 +110,6 @@ struct SHOSet : public SPOSet
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables) override;
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& dddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

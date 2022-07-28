@@ -117,7 +117,7 @@ public:
     APP_ABORT(o.str());
   }
   /// reset parameters to the values from optimizer
-  virtual void resetParameters(const opt_variables_type& optVariables) = 0;
+  virtual void resetParameters(const opt_variables_type& optVariables) {}
 
   /// check in/out parameters to the global list of parameters used by the optimizer
   virtual void checkInVariables(opt_variables_type& active) {}
