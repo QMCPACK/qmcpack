@@ -125,12 +125,6 @@ public:
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
-  ///implement the virtual function
-  void reset();
-  /** set WaveFunctionComponent::IsOptimizing to true */
-  void startOptimization();
-  /** set WaveFunctionComponent::IsOptimizing to flase */
-  void stopOptimization();
 
   // Wavefunction Parameter Optimization
   //

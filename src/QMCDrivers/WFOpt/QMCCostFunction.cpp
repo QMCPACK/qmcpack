@@ -261,8 +261,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
     }
     OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH);
     bool compute_nlpp  = useNLPPDeriv && nlpp;
-    //set the optimization mode for the trial wavefunction
-    psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -386,8 +384,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
     }
     OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
     bool compute_nlpp  = useNLPPDeriv && nlpp;
-    //set the optimization mode for the trial wavefunction
-    psiClones[ip]->startOptimization();
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -510,12 +506,6 @@ void QMCCostFunction::resetPsi(bool final_reset)
   else
     for (int i = 0; i < OptVariables.size(); ++i)
       OptVariablesForPsi[i] = OptVariables[i];
-  if (final_reset)
-  {
-#pragma omp parallel for
-    for (int i = 0; i < psiClones.size(); ++i)
-      psiClones[i]->stopOptimization();
-  }
   //cout << "######### QMCCostFunction::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
