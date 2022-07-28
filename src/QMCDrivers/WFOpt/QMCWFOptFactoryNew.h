@@ -26,13 +26,14 @@ class SampleStack;
 class QMCFixedSampleLinearOptimizeBatched;
 class ProjectData;
 
-QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const ProjectData& project_data,
-                                                              const std::optional<EstimatorManagerInput>& global_emi,
-                                                              WalkerConfigurations& wc,
-                                                              MCPopulation&& pop,
-                                                              SampleStack& samples,
-                                                              Communicate* comm);
+std::unique_ptr<QMCFixedSampleLinearOptimizeBatched> QMCWFOptLinearFactoryNew(
+    xmlNodePtr cur,
+    const ProjectData& project_data,
+    const std::optional<EstimatorManagerInput>& global_emi,
+    WalkerConfigurations& wc,
+    MCPopulation&& pop,
+    SampleStack& samples,
+    Communicate* comm);
 } // namespace qmcplusplus
 
 #endif
