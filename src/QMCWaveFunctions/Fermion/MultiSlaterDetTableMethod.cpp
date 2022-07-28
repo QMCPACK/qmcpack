@@ -736,7 +736,7 @@ void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
   }
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -750,7 +750,7 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
 
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -805,7 +805,7 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
   }
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -960,7 +960,7 @@ void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivatives(Particl
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
   for (auto const& det : Dets)
-    if (!det->Optimizable)
+    if (!det->isOptimizable())
       return;
 
   if (Dets.size() != 2)
@@ -1060,7 +1060,7 @@ void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivativesWF(Parti
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
   for (auto const& det : Dets)
-    if (!det->Optimizable)
+    if (!det->isOptimizable())
       return;
 
   if (Dets.size() != 2)
