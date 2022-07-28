@@ -370,8 +370,6 @@ private:
   ScopedTimer driver_scope_timer_;
   ///profile the driver lifetime
   ScopedProfiler driver_scope_profiler_;
-  ///true, if a run is a restart with <mcwalkerset/>
-  bool is_restart{false};
 };
 /**@}*/
 } // namespace qmcplusplus
