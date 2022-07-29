@@ -67,8 +67,6 @@ public:
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
   void addVector(const std::vector<RealType>& coefs, int jorb);
 
-  void resetParameters(const opt_variables_type& optVariables) override;
-
   void setOrbitalSetSize(int norbs) override;
 
   inline ValueType evaluate(int ib, const PosType& pos)

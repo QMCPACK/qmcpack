@@ -60,7 +60,6 @@ public:
   void report(const std::string& pad) const override;
   // ---- begin required overrides
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<FreeOrbital>(*this); }
-  void resetParameters(const opt_variables_type& optVariables) override {} //called by BFTrans}
   void setOrbitalSetSize(int norbs) override { throw std::runtime_error("not implemented"); }
   // required overrides end ----
 private:

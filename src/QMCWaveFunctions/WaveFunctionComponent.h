@@ -505,16 +505,6 @@ public:
                                      const opt_variables_type& optvars,
                                      std::vector<ValueType>& dlogpsi);
 
-  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
-  {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
-    for (int j = 0; j < myVars.size(); j++)
-    {
-      int loc = myVars.where(j);
-      dlogpsi[loc] *= myrat;
-    }
-  }
-
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
       performed with the passed-in G_in gradient vector. This object is then
@@ -709,14 +699,6 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void evaluateDerivatives(MCWalkerConfiguration& W,
-                                   const opt_variables_type& optvars,
-                                   RealMatrix_t& dgrad_logpsi,
-                                   RealMatrix_t& dhpsi_over_psi)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateDerivatives for " + ClassName +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
 #endif
 
 private:

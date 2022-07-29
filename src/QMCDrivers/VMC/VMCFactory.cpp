@@ -33,50 +33,27 @@
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactory::create(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
-                                       QMCHamiltonian& h,
-                                       Communicate* comm,
-                                       bool enable_profiling)
+std::unique_ptr<QMCDriverInterface> VMCFactory::create(MCWalkerConfiguration& w,
+                                                       TrialWaveFunction& psi,
+                                                       QMCHamiltonian& h,
+                                                       Communicate* comm,
+                                                       bool enable_profiling)
 {
-  int np = omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  QMCDriverInterface* qmc = nullptr;
+  std::unique_ptr<QMCDriverInterface> qmc;
 #ifdef QMC_CUDA
   if (VMCMode & 16)
-    qmc = new VMCcuda(w, psi, h, comm, enable_profiling);
+    qmc = std::make_unique<VMCcuda>(w, psi, h, comm, enable_profiling);
   else
 #endif
       if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMC(w, psi, h, comm, enable_profiling);
+    qmc = std::make_unique<VMC>(w, psi, h, comm, enable_profiling);
   }
-  //else if(VMCMode == 2) //(0,1,0)
-  //{
-  //  qmc = new VMCMultiple(w,psi,h);
-  //}
-  //else if(VMCMode == 3) //(0,1,1)
-  //{
-  //  qmc = new VMCPbyPMultiple(w,psi,h);
-  //}
   else if (VMCMode == 2 || VMCMode == 3)
   {
-    qmc = new CSVMC(w, psi, h, comm);
+    qmc = std::make_unique<CSVMC>(w, psi, h, comm);
   }
-  //#if !defined(QMC_COMPLEX)
-  //    else if(VMCMode == 6) //(1,1,0)
-  //    {
-  //      qmc = new VMCMultipleWarp(w,psi,h, ptclpool);
-  //    }
-  //    else if(VMCMode == 7) //(1,1,1)
-  //    {
-  //      qmc = new VMCPbyPMultiWarp(w,psi,h, ptclpool);
-  //    }
-  //#endif
-  //     else if(VMCMode == 8) //(only possible for WFMC run)
-  //     {
-  //       qmc = new WFMCSingleOMP(w,psi,h,hpool,ppool);
-  //     }
   qmc->setUpdateMode(VMCMode & 1);
   return qmc;
 }

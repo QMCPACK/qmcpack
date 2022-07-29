@@ -141,10 +141,7 @@ public:
                 std::vector<NLjob>& jobList,
                 std::vector<PosType>& quadPoints,
                 std::vector<ValueType>& psi_ratios) override;
-  void evaluateDerivatives(MCWalkerConfiguration& W,
-                           const opt_variables_type& optvars,
-                           RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dlapl_over_psi) override;
+
   OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs, bool use_offload)
       : J1OrbitalSoA<FT>(obj_name, centers, elecs, use_offload),
         ElecRef(elecs),

@@ -146,14 +146,6 @@ public:
 
   void resetParameters(const opt_variables_type& active) override;
 
-  // Evaluates the derivatives of log psi and laplacian log psi w.r.t.
-  // the parameters for optimization.  First index of the ValueMatrix is
-  // the parameter.  The second is the walker.
-  void evaluateDerivatives(MCWalkerConfiguration& W,
-                           const opt_variables_type& optvars,
-                           RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dlapl_over_psi) override;
-
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
   TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset)

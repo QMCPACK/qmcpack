@@ -40,8 +40,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
   d2psi_work_down.resize(OrbitalSetSize);
 }
 
-void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
-
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 
 

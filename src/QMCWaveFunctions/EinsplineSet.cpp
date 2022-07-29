@@ -135,10 +135,6 @@ inline void EinsplineMultiEval(multi_UBspline_3d_z* restrict spline,
 }
 
 template<typename StorageType>
-void EinsplineSetExtended<StorageType>::resetParameters(const opt_variables_type& active)
-{}
-
-template<typename StorageType>
 void EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 {
   OrbitalSetSize = norbs;
