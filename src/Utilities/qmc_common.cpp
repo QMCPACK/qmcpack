@@ -23,16 +23,7 @@
 
 namespace qmcplusplus
 {
-QMCState::QMCState()
-{
-  is_restart             = false;
-  use_density            = false;
-  dryrun                 = false;
-  io_node                = true;
-  mpi_groups             = 1;
-  qmc_counter            = 0;
-  memory_allocated       = 0;
-}
+QMCState::QMCState() = default;
 
 void QMCState::initialize(int argc, char** argv)
 {
