@@ -53,22 +53,6 @@ public:
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call checkInVariables");
-  }
-
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call checkOutVariables");
-  }
-
-  ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call resetParameters");
-  }
-
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */
   void setOrbitalSetSize(int norbs) override;
