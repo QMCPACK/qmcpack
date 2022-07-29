@@ -20,12 +20,12 @@
 
 namespace qmcplusplus
 {
-QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
-                                          const std::optional<EstimatorManagerInput>& global_emi,
-                                          WalkerConfigurations& wc,
-                                          MCPopulation&& pop,
-                                          SampleStack& samples,
-                                          Communicate* comm)
+std::unique_ptr<QMCDriverInterface> VMCFactoryNew::create(const ProjectData& project_data,
+                                                          const std::optional<EstimatorManagerInput>& global_emi,
+                                                          WalkerConfigurations& wc,
+                                                          MCPopulation&& pop,
+                                                          SampleStack& samples,
+                                                          Communicate* comm)
 {
 #if defined(QMC_CUDA)
   comm->barrier_and_abort("VMC batched driver is not supported by legacy CUDA builds.");
@@ -40,12 +40,12 @@ QMCDriverInterface* VMCFactoryNew::create(const ProjectData& project_data,
   qmcdriver_input.readXML(input_node_);
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(input_node_);
-  QMCDriverInterface* qmc = nullptr;
+  std::unique_ptr<QMCDriverInterface> qmc;
 
   if (vmc_mode_ == 0 || vmc_mode_ == 1) //(0,0,0) (0,0,1)
   {
-    qmc = new VMCBatched(project_data, std::move(qmcdriver_input), global_emi, std::move(vmcdriver_input), wc,
-                         std::move(pop), samples, comm);
+    qmc = std::make_unique<VMCBatched>(project_data, std::move(qmcdriver_input), global_emi, std::move(vmcdriver_input),
+                                       wc, std::move(pop), samples, comm);
   }
   else
   {

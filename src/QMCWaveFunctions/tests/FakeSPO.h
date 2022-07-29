@@ -33,7 +33,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
   virtual void report() {}
-  void resetParameters(const opt_variables_type& optVariables) override {}
   void setOrbitalSetSize(int norbs) override;
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;

@@ -523,9 +523,6 @@ void SHOSet::test_overlap()
 }
 
 
-//methods to be implemented later
-void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_implemented("resetParameters"); }
-
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {
   not_implemented("evaluateThirdDeriv(P,first,last,dddlogdet)");

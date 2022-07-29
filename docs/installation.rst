@@ -1716,9 +1716,8 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (2) VMC with drift term included, and (3) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README file because of their large size. You
-will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER``
-when running CMake as
-described in the README file.
+will need to set ``-DQMC_DATA=<full path to your data folder>``
+when running CMake as described in the README file.
 
 Two sets of wavefunction are tested: spline orbitals with one- and
 two-body Jastrow functions and a more complex form with an additional
@@ -1727,6 +1726,10 @@ and are not reoptimized, as might be done for research purposes.  Runs
 in the hundreds of electrons up to low thousands of electrons are representative of
 research runs performed in 2017. The largest runs target
 future machines and require very large memory.
+
+All system sizes in the table below will be tested as long as the corresponding h5 files are available in the data folder.
+You may limit the maximal system size of tests by an atom count via ``-DQMC_PERFORMANCE_NIO_MAX_ATOMS=<number of atoms>``.
+Only tests with their atom counts below and equal to ``<number of atoms>`` are added to the performance tests.
 
 .. table:: System sizes and names for NiO performance tests. GPU performance
     tests are named similarly but have different walker counts.

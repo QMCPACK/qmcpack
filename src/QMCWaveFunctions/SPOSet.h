@@ -117,10 +117,14 @@ public:
     APP_ABORT(o.str());
   }
   /// reset parameters to the values from optimizer
-  virtual void resetParameters(const opt_variables_type& optVariables) = 0;
+  virtual void resetParameters(const opt_variables_type& optVariables) {}
 
-  /// check in/out parameters to the global list of parameters used by the optimizer
+  /** check in parameters to the global list of parameters used by the optimizer.
+   * This is a query function and should never be implemented as a feature blocker.
+   * If an SPOSet derived class doesn't support optimization, use the base class fallback.
+   */
   virtual void checkInVariables(opt_variables_type& active) {}
+  /// check out parameters to the global list of parameters used by the optimizer
   virtual void checkOutVariables(const opt_variables_type& active) {}
 
   virtual void evaluateDerivatives(ParticleSet& P,

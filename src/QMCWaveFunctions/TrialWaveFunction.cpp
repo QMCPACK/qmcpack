@@ -1078,8 +1078,7 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& dlogpsi,
-                                            std::vector<ValueType>& dhpsioverpsi,
-                                            bool project)
+                                            std::vector<ValueType>& dhpsioverpsi)
 {
   //     // First, zero out derivatives
   //  This should only be done for some variables.
@@ -1090,15 +1089,6 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
     dhpsioverpsi[i] *= OneOverM;
-
-  if (project)
-  {
-    for (int i = 0; i < Z.size(); i++)
-      Z[i]->multiplyDerivsByOrbR(dlogpsi);
-    RealType psiValue = std::exp(-log_real_) * std::cos(PhaseValue);
-    for (int i = 0; i < dlogpsi.size(); i++)
-      dlogpsi[i] *= psiValue;
-  }
 }
 
 void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
