@@ -99,9 +99,9 @@ void SoaLocalizedBasisSet<COT, ORBT>::queryOrbitalsForSType(const std::vector<bo
                                                             std::vector<bool>& is_s_orbital) const
 {
   const auto& IonID(ions_.GroupID);
-  int idx = 0;
   for (int c = 0; c < NumCenters; c++)
   {
+    int idx = BasisOffset[c];
     int bss = LOBasisSet[IonID[c]]->BasisSetSize;
     std::vector<bool> local_is_s_orbital(bss);
     LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
