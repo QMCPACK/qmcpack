@@ -1680,13 +1680,12 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
    }
  }
 
+//Function for storing blocked LM parameter inputs
 template<typename S>
  void cqmc::engine::LMYEngine<S>::store_blocked_lm_info(int nblock,int nkeps)
  {
  _nblocks = nblock;
  _nkeps = nkeps;
-
-// temp_old_updates = old_updates;
 
  }
 
@@ -1966,7 +1965,6 @@ template<typename S>
  {
  double numSamples = weights.size();
 
-     //std::vector<double> y(7);
  double y[7];
    y[0] = 0.0;                   // normalization constant
    y[1] = 0.0;                   // mean of numerator

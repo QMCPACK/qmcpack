@@ -289,7 +289,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
                           bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH,
-                          EngineHandle& handle, int NumOptimizables) {
+                          EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -419,7 +419,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH, handle, NumOptimizables);
+              compute_nlpp, includeNonlocalH, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
