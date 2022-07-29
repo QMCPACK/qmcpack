@@ -232,12 +232,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   int nwtot = walker_configs_ref_.getActiveWalkers();
   myComm->bcast(nwtot);
   if (nwtot)
-  {
     setWalkerOffsets(walker_configs_ref_, myComm);
-    qmc_common.is_restart = true;
-  }
-  else
-    qmc_common.is_restart = false;
 }
 
 void QMCDriverNew::recordBlock(int block)

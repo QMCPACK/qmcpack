@@ -44,8 +44,6 @@ public:
   void advanceWalkersWithDrift();
 
   bool put(xmlNodePtr cur) override;
-  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
-  inline void setOpt(bool o) { forOpt = o; };
 
 private:
   using CTS = CUDAGlobalTypes;
@@ -67,50 +65,6 @@ private:
   bool checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
   QMCRunType getRunType() override { return QMCRunType::VMC; }
   void resetRun();
-
-  opt_variables_type dummy;
-  int numParams;
-  Matrix<RealType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
-  RealType w_beta, w_alpha;
-  RealType E_avg, V_avg;
-  std::string GEVtype;
-  bool forOpt;
-
-  ///These are the values we collect to build the Matrices GLOBAL
-  Matrix<RealType> Olp, Ham, Ham2;
-  std::vector<RealType> D_E, HD2, HD, D;
-  RealType sE, sE2, sE4, sW, sN;
-
-  void clearComponentMatrices()
-  {
-    Olp  = 0.0;
-    Ham  = 0.0;
-    Ham2 = 0.0;
-    for (int i = 0; i < D_E.size(); i++)
-    {
-      D_E[i] = 0.0;
-      HD[i]  = 0.0;
-      HD2[i] = 0.0;
-      D[i]   = 0.0;
-    }
-    sE  = 0;
-    sE2 = 0;
-    sE4 = 0;
-    sW  = 0;
-    sN  = 0;
-  }
-
-  void resizeForOpt(int n)
-  {
-    Olp.resize(n, n);
-    Ham.resize(n, n);
-    Ham2.resize(n, n);
-    D_E.resize(n);
-    HD.resize(n);
-    HD2.resize(n);
-    D.resize(n);
-    clearComponentMatrices();
-  }
 };
 } // namespace qmcplusplus
 

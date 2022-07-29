@@ -285,10 +285,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
     W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
-    qmc_common.is_restart = true;
   }
-  else
-    qmc_common.is_restart = false;
 }
 
 std::string QMCDriver::getRotationName(std::string RootName)
@@ -514,7 +511,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     CurrentStep = 0;
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmc_common.qmc_counter || qmc_common.is_restart)
+  if (qmc_common.qmc_counter)
   {
     app_log() << "Using existing walkers " << std::endl;
   }
