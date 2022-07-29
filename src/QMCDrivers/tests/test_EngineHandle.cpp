@@ -47,7 +47,8 @@ TEST_CASE("EngineHandle construction", "[drivers]")
 
   int fake_num = 5;
   int fake_sample_num = 100;
-  handle->prepareSampling(fake_num,fake_sample_num);
+  std::vector <int> fake_offsets;
+  handle->prepareSampling(fake_num,fake_sample_num,fake_offsets);
   auto& test_der_rat_samp = handle->getVector();
 
   REQUIRE(test_der_rat_samp.size() == 6);

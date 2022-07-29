@@ -281,7 +281,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
-
+  handle.prepareSampling(NumOptimizables,rank_local_num_samples_,samples_per_crowd_offsets);
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
@@ -296,7 +296,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
     int num_batches;
     int final_batch_size;
 
-    handle.prepareSampling(NumOptimizables,local_samples);
     compute_batch_parameters(local_samples, walkers_per_crowd[crowd_id], num_batches, final_batch_size);
 
     for (int inb = 0; inb < num_batches; inb++)

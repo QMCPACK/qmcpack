@@ -459,7 +459,7 @@ public:
 
 
    /// \brief Function for sizing history vectors
-   void setUpStorage(int numParams, int numSamples, int numThreads);
+   void setUpStorage(int numParams, int numSamples, int numThreads,std::vector<int> sample_offsets);
 
    /// \brief Function for selecting parameters to be optimized by LM
    void selectParameters();

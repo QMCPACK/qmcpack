@@ -1532,7 +1532,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
 //Function for setting the size of the derivative ratio histories according to the total number of optimizable parameters and the number of samples per process
  template<typename S>
- void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams, int numSamples, int numThreads)
+ void cqmc::engine::LMYEngine<S>::setUpStorage(int numParams, int numSamples, int numThreads,std::vector<int> sample_offsets)
  {
 
      le_der_rat_history.resize(numThreads);
@@ -1540,10 +1540,19 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
      vgs_history.resize(numThreads);
      weight_history.resize(numThreads);
 
+        int samples_from_thread; 
      for(int i = 0; i < le_der_rat_history.size();i++)
      {
-        le_der_rat_history.at(i).reset(numSamples, numParams+1);
-        der_rat_history.at(i).reset(numSamples, numParams+1);
+         if(i == sample_offsets.size()-1)
+         {
+            samples_from_thread = numSamples-sample_offsets[i];
+         }
+         else
+         {
+            samples_from_thread = sample_offsets[i+1] - sample_offsets[i];
+         }
+        le_der_rat_history.at(i).reset(samples_from_thread, numParams+1);
+        der_rat_history.at(i).reset(samples_from_thread, numParams+1);
      }
  }
 
@@ -1553,7 +1562,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
  {
 
     int myThread = omp_get_thread_num();
-
      for(int i = 0; i < le_der_samp.size();i++)
      {
          le_der_rat_history.at(myThread).at(sample_count,i) = le_der_samp[i];
@@ -1575,9 +1583,7 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
      int num_samples = der_rat_history[0].rows();
      int der_vec_len = der_rat_history[0].cols();
 
-     int num_threads = omp_get_max_threads();
-     int myThread = omp_get_thread_num();
-
+     int num_threads = der_rat_history.size();
 
      for(int k = 0; k < num_threads; k++)
      {
