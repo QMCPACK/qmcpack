@@ -31,11 +31,17 @@ public:
 
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
+  RotationIndices m_full_rot_inds;
 
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
+
+  // Construct a list of the matrix indices for all possible rotation parameters.
+  // They are orderd such that the first part of the list overlaps with the rotations
+  // created by createRotationindices
+  static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
 
   // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
@@ -49,6 +55,15 @@ public:
   static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                                    const ValueMatrix& rot_mat,
                                                    std::vector<ValueType>& param);
+
+  // Apply rotation in delta_param to rotation in old_param.
+  // Apply that rotation to MO coefficients and return the new rotation parameters in new_param
+  // The size of delta_param is expected to be the size of the active rotations
+  // The size of old_param and new_param are expected to the size of all rotations
+  void apply_delta_rotation(const std::vector<RealType>& delta_param,
+                            const std::vector<RealType>& old_param,
+                            std::vector<RealType>& new_param);
+
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
@@ -190,15 +205,10 @@ public:
 
   void checkInVariables(opt_variables_type& active) override
   {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
-
     if (Optimizable)
     {
       if (myVars.size())
         active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
     }
   }
 
@@ -211,19 +221,7 @@ public:
   }
 
   ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
-    }
-  }
+  void resetParameters(const opt_variables_type& active) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -335,6 +333,9 @@ private:
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  // List of all rotation parameters
+  opt_variables_type myVarsFull;
 };
 
 } //namespace qmcplusplus
