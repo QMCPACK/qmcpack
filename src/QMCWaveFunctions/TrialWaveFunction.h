@@ -40,6 +40,8 @@
 
 namespace qmcplusplus
 {
+
+class hdf_archive;
 /** @ingroup MBWfs
  * @brief Class to represent a many-body trial wave function
  *
@@ -166,6 +168,10 @@ public:
    */
   void resetParameters(const opt_variables_type& active);
 
+  // Save and restore extra variational parameter data
+
+  void saveExtraParameters(hdf_archive& hout);
+  void readExtraParameters(hdf_archive& hout);
 
   /** print out state of the trial wavefunction
    */

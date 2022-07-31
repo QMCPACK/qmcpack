@@ -119,6 +119,9 @@ public:
   /// reset parameters to the values from optimizer
   virtual void resetParameters(const opt_variables_type& optVariables) {}
 
+  virtual void saveExtraParameters(hdf_archive& hout, int id) {}
+  virtual void readExtraParameters(hdf_archive& hin, int id) {}
+
   /** check in parameters to the global list of parameters used by the optimizer.
    * This is a query function and should never be implemented as a feature blocker.
    * If an SPOSet derived class doesn't support optimization, use the base class fallback.

@@ -80,6 +80,9 @@ public:
 
   void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
 
+  void saveExtraParameters(hdf_archive& hout, int id) { Phi->saveExtraParameters(hout, id); }
+  void readExtraParameters(hdf_archive& hin, int id) { Phi->readExtraParameters(hin, id); }
+
   inline void reportStatus(std::ostream& os) final {}
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override

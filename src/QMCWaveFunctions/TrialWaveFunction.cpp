@@ -895,6 +895,18 @@ void TrialWaveFunction::resetParameters(const opt_variables_type& active)
     Z[i]->resetParameters(active);
 }
 
+void TrialWaveFunction::saveExtraParameters(hdf_archive& hout)
+{
+  for (int i = 0; i < Z.size(); i++)
+    Z[i]->saveExtraParameters(hout);
+}
+
+void TrialWaveFunction::readExtraParameters(hdf_archive& hin)
+{
+  for (int i = 0; i < Z.size(); i++)
+    Z[i]->readExtraParameters(hin);
+}
+
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
   for (int i = 0; i < Z.size(); i++)
@@ -1238,7 +1250,7 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
       //det->registerTWFFastDerivWrapper(P, twf);
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
-    else 
+    else
       twf.addJastrow(Z[i].get());
   }
 }

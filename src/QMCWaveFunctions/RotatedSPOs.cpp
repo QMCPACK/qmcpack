@@ -15,6 +15,8 @@
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 
+#include "io/hdf/hdf_archive.h"
+//#include <multi/array.hpp>
 
 namespace qmcplusplus
 {
@@ -107,6 +109,62 @@ void RotatedSPOs::resetParameters(const opt_variables_type& active)
     }
   }
 }
+
+void RotatedSPOs::saveExtraParameters(hdf_archive& hout, int id)
+{
+  hid_t grp   = hout.push("rotation");
+  size_t rows = history_params_.size();
+  size_t cols = 0;
+  if (rows > 0)
+    cols = history_params_[0].size();
+
+  Matrix<RealType> tmp(rows, cols);
+  //multi::array<RealType, 2> tmp(rows, cols);
+  for (size_t i = 0; i < rows; i++)
+  {
+    for (size_t j = 0; j < cols; j++)
+    {
+      tmp(i, j) = history_params_[i][j];
+    }
+  }
+
+  std::string rot_hist_name = std::string("rotation_history_") + std::to_string(id);
+  hout.write(tmp, rot_hist_name);
+  hout.pop();
+}
+
+void RotatedSPOs::readExtraParameters(hdf_archive& hin, int id)
+{
+  hid_t grp = hin.push("rotation", false);
+  if (grp < 0)
+    throw std::runtime_error("Expecting rotation parameters in VP file");
+
+  std::string rot_hist_name = std::string("rotation_history_") + std::to_string(id);
+
+  std::vector<int> sizes(2);
+  if (!hin.getShape<RealType>(rot_hist_name, sizes))
+    throw std::runtime_error("Failed to read rotation_history in VP file");
+
+  int rows = sizes[0];
+  int cols = sizes[1];
+
+  Matrix<RealType> tmp(rows, cols);
+  hin.read(tmp, rot_hist_name);
+
+  history_params_.resize(rows);
+  for (size_t i = 0; i < rows; i++)
+  {
+    history_params_[i].resize(cols);
+    for (size_t j = 0; j < cols; j++)
+    {
+      history_params_[i][j] = tmp(i, j);
+    }
+  }
+  hin.pop();
+
+  apply_rotation_history();
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -215,6 +273,14 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   */
   exponentiate_antisym_matrix(rot_mat);
   Phi->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::apply_rotation_history()
+{
+  for (int i = 0; i < history_params_.size(); i++)
+  {
+    apply_rotation(history_params_[i], false);
+  }
 }
 
 

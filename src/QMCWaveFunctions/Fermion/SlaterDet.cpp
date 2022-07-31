@@ -75,6 +75,21 @@ void SlaterDet::resetParameters(const opt_variables_type& active)
       Dets[i]->resetParameters(active);
 }
 
+void SlaterDet::saveExtraParameters(hdf_archive& hout)
+{
+  if (Optimizable)
+    for (int i = 0; i < Dets.size(); i++)
+      Dets[i]->saveExtraParameters(hout, i);
+}
+
+void SlaterDet::readExtraParameters(hdf_archive& hin)
+{
+  if (Optimizable)
+    for (int i = 0; i < Dets.size(); i++)
+      Dets[i]->readExtraParameters(hin, i);
+}
+
+
 void SlaterDet::reportStatus(std::ostream& os) {}
 
 PsiValueType SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
