@@ -22,7 +22,8 @@ RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
     : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
       Phi(std::move(spos)),
       nel_major_(0),
-      params_supplied(false)
+      params_supplied(false),
+      use_this_copy_to_apply_rotation_(false)
 {
   className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
@@ -77,6 +78,36 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
   }
 }
 
+void RotatedSPOs::resetParameters(const opt_variables_type& active)
+{
+  if (Optimizable)
+  {
+    {
+      //std::cout << "in resetParameters" << std::endl;
+      std::vector<RealType> delta_param(m_act_rot_inds.size());
+
+      // Compute change in parameters from previous rotation (current value in myVars)
+      // to new values (in active)
+      for (int i = 0; i < m_act_rot_inds.size(); i++)
+      {
+        int loc = myVars.where(i);
+
+        delta_param[i] = active[loc] - myVars[i];
+        myVars[i]      = active[loc];
+        //std::cout <<  " " << i << " " << delta_param[i] << " " << active[loc] << " " << myVars[i] << std::endl;
+      }
+
+      // Clones share a copy of the coefficient matrix. Need to make sure
+      // rotation only gets applied to it once
+      if (use_this_copy_to_apply_rotation_)
+      {
+        apply_rotation(delta_param, false);
+      }
+      history_params_.push_back(delta_param);
+    }
+  }
+}
+
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
 #if !defined(QMC_COMPLEX)
@@ -119,8 +150,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
   if (params_supplied)
     if (nparams_active != params.size())
-      throw std::runtime_error("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
-                "expansion. \n");
+      throw std::runtime_error(
+          "The number of supplied orbital rotation parameters does not match number produced by the slater "
+          "expansion. \n");
 
   myVars.clear();
   for (int i = 0; i < nparams_active; i++)

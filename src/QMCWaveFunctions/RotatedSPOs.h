@@ -190,15 +190,11 @@ public:
 
   void checkInVariables(opt_variables_type& active) override
   {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
-
+    use_this_copy_to_apply_rotation_ = true;
     if (Optimizable)
     {
       if (myVars.size())
         active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
     }
   }
 
@@ -211,19 +207,7 @@ public:
   }
 
   ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
-    }
-  }
+  void resetParameters(const opt_variables_type& active) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -335,6 +319,13 @@ private:
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  // Flag for which copy to applies the rotation.
+  // Pick the one that has checkInVariables called on it
+  bool use_this_copy_to_apply_rotation_;
+
+
+  std::vector<std::vector<RealType>> history_params_;
 };
 
 } //namespace qmcplusplus
