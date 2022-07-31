@@ -697,14 +697,6 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void evaluateDerivatives(MCWalkerConfiguration& W,
-                                   const opt_variables_type& optvars,
-                                   RealMatrix_t& dgrad_logpsi,
-                                   RealMatrix_t& dhpsi_over_psi)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateDerivatives for " + ClassName +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
 #endif
 
 private:

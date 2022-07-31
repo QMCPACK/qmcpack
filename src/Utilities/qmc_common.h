@@ -25,20 +25,18 @@ namespace qmcplusplus
  */
 struct QMCState
 {
-  ///true, if a run is a restart with <mcwalkerset/>
-  bool is_restart;
-  ///true, if density is used, e.g. MPC
-  bool use_density;
-  ///true, if it is a dryrun
-  bool dryrun;
-  ///true, print out file
-  bool io_node;
-  ///init for <qmc/> section
-  int qmc_counter;
-  ///number of mpi groups
-  int mpi_groups;
   ///size of memory allocated in byte per MPI
-  size_t memory_allocated;
+  size_t memory_allocated{0};
+  ///init for <qmc/> section
+  int qmc_counter{0};
+  ///number of mpi groups
+  int mpi_groups{1};
+  ///true, if density is used, e.g. MPC
+  bool use_density{false};
+  ///true, if it is a dryrun
+  bool dryrun{false};
+  ///true, print out file
+  bool io_node{true};
 
   ///constructor
   QMCState();
