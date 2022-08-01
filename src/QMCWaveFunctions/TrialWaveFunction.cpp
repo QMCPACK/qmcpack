@@ -75,21 +75,6 @@ TrialWaveFunction::~TrialWaveFunction()
     xmlFreeNode(myNode_);
 }
 
-void TrialWaveFunction::startOptimization()
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->IsOptimizing = true;
-}
-
-void TrialWaveFunction::stopOptimization()
-{
-  for (int i = 0; i < Z.size(); i++)
-  {
-    Z[i]->finalizeOptimization();
-    Z[i]->IsOptimizing = false;
-  }
-}
-
 /** Takes owndership of aterm
  */
 void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
@@ -1057,8 +1042,6 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
 }
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
-
-void TrialWaveFunction::reset() {}
 
 std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {

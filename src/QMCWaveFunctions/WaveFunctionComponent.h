@@ -95,8 +95,6 @@ public:
   // the value type for psi(r')/psi(r)
   using PsiValueType = QTFull::ValueType;
 
-  /** flag to set the optimization mode */
-  bool IsOptimizing;
   /** boolean to set optimization
    *
    * If true, this object is actively modified during optimization

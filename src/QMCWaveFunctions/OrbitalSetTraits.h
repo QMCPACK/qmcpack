@@ -76,8 +76,6 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
 
 ///typedef for a set of variables that are varied during an optimization
 using opt_variables_type = optimize::VariableSet;
-///typedef for a set of variables that can be varied
-using variable_map_type = optimize::VariableSet::variable_map_type;
 
 /** evaluate log(psi) as log(|psi|) and phase
  * @param psi real/complex value

@@ -258,8 +258,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   }
   OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
   bool compute_nlpp  = useNLPPDeriv && nlpp;
-  //set the optimization mode for the trial wavefunction
-  Psi.startOptimization();
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
   H.setRandomGenerator(MoverRng[0]);
@@ -477,10 +475,7 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   else
     for (int i = 0; i < OptVariables.size(); ++i)
       OptVariablesForPsi[i] = OptVariables[i];
-  if (final_reset)
-  {
-    Psi.stopOptimization();
-  }
+
   //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;

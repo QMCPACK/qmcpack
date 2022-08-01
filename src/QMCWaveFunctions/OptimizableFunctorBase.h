@@ -47,8 +47,6 @@ struct OptimizableFunctorBase
   using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
   using opt_variables_type = optimize::VariableSet;
-  ///typedef for name-value lists
-  using variable_map_type = optimize::VariableSet::variable_map_type;
   ///maximum cutoff
   real_type cutoff_radius = 0.0;
   ///set of variables to be optimized

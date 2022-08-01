@@ -213,7 +213,7 @@ void QMCCostFunctionBase::Report()
 
 void QMCCostFunctionBase::reportParameters()
 {
-  //final reset, restoring the WaveFunctionComponent::IsOptimizing to false
+  //final reset
   resetPsi(true);
   if (!myComm->rank())
   {

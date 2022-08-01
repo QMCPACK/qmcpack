@@ -30,8 +30,6 @@ class Backflow_ee_kSpace : public BackflowFunctionBase
   //using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
   using opt_variables_type = optimize::VariableSet;
-  ///typedef for name-value lists
-  using variable_map_type = optimize::VariableSet::variable_map_type;
 
 public:
   //number of groups of the target particleset
