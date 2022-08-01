@@ -88,16 +88,12 @@ private:
   int num_ranks_;
   int rank_;
 
-  // reference to the captured WalkerConfigurations
-  WalkerConfigurations& walker_configs_ref_;
-
 public:
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
    *  in QMCDriverFactory.
    */
   MCPopulation(int num_ranks,
                int this_rank,
-               WalkerConfigurations& mcwc,
                ParticleSet* elecs,
                TrialWaveFunction* trial_wf,
                QMCHamiltonian* hamiltonian_);
@@ -123,7 +119,7 @@ public:
    *  \param[in] num_walkers number of living walkers in initial population
    *  \param[in] reserve multiple above that to reserve >=1.0
    */
-  void createWalkers(IndexType num_walkers, RealType reserve = 1.0);
+  void createWalkers(IndexType num_walkers, const WalkerConfigurations& walker_configs, RealType reserve = 1.0);
 
   /** distributes walkers and their "cloned" elements to the elements of a vector
    *  of unique_ptr to "walker_consumers". 
@@ -177,8 +173,8 @@ public:
   //const Properties& get_properties() const { return properties_; }
 
   // accessor to the gold copy
-  const ParticleSet* get_golden_electrons() const { return elec_particle_set_; }
-  ParticleSet* get_golden_electrons() { return elec_particle_set_; }
+  const ParticleSet& get_golden_electrons() const { return *elec_particle_set_; }
+  ParticleSet& get_golden_electrons() { return *elec_particle_set_; }
   const TrialWaveFunction& get_golden_twf() const { return *trial_wf_; }
   TrialWaveFunction& get_golden_twf() { return *trial_wf_; }
   // TODO: the fact this is needed is sad remove need for its existence.
@@ -237,10 +233,8 @@ public:
   /// check if all the internal vector contain consistent sizes;
   void checkIntegrity() const;
 
-  WalkerConfigurations& getWalkerConfigsRef() { return walker_configs_ref_; }
-
-  // save walker configurations to walker_configs_ref_
-  void saveWalkerConfigurations();
+  /// save walker configurations to walker_configs_ref_
+  void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
 };
 
 } // namespace qmcplusplus

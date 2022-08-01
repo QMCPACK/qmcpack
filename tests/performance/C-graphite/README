@@ -25,12 +25,15 @@ thread counts, placement, walker count (etc.)
 
 2. Simulated system and QMC methods tests
 
-The only simulated system is a 4x4x1 repeat of a graphite primitive
-cell. This is labeled with a number indicating the total electron
-count, 256.
+Simulated systems are 1x1x1, 2x2x1, 3x3x1, and 4x4x1 repeat of
+a graphite primitive cell. These are labeled with a number indicating
+the total electron count, 256, 144, 64, and 16, respectively.
 
 Name  Atoms Electrons  Electrons per spin
 S256   64    256          128
+S144   36    144           72
+S64    16     64           32
+S16     4     16            8
 
 Runs consist of a number of short blocks of (i) VMC without drift (ii)
 VMC with drift term included (iii) DMC with constant population.

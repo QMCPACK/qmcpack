@@ -44,6 +44,7 @@ public:
    */
   QMCDriverInterface* create(const ProjectData& project_data,
                              const std::optional<EstimatorManagerInput>& global_emi,
+                             WalkerConfigurations& wc,
                              MCPopulation&& pop,
                              SampleStack& samples,
                              Communicate* comm);

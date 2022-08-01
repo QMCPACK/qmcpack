@@ -49,7 +49,8 @@ public:
             std::move(qmc_input_copy),
             std::nullopt,
             std::move(dmc_input_copy),
-            MCPopulation(comm->size(), comm->rank(), walker_confs, particle_pool->getParticleSet("e"),
+            walker_confs,
+            MCPopulation(comm->size(), comm->rank(), particle_pool->getParticleSet("e"),
                          wavefunction_pool->getPrimary(), hamiltonian_pool->getPrimary()),
             comm};
   }

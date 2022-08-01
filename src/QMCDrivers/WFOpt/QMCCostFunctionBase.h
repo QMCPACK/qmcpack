@@ -34,7 +34,6 @@
 #include "EngineHandle.h"
 namespace qmcplusplus
 {
-class MCWalkerConfiguration;
 class DescentEngine;
 
 /** @ingroup QMCDrivers
@@ -72,7 +71,7 @@ public:
   using EffectiveWeight = QMCTraits::QTFull::RealType;
 
   ///Constructor.
-  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionBase() override;
@@ -174,10 +173,10 @@ public:
   }
 
 protected:
-  ///walker ensemble
-  MCWalkerConfiguration& W;
+  ///Particle set
+  ParticleSet& W;
 
-  ///trial function
+  ///Trial function
   TrialWaveFunction& Psi;
 
   ///Hamiltonian
