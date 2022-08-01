@@ -57,7 +57,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
       m_wfPtr(NULL),
       m_doc_out(NULL),
       includeNonlocalH("no"),
-      debug_stream(0)
+      debug_stream(0),
+      do_override_output(true)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -316,7 +317,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
-  std::string output_override_str("no");
+  std::string output_override_str("yes");
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -327,14 +328,14 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
-  m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(output_override_str, "output_vp_override", {"yes", "no"});
   m_param.put(q);
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
 
-  if (output_override_str == "yes")
-    do_override_output = true;
+  if (output_override_str == "no")
+    do_override_output = false;
 
   if (includeNonlocalH == "yes")
     includeNonlocalH = "NonLocalECP";
