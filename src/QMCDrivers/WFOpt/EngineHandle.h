@@ -46,13 +46,13 @@ public:
    * \param[in] dhpsioverpsi_array  Parameter derivatives of local energy
    * \param[in] crowd_id            Crowd number
    * \param[in] local_index         Crowd local index
-   * \param[in] index_offset        Offset for sample's index
+   * \param[in] sample_index        Index of sample on a MPI rank
    *
    */
   virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
                           const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
-                          int local_index,int index_offset) = 0;
+                          int local_index,int sample_index) = 0;
   /** Function for having optimizer engines execute their sample_finish functions
    */
   virtual void finishSampling() = 0;
@@ -65,7 +65,7 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
-                  int local_index,int index_offset) override
+                  int local_index,int sample_index) override
   {}
   void finishSampling() override {}
 };
@@ -94,7 +94,7 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
-                  int local_index,int index_offset) override
+                  int local_index,int sample_index) override
   {
     der_rat_samp[0] = 1.0;
     le_der_samp[0]  = energy_list[local_index];
@@ -136,7 +136,7 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
-                  int local_index,int index_offset) override
+                  int local_index,int sample_index) override
   {
       
     der_rat_samp[0] = 1.0;
@@ -153,7 +153,7 @@ public:
 
     if(lm_engine_.getStoringSamples())
     {
-        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,index_offset);
+        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,sample_index);
     }
     else
     {

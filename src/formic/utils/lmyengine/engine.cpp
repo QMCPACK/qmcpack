@@ -1544,18 +1544,18 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
 
 //Function for storing a sample (local energy and the sets of derivative ratios)
  template<typename S>
- void cqmc::engine::LMYEngine<S>::store_sample(std::vector<S> & der_rat_samp,std::vector<S> & le_der_samp,std::vector<S> & ls_der_samp,double vgs_samp,double weight_samp,int index_offset)
+ void cqmc::engine::LMYEngine<S>::store_sample(std::vector<S> & der_rat_samp,std::vector<S> & le_der_samp,std::vector<S> & ls_der_samp,double vgs_samp,double weight_samp,int sample_index)
  {
 
     int myThread = omp_get_thread_num();
      for(int i = 0; i < le_der_samp.size();i++)
      {
-         le_der_rat_history.at(index_offset,i) = le_der_samp[i];
-         der_rat_history.at(index_offset,i) = der_rat_samp[i];
+         le_der_rat_history.at(sample_index,i) = le_der_samp[i];
+         der_rat_history.at(sample_index,i) = der_rat_samp[i];
      }
     
-    vgs_history[index_offset] = vgs_samp;
-    weight_history[index_offset] = weight_samp;
+    vgs_history[sample_index] = vgs_samp;
+    weight_history[sample_index] = weight_samp;
  }
 
 //Function for constructing matrices form stored samples

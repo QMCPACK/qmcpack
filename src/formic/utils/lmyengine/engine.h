@@ -448,6 +448,7 @@ public:
    /// \param[in]  ls_der_samp    <|S^2|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
    /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
    /// \param[in]  weight_samp    weight for this sample
+   /// \param[in]  sample_index   index of a sample on a MPI rank
    ///
    ////////////////////////////////////////////////////////////////////////////////////////////////////////
    void store_sample(std::vector<S> & der_rat_samp,
@@ -455,7 +456,7 @@ public:
                     std::vector<S> & ls_der_samp,
                     double vgs_samp,    // trial-to-guiding square ratio
                     double weight_samp,
-                    int sample_count);
+                    int sample_index);
 
 
    /// \brief Function for sizing history vectors
