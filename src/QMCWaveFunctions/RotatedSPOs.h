@@ -68,6 +68,11 @@ public:
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
+  void apply_full_rotation(const std::vector<RealType>& full_param, bool use_stored_copy);
+
+  // Apply the list of rotations in the history.  Used for initializing from a file.
+  void apply_rotation_history();
+
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
@@ -222,6 +227,10 @@ public:
 
   ///reset
   void resetParameters(const opt_variables_type& active) override;
+
+  void saveExtraParameters(hdf_archive& hout, int id) override;
+  void readExtraParameters(hdf_archive& hin, int id) override;
+
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions

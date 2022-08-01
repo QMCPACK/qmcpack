@@ -15,6 +15,8 @@
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
 
+#include "io/hdf/hdf_archive.h"
+//#include <multi/array.hpp>
 
 namespace qmcplusplus
 {
@@ -138,6 +140,61 @@ void RotatedSPOs::resetParameters(const opt_variables_type& active)
     }
   }
 }
+
+void RotatedSPOs::saveExtraParameters(hdf_archive& hout, int id)
+{
+  hid_t grp   = hout.push("rotation");
+  if (grp < 0)
+    throw std::runtime_error("Expecting rotation parameters in VP file");
+
+  std::string rot_global_name = std::string("rotation_global_") + std::to_string(id);
+
+  int nparam = myVarsFull.size();
+  std::vector<RealType> full_params(nparam);
+  for (int i = 0; i < nparam; i++) {
+    full_params[i] =  myVarsFull[i];
+  }
+
+  hout.write(full_params, rot_global_name);
+  hout.pop();
+}
+
+void RotatedSPOs::readExtraParameters(hdf_archive& hin, int id)
+{
+  hid_t grp = hin.push("rotation", false);
+  if (grp < 0)
+    throw std::runtime_error("Expecting rotation parameters in VP file");
+
+  std::string rot_global_name = std::string("rotation_global_") + std::to_string(id);
+
+  std::vector<int> sizes(1);
+  if (!hin.getShape<RealType>(rot_global_name, sizes))
+    throw std::runtime_error("Failed to read rotation_global in VP file");
+
+  int nparam_actual = sizes[0];
+
+  int nparam = myVarsFull.size();
+
+  if (nparam != nparam_actual) {
+    std::ostringstream tmp_err;
+    tmp_err << "Expected number of full rotation parameters (" << nparam << ") does not match number in file (" << nparam_actual << ")";
+    throw std::runtime_error(tmp_err.str());
+  }
+
+  std::vector<RealType> full_params(nparam);
+  hin.read(full_params, rot_global_name);
+  for (int i = 0; i < nparam; i++) {
+    myVarsFull[i] = full_params[i];
+  }
+  for (int i = 0; i < m_act_rot_inds.size(); i++) {
+    myVars[i] = full_params[i];
+  }
+
+  hin.pop();
+
+  apply_full_rotation(full_params, true);
+}
+
 
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
@@ -274,6 +331,25 @@ void RotatedSPOs::apply_delta_rotation(const std::vector<RealType>& delta_param,
 
   log_antisym_matrix(new_rot_mat);
   extractParamsFromAntiSymmetricMatrix(m_full_rot_inds, new_rot_mat, new_param);
+}
+
+void RotatedSPOs::apply_full_rotation(const std::vector<RealType>& full_param, bool use_stored_copy)
+{
+  assert(param.size() == m_full_rot_inds.size());
+
+  const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix rot_mat(nmo, nmo);
+  rot_mat = ValueType(0);
+
+  constructAntiSymmetricMatrix(m_full_rot_inds, full_param, rot_mat);
+
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat).
+    Finally, apply unitary matrix to orbs.
+  */
+  exponentiate_antisym_matrix(rot_mat);
+  Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
 void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_stored_copy)
