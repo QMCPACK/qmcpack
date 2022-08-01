@@ -1252,6 +1252,8 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
   myclone->myName          = this->myName;
+  myclone->history_params_ = this->history_params_;
+  // use_this_copy_to_apply_rotation_ is not copied
   return myclone;
 }
 

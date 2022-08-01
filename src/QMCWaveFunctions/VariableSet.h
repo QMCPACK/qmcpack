@@ -24,7 +24,7 @@
 
 namespace qmcplusplus
 {
-  class hdf_archive;
+class hdf_archive;
 }
 
 namespace optimize

@@ -895,12 +895,14 @@ void TrialWaveFunction::resetParameters(const opt_variables_type& active)
     Z[i]->resetParameters(active);
 }
 
+// The hdf_archive should be first passed to VariableSet::saveAsHDF to open the HDF file
 void TrialWaveFunction::saveExtraParameters(hdf_archive& hout)
 {
   for (int i = 0; i < Z.size(); i++)
     Z[i]->saveExtraParameters(hout);
 }
 
+// The hdf_archive should be first passed to VariableSet::readFromHDF to open the HDF file
 void TrialWaveFunction::readExtraParameters(hdf_archive& hin)
 {
   for (int i = 0; i < Z.size(); i++)
