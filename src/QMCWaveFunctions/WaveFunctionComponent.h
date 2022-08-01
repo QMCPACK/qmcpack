@@ -51,6 +51,7 @@ struct NLjob
 class WaveFunctionComponent;
 class ResourceCollection;
 class TWFFastDerivWrapper;
+class hdf_archive;
 /**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
@@ -158,6 +159,9 @@ public:
   /** reset the parameters during optimizations
    */
   virtual void resetParameters(const opt_variables_type& active) = 0;
+
+  virtual void saveExtraParameters(hdf_archive& hout) {}
+  virtual void readExtraParameters(hdf_archive& hin) {}
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) = 0;

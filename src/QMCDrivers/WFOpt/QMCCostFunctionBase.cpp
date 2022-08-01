@@ -219,7 +219,9 @@ void QMCCostFunctionBase::reportParameters()
   {
     std::ostringstream vp_filename;
     vp_filename << RootName << ".vp.h5";
-    OptVariables.saveAsHDF(vp_filename.str());
+    hdf_archive hout;
+    OptVariables.saveAsHDF(vp_filename.str(), hout);
+    Psi.saveExtraParameters(hout);
 
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());

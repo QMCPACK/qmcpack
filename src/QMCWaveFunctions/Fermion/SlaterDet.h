@@ -55,6 +55,10 @@ public:
   ///reset all the Dirac determinants, Optimizable is true
   void resetParameters(const opt_variables_type& optVariables) override;
 
+  void saveExtraParameters(hdf_archive& hout) override;
+  void readExtraParameters(hdf_archive& hin) override;
+
+
   void reportStatus(std::ostream& os) override;
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
