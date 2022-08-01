@@ -115,13 +115,15 @@ private:
    */
   RealType calculateProjector(RealType r, const PosType& dr);
 
+  NonLocalECPComponent(const NonLocalECPComponent&) = default;
+  
 public:
   NonLocalECPComponent();
-
-  ///destructor
+  
+  /// Make a copy but have it associated with pset instead of nl_ecpc's pset
+  NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset);
+    
   ~NonLocalECPComponent();
-
-  NonLocalECPComponent* makeClone(const ParticleSet& qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);

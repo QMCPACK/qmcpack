@@ -24,22 +24,22 @@ namespace qmcplusplus
 {
 NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr) {}
 
+// unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
+// This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
+NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset) : NonLocalECPComponent(nl_ecpc)
+{
+  for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
+    this->nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
+  if (nl_ecpc.VP)
+    this->VP = new VirtualParticleSet(pset, nknot);
+}
+
 NonLocalECPComponent::~NonLocalECPComponent()
 {
   for (int ip = 0; ip < nlpp_m.size(); ip++)
     delete nlpp_m[ip];
   if (VP)
     delete VP;
-}
-
-NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
-{
-  NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
-  for (int i = 0; i < nlpp_m.size(); ++i)
-    myclone->nlpp_m[i] = nlpp_m[i]->makeClone();
-  if (VP)
-    myclone->VP = new VirtualParticleSet(qp, nknot);
-  return myclone;
 }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
