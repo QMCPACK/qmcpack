@@ -273,16 +273,16 @@ private:
   std::ostream & output;
 
   /// \brief History of <n|Psi_i>/<n|Psi> ratios
-  std::vector< formic::Matrix<S> > der_rat_history;
+  formic::Matrix<S>  der_rat_history;
 
   /// \brief History of <n|H|Psi_i>/<n|Psi> ratios
-  std::vector< formic::Matrix<S> > le_der_rat_history;
+  formic::Matrix<S>  le_der_rat_history;
 
   /// \brief History of |<n|value_fn>/<n|guiding_fn>|^2 values
-  std::vector< std::vector<double> > vgs_history;
+  std::vector<double>  vgs_history;
 
   /// \brief History of sample weights
-  std::vector< std::vector<double> > weight_history;
+  std::vector<double>  weight_history;
   
 public:
   
@@ -459,7 +459,7 @@ public:
 
 
    /// \brief Function for sizing history vectors
-   void setUpStorage(int numParams, int numSamples, int numThreads,std::vector<int> sample_offsets);
+   void setUpStorage(int numParams, int numSamples);
 
    /// \brief Function for selecting parameters to be optimized by LM
    void selectParameters();

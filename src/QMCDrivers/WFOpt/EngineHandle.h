@@ -38,19 +38,21 @@ public:
    *
    *\param[in] num_params           Number of optimizable parameters
    */
-  virtual void prepareSampling(int num_params,int num_samples,std::vector<int> sample_offsets) = 0;
+  virtual void prepareSampling(int num_params,int num_samples) = 0;
   /** Function for passing derivative ratios to optimizer engines
    *
    * \param[in] energy_list         Vector of local energy values
    * \param[in] dlogpsi_array       Parameter derivatives of log psi
    * \param[in] dhpsioverpsi_array  Parameter derivatives of local energy
-   * \param[in] ib                  Sample index
+   * \param[in] crowd_id            Crowd number
+   * \param[in] local_index         Crowd local index
+   * \param[in] index_offset        Offset for sample's index
    *
    */
   virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
-                          const RecordArray<Value>& dhpsioverpsi_array,
-                          int ib) = 0;
+                          const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
+                          int local_index,int index_offset) = 0;
   /** Function for having optimizer engines execute their sample_finish functions
    */
   virtual void finishSampling() = 0;
@@ -59,11 +61,11 @@ public:
 class NullEngineHandle : public EngineHandle
 {
 public:
-  void prepareSampling(int num_params,int num_samples,std::vector<int> sample_offsets) override {}
+  void prepareSampling(int num_params,int num_samples) override {}
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
-                  const RecordArray<Value>& dhpsioverpsi_array,
-                  int ib) override
+                  const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
+                  int local_index,int index_offset) override
   {}
   void finishSampling() override {}
 };
@@ -81,7 +83,7 @@ public:
   //Retrieve der_rat_samp vector for testing
   const std::vector<FullPrecValue>& getVector() const { return der_rat_samp; }
 
-  void prepareSampling(int num_params,int num_samples,std::vector<int> sample_offsets) override
+  void prepareSampling(int num_params,int num_samples) override
   {
     engine_.prepareStorage(omp_get_max_threads(), num_params);
 
@@ -91,18 +93,18 @@ public:
 
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
-                  const RecordArray<Value>& dhpsioverpsi_array,
-                  int ib) override
+                  const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
+                  int local_index,int index_offset) override
   {
     der_rat_samp[0] = 1.0;
-    le_der_samp[0]  = energy_list[ib];
+    le_der_samp[0]  = energy_list[local_index];
 
     int num_params = der_rat_samp.size() - 1;
     for (int j = 0; j < num_params; j++)
     {
-      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
-      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, ib)) +
-          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
+      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
+          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
     }
     int ip = omp_get_thread_num();
     engine_.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
@@ -118,46 +120,40 @@ private:
   cqmc::engine::LMYEngine<Value>& lm_engine_;
   std::vector<FullPrecValue> der_rat_samp;
   std::vector<FullPrecValue> le_der_samp;
-  std::vector <int> sample_count;
 
 public:
   LMYEngineHandle(cqmc::engine::LMYEngine<Value>& lmyEngine) : lm_engine_(lmyEngine){};
 
-  void prepareSampling(int num_params,int num_samples,std::vector<int> sample_offsets) override
+  void prepareSampling(int num_params,int num_samples) override
   {
-    int num_crowds = sample_offsets.size() -1;
     der_rat_samp.resize(num_params + 1, 0.0);
     le_der_samp.resize(num_params + 1, 0.0);
     if(lm_engine_.getStoringSamples())
     {
-        sample_count.resize(num_crowds,0);
-
-        lm_engine_.setUpStorage(num_params,num_samples,num_crowds,sample_offsets);
+        lm_engine_.setUpStorage(num_params,num_samples);
     }
   }
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
-                  const RecordArray<Value>& dhpsioverpsi_array,
-                  int ib) override
+                  const RecordArray<Value>& dhpsioverpsi_array,int crowd_id,
+                  int local_index,int index_offset) override
   {
       
-    int ip = omp_get_thread_num();
     der_rat_samp[0] = 1.0;
-    le_der_samp[0]  = energy_list[ib];
+    le_der_samp[0]  = energy_list[local_index];
 
     int num_params = der_rat_samp.size() - 1;
     for (int j = 0; j < num_params; j++)
     {
-      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
-      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, ib)) +
-          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, ib));
+      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
+          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
     }
 
 
     if(lm_engine_.getStoringSamples())
     {
-        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,sample_count[ip]);
-        sample_count[ip]++;
+        lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0,index_offset);
     }
     else
     {
