@@ -47,7 +47,7 @@ public:
    * @param active a super set of optimizable variables
    *
    * This is a query function and should never be implemented as a feature blocker.
-   * If an SPOSet derived class doesn't support optimization, use the base class fallback.
+   * If an OptimizableObject derived class doesn't support optimization, use the base class fallback.
    */
   virtual void checkInVariables(opt_variables_type& active) {}
 
