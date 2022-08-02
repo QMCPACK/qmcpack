@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 
+void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
+
+
 TEST_CASE("NonLocalECPotential" "")
 {
   using Real = QMCTraits::RealType;
@@ -30,7 +33,8 @@ TEST_CASE("NonLocalECPotential" "")
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
-  lattice.R.diagonal(1.0);
+  lattice.R.diagonal(20.0);
+  lattice.LR_dim_cutoff = 15;
   lattice.reset();
 
   const SimulationCell simulation_cell(lattice);
@@ -38,27 +42,36 @@ TEST_CASE("NonLocalECPotential" "")
   ParticleSet ions(simulation_cell);
 
   ions.setName("ion");
-  ions.create({1});
+  ions.create({2});
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
-
+  ions.R[1][0] = 6.0;
+  ions.R[1][1] = 0.0;
+  ions.R[1][2] = 0.0;
+  
   SpeciesSet& ion_species       = ions.getSpeciesSet();
-  int pIdx                      = ion_species.addSpecies("C");
-  int pChargeIdx                = ion_species.addAttribute("charge");
-  ion_species(pChargeIdx, pIdx) = 2;
+  int index_species             = ion_species.addSpecies("Na");
+  int index_charge              = ion_species.addAttribute("charge");
+  int index_atomic_number       = ion_species.addAttribute("atomic_number");
+  ion_species(index_charge, index_species) = 1;
+  ion_species(index_atomic_number, index_species) = 1;
   ions.createSK();
-  ions.update();
+  ions.resetGroups(); // test_ecp.cpp claims this is needed
+  ions.update();      // elsewhere its implied this is needed
 
   ParticleSet ions2(ions);
   ions2.update();
 
   ParticleSet elec(simulation_cell);
   elec.setName("elec");
-  elec.create({1,1});
-  elec.R[0][0] = 0.5;
+  elec.create({2,1});
+  elec.R[0][0] = 2.0;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
+  elec.R[1][0] = 3.0;
+  elec.R[1][1] = 0.0;
+  elec.R[1][2] = 0.0;
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -73,19 +86,12 @@ TEST_CASE("NonLocalECPotential" "")
   tspecies(chargeIdx, dnIdx) = -1;
   tspecies(massIdx, dnIdx)   = 1.0;
 
-  elec.resetGroups();
   elec.createSK();
+  elec.resetGroups();
   const int ei_table_index = elec.addTable(ions);
   elec.update();
 
   ParticleSet elec2(elec);
-
-  elec2.R[0][0] = 0.0;
-  elec2.R[0][1] = 0.5;
-  elec2.R[0][2] = 0.1;
-  elec2.R[1][0] = 0.6;
-  elec2.R[1][1] = 0.05;
-  elec2.R[1][2] = -0.1;
   elec2.update();
 
   RefVector<ParticleSet> ptcls{elec, elec2};
@@ -107,15 +113,15 @@ TEST_CASE("NonLocalECPotential" "")
   ResourceCollectionTeamLock<ParticleSet> pset_lock(pset_res, p_list);
 
   std::vector<ListenerVector<Real>> listeners;
-  listeners.emplace_back("localpotential", getParticularListener(local_pots));
-  listeners.emplace_back("localpotential", getParticularListener(local_pots2));
+  listeners.emplace_back("nonlocalpotential", getParticularListener(local_pots));
+  listeners.emplace_back("nonlocalpotential", getParticularListener(local_pots2));
 
   Matrix<Real> ion_pots(2);
   Matrix<Real> ion_pots2(2);
 
   std::vector<ListenerVector<Real>> ion_listeners;
-  ion_listeners.emplace_back("localpotential", getParticularListener(ion_pots));
-  ion_listeners.emplace_back("localpotential", getParticularListener(ion_pots2));
+  ion_listeners.emplace_back("nonlocalpotential", getParticularListener(ion_pots));
+  ion_listeners.emplace_back("nonlocalpotential", getParticularListener(ion_pots2));
 
 
   // This took some time to sort out from the multistage mess of put and clones 
@@ -123,13 +129,13 @@ TEST_CASE("NonLocalECPotential" "")
   Communicate* comm = OHMMS::Controller;
   ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
 
-  bool okay = ecp_comp_builder.read_pp_file("C.BFD.xml");
+  bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);
   UPtr<NonLocalECPComponent> nl_ecp_comp = std::move(ecp_comp_builder.pp_nonloc);
   nl_ecp_comp->initVirtualParticle(elec);
   nl_ecp.addComponent(0, std::move(nl_ecp_comp));
   UPtr<OperatorBase> nl_ecp2_ptr = nl_ecp.makeClone(elec2, psi2);
-  auto& nl_ecp2 = *nl_ecp2_ptr;
+  auto& nl_ecp2 = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
 
   StdRandom<FullPrecReal> rng(10101);
   StdRandom<FullPrecReal> rng2(10201);
@@ -141,13 +147,19 @@ TEST_CASE("NonLocalECPotential" "")
   ResourceCollection nl_ecp_res("test_nl_ecp_res");
   nl_ecp.createResource(nl_ecp_res);
   ResourceCollectionTeamLock<OperatorBase> nl_ecp_lock(nl_ecp_res, o_list);
+
+  // Despite what test_ecp.cpp says this does not need to be done.
+  // copyGridUnrotatedForTest(*nl_ecp.PPset[0]);
+  // copyGridUnrotatedForTest(*nl_ecp2.PPset[0]);
+
+
   
   nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(14.4822673798));
-  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(14.4822673798));
-  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(14.4822673798));
-  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(14.4822673798));
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-0.0262545939));
+  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(-0.0262545939));
+  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(10.5313520432));
+  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(10.5313520432));
 
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
@@ -156,7 +168,7 @@ TEST_CASE("NonLocalECPotential" "")
   
   nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(14.4822673798));
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-0.0262545939));
 
 }
 

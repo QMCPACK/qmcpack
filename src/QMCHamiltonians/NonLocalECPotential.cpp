@@ -156,17 +156,16 @@ void NonLocalECPotential::mw_evaluatePerParticleImpl(const RefVectorWithLeader<O
   ve_sample.resize(p_leader.getTotalNum());
   vi_sample.resize(o_leader.IonConfig.getTotalNum());
 
-  auto evaluate_walker = [name, &ve_sample, &vi_sample](const int walker_index, NonLocalECPotential& nlecp,
-                                                         ParticleSet& pset, TrialWaveFunction& twf,
-                                                         const std::vector<ListenerVector<RealType>>& listeners,
-                                                         const std::vector<ListenerVector<RealType>>& listeners_ions,
-                                                         bool tmove) {
+  auto evaluate_walker = [name, &ve_sample,
+                          &vi_sample](const int walker_index, NonLocalECPotential& nlecp, ParticleSet& pset,
+                                      TrialWaveFunction& twf, const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& listeners_ions, bool tmove) {
     if (tmove)
       nlecp.tmove_xy_.clear();
 
-    nlecp.value_    = 0.0;
-    ve_sample       = 0.0;
-    vi_sample       = 0.0;
+    nlecp.value_ = 0.0;
+    ve_sample    = 0.0;
+    vi_sample    = 0.0;
     auto& p_pset = nlecp.PPset;
     for (int ipp = 0; ipp < p_pset.size(); ipp++)
       if (p_pset[ipp])
@@ -179,60 +178,71 @@ void NonLocalECPotential::mw_evaluatePerParticleImpl(const RefVectorWithLeader<O
     for (int jel = 0; jel < pset.getTotalNum(); jel++)
       nlecp.ElecNeighborIons.getNeighborList(jel).clear();
 
-    if (nlecp.ComputeForces)
+    // if (nlecp.ComputeForces)
+    // {
+    //   nlecp.forces = 0;
+    //   for (int ig = 0; ig < pset.groups(); ++ig) //loop over species
+    //   {
+    //     twf.prepareGroup(pset, ig);
+    //     for (int jel = pset.first(ig); jel < pset.last(ig); ++jel)
+    //     {
+    //       const auto& dist               = myTable.getDistRow(jel);
+    //       const auto& displ              = myTable.getDisplRow(jel);
+    //       std::vector<int>& NeighborIons = nlecp.ElecNeighborIons.getNeighborList(jel);
+    //       for (int iat = 0; iat < nlecp.NumIons; iat++)
+    //         if (nlecp.PP[iat] != nullptr && dist[iat] < nlecp.PP[iat]->getRmax())
+    //         {
+    //           RealType pairpot =
+    //               nlecp.PP[iat]->evaluateOneWithForces(pset, iat, twf, jel, dist[iat], -displ[iat], nlecp.forces[iat]);
+    //           if (tmove)
+    //             nlecp.PP[iat]->contributeTxy(jel, nlecp.tmove_xy_);
+    //           nlecp.value_ += pairpot;
+    //           NeighborIons.push_back(iat);
+    //           nlecp.IonNeighborElecs.getNeighborList(iat).push_back(jel);
+    // 	      // This might add support for per particle reporting when forces are on.
+    // 	      // There was nothing here in legacy.
+    // 	      ve_sample[jel] += 0.5 * pairpot;
+    // 	      vi_sample[iat] += 0.5 * pairpot;
+    //         }
+    //     }
+    //   }
+    // }
+    // else
+    // {
+
+    // Group implementation
+    // ===========
+    // auto pp_component = std::find_if(o_leader.PPset.begin(), o_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
+    // assert(pp_component != std::end(o_leader.PPset));
+
+    // RefVector<NonLocalECPotential> ecp_potential_list;
+    // RefVectorWithLeader<NonLocalECPComponent> ecp_component_list(**pp_component);
+    // RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
+    // RefVectorWithLeader<TrialWaveFunction> psi_list(o_leader.Psi);
+
+    for (int ig = 0; ig < pset.groups(); ++ig) //loop over species
     {
-      nlecp.forces = 0;
-      for (int ig = 0; ig < pset.groups(); ++ig) //loop over species
+      twf.prepareGroup(pset, ig);
+      for (int jel = pset.first(ig); jel < pset.last(ig); ++jel)
       {
-        twf.prepareGroup(pset, ig);
-        for (int jel = pset.first(ig); jel < pset.last(ig); ++jel)
-        {
-          const auto& dist               = myTable.getDistRow(jel);
-          const auto& displ              = myTable.getDisplRow(jel);
-          std::vector<int>& NeighborIons = nlecp.ElecNeighborIons.getNeighborList(jel);
-          for (int iat = 0; iat < nlecp.NumIons; iat++)
-            if (nlecp.PP[iat] != nullptr && dist[iat] < nlecp.PP[iat]->getRmax())
-            {
-              RealType pairpot =
-                  nlecp.PP[iat]->evaluateOneWithForces(pset, iat, twf, jel, dist[iat], -displ[iat], nlecp.forces[iat]);
-              if (tmove)
-                nlecp.PP[iat]->contributeTxy(jel, nlecp.tmove_xy_);
-              nlecp.value_ += pairpot;
-              NeighborIons.push_back(iat);
-              nlecp.IonNeighborElecs.getNeighborList(iat).push_back(jel);
-	      // This might add support for per particle reporting when forces are on.
-	      // There was nothing here in legacy.
-	      ve_sample[jel] += 0.5 * pairpot;
-	      vi_sample[iat] += 0.5 * pairpot;
-            }
-        }
+        const auto& dist               = myTable.getDistRow(jel);
+        const auto& displ              = myTable.getDisplRow(jel);
+        std::vector<int>& NeighborIons = nlecp.ElecNeighborIons.getNeighborList(jel);
+        for (int iat = 0; iat < nlecp.NumIons; iat++)
+          if (nlecp.PP[iat] != nullptr && dist[iat] < nlecp.PP[iat]->getRmax())
+          {
+            RealType pairpot = nlecp.PP[iat]->evaluateOne(pset, iat, twf, jel, dist[iat], -displ[iat], nlecp.use_DLA);
+            if (tmove)
+              nlecp.PP[iat]->contributeTxy(jel, nlecp.tmove_xy_);
+            nlecp.value_ += pairpot;
+            NeighborIons.push_back(iat);
+            nlecp.IonNeighborElecs.getNeighborList(iat).push_back(jel);
+            ve_sample[jel] += 0.5 * pairpot;
+            vi_sample[iat] += 0.5 * pairpot;
+          }
       }
     }
-    else
-    {
-      for (int ig = 0; ig < pset.groups(); ++ig) //loop over species
-      {
-        twf.prepareGroup(pset, ig);
-        for (int jel = pset.first(ig); jel < pset.last(ig); ++jel)
-        {
-          const auto& dist               = myTable.getDistRow(jel);
-          const auto& displ              = myTable.getDisplRow(jel);
-          std::vector<int>& NeighborIons = nlecp.ElecNeighborIons.getNeighborList(jel);
-          for (int iat = 0; iat < nlecp.NumIons; iat++)
-            if (nlecp.PP[iat] != nullptr && dist[iat] < nlecp.PP[iat]->getRmax())
-            {
-              RealType pairpot = nlecp.PP[iat]->evaluateOne(pset, iat, twf, jel, dist[iat], -displ[iat], nlecp.use_DLA);
-              if (tmove)
-                nlecp.PP[iat]->contributeTxy(jel, nlecp.tmove_xy_);
-              nlecp.value_ += pairpot;
-              NeighborIons.push_back(iat);
-              nlecp.IonNeighborElecs.getNeighborList(iat).push_back(jel);
-	      ve_sample[jel] += 0.5 * pairpot;
-	      vi_sample[iat] += 0.5 * pairpot;
-            }
-        }
-      }
-    }
+    // }
     for (const ListenerVector<RealType>& listener : listeners)
       listener.report(walker_index, name, ve_sample);
     for (const ListenerVector<RealType>& listener : listeners_ions)
@@ -385,9 +395,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
+      // The joblist from the previous call will still be full.
+      // jobs not consumed when run. Consider a new name.
       auto& joblist = O.nlpp_jobs[ig];
       joblist.clear();
-
       for (int jel = P.first(ig); jel < P.last(ig); ++jel)
       {
         const auto& dist               = myTable.getDistRow(jel);
@@ -447,6 +458,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     TrialWaveFunction::mw_prepareGroup(wf_list, p_list, ig);
 
     // find the max number of jobs of all the walkers
+    // at the moment its quite unclear how it would be different between walkers.
     size_t max_num_jobs = 0;
     for (size_t iw = 0; iw < nw; iw++)
     {
@@ -454,6 +466,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       max_num_jobs  = std::max(max_num_jobs, O.nlpp_jobs[ig].size());
     }
 
+    // If I read this correctly this ends up being over electrons.
     for (size_t jobid = 0; jobid < max_num_jobs; jobid++)
     {
       ecp_potential_list.clear();
@@ -478,6 +491,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       NonLocalECPComponent::mw_evaluateOne(ecp_component_list, pset_list, psi_list, batch_list, pairpots,
                                            O_leader.mw_res_->collection, O_leader.use_DLA);
 
+      // This is over the number of walkers
       for (size_t j = 0; j < ecp_potential_list.size(); j++)
       {
         if (false)
@@ -490,7 +504,10 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
             std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                       << std::abs(check_value - pairpots[j]) << std::endl;
         }
-        ecp_potential_list[j].get().value_ += pairpots[j];
+        // This is where you need to intercept to get the per particle value, electron index is
+        // job id.
+
+	ecp_potential_list[j].get().value_ += pairpots[j];
         if (Tmove)
           ecp_component_list[j].contributeTxy(batch_list[j].get().electron_id, ecp_potential_list[j].get().tmove_xy_);
       }
@@ -841,7 +858,7 @@ std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, Tr
       std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
-      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig],qp));
+      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
   return myclone;
 }
 
