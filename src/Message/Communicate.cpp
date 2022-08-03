@@ -23,7 +23,6 @@
 #include <cstdio>
 #include <fstream>
 #include "config.h"
-#include "Platforms/Host/sysutil.h"
 #include "Utilities/FairDivide.h"
 
 #ifdef HAVE_MPI
@@ -87,7 +86,6 @@ void Communicate::initialize(const mpi3::environment& env)
   d_ncontexts = comm.size();
   d_groupid   = 0;
   d_ngroups   = 1;
-  std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M");
 }
 
 // For unit tests until they can be changed and this will be removed.
@@ -119,7 +117,7 @@ void Communicate::abort() const { comm.abort(1); }
 void Communicate::barrier() const { comm.barrier(); }
 #else
 
-void Communicate::initialize(int argc, char** argv) { std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M"); }
+void Communicate::initialize(int argc, char** argv) {}
 
 void Communicate::initializeAsNodeComm(const Communicate& parent) {}
 
