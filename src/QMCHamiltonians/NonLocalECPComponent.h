@@ -27,6 +27,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class TestNonLocalECPotential;
+}
+
 /** Contains a set of radial grid potentials around a center.
 */
 class NonLocalECPComponent : public QMCTraits
@@ -115,14 +120,12 @@ private:
    */
   RealType calculateProjector(RealType r, const PosType& dr);
 
-  NonLocalECPComponent(const NonLocalECPComponent&) = default;
-  
 public:
   NonLocalECPComponent();
-  
+
   /// Make a copy but have it associated with pset instead of nl_ecpc's pset
   NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset);
-    
+
   ~NonLocalECPComponent();
 
   ///add a new Non Local component
@@ -310,7 +313,11 @@ public:
   friend struct ECPComponentBuilder;
   // a lazy temporal solution
   friend class NonLocalECPotential_CUDA;
-}; //end of RadialPotentialSet
+
+  // for testing
+  friend class testing::TestNonLocalECPotential;
+};
+
 
 } // namespace qmcplusplus
 #endif

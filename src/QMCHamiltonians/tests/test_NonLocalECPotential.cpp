@@ -20,15 +20,42 @@
 
 namespace qmcplusplus
 {
-
-void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
-
-
-TEST_CASE("NonLocalECPotential" "")
+namespace testing
+{
+/** class to violate access control because evaluation of NonLocalECPotential uses RNG
+ *  which we may not be able to control.
+ */
+class TestNonLocalECPotential
 {
   using Real = QMCTraits::RealType;
+
+public:
+  static void copyGridUnrotatedForTest(NonLocalECPotential& nl_ecp)
+  {
+    nl_ecp.PPset[0]->rrotsgrid_m = nl_ecp.PPset[0]->sgridxyz_m;
+  }
+  static bool didGridChange(NonLocalECPotential& nl_ecp)
+  {
+    return nl_ecp.PPset[0]->rrotsgrid_m != nl_ecp.PPset[0]->sgridxyz_m;
+  }
+  static void mw_evaluateImpl(NonLocalECPotential& nl_ecp,
+                              const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& twf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              bool Tmove,
+                              const std::optional<ListenerOption<Real>> listener_opt,
+                              bool keep_grid)
+  {
+    nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, Tmove, listener_opt, keep_grid);
+  }
+};
+} // namespace testing
+
+TEST_CASE("NonLocalECPotential", "[hamiltonian]")
+{
+  using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
-  using Position = QMCTraits::PosType;
+  using Position     = QMCTraits::PosType;
   using testing::getParticularListener;
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
@@ -49,12 +76,12 @@ TEST_CASE("NonLocalECPotential" "")
   ions.R[1][0] = 6.0;
   ions.R[1][1] = 0.0;
   ions.R[1][2] = 0.0;
-  
-  SpeciesSet& ion_species       = ions.getSpeciesSet();
-  int index_species             = ion_species.addSpecies("Na");
-  int index_charge              = ion_species.addAttribute("charge");
-  int index_atomic_number       = ion_species.addAttribute("atomic_number");
-  ion_species(index_charge, index_species) = 1;
+
+  SpeciesSet& ion_species                         = ions.getSpeciesSet();
+  int index_species                               = ion_species.addSpecies("Na");
+  int index_charge                                = ion_species.addAttribute("charge");
+  int index_atomic_number                         = ion_species.addAttribute("atomic_number");
+  ion_species(index_charge, index_species)        = 1;
   ion_species(index_atomic_number, index_species) = 1;
   ions.createSK();
   ions.resetGroups(); // test_ecp.cpp claims this is needed
@@ -65,11 +92,11 @@ TEST_CASE("NonLocalECPotential" "")
 
   ParticleSet elec(simulation_cell);
   elec.setName("elec");
-  elec.create({2,1});
-  elec.R[0][0] = 2.0;
+  elec.create({2, 1});
+  elec.R[0][0] = 0.4;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 0.0;
-  elec.R[1][0] = 3.0;
+  elec.R[1][0] = 1.0;
   elec.R[1][1] = 0.0;
   elec.R[1][2] = 0.0;
 
@@ -81,8 +108,8 @@ TEST_CASE("NonLocalECPotential" "")
   tspecies(massIdx, upIdx)   = 1.0;
 
   int dnIdx                  = tspecies.addSpecies("d");
-  chargeIdx              = tspecies.addAttribute("charge");
-  massIdx                = tspecies.addAttribute("mass");
+  chargeIdx                  = tspecies.addAttribute("charge");
+  massIdx                    = tspecies.addAttribute("mass");
   tspecies(chargeIdx, dnIdx) = -1;
   tspecies(massIdx, dnIdx)   = 1.0;
 
@@ -96,13 +123,13 @@ TEST_CASE("NonLocalECPotential" "")
 
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
-  
+
   TrialWaveFunction psi, psi2;
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi2});
 
   bool doForces = false;
-  bool use_DLA = false;
-  
+  bool use_DLA  = false;
+
   NonLocalECPotential nl_ecp(ions, elec, psi, doForces, use_DLA);
 
   Matrix<Real> local_pots(2);
@@ -124,7 +151,7 @@ TEST_CASE("NonLocalECPotential" "")
   ion_listeners.emplace_back("nonlocalpotential", getParticularListener(ion_pots2));
 
 
-  // This took some time to sort out from the multistage mess of put and clones 
+  // This took some time to sort out from the multistage mess of put and clones
   // but this accomplishes in a straight forward way what I interpret to be done by that code.
   Communicate* comm = OHMMS::Controller;
   ECPComponentBuilder ecp_comp_builder("test_read_ecp", comm, 4, 1);
@@ -135,13 +162,13 @@ TEST_CASE("NonLocalECPotential" "")
   nl_ecp_comp->initVirtualParticle(elec);
   nl_ecp.addComponent(0, std::move(nl_ecp_comp));
   UPtr<OperatorBase> nl_ecp2_ptr = nl_ecp.makeClone(elec2, psi2);
-  auto& nl_ecp2 = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
+  auto& nl_ecp2                  = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
 
   StdRandom<FullPrecReal> rng(10101);
   StdRandom<FullPrecReal> rng2(10201);
   nl_ecp.setRandomGenerator(&rng);
   nl_ecp2.setRandomGenerator(&rng2);
-  
+
   RefVector<OperatorBase> nl_ecps{nl_ecp, nl_ecp2};
   RefVectorWithLeader<OperatorBase> o_list(nl_ecp, nl_ecps);
   ResourceCollection nl_ecp_res("test_nl_ecp_res");
@@ -149,27 +176,46 @@ TEST_CASE("NonLocalECPotential" "")
   ResourceCollectionTeamLock<OperatorBase> nl_ecp_lock(nl_ecp_res, o_list);
 
   // Despite what test_ecp.cpp says this does not need to be done.
-  // copyGridUnrotatedForTest(*nl_ecp.PPset[0]);
-  // copyGridUnrotatedForTest(*nl_ecp2.PPset[0]);
+  // I think because of the pp
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp);
+  testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp2);
 
-
+  CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
   
-  nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
+  //nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-0.0262545939));
-  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(-0.0262545939));
+  ListenerOption<Real> listener_opt{listeners, ion_listeners};
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
+
+  // I'd like to see this gone when legacy drivers are dropped but for now we'll check against
+  // the single particle API
+  auto value = o_list[0].evaluateDeterministic(p_list[0]);
+  
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
+  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(10.5313520432));
   CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(10.5313520432));
+
+  CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
 
   elec.R[0][0] = 0.5;
   elec.R[0][1] = 0.0;
   elec.R[0][2] = 2.0;
   elec.update();
-  
+
   nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
+  CHECK(testing::TestNonLocalECPotential::didGridChange(nl_ecp));
+  auto value2 = o_list[0].evaluateDeterministic(p_list[0]);
+  auto value3 = o_list[0].evaluate(p_list[0]);
+  
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value3));
+  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
 
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(-0.0262545939));
+  // Randomizing grid does nothing for Na pp
+  nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
 
 }
 
-}
+} // namespace qmcplusplus
