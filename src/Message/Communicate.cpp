@@ -87,17 +87,6 @@ void Communicate::initialize(const mpi3::environment& env)
   d_ncontexts = comm.size();
   d_groupid   = 0;
   d_ngroups   = 1;
-#ifdef __linux__
-  for (int proc = 0; proc < OHMMS::Controller->size(); proc++)
-  {
-    if (OHMMS::Controller->rank() == proc)
-    {
-      fprintf(stderr, "Rank = %4d  Free Memory = %5zu MB\n", proc, (freemem() >> 20));
-    }
-    comm.barrier();
-  }
-  comm.barrier();
-#endif
   std::string when = "qmc." + getDateAndTime("%Y%m%d_%H%M");
 }
 
