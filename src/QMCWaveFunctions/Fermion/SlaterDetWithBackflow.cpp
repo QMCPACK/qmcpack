@@ -18,25 +18,25 @@
 
 namespace qmcplusplus
 {
+
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
                                              std::vector<std::unique_ptr<Determinant_t>> dets,
                                              std::unique_ptr<BackflowTransformation> BF)
-    : WaveFunctionComponent("SlaterDetWithBackflow"), Dets(std::move(dets)), BFTrans(std::move(BF))
+    : WaveFunctionComponent("SlaterDetWithBackflow", ""), Dets(std::move(dets)), BFTrans(std::move(BF))
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());
 
   is_fermionic = true;
-
-  Optimizable = BFTrans->isOptimizable();
-  for (const auto& det : Dets)
-    Optimizable = Optimizable || det->Optimizable;
 }
 
 ///destructor
-SlaterDetWithBackflow::~SlaterDetWithBackflow()
+SlaterDetWithBackflow::~SlaterDetWithBackflow() = default;
+
+bool SlaterDetWithBackflow::isOptimizable() const
 {
-  ///clean up SPOSet
+  return BFTrans->isOptimizable() ||
+      std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -88,7 +88,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(Particle
   for (const auto& det : Dets)
     dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
   auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
-  assert(myclone->Optimizable == Optimizable);
+  assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }
 

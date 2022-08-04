@@ -171,7 +171,7 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
 template<typename FT>
 void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
   for (auto& [key, functor] : J2Unique)
     functor->resetParameters(active);
@@ -412,8 +412,7 @@ std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& t
         j2copy->addFunc(ig, jg, std::move(fc));
       }
     }
-  j2copy->KEcorr      = KEcorr;
-  j2copy->Optimizable = Optimizable;
+  j2copy->KEcorr = KEcorr;
 
   j2copy->myVars.clear();
   j2copy->myVars.insertFrom(myVars);

@@ -37,6 +37,8 @@ public:
   ///destructor
   ~SlaterDetWithBackflow() override;
 
+  bool isOptimizable() const override;
+
   void checkInVariables(opt_variables_type& active) override
   {
     //if(Optimizable) {

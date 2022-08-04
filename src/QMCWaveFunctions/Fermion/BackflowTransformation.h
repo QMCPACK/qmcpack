@@ -161,7 +161,7 @@ public:
 
   void checkOutVariables(const opt_variables_type& active);
 
-  bool isOptimizable();
+  bool isOptimizable() const;
 
   void resetParameters(const opt_variables_type& active);
 

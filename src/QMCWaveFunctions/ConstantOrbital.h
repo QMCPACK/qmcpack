@@ -20,11 +20,6 @@ namespace qmcplusplus
 class ConstantOrbital : public WaveFunctionComponent
 {
 public:
-  void checkInVariables(opt_variables_type& active) override {}
-  void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParameters(const opt_variables_type& active) override {}
-  void reportStatus(std::ostream& os) override {}
-
   PsiValueType FakeGradRatio;
 
   ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}

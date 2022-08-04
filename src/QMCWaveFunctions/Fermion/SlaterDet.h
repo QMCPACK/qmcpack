@@ -48,6 +48,7 @@ public:
   ///destructor
   ~SlaterDet() override;
 
+  bool isOptimizable() const override;
   void checkInVariables(opt_variables_type& active) override;
 
   void checkOutVariables(const opt_variables_type& active) override;

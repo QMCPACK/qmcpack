@@ -663,7 +663,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     reset();
   }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     if (notOpt)
       return;

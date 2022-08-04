@@ -156,6 +156,7 @@ public:
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
   //implement virtual functions for optimizations
+  bool isOptimizable() const override { return true; }
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;

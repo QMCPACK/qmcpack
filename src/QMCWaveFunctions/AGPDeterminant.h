@@ -46,11 +46,6 @@ public:
   ///default destructor
   ~AGPDeterminant() override;
 
-  void checkInVariables(opt_variables_type& active) override;
-  void checkOutVariables(const opt_variables_type& active) override;
-  void resetParameters(const opt_variables_type& active) override;
-  void reportStatus(std::ostream& os) override;
-
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 

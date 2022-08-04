@@ -11,6 +11,8 @@
 
 #include "OptimizableFunctorBase.h"
 
+namespace qmcplusplus
+{
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent)
 {
   using real_type = OptimizableFunctorBase::real_type;
@@ -26,3 +28,4 @@ void print(OptimizableFunctorBase& func, std::ostream& os, double extent)
     r += d;
   }
 }
+} // namespace qmcplusplus

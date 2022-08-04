@@ -40,7 +40,7 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPO
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);
-  if (Optimizable)
+  if (isOptimizable())
     Phi->buildOptVariables(NumPtcls);
 }
 

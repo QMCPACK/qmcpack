@@ -501,8 +501,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto j1copy         = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
-    j1copy->Optimizable = Optimizable;
+    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
       if (J1UniqueFunctors[i] != nullptr)
@@ -517,6 +516,8 @@ public:
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
+  bool isOptimizable() const override { return true; }
+
   void reportStatus(std::ostream& os) override
   {
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
@@ -564,7 +565,6 @@ public:
         }
       }
     }
-    Optimizable = myVars.is_optimizable();
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
       if (J1UniqueFunctors[i] != nullptr)
         J1UniqueFunctors[i]->checkOutVariables(active);
@@ -572,7 +572,7 @@ public:
 
   void resetParameters(const opt_variables_type& active) override
   {
-    if (!Optimizable)
+    if (!isOptimizable())
       return;
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
       if (J1UniqueFunctors[i] != nullptr)
