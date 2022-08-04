@@ -154,6 +154,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
+  bool isOptimizable() const override { return true; }
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

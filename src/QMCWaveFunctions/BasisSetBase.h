@@ -107,14 +107,6 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   /** return the basis set size */
   inline IndexType getBasisSetSize() const { return BasisSetSize; }
 
-  /**@{ functions to perform optimizations  */
-  /** checkIn optimizable variables */
-  virtual void checkInVariables(opt_variables_type& active) {}
-  /** checkOut optimizable variables */
-  virtual void checkOutVariables(const opt_variables_type& active) {}
-  /** reset parameters */
-  virtual void resetParameters(const opt_variables_type& active) {}
-  /**@}*/
   ///resize the basis set
   virtual void setBasisSetSize(int nbs) = 0;
 

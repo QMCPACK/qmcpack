@@ -115,7 +115,6 @@ struct J1Spin : public WaveFunctionComponent
         NumTargetGroups(rhs.NumTargetGroups),
         Ions(rhs.Ions)
   {
-    Optimizable = rhs.Optimizable;
     initialize(tqp);
     for (int i = 0; i < NumGroups; i++)
       for (int j = 0; j < NumTargetGroups; j++)
@@ -526,6 +525,8 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
+  bool isOptimizable() const override { return true; }
+
   void reportStatus(std::ostream& os) override
   {
     for (auto& J1UniqueFunctor : J1UniqueFunctors)
@@ -584,7 +585,6 @@ struct J1Spin : public WaveFunctionComponent
         }
       }
     }
-    Optimizable = myVars.is_optimizable();
     for (auto& J1UniqueFunctor : J1UniqueFunctors)
       if (J1UniqueFunctor != nullptr)
         J1UniqueFunctor->checkOutVariables(active);
@@ -592,7 +592,7 @@ struct J1Spin : public WaveFunctionComponent
 
   void resetParameters(const opt_variables_type& active) override
   {
-    if (!Optimizable)
+    if (!isOptimizable())
       return;
     for (auto& J1UniqueFunctor : J1UniqueFunctors)
       if (J1UniqueFunctor != nullptr)

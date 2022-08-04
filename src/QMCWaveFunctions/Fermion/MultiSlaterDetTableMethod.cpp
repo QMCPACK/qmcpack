@@ -23,7 +23,7 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDetTableMethod"),
+    : WaveFunctionComponent("MultiSlaterDetTableMethod", ""),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
@@ -35,8 +35,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  //Optimizable=true;
-  Optimizable  = false;
   is_fermionic = true;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
@@ -62,7 +60,6 @@ void MultiSlaterDetTableMethod::initialize(std::unique_ptr<std::vector<std::vect
   C              = std::move(C_in);
   myVars         = std::move(myVars_in);
   csf_data_      = std::move(csf_data_in);
-  Optimizable    = optimizable;
   CI_Optimizable = CI_optimizable;
 }
 
@@ -81,8 +78,7 @@ std::unique_ptr<WaveFunctionComponent> MultiSlaterDetTableMethod::makeClone(Part
   clone->C              = C;
   clone->myVars         = myVars;
 
-  clone->Optimizable = Optimizable;
-  clone->csf_data_   = csf_data_;
+  clone->csf_data_ = csf_data_;
 
   return clone;
 }
@@ -737,12 +733,10 @@ void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
   {
     if (myVars->size())
       active.insertFrom(*myVars);
-    else
-      Optimizable = false;
   }
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -756,7 +750,7 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
 
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -811,7 +805,7 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
   }
   bool all_Optimizable = true;
   for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->Optimizable;
+    all_Optimizable = Dets[id]->isOptimizable();
 
   if (all_Optimizable)
     for (size_t id = 0; id < Dets.size(); id++)
@@ -966,7 +960,7 @@ void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivatives(Particl
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
   for (auto const& det : Dets)
-    if (!det->Optimizable)
+    if (!det->isOptimizable())
       return;
 
   if (Dets.size() != 2)
@@ -1066,7 +1060,7 @@ void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivativesWF(Parti
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
   //Here we throw an error only if the optimization is turned on for MultiDiracDeterminants until the code is updated
   for (auto const& det : Dets)
-    if (!det->Optimizable)
+    if (!det->isOptimizable())
       return;
 
   if (Dets.size() != 2)

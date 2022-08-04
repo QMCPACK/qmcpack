@@ -16,6 +16,7 @@
 #ifndef QMCPLUSPLUS_BACKFLOW_FUNCTIONBASE_H
 #define QMCPLUSPLUS_BACKFLOW_FUNCTIONBASE_H
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OptimizableObject.h"
 #include "Configuration.h"
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"

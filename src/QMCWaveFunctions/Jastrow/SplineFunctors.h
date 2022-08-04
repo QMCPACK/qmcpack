@@ -76,7 +76,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   ///set the input, analytic function
   void setInFunc(FNIN* in_) { InFunc = in_; }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     //myVars.print(os);
   }

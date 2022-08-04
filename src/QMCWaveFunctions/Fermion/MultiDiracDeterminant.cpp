@@ -562,8 +562,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       DetSigns(s.DetSigns),
       ndets_per_excitation_level_(s.ndets_per_excitation_level_)
 {
-  Optimizable = s.Optimizable;
-
   resize();
 }
 
@@ -581,7 +579,7 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
-    : WaveFunctionComponent("MultiDiracDet"),
+    : WaveFunctionComponent("MultiDiracDet", ""),
       inverse_timer(*timer_manager.createTimer(ClassName + "::invertRefDet")),
       buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
       table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
@@ -605,8 +603,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       LastIndex(first + nel),
       is_spinor_(spinor)
 {
-  (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
-
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
   refdet_occup                = std::make_shared<OffloadVector<size_t>>();
   detData                     = std::make_shared<OffloadVector<int>>();
@@ -769,7 +765,7 @@ void MultiDiracDeterminant::resize()
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const size_t nel = NumPtcls;
@@ -854,7 +850,7 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
                                                 const std::vector<size_t>& C2node_up,
                                                 const std::vector<size_t>& C2node_dn)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
@@ -902,7 +898,7 @@ void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
                                                   const std::vector<size_t>& C2node_up,
                                                   const std::vector<size_t>& C2node_dn)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
