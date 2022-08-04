@@ -43,10 +43,7 @@ SlaterDet::~SlaterDet() = default;
 
 bool SlaterDet::isOptimizable() const
 {
-  bool optimizable = false;
-  for (const auto& det : Dets)
-    optimizable = optimizable || det->isOptimizable();
-  return optimizable;
+  return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
 void SlaterDet::checkInVariables(opt_variables_type& active)

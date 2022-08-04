@@ -35,10 +35,8 @@ SlaterDetWithBackflow::~SlaterDetWithBackflow() = default;
 
 bool SlaterDetWithBackflow::isOptimizable() const
 {
-  bool optimizable = BFTrans->isOptimizable();
-  for (const auto& det : Dets)
-    optimizable = optimizable || det->isOptimizable();
-  return optimizable;
+  return BFTrans->isOptimizable() ||
+      std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
