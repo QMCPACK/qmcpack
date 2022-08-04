@@ -24,11 +24,6 @@ namespace qmcplusplus
 class LinearOrbital : public WaveFunctionComponent
 {
 public:
-  void checkInVariables(opt_variables_type& active) override {}
-  void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParameters(const opt_variables_type& active) override {}
-  void reportStatus(std::ostream& os) override {}
-
   TinyVector<ValueType, 3> coeff;
 
   LinearOrbital() : WaveFunctionComponent("LinearOrbital")

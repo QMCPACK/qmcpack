@@ -127,7 +127,7 @@ public:
   const LogValueType& get_log_value() const { return log_value_; }
 
   /// default constructor
-  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "", bool optimizable = false);
+  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
   ///default destructor
   virtual ~WaveFunctionComponent();
 
@@ -446,6 +446,8 @@ public:
   /** Return the Chiesa kinetic energy correction
    */
   virtual RealType KECorrection();
+
+  virtual bool isOptimizable() const { return false; }
 
   /** Compute the derivatives of both the log of the wavefunction and kinetic energy
    * with respect to optimizable parameters.

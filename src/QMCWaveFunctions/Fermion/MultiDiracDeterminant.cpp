@@ -579,7 +579,7 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
-    : WaveFunctionComponent("MultiDiracDet", "", spos->isOptimizable()),
+    : WaveFunctionComponent("MultiDiracDet", ""),
       inverse_timer(*timer_manager.createTimer(ClassName + "::invertRefDet")),
       buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
       table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),

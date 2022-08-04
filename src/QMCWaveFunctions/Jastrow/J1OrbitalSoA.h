@@ -516,6 +516,8 @@ public:
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
+  bool isOptimizable() const override { return true; }
+
   void reportStatus(std::ostream& os) override
   {
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)

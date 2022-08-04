@@ -310,6 +310,8 @@ public:
     }
   }
 
+  bool isOptimizable() const override { return true; }
+
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

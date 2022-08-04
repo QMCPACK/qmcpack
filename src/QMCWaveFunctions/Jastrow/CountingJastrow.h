@@ -96,14 +96,12 @@ public:
                   const Matrix<RealType>& f,
                   bool opt_C_flag,
                   bool opt_F_flag)
-      : WaveFunctionComponent("CountingJastrow", "", opt_C_flag || opt_F_flag),
-        F(f),
-        C(std::move(c)),
-        opt_F(opt_F_flag),
-        opt_C(opt_C_flag)
+      : WaveFunctionComponent("CountingJastrow", ""), F(f), C(std::move(c)), opt_F(opt_F_flag), opt_C(opt_C_flag)
   {
     num_els = P.getTotalNum();
   }
+
+  bool isOptimizable() const override { return opt_C || opt_F; }
 
   void checkInVariables(opt_variables_type& active) override
   {

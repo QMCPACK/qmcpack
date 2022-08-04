@@ -865,25 +865,29 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->checkInVariables(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->checkInVariables(active);
 }
 
 void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->checkOutVariables(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->checkOutVariables(active);
 }
 
 void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->resetParameters(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->resetParameters(active);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->reportStatus(os);
+    if (Z[i]->isOptimizable())
+      Z[i]->reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)

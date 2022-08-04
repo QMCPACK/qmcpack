@@ -25,19 +25,15 @@ using opt_variables_type = optimize::VariableSet;
 class OptimizableObject
 {
 public:
-  OptimizableObject(const std::string& name, bool optimizable) : name_(name), optimizable_(optimizable) {}
+  OptimizableObject(const std::string& name) : name_(name) {}
 
   const std::string& getName() const { return name_; }
   bool isOptimized() const { return is_optimized_; }
-  bool isOptimizable() const { return optimizable_; }
 
 private:
   /** Name of the optimizable object
    */
   const std::string name_;
-  /** If true, this object and/or its underlying components is optimizable_
-   */
-  const bool optimizable_;
   /** If true, this object is actively modified during WFOpt
    */
   bool is_optimized_ = false;
@@ -49,16 +45,25 @@ public:
    * This is a query function and should never be implemented as a feature blocker.
    * If an OptimizableObject derived class doesn't support optimization, use the base class fallback.
    */
-  virtual void checkInVariables(opt_variables_type& active) {}
+  virtual void checkInVariables(opt_variables_type& active)
+  {
+    throw std::logic_error("BUG!! OptimizableObject::checkInVariables should not be called!");
+  }
 
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
-  virtual void checkOutVariables(const opt_variables_type& active) {}
+  virtual void checkOutVariables(const opt_variables_type& active)
+  {
+    throw std::logic_error("BUG!! OptimizableObject::checkOutVariables should not be called!");
+  }
 
   /** reset the parameters during optimizations
    */
-  virtual void resetParameters(const opt_variables_type& active) {}
+  virtual void resetParameters(const opt_variables_type& active)
+  {
+    throw std::logic_error("BUG!! OptimizableObject::resetParameters should not be called!");
+  }
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}

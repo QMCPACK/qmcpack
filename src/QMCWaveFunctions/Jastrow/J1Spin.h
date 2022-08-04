@@ -91,7 +91,7 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-      : WaveFunctionComponent("J1Spin", obj_name, true),
+      : WaveFunctionComponent("J1Spin", obj_name),
         myTableID(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Nions(ions.getTotalNum()),
         Nelec(els.getTotalNum()),
@@ -107,7 +107,7 @@ struct J1Spin : public WaveFunctionComponent
   J1Spin(const J1Spin& rhs) = delete;
 
   J1Spin(const J1Spin& rhs, ParticleSet& tqp)
-      : WaveFunctionComponent("J1Spin", rhs.myName, true),
+      : WaveFunctionComponent("J1Spin", rhs.myName),
         myTableID(rhs.myTableID),
         Nions(rhs.Nions),
         Nelec(rhs.Nelec),
@@ -525,6 +525,8 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
+  bool isOptimizable() const override { return true; }
+
   void reportStatus(std::ostream& os) override
   {
     for (auto& J1UniqueFunctor : J1UniqueFunctors)

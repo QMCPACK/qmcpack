@@ -31,7 +31,7 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow", "", true), targetPtcl(target) {}
+RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow", ""), targetPtcl(target) {}
 
 RPAJastrow::~RPAJastrow() = default;
 

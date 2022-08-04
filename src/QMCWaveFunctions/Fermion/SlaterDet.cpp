@@ -24,18 +24,10 @@ namespace qmcplusplus
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
-bool determineOptimizable(const std::vector<std::unique_ptr<SlaterDet::Determinant_t>>& dets)
-{
-  bool Optimizable = false;
-  for (const auto& det : dets)
-    Optimizable = Optimizable || det->isOptimizable();
-  return Optimizable;
-}
-
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<Determinant_t>> dets,
                      const std::string& class_name)
-    : WaveFunctionComponent(class_name, "", determineOptimizable(dets)), Dets(std::move(dets))
+    : WaveFunctionComponent(class_name, ""), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
@@ -48,6 +40,14 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl,
 
 ///destructor
 SlaterDet::~SlaterDet() = default;
+
+bool SlaterDet::isOptimizable() const
+{
+  bool optimizable = false;
+  for (const auto& det : Dets)
+    optimizable = optimizable || det->isOptimizable();
+  return optimizable;
+}
 
 void SlaterDet::checkInVariables(opt_variables_type& active)
 {

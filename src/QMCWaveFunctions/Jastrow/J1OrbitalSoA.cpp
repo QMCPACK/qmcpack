@@ -46,7 +46,7 @@ struct J1OrbitalSoAMultiWalkerMem : public Resource
 
 template<typename FT>
 J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-    : WaveFunctionComponent("J1OrbitalSoA", obj_name, true),
+    : WaveFunctionComponent("J1OrbitalSoA", obj_name),
       use_offload_(use_offload),
       myTableID(els.addTable(ions, use_offload ? DTModes::ALL_OFF : DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       Nions(ions.getTotalNum()),

@@ -22,8 +22,8 @@ namespace qmcplusplus
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
-WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name, bool optimizable)
-    : OptimizableObject(obj_name, optimizable),
+WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
+    : OptimizableObject(obj_name),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
       ClassName(class_name),

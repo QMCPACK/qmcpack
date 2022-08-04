@@ -23,7 +23,7 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDetTableMethod", "", true),
+    : WaveFunctionComponent("MultiSlaterDetTableMethod", ""),
       RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
       offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),

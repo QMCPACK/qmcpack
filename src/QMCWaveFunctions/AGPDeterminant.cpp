@@ -72,23 +72,6 @@ void AGPDeterminant::resize(int nup, int ndown)
   }
 }
 
-void AGPDeterminant::checkInVariables(opt_variables_type& active)
-{
-  //do nothing
-}
-void AGPDeterminant::checkOutVariables(const opt_variables_type& active)
-{
-  //do nothing
-}
-void AGPDeterminant::resetParameters(const opt_variables_type& active)
-{
-  //GeminalBasis->resetParameters(active);
-}
-void AGPDeterminant::reportStatus(std::ostream& os)
-{
-  //do nothing
-}
-
 /** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients

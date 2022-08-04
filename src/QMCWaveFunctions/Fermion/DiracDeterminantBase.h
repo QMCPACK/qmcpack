@@ -38,7 +38,7 @@ public:
    *@param last index of last particle
    */
   DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : WaveFunctionComponent(class_name, "", spos->isOptimizable()),
+      : WaveFunctionComponent(class_name, ""),
         UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
         InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
@@ -72,13 +72,10 @@ public:
   virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
-  ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
-
-  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
-
-  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
+  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+  inline void checkInVariables(opt_variables_type& active) final { Phi->checkInVariables(active); }
+  inline void checkOutVariables(const opt_variables_type& active) final { Phi->checkOutVariables(active); }
+  void resetParameters(const opt_variables_type& active) final { Phi->resetParameters(active); }
   inline void reportStatus(std::ostream& os) final {}
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override

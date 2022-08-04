@@ -313,7 +313,7 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OMPTarget", obj_name, true),
+    : WaveFunctionComponent("J2OMPTarget", obj_name),
       N(p.getTotalNum()),
       N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),

@@ -95,6 +95,7 @@ public:
   ///destructor
   ~MultiSlaterDetTableMethod() override;
 
+  bool isOptimizable() const override { return true; }
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;

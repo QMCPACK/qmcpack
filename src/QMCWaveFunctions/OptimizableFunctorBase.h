@@ -44,7 +44,7 @@ namespace qmcplusplus
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
  * to insert calls.
  */
-struct OptimizableFunctorBase: public OptimizableObject
+struct OptimizableFunctorBase : public OptimizableObject
 {
   ///typedef for real values
   using real_type = optimize::VariableSet::real_type;
@@ -55,7 +55,7 @@ struct OptimizableFunctorBase: public OptimizableObject
   ///set of variables to be optimized
   opt_variables_type myVars;
   ///default constructor
-  inline OptimizableFunctorBase(const std::string& name = "", bool optimizable = false): OptimizableObject(name, optimizable) {}
+  inline OptimizableFunctorBase(const std::string& name = "") : OptimizableObject(name) {}
   ///virtual destrutor
   virtual ~OptimizableFunctorBase() = default;
 
@@ -105,10 +105,7 @@ struct OptimizableFunctorBase: public OptimizableObject
     return false;
   }
 
-  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
-  {
-    return false;
-  }
+  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) { return false; }
 
   // mmorales: don't know how to solve a template problem for cusp correction,
   //           so for now I do this
