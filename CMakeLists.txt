@@ -541,13 +541,7 @@ endif()
 
 message(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
 message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
-set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES
-                                                   "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
-
-#create scalar_vector_functions target
-add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-#create fftw3 target
-add_library(Math::FFTW3 INTERFACE IMPORTED)
+target_link_libraries(Math::BLAS_LAPACK INTERFACE "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
 
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
@@ -555,6 +549,7 @@ if(LAPACK_LIBRARIES MATCHES "mkl_core")
 endif()
 
 if(MKL_FOUND)
+  target_link_libraries(Math::BLAS_LAPACK INTERFACE MKL::BLAS_LAPACK)
   set(MATH_VENDOR_GUESS "INTEL_VML")
 endif()
 
@@ -569,6 +564,8 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
+add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
+
 set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
 if(NOT DEFINED MATH_VENDOR_GUESS)
   set(MATH_VENDOR_GUESS "GENERIC")
@@ -603,22 +600,21 @@ include(CheckSincos)
 #-------------------------------------------------------------------
 #  set up FFTW3 library
 #-------------------------------------------------------------------
+add_library(Math::FFTW3 INTERFACE IMPORTED)
 set(FFTW_FOUND 0)
 if(HAVE_MKL)
   if(HAVE_MKL_FFTW3)
     set(FFTW_FOUND 1)
+    target_link_libraries(Math::FFTW3 INTERFACE MKL::FFTW3)
   endif()
 endif()
 if(NOT FFTW_FOUND)
-  find_package(FFTW)
+  find_package(FFTW REQUIRED)
+  target_link_libraries(Math::FFTW3 INTERFACE FFTW::FFTW3)
 endif()
-if(FFTW_FOUND)
-  set(HAVE_LIBFFTW 1)
-  message(STATUS "Found FFTW")
-else(FFTW_FOUND)
-  #  MESSAGE(STATUS "Disabling FFTW")
-  message(FATAL_ERROR "Could not find required library FFTW. Verify FFTW_HOME")
-endif(FFTW_FOUND)
+
+set(HAVE_LIBFFTW 1)
+target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_LIBFFTW")
 
 set(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
@@ -695,13 +691,11 @@ if(HDF5_FOUND)
   endif()
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
-  set_target_properties(
-    IO::HDF5
-    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIR}" INTERFACE_COMPILE_DEFINITIONS
-                                                                   "HAVE_LIBHDF5;H5_USE_16_API" INTERFACE_LINK_LIBRARIES
-                                                                                                "${HDF5_LIBRARIES}")
+  target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
+  target_compile_definitions(IO::HDF5 INTERFACE "HAVE_LIBHDF5;H5_USE_16_API")
+  target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
-    set_property(TARGET IO::HDF5 APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "ENABLE_PHDF5")
+    target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
   endif(ENABLE_PHDF5)
 else(HDF5_FOUND)
   message(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
@@ -713,7 +707,7 @@ endif(HDF5_FOUND)
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 if(Boost_FOUND)
-  set_property(TARGET Boost::boost APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBBOOST")
+  target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
   message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 else()
   message(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
