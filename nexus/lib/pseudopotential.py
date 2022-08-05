@@ -53,7 +53,7 @@ from basisset import process_gaussian_text,GaussianBasisSet
 from physical_system import PhysicalSystem
 from plotting import *
 from debug import *
-#from testing import *
+from testing import object_eq
 
 try:
     import matplotlib.pyplot as plt
@@ -443,7 +443,7 @@ class Pseudopotential(DevBase):
 
 
 class SemilocalPP(Pseudopotential):
-    l_channels   = tuple('spdfghi')
+    l_channels   = tuple('spdfghiklmnoqrtuvwxyz')
     channel_colors = obj(s='g',p='r',d='b',f='m',g='c',h='k',i='g',L2='k')
 
     numeric        = False
@@ -1037,7 +1037,7 @@ class SemilocalPP(Pseudopotential):
     def plot_components(self,r=None,show=True,fig=True,linestyle='-',rmin=0.01,rmax=5.0,title=None,metric=None,color=None,rpow=0):
         channels = list(self.l_channels)+['L2']
         if fig:
-            figure(tight_layout=True)
+            plt.figure(tight_layout=True)
         #end if
         if r is None and self.numeric:
             r = self.r
@@ -1075,20 +1075,20 @@ class SemilocalPP(Pseudopotential):
                 elif metric!=None:
                     self.error('invalid metric for plotting: {0}\nvalid options are: r2'.format(metric))
                 #end if
-                plot(r,v,color+linestyle,label=lab)
+                plt.plot(r,v,color+linestyle,label=lab)
             #end for
         #end for
         if fig:
             if title is None:
                 title = 'Semilocal {0} PP ({1} core)'.format(self.element,self.core)
             #end if
-            set_title(title)
-            ylabel('component potentials (Ha)')
-            xlabel('r (Bohr)')
-            legend()
+            plt.title(title)
+            plt.ylabel('component potentials (Ha)')
+            plt.xlabel('r (Bohr)')
+            plt.legend()
         #end if
         if show:
-            show_plots()
+            plt.show()
         #end if
     #end def plot_components
 
@@ -1212,7 +1212,7 @@ class SemilocalPP(Pseudopotential):
                 
     def plot_L2(self,show=True,fig=True,r=None,rmin=0.01,rmax=5.0,linestyle='-',title=None,color=None):
         if fig:
-            figure(tight_layout=True)
+            plt.figure(tight_layout=True)
         #end if
         if r is None and self.numeric:
             r = self.r
@@ -1230,20 +1230,20 @@ class SemilocalPP(Pseudopotential):
                 r = r[rng]
                 l = self.channel_indices[c]
                 vL2 = (v-vs)/(l*(l+1))
-                plot(r,vL2,color+linestyle,label='(v{0}-vs)/(l(l+1))'.format(c))
+                plt.plot(r,vL2,color+linestyle,label='(v{0}-vs)/(l(l+1))'.format(c))
             #end if
         #end for
         if fig:
-            xlim([0,rmax])
+            plt.xlim([0,rmax])
             if title is None:
                 title = 'Semilocal {0} PP ({1} core)'.format(self.element,self.core)
             #end if
-            set_title(title)
-            ylabel('vL2 for channels above s')
-            xlabel('r')
-            legend()
+            plt.title(title)
+            plt.ylabel('vL2 for channels above s')
+            plt.xlabel('r')
+            plt.legend()
             if show:
-                show_plots()
+                plt.show()
             #end if
         #end if 
     #end def plot_L2
@@ -1393,7 +1393,7 @@ class SemilocalPP(Pseudopotential):
             vL2 = vL2[rng][::ndrf]
             VL2SUM = None
             for li in range(1,lmax):
-                print('V L2 {} of {}'.format(li,lmax))
+                #print('V L2 {} of {}'.format(li,lmax))
                 v = li*(li+1)*vL2
                 VL,PL = np.array(np.meshgrid(v,Pli[li],indexing='ij'))
                 V = VL*PL
@@ -1424,7 +1424,7 @@ class SemilocalPP(Pseudopotential):
         zval          = self.Zval
         creator       = 'Nexus'
         npots_down    = len(channels)
-        l_local       = 'spdfghi'.find(self.local)
+        l_local       = self.channel_indices[self.local]
         if l_local == -1:
             self.error('Local channel, {}, not coded.'.format(self.local))
         #end if
@@ -2037,7 +2037,8 @@ class GaussianPP(SemilocalPP):
         '''
         dec=16
         # Remove terms with coefficients equivalent to zero
-        chan_labels = ['s','p','d','f','g','h','i','j']
+        #chan_labels = ['s','p','d','f','g','h','i','k']
+        chan_labels = list(self.l_channels)
         remove = []
         for l in np.arange(self.lmax+1):
             for term_idx,term in enumerate(self.components[chan_labels[l]]):
@@ -2244,7 +2245,6 @@ class GaussianPP(SemilocalPP):
         #end for
 
         return unboundedness
-
     #end def get_unboundedness
 
 
