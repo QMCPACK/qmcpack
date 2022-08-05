@@ -56,16 +56,12 @@ ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 
 MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 {
-  ParticleSet* mc = 0;
-  if (myPool.size() == 1)
-    mc = myPool.begin()->second.get();
-  else
-    mc = getParticleSet(pname);
-  if (mc == 0)
+  auto mc = dynamic_cast<MCWalkerConfiguration*>(getParticleSet(pname));
+  if (mc == nullptr)
   {
     throw std::runtime_error("ParticleSePool::getWalkerSet missing " + pname);
   }
-  return dynamic_cast<MCWalkerConfiguration*>(mc);
+  return mc;
 }
 
 void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)

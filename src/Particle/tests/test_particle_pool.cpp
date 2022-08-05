@@ -57,8 +57,10 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   ParticleSet* not_here = pp.getParticleSet("does_not_exist");
   REQUIRE(not_here == NULL);
 
-  ParticleSet* ws = pp.getWalkerSet("ion0");
+  MCWalkerConfiguration* ws = pp.getWalkerSet("ion0");
   REQUIRE(ws != NULL);
+
+  REQUIRE_THROWS_AS(pp.getWalkerSet("does_not_exist"), std::runtime_error);
 
   auto ps2 = std::make_unique<ParticleSet>(pp.getSimulationCell());
   ps2->setName("particle_set_2");
