@@ -111,8 +111,9 @@ UNTRIMMED_COMMITTER_TOKEN=${!USER_TOKEN:-$GITHUB_TOKEN}
 COMMITTER_TOKEN="$(echo -e "${UNTRIMMED_COMMITTER_TOKEN}" | tr -d '[:space:]')"
 
 git remote set-url origin https://x-access-token:$COMMITTER_TOKEN@github.com/$GITHUB_REPOSITORY.git
-git config --global user.email "$USER_EMAIL"
-git config --global user.name "$USER_NAME"
+# CHANGED FROM ORIGNAL: use bot credentials
+git config --global user.email "QMCPACKbot@gmail.com"
+git config --global user.name "QMCPACK-Bot"
 
 git remote add fork https://x-access-token:$COMMITTER_TOKEN@github.com/$HEAD_REPO.git
 
@@ -128,6 +129,11 @@ git rebase origin/$BASE_BRANCH
 
 # push back
 git push --force-with-lease fork fork/$HEAD_BRANCH:$HEAD_BRANCH
+
+# CHANGE FROM ORIGINAL: add empty commit signed by bot 
+git config --global user.signingkey "$QMCPACK_BOT_GPG_KEY"  
+git commit --allow-empty -S -m "Rebased Signed Off by QMCPACK-Bot"
+git push fork HEAD
 
 COMMIT_SHA=$(git rev-parse --verify HEAD)
 
