@@ -26,10 +26,8 @@ using MatrixOperators::product;
 using MatrixOperators::product_AtB;
 
 
-DensityMatrices1B::DensityMatrices1B(ParticleSet& P,
-                                     TrialWaveFunction& psi,
-                                     ParticleSet* Pcl)
-    : lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
+DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl)
+    : basis_functions("DensityMatrices1B::basis"), lattice_(P.getLattice()), Psi(psi), Pq(P), Pc(Pcl)
 {
   reset();
 }
@@ -232,7 +230,8 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
     metric     = 1.0 / samples;
   }
   else
-    throw std::runtime_error("DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
+    throw std::runtime_error(
+        "DensityMatrices1B::set_state  invalid integrator\n  valid options are: uniform_grid, uniform, density");
 
   if (evstr == "loop")
     evaluator = loop;
@@ -257,7 +256,7 @@ void DensityMatrices1B::set_state(xmlNodePtr cur)
   for (int i = 0; i < sposets.size(); ++i)
   {
     auto& spomap = Psi.getSPOMap();
-    auto spo_it = spomap.find(sposets[i]);
+    auto spo_it  = spomap.find(sposets[i]);
     if (spo_it == spomap.end())
       throw std::runtime_error("DensityMatrices1B::put  sposet " + sposets[i] + " does not exist.");
     basis_functions.add(spo_it->second->makeClone());

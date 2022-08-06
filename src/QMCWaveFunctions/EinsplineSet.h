@@ -75,7 +75,9 @@ public:
   void resetSourceParticleSet(ParticleSet& ions);
   void setOrbitalSetSize(int norbs) override;
   inline std::string Type() { return "EinsplineSet"; }
-  EinsplineSet() : TwistNum(0), NumValenceOrbs(0) { className = "EinsplineSet"; }
+  EinsplineSet(const std::string& my_name) : SPOSet(my_name), TwistNum(0), NumValenceOrbs(0) {}
+
+  virtual std::string getClassName() const override { return "EinsplineSet"; }
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -478,11 +480,14 @@ public:
   void registerTimers();
   PosType get_k(int orb) override { return kPoints[orb]; }
 
+  virtual std::string getClassName() const override { return "EinsplineSetExtended"; }
+  bool hasIonDerivs() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  EinsplineSetExtended()
-      : MultiSpline(NULL),
+  EinsplineSetExtended(const std::string& my_name)
+      : EinsplineSet(my_name),
+        MultiSpline(NULL),
         ValueTimer(*timer_manager.createTimer("EinsplineSetExtended::ValueOnly")),
         VGLTimer(*timer_manager.createTimer("EinsplineSetExtended::VGL")),
         VGLMatTimer(*timer_manager.createTimer("EinsplineSetExtended::VGLMatrix")),
@@ -506,7 +511,6 @@ public:
         L_cuda("EinsplineSetExtended::L_cuda")
 #endif
   {
-    className = "EinsplineSetExtended";
     for (int i = 0; i < OHMMS_DIM; i++)
       HalfG[i] = 0;
   }
@@ -631,9 +635,11 @@ public:
 
   std::string Type();
 
+  std::string getClassName() const override { return "EinsplineSetHybrid"; }
+
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  EinsplineSetHybrid();
+  EinsplineSetHybrid(const std::string& my_name) : EinsplineSetExtended<StorageType>(my_name) {}
 };
 
 #endif

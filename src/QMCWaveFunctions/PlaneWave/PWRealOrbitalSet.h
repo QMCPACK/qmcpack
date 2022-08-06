@@ -47,7 +47,11 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0) { className = "PWRealOrbitalSet"; }
+  PWRealOrbitalSet(const std::string& my_name)
+      : SPOSet(my_name), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0)
+  {}
+
+  std::string getClassName() const override { return "PWRealOrbitalSet"; }
 
   /** delete BasisSet only it owns this
    *

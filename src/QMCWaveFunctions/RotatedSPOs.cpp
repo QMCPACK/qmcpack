@@ -18,13 +18,9 @@
 
 namespace qmcplusplus
 {
-RotatedSPOs::RotatedSPOs(std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(spos->isOMPoffload(), spos->hasIonDerivs(), true),
-      Phi(std::move(spos)),
-      nel_major_(0),
-      params_supplied(false)
+RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
+    : SPOSet(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
 {
-  className      = "RotatedSPOs";
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
 
@@ -119,8 +115,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
   app_log() << "nparams_active: " << nparams_active << " params2.size(): " << params.size() << std::endl;
   if (params_supplied)
     if (nparams_active != params.size())
-      throw std::runtime_error("The number of supplied orbital rotation parameters does not match number prdouced by the slater "
-                "expansion. \n");
+      throw std::runtime_error(
+          "The number of supplied orbital rotation parameters does not match number prdouced by the slater "
+          "expansion. \n");
 
   myVars.clear();
   for (int i = 0; i < nparams_active; i++)
@@ -128,7 +125,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
     p = m_act_rot_inds[i].first;
     q = m_act_rot_inds[i].second;
     std::stringstream sstr;
-    sstr << myName << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
+    sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p << "_"
          << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
@@ -153,16 +150,6 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
   for (int i = 0; i < m_act_rot_inds.size(); i++)
     param[i] = myVars[i];
   apply_rotation(param, false);
-
-  if (!Optimizable)
-  {
-    //THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
-    //this assumes there are only CI coefficients ahead of the M_orb_coefficients
-    myVars.Index.erase(myVars.Index.begin(), myVars.Index.end());
-    myVars.NameAndValue.erase(myVars.NameAndValue.begin(), myVars.NameAndValue.end());
-    myVars.ParameterType.erase(myVars.ParameterType.begin(), myVars.ParameterType.end());
-    myVars.Recompute.erase(myVars.Recompute.begin(), myVars.Recompute.end());
-  }
 #endif
 }
 
@@ -1147,13 +1134,12 @@ void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
 
 std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
 {
-  auto myclone = std::make_unique<RotatedSPOs>(std::unique_ptr<SPOSet>(Phi->makeClone()));
+  auto myclone = std::make_unique<RotatedSPOs>(my_name_, std::unique_ptr<SPOSet>(Phi->makeClone()));
 
   myclone->params          = this->params;
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
-  myclone->myName          = this->myName;
   return myclone;
 }
 

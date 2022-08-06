@@ -540,10 +540,10 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   kdn[1] = PosType(-0.1, 0.2, -0.3);
   kdn[2] = PosType(0.4, -0.5, 0.6);
 
-  auto spo_up = std::make_unique<FreeOrbital>(kup);
-  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
+  auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
+  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
 
-  auto spinor_set = std::make_unique<SpinorSet>();
+  auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
   DET dd(std::move(spinor_set), 0, nelec, 1, inverter_kind);

@@ -452,13 +452,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
-  std::string spo_name(""), id, cusp_file(""), optimize("no");
+  std::string spo_name(""), cusp_file(""), optimize("no");
   std::string basisset_name("LCAOBSet");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
-  spoAttrib.add(id, "id");
+  spoAttrib.add(spo_name, "id");
   spoAttrib.add(cusp_file, "cuspInfo");
-  spoAttrib.add(optimize, "optimize");
   spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
@@ -468,9 +467,6 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
-  if (optimize == "yes")
-    app_log() << "  SPOSet " << spo_name << " is optimizable\n";
-
   std::unique_ptr<LCAOrbitalSet> lcos;
   if (doCuspCorrection)
   {
@@ -479,12 +475,11 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos =
-        std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
 #endif
   }
   else
-    lcos = std::make_unique<LCAOrbitalSet>(std::move(myBasisSet), optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
   loadMO(*lcos, cur);
 
 #if !defined(QMC_COMPLEX)
@@ -502,17 +497,13 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     const int num_centers = sourcePtcl.getTotalNum();
     auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
-    // Sometimes sposet attribute is 'name' and sometimes it is 'id'
-    if (id == "")
-      id = spo_name;
-
     const int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
     /// use int instead of bool to handle MPI bcast properly.
     int valid = false;
     if (myComm->rank() == 0)
-      valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
+      valid = readCuspInfo(cusp_file, spo_name, orbital_set_size, info);
 
 #ifdef HAVE_MPI
     myComm->comm.broadcast_value(valid);
@@ -522,9 +513,9 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
           broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
 #endif
     if (!valid)
-      generateCuspInfo(orbital_set_size, num_centers, info, tmp_targetPtcl, sourcePtcl, lcwc, id, *myComm);
+      generateCuspInfo(orbital_set_size, num_centers, info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name, *myComm);
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, tmp_targetPtcl, sourcePtcl, lcwc, id);
+    applyCuspCorrection(info, num_centers, orbital_set_size, tmp_targetPtcl, sourcePtcl, lcwc, spo_name);
   }
 #endif
 

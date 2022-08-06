@@ -31,6 +31,8 @@ public:
   FakeSPO();
   ~FakeSPO() override {}
 
+  std::string getClassName() const override { return "FakeSPO"; }
+
   std::unique_ptr<SPOSet> makeClone() const override;
   virtual void report() {}
   void setOrbitalSetSize(int norbs) override;

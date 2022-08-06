@@ -34,10 +34,10 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
-  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
 
@@ -199,10 +199,10 @@ void generateCuspInfo(int orbital_set_size,
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
-  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
 
@@ -229,12 +229,10 @@ void generateCuspInfo(int orbital_set_size,
       ParticleSet localTargetPtcl(targetPtcl);
       ParticleSet localSourcePtcl(sourcePtcl);
 
-      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()),
-                              phi.isOptimizable());
+      LCAOrbitalSet local_phi("local_phi", std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()));
       local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
 
-      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()),
-                              eta.isOptimizable());
+      LCAOrbitalSet local_eta("local_eta", std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()));
       local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
 
 #pragma omp critical
