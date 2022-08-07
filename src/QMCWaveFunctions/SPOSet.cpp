@@ -26,7 +26,7 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet(const std::string& my_name) : my_name_(my_name), OrbitalSetSize(0) {}
+SPOSet::SPOSet(const std::string& my_name) : OptimizableObject(my_name), my_name_(my_name), OrbitalSetSize(0) {}
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
