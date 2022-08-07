@@ -457,7 +457,7 @@ public:
   /** extract underlying OptimizableObject references
    * @param opt_obj_refs aggregated list of optimizable object references
    */
-  virtual void extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs);
+  virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
 
   /** Compute the derivatives of both the log of the wavefunction and kinetic energy
    * with respect to optimizable parameters.

@@ -27,7 +27,7 @@ template<class T>
 struct FakeFunctor : public OptimizableFunctorBase
 {
   ///default constructor
-  FakeFunctor() {}
+  FakeFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) {}
 
   void setCusp(real_type cusp) override {}
 

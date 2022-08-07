@@ -123,7 +123,7 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs)
+void J2OMPTarget<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
   for (auto& [key, functor] : J2Unique)
     opt_obj_refs.push_back(*functor);

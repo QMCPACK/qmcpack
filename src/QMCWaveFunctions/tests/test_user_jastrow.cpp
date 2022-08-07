@@ -25,7 +25,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 
   Communicate* c = OHMMS::Controller;
 
-  UserFunctor<RealType> uf;
+  UserFunctor<RealType> uf("test_functor");
 
   // This may or may not need to be present
   uf.setCusp(1.0);

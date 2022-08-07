@@ -195,7 +195,7 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
-void WaveFunctionComponent::extractOptimizableObjectRefs(RefVector<OptimizableObject>&)
+void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() + "::extractOptimizableObjectRefs "

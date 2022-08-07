@@ -55,8 +55,8 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
   bool notOpt;
 
   ///constructor
-  PolynomialFunctor3D(real_type ee_cusp = 0.0, real_type eI_cusp = 0.0)
-      : N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
+  PolynomialFunctor3D(const std::string& my_name, real_type ee_cusp = 0.0, real_type eI_cusp = 0.0)
+      : OptimizableFunctorBase(my_name), N_eI(0), N_ee(0), ResetCount(0), C(3), scale(1.0), notOpt(false)
   {
     if (std::abs(ee_cusp) > 0.0 || std::abs(eI_cusp) > 0.0)
     {

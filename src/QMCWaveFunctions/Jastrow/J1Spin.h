@@ -536,7 +536,7 @@ struct J1Spin : public WaveFunctionComponent
         J1UniqueFunctor->myVars.print(os);
   }
 
-  void extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs) override
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
     for (auto& functor : J1UniqueFunctors)
       opt_obj_refs.push_back(*functor);

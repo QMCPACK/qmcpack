@@ -63,7 +63,7 @@ struct UserFunctor : public OptimizableFunctorBase
 
 
   ///default constructor
-  UserFunctor() { reset(); }
+  UserFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) { reset(); }
 
   // void setCusp(real_type cusp)
 

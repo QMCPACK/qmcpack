@@ -61,7 +61,11 @@ struct PadeFunctor : public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor() : Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0") { reset(); }
+  PadeFunctor(const std::string& my_name)
+      : OptimizableFunctorBase(my_name), Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0")
+  {
+    reset();
+  }
 
   void setCusp(real_type cusp) override
   {
@@ -332,8 +336,8 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   std::string ID_C;
 
   ///constructor
-  Pade2ndOrderFunctor(real_type a = 1.0, real_type b = 1.0, real_type c = 1.0)
-      : A(a), B(b), C(c), ID_A("0"), ID_B("0"), ID_C("0")
+  Pade2ndOrderFunctor(const std::string& my_name, real_type a = 1.0, real_type b = 1.0, real_type c = 1.0)
+      : OptimizableFunctorBase(my_name), A(a), B(b), C(c), ID_A("0"), ID_B("0"), ID_C("0")
   {
     reset();
   }

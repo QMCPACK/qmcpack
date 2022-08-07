@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 template<typename FT>
-void J2OrbitalSoA<FT>::extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs)
+void J2OrbitalSoA<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
   for (auto& [key, functor] : J2Unique)
     opt_obj_refs.push_back(*functor);
