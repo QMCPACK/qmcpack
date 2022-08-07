@@ -44,6 +44,12 @@ bool SlaterDet::isOptimizable() const
   return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
+void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+}
+
 void SlaterDet::checkInVariables(opt_variables_type& active)
 {
   myVars.clear();

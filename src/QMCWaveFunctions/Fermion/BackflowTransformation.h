@@ -24,10 +24,11 @@
 #include "Particle/ParticleBase/ParticleAttribOps.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "OptimizableObject.h"
 
 namespace qmcplusplus
 {
-class BackflowTransformation
+class BackflowTransformation : public OptimizableObject
 {
 public:
   using WFBufferType = BackflowFunctionBase::WFBufferType;
@@ -155,15 +156,15 @@ public:
 
   void restore(int iat = 0);
 
-  void checkInVariables(opt_variables_type& active);
+  void checkInVariables(opt_variables_type& active) override;
 
-  void reportStatus(std::ostream& os);
+  void reportStatus(std::ostream& os) override;
 
-  void checkOutVariables(const opt_variables_type& active);
+  void checkOutVariables(const opt_variables_type& active) override;
 
   bool isOptimizable() const;
 
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 
