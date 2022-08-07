@@ -232,7 +232,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
       app_debug() << "    RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
 
       const auto coef_id = extractCoefficientsID(cur);
-      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? j2name + spA + spB : coef_id);
+      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? j2name + "_" + spA + spB : coef_id);
       functor->setCusp(cusp);
       functor->setPeriodic(targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius   = targetPtcl.getLattice().WignerSeitzRadius;
@@ -384,7 +384,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.put(kids);
 
       const auto coef_id = extractCoefficientsID(kids);
-      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? jname + speciesA + speciesB : coef_id);
+      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? jname + "_"  + speciesA + speciesB : coef_id);
       functor->setPeriodic(SourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
       functor->setCusp(cusp);

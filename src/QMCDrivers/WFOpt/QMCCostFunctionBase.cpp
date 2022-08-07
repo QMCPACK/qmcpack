@@ -27,10 +27,7 @@
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
-                                         TrialWaveFunction& psi,
-                                         QMCHamiltonian& h,
-                                         Communicate* comm)
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : MPIObjectBase(comm),
       reportH5(false),
       CI_Opt(false),
@@ -131,7 +128,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   resetPsi();
   //evaluate new local energies
   EffectiveWeight effective_weight = correlatedSampling(needGrad);
-  IsValid = isEffectiveWeightValid(effective_weight);
+  IsValid                          = isEffectiveWeightValid(effective_weight);
   return computedCost();
 }
 
@@ -191,9 +188,9 @@ void QMCCostFunctionBase::Report()
     if (msg_stream)
     {
       msg_stream->precision(8);
-      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue
-                  << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
-                  << std::setw(16) << curVar << std::setw(16) << curVar_abs << std::endl;
+      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
+                  << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w << std::setw(16) << curVar
+                  << std::setw(16) << curVar_abs << std::endl;
       *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i = 0; i < OptVariables.size(); i++)
         *msg_stream << std::setw(16) << OptVariables[i];
@@ -399,6 +396,17 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     }
     cur = cur->next;
   }
+
+  /// survey all the optimizable objects
+  UniqueOptObjRefs opt_obj_refs;
+  Psi.extractOptimizableObjectRefs(opt_obj_refs);
+  app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
+            << " optimizable objects:" << std::endl
+            << "  ";
+  for (OptimizableObject& obj : opt_obj_refs)
+    std::cout << " '" << obj.getName() << "'";
+  app_log() << std::endl;
+
   //build optimizables from the wavefunction
   OptVariablesForPsi.clear();
   Psi.checkInVariables(OptVariablesForPsi);
@@ -1036,11 +1044,12 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
 
 bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weight) const
 {
-  app_log() << "Effective weight of all the samples measured by correlated sampling is "
-          << effective_weight << std::endl;
+  app_log() << "Effective weight of all the samples measured by correlated sampling is " << effective_weight
+            << std::endl;
   if (effective_weight < MinNumWalkers)
   {
-    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = " << MinNumWalkers << std::endl
+    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = "
+            << MinNumWalkers << std::endl
             << "  If this message appears frequently. You might have to be cautious. " << std::endl
             << "  Find info about parameter \"minwalkers\" in the user manual!");
     return false;

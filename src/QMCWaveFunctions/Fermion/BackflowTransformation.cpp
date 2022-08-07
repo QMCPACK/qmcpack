@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 BackflowTransformation::BackflowTransformation(ParticleSet& els)
-    : OptimizableObject(""), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
+    : OptimizableObject("bf"), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
 {
   NumTargets = els.getTotalNum();
   Bmat.resize(NumTargets);

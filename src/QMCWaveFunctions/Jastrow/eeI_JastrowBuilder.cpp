@@ -54,7 +54,7 @@ bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
       using FT           = typename J3type::FuncType;
       const auto coef_id = extractCoefficientsID(kids);
       auto functor =
-          std::make_unique<FT>(coef_id.empty() ? jname + iSpecies + eSpecies1 + eSpecies2 : coef_id, ee_cusp, eI_cusp);
+          std::make_unique<FT>(coef_id.empty() ? jname + "_"  + iSpecies + eSpecies1 + eSpecies2 : coef_id, ee_cusp, eI_cusp);
       functor->iSpecies  = iSpecies;
       functor->eSpecies1 = eSpecies1;
       functor->eSpecies2 = eSpecies2;
