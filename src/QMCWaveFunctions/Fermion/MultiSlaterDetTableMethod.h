@@ -95,6 +95,7 @@ public:
   ///destructor
   ~MultiSlaterDetTableMethod() override;
 
+  std::string getClassName() const override { return "MultiSlaterDetTableMethod"; }
   bool isOptimizable() const override { return true; }
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;

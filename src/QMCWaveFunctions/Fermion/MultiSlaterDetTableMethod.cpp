@@ -23,15 +23,14 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDetTableMethod", ""),
-      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
-      RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
-      PrepareGroupTimer(*timer_manager.createTimer(ClassName + "::prepareGroup")),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
-      AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
-      EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
+    : RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
+      offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
+      EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
+      RatioGradTimer(*timer_manager.createTimer(getClassName() + "::ratioGrad")),
+      PrepareGroupTimer(*timer_manager.createTimer(getClassName() + "::prepareGroup")),
+      UpdateTimer(*timer_manager.createTimer(getClassName() + "::updateBuffer")),
+      AccRejTimer(*timer_manager.createTimer(getClassName() + "::Accept_Reject")),
+      EvaluateTimer(*timer_manager.createTimer(getClassName() + "::evaluate")),
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {

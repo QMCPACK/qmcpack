@@ -22,7 +22,7 @@ namespace qmcplusplus
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
                                              std::vector<std::unique_ptr<Determinant_t>> dets,
                                              std::unique_ptr<BackflowTransformation> BF)
-    : WaveFunctionComponent("SlaterDetWithBackflow", ""), Dets(std::move(dets)), BFTrans(std::move(BF))
+    : Dets(std::move(dets)), BFTrans(std::move(BF))
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());

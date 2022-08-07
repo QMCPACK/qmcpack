@@ -41,6 +41,8 @@ public:
   DiracDeterminantCUDA(std::unique_ptr<SPOSet>&& spos, int first, int last);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminantCUDA"; }
+
 protected:
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //

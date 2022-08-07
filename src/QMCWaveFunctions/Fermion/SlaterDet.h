@@ -48,6 +48,7 @@ public:
   ///destructor
   ~SlaterDet() override;
 
+  std::string getClassName() const override { return "SlaterDet"; }
   bool isOptimizable() const override;
   void checkInVariables(opt_variables_type& active) override;
 

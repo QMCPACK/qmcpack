@@ -31,7 +31,7 @@
 namespace qmcplusplus
 {
 DiracDeterminantCUDA::DiracDeterminantCUDA(std::unique_ptr<SPOSet>&& spos, int first, int last)
-    : DiracDeterminantBase("DiracDeterminantCUDA", std::move(spos), first, last),
+    : DiracDeterminantBase(getClassName(), std::move(spos), first, last),
       UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
       srcList_d("DiracDeterminant::srcList_d"),
       destList_d("DiracDeterminant::destList_d"),
@@ -277,9 +277,12 @@ void DiracDeterminantCUDA::update(MCWalkerConfiguration* W,
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(
+      cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType),
+                       cudaMemcpyDeviceToHost));
+  cudaCheck(
+      cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
   // for (int i=0; i<NumPtcls; i++)
   //  	cerr << "new_row(" << i << ") = " << new_row[i]
   // 	     << "  old_row = " << A[iat-FirstIndex][i] << std::endl;
@@ -390,9 +393,12 @@ void DiracDeterminantCUDA::update(const std::vector<Walker_t*>& walkers, const s
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(
+      cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType),
+                       cudaMemcpyDeviceToHost));
+  cudaCheck(
+      cudaMemcpy(new_row, &(data.data()[newRowOffset]), RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
   // for (int i=0; i<NumPtcls; i++)
   //  	cerr << "new_row(" << i << ") = " << new_row[i]
   // 	     << "  old_row = " << A[iat-FirstIndex][i] << std::endl;
@@ -537,8 +543,10 @@ void DiracDeterminantCUDA::recompute(MCWalkerConfiguration& W, bool firstTime)
   //{
   int iw                        = 0;
   Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
-  cudaCheck(cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
-  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(
+      cudaMemcpy(A, &(data.data()[AOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType), cudaMemcpyDeviceToHost));
+  cudaCheck(cudaMemcpy(Ainv, &(data.data()[AinvOffset]), NumPtcls * RowStride * sizeof(CTS::ValueType),
+                       cudaMemcpyDeviceToHost));
 
   FILE *f1, *f2;
   f1 = fopen("A.dat", "a");

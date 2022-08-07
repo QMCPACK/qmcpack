@@ -32,7 +32,7 @@ eeI_JastrowBuilder::eeI_JastrowBuilder(Communicate* comm, ParticleSet& target, P
 template<typename J3type>
 bool eeI_JastrowBuilder::putkids(xmlNodePtr kids, J3type& J3)
 {
-  auto& jname      = J3.myName;
+  auto& jname      = J3.getName();
   SpeciesSet& iSet = sourcePtcl->getSpeciesSet();
   SpeciesSet& eSet = targetPtcl.getSpeciesSet();
   //read in xml

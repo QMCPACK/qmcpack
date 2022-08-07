@@ -79,9 +79,9 @@ TrialWaveFunction::~TrialWaveFunction()
  */
 void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
 {
-  std::string aname = aterm->ClassName;
-  if (!aterm->myName.empty())
-    aname += ":" + aterm->myName;
+  std::string aname = aterm->getClassName();
+  if (!aterm->getName().empty())
+    aname += ":" + aterm->getName();
 
   if (aterm->is_fermionic)
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
