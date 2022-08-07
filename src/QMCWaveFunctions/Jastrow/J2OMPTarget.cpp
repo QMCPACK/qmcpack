@@ -123,6 +123,13 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
 }
 
 template<typename FT>
+void J2OMPTarget<FT>::extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs)
+{
+  for (auto& [key, functor] : J2Unique)
+    opt_obj_refs.push_back(*functor);
+}
+
+template<typename FT>
 void J2OMPTarget<FT>::checkInVariables(opt_variables_type& active)
 {
   for (auto& [key, functor] : J2Unique)

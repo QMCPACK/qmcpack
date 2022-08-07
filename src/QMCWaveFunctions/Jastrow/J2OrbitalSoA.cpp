@@ -20,6 +20,13 @@
 namespace qmcplusplus
 {
 template<typename FT>
+void J2OrbitalSoA<FT>::extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs)
+{
+  for (auto& [key, functor] : J2Unique)
+    opt_obj_refs.push_back(*functor);
+}
+
+template<typename FT>
 void J2OrbitalSoA<FT>::checkInVariables(opt_variables_type& active)
 {
   for (auto& [key, functor] : J2Unique)

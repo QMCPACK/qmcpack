@@ -143,6 +143,8 @@ public:
   std::string getClassName() const override { return "J2OrbitalSoA"; }
 
   bool isOptimizable() const override { return true; }
+
+  void extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs) override;
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

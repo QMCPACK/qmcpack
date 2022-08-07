@@ -861,6 +861,11 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
   }
 }
 
+void TrialWaveFunction::extractOptimizableObjectRefs(RefVector<OptimizableObject>& opt_obj_refs)
+{
+  for (int i = 0; i < Z.size(); i++)
+    Z[i]->extractOptimizableObjectRefs(opt_obj_refs);
+}
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
