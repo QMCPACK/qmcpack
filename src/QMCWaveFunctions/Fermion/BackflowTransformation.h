@@ -156,15 +156,17 @@ public:
 
   void restore(int iat = 0);
 
-  void checkInVariables(opt_variables_type& active) override;
-
+  bool isOptimizable() const;
+  void checkInVariables(opt_variables_type& active);
+  void checkOutVariables(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active);
   void reportStatus(std::ostream& os) override;
 
-  void checkOutVariables(const opt_variables_type& active) override;
-
-  bool isOptimizable() const;
-
-  void resetParameters(const opt_variables_type& active) override;
+  // extractOptimizableObjectRefs is not enabled in BackflowTransformation.
+  // it is exposed as a whole to the opitmizer. Thus the underlying OptimizableObject are not explosed.
+  // Simply redirect existing implentation.
+  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 

@@ -46,25 +46,11 @@ public:
    * This is a query function and should never be implemented as a feature blocker.
    * If an OptimizableObject derived class doesn't support optimization, use the base class fallback.
    */
-  virtual void checkInVariables(opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::checkInVariables should not be called!");
-  }
-
-  /** check out variational optimizable variables
-   * @param active a super set of optimizable variables
-   */
-  virtual void checkOutVariables(const opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::checkOutVariables should not be called!");
-  }
+  virtual void checkInVariablesExclusive(opt_variables_type& active) = 0;
 
   /** reset the parameters during optimizations
    */
-  virtual void resetParameters(const opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::resetParameters should not be called!");
-  }
+  virtual void resetParametersExclusive(const opt_variables_type& active) = 0;
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}
@@ -77,6 +63,8 @@ public:
 
   void push_back(OptimizableObject& obj)
   {
+    if (obj.getName().empty())
+      throw std::logic_error("BUG!! Only named OptimizableObject object can be added to UniqueOptObjRefs!");
     auto result =
         std::find_if(begin(), end(), [&](OptimizableObject& element) { return element.getName() == obj.getName(); });
     if (result == end())

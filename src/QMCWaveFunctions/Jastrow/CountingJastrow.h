@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 template<class RegionType>
-class CountingJastrow : public WaveFunctionComponent
+class CountingJastrow : public WaveFunctionComponent, public OptimizableObject
 {
 protected:
   // number of electrons
@@ -96,7 +96,7 @@ public:
                   const Matrix<RealType>& f,
                   bool opt_C_flag,
                   bool opt_F_flag)
-      : WaveFunctionComponent(""), F(f), C(std::move(c)), opt_F(opt_F_flag), opt_C(opt_C_flag)
+      : OptimizableObject("countingjas"), F(f), C(std::move(c)), opt_F(opt_F_flag), opt_C(opt_C_flag)
   {
     num_els = P.getTotalNum();
   }
@@ -104,6 +104,10 @@ public:
   std::string getClassName() const override { return "CountingJastrow"; }
 
   bool isOptimizable() const override { return opt_C || opt_F; }
+
+  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
+  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
 
   void checkInVariables(opt_variables_type& active) override
   {

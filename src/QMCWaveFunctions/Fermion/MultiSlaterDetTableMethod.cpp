@@ -23,7 +23,7 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("msd"),
+    : OptimizableObject("msd"),
       RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
       offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
@@ -732,19 +732,17 @@ void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& o
     Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
+void MultiSlaterDetTableMethod::checkInVariablesExclusive(opt_variables_type& active)
+{
+  if (CI_Optimizable && myVars->size())
+    active.insertFrom(*myVars);
+}
+
 void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
 {
-  if (CI_Optimizable)
-  {
-    if (myVars->size())
-      active.insertFrom(*myVars);
-  }
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
-
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
+  checkInVariablesExclusive(active);
+  for (size_t id = 0; id < Dets.size(); id++)
+    if (Dets[id]->isOptimizable())
       Dets[id]->checkInVariables(active);
 }
 
@@ -753,20 +751,12 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
   if (CI_Optimizable)
     myVars->getIndex(active);
 
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
-
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
+  for (size_t id = 0; id < Dets.size(); id++)
+    if (Dets[id]->isOptimizable())
       Dets[id]->checkOutVariables(active);
 }
 
-/** resetParameters with optVariables
- *
- * USE_resetParameters
- */
-void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active)
+void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_type& active)
 {
   if (CI_Optimizable)
   {
@@ -808,14 +798,16 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
   }
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
+}
 
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
+void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active)
+{
+  resetParametersExclusive(active);
+  for (size_t id = 0; id < Dets.size(); id++)
+    if (Dets[id]->isOptimizable())
       Dets[id]->resetParameters(active);
 }
+
 void MultiSlaterDetTableMethod::reportStatus(std::ostream& os) {}
 
 
