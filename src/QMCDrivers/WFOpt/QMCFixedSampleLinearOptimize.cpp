@@ -546,6 +546,8 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     if (!hybridEngineObj)
       hybridEngineObj = std::make_unique<HybridEngine>(myComm, q);
 
+    hybridEngineObj->incrementStepCounter();
+
     return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
   }
   else
