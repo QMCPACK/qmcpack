@@ -404,7 +404,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
             << " optimizable objects:" << std::endl
             << "  ";
   for (OptimizableObject& obj : opt_obj_refs)
-    std::cout << " '" << obj.getName() << "'";
+    app_log() << " '" << obj.getName() << "'";
   app_log() << std::endl;
 
   //build optimizables from the wavefunction

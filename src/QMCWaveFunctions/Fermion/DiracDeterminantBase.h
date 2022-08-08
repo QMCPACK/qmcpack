@@ -217,6 +217,7 @@ protected:
 
   static bool checkG(const GradType& g)
   {
+#if !defined(NDEBUG)
     auto g_mag = std::abs(dot(g, g));
     if (std::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
@@ -227,6 +228,7 @@ protected:
       std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
       throw std::runtime_error("gradient of zero");
     }
+#endif
     return true;
   }
 };
