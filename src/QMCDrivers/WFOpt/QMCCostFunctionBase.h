@@ -321,7 +321,10 @@ protected:
   bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
 
   /// survey all the optimizable objects
-  UniqueOptObjRefs extractOptimizableObjectRefs(TrialWaveFunction& psi);
+  UniqueOptObjRefs extractOptimizableObjectRefs(TrialWaveFunction& psi) const;
+
+  void resetOptimizableObjectRefs(TrialWaveFunction& psi,
+                                  const opt_variables_type& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

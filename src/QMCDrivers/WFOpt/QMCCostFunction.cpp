@@ -509,9 +509,10 @@ void QMCCostFunction::resetPsi(bool final_reset)
   //cout << "######### QMCCostFunction::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
-  Psi.resetParameters(OptVariablesForPsi);
+
+  resetOptimizableObjectRefs(Psi, OptVariablesForPsi);
   for (int i = 0; i < psiClones.size(); ++i)
-    psiClones[i]->resetParameters(OptVariablesForPsi);
+    resetOptimizableObjectRefs(*psiClones[i], OptVariablesForPsi);
 }
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
