@@ -31,8 +31,6 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl,
 {
   assert(Dets.size() == targetPtcl.groups());
 
-  is_fermionic = true;
-
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
     Last[i] = targetPtcl.last(i) - 1;

@@ -26,8 +26,6 @@ SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
 }
 
 ///destructor

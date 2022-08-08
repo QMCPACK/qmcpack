@@ -24,7 +24,6 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 WaveFunctionComponent::WaveFunctionComponent(const std::string& obj_name)
     : OptimizableObject(obj_name),
-      is_fermionic(false),
       UpdateMode(ORB_WALKER),
       Bytes_in_WFBuffer(0),
       my_name_(obj_name),

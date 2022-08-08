@@ -49,9 +49,7 @@ public:
         LastIndex(last),
         NumOrbitals(last - first),
         NumPtcls(last - first)
-  {
-    is_fermionic = true;
-  }
+  { }
 
   ///default destructor
   ~DiracDeterminantBase() override {}
@@ -71,6 +69,7 @@ public:
   virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
+  bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
   inline void checkInVariables(opt_variables_type& active) final
   {

@@ -34,7 +34,6 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  is_fermionic = true;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();

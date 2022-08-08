@@ -96,9 +96,6 @@ public:
   // the value type for psi(r')/psi(r)
   using PsiValueType = QTFull::ValueType;
 
-  /** true, if this component is fermionic */
-  bool is_fermionic;
-
   /** current update mode */
   int UpdateMode;
   ///list of variables this WaveFunctionComponent handles
@@ -136,6 +133,9 @@ public:
 
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
+
+  /** true, if this component is fermionic */
+  virtual bool isFermionic() const { return false; }
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
