@@ -102,10 +102,6 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
-  /// inject additional barrier and measure load imbalance.
-  void measureImbalance(const std::string& tag) const;
-  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
-  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -117,6 +113,16 @@ protected:
     std::vector<IndexType> walkers_per_crowd;
     RealType reserve_walkers;
   };
+  /** Do common section starting tasks for VMC and DMC
+   *
+   * set up population_, crowds_, rngs and step_contexts_
+   */
+  void initializeQMC(const AdjustedWalkerCounts& awc);
+
+  /// inject additional barrier and measure load imbalance.
+  void measureImbalance(const std::string& tag) const;
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
+  void endBlock();
 
 public:
   /// Constructor.
@@ -227,15 +233,6 @@ public:
    *        this stage of driver initialization is hit.
    */
   void process(xmlNodePtr cur) override = 0;
-
-  /** Do common section starting tasks
-   *
-   *  \todo This should not take xmlNodePtr
-   *        It should either take BranchEngineInput and EstimatorInput
-   *        And these are the arguments to the branch_engine and estimator_manager
-   *        Constructors or these objects should be created elsewhere.
-   */
-  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
