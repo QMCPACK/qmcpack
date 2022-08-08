@@ -129,7 +129,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   }
 }
 
-void QMCDriverNew::startup(const QMCDriverNew::AdjustedWalkerCounts& awc)
+void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
 {
   ScopedTimer local_timer(timers_.startup_timer);
 
