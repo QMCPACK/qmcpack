@@ -360,6 +360,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
       putContent(tmpid, cur);
       idtag.insert(idtag.end(), tmpid.begin(), tmpid.end());
     }
+    else if (cname == "optimize_objects")
+      putContent(optimized_object_names, cur);
     else if (cname == "exclude")
     {
       std::vector<std::string> tmpid;
@@ -397,20 +399,20 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     cur = cur->next;
   }
 
-  /// survey all the optimizable objects
-  UniqueOptObjRefs opt_obj_refs;
-  Psi.extractOptimizableObjectRefs(opt_obj_refs);
+  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjectRefs(Psi);
   app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
-            << " optimizable objects:" << std::endl
-            << "  ";
+            << " optimizable objects:" << std::endl;
   for (OptimizableObject& obj : opt_obj_refs)
-    app_log() << " '" << obj.getName() << "'";
-  app_log() << std::endl;
+    app_log() << "   '" << obj.getName() << "'" << (obj.isOptimized() ? " optimized" : " fixed") << std::endl;
 
   //build optimizables from the wavefunction
   OptVariablesForPsi.clear();
-  Psi.checkInVariables(OptVariablesForPsi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
+  app_log() << "Totally " << OptVariablesForPsi.size() << " parameters being optimzied." << std::endl;
+
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
   InitVariables = OptVariablesForPsi;
@@ -1056,6 +1058,19 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
   }
 
   return true;
+}
+
+UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjectRefs(TrialWaveFunction& psi)
+{
+  /// survey all the optimizable objects
+  UniqueOptObjRefs opt_obj_refs;
+  psi.extractOptimizableObjectRefs(opt_obj_refs);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.setOptimization(optimized_object_names.empty() ||
+                        std::find_if(optimized_object_names.begin(), optimized_object_names.end(),
+                                     [&](const std::string& name) { return name == obj.getName(); }) !=
+                            optimized_object_names.end());
+  return opt_obj_refs;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -54,6 +54,8 @@ public:
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}
+
+  void setOptimization(bool state) { is_optimized_ = state; }
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>

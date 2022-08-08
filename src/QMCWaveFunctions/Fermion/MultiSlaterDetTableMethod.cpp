@@ -23,7 +23,7 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : OptimizableObject("msd"),
+    : OptimizableObject("multidet_coefs"),
       RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
       offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
