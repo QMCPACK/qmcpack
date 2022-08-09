@@ -21,7 +21,6 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/HDFSTLAttrib.h"
 
 namespace qmcplusplus

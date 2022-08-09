@@ -19,8 +19,9 @@
 #define QMCPLUSPLUS_PWPARAMETERSET_H
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Message/MPIObjectBase.h"
+#include "hdf/hdf_archive.h"
+#include "hdf5.h"
 
 namespace qmcplusplus
 {
@@ -69,7 +70,7 @@ struct PWParameterSet : public MPIObjectBase
 
   bool put(xmlNodePtr cur) { return m_param.put(cur); }
 
-  void checkVersion(hid_t h);
+  void checkVersion(hdf_archive& h);
 
   double getEcut(double ecut);
 
@@ -98,7 +99,7 @@ struct PWParameterSet : public MPIObjectBase
   std::string getCenterName(const std::string& hg, int ib);
   std::string getOriginName(const std::string& hg, int ib);
 
-  void writeParameters(hid_t gid);
+  void writeParameters(hdf_archive& gid);
 };
 } // namespace qmcplusplus
 #endif

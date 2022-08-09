@@ -21,7 +21,6 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Message/Communicate.h"
 #include "CPU/e2iphi.h"
 
