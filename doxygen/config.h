@@ -36,9 +36,6 @@
 /* Enable OpenMP parallelization. */
 #define QMC_OMP 1
 
-/* Define to 1 if you have the `hdf5' library (-lhdf5). */
-#define HAVE_LIBHDF5 1
-
 /* Define to 1 if you want to use parallel hdf5 for frequent output */
 /* #undef ENABLE_PHDF5 */
 
