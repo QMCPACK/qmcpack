@@ -299,7 +299,6 @@ void QMCFixedSampleLinearOptimizeBatched::generateSamples()
   t1.restart();
   //     W.reset();
   samples_.resetSampleCount();
-  population_.set_variational_parameters(optTarget->getOptVariables());
 
   vmcEngine->run();
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
@@ -654,38 +653,11 @@ void QMCFixedSampleLinearOptimizeBatched::process(xmlNodePtr q)
 
     hybridEngineObj->incrementStepCounter();
 
-    //Overwrite sampling information with input from selected optimizer block of a hybrid run
-    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
-    VMCDriverInput vmcdriver_input_copy = vmcdriver_input_;
-
-    qmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
-    vmcdriver_input_copy.readXML(hybridEngineObj->getSelectedXML());
-
-
     processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
-
-
-    QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
-                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
-                                qmcdriver_input_copy.get_num_crowds());
-    QMCDriverNew::startup(q, awc);
   }
   else
   {
-    //Also need to overwrite input information again in case this method was preceded by hybrid method optimization
-    QMCDriverInput qmcdriver_input_copy = qmcdriver_input_;
-    qmcdriver_input_copy.readXML(q);
-
     processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
-
-    auto& qmcdriver_input = vmcEngine->getQMCDriverInput();
-    // This code is also called when setting up vmcEngine.  Would be nice to not duplicate the call.
-    QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_copy.get_total_walkers(),
-                                qmcdriver_input_copy.get_walkers_per_rank(), 1.0,
-                                qmcdriver_input_copy.get_num_crowds());
-    QMCDriverNew::startup(q, awc);
   }
 }
 

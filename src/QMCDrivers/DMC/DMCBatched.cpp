@@ -380,7 +380,7 @@ void DMCBatched::process(xmlNodePtr node)
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
                                 qmcdriver_input_.get_num_crowds());
 
-    Base::startup(node, awc);
+    Base::initializeQMC(awc);
   }
   catch (const UniformCommunicateError& ue)
   {
