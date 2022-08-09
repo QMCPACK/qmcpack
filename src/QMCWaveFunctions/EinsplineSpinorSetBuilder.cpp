@@ -132,10 +132,12 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
   const auto iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
-    app_warning() << "!!!!!!! Identical SPOSet detected in EinsplineSpinorSetBuilder! "
-                     "Implicit sharing one SPOSet for spin-up and spin-down electrions has been removed. "
-                     "Create a single SPO set outside determinantset instead. "
-                     "Use sposet_collection to construct an explicit sposet for explicit sharing."
+    app_warning() << "!!!!!!! Identical SPOSets are detected by EinsplineSpinorSetBuilder! "
+                     "Implicit sharing one SPOSet for spin-up and spin-down electrons has been removed. "
+                     "Each determinant creates its own SPOSet with dedicated memory for spline coefficients. "
+                     "To avoid increasing the memory footprint of spline coefficients, "
+                     "create a single SPOset outside the determinantset using 'sposet_collection' "
+                     "and reference it by name on the determinant line."
                   << std::endl;
 
   if (FullBands[spinSet] == 0)
