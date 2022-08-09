@@ -41,12 +41,8 @@ inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVec
   const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
-  {
     if (LOBasisSet[c])
-    {
       LOBasisSet[c]->evaluate_vgl(dist[c], displ[c], myVGL[0], myVGL[1], myVGL[2], myVGL[3], myVGL[4]);
-    }
-  }
 
   {
     const auto v_in  = myVGL[0];
@@ -59,7 +55,7 @@ inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVec
     auto gy_out      = vgl.data(2);
     auto gz_out      = vgl.data(3);
     auto l_out       = vgl.data(4);
-    for (size_t i = 0; i < BasisSetSize; ++i)
+    for (size_t i = 0; i < vgl.size(); ++i)
     {
       v_out[i] += v_in[i];
       gx_out[i] += gx_in[i];
@@ -82,12 +78,8 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
-  {
     if (LOBasisSet[c])
-    {
       LOBasisSet[c]->evaluate_vgl(dist[c], displ[c], myVGL[0], myVGL[1], myVGL[2], myVGL[3], myVGL[4]);
-    }
-  }
 
   const auto v_in  = myVGL[0];
   const auto gx_in = myVGL[1];
@@ -117,19 +109,15 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
   const auto& dist    = (P.getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
   const auto& displ   = (P.getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
   for (int c = 0; c < NumCenters; c++)
-  {
     if (LOBasisSet[c])
-    {
       LOBasisSet[c]->evaluate_vgl(dist[c], displ[c], myVGL[0], myVGL[1], myVGL[2], myVGL[3], myVGL[4]);
-    }
-  }
 
   const auto v_in  = myVGL[0];
   const auto gx_in = myVGL[1];
   const auto gy_in = myVGL[2];
   const auto gz_in = myVGL[3];
   const auto l_in  = myVGL[4];
-  for (size_t i = 0; i < psi.rows(); ++i)
+  for (size_t i = 0; i < psi.cols(); ++i)
   {
     psi[idx][i] += v_in[i];
     dpsi[idx][i][0] += gx_in[i];
@@ -150,19 +138,13 @@ void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueVector& ps
 
   //THIS IS SERIAL, only way to avoid this is to use myVGL
   for (int c = 0; c < NumCenters; c++)
-  {
     if (LOBasisSet[c])
-    {
       LOBasisSet[c]->evaluate(dist[c], tmp_vals);
-    }
-  }
 
   { //collect
     const auto v_in = myVGL[0];
     for (size_t i = 0; i < psi.size(); ++i)
-    {
       psi[i] += v_in[i];
-    }
   }
 }
 

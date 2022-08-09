@@ -528,9 +528,9 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   SPOSet::ValueMatrix all_values;
   SPOSet::GradMatrix all_grad;
   SPOSet::ValueMatrix all_lap;
-  all_values.resize(13, 13);
-  all_grad.resize(13, 13);
-  all_lap.resize(13, 13);
+  all_values.resize(10, 13);
+  all_grad.resize(10, 13);
+  all_lap.resize(10, 13);
 
   sposet->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 
