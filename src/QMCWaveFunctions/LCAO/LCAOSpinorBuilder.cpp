@@ -117,7 +117,6 @@ bool LCAOSpinorBuilder::loadMO(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr 
 bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodePtr occ_ptr)
 {
 #ifdef QMC_COMPLEX
-#if defined(HAVE_LIBHDF5)
   if (up.getBasisSetSize() == 0 || dn.getBasisSetSize() == 0)
   {
     myComm->barrier_and_abort("LCASpinorBuilder::loadMO  detected ZERO BasisSetSize");
@@ -196,10 +195,6 @@ bool LCAOSpinorBuilder::putFromH5(LCAOrbitalSet& up, LCAOrbitalSet& dn, xmlNodeP
 #ifdef HAVE_MPI
   myComm->comm.broadcast_n(up.C->data(), up.C->size());
   myComm->comm.broadcast_n(dn.C->data(), dn.C->size());
-#endif
-
-#else
-  myComm->barrier_and_abort("LCAOSpinorBuilder::putFromH5 HDF5 is disabled");
 #endif
 
 #else
