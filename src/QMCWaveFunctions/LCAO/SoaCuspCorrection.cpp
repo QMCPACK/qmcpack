@@ -26,15 +26,15 @@ SoaCuspCorrection::SoaCuspCorrection(ParticleSet& ions, ParticleSet& els) : myTa
 
 SoaCuspCorrection::SoaCuspCorrection(const SoaCuspCorrection& a) = default;
 
-void SoaCuspCorrection::setBasisSetSize(int nbs)
+void SoaCuspCorrection::setOrbitalSetSize(int norbs)
 {
-  BasisSetSize = nbs;
-  //THIS NEEDS TO BE FIXE for OpenMP
-  myVGL.resize(5, BasisSetSize);
+  MaxOrbSize = norbs;
+  myVGL.resize(5, MaxOrbSize);
 }
 
 inline void SoaCuspCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector& vgl)
 {
+  assert(MaxOrbSize >= vgl.size());
   myVGL = 0.0;
 
   const auto& d_table = P.getDistTableAB(myTableIndex);
@@ -72,6 +72,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
                                      GradVector& dpsi,
                                      ValueVector& d2psi)
 {
+  assert(MaxOrbSize >= psi.size());
   myVGL = 0.0;
 
   const auto& d_table = P.getDistTableAB(myTableIndex);
@@ -103,6 +104,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
                                      GradMatrix& dpsi,
                                      ValueMatrix& d2psi)
 {
+  assert(MaxOrbSize >= psi.cols());
   myVGL = 0.0;
 
   const auto& d_table = P.getDistTableAB(myTableIndex);
@@ -129,6 +131,7 @@ void SoaCuspCorrection::evaluate_vgl(const ParticleSet& P,
 
 void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueVector& psi)
 {
+  assert(MaxOrbSize >= psi.size());
   ValueType* tmp_vals = myVGL[0];
 
   std::fill_n(tmp_vals, myVGL.size(), 0.0);
@@ -148,6 +151,10 @@ void SoaCuspCorrection::evaluateV(const ParticleSet& P, int iat, ValueVector& ps
   }
 }
 
-void SoaCuspCorrection::add(int icenter, std::unique_ptr<COT> aos) { LOBasisSet[icenter].reset(aos.release()); }
+void SoaCuspCorrection::add(int icenter, std::unique_ptr<COT> aos)
+{
+  assert(MaxOrbSize == aos->getNumOrbs() && "All the centers should support the same number of orbitals!");
+  LOBasisSet[icenter].reset(aos.release());
+}
 
 } // namespace qmcplusplus
