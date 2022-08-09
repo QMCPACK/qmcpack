@@ -652,8 +652,6 @@ endif()
 find_package(HDF5 COMPONENTS C)
 
 if(HDF5_FOUND)
-  set(HAVE_LIBHDF5 1)
-
   if(HDF5_IS_PARALLEL)
     message(STATUS "Parallel HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
@@ -692,7 +690,7 @@ if(HDF5_FOUND)
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
   target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
-  target_compile_definitions(IO::HDF5 INTERFACE "HAVE_LIBHDF5;H5_USE_16_API")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_16_API")
   target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
     target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
