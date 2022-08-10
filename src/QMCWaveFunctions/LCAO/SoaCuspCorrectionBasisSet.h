@@ -40,7 +40,9 @@ class CuspCorrectionAtomicBasis
   aligned_vector<size_t> ID;
 
 public:
-  CuspCorrectionAtomicBasis(){};
+  CuspCorrectionAtomicBasis() = default;
+
+  auto getNumOrbs() const { return AOs.getNumSplines(); }
 
   /** copy constructor */
   CuspCorrectionAtomicBasis(const CuspCorrectionAtomicBasis& a) = default;

@@ -24,7 +24,7 @@ LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_n
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
   LCAOrbitalSet::setOrbitalSetSize(norbs);
-  cusp.setBasisSetSize(norbs);
+  cusp.setOrbitalSetSize(norbs);
 }
 
 
