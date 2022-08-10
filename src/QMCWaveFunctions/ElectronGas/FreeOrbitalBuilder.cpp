@@ -13,10 +13,12 @@ FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlN
 std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   int npw, norb;
+  std::string spo_object_name;
   PosType twist(0.0);
   OhmmsAttributeSet attrib;
   attrib.add(norb, "size");
   attrib.add(twist, "twist");
+  attrib.add(spo_object_name, "name");
   attrib.put(cur);
 
   auto lattice = targetPtcl.getLattice();
@@ -68,7 +70,7 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
       break;
   }
 #endif
-  auto sposet = std::make_unique<FreeOrbital>(kpts);
+  auto sposet = std::make_unique<FreeOrbital>(spo_object_name, kpts);
   sposet->report("  ");
   return sposet;
 }

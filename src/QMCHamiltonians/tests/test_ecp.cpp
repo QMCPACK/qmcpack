@@ -503,10 +503,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
 
-  auto spo_up = std::make_unique<FreeOrbital>(kup);
-  auto spo_dn = std::make_unique<FreeOrbital>(kdn);
+  auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
+  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
 
-  auto spinor_set = std::make_unique<SpinorSet>();
+  auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);

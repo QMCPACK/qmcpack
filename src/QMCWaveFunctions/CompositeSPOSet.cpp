@@ -39,9 +39,8 @@ inline void insert_columns(const MAT1& small, MAT2& big, int offset_c)
 }
 } // namespace MatrixOperators
 
-CompositeSPOSet::CompositeSPOSet()
+CompositeSPOSet::CompositeSPOSet(const std::string& my_name) : SPOSet(my_name)
 {
-  className      = "CompositeSPOSet";
   OrbitalSetSize = 0;
   component_offsets.reserve(4);
 }
@@ -194,7 +193,7 @@ std::unique_ptr<SPOSet> CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr c
     return nullptr;
   }
 
-  auto spo_now = std::make_unique<CompositeSPOSet>();
+  auto spo_now = std::make_unique<CompositeSPOSet>(getXMLAttributeValue(cur, "name"));
   for (int i = 0; i < spolist.size(); ++i)
   {
     const SPOSet* spo = sposet_builder_factory_.getSPOSet(spolist[i]);

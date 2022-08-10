@@ -498,6 +498,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
   }
   if (occ_format == "energy")
   {
+    app_log() << "  Occupying bands based on energy in mode " << (Occ.size() > 0? "\"excited\"" : "\"ground\"") << std::endl;
     // To get the occupations right.
     std::vector<int> Removed(0, 0);
     std::vector<int> Added(0, 0);

@@ -446,7 +446,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            int iat,
                                                            RealGradMatrix& dpsi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -496,7 +496,7 @@ void EinsplineSetExtended<StorageType>::evaluateGradSource(const ParticleSet& P,
                                                            RealHessMatrix& dgrad_phi,
                                                            RealGradMatrix& dlapl_phi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     std::complex<double> eye(0.0, 1.0);
     // Loop over dimensions
@@ -567,7 +567,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       RealHessMatrix& dgrad_phi,
                                                       RealGradMatrix& dlapl_phi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -627,7 +627,7 @@ void EinsplineSetExtended<double>::evaluateGradSource(const ParticleSet& P,
                                                       int iat,
                                                       RealGradMatrix& dpsi)
 {
-  if (ionDerivs)
+  if (hasIonDerivs())
   {
     // Loop over dimensions
     for (int dim = 0; dim < OHMMS_DIM; dim++)
@@ -1309,17 +1309,17 @@ std::string EinsplineSetHybrid<std::complex<double>>::Type()
 }
 
 template<>
-EinsplineSetHybrid<double>::EinsplineSetHybrid() : CurrentWalkers(0)
+EinsplineSetHybrid<double>::EinsplineSetHybrid(const std::string& my_name)
+    : EinsplineSetExtended<double>(my_name), CurrentWalkers(0)
 {
-  className = "EinsplineSeHybrid";
   for (int i = 0; i < OHMMS_DIM; i++)
     HalfG[i] = 0;
 }
 
 template<>
-EinsplineSetHybrid<std::complex<double>>::EinsplineSetHybrid() : CurrentWalkers(0)
+EinsplineSetHybrid<std::complex<double>>::EinsplineSetHybrid(const std::string& my_name)
+    : EinsplineSetExtended<std::complex<double>>(my_name), CurrentWalkers(0)
 {
-  className = "EinsplineSeHybrid";
   for (int i = 0; i < OHMMS_DIM; i++)
     HalfG[i] = 0;
 }

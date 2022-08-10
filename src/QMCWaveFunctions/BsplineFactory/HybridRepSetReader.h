@@ -540,7 +540,7 @@ public:
             splineData_r[ip] = all_vals[idx][ip][lm];
           atomic_spline_r = einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(),
                                               ((lm == 0) || (lm > 3)));
-          if (!bspline->is_complex)
+          if (!bspline->isComplex())
           {
             mycenter.set_spline(atomic_spline_r, lm, iorb);
             einspline::destroy(atomic_spline_r);

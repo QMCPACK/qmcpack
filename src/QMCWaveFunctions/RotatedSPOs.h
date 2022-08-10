@@ -22,9 +22,14 @@ class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
+  RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs() override;
+
+  std::string getClassName() const override { return "RotatedSPOs"; }
+  bool isOptimizable() const override { return true; }
+  bool isOMPoffload() const override { return Phi->isOMPoffload(); }
+  bool hasIonDerivs() const override { return Phi->hasIonDerivs(); }
 
   // Vector of rotation matrix indices
   using RotationIndices = std::vector<std::pair<int, int>>;
@@ -194,35 +199,23 @@ public:
     for (int k = 0; k < myVars.size(); ++k)
       myVars[k] = 0.0;
 
-    if (Optimizable)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
-    }
+    if (myVars.size())
+      active.insertFrom(myVars);
+    Phi->storeParamsBeforeRotation();
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      myVars.getIndex(active);
-    }
-  }
+  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
   void resetParameters(const opt_variables_type& active) override
   {
-    if (Optimizable)
+    std::vector<RealType> param(m_act_rot_inds.size());
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
     {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
+      int loc  = myVars.where(i);
+      param[i] = myVars[i] = active[loc];
     }
+    apply_rotation(param, true);
   }
 
   //*********************************************************************************

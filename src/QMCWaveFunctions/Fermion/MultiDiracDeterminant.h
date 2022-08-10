@@ -147,9 +147,21 @@ public:
   SPOSetPtr getPhi() { return Phi.get(); };
 
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
-  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
-  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
-  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
+  inline void checkInVariables(opt_variables_type& active) override
+  {
+    if (Phi->isOptimizable())
+      Phi->checkInVariables(active);
+  }
+  inline void checkOutVariables(const opt_variables_type& active) override
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
+  void resetParameters(const opt_variables_type& active) override
+  {
+    if (Phi->isOptimizable())
+      Phi->resetParameters(active);
+  }
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);

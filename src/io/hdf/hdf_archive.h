@@ -18,12 +18,9 @@
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"
-#if defined(HAVE_LIBHDF5)
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
-//#include "hdf_double_hyperslab.h"
-#endif
 #include <stack>
 #include <bitset>
 #ifdef HAVE_MPI

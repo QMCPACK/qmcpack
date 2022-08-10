@@ -35,6 +35,7 @@ OneBodyDensityMatrices::OneBodyDensityMatrices(OneBodyDensityMatricesInput&& obd
       input_(obdmi),
       lattice_(lattice),
       species_(species),
+      basis_functions_("OneBodyDensityMatrices::basis"),
       timers_("OneBodyDensityMatrix")
 {
   my_name_ = "OneBodyDensityMatrices";

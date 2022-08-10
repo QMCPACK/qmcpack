@@ -43,9 +43,13 @@ public:
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize);
+  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs);
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
+
+  virtual std::string getClassName() const override { return "LCAOrbitalSet"; }
+
+  bool hasIonDerivs() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
