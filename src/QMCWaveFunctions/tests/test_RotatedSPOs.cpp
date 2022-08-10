@@ -120,7 +120,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 #if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
 
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
-  auto rot_spo = std::make_unique<RotatedSPOs>(std::move(spo));
+  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();

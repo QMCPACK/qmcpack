@@ -23,12 +23,14 @@ namespace qmcplusplus
 class SpinorSet : public SPOSet
 {
 public:
-  ///name of the class
-  std::string className;
-
   /** constructor */
-  SpinorSet();
-  ~SpinorSet() override = default;
+  SpinorSet(const std::string& my_name);
+  ~SpinorSet() override;
+
+  std::string getClassName() const override { return "SpinorSet"; }
+  bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
+  bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
+  bool hasIonDerivs() const override { return spo_up->hasIonDerivs() || spo_dn->hasIonDerivs(); }
 
   //This class is initialized by separately building the up and down channels of the spinor set and
   //then registering them.

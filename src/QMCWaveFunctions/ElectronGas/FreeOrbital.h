@@ -24,8 +24,10 @@ namespace qmcplusplus
 class FreeOrbital : public SPOSet
 {
 public:
-  FreeOrbital(const std::vector<PosType>& kpts_cart);
+  FreeOrbital(const std::string& my_name, const std::vector<PosType>& kpts_cart);
   ~FreeOrbital();
+
+  std::string getClassName() const override { return "FreeOrbital"; }
 
   // phi[i][j] is phi_j(r_i), i.e. electron i in orbital j
   //  i \in [first, last)

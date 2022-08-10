@@ -32,7 +32,7 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
   auto& pset             = *particle_pool.getParticleSet("e");
   auto& twf              = *wavefunction_pool.getWaveFunction("wavefunction");
 
-  CompositeSPOSet comp_sposet;
+  CompositeSPOSet comp_sposet("one_composite_set");
 
   std::vector<std::string> sposets{"spo_ud", "spo_dm"};
   for (auto sposet_str : sposets)

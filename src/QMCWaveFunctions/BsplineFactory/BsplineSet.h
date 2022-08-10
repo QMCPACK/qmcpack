@@ -35,8 +35,6 @@ class BsplineSet : public SPOSet
 {
 protected:
   static const int D = DIM;
-  ///true if the computed values are complex
-  bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   size_t MyIndex;
   ///first index of the SPOs this Spline handles
@@ -56,13 +54,12 @@ protected:
   aligned_vector<int> BandIndexMap;
   ///band offsets used for communication
   std::vector<int> offset;
-  ///keyword used to match hdf5
-  std::string KeyWord;
 
 public:
-  BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
-      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0)
-  {}
+  BsplineSet(const std::string& my_name) : SPOSet(my_name), MyIndex(0), first_spo(0), last_spo(0) {}
+
+  virtual bool isComplex() const         = 0;
+  virtual std::string getKeyword() const = 0;
 
   auto& getHalfG() const { return HalfG; }
 

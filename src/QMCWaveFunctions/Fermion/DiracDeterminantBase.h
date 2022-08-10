@@ -73,9 +73,21 @@ public:
 #endif
 
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
-  inline void checkInVariables(opt_variables_type& active) final { Phi->checkInVariables(active); }
-  inline void checkOutVariables(const opt_variables_type& active) final { Phi->checkOutVariables(active); }
-  void resetParameters(const opt_variables_type& active) final { Phi->resetParameters(active); }
+  inline void checkInVariables(opt_variables_type& active) final
+  {
+    if (Phi->isOptimizable())
+      Phi->checkInVariables(active);
+  }
+  inline void checkOutVariables(const opt_variables_type& active) final
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
+  void resetParameters(const opt_variables_type& active) final
+  {
+    if (Phi->isOptimizable())
+      Phi->resetParameters(active);
+  }
   inline void reportStatus(std::ostream& os) final {}
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
