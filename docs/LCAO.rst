@@ -161,7 +161,7 @@ To generate QMCPACK input files, you will need to run ``convert4qmc`` exactly as
 
 ::
 
-  convert4qmc -pyscf C_diamond-tiled-cplx
+  convert4qmc -orbitals C_diamond-tiled-cplx
 
 This tool can be used with any option described in convert4qmc. Since
 the HDF5 contains all the information needed, there is no need to
