@@ -154,8 +154,10 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   //  targetPsi->VarList.print(app_log());
   //}
   // synch all parameters. You don't want some being different if same name.
+  const auto opt_obj_refs = targetPsi->extractOptimizableObjectRefs();
   opt_variables_type dummy;
-  targetPsi->checkInVariables(dummy);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);
 
@@ -165,7 +167,8 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
     dummy.readFromHDF(vp_file_to_load);
   }
 
-  targetPsi->resetParameters(dummy);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.resetParametersExclusive(dummy);
   targetPsi->storeSPOMap(sposet_builder_factory.exportSPOSets());
   return targetPsi;
 }

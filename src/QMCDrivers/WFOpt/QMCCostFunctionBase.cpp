@@ -1064,8 +1064,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjectRefs(TrialWaveFunc
 {
   const auto& names(optimized_object_names);
   /// survey all the optimizable objects
-  UniqueOptObjRefs opt_obj_refs;
-  psi.extractOptimizableObjectRefs(opt_obj_refs);
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
     obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&](const std::string& name) {
                                            return name == obj.getName();
@@ -1076,7 +1075,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjectRefs(TrialWaveFunc
 void QMCCostFunctionBase::resetOptimizableObjectRefs(TrialWaveFunction& psi,
                                                      const opt_variables_type& opt_variables) const
 {
-  auto opt_obj_refs = extractOptimizableObjectRefs(psi);
+  const auto opt_obj_refs = extractOptimizableObjectRefs(psi);
   for (OptimizableObject& obj : opt_obj_refs)
     if (obj.isOptimized())
       obj.resetParametersExclusive(opt_variables);

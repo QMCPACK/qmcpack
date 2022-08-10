@@ -147,13 +147,14 @@ public:
   /** extract underlying OptimizableObject references
    * @param opt_obj_refs aggregated list of optimizable object references
    */
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+  UniqueOptObjRefs extractOptimizableObjectRefs();
 
   /** Check in an optimizable parameter
    * @param o aggregated list of optimizable variables
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */
+  [[deprecated]]
   void checkInVariables(opt_variables_type& o);
 
   /** Check out optimizable variables
@@ -163,6 +164,7 @@ public:
 
   /**  Set values of parameters in each component from the global list
    */
+  [[deprecated]]
   void resetParameters(const opt_variables_type& active);
 
 
