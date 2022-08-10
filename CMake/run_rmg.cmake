@@ -40,7 +40,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
   endfunction()
 
   function(ADD_RMG_CONVERT_TEST TESTNAME PREFIX WORKDIR TEST_INPUT)
-    add_test(NAME ${TESTNAME} COMMAND $<TARGET_FILE:convert4qmc> -rmg ${TEST_INPUT} -prefix ${PREFIX})
+    add_test(NAME ${TESTNAME} COMMAND $<TARGET_FILE:convert4qmc> -nojastrow -rmg ${TEST_INPUT} -prefix ${PREFIX})
     set_tests_properties(${TESTNAME} PROPERTIES WORKING_DIRECTORY ${WORKDIR})
     set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;rmg")
   endfunction()
