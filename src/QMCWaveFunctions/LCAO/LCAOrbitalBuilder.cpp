@@ -652,7 +652,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-#if defined(HAVE_LIBHDF5)
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
   std::string setname;
@@ -714,9 +713,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
   }
   myComm->bcast(spo.C->data(), spo.C->size());
-#else
-  APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
-#endif
   return true;
 }
 
@@ -727,7 +723,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-#if defined(HAVE_LIBHDF5)
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
   int norbs      = spo.getOrbitalSetSize();
   int neigs      = spo.getBasisSetSize();
@@ -812,10 +807,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   }
 #ifdef HAVE_MPI
   myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
-#endif
-
-#else
-  APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
 #endif
   return true;
 }

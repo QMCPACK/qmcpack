@@ -265,7 +265,7 @@ void VMCBatched::process(xmlNodePtr node)
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
-    Base::startup(node, awc);
+    Base::initializeQMC(awc);
   }
   catch (const UniformCommunicateError& ue)
   {
