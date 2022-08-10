@@ -83,8 +83,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  std::vector<int> Occ_Old(0, 0);
-  Occ.resize(0, 0);
+  const std::vector<int> last_occ(Occ);
+  Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
 
   {
@@ -117,10 +117,10 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     }
     cur = cur->next;
   }
-  if (Occ != Occ_Old)
+
+  if (Occ != last_occ)
   {
     NewOcc  = true;
-    Occ_Old = Occ;
   }
   else
     NewOcc = false;
