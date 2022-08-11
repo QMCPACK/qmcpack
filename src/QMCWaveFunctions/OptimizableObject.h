@@ -43,12 +43,28 @@ public:
   /** check in variational parameters to the global list of parameters used by the optimizer.
    * @param active a super set of optimizable variables
    *
-   * This is a query function and should never be implemented as a feature blocker.
-   * If an OptimizableObject derived class doesn't support optimization, use the base class fallback.
+   * The existing checkInVariables implementation in WFC/SPO/.. are inclusive and it calls checkInVariables of its members
+   * class A: public SPOSet {}
+   * class B: public WFC
+   * {
+   *   A objA;
+   *   checkInVariables() { objA.checkInVariables(); }
+   * };
+   *
+   * With OptimizableObject,
+   * class A: public OptimizableObject {}
+   * class B: public OptimizableObject
+   * {
+   *   A objA;
+   *   checkInVariablesExclusive() { // should not call objA.checkInVariablesExclusive(); }
+   * };
+   * A vector will be created by calling extractOptimizableObjects().
+   * All the checkInVariables() will be called through this vector and thus
+   * checkInVariablesExclusive implementation should only handle non-OptimizableObject members.
    */
   virtual void checkInVariablesExclusive(opt_variables_type& active) = 0;
 
-  /** reset the parameters during optimizations
+  /** reset the parameters during optimizations. Exclusive, see checkInVariablesExclusive
    */
   virtual void resetParametersExclusive(const opt_variables_type& active) = 0;
 

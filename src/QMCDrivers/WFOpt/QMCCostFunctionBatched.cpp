@@ -479,10 +479,10 @@ void QMCCostFunctionBatched::resetPsi(bool final_reset)
   //cout << "######### QMCCostFunctionBatched::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
-  resetOptimizableObjectRefs(Psi, OptVariablesForPsi);
+  resetOptimizableObjects(Psi, OptVariablesForPsi);
   for (int i = 0; i < opt_eval_.size(); i++)
     for (int j = 0; j < opt_eval_[i]->get_wf_ptr_list().size(); j++)
-      resetOptimizableObjectRefs(*opt_eval_[i]->get_wf_ptr_list()[j], OptVariablesForPsi);
+      resetOptimizableObjects(*opt_eval_[i]->get_wf_ptr_list()[j], OptVariablesForPsi);
 }
 
 QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampling(bool needGrad)

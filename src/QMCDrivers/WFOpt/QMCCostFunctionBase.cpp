@@ -399,7 +399,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     cur = cur->next;
   }
 
-  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjectRefs(Psi);
+  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjects(Psi);
   app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
             << " optimizable objects:" << std::endl;
   for (OptimizableObject& obj : opt_obj_refs)
@@ -1060,7 +1060,7 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
   return true;
 }
 
-UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjectRefs(TrialWaveFunction& psi) const
+UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
 {
   const auto& names(optimized_object_names);
   /// survey all the optimizable objects
@@ -1072,10 +1072,10 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjectRefs(TrialWaveFunc
   return opt_obj_refs;
 }
 
-void QMCCostFunctionBase::resetOptimizableObjectRefs(TrialWaveFunction& psi,
-                                                     const opt_variables_type& opt_variables) const
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi,
+                                                  const opt_variables_type& opt_variables) const
 {
-  const auto opt_obj_refs = extractOptimizableObjectRefs(psi);
+  const auto opt_obj_refs = extractOptimizableObjects(psi);
   for (OptimizableObject& obj : opt_obj_refs)
     if (obj.isOptimized())
       obj.resetParametersExclusive(opt_variables);
