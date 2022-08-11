@@ -35,7 +35,7 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  Dets         = std::move(dets);
+  Dets = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
   myG.resize(NP);
@@ -735,7 +735,10 @@ void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& o
 void MultiSlaterDetTableMethod::checkInVariablesExclusive(opt_variables_type& active)
 {
   if (CI_Optimizable && myVars->size())
+  {
+    myVars->setIndexDefault();
     active.insertFrom(*myVars);
+  }
 }
 
 void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
