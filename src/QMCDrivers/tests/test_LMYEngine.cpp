@@ -10,16 +10,13 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
 
+#ifdef HAVE_LMY_ENGINE
 
 #include "catch.hpp"
 
-#include "OhmmsData/Libxml2Doc.h"
 #include "VariableSet.h"
-#include "Configuration.h"
-#include "Message/Communicate.h"
-#include "formic/utils/lmyengine/var_dependencies.h"
 #include "formic/utils/lmyengine/engine.h"
-
+#include "formic/utils/lmyengine/var_dependencies.h"
 
 namespace qmcplusplus
 {
@@ -104,4 +101,4 @@ formic::VarDeps vdeps(1, std::vector<double>());
 }
 
 }
-
+#endif
