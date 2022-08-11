@@ -279,7 +279,7 @@ protected:
   std::string includeNonlocalH;
 
   /// optimized parameter names
-  std::vector<std::string> optimized_object_names;
+  std::vector<std::string> variational_subset_names;
 
   /** Sum of energies and weights for averages
    *

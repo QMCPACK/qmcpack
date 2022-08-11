@@ -27,7 +27,7 @@
     <estimator name="LocalEnergy" hdf5="no"/>
     <parameter name="nonlocalpp"> yes </parameter>
     <parameter name="MinMethod">OneShiftOnly</parameter>
-    <optimize_objects> eH uu ud </optimize_objects>
+    <variational_subset> eH uu ud </variational_subset>
   </qmc>
 </loop>
 

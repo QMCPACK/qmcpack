@@ -360,8 +360,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
       putContent(tmpid, cur);
       idtag.insert(idtag.end(), tmpid.begin(), tmpid.end());
     }
-    else if (cname == "optimize_objects")
-      putContent(optimized_object_names, cur);
+    else if (cname == "variational_subset")
+      putContent(variational_subset_names, cur);
     else if (cname == "exclude")
     {
       std::vector<std::string> tmpid;
@@ -1062,7 +1062,7 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
 
 UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
 {
-  const auto& names(optimized_object_names);
+  const auto& names(variational_subset_names);
   /// survey all the optimizable objects
   const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
