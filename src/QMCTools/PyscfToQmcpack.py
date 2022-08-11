@@ -570,7 +570,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
-  print ('Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title))
+  print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
   # Close the file before exiting
 
 
