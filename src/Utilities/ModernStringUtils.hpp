@@ -32,7 +32,6 @@ namespace qmcplusplus
 std::string lowerCase(const std::string_view s);
 /** @} */
 
-
 } // namespace qmcplusplus
 
 #endif
