@@ -90,6 +90,8 @@ public:
   DiracDeterminantBatched(const DiracDeterminantBatched& s)            = delete;
   DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminant"; }
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<Value>& dlogpsi,

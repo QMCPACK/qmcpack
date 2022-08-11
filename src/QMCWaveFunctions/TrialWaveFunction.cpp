@@ -79,11 +79,11 @@ TrialWaveFunction::~TrialWaveFunction()
  */
 void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
 {
-  std::string aname = aterm->ClassName;
-  if (!aterm->myName.empty())
-    aname += ":" + aterm->myName;
+  std::string aname = aterm->getClassName();
+  if (!aterm->getName().empty())
+    aname += ":" + aterm->getName();
 
-  if (aterm->is_fermionic)
+  if (aterm->isFermionic())
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   for (auto& suffix : suffixes)
@@ -436,8 +436,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
   ScopedTimer local_timer(TWF_timers_[V_TIMER]);
   PsiValueType r(1.0);
   for (int i = 0; i < Z.size(); i++)
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(WFC_timers_[V_TIMER + TIMER_SKIP * i]);
       r *= Z[i]->ratio(P, iat);
@@ -463,8 +463,8 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
   std::vector<PsiValueType> ratios_z(num_wf);
   for (int i = 0; i < num_wfc; i++)
   {
-    if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (wavefunction_components[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!wavefunction_components[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[V_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -986,8 +986,8 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
   std::vector<ValueType> t(ratios.size());
   std::fill(ratios.begin(), ratios.end(), 1.0);
   for (int i = 0; i < Z.size(); ++i)
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
       Z[i]->evaluateRatios(VP, t);
@@ -1014,8 +1014,8 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
   }
 
   for (int i = 0; i < wavefunction_components.size(); i++)
-    if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (wavefunction_components[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!wavefunction_components[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -1217,7 +1217,7 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
 {
   for (int i = 0; i < Z.size(); ++i)
   {
-    if (Z[i]->is_fermionic)
+    if (Z[i]->isFermionic())
     {
       //OK, so this is a hack only for SlaterDeterminant objects.
       //Needs a bit of logic and protection before this reaches production.

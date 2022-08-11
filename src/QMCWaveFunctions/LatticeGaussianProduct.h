@@ -46,6 +46,8 @@ public:
 
   ~LatticeGaussianProduct() override;
 
+  std::string getClassName() const override { return "LatticeGaussianProduct"; }
+
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;

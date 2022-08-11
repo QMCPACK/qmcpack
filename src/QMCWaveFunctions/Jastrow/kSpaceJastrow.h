@@ -155,6 +155,7 @@ public:
 
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
+  std::string getClassName() const override { return "kSpaceJastrow"; }
   //implement virtual functions for optimizations
   bool isOptimizable() const override { return true; }
   void checkInVariables(opt_variables_type& active) override;

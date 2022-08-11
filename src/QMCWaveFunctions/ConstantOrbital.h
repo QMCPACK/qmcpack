@@ -22,7 +22,9 @@ class ConstantOrbital : public WaveFunctionComponent
 public:
   PsiValueType FakeGradRatio;
 
-  ConstantOrbital() : WaveFunctionComponent("ConstantOrbital"), FakeGradRatio(1.0) {}
+  ConstantOrbital() : FakeGradRatio(1.0) {}
+
+  std::string getClassName() const override { return "ConstantOrbital"; }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

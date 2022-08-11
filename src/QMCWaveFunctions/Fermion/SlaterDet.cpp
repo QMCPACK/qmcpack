@@ -27,11 +27,9 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<Determinant_t>> dets,
                      const std::string& class_name)
-    : WaveFunctionComponent(class_name, ""), Dets(std::move(dets))
+    : Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)

@@ -21,8 +21,7 @@ using ValueType    = LatticeGaussianProduct::ValueType;
 using GradType     = LatticeGaussianProduct::GradType;
 using PsiValueType = LatticeGaussianProduct::PsiValueType;
 
-LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls)
-    : WaveFunctionComponent("LatticeGaussianProduct"), CenterRef(centers)
+LatticeGaussianProduct::LatticeGaussianProduct(ParticleSet& centers, ParticleSet& ptcls) : CenterRef(centers)
 {
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();

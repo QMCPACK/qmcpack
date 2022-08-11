@@ -38,8 +38,7 @@ public:
    *@param last index of last particle
    */
   DiracDeterminantBase(const std::string& class_name, std::unique_ptr<SPOSet>&& spos, int first, int last)
-      : WaveFunctionComponent(class_name, ""),
-        UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
+      : UpdateTimer(*timer_manager.createTimer(class_name + "::update", timer_level_fine)),
         RatioTimer(*timer_manager.createTimer(class_name + "::ratio", timer_level_fine)),
         InverseTimer(*timer_manager.createTimer(class_name + "::inverse", timer_level_fine)),
         BufferTimer(*timer_manager.createTimer(class_name + "::buffer", timer_level_fine)),
@@ -50,9 +49,7 @@ public:
         LastIndex(last),
         NumOrbitals(last - first),
         NumPtcls(last - first)
-  {
-    is_fermionic = true;
-  }
+  { }
 
   ///default destructor
   ~DiracDeterminantBase() override {}
@@ -72,6 +69,7 @@ public:
   virtual ValueMatrix& getPsiMinv() { return dummy_vmt; }
 #endif
 
+  bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
   inline void checkInVariables(opt_variables_type& active) final
   {

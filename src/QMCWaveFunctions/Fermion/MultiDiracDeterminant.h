@@ -146,6 +146,9 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
+  std::string getClassName() const override { return "MultiDiracDeterminant"; }
+
+  bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
   inline void checkInVariables(opt_variables_type& active) override
   {

@@ -35,7 +35,7 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
                                             int last,
                                             int ndelay,
                                             DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last),
+    : DiracDeterminantBase(getClassName(), std::move(spos), first, last),
       ndelay_(ndelay),
       invRow_id(-1),
       matrix_inverter_kind_(matrix_inverter_kind)

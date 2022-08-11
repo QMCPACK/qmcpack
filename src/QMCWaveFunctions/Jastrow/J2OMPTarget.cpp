@@ -313,14 +313,14 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OMPTarget", obj_name),
+    : WaveFunctionComponent(obj_name),
       N(p.getTotalNum()),
       N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
       my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {
-  if (myName.empty())
+  if (my_name_.empty())
     throw std::runtime_error("J2OMPTarget object name cannot be empty!");
 
   F.resize(NumGroups * NumGroups, nullptr);
@@ -396,7 +396,7 @@ void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
-  auto j2copy = std::make_unique<J2OMPTarget<FT>>(myName, tqp);
+  auto j2copy = std::make_unique<J2OMPTarget<FT>>(my_name_, tqp);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)

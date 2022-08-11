@@ -61,6 +61,8 @@ public:
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s)            = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminantWithBackflow"; }
+
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,

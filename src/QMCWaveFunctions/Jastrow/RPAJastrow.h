@@ -40,6 +40,8 @@ public:
 
   ~RPAJastrow() override;
 
+  std::string getClassName() const override { return "RPAJastrow"; }
+
   bool put(xmlNodePtr cur);
 
   void buildOrbital(const std::string& name,
