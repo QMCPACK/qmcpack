@@ -73,12 +73,12 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineR2R()
-  {
-    is_complex = false;
-    className  = "SplineR2R";
-    KeyWord    = "SplineR2R";
-  }
+  SplineR2R(const std::string& my_name) : BsplineSet(my_name) {}
+
+  SplineR2R(const SplineR2R& in);
+  virtual std::string getClassName() const override { return "SplineR2R"; }
+  virtual std::string getKeyword() const override { return "SplineR2R"; }
+  bool isComplex() const override { return false; };
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 

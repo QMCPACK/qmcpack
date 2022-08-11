@@ -267,7 +267,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   //hid_t twist_grp_id = H5Gopen2(es_grp_id,tname.c_str(), H5P_DEFAULT);
   hid_t twist_grp_id = H5Gopen2(es_grp_id, "kpoint_0", H5P_DEFAULT);
   //create a single-particle orbital set
-  SPOSetType* psi = new SPOSetType;
+  SPOSetType* psi = new SPOSetType(getXMLAttributeValue(cur, "name"));
   if (transform2grid)
   {
     nb = myParam->numBands;

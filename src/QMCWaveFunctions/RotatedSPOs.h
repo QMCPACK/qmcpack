@@ -22,9 +22,14 @@ class RotatedSPOs : public SPOSet
 {
 public:
   //constructor
-  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
+  RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs() override;
+
+  std::string getClassName() const override { return "RotatedSPOs"; }
+  bool isOptimizable() const override { return true; }
+  bool isOMPoffload() const override { return Phi->isOMPoffload(); }
+  bool hasIonDerivs() const override { return Phi->hasIonDerivs(); }
 
   // Vector of rotation matrix indices
   using RotationIndices = std::vector<std::pair<int, int>>;
@@ -37,19 +42,27 @@ public:
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
-  // Fill in anti-symmetric matrix from the list of rotation parameter indices
+  // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
   static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                            const std::vector<ValueType>& param,
                                            ValueMatrix& rot_mat);
 
+  // Extract the list of rotation parameters from the entries in an antisymmetric matrix
+  // This function expects rot_indices and param are the same length.
+  static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                                   const ValueMatrix& rot_mat,
+                                                   std::vector<ValueType>& param);
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
+
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix
+  static void log_antisym_matrix(ValueMatrix& mat);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
@@ -186,35 +199,23 @@ public:
     for (int k = 0; k < myVars.size(); ++k)
       myVars[k] = 0.0;
 
-    if (Optimizable)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
-    }
+    if (myVars.size())
+      active.insertFrom(myVars);
+    Phi->storeParamsBeforeRotation();
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      myVars.getIndex(active);
-    }
-  }
+  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
   void resetParameters(const opt_variables_type& active) override
   {
-    if (Optimizable)
+    std::vector<RealType> param(m_act_rot_inds.size());
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
     {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
+      int loc  = myVars.where(i);
+      param[i] = myVars[i] = active[loc];
     }
+    apply_rotation(param, true);
   }
 
   //*********************************************************************************

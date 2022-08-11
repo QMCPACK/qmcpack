@@ -20,21 +20,18 @@
 
 namespace qmcplusplus
 {
+
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<Determinant_t>> dets,
                      const std::string& class_name)
-    : WaveFunctionComponent(class_name), Dets(std::move(dets))
+    : WaveFunctionComponent(class_name, ""), Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
 
   is_fermionic = true;
-
-  Optimizable = false;
-  for (const auto& det : Dets)
-    Optimizable = Optimizable || det->Optimizable;
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -44,10 +41,15 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl,
 ///destructor
 SlaterDet::~SlaterDet() = default;
 
+bool SlaterDet::isOptimizable() const
+{
+  return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+}
+
 void SlaterDet::checkInVariables(opt_variables_type& active)
 {
   myVars.clear();
-  if (Optimizable)
+  if (isOptimizable())
     for (int i = 0; i < Dets.size(); i++)
     {
       Dets[i]->checkInVariables(active);
@@ -58,7 +60,7 @@ void SlaterDet::checkInVariables(opt_variables_type& active)
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
 {
   myVars.clear();
-  if (Optimizable)
+  if (isOptimizable())
     for (int i = 0; i < Dets.size(); i++)
     {
       Dets[i]->checkOutVariables(active);
@@ -70,7 +72,7 @@ void SlaterDet::checkOutVariables(const opt_variables_type& active)
 ///reset all the Dirac determinants, Optimizable is true
 void SlaterDet::resetParameters(const opt_variables_type& active)
 {
-  if (Optimizable)
+  if (isOptimizable())
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->resetParameters(active);
 }
@@ -254,7 +256,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDet::makeClone(ParticleSet& tqp) co
   for (const auto& det : Dets)
     dets.emplace_back(det->makeCopy(det->getPhi()->makeClone()));
   auto myclone = std::make_unique<SlaterDet>(tqp, std::move(dets));
-  assert(myclone->Optimizable == Optimizable);
+  assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }
 

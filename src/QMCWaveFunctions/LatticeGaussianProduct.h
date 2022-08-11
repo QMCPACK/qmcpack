@@ -46,22 +46,6 @@ public:
 
   ~LatticeGaussianProduct() override;
 
-  /** check out optimizable variables
-   */
-  void checkOutVariables(const opt_variables_type& o) override;
-
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& o) override;
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override;
-
-  /** reset the parameters during optimizations
-   */
-  void resetParameters(const opt_variables_type& active) override;
-
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;

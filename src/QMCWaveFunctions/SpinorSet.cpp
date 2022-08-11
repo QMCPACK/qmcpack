@@ -14,7 +14,8 @@
 
 namespace qmcplusplus
 {
-SpinorSet::SpinorSet() : SPOSet(), className("SpinorSet"), spo_up(nullptr), spo_dn(nullptr) {}
+SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
+SpinorSet::~SpinorSet() = default;
 
 void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&& dn)
 {
@@ -39,8 +40,6 @@ void SpinorSet::set_spos(std::unique_ptr<SPOSet>&& up, std::unique_ptr<SPOSet>&&
   d2psi_work_up.resize(OrbitalSetSize);
   d2psi_work_down.resize(OrbitalSetSize);
 }
-
-void SpinorSet::resetParameters(const opt_variables_type& optVariables){};
 
 void SpinorSet::setOrbitalSetSize(int norbs) { OrbitalSetSize = norbs; };
 
@@ -445,7 +444,7 @@ void SpinorSet::evaluateGradSource(const ParticleSet& P,
 
 std::unique_ptr<SPOSet> SpinorSet::makeClone() const
 {
-  auto myclone = std::make_unique<SpinorSet>();
+  auto myclone = std::make_unique<SpinorSet>(my_name_);
   std::unique_ptr<SPOSet> cloneup(spo_up->makeClone());
   std::unique_ptr<SPOSet> clonedn(spo_dn->makeClone());
   myclone->set_spos(std::move(cloneup), std::move(clonedn));

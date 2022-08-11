@@ -1747,7 +1747,6 @@ void WaveFunctionTester::runDerivTest()
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     //     Psi.checkOutVariables(wfvar_prime);
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -1757,7 +1756,6 @@ void WaveFunctionTester::runDerivTest()
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     //     Psi.checkOutVariables(wfvar_prime);
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;
@@ -1860,7 +1858,6 @@ void WaveFunctionTester::runDerivNLPPTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -1872,7 +1869,6 @@ void WaveFunctionTester::runDerivNLPPTest()
 
     wfvar_prime[i] = wfVars[i] - FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;
@@ -1965,7 +1961,6 @@ void WaveFunctionTester::runDerivCloneTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     psi_clone->resetParameters(wfvar_prime);
-    psi_clone->reset();
     w_clone->update();
     w_clone->G          = 0;
     w_clone->L          = 0;
@@ -1974,7 +1969,6 @@ void WaveFunctionTester::runDerivCloneTest()
     RealType elocPlus = h_clone->getLocalEnergy() - h_clone->getLocalPotential();
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     psi_clone->resetParameters(wfvar_prime);
-    psi_clone->reset();
     w_clone->update();
     w_clone->G           = 0;
     w_clone->L           = 0;
@@ -1999,7 +1993,6 @@ void WaveFunctionTester::runDerivCloneTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -2008,7 +2001,6 @@ void WaveFunctionTester::runDerivCloneTest()
     RealType elocPlus = H.getLocalEnergy() - H.getLocalPotential();
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;

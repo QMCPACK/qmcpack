@@ -75,21 +75,6 @@ TrialWaveFunction::~TrialWaveFunction()
     xmlFreeNode(myNode_);
 }
 
-void TrialWaveFunction::startOptimization()
-{
-  for (int i = 0; i < Z.size(); i++)
-    Z[i]->IsOptimizing = true;
-}
-
-void TrialWaveFunction::stopOptimization()
-{
-  for (int i = 0; i < Z.size(); i++)
-  {
-    Z[i]->finalizeOptimization();
-    Z[i]->IsOptimizing = false;
-  }
-}
-
 /** Takes owndership of aterm
  */
 void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
@@ -237,7 +222,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   for (int i = 0; i < Z.size(); ++i)
   {
     ScopedTimer z_timer(WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
-    if (Z[i]->Optimizable)
+    if (Z[i]->isOptimizable())
       logpsi += Z[i]->evaluateLog(P, P.G, P.L);
   }
   log_real_  = std::real(logpsi);
@@ -254,7 +239,7 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
     for (int i = 0; i < Z.size(); ++i)
     {
       //update orbitals if its not flagged optimizable, AND recomputeall is true
-      if (!Z[i]->Optimizable)
+      if (!Z[i]->isOptimizable())
         Z[i]->evaluateLog(P, dummyG, dummyL);
     }
   }
@@ -278,7 +263,7 @@ void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
   for (int i = 0; i < Z.size(); ++i)
   {
     ScopedTimer z_timer(WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
-    if (Z[i]->Optimizable)
+    if (Z[i]->isOptimizable())
       logpsi_opt += Z[i]->evaluateLog(P, P.G, P.L);
     else
       logpsi_fixed += Z[i]->evaluateLog(P, fixedG, fixedL);
@@ -322,7 +307,7 @@ void TrialWaveFunction::mw_evaluateDeltaLogSetup(const RefVectorWithLeader<Trial
   {
     ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
     const auto wfc_list(extractWFCRefList(wf_list, i));
-    if (wavefunction_components[i]->Optimizable)
+    if (wavefunction_components[i]->isOptimizable())
     {
       wavefunction_components[i]->mw_evaluateLog(wfc_list, p_list, g_list, l_list);
       for (int iw = 0; iw < wf_list.size(); iw++)
@@ -382,7 +367,7 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
 
   // Loop over the wavefunction components
   for (int i = 0; i < num_wfc; ++i)
-    if (wavefunction_components[i]->Optimizable)
+    if (wavefunction_components[i]->isOptimizable())
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -406,7 +391,7 @@ void TrialWaveFunction::mw_evaluateDeltaLog(const RefVectorWithLeader<TrialWaveF
   // Ignore logPsi, G and L.
   if (recompute)
     for (int i = 0; i < num_wfc; ++i)
-      if (!wavefunction_components[i]->Optimizable)
+      if (!wavefunction_components[i]->isOptimizable())
       {
         ScopedTimer z_timer(wf_leader.WFC_timers_[RECOMPUTE_TIMER + TIMER_SKIP * i]);
         const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -880,25 +865,29 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->checkInVariables(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->checkInVariables(active);
 }
 
 void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->checkOutVariables(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->checkOutVariables(active);
 }
 
 void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->resetParameters(active);
+    if (Z[i]->isOptimizable())
+      Z[i]->resetParameters(active);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
   for (int i = 0; i < Z.size(); i++)
-    Z[i]->reportStatus(os);
+    if (Z[i]->isOptimizable())
+      Z[i]->reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
@@ -1058,8 +1047,6 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
 
 bool TrialWaveFunction::put(xmlNodePtr cur) { return true; }
 
-void TrialWaveFunction::reset() {}
-
 std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp) const
 {
   auto myclone                 = std::make_unique<TrialWaveFunction>(myName, use_tasking_);
@@ -1078,8 +1065,7 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& dlogpsi,
-                                            std::vector<ValueType>& dhpsioverpsi,
-                                            bool project)
+                                            std::vector<ValueType>& dhpsioverpsi)
 {
   //     // First, zero out derivatives
   //  This should only be done for some variables.
@@ -1090,15 +1076,6 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
     dhpsioverpsi[i] *= OneOverM;
-
-  if (project)
-  {
-    for (int i = 0; i < Z.size(); i++)
-      Z[i]->multiplyDerivsByOrbR(dlogpsi);
-    RealType psiValue = std::exp(-log_real_) * std::cos(PhaseValue);
-    for (int i = 0; i < dlogpsi.size(); i++)
-      dlogpsi[i] *= psiValue;
-  }
 }
 
 void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -1248,7 +1225,7 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
       //det->registerTWFFastDerivWrapper(P, twf);
       Z[i]->registerTWFFastDerivWrapper(P, twf);
     }
-    else 
+    else
       twf.addJastrow(Z[i].get());
   }
 }

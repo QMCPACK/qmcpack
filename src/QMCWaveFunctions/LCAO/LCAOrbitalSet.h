@@ -43,31 +43,19 @@ public:
   /** constructor
      * @param bs pointer to the BasisSet
      */
-  LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize);
+  LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs);
 
   LCAOrbitalSet(const LCAOrbitalSet& in);
+
+  virtual std::string getClassName() const override { return "LCAOrbitalSet"; }
+
+  bool hasIonDerivs() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
   void storeParamsBeforeRotation() override { C_copy = *C; }
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
-
-  void checkInVariables(opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call checkInVariables");
-  }
-
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call checkOutVariables");
-  }
-
-  ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    APP_ABORT("LCAOrbitalSet should not call resetParameters");
-  }
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
     */

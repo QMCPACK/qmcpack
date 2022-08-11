@@ -26,11 +26,7 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet(bool use_OMP_offload, bool ion_deriv, bool optimizable)
-    : useOMPoffload(use_OMP_offload), ionDerivs(ion_deriv), Optimizable(optimizable), OrbitalSetSize(0)
-{
-  className = "invalid";
-}
+SPOSet::SPOSet(const std::string& my_name) : OptimizableObject(my_name), my_name_(my_name), OrbitalSetSize(0) {}
 
 void SPOSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                ValueVector& psi,
@@ -151,7 +147,7 @@ void SPOSet::evaluate_notranspose_spin(const ParticleSet& P,
                                        ValueMatrix& d2logdet,
                                        ValueMatrix& dspinlogdet)
 {
-  throw std::runtime_error("Need specialization of " + className +
+  throw std::runtime_error("Need specialization of " + getClassName() +
                            "::evaluate_notranspose_spin(P,iat,psi,dpsi,d2logdet, dspin_logdet) (vector quantities)\n");
 }
 
@@ -192,7 +188,7 @@ void SPOSet::evaluate_notranspose(const ParticleSet& P,
 
 std::unique_ptr<SPOSet> SPOSet::makeClone() const
 {
-  throw std::runtime_error("Missing  SPOSet::makeClone for " + className);
+  throw std::runtime_error("Missing  SPOSet::makeClone for " + getClassName());
 }
 
 void SPOSet::basic_report(const std::string& pad) const
@@ -205,7 +201,7 @@ void SPOSet::basic_report(const std::string& pad) const
 
 void SPOSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className +
+  throw std::runtime_error("Need specialization of " + getClassName() +
                            "::evaluate(P,iat,psi,dpsi,dhpsi) (vector quantities)\n");
 }
 
@@ -216,7 +212,7 @@ void SPOSet::evaluateVGHGH(const ParticleSet& P,
                            HessVector& grad_grad_psi,
                            GGGVector& grad_grad_grad_psi)
 {
-  throw std::runtime_error("Need specialization of " + className +
+  throw std::runtime_error("Need specialization of " + getClassName() +
                            "::evaluate(P,iat,psi,dpsi,dhpsi,dghpsi) (vector quantities)\n");
 }
 
@@ -253,7 +249,7 @@ void SPOSet::evaluateGradSourceRow(const ParticleSet& P,
 
 void SPOSet::evaluate_spin(const ParticleSet& P, int iat, ValueVector& psi, ValueVector& dpsi)
 {
-  throw std::runtime_error("Need specialization of " + className +
+  throw std::runtime_error("Need specialization of " + getClassName() +
                            "::evaluate_spin(P,iat,psi,dpsi) (vector quantities)\n");
 }
 

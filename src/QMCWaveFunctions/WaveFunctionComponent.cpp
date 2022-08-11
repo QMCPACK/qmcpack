@@ -23,8 +23,7 @@ namespace qmcplusplus
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
-    : IsOptimizing(false),
-      Optimizable(true),
+    : OptimizableObject(obj_name),
       is_fermionic(false),
       UpdateMode(ORB_WALKER),
       ClassName(class_name),

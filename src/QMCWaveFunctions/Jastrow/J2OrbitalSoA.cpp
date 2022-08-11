@@ -71,7 +71,7 @@ void J2OrbitalSoA<FT>::checkOutVariables(const opt_variables_type& active)
 template<typename FT>
 void J2OrbitalSoA<FT>::resetParameters(const opt_variables_type& active)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
   for (auto& [key, functor] : J2Unique)
     functor->resetParameters(active);
@@ -262,8 +262,7 @@ std::unique_ptr<WaveFunctionComponent> J2OrbitalSoA<FT>::makeClone(ParticleSet& 
         j2copy->addFunc(ig, jg, std::move(fc));
       }
     }
-  j2copy->KEcorr      = KEcorr;
-  j2copy->Optimizable = Optimizable;
+  j2copy->KEcorr = KEcorr;
 
   j2copy->myVars.clear();
   j2copy->myVars.insertFrom(myVars);

@@ -255,7 +255,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
     }
     cur = cur->next;
   }
-  J2->setOptimizable(true);
 
   // compute Chiesa Correction based on the current J2 parameters
   J2->ChiesaKEcorrection();
@@ -368,7 +367,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   SpeciesSet& tSet = targetPtcl.getSpeciesSet();
   bool success     = false;
-  bool Opt(true);
   while (kids != NULL)
   {
     std::string kidsname(lowerCase(castXMLCharToChar(kids->name)));
@@ -418,7 +416,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
             std::is_same<RadFuncType, Pade2ndOrderFunctor<RealType>>::value)
         {
           double plotextent = 10.0;
-          print(*functor.get(), os, plotextent);  
+          print(*functor.get(), os, plotextent);
         }
         else
         {
@@ -430,11 +428,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
     }
     kids = kids->next;
   }
+
   if (success)
-  {
-    J1->setOptimizable(Opt);
     return J1;
-  }
   else
   {
     PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
@@ -465,7 +461,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   params.add(Rs, "rs");
   params.add(Kc, "kc");
   params.put(cur);
-  bool Opt(true);
 
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
@@ -510,7 +505,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
     J1->addFunc(ig, std::move(nfunc));
   }
 
-  J1->setOptimizable(Opt);
   return J1;
 }
 

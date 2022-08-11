@@ -589,7 +589,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   bool any_optimizable = false;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    if (dets[grp]->Optimizable == true)
+    if (dets[grp]->isOptimizable() == true)
     {
       any_optimizable = true;
       break;
@@ -599,7 +599,7 @@ std::unique_ptr<MultiSlaterDetTableMethod> SlaterDetBuilder::createMSDFast(
   {
     for (int grp = 0; grp < nGroups; grp++)
     {
-      if (dets[grp]->Optimizable != true)
+      if (dets[grp]->isOptimizable() != true)
         APP_ABORT("Optimizing the SPOSet of only only species is not supported!\n");
     }
     if (csf_data_ptr)

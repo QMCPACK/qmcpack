@@ -18,6 +18,9 @@
 
 namespace qmcplusplus
 {
+template<typename ST>
+SplineC2ROMPTarget<ST>::SplineC2ROMPTarget(const SplineC2ROMPTarget& in) = default;
+
 namespace C2R
 {
 template<typename ST, typename TT>

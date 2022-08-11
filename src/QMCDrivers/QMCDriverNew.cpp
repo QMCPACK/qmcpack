@@ -129,22 +129,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   }
 }
 
-/** process a <qmc/> element
- * @param cur xmlNode with qmc tag
- *
- * This function is called before QMCDriverNew::run and following actions are taken:
- * - Initialize basic data to execute run function.
- * -- distance tables
- * -- resize deltaR and drift with the number of particles
- * -- assign cur to qmcNode
- * - process input file
- *   -- putQMCInfo: <parameter/> s for generic QMC
- *   -- put : extra data by derived classes
- * - initialize branchEngine to accumulate energies
- * - initialize Estimators
- * - initialize Walkers
- */
-void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
+void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
 {
   ScopedTimer local_timer(timers_.startup_timer);
 
@@ -232,12 +217,7 @@ void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
   int nwtot = walker_configs_ref_.getActiveWalkers();
   myComm->bcast(nwtot);
   if (nwtot)
-  {
     setWalkerOffsets(walker_configs_ref_, myComm);
-    qmc_common.is_restart = true;
-  }
-  else
-    qmc_common.is_restart = false;
 }
 
 void QMCDriverNew::recordBlock(int block)

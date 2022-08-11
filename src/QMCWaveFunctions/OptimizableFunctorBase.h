@@ -18,12 +18,15 @@
  */
 #ifndef QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
 #define QMCPLUSPLUS_OPTIMIZABLEFUNCTORBASE_H
-#include "VariableSet.h"
+
+#include "OptimizableObject.h"
 #include "OhmmsData/OhmmsElementBase.h"
 #include "OhmmsPETE/TinyVector.h"
 //#include <cstdio>
 #include <iostream>
 
+namespace qmcplusplus
+{
 /** Base class for any functor with optimizable parameters
  *
  * Derived classes from OptimizableFunctorBase are called "functor"s and
@@ -41,33 +44,23 @@
  * Unlike VarList which uses map, VariableSet is serialized in that the internal order is according
  * to insert calls.
  */
-struct OptimizableFunctorBase
+struct OptimizableFunctorBase : public OptimizableObject
 {
   ///typedef for real values
   using real_type = optimize::VariableSet::real_type;
   ///typedef for variableset: this is going to be replaced
   using opt_variables_type = optimize::VariableSet;
-  ///typedef for name-value lists
-  using variable_map_type = optimize::VariableSet::variable_map_type;
   ///maximum cutoff
   real_type cutoff_radius = 0.0;
   ///set of variables to be optimized
   opt_variables_type myVars;
   ///default constructor
-  inline OptimizableFunctorBase() {}
+  inline OptimizableFunctorBase(const std::string& name = "") : OptimizableObject(name) {}
   ///virtual destrutor
-  virtual ~OptimizableFunctorBase() {}
+  virtual ~OptimizableFunctorBase() = default;
 
   inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
 
-  virtual void checkInVariables(opt_variables_type& active) = 0;
-
-  virtual void checkOutVariables(const opt_variables_type& active) = 0;
-
-  /** reset the optimizable variables
-   * @param active list of active optimizable variables
-   */
-  virtual void resetParameters(const opt_variables_type& active) = 0;
   /** create a clone of this object
    */
   virtual OptimizableFunctorBase* makeClone() const = 0;
@@ -112,10 +105,7 @@ struct OptimizableFunctorBase
     return false;
   }
 
-  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs)
-  {
-    return false;
-  }
+  virtual inline bool evaluateDerivatives(real_type r, std::vector<real_type>& derivs) { return false; }
 
   // mmorales: don't know how to solve a template problem for cusp correction,
   //           so for now I do this
@@ -129,5 +119,6 @@ struct OptimizableFunctorBase
  */
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent = -1.0);
 
+} // namespace qmcplusplus
 
 #endif

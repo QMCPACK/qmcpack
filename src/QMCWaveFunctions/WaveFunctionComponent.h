@@ -25,6 +25,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OptimizableObject.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "type_traits/template_types.hpp"
 #include "TWFGrads.hpp"
@@ -68,7 +69,7 @@ class TWFFastDerivWrapper;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-class WaveFunctionComponent : public QMCTraits
+class WaveFunctionComponent : public QMCTraits, public OptimizableObject
 {
 public:
   /** enum for a update mode */
@@ -95,13 +96,6 @@ public:
   // the value type for psi(r')/psi(r)
   using PsiValueType = QTFull::ValueType;
 
-  /** flag to set the optimization mode */
-  bool IsOptimizing;
-  /** boolean to set optimization
-   *
-   * If true, this object is actively modified during optimization
-   */
-  bool Optimizable;
   /** true, if this component is fermionic */
   bool is_fermionic;
 
@@ -137,30 +131,8 @@ public:
   ///default destructor
   virtual ~WaveFunctionComponent();
 
-  inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
-
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
-
-  /** check in optimizable parameters
-   * @param active a super set of optimizable variables
-   *
-   * Add the paramemters this WaveFunctionComponent manage to active.
-   */
-  virtual void checkInVariables(opt_variables_type& active) = 0;
-
-  /** check out optimizable variables
-   *
-   * Update myVars index map
-   */
-  virtual void checkOutVariables(const opt_variables_type& active) = 0;
-
-  /** reset the parameters during optimizations
-   */
-  virtual void resetParameters(const opt_variables_type& active) = 0;
-
-  /** print the state, e.g., optimizables */
-  virtual void reportStatus(std::ostream& os) = 0;
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
@@ -475,6 +447,8 @@ public:
    */
   virtual RealType KECorrection();
 
+  virtual bool isOptimizable() const { return false; }
+
   /** Compute the derivatives of both the log of the wavefunction and kinetic energy
    * with respect to optimizable parameters.
    *  @param P particle set
@@ -504,16 +478,6 @@ public:
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
                                      std::vector<ValueType>& dlogpsi);
-
-  virtual void multiplyDerivsByOrbR(std::vector<ValueType>& dlogpsi)
-  {
-    RealType myrat = std::real(LogToValue<PsiValueType>::convert(log_value_));
-    for (int j = 0; j < myVars.size(); j++)
-    {
-      int loc = myVars.where(j);
-      dlogpsi[loc] *= myrat;
-    }
-  }
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
@@ -709,14 +673,6 @@ public:
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
-  virtual void evaluateDerivatives(MCWalkerConfiguration& W,
-                                   const opt_variables_type& optvars,
-                                   RealMatrix_t& dgrad_logpsi,
-                                   RealMatrix_t& dhpsi_over_psi)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateDerivatives for " + ClassName +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
 #endif
 
 private:

@@ -140,6 +140,7 @@ public:
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
 
+  bool isOptimizable() const override { return true; }
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

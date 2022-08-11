@@ -52,7 +52,7 @@ void TrialWaveFunction::reserve(PointerPool<gpu::device_vector<CTS::ValueType>>&
                                 int kblocksize)
 {
   for (int i = 0; i < Z.size(); i++)
-    if (!onlyOptimizable || Z[i]->Optimizable)
+    if (!onlyOptimizable)
       Z[i]->reserve(pool, kblocksize);
 }
 
@@ -312,100 +312,4 @@ void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
   }
 }
 
-void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<RealType>& logpsi_opt)
-{
-  for (int iw = 0; iw < logpsi_opt.size(); iw++)
-    logpsi_opt[iw] = RealType();
-  for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    ScopedTimer local_timer(WFC_timers_[ii]);
-    if (Z[i]->Optimizable)
-      Z[i]->addLog(W, logpsi_opt);
-  }
-}
-
-
-void TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration& W,
-                                         std::vector<RealType>& logpsi_fixed,
-                                         std::vector<RealType>& logpsi_opt,
-                                         GradMatrix& fixedG,
-                                         ValueMatrix& fixedL)
-{
-  for (int iw = 0; iw < logpsi_fixed.size(); iw++)
-  {
-    logpsi_opt[iw]   = RealType();
-    logpsi_fixed[iw] = RealType();
-  }
-  fixedG = GradType();
-  fixedL = RealType();
-  // First, sum optimizable part, using fixedG and fixedL as temporaries
-  for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    ScopedTimer local_timer(WFC_timers_[ii]);
-    if (Z[i]->Optimizable)
-    {
-      Z[i]->addLog(W, logpsi_opt);
-      Z[i]->gradLapl(W, fixedG, fixedL);
-    }
-  }
-  for (int iw = 0; iw < W.WalkerList.size(); iw++)
-    for (int ptcl = 0; ptcl < fixedG.cols(); ptcl++)
-    {
-      W[iw]->G[ptcl] = fixedG(iw, ptcl);
-      W[iw]->L[ptcl] = fixedL(iw, ptcl);
-    }
-  // Reset them, then accumulate the fixe part
-  fixedG = GradType();
-  fixedL = RealType();
-  for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    if (!Z[i]->Optimizable)
-    {
-      Z[i]->addLog(W, logpsi_fixed);
-      Z[i]->gradLapl(W, fixedG, fixedL);
-    }
-  }
-  // Add on the fixed part to the total laplacian and gradient
-  for (int iw = 0; iw < W.WalkerList.size(); iw++)
-    for (int ptcl = 0; ptcl < fixedG.cols(); ptcl++)
-    {
-      W[iw]->G[ptcl] += fixedG(iw, ptcl);
-      W[iw]->L[ptcl] += fixedL(iw, ptcl);
-    }
-}
-
-void TrialWaveFunction::evaluateOptimizableLog(MCWalkerConfiguration& W,
-                                               std::vector<RealType>& logpsi_opt,
-                                               GradMatrix& optG,
-                                               ValueMatrix& optL)
-{
-  for (int iw = 0; iw < W.getActiveWalkers(); iw++)
-    logpsi_opt[iw] = RealType();
-  optG = GradType();
-  optL = RealType();
-  // Sum optimizable part of log Psi
-  for (int i = 0, ii = RECOMPUTE_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    ScopedTimer local_timer(WFC_timers_[ii]);
-    if (Z[i]->Optimizable)
-    {
-      Z[i]->addLog(W, logpsi_opt);
-      Z[i]->gradLapl(W, optG, optL);
-    }
-  }
-}
-
-
-void TrialWaveFunction::evaluateDerivatives(MCWalkerConfiguration& W,
-                                            const opt_variables_type& optvars,
-                                            RealMatrix_t& dlogpsi,
-                                            RealMatrix_t& dhpsioverpsi)
-{
-  for (int i = 0, ii = DERIVS_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
-  {
-    ScopedTimer local_timer(WFC_timers_[ii]);
-    if (Z[i]->Optimizable)
-      Z[i]->evaluateDerivatives(W, optvars, dlogpsi, dhpsioverpsi);
-  }
-}
 } // namespace qmcplusplus

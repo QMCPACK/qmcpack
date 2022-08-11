@@ -54,6 +54,7 @@ public:
 
   void setHandler(std::unique_ptr<HandlerType> Handler) { myHandler = std::move(Handler); };
 
+  bool isOptimizable() const override { return true; }
   /** check out optimizable variables
     */
   void checkOutVariables(const opt_variables_type& o) override;

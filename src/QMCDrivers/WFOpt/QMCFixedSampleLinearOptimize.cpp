@@ -90,6 +90,8 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       output_matrices_initialized_(false),
       freeze_parameters_(false),
       Max_iterations(1),
+      wfNode(NULL),
+      param_tol(1e-4),
       generate_samples_timer_(
           *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
@@ -122,7 +124,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
   m_param.add(num_shifts, "num_shifts");
   m_param.add(cost_increase_tol, "cost_increase_tol");
   m_param.add(target_shift_i, "target_shift_i");
-
+  m_param.add(param_tol, "alloweddifference");
 
 #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;

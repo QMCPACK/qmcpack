@@ -115,7 +115,7 @@ void BackflowTransformation::checkOutVariables(const opt_variables_type& active)
     bfFuns[i]->checkOutVariables(active);
 }
 
-bool BackflowTransformation::isOptimizable()
+bool BackflowTransformation::isOptimizable() const
 {
   for (int i = 0; i < bfFuns.size(); i++)
     if (bfFuns[i]->isOptimizable())

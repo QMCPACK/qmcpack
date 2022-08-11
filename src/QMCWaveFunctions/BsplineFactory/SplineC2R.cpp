@@ -23,6 +23,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
+SplineC2R<ST>::SplineC2R(const SplineC2R& in) = default;
+
+template<typename ST>
 inline void SplineC2R<ST>::set_spline(SingleSplineType* spline_r,
                                       SingleSplineType* spline_i,
                                       int twist,

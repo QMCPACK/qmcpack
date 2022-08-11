@@ -33,9 +33,14 @@ public:
      * @param bs pointer to the BasisSet
      * @param rl report level
      */
-  LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, std::unique_ptr<basis_type>&& bs, bool optimize);
+  LCAOrbitalSetWithCorrection(const std::string& my_name,
+                              ParticleSet& ions,
+                              ParticleSet& els,
+                              std::unique_ptr<basis_type>&& bs);
 
   LCAOrbitalSetWithCorrection(const LCAOrbitalSetWithCorrection& in) = default;
+
+  std::string getClassName() const override { return "LCAOrbitalSetWithCorrection"; }
 
   std::unique_ptr<SPOSet> makeClone() const override;
 

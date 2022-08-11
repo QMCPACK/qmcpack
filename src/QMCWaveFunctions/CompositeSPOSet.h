@@ -36,9 +36,11 @@ public:
   ///store the precomputed offsets
   std::vector<int> component_offsets;
 
-  CompositeSPOSet();
+  CompositeSPOSet(const std::string& my_name);
   CompositeSPOSet(const CompositeSPOSet& other);
   ~CompositeSPOSet() override;
+
+  std::string getClassName() const override { return "CompositeSPOSet"; }
 
   ///add a sposet component to this composite sposet
   void add(std::unique_ptr<SPOSet> component);
@@ -62,9 +64,9 @@ public:
     APP_ABORT("CompositeSPOSet::" + method + " has not been implemented");
   }
 
+  void resetParameters(const opt_variables_type& optVariables) override;
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables) override;
 #ifdef QMC_CUDA
   void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi) override;
 #endif

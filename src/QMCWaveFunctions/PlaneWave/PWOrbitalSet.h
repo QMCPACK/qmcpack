@@ -43,10 +43,12 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet() : OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
-  {
-    className = "PWOrbitalSet";
-  }
+  PWOrbitalSet(const std::string& my_name)
+      : SPOSet(my_name), OwnBasisSet(false), myBasisSet(nullptr), BasisSetSize(0), C(nullptr), IsCloned(false)
+  {}
+
+  std::string getClassName() const override { return "PWOrbitalSet"; }
+
 
   /** delete BasisSet only it owns this
    *
@@ -66,8 +68,6 @@ public:
   */
   void addVector(const std::vector<ComplexType>& coefs, int jorb);
   void addVector(const std::vector<RealType>& coefs, int jorb);
-
-  void resetParameters(const opt_variables_type& optVariables) override;
 
   void setOrbitalSetSize(int norbs) override;
 

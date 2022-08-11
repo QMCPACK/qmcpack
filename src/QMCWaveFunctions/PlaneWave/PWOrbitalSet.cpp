@@ -35,11 +35,6 @@ std::unique_ptr<SPOSet> PWOrbitalSet::makeClone() const
   return myclone;
 }
 
-void PWOrbitalSet::resetParameters(const opt_variables_type& optVariables)
-{
-  //DO NOTHING FOR NOW
-}
-
 void PWOrbitalSet::setOrbitalSetSize(int norbs) {}
 
 void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)

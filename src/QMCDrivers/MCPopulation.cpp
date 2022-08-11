@@ -257,14 +257,6 @@ void MCPopulation::measureGlobalEnergyVariance(Communicate& comm,
   variance = weight_energy_variance[2] / weight_energy_variance[0] - ener * ener;
 }
 
-void MCPopulation::set_variational_parameters(const opt_variables_type& active)
-{
-  for (auto it_twfs = walker_trial_wavefunctions_.begin(); it_twfs != walker_trial_wavefunctions_.end(); ++it_twfs)
-  {
-    (*it_twfs).get()->resetParameters(active);
-  }
-}
-
 void MCPopulation::checkIntegrity() const
 {
   // check active walkers
