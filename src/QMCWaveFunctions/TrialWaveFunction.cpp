@@ -871,9 +871,9 @@ UniqueOptObjRefs TrialWaveFunction::extractOptimizableObjectRefs()
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->checkInVariables(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(active);
 }
 
 void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
@@ -885,9 +885,9 @@ void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
 
 void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->resetParameters(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.resetParametersExclusive(active);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)

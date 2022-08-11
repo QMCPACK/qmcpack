@@ -154,7 +154,6 @@ public:
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */
-  [[deprecated]]
   void checkInVariables(opt_variables_type& o);
 
   /** Check out optimizable variables
@@ -164,7 +163,6 @@ public:
 
   /**  Set values of parameters in each component from the global list
    */
-  [[deprecated]]
   void resetParameters(const opt_variables_type& active);
 
 

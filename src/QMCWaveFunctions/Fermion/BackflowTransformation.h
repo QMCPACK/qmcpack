@@ -28,7 +28,7 @@
 
 namespace qmcplusplus
 {
-class BackflowTransformation : public OptimizableObject
+class BackflowTransformation final : public OptimizableObject
 {
 public:
   using WFBufferType = BackflowFunctionBase::WFBufferType;
@@ -160,7 +160,7 @@ public:
   void checkInVariables(opt_variables_type& active);
   void checkOutVariables(const opt_variables_type& active);
   void resetParameters(const opt_variables_type& active);
-  void reportStatus(std::ostream& os) override;
+  void reportStatus(std::ostream& os) final;
 
   // extractOptimizableObjectRefs is not enabled in BackflowTransformation.
   // it is exposed as a whole to the opitmizer. Thus the underlying OptimizableObject are not explosed.
