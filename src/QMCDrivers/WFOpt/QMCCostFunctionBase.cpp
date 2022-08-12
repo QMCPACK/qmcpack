@@ -312,6 +312,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
   std::string output_override_str("no");
+  astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -323,6 +324,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
   m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
   targetExcitedStr = lowerCase(targetExcitedStr);
@@ -339,6 +341,9 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
     useNLPPDeriv = true;
   }
+
+  variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
+
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
   Write2OneXml     = (writeXmlPerStep == "no");
@@ -360,8 +365,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
       putContent(tmpid, cur);
       idtag.insert(idtag.end(), tmpid.begin(), tmpid.end());
     }
-    else if (cname == "variational_subset")
-      putContent(variational_subset_names, cur);
     else if (cname == "exclude")
     {
       std::vector<std::string> tmpid;
