@@ -239,6 +239,32 @@ if(NOT QMC_CUDA)
       H4_HYBRID_SCALARS
       TRUE)
 
+    list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.004")
+
+    qmc_run_and_check(
+      short-H4-batched-hybrid
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-batched-hybrid
+      optm-batched-hybrid.xml
+      16
+      1
+      ${SUCCESS_STATUS_MP}
+      9
+      H4_BATCHED_HYBRID_SCALARS
+      TRUE)
+
+    qmc_run_and_check(
+      short-H4-batched-hybrid
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-batched-hybrid
+      optm-batched-hybrid.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      9
+      H4_BATCHED_HYBRID_SCALARS
+      TRUE)
+
     list(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
 
     qmc_run_and_check(
