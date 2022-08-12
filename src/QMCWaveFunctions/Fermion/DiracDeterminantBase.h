@@ -71,22 +71,29 @@ public:
 
   bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
+
   inline void checkInVariables(opt_variables_type& active) final
   {
     if (Phi->isOptimizable())
       Phi->checkInVariables(active);
   }
+
   inline void checkOutVariables(const opt_variables_type& active) final
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
   }
+
   void resetParameters(const opt_variables_type& active) final
   {
     if (Phi->isOptimizable())
       Phi->resetParameters(active);
   }
-  inline void reportStatus(std::ostream& os) final {}
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override
   {
@@ -210,6 +217,7 @@ protected:
 
   static bool checkG(const GradType& g)
   {
+#if !defined(NDEBUG)
     auto g_mag = std::abs(dot(g, g));
     if (std::isnan(g_mag))
       throw std::runtime_error("gradient of NaN");
@@ -220,6 +228,7 @@ protected:
       std::cerr << "evalGrad gradient is " << g[0] << ' ' << g[1] << ' ' << g[2] << '\n';
       throw std::runtime_error("gradient of zero");
     }
+#endif
     return true;
   }
 };

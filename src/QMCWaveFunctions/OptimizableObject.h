@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_OPTIMIZABLEOBJECT_H
 
 #include "VariableSet.h"
+#include "type_traits/template_types.hpp"
 
 /**@file OptimizableObject.h
  *@brief Declaration of OptimizableObject
@@ -68,5 +69,20 @@ public:
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}
 };
+
+class UniqueOptObjRefs : public RefVector<OptimizableObject>
+{
+public:
+  OptimizableObject& operator[](size_t i) const { return RefVector<OptimizableObject>::operator[](i); }
+
+  void push_back(OptimizableObject& obj)
+  {
+    auto result =
+        std::find_if(begin(), end(), [&](OptimizableObject& element) { return element.getName() == obj.getName(); });
+    if (result == end())
+      RefVector<OptimizableObject>::push_back(obj);
+  }
+};
+
 } // namespace qmcplusplus
 #endif

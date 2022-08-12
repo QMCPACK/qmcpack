@@ -314,6 +314,12 @@ public:
 
   bool isOptimizable() const override { return true; }
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    for (auto& [key, functor] : J3Unique)
+      opt_obj_refs.push_back(*functor);
+  }
+
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

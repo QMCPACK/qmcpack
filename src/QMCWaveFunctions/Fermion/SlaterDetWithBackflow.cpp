@@ -37,6 +37,13 @@ bool SlaterDetWithBackflow::isOptimizable() const
       std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
+void SlaterDetWithBackflow::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*BFTrans);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+}
+
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)

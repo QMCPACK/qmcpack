@@ -40,7 +40,7 @@ TEST_CASE("BSpline functor zero", "[wavefunction]")
 {
   // What is being tested here is different depending on QMC_MIXED_PRECISION
   // double with either match the real_type of the OptimizableFunctorBase or not
-  BsplineFunctor<double> bf;
+  BsplineFunctor<double> bf("test_functor");
 
   double r = 1.2;
   double u = bf.evaluate(r);
@@ -49,7 +49,7 @@ TEST_CASE("BSpline functor zero", "[wavefunction]")
 
 TEST_CASE("BSpline functor one", "[wavefunction]")
 {
-  BsplineFunctor<double> bf;
+  BsplineFunctor<double> bf("test_functor");
 
   bf.resize(1);
 
@@ -381,6 +381,10 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
     REQUIRE(Vals2[i].u == Approx(val));
     REQUIRE(Vals2[i].ddu == Approx(ddv));
   }
+
+  UniqueOptObjRefs opt_obj_refs;
+  j12->extractOptimizableObjectRefs(opt_obj_refs);
+  REQUIRE(opt_obj_refs.size() == 1);
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");

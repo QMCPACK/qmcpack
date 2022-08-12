@@ -144,8 +144,13 @@ public:
   // Finally, the call to resetParameters progates the new values (step 3).
   // The call to checkOutVariables is a prerequisite for resetParameters to set the local values successfully.
 
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+
   /** Check in an optimizable parameter
-   * * @param o aggregated list of optimizable variables
+   * @param o aggregated list of optimizable variables
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */

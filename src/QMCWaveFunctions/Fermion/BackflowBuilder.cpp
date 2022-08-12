@@ -247,7 +247,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addOneBody(xmlNodePtr cur
       for (int i = 0; i < funs.size(); i++)
       {
         //           BsplineFunctor<RealType> *bsp = new BsplineFunctor<RealType>(cusps[i]);
-        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(funs[i]));
         bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(funs[i]);
         if (bsp->cutoff_radius > cutOff)
@@ -323,7 +323,7 @@ std::unique_ptr<BackflowFunctionBase> BackflowBuilder::addTwoBody(xmlNodePtr cur
         }
         app_log() << "Adding radial component for species: " << spA << " " << spB << " " << ia << "  " << ib
                   << std::endl;
-        auto bsp           = std::make_unique<BsplineFunctor<RealType>>();
+        auto bsp           = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(cur));
         bsp->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
         bsp->put(cur);
         if (bsp->cutoff_radius > cutOff)
@@ -625,7 +625,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
       {
         APP_ABORT("Unknown correlation type " + type + " in Backflow.");
       }
-      auto bsp = std::make_unique<BsplineFunctor<RealType>>();
+      auto bsp = std::make_unique<BsplineFunctor<RealType>>(extractCoefficientsID(cur));
       if (init == "true" || init == "yes")
       {
         app_log() << "Initializing backflow radial functions with RPA.";
@@ -670,7 +670,7 @@ void BackflowBuilder::makeShortRange_twoBody(xmlNodePtr cur,
         //              for (int j=0; j<nfitgaussians; j++) y1_c+=gb[j]*(std::exp(-x[1]*x[1]/((j+1)*Rcut*Rcut)));
         //              for (int j=0; j<nfitgaussians; j++) y2_c+=gb[j]*(std::exp(-x[2]*x[2]/((j+1)*Rcut*Rcut)));
         //make a temp functor to ensure right BC's (Necessary?)
-        auto tmp_bsp = std::make_unique<BsplineFunctor<RealType>>();
+        auto tmp_bsp = std::make_unique<BsplineFunctor<RealType>>("tmp_bsp");
         tmp_bsp->initialize(12, x, y, cusp, Rcut, id, optimize);
         //              tmp_bsp->print(app_log());
         for (int i = 0; i < myGrid->size(); i++)

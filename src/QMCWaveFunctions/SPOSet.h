@@ -90,6 +90,11 @@ public:
   /// Query if this SPOSet is optimizable
   virtual bool isOptimizable() const { return false; }
 
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
 

@@ -52,6 +52,9 @@ public:
 
   bool isFermionic() const final { return true; }
   bool isOptimizable() const override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
+
   void checkInVariables(opt_variables_type& active) override;
 
   void checkOutVariables(const opt_variables_type& active) override;

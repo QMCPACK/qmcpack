@@ -195,6 +195,13 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
+void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() + "::extractOptimizableObjectRefs "
+                           "must be overloaded when the WFC is optimizable.");
+}
+
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
                                                   std::vector<ValueType>& dlogpsi)

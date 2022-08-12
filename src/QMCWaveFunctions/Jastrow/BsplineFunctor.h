@@ -82,7 +82,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
   bool periodic;
 
   ///constructor
-  BsplineFunctor(Real cusp = 0.0) : NumParams(0), CuspValue(cusp), notOpt(false), periodic(true)
+  BsplineFunctor(const std::string& my_name, Real cusp = 0.0)
+      : OptimizableFunctorBase(my_name), NumParams(0), CuspValue(cusp), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -553,7 +554,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     << ".  Performing fit:\n";
           // Fit function to new number of parameters
           const int numPoints = 500;
-          BsplineFunctor<REAL> tmp_func(CuspValue);
+          BsplineFunctor<REAL> tmp_func("tmp_func", CuspValue);
           tmp_func.cutoff_radius = cutoff_radius;
           tmp_func.resize(params.size());
           tmp_func.Parameters = params;

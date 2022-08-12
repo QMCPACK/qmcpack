@@ -23,7 +23,8 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
+    : WaveFunctionComponent("msd"),
+      RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
       offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
       RatioGradTimer(*timer_manager.createTimer(getClassName() + "::ratioGrad")),
@@ -724,6 +725,12 @@ void MultiSlaterDetTableMethod::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   buf.get(psi_ratio_to_ref_det_);
 }
 
+void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*this);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+}
 
 void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
 {
