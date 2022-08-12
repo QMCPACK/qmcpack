@@ -130,10 +130,13 @@ git rebase origin/$BASE_BRANCH
 # push back
 git push --force-with-lease fork fork/$HEAD_BRANCH:$HEAD_BRANCH
 
-# CHANGE FROM ORIGINAL: add empty commit signed by bot 
-git config --global user.signingkey "$QMCPACK_BOT_GPG_KEY"  
+# CHANGE FROM ORIGINAL: add empty commit signed by bot
+echo "$QMCPACK_BOT_GPG_KEY" >> import.key
+gpg --import import.key
+rm import.key
+git config --global user.signingkey "$QMCPACK_BOT_GPG_SIGNING_KEY"  
 git commit --allow-empty -S -m "Rebased Signed Off by QMCPACK-Bot"
-git push fork HEAD
+git push fork fork/$HEAD_BRANCH:$HEAD_BRANCH
 
 COMMIT_SHA=$(git rev-parse --verify HEAD)
 

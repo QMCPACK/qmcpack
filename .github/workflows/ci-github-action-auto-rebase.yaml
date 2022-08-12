@@ -32,6 +32,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
 
   trigger-rebase:
     if: github.event_name == 'push'
@@ -48,3 +49,4 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
