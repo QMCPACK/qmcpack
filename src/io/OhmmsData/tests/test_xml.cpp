@@ -166,6 +166,7 @@ TEST_CASE("ParameterSet", "[xml]")
   const char* content = " \
 <simulation> \
    <parameter name=\"p1\">1</parameter> \
+   <parameter name=\"p4\"> -2 -3 </parameter> \
    <p2>2</p2> \
 </simulation>";
   Libxml2Document doc;
@@ -177,14 +178,21 @@ TEST_CASE("ParameterSet", "[xml]")
   int p1_val = 0;
   int p2_val = 0;
   int p3_val = 0;
+  qmcplusplus::astring p4_str;
   param.add(p1_val, "p1");
   param.add(p2_val, "p2");
   param.add(p3_val, "p3");
+  param.add(p4_str, "p4");
   param.put(root);
 
-  REQUIRE(p1_val == 1);
-  REQUIRE(p2_val == 2);
-  REQUIRE(p3_val == 0);
+  CHECK(p1_val == 1);
+  CHECK(p2_val == 2);
+  CHECK(p3_val == 0);
+
+  auto p4_vals = qmcplusplus::convertStrToVec<int>(p4_str.s);
+  REQUIRE(p4_vals.size() == 2);
+  CHECK(p4_vals[0] == -2);
+  CHECK(p4_vals[1] == -3);
 }
 
 TEST_CASE("write_file", "[xml]")

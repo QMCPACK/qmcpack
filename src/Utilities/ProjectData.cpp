@@ -20,6 +20,7 @@
 #include "Utilities/qmc_common.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/UniformCommunicateError.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -28,9 +29,15 @@ namespace qmcplusplus
 //----------------------------------------------------------------------------
 // constructors and destructors
 ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
-    : m_title(atitle), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_version_(driver_version)
+    : m_title(atitle),
+      m_host("none"),
+      m_date("none"),
+      m_series(0),
+      m_cur(NULL),
+      max_cpu_secs_(360000),
+      driver_version_(driver_version)
 {
-  myComm  = OHMMS::Controller;
+  myComm = OHMMS::Controller;
   if (m_title.empty())
     m_title = getDateAndTime("%Y%m%dT%H%M");
 }

@@ -11,7 +11,9 @@
 
 #include "InputSection.h"
 #include "Message/UniformCommunicateError.h"
+#include "ModernStringUtils.hpp"
 #include "Utilities/string_utils.h"
+
 namespace qmcplusplus
 {
 
@@ -51,8 +53,7 @@ void InputSection::readXML(xmlNodePtr cur)
       std::istringstream stream(XMLNodeString{element});
       setFromStream(name, stream);
     }
-    else if (isDelegate(ename))
-    {}
+    else if (isDelegate(ename)) {}
     element = element->next;
   }
 
