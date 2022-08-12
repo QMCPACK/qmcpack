@@ -19,7 +19,7 @@
 #include <string>
 #include <complex>
 #include "OhmmsData/OhmmsParameter.h"
-#include "ModernStringUtils.hpp"
+#include "string_utils.h"
 #include "OhmmsPETE/TinyVector.h"
 
 /** class to handle a set of parameters
@@ -64,7 +64,7 @@ struct ParameterSet : public OhmmsElementBase
   void add(PDT& aparam,
            const std::string& aname_in,
            std::vector<PDT> candidate_values = {},
-           TagStatus status                    = TagStatus::OPTIONAL);
+           TagStatus status                  = TagStatus::OPTIONAL);
 
   template<class PDT>
   void setValue(const std::string& aname_in, PDT aval);
@@ -74,6 +74,10 @@ extern template void ParameterSet::add<std::string>(std::string&,
                                                     const std::string&,
                                                     std::vector<std::string>,
                                                     TagStatus);
+extern template void ParameterSet::add<qmcplusplus::astring>(qmcplusplus::astring&,
+                                                             const std::string&,
+                                                             std::vector<qmcplusplus::astring>,
+                                                             TagStatus);
 extern template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>, TagStatus);
 extern template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>, TagStatus);
 extern template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>, TagStatus);
@@ -86,11 +90,10 @@ extern template void ParameterSet::add<std::complex<float>>(std::complex<float>&
                                                             const std::string&,
                                                             std::vector<std::complex<float>>,
                                                             TagStatus);
-extern template void ParameterSet::add<qmcplusplus::TinyVector<int, 3u>>(
-    qmcplusplus::TinyVector<int, 3u>&,
-    const std::string&,
-    std::vector<qmcplusplus::TinyVector<int, 3u>>,
-    TagStatus);
+extern template void ParameterSet::add<qmcplusplus::TinyVector<int, 3u>>(qmcplusplus::TinyVector<int, 3u>&,
+                                                                         const std::string&,
+                                                                         std::vector<qmcplusplus::TinyVector<int, 3u>>,
+                                                                         TagStatus);
 
 extern template void ParameterSet::setValue<int>(const std::string& aname_in, int aval);
 
