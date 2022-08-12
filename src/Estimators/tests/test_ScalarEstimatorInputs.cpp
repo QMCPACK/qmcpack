@@ -15,6 +15,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "ScalarEstimatorInputs.h"
 #include "ValidScalarEstimatorInput.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {

@@ -187,10 +187,7 @@ inline std::ostream& operator<<(std::ostream& os, const astring& rhs)
   return os;
 }
 
-inline bool operator==(const astring& lhs, const astring& rhs)
-{
-  return lhs.s == rhs.s;
-}
+inline bool operator==(const astring& lhs, const astring& rhs) { return lhs.s == rhs.s; }
 } // namespace qmcplusplus
 
 #endif

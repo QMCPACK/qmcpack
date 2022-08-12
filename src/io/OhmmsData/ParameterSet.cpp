@@ -77,6 +77,10 @@ void ParameterSet::setValue(const std::string& aname_in, PDT aval)
 }
 
 template void ParameterSet::add(std::string&, const std::string&, std::vector<std::string>, TagStatus);
+template void ParameterSet::add(qmcplusplus::astring&,
+                                const std::string&,
+                                std::vector<qmcplusplus::astring>,
+                                TagStatus);
 template void ParameterSet::add<int>(int&, const std::string&, std::vector<int>, TagStatus);
 template void ParameterSet::add<bool>(bool&, const std::string&, std::vector<bool>, TagStatus);
 template void ParameterSet::add<double>(double&, const std::string&, std::vector<double>, TagStatus);
