@@ -17,6 +17,7 @@
 #include "QMCDriverInput.h"
 #include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
