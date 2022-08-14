@@ -229,7 +229,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
           throw UniformCommunicateError("'ionid' only supports datatype=\"" + stringtype_tag + "\"");
         std::vector<std::string> d_in(nat);
         putContent(d_in, element);
-        int storage_index = 0;
+        bool ungrouped_message_printed = false;
+        int storage_index              = 0;
         for (int ig = 0; ig < nat_group.size(); ig++)
         {
           const auto& group_species_name = tspecies.getSpeciesName(ig);
@@ -244,6 +245,18 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
             {
               count_group_size++;
               map_storage_to_input[storage_index++] = iat;
+              if (iat != storage_index - 1 && outputManager.isHighActive())
+              {
+                if (!ungrouped_message_printed)
+                {
+                  app_log() << "  Input particle set is not grouped by species.  Remapping particle position indices "
+                               "internally."
+                            << std::endl;
+                  app_log() << "    Species : input particle index -> internal particle index" << std::endl;
+                  ungrouped_message_printed = true;
+                }
+                app_log() << "    " << group_species_name << " : " << iat << " -> " << storage_index - 1 << std::endl;
+              }
             }
           }
 
