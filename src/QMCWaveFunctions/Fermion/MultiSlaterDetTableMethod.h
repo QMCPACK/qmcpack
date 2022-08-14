@@ -189,6 +189,11 @@ public:
                              const opt_variables_type& optvars,
                              std::vector<ValueType>& dlogpsi) override;
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor
    * because the constructor is used by makeClone. The right way of fix needs:
