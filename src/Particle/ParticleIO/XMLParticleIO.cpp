@@ -229,8 +229,8 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
           throw UniformCommunicateError("'ionid' only supports datatype=\"" + stringtype_tag + "\"");
         std::vector<std::string> d_in(nat);
         putContent(d_in, element);
-        bool ungrouped_message_printed = false;
-        int storage_index              = 0;
+        bool input_ungrouped = false;
+        int storage_index    = 0;
         for (int ig = 0; ig < nat_group.size(); ig++)
         {
           const auto& group_species_name = tspecies.getSpeciesName(ig);
@@ -243,20 +243,10 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
                                             " doesn't match any species from 'group' XML element nodes.");
             if (element_index == ig)
             {
+              if (iat != storage_index)
+                input_ungrouped = true;
               count_group_size++;
               map_storage_to_input[storage_index++] = iat;
-              if (iat != storage_index - 1 && outputManager.isHighActive())
-              {
-                if (!ungrouped_message_printed)
-                {
-                  app_log() << "  Input particle set is not grouped by species.  Remapping particle position indices "
-                               "internally."
-                            << std::endl;
-                  app_log() << "    Species : input particle index -> internal particle index" << std::endl;
-                  ungrouped_message_printed = true;
-                }
-                app_log() << "    " << group_species_name << " : " << iat << " -> " << storage_index - 1 << std::endl;
-              }
             }
           }
 
@@ -271,6 +261,20 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
             msg << "The number of particles of element '" << group_species_name << "' from 'group' XML elment node was "
                 << nat_group[ig] << " but 'ionid' contains " << count_group_size << " entries." << std::endl;
             throw UniformCommunicateError(msg.str());
+          }
+        }
+
+        if (input_ungrouped)
+        {
+          app_log() << "  Input particle set is not grouped by species.  Remapping particle position indices "
+                       "internally."
+                    << std::endl;
+          app_log() << "    Species : input particle index -> internal particle index" << std::endl;
+          for (int new_idx = 0; new_idx < map_storage_to_input.size(); new_idx++)
+          {
+            int old_idx = map_storage_to_input[new_idx];
+            if (new_idx != old_idx)
+              app_log() << "    " << d_in[old_idx] << " : " << old_idx << " -> " << new_idx << std::endl;
           }
         }
       }
