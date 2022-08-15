@@ -970,60 +970,74 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
       if (optvars.recompute(kk))
         recalculate = true;
     }
-    // need to modify for CSF later on, right now assume Slater Det basis
+
     if (recalculate)
     {
-      if (csf_data_)
-      {
-        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
+      std::vector<ValueType> dlogpsi_local;
+      evaluateDerivativesMSD(psi_ratio_to_ref_det_, false, dlogpsi_local);
 
-        const int num = csf_data_->coeffs.size() - 1;
-        int cnt       = 0;
-        //        this one is not optable
-        cnt += csf_data_->dets_per_csf[0];
-        int ip(1);
-        for (int i = 0; i < num; i++, ip++)
-        {
-          int kk = myVars->where(i);
-          if (kk < 0)
-          {
-            cnt += csf_data_->dets_per_csf[ip];
-            continue;
-          }
-          ValueType cdet                          = 0.0;
-          const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
-          for (int k = 0; k < csf_data_->dets_per_csf[ip]; k++)
-          {
-            ValueType t = CSFexpansion_p[cnt] * psiinv;
-            // assume that evaluateLog has been called in opt routine before
-            for (size_t id = 0; id < Dets.size(); id++)
-              t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][cnt]];
-            cdet += t;
-            cnt++;
-          }
-          dlogpsi[kk] = cdet;
-        }
-      }
-      else
-      //usingDETS
+      const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
+      assert(dlogpsi_local.size() == nparams);
+      for (int i = 0; i < nparams; i++)
       {
-        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
-        for (size_t i = 1; i < C->size(); i++)
-        {
-          int kk = myVars->where(i - 1);
-          if (kk < 0)
-            continue;
-          ValueType cdet = psiinv;
-          // assume that evaluateLog has been called in opt routine before
-          for (size_t id = 0; id < Dets.size(); id++)
-            cdet *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-          dlogpsi[kk] = cdet;
-        }
+        int kk = myVars->where(i);
+        if (kk < 0)
+          continue;
+        dlogpsi[kk] = dlogpsi_local[i];
       }
     }
   }
 
   evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
+}
+
+void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const ValueType& multi_det_to_ref,
+                                                       const bool newpos,
+                                                       std::vector<ValueType>& dlogpsi,
+                                                       size_t det_id) const
+{
+  if (newpos)
+    assert(det_id >= 0);
+  else
+    det_id = 0;
+
+  ValueType psiinv       = static_cast<ValueType>(PsiValueType(1.0) / multi_det_to_ref);
+  const auto& detValues0 = newpos ? Dets[det_id]->getNewRatiosToRefDet() : Dets[det_id]->getRatiosToRefDet();
+
+  if (csf_data_) // CSF
+  {
+    dlogpsi.resize(csf_data_->coeffs.size() - 1);
+    // this one is not optimizable
+    int cnt = csf_data_->dets_per_csf[0];
+    for (int i = 1; i < csf_data_->coeffs.size(); i++)
+    {
+      ValueType cdet = 0.0;
+      for (int k = 0; k < csf_data_->dets_per_csf[i]; k++)
+      {
+        ValueType t = csf_data_->expansion[cnt] * psiinv * detValues0[(*C2node)[det_id][cnt]];
+        // assume that evaluateLog has been called in opt routine before
+        for (size_t id = 0; id < Dets.size(); id++)
+          if (id != det_id)
+            t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][cnt]];
+        cdet += t;
+        cnt++;
+      }
+      dlogpsi[i - 1] = cdet;
+    }
+  }
+  else // CI
+  {
+    dlogpsi.resize(C->size() - 1);
+    for (size_t i = 1; i < C->size(); i++)
+    {
+      ValueType cdet = psiinv * detValues0[(*C2node)[det_id][i]];
+      // assume that evaluateLog has been called in opt routine before
+      for (size_t id = 0; id < Dets.size(); id++)
+        if (id != det_id)
+          cdet *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
+      dlogpsi[i - 1] = cdet;
+    }
+  }
 }
 
 void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP,
@@ -1045,58 +1059,9 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     }
 
   // calculate derivatives based on the reference electron position
-  std::vector<ValueType> dlogpsi_ref;
+  std::vector<ValueType> dlogpsi_ref, dlogpsi_vp;
   if (recalculate)
-  {
-    if (csf_data_)
-    {
-      ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
-
-      const int num = csf_data_->coeffs.size() - 1;
-      dlogpsi_ref.resize(num);
-
-      int cnt = 0;
-      //        this one is not optable
-      cnt += csf_data_->dets_per_csf[0];
-      int ip(1);
-      for (int i = 0; i < num; i++, ip++)
-      {
-        if (myVars->where(i) < 0)
-        {
-          cnt += csf_data_->dets_per_csf[ip];
-          continue;
-        }
-        ValueType cdet                          = 0.0;
-        const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
-        for (int k = 0; k < csf_data_->dets_per_csf[ip]; k++)
-        {
-          ValueType t = CSFexpansion_p[cnt] * psiinv;
-          // assume that evaluateLog has been called in opt routine before
-          for (size_t id = 0; id < Dets.size(); id++)
-            t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][cnt]];
-          cdet += t;
-          cnt++;
-        }
-        dlogpsi_ref[i] = cdet;
-      }
-    }
-    else
-    //usingDETS
-    {
-      dlogpsi_ref.resize(C->size() - 1);
-      ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psi_ratio_to_ref_det_);
-      for (size_t i = 1; i < C->size(); i++)
-      {
-        if (myVars->where(i - 1) < 0)
-          continue;
-        ValueType cdet = psiinv;
-        // assume that evaluateLog has been called in opt routine before
-        for (size_t id = 0; id < Dets.size(); id++)
-          cdet *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-        dlogpsi_ref[i - 1] = cdet;
-      }
-    }
-  }
+    evaluateDerivativesMSD(psi_ratio_to_ref_det_, false, dlogpsi_ref);
 
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
@@ -1110,54 +1075,17 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     // calculate VP ratios derivatives
     if (recalculate)
     {
-      if (csf_data_)
-      {
-        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiNew);
+      evaluateDerivativesMSD(psiNew, true, dlogpsi_vp, det_id);
 
-        const int num = csf_data_->coeffs.size() - 1;
-        int cnt       = 0;
-        //        this one is not optable
-        cnt += csf_data_->dets_per_csf[0];
-        int ip(1);
-        for (int i = 0; i < num; i++, ip++)
-        {
-          int kk = myVars->where(i);
-          if (kk < 0)
-          {
-            cnt += csf_data_->dets_per_csf[ip];
-            continue;
-          }
-          ValueType cdet                          = 0.0;
-          const RealType* restrict CSFexpansion_p = csf_data_->expansion.data();
-          for (int k = 0; k < csf_data_->dets_per_csf[ip]; k++)
-          {
-            ValueType t = CSFexpansion_p[cnt] * psiinv * detValues0[(*C2node)[det_id][cnt]];
-            // assume that evaluateLog has been called in opt routine before
-            for (size_t id = 0; id < Dets.size(); id++)
-              if (id != det_id)
-                t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][cnt]];
-            cdet += t;
-            cnt++;
-          }
-          dratios[iat][kk] = cdet - dlogpsi_ref[i];
-        }
-      }
-      else
-      //usingDETS
+      const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
+      assert(dlogpsi_vp.size() == nparams);
+
+      for (int i = 0; i < nparams; i++)
       {
-        ValueType psiinv = static_cast<ValueType>(PsiValueType(1.0) / psiNew);
-        for (size_t i = 1; i < C->size(); i++)
-        {
-          int kk = myVars->where(i - 1);
-          if (kk < 0)
-            continue;
-          ValueType cdet = psiinv * detValues0[(*C2node)[det_id][i]];
-          // assume that evaluateLog has been called in opt routine before
-          for (size_t id = 0; id < Dets.size(); id++)
-            if (id != det_id)
-              cdet *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-          dratios[iat][kk] = cdet - dlogpsi_ref[i - 1];
-        }
+        int kk = myVars->where(i);
+        if (kk < 0)
+          continue;
+        dratios[iat][kk] = dlogpsi_vp[i] - dlogpsi_ref[i];
       }
     }
   }
