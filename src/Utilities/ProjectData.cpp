@@ -250,7 +250,8 @@ int ProjectData::getMaxCPUSeconds() const noexcept { return max_cpu_secs_; }
 
 ProjectData::DriverVersion ProjectData::getDriverVersion() const noexcept { return driver_version_; }
 
-bool ProjectData::isComplex() const noexcept { return is_complex_; }
+// STATIC PUBLIC
+bool ProjectData::isComplex() noexcept { return is_complex_; }
 
 // PRIVATE
 ProjectData::DriverVersion ProjectData::lookupDriverVersion(const std::string& enum_value)

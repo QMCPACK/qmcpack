@@ -136,5 +136,14 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   // host and date nodes get added for output to the .cont.xml file
 }
 
+TEST_CASE("ProjectData::TestIsComplex", "[ohmmsapp]")
+{
+#ifdef QMC_COMPLEX
+  REQUIRE(ProjectData::isComplex());
+#else
+  REQUIRE(!ProjectData::isComplex());
+#endif
+}
+
 
 } // namespace qmcplusplus
