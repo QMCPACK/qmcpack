@@ -974,7 +974,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
     if (recalculate)
     {
       std::vector<ValueType> dlogpsi_local;
-      evaluateDerivativesMSD(psi_ratio_to_ref_det_, false, dlogpsi_local);
+      evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_local);
 
       const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
       assert(dlogpsi_local.size() == nparams);
@@ -992,13 +992,12 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
 }
 
 void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const ValueType& multi_det_to_ref,
-                                                       const bool newpos,
                                                        std::vector<ValueType>& dlogpsi,
-                                                       size_t det_id) const
+                                                       int det_id) const
 {
-  if (newpos)
-    assert(det_id >= 0);
-  else
+  const bool newpos = det_id < 0 ? false : true;
+  // when not using a new position, the result doesn't get affected by det_id, thus choose 0.
+  if (det_id < 0)
     det_id = 0;
 
   ValueType psiinv       = static_cast<ValueType>(PsiValueType(1.0) / multi_det_to_ref);
@@ -1061,7 +1060,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
   // calculate derivatives based on the reference electron position
   std::vector<ValueType> dlogpsi_ref, dlogpsi_vp;
   if (recalculate)
-    evaluateDerivativesMSD(psi_ratio_to_ref_det_, false, dlogpsi_ref);
+    evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_ref);
 
   for (size_t iat = 0; iat < VP.getTotalNum(); ++iat)
   {
@@ -1075,7 +1074,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     // calculate VP ratios derivatives
     if (recalculate)
     {
-      evaluateDerivativesMSD(psiNew, true, dlogpsi_vp, det_id);
+      evaluateDerivativesMSD(psiNew, dlogpsi_vp, det_id);
 
       const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
       assert(dlogpsi_vp.size() == nparams);

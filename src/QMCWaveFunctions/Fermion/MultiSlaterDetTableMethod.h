@@ -263,14 +263,12 @@ private:
 
   /** compute parameter derivatives of CI/CSF coefficients
    * @param multi_det_to_ref multideterminant over the reference single determinant
-   * @param newpos if ture, compute with the new position, used by virtual moves
    * @param dlogpsi saved derivatives
-   * @param det_id provide the affect determinant group id, only needed when newpos = true.
+   * @param det_id provide this argument to affect determinant group id for virtual moves
    */
   void evaluateDerivativesMSD(const ValueType& multi_det_to_ref,
-                              const bool newpos,
                               std::vector<ValueType>& dlogpsi,
-                              size_t det_id = -1) const;
+                              int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
