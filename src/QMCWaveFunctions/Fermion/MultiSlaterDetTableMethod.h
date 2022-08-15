@@ -243,10 +243,8 @@ private:
                                                    GradType& g_at,
                                                    ComplexType& sg_at);
 
-  // an implementation of ratio. Use precomputed data
-  PsiValueType ratio_impl(ParticleSet& P, int iat);
-  // an implementation of ratio. No use of precomputed data
-  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+  // compute the new multi determinant to reference determinant ratio based on temporarycoordinates.
+  PsiValueType computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set

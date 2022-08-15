@@ -35,7 +35,7 @@ MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  Dets         = std::move(dets);
+  Dets = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
   myG.resize(NP);
@@ -483,45 +483,35 @@ void MultiSlaterDetTableMethod::mw_ratioGrad(const RefVectorWithLeader<WaveFunct
   }
 }
 
-WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl(ParticleSet& P, int iat)
+WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::computeRatio_NewMultiDet_to_NewRefDet(int det_id) const
 {
-  const int det_id = getDetID(iat);
-
-  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
-
-  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
+  const auto& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
   PsiValueType psi = 0;
-  // This function computes
-  // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  // Since only one electron group is moved at the time, identified by det_id, We precompute:
-  // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
-  for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
-    psi += detValues0[i] * C_otherDs[det_id][i];
-
-  return psi;
-}
-
-
-WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio_impl_no_precompute(ParticleSet& P, int iat)
-{
-  const int det_id = getDetID(iat);
-  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
-
-  const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet(); //always new
-  const size_t* restrict det0                = (*C2node)[det_id].data();
-  const ValueType* restrict cptr             = C->data();
-  const size_t nc                            = C->size();
-
-  PsiValueType psi = 0;
-  for (size_t i = 0; i < nc; ++i)
+  if (use_pre_computing_)
   {
-    ValueType t = cptr[i];
-    for (size_t id = 0; id < Dets.size(); id++)
-      if (id != det_id)
-        t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-    t *= detValues0[det0[i]];
-    psi += t;
+    // This function computes
+    // psi=Det_Coeff[i]*Det_Value[unique_det_up]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+    // Since only one electron group is moved at the time, identified by det_id, We precompute:
+    // C_otherDs[det_id][i]=Det_Coeff[i]*Det_Value[unique_det_dn]*Det_Value[unique_det_AnyOtherType]
+    for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
+      psi += detValues0[i] * C_otherDs[det_id][i];
+  }
+  else
+  {
+    const size_t* restrict det0    = (*C2node)[det_id].data();
+    const ValueType* restrict cptr = C->data();
+    const size_t nc                = C->size();
+
+    for (size_t i = 0; i < nc; ++i)
+    {
+      ValueType t = cptr[i];
+      for (size_t id = 0; id < Dets.size(); id++)
+        if (id != det_id)
+          t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
+      t *= detValues0[det0[i]];
+      psi += t;
+    }
   }
   return psi;
 }
@@ -532,13 +522,11 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio(ParticleSet
   ScopedTimer local_timer(RatioTimer);
   UpdateMode = ORB_PBYP_RATIO;
 
-  if (use_pre_computing_)
-    new_psi_ratio_to_new_ref_det_ = ratio_impl(P, iat);
-  else
-    new_psi_ratio_to_new_ref_det_ = ratio_impl_no_precompute(P, iat);
-
   const int det_id = getDetID(iat);
-  curRatio         = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
+  Dets[det_id]->evaluateDetsForPtclMove(P, iat);
+
+  new_psi_ratio_to_new_ref_det_ = computeRatio_NewMultiDet_to_NewRefDet(det_id);
+  curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
   return curRatio;
 }
 
@@ -620,27 +608,8 @@ void MultiSlaterDetTableMethod::evaluateRatios(const VirtualParticleSet& VP, std
     Dets[det_id]->evaluateDetsForPtclMove(VP, iat, VP.refPtcl);
     const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
-    PsiValueType psiNew(0);
-    if (use_pre_computing_)
-      for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
-        psiNew += detValues0[i] * C_otherDs[det_id][i];
-    else
-    {
-      const size_t* restrict det0    = (*C2node)[det_id].data();
-      const ValueType* restrict cptr = C->data();
-      const size_t nc                = C->size();
-
-      for (size_t i = 0; i < nc; ++i)
-      {
-        ValueType t = cptr[i];
-        for (size_t id = 0; id < Dets.size(); id++)
-          if (id != det_id)
-            t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-        t *= detValues0[det0[i]];
-        psiNew += t;
-      }
-    }
-    ratios[iat] = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
+    PsiValueType psiNew = computeRatio_NewMultiDet_to_NewRefDet(det_id);
+    ratios[iat]         = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
   }
 }
 
@@ -1135,27 +1104,8 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     const OffloadVector<ValueType>& detValues0 = Dets[det_id]->getNewRatiosToRefDet();
 
     // calculate VP ratios
-    PsiValueType psiNew(0);
-    if (use_pre_computing_)
-      for (size_t i = 0; i < Dets[det_id]->getNumDets(); i++)
-        psiNew += detValues0[i] * C_otherDs[det_id][i];
-    else
-    {
-      const size_t* restrict det0    = (*C2node)[det_id].data();
-      const ValueType* restrict cptr = C->data();
-      const size_t nc                = C->size();
-
-      for (size_t i = 0; i < nc; ++i)
-      {
-        ValueType t = cptr[i];
-        for (size_t id = 0; id < Dets.size(); id++)
-          if (id != det_id)
-            t *= Dets[id]->getRatiosToRefDet()[(*C2node)[id][i]];
-        t *= detValues0[det0[i]];
-        psiNew += t;
-      }
-    }
-    ratios[iat] = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
+    PsiValueType psiNew = computeRatio_NewMultiDet_to_NewRefDet(det_id);
+    ratios[iat]         = Dets[det_id]->getRefDetRatio() * psiNew / psi_ratio_to_ref_det_;
 
     // calculate VP ratios derivatives
     if (recalculate)
