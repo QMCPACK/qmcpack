@@ -269,12 +269,12 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
           app_log() << "  Input particle set is not grouped by species.  Remapping particle position indices "
                        "internally."
                     << std::endl;
-          app_log() << "    Species : input particle index -> internal particle index" << std::endl;
+          app_debug() << "    Species : input particle index -> internal particle index" << std::endl;
           for (int new_idx = 0; new_idx < map_storage_to_input.size(); new_idx++)
           {
             int old_idx = map_storage_to_input[new_idx];
             if (new_idx != old_idx)
-              app_log() << "    " << d_in[old_idx] << " : " << old_idx << " -> " << new_idx << std::endl;
+              app_debug() << "    " << d_in[old_idx] << " : " << old_idx << " -> " << new_idx << std::endl;
           }
         }
       }
