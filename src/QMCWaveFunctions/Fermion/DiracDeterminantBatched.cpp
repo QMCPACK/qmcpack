@@ -133,6 +133,8 @@ void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
   dpsiV_host_view.attachReference(dpsiV.data(), NumOrbitals);
   d2psiV.resize(NumOrbitals);
   d2psiV_host_view.attachReference(d2psiV.data(), NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
+  dspin_psiV_host_view.attachReference(dspin_psiV.data(), NumOrbitals);
 }
 
 template<typename DET_ENGINE>
@@ -177,6 +179,22 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<
   for (int iw = 0; iw < nw; iw++)
     checkG(grad_now[iw]);
 #endif
+}
+
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_ENGINE>::evalGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    ComplexType& spingrad)
+{
+  Phi->evaluate_spin(P, iat, psiV_host_view, dspin_psiV_host_view);
+  ScopedTimer local_timer(RatioTimer);
+  const int WorkingIndex = iat - FirstIndex;
+  Grad g                 = simd::dot(det_engine_.get_psiMinv()[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
+  ComplexType spin_g     = simd::dot(det_engine_.get_psiMinv()[WorkingIndex], dspin_psiV.data(), NumOrbitals);
+  assert(checkG(g));
+  spingrad += spin_g;
+  return g;
 }
 
 template<typename DET_ENGINE>

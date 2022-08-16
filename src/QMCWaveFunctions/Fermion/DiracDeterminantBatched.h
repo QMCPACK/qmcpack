@@ -137,6 +137,8 @@ public:
                    int iat,
                    std::vector<Grad>& grad_now) const override;
 
+  Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
+
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
    *  31 * n^2 * sizeof(Value) bytes per DDB
@@ -267,6 +269,8 @@ public:
   Vector<Grad> dpsiV_host_view;
   DualVector<Value> d2psiV;
   Vector<Value> d2psiV_host_view;
+  DualVector<Value> dspin_psiV;
+  Vector<Value> dspin_psiV_host_view;
 
   /// psi(r')/psi(r) during a PbyP move
   PsiValue curRatio;
