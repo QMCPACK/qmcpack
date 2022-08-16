@@ -737,6 +737,97 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
   inline bool evaluateDerivatives(const real_type r_12,
                                   const real_type r_1I,
                                   const real_type r_2I,
+                                  std::vector<real_type>& d_vals)
+  {
+    const real_type L = 0.5 * cutoff_radius;
+    if (r_1I >= L || r_2I >= L)
+      return false;
+
+    constexpr real_type czero(0);
+    constexpr real_type cone(1);
+
+    real_type dval_dgamma;
+
+    for (int i = 0; i < dval_Vec.size(); i++)
+      dval_Vec[i]  = czero;
+
+    const real_type r_2I_minus_L = r_2I - L;
+    const real_type r_1I_minus_L = r_1I - L;
+    const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
+
+    real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
+    for (int l = 0; l <= N_eI; l++)
+    {
+      real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
+      for (int m = 0; m <= N_eI; m++)
+      {
+        int num;
+        if (m > l)
+          num = ((2 * N_eI - l + 3) * l / 2 + m - l) * (N_ee + 1);
+        else
+          num = ((2 * N_eI - m + 3) * m / 2 + l - m) * (N_ee + 1);
+        real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
+        for (int n = 0; n <= N_ee; n++, num++)
+        {
+          dval_dgamma        = r2l * r2m * r2n;
+
+          for (int i = 0; i < C; i++)
+            dval_dgamma *= both_minus_L;
+
+          // Now, pack into vectors
+          dval_Vec[num] += scale * dval_dgamma;
+
+          nf += cone;
+          r2n_2 = r2n_1 * nf;
+          r2n_1 = r2n * nf;
+          r2n *= r_12;
+        }
+        mf += cone;
+        r2m_2 = r2m_1 * mf;
+        r2m_1 = r2m * mf;
+        r2m *= r_2I;
+      }
+      lf += cone;
+      r2l_2 = r2l_1 * lf;
+      r2l_1 = r2l * lf;
+      r2l *= r_1I;
+    }
+    // for (int i=0; i<dval_Vec.size(); i++)
+    // 	fprintf (stderr, "dval_Vec[%d] = %12.6e\n", i, dval_Vec[i]);
+    ///////////////////////////////////////////
+    // Now, compensate for constraint matrix //
+    ///////////////////////////////////////////
+    std::fill(d_vals.begin(), d_vals.end(), 0.0);
+    int var = 0;
+    for (int i = 0; i < NumGamma; i++)
+      if (IndepVar[i])
+      {
+        d_vals[var]  = dval_Vec[i];
+        var++;
+      }
+    int constraint = 0;
+    for (int i = 0; i < NumGamma; i++)
+    {
+      if (!IndepVar[i])
+      {
+        int indep_var = 0;
+        for (int j = 0; j < NumGamma; j++)
+          if (IndepVar[j])
+          {
+            d_vals[indep_var] -= ConstraintMatrix(constraint, j) * dval_Vec[i];
+            indep_var++;
+          }
+          else if (i != j)
+            assert(std::abs(ConstraintMatrix(constraint, j)) < 1.0e-10);
+        constraint++;
+      }
+    }
+    return true;
+  }
+
+  inline bool evaluateDerivatives(const real_type r_12,
+                                  const real_type r_1I,
+                                  const real_type r_2I,
                                   std::vector<real_type>& d_vals,
                                   std::vector<TinyVector<real_type, 3>>& d_grads,
                                   std::vector<Tensor<real_type, 3>>& d_hess)
