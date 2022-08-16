@@ -490,7 +490,6 @@ template<class DET_ENGINE>
 void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
 
-  std::cout << "Hello from test" << std::endl;
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
   using ParticleLaplacian = ParticleSet::ParticleLaplacian;
@@ -699,6 +698,8 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   REQUIRE(G[1][1] == ComplexApprox(grad_new[1]));
   REQUIRE(G[1][2] == ComplexApprox(grad_new[2]));
   REQUIRE(SG[1] == ComplexApprox(spingrad_new));
+
+  //TODO: add batched APIs and test
 }
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
