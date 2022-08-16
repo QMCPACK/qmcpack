@@ -685,13 +685,13 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   block_lm    = (block_lmStr == "yes");
 
   filter_paramStr = lowerCase(filter_paramStr);
-  filter_param_ = (filter_paramStr == "yes");
+  filter_param_   = (filter_paramStr == "yes");
 
   filter_infoStr = lowerCase(filter_infoStr);
-  filter_info_ = (filter_infoStr == "yes");
+  filter_info_   = (filter_infoStr == "yes");
 
   store_samplesStr = lowerCase(store_samplesStr);
-  store_samples_ = (store_samplesStr == "yes");
+  store_samples_   = (store_samplesStr == "yes");
 
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
@@ -1104,18 +1104,17 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
+  EngineObj->setStoringSamples(store_samples_);
 
-   EngineObj->setStoringSamples(store_samples_);
+  //Set whether LM will only update a filtered set of parameters
+  EngineObj->setFiltering(filter_param_);
+  EngineObj->setFilterInfo(filter_info_);
 
-   //Set whether LM will only update a filtered set of parameters
-   EngineObj->setFiltering(filter_param_);
-   EngineObj->setFilterInfo(filter_info_);
+  if (filter_param_ && !store_samples_)
+    myComm->barrier_and_abort(" Error: Parameter Filtration requires storing the samples. \n");
 
-   if(filter_param_ && !store_samples_)
-       myComm->barrier_and_abort(" Error: Parameter Filtration requires storing the samples. \n");
-
-   if(filter_param_)
-       EngineObj->setThreshold(ratio_threshold_);
+  if (filter_param_)
+    EngineObj->setThreshold(ratio_threshold_);
 
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
@@ -1165,12 +1164,12 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   }
 
   //Reset parameter number for vdeps to the total number in case filtration happened on a previous iteration
-   if(filter_param_)
-   {
-     formic::VarDeps tmp_vdeps(numParams, std::vector<double>());
-     vdeps=tmp_vdeps;
-     EngineObj->var_deps_ptr_update(&vdeps);
-   }
+  if (filter_param_)
+  {
+    formic::VarDeps tmp_vdeps(numParams, std::vector<double>());
+    vdeps = tmp_vdeps;
+    EngineObj->var_deps_ptr_update(&vdeps);
+  }
 
   // update shift
   EngineObj->shift_update(shift_scales);
@@ -1178,22 +1177,21 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   // turn on wavefunction update mode
   EngineObj->turn_on_update();
 
-//The initial intialization of the LM engine is handled differently if parameters are being filtered
-  if(!filter_param_)
+  //The initial intialization of the LM engine is handled differently if parameters are being filtered
+  if (!filter_param_)
   {
-   // initialize the engine if we do not use block lm or it's the first part of block lm
-   EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
-   EngineObj->reset();
+    // initialize the engine if we do not use block lm or it's the first part of block lm
+    EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
+    EngineObj->reset();
   }
   else
   {
-
-      app_log() << "Skipping initialization at first" << std::endl;
-   EngineObj->store_blocked_lm_info(nblocks,nkept);
+    app_log() << "Skipping initialization at first" << std::endl;
+    EngineObj->store_blocked_lm_info(nblocks, nkept);
   }
 
   // initialize the engine if we do not use block lm or it's the first part of block lm
-//  EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
+  //  EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
 
   // reset the engine
   EngineObj->reset();
@@ -1201,140 +1199,122 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   // generate samples and compute weights, local energies, and derivative vectors
   engine_start(EngineObj, *descentEngineObj, MinMethod);
 
-int new_num = 0;
+  int new_num = 0;
 
- //To handle different cases for the LM's mode of operation, first check if samples are being stored
- if(store_samples_)
- {
+  //To handle different cases for the LM's mode of operation, first check if samples are being stored
+  if (store_samples_)
+  {
+    //Need to clear lists from previous iter
+    EngineObj->reset();
 
-     //Need to clear lists from previous iter
-     EngineObj->reset();
+    //If samples are being stored, check for the subcase where parameters are also being filtered
+    if (filter_param_)
+    {
+      EngineObj->selectParameters();
 
-     //If samples are being stored, check for the subcase where parameters are also being filtered
-     if(filter_param_)
-     {    
-         EngineObj->selectParameters();
+      for (int i = 0; i < numParams; i++)
+      {
+        if (EngineObj->getParameterSetting(i))
+        {
+          new_num++;
+        }
+      }
 
-         for(int i = 0; i < numParams; i++)
-         {
-             if(EngineObj->getParameterSetting(i))
-             {
-                 new_num++;
-             }
-         }
+      formic::VarDeps real_vdeps(new_num, std::vector<double>());
+      vdeps = real_vdeps;
+      EngineObj->var_deps_ptr_update(&vdeps);
 
-         formic::VarDeps real_vdeps(new_num, std::vector<double>());
-         vdeps = real_vdeps;
-         EngineObj->var_deps_ptr_update(&vdeps);
+      //Also need to check if Blocked LM is being used
+      if (EngineObj->use_blm())
+      {
+        //If so, the old update vectors need to be trimmed to remove the filtered out parameters
+        std::vector<formic::ColVec<double>> trimmed_old_updates(previous_update.size());
 
-         //Also need to check if Blocked LM is being used
-         if(EngineObj->use_blm())
-         {
-
-
-             //If so, the old update vectors need to be trimmed to remove the filtered out parameters
-             std::vector<formic::ColVec<double> > trimmed_old_updates(previous_update.size());
-
-         //Check if this Blocked LM step is part of a hybrid optimization           
-         if( EngineObj->getOnHybrid())
-         {
-
-             //If so, get the old update vectors from the descent engine
-             std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
+        //Check if this Blocked LM step is part of a hybrid optimization
+        if (EngineObj->getOnHybrid())
+        {
+          //If so, get the old update vectors from the descent engine
+          std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
 
 
-             app_log() << "Blocked LM is part of hybrid run. Need to filter vectors from descent. " << std::endl;
+          app_log() << "Blocked LM is part of hybrid run. Need to filter vectors from descent. " << std::endl;
 
-             //This section handles the trimming of the old update vectors from descent
-             for(int i = 0; i < hybridBLM_Input.size();i++)
-             {
-                 std::vector<ValueType> full_vec = hybridBLM_Input[i];
-                 std::vector<ValueType> filtered_vec;
+          //This section handles the trimming of the old update vectors from descent
+          for (int i = 0; i < hybridBLM_Input.size(); i++)
+          {
+            std::vector<ValueType> full_vec = hybridBLM_Input[i];
+            std::vector<ValueType> filtered_vec;
 
-                 formic::ColVec<double> reduced_vector(new_num,0.0);
-                 int count = 0;
+            formic::ColVec<double> reduced_vector(new_num, 0.0);
+            int count = 0;
 
-                 for(int j = 0; j < full_vec.size(); j++)
-                 {
-                     if(EngineObj->getParameterSetting(j))
-                     {
-                         filtered_vec.push_back(full_vec[j]);
-                         reduced_vector[count] = formic::real(full_vec[j]);
-                         count++;
-                     }
+            for (int j = 0; j < full_vec.size(); j++)
+            {
+              if (EngineObj->getParameterSetting(j))
+              {
+                filtered_vec.push_back(full_vec[j]);
+                reduced_vector[count] = formic::real(full_vec[j]);
+                count++;
+              }
+            }
 
-                 }
+            hybridBLM_Input[i]     = filtered_vec;
+            trimmed_old_updates[i] = reduced_vector;
+          }
 
-                 hybridBLM_Input[i] = filtered_vec;
-                 trimmed_old_updates[i] = reduced_vector;
+#if !defined(QMC_COMPLEX)
+          EngineObj->setHybridBLM_Input(hybridBLM_Input);
+#endif
 
-                 }
+          EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
+          EngineObj->reset();
+        }
+        //If the Blocked LM is not part of a hybrid run, carry out the trimming of the old updates here
+        else
+        {
+          app_log() << "Regular Blocked LM run. Need to filter old update vectors. " << std::endl;
 
- #if !defined(QMC_COMPLEX)
-             EngineObj->setHybridBLM_Input(hybridBLM_Input);
-  #endif
+          for (int i = 0; i < previous_update.size(); i++)
+          {
+            formic::ColVec<double> full_vec = previous_update[i];
 
-             EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
-             EngineObj->reset();
+            formic::ColVec<double> reduced_vector(new_num, 0.0);
+            int count = 0;
 
+            for (int j = 0; j < full_vec.size(); j++)
+            {
+              if (EngineObj->getParameterSetting(j))
+              {
+                reduced_vector[count] = full_vec[j];
+                count++;
+              }
+            }
 
-         }
-         //If the Blocked LM is not part of a hybrid run, carry out the trimming of the old updates here
-         else
-         {
-                 app_log() << "Regular Blocked LM run. Need to filter old update vectors. " << std::endl;
+            trimmed_old_updates[i] = reduced_vector;
+          }
 
-             for(int i = 0; i < previous_update.size();i++)
-             {
-                 formic::ColVec<double> full_vec = previous_update[i];
-
-                 formic::ColVec<double> reduced_vector(new_num,0.0);
-                 int count = 0;
-
-                 for(int j = 0; j < full_vec.size(); j++)
-                 {
-                     if(EngineObj->getParameterSetting(j))
-                     {
-                         reduced_vector[count] = full_vec[j];
-                         count++;
-                     }
-
-
-                 }
-
-                 trimmed_old_updates[i] = reduced_vector;
-             }
-
-                 EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
-                 EngineObj->reset();
-
-         }
-
-         }
-
-     }
+          EngineObj->initialize(nblocks, 0, nkept, trimmed_old_updates, false);
+          EngineObj->reset();
+        }
+      }
+    }
     //If not filtering parameters and only storing samples, can proceed with the rest of the LM engine initialization
-     else
-     {
-
-         EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
-         EngineObj->reset();
-
-
-     }
+    else
+    {
+      EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
+      EngineObj->reset();
+    }
 
 
-
- //This function call builds the matrices from the stored samples 
-     EngineObj->buildMatricesFromDerivatives();
-
- }
+    //This function call builds the matrices from the stored samples
+    EngineObj->buildMatricesFromDerivatives();
+  }
 
 
   // get dimension of the linear method matrices
   int N = numParams + 1;
-   if(filter_param_)
-         N = new_num +1;
+  if (filter_param_)
+    N = new_num + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -1356,51 +1336,47 @@ int new_num = 0;
 
   if (block_lm)
   {
-
-    if(!store_samples_)
+    if (!store_samples_)
     {
-    optTarget->setneedGrads(true);
+      optTarget->setneedGrads(true);
 
-    int numOptParams = optTarget->getNumParams();
+      int numOptParams = optTarget->getNumParams();
 
-    // reset the engine object
-    EngineObj->reset();
+      // reset the engine object
+      EngineObj->reset();
 
-    // finish last sample
-    finish();
+      // finish last sample
+      finish();
 
-    // take sample
-    engine_start(EngineObj, *descentEngineObj, MinMethod);
+      // take sample
+      engine_start(EngineObj, *descentEngineObj, MinMethod);
     }
     else
     {
-                EngineObj->clear_histories();
-         EngineObj->reset();
+      EngineObj->clear_histories();
+      EngineObj->reset();
 
-         finish();
+      finish();
 
-         if(filter_param_)
-         {
-         engine_start(EngineObj,*descentEngineObj,MinMethod);
-          EngineObj->buildMatricesFromDerivatives();
-
-         }
-         else
-         {
-             engine_start(EngineObj,*descentEngineObj,MinMethod);
-             app_log() << "Should be building matrices from stored samples" << std::endl;
-             EngineObj->buildMatricesFromDerivatives();
-         }
-
+      if (filter_param_)
+      {
+        engine_start(EngineObj, *descentEngineObj, MinMethod);
+        EngineObj->buildMatricesFromDerivatives();
+      }
+      else
+      {
+        engine_start(EngineObj, *descentEngineObj, MinMethod);
+        app_log() << "Should be building matrices from stored samples" << std::endl;
+        EngineObj->buildMatricesFromDerivatives();
+      }
     }
-
   }
 
-//Need to wipe the stored samples after they are no longer needed and before the next iteration
- if(store_samples_)
- {
-     EngineObj->clear_histories();
- }
+  //Need to wipe the stored samples after they are no longer needed and before the next iteration
+  if (store_samples_)
+  {
+    EngineObj->clear_histories();
+  }
 
   // say what we are doing
   app_log() << std::endl
@@ -1432,41 +1408,35 @@ int new_num = 0;
       parameterDirections.at(i).at(0) = 1.0;
   }
 
-//If paramters are being filtered need to expand the LM updates from the engine to the full parameter set.
- //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
- if(filter_param_)
- {
- std::vector<std::vector<ValueType>> tmpParameterDirections;
- tmpParameterDirections.resize(shifts_i.size());
+  //If paramters are being filtered need to expand the LM updates from the engine to the full parameter set.
+  //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
+  if (filter_param_)
+  {
+    std::vector<std::vector<ValueType>> tmpParameterDirections;
+    tmpParameterDirections.resize(shifts_i.size());
 
- for (int i = 0; i < shifts_i.size(); i++)
- {
- tmpParameterDirections.at(i).assign(numParams+1, 0.0);
- int lm_update_idx = 0;
- for (int j = 0; j < numParams+1; j++)
- {
+    for (int i = 0; i < shifts_i.size(); i++)
+    {
+      tmpParameterDirections.at(i).assign(numParams + 1, 0.0);
+      int lm_update_idx = 0;
+      for (int j = 0; j < numParams + 1; j++)
+      {
+        if (j == 0)
+        {
+          tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(j);
+          lm_update_idx++;
+        }
+        else if (EngineObj->getParameterSetting(j - 1) == true)
+        {
+          tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(lm_update_idx);
+          lm_update_idx++;
+        }
+      }
+      parameterDirections.at(i) = tmpParameterDirections.at(i);
+    }
+  }
 
-     if(j == 0)
-     {
-     tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(j);
-     lm_update_idx++;
-     }
-     else if(EngineObj->getParameterSetting(j-1) == true)
-     {
-
-         tmpParameterDirections.at(i).at(j) = parameterDirections.at(i).at(lm_update_idx);
-         lm_update_idx++;
-
-     }
-
-
- }
- parameterDirections.at(i) = tmpParameterDirections.at(i);
-
- }
- }
-
- //From this point, the comparison of the 3 diffferent shifts' updates should proceed as normal regardless of the sample storage or parameter filtration settings.
+  //From this point, the comparison of the 3 diffferent shifts' updates should proceed as normal regardless of the sample storage or parameter filtration settings.
 
   // now that we are done with them, prevent further computation of derivative vectors
   optTarget->setneedGrads(false);
@@ -1878,7 +1848,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
   //Either the adaptive BLM or descent optimization is run
 
   //Ensure LM engine knows it is being used as part of a hybrid run
-   EngineObj->setOnHybrid(true);
+  EngineObj->setOnHybrid(true);
 
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE)
   {
