@@ -266,7 +266,7 @@ private:
    * @param dlogpsi saved derivatives
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
-  void evaluateDerivativesMSD(const ValueType& multi_det_to_ref,
+  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
                               std::vector<ValueType>& dlogpsi,
                               int det_id = -1) const;
 
