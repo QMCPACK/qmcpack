@@ -189,6 +189,11 @@ public:
                              const opt_variables_type& optvars,
                              std::vector<ValueType>& dlogpsi) override;
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor
    * because the constructor is used by makeClone. The right way of fix needs:
@@ -238,10 +243,8 @@ private:
                                                    GradType& g_at,
                                                    ComplexType& sg_at);
 
-  // an implementation of ratio. Use precomputed data
-  PsiValueType ratio_impl(ParticleSet& P, int iat);
-  // an implementation of ratio. No use of precomputed data
-  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+  // compute the new multi determinant to reference determinant ratio based on temporarycoordinates.
+  PsiValueType computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set
@@ -257,6 +260,15 @@ private:
   void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
                                                   std::vector<ValueType>& dlogpsi);
+
+  /** compute parameter derivatives of CI/CSF coefficients
+   * @param multi_det_to_ref multideterminant over the reference single determinant
+   * @param dlogpsi saved derivatives
+   * @param det_id provide this argument to affect determinant group id for virtual moves
+   */
+  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
+                              std::vector<ValueType>& dlogpsi,
+                              int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
