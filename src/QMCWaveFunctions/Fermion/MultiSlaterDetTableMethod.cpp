@@ -991,7 +991,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
   evaluateMultiDiracDeterminantDerivativesWF(P, optvars, dlogpsi);
 }
 
-void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const ValueType& multi_det_to_ref,
+void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
                                                        std::vector<ValueType>& dlogpsi,
                                                        int det_id) const
 {
