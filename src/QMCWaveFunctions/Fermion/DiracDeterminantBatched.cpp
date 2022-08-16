@@ -268,6 +268,33 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
   }
 }
 
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    Grad& grad_iat,
+    ComplexType& spingrad_iat)
+{
+  UpdateMode = ORB_PBYP_PARTIAL;
+
+  {
+    ScopedTimer local_timer(SPOVGLTimer);
+    Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV_host_view);
+  }
+
+  {
+    ScopedTimer local_timer(RatioTimer);
+    auto& psiMinv          = det_engine_.get_psiMinv();
+    const int WorkingIndex = iat - FirstIndex;
+    curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
+    grad_iat += static_cast<Value>(static_cast<PsiValue>(1.0) / curRatio) *
+        simd::dot(psiMinv[WorkingIndex], dpsiV.data(), NumOrbitals);
+    spingrad_iat += static_cast<Value>(static_cast<PsiValue>(1.0) / curRatio) *
+        simd::dot(psiMinv[WorkingIndex], dspin_psiV.data(), NumOrbitals);
+  }
+  return curRatio;
+}
+
 
 /** move was accepted, update the real container
 */

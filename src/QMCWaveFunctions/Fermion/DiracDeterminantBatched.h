@@ -130,6 +130,8 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<Grad>& grad_new) const override;
 
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, Grad& grad_iat, ComplexType& spingrad) override;
+
   Grad evalGrad(ParticleSet& P, int iat) override;
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -137,7 +139,7 @@ public:
                    int iat,
                    std::vector<Grad>& grad_now) const override;
 
-  Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) final;
+  Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
 
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
