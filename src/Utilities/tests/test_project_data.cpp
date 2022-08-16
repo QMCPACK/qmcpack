@@ -138,10 +138,11 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
 
 TEST_CASE("ProjectData::TestIsComplex", "[ohmmsapp]")
 {
+  ProjectData proj;
 #ifdef QMC_COMPLEX
-  REQUIRE(ProjectData::isComplex());
+  REQUIRE(proj.isComplex());
 #else
-  REQUIRE(!ProjectData::isComplex());
+  REQUIRE(!proj.isComplex());
 #endif
 }
 

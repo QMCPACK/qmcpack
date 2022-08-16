@@ -103,7 +103,7 @@ public:
    * true: complex run
    * false: real run (default)
    */
-  static bool isComplex() noexcept;
+  bool isComplex() const noexcept;
 
 private:
   static const std::unordered_map<std::string, DriverVersion> lookup_input_enum_value_;
@@ -147,7 +147,7 @@ private:
    * true: complex run
    * false: real run (default)
    */
-  static const bool is_complex_;
+  const bool is_complex_;
 
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 };
