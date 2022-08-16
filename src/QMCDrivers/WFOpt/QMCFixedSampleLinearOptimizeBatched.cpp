@@ -1213,12 +1213,8 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
       EngineObj->selectParameters();
 
       for (int i = 0; i < numParams; i++)
-      {
         if (EngineObj->getParameterSetting(i))
-        {
           new_num++;
-        }
-      }
 
       formic::VarDeps real_vdeps(new_num, std::vector<double>());
       vdeps = real_vdeps;
@@ -1249,14 +1245,12 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             int count = 0;
 
             for (int j = 0; j < full_vec.size(); j++)
-            {
               if (EngineObj->getParameterSetting(j))
               {
                 filtered_vec.push_back(full_vec[j]);
                 reduced_vector[count] = formic::real(full_vec[j]);
                 count++;
               }
-            }
 
             hybridBLM_Input[i]     = filtered_vec;
             trimmed_old_updates[i] = reduced_vector;
@@ -1282,13 +1276,11 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
             int count = 0;
 
             for (int j = 0; j < full_vec.size(); j++)
-            {
               if (EngineObj->getParameterSetting(j))
               {
                 reduced_vector[count] = full_vec[j];
                 count++;
               }
-            }
 
             trimmed_old_updates[i] = reduced_vector;
           }
