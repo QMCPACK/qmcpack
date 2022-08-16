@@ -27,11 +27,9 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<Determinant_t>> dets,
                      const std::string& class_name)
-    : WaveFunctionComponent(class_name, ""), Dets(std::move(dets))
+    : Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -44,6 +42,12 @@ SlaterDet::~SlaterDet() = default;
 bool SlaterDet::isOptimizable() const
 {
   return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+}
+
+void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDet::checkInVariables(opt_variables_type& active)

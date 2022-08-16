@@ -26,12 +26,14 @@ class LinearOrbital : public WaveFunctionComponent
 public:
   TinyVector<ValueType, 3> coeff;
 
-  LinearOrbital() : WaveFunctionComponent("LinearOrbital")
+  LinearOrbital()
   {
     coeff[0] = 1.0;
     coeff[1] = 2.0;
     coeff[2] = 3.0;
   }
+
+  std::string getClassName() const override { return "LinearOrbital"; }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "OptimizableFunctorBase.h"
+#include "OhmmsData/XMLParsingString.h"
 
 namespace qmcplusplus
 {
@@ -27,5 +28,18 @@ void print(OptimizableFunctorBase& func, std::ostream& os, double extent)
     os << std::setw(22) << r << std::setw(22) << u << std::setw(22) << du << std::endl;
     r += d;
   }
+}
+
+std::string extractCoefficientsID(xmlNodePtr cur)
+{
+  xmlNodePtr xmlCoefs = cur->xmlChildrenNode;
+  while (xmlCoefs != NULL)
+  {
+    std::string cname((const char*)xmlCoefs->name);
+    if (cname == "coefficients")
+      return getXMLAttributeValue(xmlCoefs, "id");
+    xmlCoefs = xmlCoefs->next;
+  }
+  return "";
 }
 } // namespace qmcplusplus

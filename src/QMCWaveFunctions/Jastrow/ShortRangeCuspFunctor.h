@@ -84,8 +84,9 @@ struct ShortRangeCuspFunctor : public OptimizableFunctorBase
   //*****************************************************************************//
 
   ///default constructor
-  ShortRangeCuspFunctor()
-      : Opt_A(false),
+  ShortRangeCuspFunctor(const std::string& my_name)
+      : OptimizableFunctorBase(my_name),
+        Opt_A(false),
         Opt_R0(true),
         Opt_B(true),
         A(1.0),

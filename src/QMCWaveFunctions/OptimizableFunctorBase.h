@@ -119,6 +119,9 @@ struct OptimizableFunctorBase : public OptimizableObject
  */
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent = -1.0);
 
+/// return the id of the first coefficients. If not found, return an emtpy string
+std::string extractCoefficientsID(xmlNodePtr cur);
+
 } // namespace qmcplusplus
 
 #endif

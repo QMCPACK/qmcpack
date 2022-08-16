@@ -33,7 +33,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
 {
   double A = -0.25;
   double B = 0.1;
-  PadeFunctor<double> pf;
+  PadeFunctor<double> pf("test_functor");
   pf.B0 = B;
   pf.setCusp(A);
 
@@ -47,7 +47,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
   double A = 0.8;
   double B = 5.0;
   double C = -0.1;
-  Pade2ndOrderFunctor<double> pf2;
+  Pade2ndOrderFunctor<double> pf2("test_functor");
   pf2.A = A;
   pf2.B = B;
   pf2.C = C;
@@ -75,7 +75,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  elec_.create({2,0});
+  elec_.create({2, 0});
   elec_.R[0][0] = -0.28;
   elec_.R[0][1] = 0.0225;
   elec_.R[0][2] = -2.709;

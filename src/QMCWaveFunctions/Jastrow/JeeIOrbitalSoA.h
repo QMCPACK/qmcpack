@@ -146,19 +146,21 @@ public:
   using FuncType = FT;
 
   JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs)
-      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
+      : WaveFunctionComponent(obj_name),
         ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Ions(ions)
   {
-    if (myName.empty())
+    if (my_name_.empty())
       throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
 
+  std::string getClassName() const override { return "JeeIOrbitalSoA"; }
+
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
-    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs);
+    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(my_name_, Ions, elecs);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)
@@ -311,6 +313,12 @@ public:
   }
 
   bool isOptimizable() const override { return true; }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    for (auto& [key, functor] : J3Unique)
+      opt_obj_refs.push_back(*functor);
+  }
 
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables

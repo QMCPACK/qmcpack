@@ -283,8 +283,8 @@ void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
     psi_ratios[i] = 1.0;
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer local_timer(WFC_timers_[ii]);
       Z[i]->NLratios(W, jobList, quadPoints, psi_ratios);
@@ -303,8 +303,8 @@ void TrialWaveFunction::NLratios(MCWalkerConfiguration& W,
 {
   for (int i = 0, ii = NL_TIMER; i < Z.size(); i++, ii += TIMER_SKIP)
   {
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer local_timer(WFC_timers_[ii]);
       Z[i]->NLratios(W, Rlist, ElecList, NumCoreElecs, QuadPosList, RatioList, numQuadPoints);

@@ -154,7 +154,9 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
+  std::string getClassName() const override { return "J2OMPTarget"; }
   bool isOptimizable() const override { return true; }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   /** check in an optimizable parameter
    * @param o a super set of optimizable variables
    */

@@ -70,6 +70,8 @@ public:
   DiracDeterminant(const DiracDeterminant& s)            = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminant"; }
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            std::vector<ValueType>& dlogpsi,

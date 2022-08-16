@@ -91,7 +91,7 @@ struct J1Spin : public WaveFunctionComponent
   }
 
   J1Spin(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-      : WaveFunctionComponent("J1Spin", obj_name),
+      : WaveFunctionComponent(obj_name),
         myTableID(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Nions(ions.getTotalNum()),
         Nelec(els.getTotalNum()),
@@ -99,7 +99,7 @@ struct J1Spin : public WaveFunctionComponent
         NumTargetGroups(els.groups()),
         Ions(ions)
   {
-    if (myName.empty())
+    if (my_name_.empty())
       throw std::runtime_error("J1Spin object name cannot be empty!");
     initialize(els);
   }
@@ -107,7 +107,7 @@ struct J1Spin : public WaveFunctionComponent
   J1Spin(const J1Spin& rhs) = delete;
 
   J1Spin(const J1Spin& rhs, ParticleSet& tqp)
-      : WaveFunctionComponent("J1Spin", rhs.myName),
+      : WaveFunctionComponent(rhs.my_name_),
         myTableID(rhs.myTableID),
         Nions(rhs.Nions),
         Nelec(rhs.Nelec),
@@ -126,6 +126,8 @@ struct J1Spin : public WaveFunctionComponent
     myVars = rhs.myVars;
     OffSet = rhs.OffSet;
   }
+
+  std::string getClassName() const override { return "J1Spin"; }
 
   /* initialize storage */
   void initialize(ParticleSet& els)
@@ -534,6 +536,12 @@ struct J1Spin : public WaveFunctionComponent
         J1UniqueFunctor->myVars.print(os);
   }
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    for (auto& functor : J1UniqueFunctors)
+      opt_obj_refs.push_back(*functor);
+  }
+
   void checkInVariables(opt_variables_type& active) override
   {
     myVars.clear();
@@ -546,6 +554,7 @@ struct J1Spin : public WaveFunctionComponent
       }
     }
   }
+
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();

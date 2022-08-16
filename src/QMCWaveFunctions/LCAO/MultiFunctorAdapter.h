@@ -17,6 +17,7 @@
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Message/MPIObjectBase.h"
+#include "ModernStringUtils.hpp"
 #include "hdf/hdf_archive.h"
 
 namespace qmcplusplus

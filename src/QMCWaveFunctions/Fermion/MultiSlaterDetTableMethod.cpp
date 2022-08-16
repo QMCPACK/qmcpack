@@ -23,19 +23,18 @@ namespace qmcplusplus
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("MultiSlaterDetTableMethod", ""),
-      RatioTimer(*timer_manager.createTimer(ClassName + "::ratio")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      EvalGradTimer(*timer_manager.createTimer(ClassName + "::evalGrad")),
-      RatioGradTimer(*timer_manager.createTimer(ClassName + "::ratioGrad")),
-      PrepareGroupTimer(*timer_manager.createTimer(ClassName + "::prepareGroup")),
-      UpdateTimer(*timer_manager.createTimer(ClassName + "::updateBuffer")),
-      AccRejTimer(*timer_manager.createTimer(ClassName + "::Accept_Reject")),
-      EvaluateTimer(*timer_manager.createTimer(ClassName + "::evaluate")),
+    : WaveFunctionComponent("msd"),
+      RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
+      offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
+      EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
+      RatioGradTimer(*timer_manager.createTimer(getClassName() + "::ratioGrad")),
+      PrepareGroupTimer(*timer_manager.createTimer(getClassName() + "::prepareGroup")),
+      UpdateTimer(*timer_manager.createTimer(getClassName() + "::updateBuffer")),
+      AccRejTimer(*timer_manager.createTimer(getClassName() + "::Accept_Reject")),
+      EvaluateTimer(*timer_manager.createTimer(getClassName() + "::evaluate")),
       CI_Optimizable(false),
       use_pre_computing_(use_pre_computing)
 {
-  is_fermionic = true;
   Dets         = std::move(dets);
   C_otherDs.resize(Dets.size());
   int NP = targetPtcl.getTotalNum();
@@ -726,6 +725,12 @@ void MultiSlaterDetTableMethod::copyFromBuffer(ParticleSet& P, WFBufferType& buf
   buf.get(psi_ratio_to_ref_det_);
 }
 
+void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*this);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
+}
 
 void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
 {

@@ -95,7 +95,10 @@ public:
   ///destructor
   ~MultiSlaterDetTableMethod() override;
 
+  std::string getClassName() const override { return "MultiSlaterDetTableMethod"; }
+  bool isFermionic() const final { return true; }
   bool isOptimizable() const override { return true; }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;

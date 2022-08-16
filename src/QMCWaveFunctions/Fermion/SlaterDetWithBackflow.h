@@ -37,7 +37,11 @@ public:
   ///destructor
   ~SlaterDetWithBackflow() override;
 
+  std::string getClassName() const override { return "SlaterDetWithBackflow"; }
+  bool isFermionic() const final { return true; }
   bool isOptimizable() const override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
   void checkInVariables(opt_variables_type& active) override
   {

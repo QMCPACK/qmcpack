@@ -115,8 +115,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 #endif
   }
 
-  //if (!spo_object_name.empty() && sposet->getName().empty())
-  //sposet->setName(spo_object_name);
   if (sposet->getName().empty())
     app_warning() << "SPOSet object doesn't have a name." << std::endl;
   if (!spo_object_name.empty() && sposet->getName() != spo_object_name)

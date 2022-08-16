@@ -781,7 +781,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->getClassName() << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -807,7 +807,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->getClassName() << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {

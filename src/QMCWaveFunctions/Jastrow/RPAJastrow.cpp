@@ -31,7 +31,7 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow", ""), targetPtcl(target) {}
+RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent(""), targetPtcl(target) {}
 
 RPAJastrow::~RPAJastrow() = default;
 
@@ -170,7 +170,7 @@ void RPAJastrow::makeShortRange()
   RealType tiny = 1e-6;
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
-  auto nfunc_uptr = std::make_unique<FuncType>();
+  auto nfunc_uptr = std::make_unique<FuncType>(my_name_ + "_short");
   nfunc           = nfunc_uptr.get();
   ShortRangePartAdapter<RealType> SRA(myHandler.get());
   SRA.setRmax(Rcut);

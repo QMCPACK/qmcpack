@@ -193,6 +193,11 @@ public:
                            const std::vector<int>& detData_up,
                            const std::vector<std::vector<int>>& lookup_tbl);
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    opt_obj_refs.push_back(*this);
+  }
+
   void checkInVariables(opt_variables_type& active) override
   {
     //reset parameters to zero after coefficient matrix has been updated

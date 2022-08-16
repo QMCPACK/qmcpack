@@ -195,6 +195,8 @@ public:
 
   ~J1OrbitalSoA();
 
+  std::string getClassName() const override { return "J1OrbitalSoA"; }
+
   /* initialize storage */
   void initialize(const ParticleSet& els)
   {
@@ -501,7 +503,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
+    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(my_name_, Ions, tqp, use_offload_);
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
       if (J1UniqueFunctors[i] != nullptr)
@@ -527,6 +529,12 @@ public:
     }
   }
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    for (auto& functor : J1UniqueFunctors)
+      opt_obj_refs.push_back(*functor);
+  }
+
   void checkInVariables(opt_variables_type& active) override
   {
     myVars.clear();
@@ -539,6 +547,7 @@ public:
       }
     }
   }
+
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();

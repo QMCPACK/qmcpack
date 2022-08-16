@@ -146,17 +146,28 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
+  std::string getClassName() const override { return "MultiDiracDeterminant"; }
+
+  bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
+
   inline void checkInVariables(opt_variables_type& active) override
   {
     if (Phi->isOptimizable())
       Phi->checkInVariables(active);
   }
+
   inline void checkOutVariables(const opt_variables_type& active) override
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
   }
+
   void resetParameters(const opt_variables_type& active) override
   {
     if (Phi->isOptimizable())

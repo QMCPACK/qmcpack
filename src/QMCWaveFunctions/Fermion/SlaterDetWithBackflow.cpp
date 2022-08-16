@@ -22,12 +22,10 @@ namespace qmcplusplus
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
                                              std::vector<std::unique_ptr<Determinant_t>> dets,
                                              std::unique_ptr<BackflowTransformation> BF)
-    : WaveFunctionComponent("SlaterDetWithBackflow", ""), Dets(std::move(dets)), BFTrans(std::move(BF))
+    : Dets(std::move(dets)), BFTrans(std::move(BF))
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
 }
 
 ///destructor
@@ -37,6 +35,13 @@ bool SlaterDetWithBackflow::isOptimizable() const
 {
   return BFTrans->isOptimizable() ||
       std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+}
+
+void SlaterDetWithBackflow::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*BFTrans);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
