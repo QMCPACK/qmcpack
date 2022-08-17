@@ -20,7 +20,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Numerics/MatrixOperators.h"
 #include "OMPTarget/ompBLAS.hpp"
-#include "OMPTarget/ompReduction.hpp"
+#include "OMPTarget/ompReductionComplex.hpp"
 #include "OhmmsPETE/ompReductionTinyVector.hpp"
 
 namespace qmcplusplus
