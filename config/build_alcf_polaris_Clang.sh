@@ -1,4 +1,12 @@
 #!/bin/bash
+# This recipe is intended for ALCF Polaris https://www.alcf.anl.gov/polaris
+# It builds all the varaints of QMCPACK in the current directory
+# last revision: Aug 17th 2022
+#
+# How to invoke this script?
+# build_alcf_polaris_Clang.sh # build all the variants assuming the current directory is the source directory.
+# build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
+# build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
 module load mpiwrappers/cray-mpich-llvm llvm/main-20220317
 module load cudatoolkit-standalone/11.2.2
