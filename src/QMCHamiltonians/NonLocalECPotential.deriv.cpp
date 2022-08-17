@@ -28,6 +28,11 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
+
+  /* evaluating TWF ratio values requires calling prepareGroup
+   * In evaluate() we first loop over species and call prepareGroup before looping over all the electrons of a species
+   * Here it is not necessary because TWF::evaluateLog has been called and precomputed data is up-to-date
+   */
   const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {

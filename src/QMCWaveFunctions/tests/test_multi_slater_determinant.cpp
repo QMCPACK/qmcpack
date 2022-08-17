@@ -133,7 +133,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   opt_variables_type active;
   twf.checkInVariables(active);
 
-  int nparam = active.size_of_active();
+  const int nparam = active.size_of_active();
   REQUIRE(nparam == 1486);
 
   using ValueType = QMCTraits::ValueType;
@@ -179,6 +179,16 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
     CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));
+
+    std::fill(ratios2.begin(), ratios2.end(), 0);
+    Matrix<ValueType> dratio(2, nparam);
+    twf.evaluateDerivRatios(VP, active, ratios2, dratio);
+
+    CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
+    CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));
+
+    CHECK(std::real(dratio[0][0]) == Approx(0.248887465));
+    CHECK(std::real(dratio[0][1]) == Approx(0.135021218));
   }
 
   //test acceptMove
