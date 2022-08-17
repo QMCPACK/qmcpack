@@ -551,8 +551,8 @@ The cost function consists of three components: energy, unreweighted variance, a
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
 
-Varational paramemter selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Varational parameter selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The predominant way of selecting varational paramemters is via ``<wavefunction>`` input.
 ``<coefficients>`` entries support ``optimize="yes"/"no"`` to enable/disable variational parameters in the wavefunction optimization.
 The secondary way of selecting varational paramemters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.

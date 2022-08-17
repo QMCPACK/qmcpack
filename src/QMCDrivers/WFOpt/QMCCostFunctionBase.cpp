@@ -414,7 +414,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     if (obj.isOptimized())
       obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
-  app_log() << "In total " << OptVariablesForPsi.size() << " parameters being optimzied." << std::endl;
+  app_log() << " Variational subset selects " << OptVariablesForPsi.size() << " parameters." << std::endl;
 
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
@@ -483,7 +483,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
   }
   else
-    app_log() << " Totally " << NumOptimizables << " parameters being optimized after applying constraints." << std::endl;
+    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints." << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
   //     app_log() << "</active-optimizables>" << std::endl;
