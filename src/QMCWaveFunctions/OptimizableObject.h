@@ -58,8 +58,8 @@ public:
    *   A objA;
    *   checkInVariablesExclusive() { // should not call objA.checkInVariablesExclusive(); }
    * };
-   * A vector will be created by calling extractOptimizableObjects().
-   * All the checkInVariables() will be called through this vector and thus
+   * A vector of OptimizableObject, will be created by calling extractOptimizableObjects().
+   * All the checkInVariablesExclusive() will be called through this vector and thus
    * checkInVariablesExclusive implementation should only handle non-OptimizableObject members.
    */
   virtual void checkInVariablesExclusive(opt_variables_type& active) = 0;

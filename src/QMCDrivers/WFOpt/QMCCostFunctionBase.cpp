@@ -414,7 +414,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     if (obj.isOptimized())
       obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
-  app_log() << "Totally " << OptVariablesForPsi.size() << " parameters being optimzied." << std::endl;
+  app_log() << "In total " << OptVariablesForPsi.size() << " parameters being optimzied." << std::endl;
 
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
@@ -1069,7 +1069,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunctio
   /// survey all the optimizable objects
   const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
-    obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&](const std::string& name) {
+    obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&obj](const std::string& name) {
                                            return name == obj.getName();
                                          }) != names.end());
   return opt_obj_refs;
