@@ -43,31 +43,35 @@ public:
   /** check in variational parameters to the global list of parameters used by the optimizer.
    * @param active a super set of optimizable variables
    *
-   * This is a query function and should never be implemented as a feature blocker.
-   * If an OptimizableObject derived class doesn't support optimization, use the base class fallback.
+   * The existing checkInVariables implementation in WFC/SPO/.. are inclusive and it calls checkInVariables of its members
+   * class A: public SPOSet {}
+   * class B: public WFC
+   * {
+   *   A objA;
+   *   checkInVariables() { objA.checkInVariables(); }
+   * };
+   *
+   * With OptimizableObject,
+   * class A: public OptimizableObject {}
+   * class B: public OptimizableObject
+   * {
+   *   A objA;
+   *   checkInVariablesExclusive() { // should not call objA.checkInVariablesExclusive(); }
+   * };
+   * A vector of OptimizableObject, will be created by calling extractOptimizableObjects().
+   * All the checkInVariablesExclusive() will be called through this vector and thus
+   * checkInVariablesExclusive implementation should only handle non-OptimizableObject members.
    */
-  virtual void checkInVariables(opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::checkInVariables should not be called!");
-  }
+  virtual void checkInVariablesExclusive(opt_variables_type& active) = 0;
 
-  /** check out variational optimizable variables
-   * @param active a super set of optimizable variables
+  /** reset the parameters during optimizations. Exclusive, see checkInVariablesExclusive
    */
-  virtual void checkOutVariables(const opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::checkOutVariables should not be called!");
-  }
-
-  /** reset the parameters during optimizations
-   */
-  virtual void resetParameters(const opt_variables_type& active)
-  {
-    throw std::logic_error("BUG!! OptimizableObject::resetParameters should not be called!");
-  }
+  virtual void resetParametersExclusive(const opt_variables_type& active) = 0;
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}
+
+  void setOptimization(bool state) { is_optimized_ = state; }
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>
@@ -77,6 +81,8 @@ public:
 
   void push_back(OptimizableObject& obj)
   {
+    if (obj.getName().empty())
+      throw std::logic_error("BUG!! Only named OptimizableObject object can be added to UniqueOptObjRefs!");
     auto result =
         std::find_if(begin(), end(), [&](OptimizableObject& element) { return element.getName() == obj.getName(); });
     if (result == end())

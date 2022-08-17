@@ -312,6 +312,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
   std::string output_override_str("no");
+  astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
@@ -323,6 +324,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
   m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
   targetExcitedStr = lowerCase(targetExcitedStr);
@@ -339,6 +341,9 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
     useNLPPDeriv = true;
   }
+
+  variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
+
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
   Write2OneXml     = (writeXmlPerStep == "no");
@@ -397,20 +402,20 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     cur = cur->next;
   }
 
-  /// survey all the optimizable objects
-  UniqueOptObjRefs opt_obj_refs;
-  Psi.extractOptimizableObjectRefs(opt_obj_refs);
+  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjects(Psi);
   app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
-            << " optimizable objects:" << std::endl
-            << "  ";
+            << " optimizable objects:" << std::endl;
   for (OptimizableObject& obj : opt_obj_refs)
-    app_log() << " '" << obj.getName() << "'";
-  app_log() << std::endl;
+    app_log() << "   '" << obj.getName() << "'" << (obj.isOptimized() ? " optimized" : " fixed") << std::endl;
 
   //build optimizables from the wavefunction
   OptVariablesForPsi.clear();
-  Psi.checkInVariables(OptVariablesForPsi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
+  app_log() << "In total " << OptVariablesForPsi.size() << " parameters being optimzied." << std::endl;
+
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
   InitVariables = OptVariablesForPsi;
@@ -1056,6 +1061,27 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
   }
 
   return true;
+}
+
+UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
+{
+  const auto& names(variational_subset_names);
+  /// survey all the optimizable objects
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&obj](const std::string& name) {
+                                           return name == obj.getName();
+                                         }) != names.end());
+  return opt_obj_refs;
+}
+
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi,
+                                                  const opt_variables_type& opt_variables) const
+{
+  const auto opt_obj_refs = extractOptimizableObjects(psi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.resetParametersExclusive(opt_variables);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

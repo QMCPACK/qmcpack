@@ -532,7 +532,8 @@ public:
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
     for (auto& functor : J1UniqueFunctors)
-      opt_obj_refs.push_back(*functor);
+      if (functor)
+        opt_obj_refs.push_back(*functor);
   }
 
   void checkInVariables(opt_variables_type& active) override

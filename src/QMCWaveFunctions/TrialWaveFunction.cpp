@@ -861,17 +861,19 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
   }
 }
 
-void TrialWaveFunction::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+UniqueOptObjRefs TrialWaveFunction::extractOptimizableObjectRefs()
 {
+  UniqueOptObjRefs opt_obj_refs;
   for (int i = 0; i < Z.size(); i++)
     Z[i]->extractOptimizableObjectRefs(opt_obj_refs);
+  return opt_obj_refs;
 }
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->checkInVariables(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(active);
 }
 
 void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
@@ -883,9 +885,9 @@ void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
 
 void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->resetParameters(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.resetParametersExclusive(active);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
