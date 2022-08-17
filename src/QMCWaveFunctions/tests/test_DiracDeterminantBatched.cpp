@@ -520,7 +520,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   elec_.create({3});
   elec_.R[0] = {0.1, -0.3, 1.0};
   elec_.R[1] = {-0.1, 0.3, 1.0};
-  elec_.R[2] = {0.1, 0.2, 0.3;
+  elec_.R[2] = {0.1, 0.2, 0.3};
 
   elec_.spins[0] = 0.0;
   elec_.spins[1] = 0.2;
