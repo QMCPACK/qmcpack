@@ -161,12 +161,12 @@ public:
 
   PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::ratioGradWithSpin():  Implementation required\n");
     return 0.0;
   }
   GradType evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override
   {
-    APP_ABORT("  DiracDeterminantBase::evalGradWithSpins():  Implementation required\n");
+    APP_ABORT("  DiracDeterminantBase::evalGradWithSpin():  Implementation required\n");
     return GradType();
   }
   /** cloning function
