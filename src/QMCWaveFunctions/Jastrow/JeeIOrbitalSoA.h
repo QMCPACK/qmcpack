@@ -434,6 +434,7 @@ public:
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
+    assert(VP.getTotalNum() == ratios.size());
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
@@ -872,7 +873,6 @@ public:
     resizeWFOptVectors();
 
     bool recalculate(false);
-    std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
     {
       int kk = myVars.where(k);
@@ -880,7 +880,6 @@ public:
         continue;
       if (optvars.recompute(kk))
         recalculate = true;
-      rcsingles[k] = true;
     }
 
     if (recalculate)
@@ -982,6 +981,92 @@ public:
 #endif
         }
         dhpsioverpsi[kk] = (ValueType)sum;
+      }
+    }
+  }
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override
+  {
+    assert(VP.getTotalNum() == ratios.size());
+    evaluateRatios(VP, ratios);
+
+    bool recalculate(false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+    }
+
+    if (recalculate)
+    {
+      constexpr valT czero(0);
+
+      const auto& refPS    = VP.refPS;
+      const auto& ee_dists = refPS.getDistTableAA(ee_Table_ID_).getDistances();
+      const auto& ei_dists = refPS.getDistTableAB(ei_Table_ID_).getDistances();
+
+      const auto& vpe_dists = VP.getDistTableAB(ee_Table_ID_).getDistances();
+      const auto& vpi_dists = VP.getDistTableAB(ei_Table_ID_).getDistances();
+
+      const int nVP = VP.getTotalNum();
+      std::vector<Vector<RealType>> dLogPsi_vp(nVP);
+      for (auto& dLogPsi : dLogPsi_vp)
+      {
+        dLogPsi.resize(myVars.size());
+        dLogPsi = czero;
+      }
+
+      const int kel = VP.refPtcl;
+      const int kg  = refPS.getGroupID(kel);
+
+      for (int iat = 0; iat < Nion; ++iat)
+      {
+        const int ig = Ions.getGroupID(iat);
+        for (int jg = 0; jg < eGroups; ++jg)
+        {
+          FT& func             = *F(ig, jg, kg);
+          const size_t nparams = func.getNumParameters();
+          std::vector<RealType> dlog_ref(nparams), dlog(nparams);
+          for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+          {
+            const int jel = elecs_inside(jg, iat)[jind];
+            if (jel == kel)
+              continue;
+            const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+            const valT r_Ik_ref = ei_dists[kel][iat];
+            const valT r_jk_ref = jel < kel ? ee_dists[kel][jel] : ee_dists[jel][kel];
+
+            if (!func.evaluateDerivatives(r_jk_ref, r_Ij, r_Ik_ref, dlog_ref))
+              std::fill(dlog_ref.begin(), dlog_ref.end(), czero);
+
+            for (int ivp = 0; ivp < nVP; ivp++)
+            {
+              const valT r_Ik = vpi_dists[ivp][iat];
+              const valT r_jk = vpe_dists[ivp][jel];
+              if (!func.evaluateDerivatives(r_jk, r_Ij, r_Ik, dlog))
+                std::fill(dlog.begin(), dlog.end(), czero);
+              const int first = VarOffset(ig, jg, kg).first;
+              const int last  = VarOffset(ig, jg, kg).second;
+              for (int p = first, ip = 0; p < last; p++, ip++)
+                dLogPsi_vp[ivp][p] -= dlog[ip] - dlog_ref[ip];
+            }
+          }
+        }
+      }
+
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        for (int ivp = 0; ivp < nVP; ivp++)
+          dratios[ivp][kk] = (ValueType)dLogPsi_vp[ivp][k];
       }
     }
   }

@@ -77,6 +77,32 @@ if(NOT QMC_CUDA)
       C2_PP_MSDJ_LONG # VMC
     )
 
+    if(NOT QMC_MIXED_PRECISION)
+      list(APPEND DET_C2_PP_MSDJ_PARAM CIcoeff_4 0.29045551 0.00001)
+      list(APPEND DET_C2_PP_MSDJ_PARAM ud_4 0.4797811594 0.00001)
+      list(APPEND DET_C2_PP_MSDJ_PARAM udC_25 -4.406254149 0.00001)
+
+      qmc_run_and_check_custom_scalar(
+        BASE_NAME
+        deterministic-C2_pp_msdj-H5-param-grad
+        BASE_DIR
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        PREFIX
+        C2_TZ_PP_SHORT_H5_MSDJ.param
+        INPUT_FILE
+        opt_det_pp_msdj-H5-param-grad.xml
+        PROCS
+        1
+        THREADS
+        1
+        SERIES
+        0
+        EQUILIBRATION
+        0
+        SCALAR_VALUES
+        DET_C2_PP_MSDJ_PARAM)
+    endif()
+
   else()
     message(VERBOSE
       "Skipping C2_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
