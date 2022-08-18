@@ -196,8 +196,24 @@ private:
   RealType shift_s_base;
 
   // ------------------------------------
-  // Parameters in this section are used by one or more of the adaptive LM, descent, or hybrid optimizers
+  // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
 
+  //String inputs are listed outside the struct
+
+   ///whether we are targeting an excited state
+  std::string targetExcitedStr;
+  ///whether to filter parameters for the lm
+  std::string filter_paramStr;
+  ///whether to filter parameters for the lm
+  std::string filter_infoStr;
+  ///whether to store samples for the lm
+  std::string store_samplesStr;
+  ///whether we are doing block algorithm
+  std::string block_lmStr;
+  ///name of the current optimization method, updated by processOptXML before run
+  std::string MinMethod;
+
+  struct {
   /// number of shifts we will try
   int num_shifts;
   /// the maximum relative change in the cost function for the adaptive three-shift scheme
@@ -208,12 +224,8 @@ private:
   RealType cost_increase_tol;
   /// the shift_i value that the adaptive shift method should aim for
   RealType target_shift_i;
-  ///whether we are targeting an excited state
-  std::string targetExcitedStr;
-  ///whether we are targeting an excited state
+    ///whether we are targeting an excited state
   bool targetExcited;
-  ///whether we are doing block algorithm
-  std::string block_lmStr;
   ///whether we are doing block algorithm
   bool block_lm;
   ///number of blocks used in block algorithm
@@ -232,41 +244,23 @@ private:
   bool block_second;
   ///whether to do the third part of block lm
   bool block_third;
-
   ///whether to filter parameters for the lm
   bool filter_param_;
-
-  ///whether to filter parameters for the lm
-  std::string filter_paramStr;
-
   ///whether to filter parameters for the lm
   bool filter_info_;
-
-  ///whether to filter parameters for the lm
-  std::string filter_infoStr;
-
   ///threshold for filtering parameters for the lm
   double ratio_threshold_;
-
   ///whether to store samples for the lm
   bool store_samples_;
-
-  ///whether to store samples for the lm
-  std::string store_samplesStr;
-
-  ///name of the current optimization method, updated by processOptXML before run
-  std::string MinMethod;
-
   ///type of the previous optimization method, updated by processOptXML before run
   OptimizerType previous_optimizer_type_;
-
   ///type of the current optimization method, updated by processOptXML before run
   OptimizerType current_optimizer_type_;
-
   ///whether to use hybrid method
   bool doHybrid;
+  };
 
-  // ------------------------------------
+    // ------------------------------------
 
   // Test parameter gradients
   bool doGradientTest;

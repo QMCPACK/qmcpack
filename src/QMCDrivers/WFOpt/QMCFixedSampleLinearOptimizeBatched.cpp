@@ -81,14 +81,18 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       shift_s_input(1.00),
       accept_history(3),
       shift_s_base(4.0),
+      targetExcitedStr("no"),
+      filter_paramStr("no"),
+      filter_infoStr("no"),
+      store_samplesStr("no"),
+      block_lmStr("no"),
+      MinMethod("OneShiftOnly"),
       num_shifts(3),
       max_relative_cost_change(10.0),
       max_param_change(0.3),
       cost_increase_tol(0.0),
       target_shift_i(-1.0),
-      targetExcitedStr("no"),
       targetExcited(false),
-      block_lmStr("no"),
       block_lm(false),
       nblocks(1),
       nolds(1),
@@ -99,13 +103,9 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       block_second(false),
       block_third(false),
       filter_param_(false),
-      filter_paramStr("no"),
       filter_info_(false),
-      filter_infoStr("no"),
       ratio_threshold_(0.0),
       store_samples_(false),
-      store_samplesStr("no"),
-      MinMethod("OneShiftOnly"),
       previous_optimizer_type_(OptimizerType::NONE),
       current_optimizer_type_(OptimizerType::NONE),
       do_output_matrices_csv_(false),
@@ -1190,8 +1190,6 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
     EngineObj->store_blocked_lm_info(nblocks, nkept);
   }
 
-  // initialize the engine if we do not use block lm or it's the first part of block lm
-  //  EngineObj->initialize(nblocks, 0, nkept, previous_update, false);
 
   // reset the engine
   EngineObj->reset();
