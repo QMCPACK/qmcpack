@@ -193,6 +193,14 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
   REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
 
+  std::fill(ratios2.begin(), ratios2.end(), 0);
+  Matrix<ValueType> dratio(2, NumOptimizables);
+  j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
+
+  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
+  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(dratio[0][43]) == Approx(-1.4282569e+03));
+
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
   ResourceCollection wfc_res("test_wfc_res");

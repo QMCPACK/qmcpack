@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
+    : SPOSet(my_name), OptimizableObject(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
 {
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }

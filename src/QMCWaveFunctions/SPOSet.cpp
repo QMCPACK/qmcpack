@@ -26,13 +26,37 @@
 
 namespace qmcplusplus
 {
-SPOSet::SPOSet(const std::string& my_name) : OptimizableObject(my_name), my_name_(my_name), OrbitalSetSize(0) {}
+SPOSet::SPOSet(const std::string& my_name) : my_name_(my_name), OrbitalSetSize(0) {}
 
 void SPOSet::extractOptimizableObjectRefs(UniqueOptObjRefs&)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
                            "::extractOptimizableObjectRefs "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::checkInVariables(opt_variables_type& active)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::checkInVariables "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::checkOutVariables(const opt_variables_type& active)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::checkOutVariables "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::resetParameters(const opt_variables_type& active)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::resetParameters "
                            "must be overloaded when the SPOSet is optimizable.");
 }
 

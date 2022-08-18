@@ -147,7 +147,7 @@ public:
   /** extract underlying OptimizableObject references
    * @param opt_obj_refs aggregated list of optimizable object references
    */
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+  UniqueOptObjRefs extractOptimizableObjectRefs();
 
   /** Check in an optimizable parameter
    * @param o aggregated list of optimizable variables

@@ -63,7 +63,7 @@ struct CSFData
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDetTableMethod : public WaveFunctionComponent
+class MultiSlaterDetTableMethod : public WaveFunctionComponent, public OptimizableObject
 {
 public:
   NewTimer &RatioTimer, &offload_timer;
@@ -103,6 +103,9 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
+
+  void checkInVariablesExclusive(opt_variables_type& active) override;
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();

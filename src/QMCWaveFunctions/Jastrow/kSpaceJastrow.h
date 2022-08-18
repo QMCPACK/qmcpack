@@ -65,7 +65,7 @@ public:
   }
 };
 
-class kSpaceJastrow : public WaveFunctionComponent
+class kSpaceJastrow : public WaveFunctionComponent, public OptimizableObject
 {
 public:
   typedef enum
@@ -162,6 +162,12 @@ public:
   void checkOutVariables(const opt_variables_type& active) override;
   void resetParameters(const opt_variables_type& active) override;
   void reportStatus(std::ostream& os) override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
+  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
+  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

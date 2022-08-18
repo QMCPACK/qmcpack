@@ -59,6 +59,24 @@ struct OptimizableFunctorBase : public OptimizableObject
   ///virtual destrutor
   virtual ~OptimizableFunctorBase() = default;
 
+  /** check in variational parameters to the global list of parameters used by the optimizer.
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkInVariables(opt_variables_type& active) = 0;
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active) = 0;
+
+  /** reset the parameters during optimizations
+   */
+  virtual void resetParameters(const opt_variables_type& active) = 0;
+
+  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
+  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
+
   inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
 
   /** create a clone of this object
