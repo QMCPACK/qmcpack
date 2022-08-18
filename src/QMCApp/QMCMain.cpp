@@ -307,7 +307,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.currentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -638,7 +638,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
+    qmc_driver->setStatus(myProject.currentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.
