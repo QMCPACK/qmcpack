@@ -217,6 +217,8 @@ public:
   OrbitalImages(ParticleSet& P, const PSPool& PSP, Communicate* mpicomm, const SPOMap& spomap);
   OrbitalImages(const OrbitalImages& other);
 
+  std::string getClassName() const override { return "OrbitalImages"; }
+
   //standard interface
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
 

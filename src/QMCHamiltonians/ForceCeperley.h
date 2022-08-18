@@ -41,6 +41,8 @@ public:
 
   ForceCeperley(ParticleSet& ions, ParticleSet& elns);
 
+  std::string getClassName() const override { return "ForceCeperley"; }
+
   Return_t evaluate(ParticleSet& P) override;
 
   void InitMatrix();

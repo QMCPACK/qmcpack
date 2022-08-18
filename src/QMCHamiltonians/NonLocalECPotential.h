@@ -37,6 +37,8 @@ public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
   ~NonLocalECPotential() override;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "NonLocalECPotential"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)

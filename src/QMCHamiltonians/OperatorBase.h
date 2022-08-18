@@ -120,6 +120,9 @@ public:
 
   virtual ~OperatorBase() = default;
 
+  /// return true if this operator depends on a wavefunction
+  virtual bool dependsOnWaveFunction() const { return false; }
+
   //////// GETTER AND SETTER FUNCTIONS ////////////////
 
   /**
@@ -142,6 +145,9 @@ public:
    * @return std::string copy of my_name_ member
    */
   std::string getName() const noexcept;
+
+  /// return class name
+  virtual std::string getClassName() const = 0;
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
