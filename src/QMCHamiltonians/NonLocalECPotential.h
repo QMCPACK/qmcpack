@@ -100,8 +100,8 @@ public:
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
-                                       const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi) override;
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

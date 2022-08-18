@@ -198,13 +198,13 @@ TEST_CASE("J2OrbitalSoA variables fail", "[wavefunction]")
   j2b.derivs_.resize(num_vars);
   // Elements are d/dp_i u(r), d/dp_i du/dr,  d/dp_i d2u/dr2
   j2b.derivs_[0] = {0.5, 1.3, 2.4};
-  std::vector<ValueType> dlogpsi(num_vars);
+  Vector<ValueType> dlogpsi(num_vars);
   jorb.evaluateDerivativesWF(elec, global_active, dlogpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(-2.0)); // 4 * derivs_[0][0]
 
-  std::vector<ValueType> dlogpsi2(num_vars);
-  std::vector<ValueType> dhpsioverpsi(num_vars);
+  Vector<ValueType> dlogpsi2(num_vars);
+  Vector<ValueType> dhpsioverpsi(num_vars);
 
   jorb.evaluateDerivatives(elec, global_active, dlogpsi2, dhpsioverpsi);
   CHECK(dlogpsi2[0] == ValueApprox(-2.0));
@@ -270,13 +270,13 @@ TEST_CASE("J2OrbitalSoA other variables", "[wavefunction]")
   j2b.derivs_.resize(num_vars);
   // Elements are d/dp_i u(r), d/dp_i du/dr,  d/dp_i d2u/dr2
   j2b.derivs_[0] = {0.5, 1.3, 2.4};
-  std::vector<ValueType> dlogpsi(num_vars);
+  Vector<ValueType> dlogpsi(num_vars);
   jorb.evaluateDerivativesWF(elec, global_active, dlogpsi);
 
   CHECK(dlogpsi[1] == ValueApprox(-2.0)); // 4 * derivs_[0][0]
 
-  std::vector<ValueType> dlogpsi2(num_vars);
-  std::vector<ValueType> dhpsioverpsi(num_vars);
+  Vector<ValueType> dlogpsi2(num_vars);
+  Vector<ValueType> dhpsioverpsi(num_vars);
 
   jorb.evaluateDerivatives(elec, global_active, dlogpsi2, dhpsioverpsi);
   CHECK(dlogpsi2[1] == ValueApprox(-2.0));

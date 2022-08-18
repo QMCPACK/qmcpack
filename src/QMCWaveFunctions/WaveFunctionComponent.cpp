@@ -233,7 +233,7 @@ void WaveFunctionComponent::reportStatus(std::ostream& os)
 
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
-                                                  std::vector<ValueType>& dlogpsi)
+                                                  Vector<ValueType>& dlogpsi)
 {
   throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
 }
