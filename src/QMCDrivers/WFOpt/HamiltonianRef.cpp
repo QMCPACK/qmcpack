@@ -24,16 +24,11 @@ void HamiltonianRef::addOperator(OperatorBase& op) { Hrefs_.emplace_back(op); }
 FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(ParticleSet& P,
                                                              const opt_variables_type& optvars,
                                                              Vector<ValueType>& dlogpsi,
-                                                             Vector<ValueType>& dhpsioverpsi,
-                                                             bool compute_deriv)
+                                                             Vector<ValueType>& dhpsioverpsi)
 {
   FullPrecRealType LocalEnergy = Hrefs_[0].get().evaluate(P);
-  if (compute_deriv)
-    for (int i = 1; i < Hrefs_.size(); ++i)
-      LocalEnergy += Hrefs_[i].get().evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-  else
-    for (int i = 1; i < Hrefs_.size(); ++i)
-      LocalEnergy += Hrefs_[i].get().evaluate(P);
+  for (int i = 1; i < Hrefs_.size(); ++i)
+    LocalEnergy += Hrefs_[i].get().evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   return LocalEnergy;
 }
 

@@ -270,8 +270,7 @@ public:
   FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                Vector<ValueType>& dlogpsi,
-                                               Vector<ValueType>& dhpsioverpsi,
-                                               bool compute_deriv);
+                                               Vector<ValueType>& dhpsioverpsi);
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,

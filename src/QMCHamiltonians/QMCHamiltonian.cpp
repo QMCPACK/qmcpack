@@ -610,16 +610,11 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
                                                                              const opt_variables_type& optvars,
                                                                              Vector<ValueType>& dlogpsi,
-                                                                             Vector<ValueType>& dhpsioverpsi,
-                                                                             bool compute_deriv)
+                                                                             Vector<ValueType>& dhpsioverpsi)
 {
   LocalEnergy = KineticEnergy = H[0]->evaluate(P);
-  if (compute_deriv)
-    for (int i = 1; i < H.size(); ++i)
-      LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-  else
-    for (int i = 1; i < H.size(); ++i)
-      LocalEnergy += H[i]->evaluate(P);
+  for (int i = 1; i < H.size(); ++i)
+    LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   return LocalEnergy;
 }
 
