@@ -618,7 +618,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
   return LocalEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivativesInner(
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivatives(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -657,26 +657,6 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
 
   return local_energies;
 }
-
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivatives(
-    const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const opt_variables_type& optvars,
-    RecordArray<ValueType>& dlogpsi,
-    RecordArray<ValueType>& dhpsioverpsi,
-    bool compute_deriv)
-{
-  std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
-  if (compute_deriv)
-    local_energies =
-        QMCHamiltonian::mw_evaluateValueAndDerivativesInner(ham_list, wf_list, p_list, optvars, dlogpsi, dhpsioverpsi);
-  else
-    local_energies = QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
-
-  return local_energies;
-}
-
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {

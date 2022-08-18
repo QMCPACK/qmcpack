@@ -257,7 +257,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
     }
   }
   OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
-  bool compute_nlpp  = useNLPPDeriv && nlpp;
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
   H.setRandomGenerator(MoverRng[0]);
@@ -286,7 +285,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, bool compute_nlpp, const std::string& includeNonlocalH,
+                          bool needGrads, const std::string& includeNonlocalH,
                           EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
@@ -355,7 +354,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 
         auto energy_list =
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
-                                                           dhpsioverpsi_array, compute_nlpp);
+                                                           dhpsioverpsi_array);
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
@@ -415,7 +414,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              compute_nlpp, includeNonlocalH, handle);
+              includeNonlocalH, handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -503,7 +502,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
 
   Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
 
-  bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
   bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
 
   const size_t opt_num_crowds = walkers_per_crowd_.size();
@@ -518,7 +516,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
                               std::vector<ParticleLaplacian*>& lapPsi, Matrix<Return_rt>& RecordsOnNode,
                               Matrix<Return_rt>& DerivRecords, Matrix<Return_rt>& HDerivRecords,
                               const SampleStack& samples, const opt_variables_type& optVars,
-                              bool compute_all_from_scratch, Return_rt vmc_or_dmc, bool needGrad, bool compute_nlpp) {
+                              bool compute_all_from_scratch, Return_rt vmc_or_dmc, bool needGrad) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
 
@@ -612,7 +610,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
         // Energy
         auto energy_list =
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, wf_list, p_list, optVars, dlogpsi_array,
-                                                           dhpsioverpsi_array, compute_nlpp);
+                                                           dhpsioverpsi_array);
 
         for (int ib = 0; ib < current_batch_size; ib++)
         {
@@ -646,7 +644,7 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi,
-              compute_all_from_scratch, vmc_or_dmc, needGrad, compute_nlpp);
+              compute_all_from_scratch, vmc_or_dmc, needGrad);
   // Sum weights over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {

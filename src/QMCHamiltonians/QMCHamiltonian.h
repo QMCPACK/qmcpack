@@ -278,15 +278,6 @@ public:
       const RefVectorWithLeader<ParticleSet>& p_list,
       const opt_variables_type& optvars,
       RecordArray<ValueType>& dlogpsi,
-      RecordArray<ValueType>& dhpsioverpsi,
-      bool compute_deriv);
-
-  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivativesInner(
-      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-      const RefVectorWithLeader<ParticleSet>& p_list,
-      const opt_variables_type& optvars,
-      RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi);
 
 
