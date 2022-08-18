@@ -51,8 +51,7 @@ public:
   virtual void takeSample(const std::vector<FullPrecReal>& energy_list,
                           const RecordArray<Value>& dlogpsi_array,
                           const RecordArray<Value>& dhpsioverpsi_array,
-                          int local_index,
-                          int sample_index) = 0;
+                          int base_sample_index) = 0;
   /** Function for having optimizer engines execute their sample_finish functions
    */
   virtual void finishSampling() = 0;
@@ -65,8 +64,7 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
-                  int local_index,
-                  int sample_index) override
+                  int base_sample_index) override
   {}
   void finishSampling() override {}
 };
@@ -95,21 +93,24 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
-                  int local_index,
-                  int sample_index) override
+                  int base_sample_index) override
   {
-    der_rat_samp[0] = 1.0;
-    le_der_samp[0]  = energy_list[local_index];
-
-    int num_params = der_rat_samp.size() - 1;
-    for (int j = 0; j < num_params; j++)
+    int current_batch_size = dlogpsi_array.nentry();
+    for (int local_index = 0; local_index < current_batch_size; local_index++)
     {
-      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
-      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
-          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+        der_rat_samp[0] = 1.0;
+        le_der_samp[0]  = energy_list[local_index];
+
+        int num_params = der_rat_samp.size() - 1;
+        for (int j = 0; j < num_params; j++)
+        {
+            der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+            le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
+            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+        }
+        int ip = omp_get_thread_num();
+        engine_.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
     }
-    int ip = omp_get_thread_num();
-    engine_.takeSample(ip, der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
   }
 
   void finishSampling() override { engine_.sample_finish(); }
@@ -138,28 +139,33 @@ public:
   void takeSample(const std::vector<FullPrecReal>& energy_list,
                   const RecordArray<Value>& dlogpsi_array,
                   const RecordArray<Value>& dhpsioverpsi_array,
-                  int local_index,
-                  int sample_index) override
+                  int base_sample_index) override
   {
-    der_rat_samp[0] = 1.0;
-    le_der_samp[0]  = energy_list[local_index];
-
-    int num_params = der_rat_samp.size() - 1;
-    for (int j = 0; j < num_params; j++)
+    int current_batch_size = dlogpsi_array.nentry();
+    for (int local_index = 0; local_index < current_batch_size; local_index++)
     {
-      der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
-      le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
-          le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
-    }
+
+        int sample_index = base_sample_index + local_index;   
+        der_rat_samp[0] = 1.0;
+        le_der_samp[0]  = energy_list[local_index];
+
+        int num_params = der_rat_samp.size() - 1;
+        for (int j = 0; j < num_params; j++)
+        {
+            der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+            le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
+            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+        }
 
 
-    if (lm_engine_.getStoringSamples())
-    {
-      lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0, sample_index);
-    }
-    else
-    {
-      lm_engine_.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
+        if (lm_engine_.getStoringSamples())
+        {
+            lm_engine_.store_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0, sample_index);
+        }
+        else
+        {
+            lm_engine_.take_sample(der_rat_samp, le_der_samp, le_der_samp, 1.0, 1.0);
+        }
     }
   }
   void finishSampling() override

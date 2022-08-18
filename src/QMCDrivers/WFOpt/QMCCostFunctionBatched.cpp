@@ -358,6 +358,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                            dhpsioverpsi_array, compute_nlpp);
 
+        handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array,base_sample_index);
+        
         for (int ib = 0; ib < current_batch_size; ib++)
         {
           const int is = base_sample_index + ib;
@@ -368,8 +370,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
-
-          handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, ib, is);
         }
 
         for (int ib = 0; ib < current_batch_size; ib++)
