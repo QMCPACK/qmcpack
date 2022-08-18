@@ -77,6 +77,7 @@ public:
   ///destructor
   ~BareKineticEnergy() override;
 
+  std::string getClassName() const override { return "BareKineticEnergy"; }
   void resetTargetParticleSet(ParticleSet& P) override {}
 
 #if !defined(REMOVE_TRACEMANAGER)

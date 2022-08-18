@@ -71,6 +71,8 @@ struct L2Potential : public OperatorBase
 
   L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
+  std::string getClassName() const override { return "L2Potential"; }
+
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

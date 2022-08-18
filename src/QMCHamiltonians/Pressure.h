@@ -48,6 +48,7 @@ struct Pressure : public OperatorBase
   ///destructor
   ~Pressure() override {}
 
+  std::string getClassName() const override { return "Pressure"; }
   void resetTargetParticleSet(ParticleSet& P) override { pNorm = 1.0 / (P.getLattice().DIM * P.getLattice().Volume); }
 
   inline Return_t evaluate(ParticleSet& P) override
