@@ -77,6 +77,7 @@ public:
   ///destructor
   ~BareKineticEnergy() override;
 
+  //FIXME bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "BareKineticEnergy"; }
   void resetTargetParticleSet(ParticleSet& P) override {}
 

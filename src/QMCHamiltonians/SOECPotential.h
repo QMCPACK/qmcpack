@@ -22,6 +22,7 @@ class SOECPotential : public OperatorBase
 public:
   SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
+  bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "SOECPotential"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
