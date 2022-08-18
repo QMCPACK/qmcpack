@@ -37,7 +37,7 @@ using Return_t = BareKineticEnergy::Return_t;
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : Ps(p), psi_(psi)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -125,6 +125,16 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
     }
   }
   return value_;
+}
+
+Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi)
+{
+  // KineticEnergy is always the first hamiltonian element. It is responsible for calculating dlogpsi.
+  psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  return evaluate(P);
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -601,7 +611,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
 
 std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_unique<BareKineticEnergy>(*this);
+  return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
 #ifdef QMC_CUDA

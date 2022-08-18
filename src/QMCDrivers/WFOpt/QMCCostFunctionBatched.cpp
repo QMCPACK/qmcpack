@@ -352,8 +352,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
         int nparam = optVars.size();
         RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
         RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
-        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
-
 
         auto energy_list =
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
@@ -610,9 +608,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
         int nparam = optVars.size();
         RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
         RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
-
-        TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optVars, dlogpsi_array, dhpsioverpsi_array);
-
 
         // Energy
         auto energy_list =

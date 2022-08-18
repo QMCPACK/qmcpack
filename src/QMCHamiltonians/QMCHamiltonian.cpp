@@ -612,7 +612,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
                                                                              Vector<ValueType>& dlogpsi,
                                                                              Vector<ValueType>& dhpsioverpsi)
 {
-  LocalEnergy = KineticEnergy = H[0]->evaluate(P);
+  LocalEnergy = KineticEnergy = H[0]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   for (int i = 1; i < H.size(); ++i)
     LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   return LocalEnergy;

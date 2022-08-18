@@ -26,9 +26,9 @@ FullPrecRealType HamiltonianRef::evaluateValueAndDerivatives(ParticleSet& P,
                                                              Vector<ValueType>& dlogpsi,
                                                              Vector<ValueType>& dhpsioverpsi)
 {
-  FullPrecRealType LocalEnergy = Hrefs_[0].get().evaluate(P);
-  for (int i = 1; i < Hrefs_.size(); ++i)
-    LocalEnergy += Hrefs_[i].get().evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  FullPrecRealType LocalEnergy(0);
+  for (OperatorBase& Href : Hrefs_)
+    LocalEnergy += Href.evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   return LocalEnergy;
 }
 

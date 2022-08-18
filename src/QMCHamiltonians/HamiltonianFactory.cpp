@@ -76,7 +76,6 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
   ClassName = "HamiltonianFactory";
   myName    = hName;
   targetPtcl.set_quantum();
-  targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl), "Kinetic");
 }
 
 /** main hamiltonian build function
@@ -133,6 +132,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
   TrialWaveFunction* targetPsi = psi_it->second.get();
+  if (defaultKE != "no")
+    targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl, *targetPsi), "Kinetic");
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while (cur != NULL)

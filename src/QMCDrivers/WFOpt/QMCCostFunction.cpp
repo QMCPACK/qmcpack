@@ -284,7 +284,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
 
@@ -405,7 +404,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
@@ -550,7 +548,6 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
 
         Vector<Return_rt> rDsaved(NumOptimizables, 0);
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         saved[ENERGY_NEW] =
             H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved) +
