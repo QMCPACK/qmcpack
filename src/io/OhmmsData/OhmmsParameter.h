@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Host/OutputManager.h"
+#include "ModernStringUtils.hpp"
 
 /** generic class for parameter xmlNode
  *
@@ -242,17 +243,19 @@ public:
   inline bool put(std::istream& is) override
   {
     checkTagStatus(myName, tag_staus_);
-    std::string yes;
-    is >> yes;
-    if (yes == "yes" || yes == "true")
+    std::string input_value;
+    is >> input_value;
+    std::string input_value_lower_case = qmcplusplus::lowerCase(input_value);
+
+    if (input_value_lower_case == "yes" || input_value_lower_case == "true")
       ref_ = true;
-    else if (yes == "no" || yes == "false")
+    else if (input_value_lower_case == "no" || input_value_lower_case == "false")
       ref_ = false;
-    else if (yes.empty())
+    else if (input_value.empty())
       throw std::runtime_error(myName + " requires a single value input.");
     else
-      throw std::runtime_error(myName + " only accepts 'yes'/'no'/'true'/'false' but the input value is '" + yes +
-                               "'.");
+      throw std::runtime_error(myName + " only accepts 'yes'/'no'/'true'/'false' but the input value is '" +
+                               input_value + "'.");
 
     std::string dummy;
     is >> dummy;
