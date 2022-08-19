@@ -710,14 +710,6 @@ void MultiSlaterDetTableMethod::checkInVariablesExclusive(opt_variables_type& ac
   }
 }
 
-void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
-{
-  checkInVariablesExclusive(active);
-  for (size_t id = 0; id < Dets.size(); id++)
-    if (Dets[id]->isOptimizable())
-      Dets[id]->checkInVariables(active);
-}
-
 void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& active)
 {
   if (CI_Optimizable)
@@ -771,17 +763,6 @@ void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_typ
     }
   }
 }
-
-void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active)
-{
-  resetParametersExclusive(active);
-  for (size_t id = 0; id < Dets.size(); id++)
-    if (Dets[id]->isOptimizable())
-      Dets[id]->resetParameters(active);
-}
-
-void MultiSlaterDetTableMethod::reportStatus(std::ostream& os) {}
-
 
 void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& optvars,

@@ -77,22 +77,10 @@ public:
     Phi->extractOptimizableObjectRefs(opt_obj_refs);
   }
 
-  inline void checkInVariables(opt_variables_type& active) final
-  {
-    if (Phi->isOptimizable())
-      Phi->checkInVariables(active);
-  }
-
   inline void checkOutVariables(const opt_variables_type& active) final
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
-  }
-
-  void resetParameters(const opt_variables_type& active) final
-  {
-    if (Phi->isOptimizable())
-      Phi->resetParameters(active);
   }
 
   virtual void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override

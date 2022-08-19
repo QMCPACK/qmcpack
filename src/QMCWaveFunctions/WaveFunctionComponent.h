@@ -137,22 +137,10 @@ public:
   /** true, if this component is fermionic */
   virtual bool isFermionic() const { return false; }
 
-  /** check in variational parameters to the global list of parameters used by the optimizer.
-   * @param active a super set of optimizable variables
-   */
-  virtual void checkInVariables(opt_variables_type& active);
-
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
   virtual void checkOutVariables(const opt_variables_type& active);
-
-  /** reset the parameters during optimizations
-   */
-  virtual void resetParameters(const opt_variables_type& active);
-
-  /** print the state, e.g., optimizables */
-  virtual void reportStatus(std::ostream& os);
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */

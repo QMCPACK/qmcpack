@@ -130,13 +130,6 @@ void J2OMPTarget<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_ref
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::checkInVariables(opt_variables_type& active)
-{
-  for (auto& [key, functor] : J2Unique)
-    functor->checkInVariables(active);
-}
-
-template<typename FT>
 void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
 {
   myVars.clear();
@@ -172,33 +165,6 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
       }
       else
         OffSet[i].first = OffSet[i].second = -1;
-  }
-}
-
-template<typename FT>
-void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
-{
-  if (!isOptimizable())
-    return;
-  for (auto& [key, functor] : J2Unique)
-    functor->resetParameters(active);
-
-  for (int i = 0; i < myVars.size(); ++i)
-  {
-    int ii = myVars.Index[i];
-    if (ii >= 0)
-      myVars[i] = active[ii];
-  }
-}
-
-template<typename FT>
-void J2OMPTarget<FT>::reportStatus(std::ostream& os)
-{
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->myVars.print(os);
-    ++it;
   }
 }
 

@@ -892,9 +892,9 @@ void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->reportStatus(os);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+      obj.reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)

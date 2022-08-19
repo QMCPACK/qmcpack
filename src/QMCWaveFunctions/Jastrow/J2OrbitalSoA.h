@@ -145,22 +145,11 @@ public:
   bool isOptimizable() const override { return true; }
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& active) override;
-
   /** check out optimizable variables
    */
   void checkOutVariables(const opt_variables_type& active) override;
 
-  ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active) override;
-
   inline void finalizeOptimization() override { KEcorr = j2_ke_corr_helper.computeKEcorr(); }
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override;
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 

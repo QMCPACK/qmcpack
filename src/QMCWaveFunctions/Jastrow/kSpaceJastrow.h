@@ -158,16 +158,13 @@ public:
   std::string getClassName() const override { return "kSpaceJastrow"; }
   //implement virtual functions for optimizations
   bool isOptimizable() const override { return true; }
-  void checkInVariables(opt_variables_type& active) override;
   void checkOutVariables(const opt_variables_type& active) override;
-  void resetParameters(const opt_variables_type& active) override;
-  void reportStatus(std::ostream& os) override;
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
   // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
-  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
-  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
+  void checkInVariablesExclusive(opt_variables_type& active) final;
+  void resetParametersExclusive(const opt_variables_type& active) final;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
