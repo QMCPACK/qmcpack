@@ -102,7 +102,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   const int nchars = qmc_mode.size();
 
   using DV = ProjectData::DriverVersion;
-  switch (project_data_.get_driver_version())
+  switch (project_data_.getDriverVersion())
   {
   case DV::BATCH:
 #if defined(QMC_CUDA)
