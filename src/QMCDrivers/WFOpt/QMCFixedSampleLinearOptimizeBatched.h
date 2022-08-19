@@ -199,17 +199,6 @@ private:
   // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
 
   //String inputs are listed outside the struct
-
-  ///whether we are targeting an excited state
-  std::string targetExcitedStr;
-  ///whether to filter parameters for the lm
-  std::string filter_paramStr;
-  ///whether to filter parameters for the lm
-  std::string filter_infoStr;
-  ///whether to store samples for the lm
-  std::string store_samplesStr;
-  ///whether we are doing block algorithm
-  std::string block_lmStr;
   ///name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 

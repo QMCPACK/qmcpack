@@ -81,11 +81,6 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       shift_s_input(1.00),
       accept_history(3),
       shift_s_base(4.0),
-      targetExcitedStr("no"),
-      filter_paramStr("no"),
-      filter_infoStr("no"),
-      store_samplesStr("no"),
-      block_lmStr("no"),
       MinMethod("OneShiftOnly"),
       num_shifts(3),
       max_relative_cost_change(10.0),
@@ -132,8 +127,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(bigChange, "bigchange");
   m_param.add(MinMethod, "MinMethod");
   m_param.add(exp0, "exp0");
-  m_param.add(targetExcitedStr, "targetExcited");
-  m_param.add(block_lmStr, "block_lm");
+  m_param.add(targetExcited,"targetExcited");
+  m_param.add(block_lm,"block_lm");
   m_param.add(nblocks, "nblocks");
   m_param.add(nolds, "nolds");
   m_param.add(nkept, "nkept");
@@ -147,10 +142,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(cost_increase_tol, "cost_increase_tol");
   m_param.add(target_shift_i, "target_shift_i");
   m_param.add(param_tol, "alloweddifference");
-  m_param.add(filter_paramStr, "filter_param");
+  m_param.add(filter_param_, "filter_param");
   m_param.add(ratio_threshold_, "deriv_threshold");
-  m_param.add(store_samplesStr, "store_samples");
-  m_param.add(filter_infoStr, "filter_info");
+  m_param.add(store_samples_, "store_samples");
+  m_param.add(filter_info_, "filter_info");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -678,21 +673,7 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
                                                         bool useGPU)
 {
   m_param.put(opt_xml);
-  targetExcitedStr = lowerCase(targetExcitedStr);
-  targetExcited    = (targetExcitedStr == "yes");
-
-  block_lmStr = lowerCase(block_lmStr);
-  block_lm    = (block_lmStr == "yes");
-
-  filter_paramStr = lowerCase(filter_paramStr);
-  filter_param_   = (filter_paramStr == "yes");
-
-  filter_infoStr = lowerCase(filter_infoStr);
-  filter_info_   = (filter_infoStr == "yes");
-
-  store_samplesStr = lowerCase(store_samplesStr);
-  store_samples_   = (store_samplesStr == "yes");
-
+  
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
     throw std::runtime_error("Unknown MinMethod!\n");
