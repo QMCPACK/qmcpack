@@ -92,6 +92,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   ~CoulombPBCAA() override;
 
+  std::string getClassName() const override { return "CoulombPBCAA"; }
+
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
