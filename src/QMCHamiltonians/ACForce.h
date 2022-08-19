@@ -34,6 +34,9 @@ public:
   /** Destructor, "final" triggers a clang warning **/
   ~ACForce() override = default;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "ACForce"; }
+
   /** I/O Routines */
   bool put(xmlNodePtr cur) final;
 

@@ -42,6 +42,7 @@ struct GridExternalPotential : public OperatorBase
     oneBodyQuantumDomain(P);
   }
 
+  std::string getClassName() const override { return "GridExternalPotential"; }
   //unneeded interface functions
   void resetTargetParticleSet(ParticleSet& P) override {}
 

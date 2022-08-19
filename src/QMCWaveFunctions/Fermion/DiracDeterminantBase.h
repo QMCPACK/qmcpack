@@ -102,7 +102,7 @@ public:
 
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi) override
+                                     Vector<ValueType>& dlogpsi) override
   {
     // assume no orbital optimization. If implemented, override this function
   }

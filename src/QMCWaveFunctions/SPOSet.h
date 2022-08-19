@@ -136,8 +136,8 @@ public:
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
                                    const int& LastIndex)
   {}
@@ -146,8 +146,8 @@ public:
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
                                    const std::vector<ValueType>& Coeff,
                                    const std::vector<size_t>& C2node_up,
@@ -177,7 +177,7 @@ public:
    */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi,
+                                     Vector<ValueType>& dlogpsi,
                                      const QTFull::ValueType& psiCurrent,
                                      const std::vector<ValueType>& Coeff,
                                      const std::vector<size_t>& C2node_up,

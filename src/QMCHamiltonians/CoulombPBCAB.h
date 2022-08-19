@@ -134,6 +134,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P) override;
 
+  std::string getClassName() const override { return "CoulombPBCAB"; }
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;

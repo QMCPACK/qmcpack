@@ -733,7 +733,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-
+  ///calculate derivatives with respect to polynomial parameters
   inline bool evaluateDerivatives(const real_type r_12,
                                   const real_type r_1I,
                                   const real_type r_2I,
@@ -755,10 +755,10 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     const real_type r_1I_minus_L = r_1I - L;
     const real_type both_minus_L = r_2I_minus_L * r_1I_minus_L;
 
-    real_type r2l(cone), r2l_1(czero), r2l_2(czero), lf(czero);
+    real_type r2l(cone);
     for (int l = 0; l <= N_eI; l++)
     {
-      real_type r2m(cone), r2m_1(czero), r2m_2(czero), mf(czero);
+      real_type r2m(cone);
       for (int m = 0; m <= N_eI; m++)
       {
         int num;
@@ -766,30 +766,19 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
           num = ((2 * N_eI - l + 3) * l / 2 + m - l) * (N_ee + 1);
         else
           num = ((2 * N_eI - m + 3) * m / 2 + l - m) * (N_ee + 1);
-        real_type r2n(cone), r2n_1(czero), r2n_2(czero), nf(czero);
+        real_type r2n(cone);
         for (int n = 0; n <= N_ee; n++, num++)
         {
           dval_dgamma        = r2l * r2m * r2n;
-
           for (int i = 0; i < C; i++)
             dval_dgamma *= both_minus_L;
 
           // Now, pack into vectors
           dval_Vec[num] += scale * dval_dgamma;
-
-          nf += cone;
-          r2n_2 = r2n_1 * nf;
-          r2n_1 = r2n * nf;
           r2n *= r_12;
         }
-        mf += cone;
-        r2m_2 = r2m_1 * mf;
-        r2m_1 = r2m * mf;
         r2m *= r_2I;
       }
-      lf += cone;
-      r2l_2 = r2l_1 * lf;
-      r2l_1 = r2l * lf;
       r2l *= r_1I;
     }
     // for (int i=0; i<dval_Vec.size(); i++)
