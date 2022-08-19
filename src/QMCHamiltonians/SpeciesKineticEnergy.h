@@ -28,6 +28,7 @@ class SpeciesKineticEnergy : public OperatorBase
 public:
   SpeciesKineticEnergy(ParticleSet& P);
 
+  std::string getClassName() const override { return "SpeciesKineticEnergy"; }
   bool put(xmlNodePtr cur) override;         // read input xml node, required
   bool get(std::ostream& os) const override; // class description, required
 

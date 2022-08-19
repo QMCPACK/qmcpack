@@ -180,6 +180,11 @@ OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
                                                                  const std::vector<ValueType>& dlogpsi,
                                                                  std::vector<ValueType>& dhpsioverpsi)
 {
+  if(dependsOnWaveFunction())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateValueAndDerivatives"
+                           "must be overloaded when the OperatorBase depends on a wavefunction.");
+
   return evaluate(P);
 }
 
