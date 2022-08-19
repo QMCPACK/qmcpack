@@ -352,6 +352,16 @@ if(NOT QMC_CUDA)
       11
       H4_OPT_SCALARS_ONLY_MSD # OPT step 011
     )
+
+    qmc_run_and_check(
+      deterministic-input_check-invalid_variational_subset
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      det-input-check-optm-invalid-subset.xml
+      2
+      1
+      FALSE
+    )
   else()
     message(VERBOSE
       "Skipping H4_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
