@@ -162,7 +162,6 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
   void checkInVariablesExclusive(opt_variables_type& active) final;
   void resetParametersExclusive(const opt_variables_type& active) final;
 

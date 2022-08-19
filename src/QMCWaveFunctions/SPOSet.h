@@ -95,19 +95,10 @@ public:
    */
   virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
 
-  /** check in variational parameters to the global list of parameters used by the optimizer.
-   * @param active a super set of optimizable variables
-   */
-  virtual void checkInVariables(opt_variables_type& active);
-
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
   virtual void checkOutVariables(const opt_variables_type& active);
-
-  /** reset the parameters during optimizations
-   */
-  virtual void resetParameters(const opt_variables_type& active);
 
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
