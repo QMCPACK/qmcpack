@@ -534,8 +534,8 @@ void J2OrbitalSoA<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi
 template<typename FT>
 void J2OrbitalSoA<FT>::evaluateDerivatives(ParticleSet& P,
                                            const opt_variables_type& active,
-                                           std::vector<ValueType>& dlogpsi,
-                                           std::vector<ValueType>& dhpsioverpsi)
+                                           Vector<ValueType>& dlogpsi,
+                                           Vector<ValueType>& dhpsioverpsi)
 {
   if (myVars.size() == 0)
     return;
@@ -570,7 +570,7 @@ void J2OrbitalSoA<FT>::evaluateDerivatives(ParticleSet& P,
 template<typename FT>
 void J2OrbitalSoA<FT>::evaluateDerivativesWF(ParticleSet& P,
                                              const opt_variables_type& active,
-                                             std::vector<ValueType>& dlogpsi)
+                                             Vector<ValueType>& dlogpsi)
 {
   if (myVars.size() == 0)
     return;

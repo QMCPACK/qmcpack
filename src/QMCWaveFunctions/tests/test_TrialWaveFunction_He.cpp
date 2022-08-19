@@ -141,8 +141,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   optimize::VariableSet var_param;
   psi.checkInVariables(var_param);
 
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
 
   psi.evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
@@ -187,8 +187,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   p_list.push_back(elec2);
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
-  std::vector<ValueType> dlogpsi2(nparam);
-  std::vector<ValueType> dhpsioverpsi2(nparam);
+  Vector<ValueType> dlogpsi2(nparam);
+  Vector<ValueType> dhpsioverpsi2(nparam);
 
   psi.evaluateDerivatives(elec2, var_param, dlogpsi2, dhpsioverpsi2);
 

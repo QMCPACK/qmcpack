@@ -14,7 +14,7 @@
 #include <stdexcept>
 #include "config.h"
 #if !defined(OPENMP_NO_COMPLEX)
-#include "ompReduction.hpp"
+#include "ompReductionComplex.hpp"
 #endif
 
 namespace qmcplusplus

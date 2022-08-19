@@ -1726,8 +1726,8 @@ void WaveFunctionTester::runDerivTest()
   wfvar_prime = wfVars;
   wfVars.print(fout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1833,8 +1833,8 @@ void WaveFunctionTester::runDerivNLPPTest()
   wfvar_prime = wfVars;
   wfVars.print(nlout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1935,8 +1935,8 @@ void WaveFunctionTester::runDerivCloneTest()
   wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
-  std::vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
-  std::vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
+  Vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
+  Vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
   std::vector<RealType> PGradient(Nvars, 0), og_PGradient(Nvars, 0);
   std::vector<RealType> HGradient(Nvars, 0), og_HGradient(Nvars, 0);
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);

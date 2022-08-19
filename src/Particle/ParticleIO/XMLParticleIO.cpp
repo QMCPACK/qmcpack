@@ -274,7 +274,9 @@ bool XMLParticleParser::readXML(xmlNodePtr cur)
           {
             int old_idx = map_storage_to_input[new_idx];
             if (new_idx != old_idx)
+            {
               app_debug() << "    " << d_in[old_idx] << " : " << old_idx << " -> " << new_idx << std::endl;
+            }
           }
         }
       }
