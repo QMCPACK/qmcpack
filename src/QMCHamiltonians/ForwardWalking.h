@@ -39,6 +39,7 @@ struct ForwardWalking : public OperatorBase
   ///destructor
   ~ForwardWalking() override {}
 
+  std::string getClassName() const override { return "ForwardWalking"; }
   void resetTargetParticleSet(ParticleSet& P) override {}
 
   inline Return_t rejectedMove(ParticleSet& P) override

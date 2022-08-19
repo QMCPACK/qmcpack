@@ -30,6 +30,7 @@ class DensityEstimator : public OperatorBase
 public:
   DensityEstimator(ParticleSet& elns);
   int potentialIndex;
+  std::string getClassName() const override { return "DensityEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

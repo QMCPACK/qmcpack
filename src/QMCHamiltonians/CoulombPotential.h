@@ -106,6 +106,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     nCenters = s.getTotalNum();
   }
 
+  std::string getClassName() const override { return "CoulombPotential"; }
+
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override { request_.contribute_array(name_); }
 
