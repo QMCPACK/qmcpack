@@ -16,7 +16,7 @@
 #include "MultiSlaterDetTableMethod.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "Platforms/OMPTarget/ompReduction.hpp"
+#include "Platforms/OMPTarget/ompReductionComplex.hpp"
 
 namespace qmcplusplus
 {
