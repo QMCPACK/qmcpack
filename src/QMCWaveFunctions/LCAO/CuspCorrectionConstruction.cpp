@@ -20,13 +20,13 @@ namespace qmcplusplus
 {
 // Modifies orbital set lcwc
 void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
-                         int num_centers,
-                         int orbital_set_size,
                          ParticleSet& targetPtcl,
                          ParticleSet& sourcePtcl,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   using RealType = QMCTraits::RealType;
 
   NewTimer& cuspApplyTimer =
@@ -113,8 +113,10 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
   removeSTypeOrbitals(corrCenter, lcwc);
 }
 
-void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, const std::string& id)
+void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   xmlDocPtr doc       = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
   xmlNodePtr spo      = xmlNewNode(NULL, (const xmlChar*)"sposet");
@@ -174,21 +176,20 @@ void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParame
     xmlAddChild(spo, ctr);
   }
 
-  std::string fname = id + ".cuspInfo.xml";
-  app_log() << "Saving resulting cusp Info xml block to: " << fname << std::endl;
-  xmlSaveFormatFile(fname.c_str(), doc, 1);
+  app_log() << "Saving resulting cusp Info xml block to: " << filename << std::endl;
+  xmlSaveFormatFile(filename.c_str(), doc, 1);
   xmlFreeDoc(doc);
 }
 
-void generateCuspInfo(int orbital_set_size,
-                      int num_centers,
-                      Matrix<CuspCorrectionParameters>& info,
+void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const ParticleSet& targetPtcl,
                       const ParticleSet& sourcePtcl,
                       const LCAOrbitalSetWithCorrection& lcwc,
                       const std::string& id,
                       Communicate& Comm)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   using RealType = QMCTraits::RealType;
 
   NewTimer& cuspCreateTimer =
@@ -307,11 +308,6 @@ void generateCuspInfo(int orbital_set_size,
         broadcastCuspInfo(info(center_idx, mo_idx), Comm, root);
       }
     }
-  }
-
-  if (Comm.rank() == 0)
-  {
-    saveCusp(orbital_set_size, num_centers, info, id);
   }
 }
 
