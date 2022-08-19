@@ -1070,9 +1070,21 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     reset_gamma();
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariables(opt_variables_type& active) override
+  {
+    if (notOpt)
+      return;
 
-  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
+    myVars.setIndexDefault();
+    active.insertFrom(myVars);
+  }
+
+  void checkOutVariables(const opt_variables_type& active) override
+  {
+    if (notOpt)
+      return;
+    myVars.getIndex(active);
+  }
 
   void print(std::ostream& os)
   {

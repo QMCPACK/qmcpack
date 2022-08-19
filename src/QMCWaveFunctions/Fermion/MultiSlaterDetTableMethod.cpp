@@ -704,7 +704,10 @@ void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& o
 void MultiSlaterDetTableMethod::checkInVariablesExclusive(opt_variables_type& active)
 {
   if (CI_Optimizable && myVars->size())
+  {
+    myVars->setIndexDefault();
     active.insertFrom(*myVars);
+  }
 }
 
 void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
