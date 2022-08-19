@@ -21,7 +21,7 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
-#include <set>
+#include "Message/UniformCommunicateError.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 
@@ -483,7 +483,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
   }
   else
-    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints." << std::endl;
+    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints."
+              << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
   //     app_log() << "</active-optimizables>" << std::endl;
@@ -1068,8 +1069,21 @@ bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weigh
 UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
 {
   const auto& names(variational_subset_names);
-  /// survey all the optimizable objects
+  // survey all the optimizable objects
   const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  // check if input names are valid
+  for (auto& name : names)
+    if (std::find_if(opt_obj_refs.begin(), opt_obj_refs.end(),
+                     [&name](const OptimizableObject& obj) { return name == obj.getName(); }) == opt_obj_refs.end())
+    {
+      std::ostringstream msg;
+      msg << "Variational subset entry " << name << " doesn't exist in the trial wavefunction which contains :";
+      for (OptimizableObject& obj : opt_obj_refs)
+        msg << " '" << obj.getName() << "'";
+      msg << "." << std::endl;
+      throw UniformCommunicateError(msg.str());
+    }
+
   for (OptimizableObject& obj : opt_obj_refs)
     obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&obj](const std::string& name) {
                                            return name == obj.getName();
@@ -1077,8 +1091,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunctio
   return opt_obj_refs;
 }
 
-void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi,
-                                                  const opt_variables_type& opt_variables) const
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const
 {
   const auto opt_obj_refs = extractOptimizableObjects(psi);
   for (OptimizableObject& obj : opt_obj_refs)
