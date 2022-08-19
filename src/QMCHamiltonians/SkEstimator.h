@@ -30,6 +30,7 @@ class SkEstimator : public OperatorBase
 public:
   SkEstimator(ParticleSet& elns);
 
+  std::string getClassName() const override { return "SkEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

@@ -31,6 +31,7 @@ class SkAllEstimator : public OperatorBase
 public:
   SkAllEstimator(ParticleSet& ions, ParticleSet& elns);
 
+  std::string getClassName() const override { return "SkAllEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

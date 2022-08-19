@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-class RotatedSPOs : public SPOSet
+class RotatedSPOs : public SPOSet, public OptimizableObject
 {
 public:
   //constructor
@@ -193,10 +193,11 @@ public:
                            const std::vector<int>& detData_up,
                            const std::vector<std::vector<int>>& lookup_tbl);
 
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
-  {
-    opt_obj_refs.push_back(*this);
-  }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
+  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
+  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
+  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
 
   void checkInVariables(opt_variables_type& active) override
   {

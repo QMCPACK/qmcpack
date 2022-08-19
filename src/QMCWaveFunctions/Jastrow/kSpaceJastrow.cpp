@@ -237,7 +237,11 @@ kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions,
                              RealType twoBodyCutoff,
                              std::string twobodyid,
                              bool twoBodySpin)
-    : WaveFunctionComponent(elecs.getName()), Ions(ions), OneBodyID(onebodyid), TwoBodyID(twobodyid)
+    : WaveFunctionComponent(elecs.getName()),
+      OptimizableObject("kspace_" + elecs.getName()),
+      Ions(ions),
+      OneBodyID(onebodyid),
+      TwoBodyID(twobodyid)
 {
   Prefactor     = 1.0 / elecs.getLattice().Volume;
   NumIonSpecies = 0;
@@ -774,7 +778,9 @@ std::unique_ptr<WaveFunctionComponent> kSpaceJastrow::makeClone(ParticleSet& tqp
 
 /** constructor to initialize Ions
  */
-kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions) : WaveFunctionComponent(ions.getName()), Ions(ions) {}
+kSpaceJastrow::kSpaceJastrow(const ParticleSet& ions)
+    : WaveFunctionComponent(ions.getName()), OptimizableObject("kspace_" + ions.getName()), Ions(ions)
+{}
 
 void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 {

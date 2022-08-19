@@ -63,6 +63,7 @@ struct LocalECPotential : public OperatorBase
 
   LocalECPotential(const ParticleSet& ions, ParticleSet& els);
 
+  std::string getClassName() const override { return "LocalECPotential"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)

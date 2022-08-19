@@ -66,6 +66,12 @@ public:
     */
   void checkInVariables(opt_variables_type& o) override;
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    opt_obj_refs.push_back(*LongRangeRPA);
+    ShortRangeRPA->extractOptimizableObjectRefs(opt_obj_refs);
+  }
+
   /** print the state, e.g., optimizables */
   void reportStatus(std::ostream& os) override;
 
