@@ -830,8 +830,8 @@ void kSpaceJastrow::copyFrom(const kSpaceJastrow& old)
 
 void kSpaceJastrow::evaluateDerivatives(ParticleSet& P,
                                         const opt_variables_type& active,
-                                        std::vector<ValueType>& dlogpsi,
-                                        std::vector<ValueType>& dhpsioverpsi)
+                                        Vector<ValueType>& dlogpsi,
+                                        Vector<ValueType>& dhpsioverpsi)
 {
   bool recalculate(false);
   for (int k = 0; k < myVars.size(); ++k)

@@ -206,8 +206,8 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-1.626231256363484));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.2062050179872));
@@ -278,8 +278,8 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
@@ -373,8 +373,8 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-1.2132292565412577));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(3);
-  std::vector<ValueType> dhpsioverpsi(3);
+  Vector<ValueType> dlogpsi(3);
+  Vector<ValueType> dhpsioverpsi(3);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.206205017987166));
@@ -442,8 +442,8 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
@@ -505,8 +505,8 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 

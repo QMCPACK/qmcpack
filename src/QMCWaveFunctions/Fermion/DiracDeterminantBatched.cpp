@@ -990,8 +990,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               const opt_variables_type& active,
-                                                              std::vector<Value>& dlogpsi,
-                                                              std::vector<Value>& dhpsioverpsi)
+                                                              Vector<Value>& dlogpsi,
+                                                              Vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }

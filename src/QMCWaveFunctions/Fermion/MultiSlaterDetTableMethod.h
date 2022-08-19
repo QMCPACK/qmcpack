@@ -185,12 +185,12 @@ public:
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi) override;
+                             Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
@@ -257,12 +257,12 @@ private:
 
   void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi);
+                                                Vector<ValueType>& dlogpsi,
+                                                Vector<ValueType>& dhpsioverpsi);
 
   void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
-                                                  std::vector<ValueType>& dlogpsi);
+                                                  Vector<ValueType>& dlogpsi);
 
   /** compute parameter derivatives of CI/CSF coefficients
    * @param multi_det_to_ref multideterminant over the reference single determinant
@@ -270,7 +270,7 @@ private:
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
   void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
-                              std::vector<ValueType>& dlogpsi,
+                              Vector<ValueType>& dlogpsi,
                               int det_id = -1) const;
 
   /// determinant collection

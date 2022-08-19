@@ -308,8 +308,8 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
-                                      std::vector<ValueType>& dlogpsi,
-                                      std::vector<ValueType>& dhpsioverpsi,
+                                      Vector<ValueType>& dlogpsi,
+                                      Vector<ValueType>& dhpsioverpsi,
                                       const int& FirstIndex,
                                       const int& LastIndex)
 {
@@ -404,15 +404,15 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     int kk              = myVars.where(i);
     const int p         = m_act_rot_inds.at(i).first;
     const int q         = m_act_rot_inds.at(i).second;
-    dlogpsi.at(kk)      = T(p, q);
-    dhpsioverpsi.at(kk) = ValueType(-0.5) * Y4(p, q);
+    dlogpsi[kk]      = T(p, q);
+    dhpsioverpsi[kk] = ValueType(-0.5) * Y4(p, q);
   }
 }
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
-                                      std::vector<ValueType>& dlogpsi,
-                                      std::vector<ValueType>& dhpsioverpsi,
+                                      Vector<ValueType>& dlogpsi,
+                                      Vector<ValueType>& dhpsioverpsi,
                                       const ValueType& psiCurrent,
                                       const std::vector<ValueType>& Coeff,
                                       const std::vector<size_t>& C2node_up,
@@ -502,7 +502,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
 void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
                                         const opt_variables_type& optvars,
-                                        std::vector<ValueType>& dlogpsi,
+                                        Vector<ValueType>& dlogpsi,
                                         const QTFull::ValueType& psiCurrent,
                                         const std::vector<ValueType>& Coeff,
                                         const std::vector<size_t>& C2node_up,
@@ -535,8 +535,8 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
   }
 }
 
-void RotatedSPOs::table_method_eval(std::vector<ValueType>& dlogpsi,
-                                    std::vector<ValueType>& dhpsioverpsi,
+void RotatedSPOs::table_method_eval(Vector<ValueType>& dlogpsi,
+                                    Vector<ValueType>& dhpsioverpsi,
                                     const ParticleSet::ParticleLaplacian& myL_J,
                                     const ParticleSet::ParticleGradient& myG_J,
                                     const size_t nel,
@@ -965,7 +965,7 @@ $
   }
 }
 
-void RotatedSPOs::table_method_evalWF(std::vector<ValueType>& dlogpsi,
+void RotatedSPOs::table_method_evalWF(Vector<ValueType>& dlogpsi,
                                       const size_t nel,
                                       const size_t nmo,
                                       const ValueType& psiCurrent,
