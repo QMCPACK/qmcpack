@@ -358,8 +358,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
             QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                            dhpsioverpsi_array, compute_nlpp);
 
-        handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array,base_sample_index);
-        
+        handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, base_sample_index);
+
         for (int ib = 0; ib < current_batch_size; ib++)
         {
           const int is = base_sample_index + ib;
