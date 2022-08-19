@@ -1071,8 +1071,8 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
                                             const opt_variables_type& optvars,
-                                            std::vector<ValueType>& dlogpsi,
-                                            std::vector<ValueType>& dhpsioverpsi)
+                                            Vector<ValueType>& dlogpsi,
+                                            Vector<ValueType>& dhpsioverpsi)
 {
   //     // First, zero out derivatives
   //  This should only be done for some variables.
@@ -1094,8 +1094,8 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
   const int nparam = dlogpsi.nparam();
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
-    std::vector<ValueType> tmp_dlogpsi(nparam);
-    std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+    Vector<ValueType> tmp_dlogpsi(nparam);
+    Vector<ValueType> tmp_dhpsioverpsi(nparam);
     TrialWaveFunction& twf = wf_list[iw];
     for (int i = 0; i < twf.Z.size(); i++)
       twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
@@ -1113,7 +1113,7 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
 
 void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               const opt_variables_type& optvars,
-                                              std::vector<ValueType>& dlogpsi)
+                                              Vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
     Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);

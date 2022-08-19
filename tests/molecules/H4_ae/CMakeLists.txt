@@ -315,6 +315,19 @@ if(NOT QMC_CUDA)
       H4_OPT_SCALARS # OPT step 5
     )
 
+    list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
+    qmc_run_and_check(
+      short-H4-opt-OneShiftOnly-onlyjas
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      optm-OneShiftOnly-onlyjas.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      5
+      H4_OPT_SCALARS_ONLY_JAS # OPT step 5
+    )
+
     list(APPEND H4_OPT_SCALARS_ONLY_MSD "totenergy" "-2.138635 0.0009") # total energy
     qmc_run_and_check(
       short-H4-opt-OneShiftOnly-onlymsd
@@ -328,17 +341,26 @@ if(NOT QMC_CUDA)
       H4_OPT_SCALARS_ONLY_MSD # OPT step 5
     )
 
-    list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
     qmc_run_and_check(
-      short-H4-opt-OneShiftOnly-onlyjas
+      short-H4-optbatch-OneShiftOnly-multistep
       "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
       H4-OneShiftOnly
-      optm-OneShiftOnly-onlyjas.xml
+      optm-OneShiftOnly-multistep.xml
       1
       16
       ${SUCCESS_STATUS_MP}
-      5
-      H4_OPT_SCALARS_ONLY_JAS # OPT step 5
+      11
+      H4_OPT_SCALARS_ONLY_MSD # OPT step 011
+    )
+
+    qmc_run_and_check(
+      deterministic-input_check-invalid_variational_subset
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      det-input-check-optm-invalid-subset.xml
+      2
+      1
+      FALSE
     )
   else()
     message(VERBOSE

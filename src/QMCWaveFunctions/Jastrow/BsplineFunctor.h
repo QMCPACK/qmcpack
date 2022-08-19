@@ -682,6 +682,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
   {
     if (notOpt)
       return;
+    myVars.setIndexDefault();
     active.insertFrom(myVars);
   }
 

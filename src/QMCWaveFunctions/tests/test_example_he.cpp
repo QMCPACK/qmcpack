@@ -219,8 +219,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   // Finite difference derivative approximation
   LogValueType fd_logpsi = (logpsi_plus_h - logpsi) / LogValueType(h);
 
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
   REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));

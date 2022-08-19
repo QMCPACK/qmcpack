@@ -16,7 +16,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 # Directory where input file is copied to, and working directory for unit test
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-add_executable(${UTEST_EXE} test_xml.cpp)
+add_executable(${UTEST_EXE} test_xml.cpp test_AttributeSet.cpp test_ParameterSet.cpp)
 target_include_directories(${UTEST_EXE} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../../")
 target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcio_xml)
 
