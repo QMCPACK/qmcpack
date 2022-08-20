@@ -137,6 +137,19 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
   return evaluate(P);
 }
 
+void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         const opt_variables_type& optvars,
+      const RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi) const
+{
+  RefVectorWithLeader<TrialWaveFunction> wf_list(o_list.getCastedLeader<BareKineticEnergy>().psi_);
+  for(int i = 0; i < o_list.size(); i++)
+    wf_list.push_back(o_list.getCastedElement<BareKineticEnergy>(i).psi_);
+  mw_evaluate(o_list, wf_list, p_list);
+  TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars, const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
+}
+
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
  *  This general function represents the OperatorBase interface for computing.  For an operator \hat{O}, this

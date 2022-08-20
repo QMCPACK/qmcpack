@@ -126,7 +126,7 @@ void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
-                                                       RecordArray<ValueType>& dlogpsi,
+                                                       const RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const
 {
   const int nparam = dlogpsi.nparam();

@@ -94,6 +94,12 @@ public:
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
 
+void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                         const RefVectorWithLeader<ParticleSet>& p_list,
+                                         const opt_variables_type& optvars,
+      const RecordArray<ValueType>& dlogpsi,
+      RecordArray<ValueType>& dhpsioverpsi) const override;
+
   /** Evaluate the contribution of this component for multiple walkers reporting
    *  to registered listeners from Estimators.
    */
