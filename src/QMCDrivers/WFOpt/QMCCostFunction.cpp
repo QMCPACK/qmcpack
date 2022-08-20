@@ -188,7 +188,7 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
       {
         app_log() << " Found " << components.size() << " wavefunction dependent components in the Hamiltonian";
         if (components.size())
-          for(const OperatorBase& component: components)
+          for (const OperatorBase& component : components)
             app_log() << " '" << component.getName() << "'";
         app_log() << "." << std::endl;
       }
@@ -263,7 +263,8 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
+                                           *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -292,9 +293,9 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
 
       e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp * etmp;
-      saved[ENERGY_FIXED] = saved[ENERGY_TOT];
+      saved[ENERGY_FIXED]                 = saved[ENERGY_TOT];
       const auto twf_dependent_components = hClones[ip]->getTWFDependentComponents();
-      for (const OperatorBase& component: twf_dependent_components)
+      for (const OperatorBase& component : twf_dependent_components)
         saved[ENERGY_FIXED] -= component.getValue();
     }
     //add them all using reduction
@@ -386,7 +387,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
+                                           *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -434,9 +436,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       e0 += saved[ENERGY_TOT] = etmp;
       e2 += etmp * etmp;
 
-      saved[ENERGY_FIXED] = saved[ENERGY_TOT];
+      saved[ENERGY_FIXED]                 = saved[ENERGY_TOT];
       const auto twf_dependent_components = hClones[ip]->getTWFDependentComponents();
-      for (const OperatorBase& component: twf_dependent_components)
+      for (const OperatorBase& component : twf_dependent_components)
         saved[ENERGY_FIXED] -= component.getValue();
     }
 
@@ -543,8 +545,7 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
 
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved) +
-            saved[ENERGY_FIXED];
+            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved) + saved[ENERGY_FIXED];
         ;
 
         for (int i = 0; i < NumOptimizables; i++)

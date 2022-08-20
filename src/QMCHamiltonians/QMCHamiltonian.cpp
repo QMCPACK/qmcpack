@@ -906,7 +906,7 @@ RefVector<OperatorBase> QMCHamiltonian::getTWFDependentComponents()
 {
   RefVector<OperatorBase> components;
   for (int i = 0; i < H.size(); i++)
-    if(H[i]->dependsOnWaveFunction())
+    if (H[i]->dependsOnWaveFunction())
       components.push_back(*H[i]);
   return components;
 }

@@ -61,7 +61,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid      = true;
+  IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
@@ -326,10 +326,13 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
-  if(!includeNonlocalH.empty())
-    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file." << std::endl;
-  if(!computeNLPPderiv.empty())
-    app_warning() << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file." << std::endl;
+  if (!includeNonlocalH.empty())
+    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file."
+                  << std::endl;
+  if (!computeNLPPderiv.empty())
+    app_warning()
+        << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file."
+        << std::endl;
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
