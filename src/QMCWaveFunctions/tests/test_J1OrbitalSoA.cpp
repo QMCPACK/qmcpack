@@ -95,8 +95,8 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   REQUIRE(nparam == 2);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
@@ -195,8 +195,8 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
   REQUIRE(nparam == 4);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
@@ -292,8 +292,8 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
   REQUIRE(nparam == 2);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 

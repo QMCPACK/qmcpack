@@ -28,6 +28,7 @@ private:
 public:
   ChiesaCorrection(ParticleSet& ptcl, const TrialWaveFunction& psi) : psi_ref(psi), ptcl_ref(ptcl) {}
 
+  std::string getClassName() const override { return "ChiesaCorrection"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

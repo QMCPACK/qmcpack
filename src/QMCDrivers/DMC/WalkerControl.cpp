@@ -549,14 +549,12 @@ std::vector<WalkerControl::IndexType> WalkerControl::syncFutureWalkersPerRank(Co
 bool WalkerControl::put(xmlNodePtr cur)
 {
   int nw_target = 0, nw_max = 0;
-  std::string nonblocking;
-  std::string debug_disable_branching;
   ParameterSet params;
   params.add(max_copy_, "maxCopy");
   params.add(nw_target, "targetwalkers");
   params.add(nw_max, "max_walkers");
-  params.add(nonblocking, "use_nonblocking", {"yes", "no"});
-  params.add(debug_disable_branching, "debug_disable_branching", {"no", "yes"});
+  params.add(use_nonblocking_, "use_nonblocking", {true});
+  params.add(debug_disable_branching_, "debug_disable_branching", {false});
 
   try
   {
@@ -566,9 +564,6 @@ bool WalkerControl::put(xmlNodePtr cur)
   {
     myComm->barrier_and_abort("WalkerControl::put parsing error. " + std::string(re.what()));
   }
-
-  use_nonblocking_         = nonblocking == "yes";
-  debug_disable_branching_ = debug_disable_branching == "yes";
 
   setMinMax(nw_target, nw_max);
 

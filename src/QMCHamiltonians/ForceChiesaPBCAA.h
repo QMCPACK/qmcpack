@@ -61,6 +61,8 @@ struct ForceChiesaPBCAA : public OperatorBase, public ForceBase
 
   ForceChiesaPBCAA(ParticleSet& ions, ParticleSet& elns, bool firsttime = true);
 
+  std::string getClassName() const override { return "ForceChiesaPBCAA"; }
+
   Return_t evaluate(ParticleSet& P) override;
 
   void InitMatrix();

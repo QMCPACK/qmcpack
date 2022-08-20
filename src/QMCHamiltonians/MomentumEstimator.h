@@ -21,6 +21,8 @@ class MomentumEstimator : public OperatorBase
 {
 public:
   MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi);
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "MomentumEstimator"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;

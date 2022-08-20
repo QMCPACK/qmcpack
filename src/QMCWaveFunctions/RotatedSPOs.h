@@ -99,15 +99,15 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
@@ -133,7 +133,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const QTFull::ValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
@@ -148,8 +148,8 @@ public:
                              const std::vector<std::vector<int>>& lookup_tbl) override;
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi,
+  void table_method_eval(Vector<ValueType>& dlogpsi,
+                         Vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian& myL_J,
                          const ParticleSet::ParticleGradient& myG_J,
                          const size_t nel,
@@ -177,7 +177,7 @@ public:
                          const size_t NP2,
                          const std::vector<std::vector<int>>& lookup_tbl);
 
-  void table_method_evalWF(std::vector<ValueType>& dlogpsi,
+  void table_method_evalWF(Vector<ValueType>& dlogpsi,
                            const size_t nel,
                            const size_t nmo,
                            const ValueType& psiCurrent,

@@ -169,14 +169,14 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
@@ -185,7 +185,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
                              const PsiValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,

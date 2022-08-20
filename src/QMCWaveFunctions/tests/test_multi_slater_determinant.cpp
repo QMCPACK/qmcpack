@@ -137,8 +137,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   REQUIRE(nparam == 1486);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 
   // Numbers not validated

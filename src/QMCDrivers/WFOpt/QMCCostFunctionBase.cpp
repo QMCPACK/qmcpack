@@ -1077,7 +1077,7 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunctio
                      [&name](const OptimizableObject& obj) { return name == obj.getName(); }) == opt_obj_refs.end())
     {
       std::ostringstream msg;
-      msg << "Variational subset entry " << name << " doesn't exist in the trial wavefunction which contains :";
+      msg << "Variational subset entry '" << name << "' doesn't exist in the trial wavefunction which contains";
       for (OptimizableObject& obj : opt_obj_refs)
         msg << " '" << obj.getName() << "'";
       msg << "." << std::endl;
