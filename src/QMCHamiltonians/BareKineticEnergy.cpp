@@ -132,7 +132,8 @@ Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
                                                         const Vector<ValueType>& dlogpsi,
                                                         Vector<ValueType>& dhpsioverpsi)
 {
-  // KineticEnergy is always the first hamiltonian element. It is responsible for calculating dlogpsi.
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
   psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
   return evaluate(P);
 }
@@ -147,6 +148,8 @@ void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithL
   for (int i = 0; i < o_list.size(); i++)
     wf_list.push_back(o_list.getCastedElement<BareKineticEnergy>(i).psi_);
   mw_evaluate(o_list, wf_list, p_list);
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars,
                                                      const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
 }

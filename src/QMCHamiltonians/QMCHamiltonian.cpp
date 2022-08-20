@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
+#include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -29,6 +30,7 @@
 
 namespace qmcplusplus
 {
+
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -612,6 +614,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
                                                                              Vector<ValueType>& dlogpsi,
                                                                              Vector<ValueType>& dhpsioverpsi)
 {
+  // The first componennt must be BareKineticEnergy for both handling KineticEnergy and dlogpsi computation
+  // by calling TWF::evaluateDerivatives inside BareKineticEnergy::evaluateValueAndDerivatives
+  assert(dynamic_cast<BareKineticEnergy*>(H[0].get()) &&
+         "BUG: The first componennt in Hamiltonian must be BareKineticEnergy.");
   LocalEnergy = KineticEnergy = H[0]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
   for (int i = 1; i < H.size(); ++i)
     LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);

@@ -132,6 +132,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
   TrialWaveFunction* targetPsi = psi_it->second.get();
+  // KineticEnergy must be the first element in the hamiltonian array.
   if (defaultKE != "no")
     targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl, *targetPsi), "Kinetic");
   xmlNodePtr cur_saved(cur);
@@ -308,8 +309,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
-        std::unique_ptr<DensityMatrices1B> apot =
-            std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
+        std::unique_ptr<DensityMatrices1B> apot = std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
         apot->put(cur);
         targetH->addOperator(std::move(apot), potName, false);
       }
