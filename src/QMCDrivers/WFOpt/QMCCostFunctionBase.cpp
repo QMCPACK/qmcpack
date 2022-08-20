@@ -53,7 +53,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       msg_stream(0),
       m_wfPtr(NULL),
       m_doc_out(NULL),
-      includeNonlocalH("no"),
       debug_stream(0)
 {
   GEVType = "mixed";
@@ -63,7 +62,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
   IsValid      = true;
-  useNLPPDeriv = false;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
@@ -309,6 +307,7 @@ bool QMCCostFunctionBase::checkParameters()
  */
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
+  std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
   std::string output_override_str("no");
@@ -317,8 +316,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
-  m_param.add(includeNonlocalH, "nonlocalpp");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {"yes", "no"});
+  m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {}, TagStatus::DEPRECATED);
   m_param.add(w_beta, "beta");
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
@@ -327,20 +326,16 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
+  if(!includeNonlocalH.empty())
+    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file." << std::endl;
+  if(!computeNLPPderiv.empty())
+    app_warning() << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file." << std::endl;
+
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
 
   if (output_override_str == "yes")
     do_override_output = true;
-
-  if (includeNonlocalH == "yes")
-    includeNonlocalH = "NonLocalECP";
-
-  if (computeNLPPderiv != "no" && includeNonlocalH != "no")
-  {
-    app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
-    useNLPPDeriv = true;
-  }
 
   variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
 

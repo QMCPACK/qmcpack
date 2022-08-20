@@ -241,7 +241,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
       HDerivRecords_.resize(rank_local_num_samples_, NumOptimizables);
     }
   }
-  OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : H.getHamiltonian(includeNonlocalH);
   //    synchronize the random number generator with the node
   (*MoverRng[0]) = (*RngSaved[0]);
   H.setRandomGenerator(MoverRng[0]);
@@ -270,8 +269,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
                           std::vector<ParticleGradient*>& gradPsi, std::vector<ParticleLaplacian*>& lapPsi,
                           Matrix<Return_rt>& RecordsOnNode, Matrix<Return_rt>& DerivRecords,
                           Matrix<Return_rt>& HDerivRecords, const SampleStack& samples, opt_variables_type& optVars,
-                          bool needGrads, const std::string& includeNonlocalH,
-                          EngineHandle& handle) {
+                          bool needGrads, EngineHandle& handle) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
@@ -367,12 +365,9 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
           RecordsOnNode[is][REWEIGHT]     = 1.0;
           RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
 
-          if (includeNonlocalH != "no")
-          {
-            OperatorBase* nlpp = h_list[ib].getHamiltonian(includeNonlocalH);
-            if (nlpp)
-              RecordsOnNode[is][ENERGY_FIXED] -= nlpp->getValue();
-          }
+          const auto twf_dependent_components = h_list[ib].getTWFDependentComponents();
+          for (const OperatorBase& component: twf_dependent_components)
+            RecordsOnNode[is][ENERGY_FIXED] -= component.getValue();
         }
       }
       else
@@ -399,7 +394,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptConfig, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi, needGrads,
-              includeNonlocalH, handle);
+              handle);
   // Sum energy values over crowds
   for (int i = 0; i < opt_eval_.size(); i++)
   {
@@ -478,7 +473,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   }
 
   //Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
-  const bool nlpp    = (includeNonlocalH != "no");
   Return_rt wgt_tot  = 0.0;
   Return_rt wgt_tot2 = 0.0;
 
@@ -486,8 +480,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
   assert(rank_local_num_samples_ == samples_.getNumSamples());
 
   Return_rt inv_n_samples = 1.0 / samples_.getGlobalNumSamples();
-
-  bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
 
   const size_t opt_num_crowds = walkers_per_crowd_.size();
   // Divide samples among crowds
@@ -503,7 +495,6 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
                               const SampleStack& samples, const opt_variables_type& optVars,
                               bool compute_all_from_scratch, Return_rt vmc_or_dmc, bool needGrad) {
     CostFunctionCrowdData& opt_data = *opt_crowds[crowd_id];
-
 
     const int local_samples = samples_per_crowd_offsets[crowd_id + 1] - samples_per_crowd_offsets[crowd_id];
 
@@ -626,6 +617,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
     }
   };
 
+  //if we have more than KE depending on TWF, TWF must be fully recomputed.
+  const bool compute_all_from_scratch = H.getTWFDependentComponents().size() > 1;
   ParallelExecutor<> crowd_tasks;
   crowd_tasks(opt_num_crowds, evalOptCorrelated, opt_eval_, samples_per_crowd_offsets, walkers_per_crowd_, dLogPsi,
               d2LogPsi, RecordsOnNode_, DerivRecords_, HDerivRecords_, samples_, OptVariablesForPsi,
