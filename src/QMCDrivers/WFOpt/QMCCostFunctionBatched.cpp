@@ -171,27 +171,12 @@ void QMCCostFunctionBatched::GradCost(std::vector<Return_rt>& PGradient,
 
 void QMCCostFunctionBatched::getConfigurations(const std::string& aroot)
 {
-  app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
-  outputManager.pause();
-
-  if (H_KE_node_names_.size() == 0)
-  {
-    H_KE_node_names_.reserve(2);
-    H_KE_node_names_.emplace_back("Kinetic");
-    if (includeNonlocalH != "no")
-    {
-      OperatorBase* a(H.getHamiltonian(includeNonlocalH));
-      outputManager.resume();
-      if (a)
-      {
-        app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-        H_KE_node_names_.emplace_back(includeNonlocalH);
-      }
-      else
-        app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-    }
-  }
-  outputManager.resume();
+  auto components = H.getTWFDependentComponents();
+  app_log() << " Found " << components.size() << " wavefunction dependent components in the Hamiltonian";
+  if (components.size())
+    for(const OperatorBase& component: components)
+      app_log() << " '" << component.getName() << "'";
+  app_log() << "." << std::endl;
 
   rank_local_num_samples_ = samples_.getNumSamples();
 
@@ -268,7 +253,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   opt_eval_.resize(opt_num_crowds);
   for (int i = 0; i < opt_num_crowds; i++)
     opt_eval_[i] =
-        std::make_unique<CostFunctionCrowdData>(walkers_per_crowd_[i], W, Psi, H, H_KE_node_names_, *MoverRng[0]);
+        std::make_unique<CostFunctionCrowdData>(walkers_per_crowd_[i], W, Psi, H, *MoverRng[0]);
   outputManager.resume();
 
 

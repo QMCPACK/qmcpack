@@ -902,6 +902,15 @@ OperatorBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
   return nullptr;
 }
 
+RefVector<OperatorBase> QMCHamiltonian::getTWFDependentComponents()
+{
+  RefVector<OperatorBase> components;
+  for (int i = 0; i < H.size(); i++)
+    if(H[i]->dependsOnWaveFunction())
+      components.push_back(*H[i]);
+  return components;
+}
+
 void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)
 {
   for (int i = 0; i < H.size(); i++)

@@ -30,8 +30,7 @@ public:
   using ValueType        = OperatorBase::ValueType;
   using RealType         = OperatorBase::RealType;
 
-  /// record operator reference
-  void addOperator(OperatorBase& op);
+  HamiltonianRef(const RefVector<OperatorBase>);
 
   /// the same evaluateValueAndDerivatives as QMCHamiltonian
   FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
@@ -42,18 +41,11 @@ public:
   /// the same evaluate as QMCHamiltonian
   FullPrecRealType evaluate(ParticleSet& P);
 
-#ifdef QMC_CUDA
-  /// the same evaluate as QMCHamiltonian
-  void evaluate(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-#endif
-
-  int addObservables(ParticleSet& P);
-
   int size() const { return Hrefs_.size(); }
 
 private:
   /// collected references
-  RefVector<OperatorBase> Hrefs_;
+  const RefVector<OperatorBase> Hrefs_;
 };
 
 } // namespace qmcplusplus

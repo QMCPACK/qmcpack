@@ -183,24 +183,16 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
   outputManager.pause();
   //#pragma omp parallel for
   for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    if (H_KE_Node[ip] == 0)
+    if (!H_KE_Node[ip])
     {
-      H_KE_Node[ip] = std::make_unique<HamiltonianRef>();
-      H_KE_Node[ip]->addOperator(*hClones[ip]->getHamiltonian("Kinetic"));
-      if (includeNonlocalH != "no")
-      {
-        OperatorBase* a(hClones[ip]->getHamiltonian(includeNonlocalH));
-        if (a)
-        {
-          app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node[ip]->addOperator(*a);
-        }
-        else
-          app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-      }
+      auto components = hClones[ip]->getTWFDependentComponents();
+      app_log() << " Found " << components.size() << " wavefunction dependent components in the Hamiltonian";
+      if (components.size())
+        for(const OperatorBase& component: components)
+          app_log() << " '" << component.getName() << "'";
+      app_log() << "." << std::endl;
+      H_KE_Node[ip] = std::make_unique<HamiltonianRef>(components);
     }
-  }
 
   //load samples from SampleStack
   outputManager.resume();

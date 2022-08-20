@@ -92,6 +92,10 @@ public:
    */
   OperatorBase* getHamiltonian(int i) { return H[i].get(); }
 
+  /** return components, auxH not included, depending on TWF.
+   */
+  RefVector<OperatorBase> getTWFDependentComponents();
+
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
