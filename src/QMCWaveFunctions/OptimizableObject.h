@@ -56,7 +56,7 @@ public:
    * class B: public OptimizableObject
    * {
    *   A objA;
-   *   checkInVariablesExclusive() { // should not call objA.checkInVariablesExclusive(); }
+   *   checkInVariablesExclusive() { // should not call objA.checkInVariablesExclusive() if objA has been extracted; }
    * };
    * A vector of OptimizableObject, will be created by calling extractOptimizableObjects().
    * All the checkInVariablesExclusive() will be called through this vector and thus

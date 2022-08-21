@@ -121,13 +121,6 @@ void CompositeSPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector& ps
 }
 #endif
 
-//methods to be implemented later
-void CompositeSPOSet::resetParameters(const opt_variables_type& optVariables)
-{
-  for (int c = 0; c < components.size(); ++c)
-    components[c]->resetParameters(optVariables);
-}
-
 void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
                                            int first,
                                            int last,

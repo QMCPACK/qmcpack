@@ -200,20 +200,9 @@ void RPAJastrow::makeShortRange()
   Psi.push_back(std::move(j2));
 }
 
-void RPAJastrow::resetParameters(const opt_variables_type& active)
-{
-  //This code was removed in 6 April 2017.  To reimplement, please consult a revision
-  //earlier than this.
-}
-
-void RPAJastrow::checkOutVariables(const opt_variables_type& active) {}
-
-void RPAJastrow::checkInVariables(opt_variables_type& active) {}
-
-void RPAJastrow::reportStatus(std::ostream& os)
-{
-  for (int i = 0; i < Psi.size(); i++)
-    Psi[i]->reportStatus(os);
+void RPAJastrow::checkOutVariables(const opt_variables_type& active) {
+  LongRangeRPA->checkOutVariables(active);
+  ShortRangeRPA->checkOutVariables(active);
 }
 
 RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,

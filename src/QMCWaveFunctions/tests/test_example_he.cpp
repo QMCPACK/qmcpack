@@ -192,7 +192,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   const int nparam = 1;
   optimize::VariableSet var_param;
-  example_he->checkInVariables(var_param);
+  example_he->checkInVariablesExclusive(var_param);
   REQUIRE(var_param.size_of_active() == nparam);
 
   example_he->checkOutVariables(var_param);
@@ -203,7 +203,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   RealType new_B = old_B + h;
 
   var_param["B"] = new_B;
-  example_he->resetParameters(var_param);
+  example_he->resetParametersExclusive(var_param);
   REQUIRE(example_he->B == Approx(new_B));
 
   ParticleSet::ParticleGradient grad_plus_h;

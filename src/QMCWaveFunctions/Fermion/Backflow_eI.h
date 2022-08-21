@@ -93,13 +93,13 @@ public:
   void resetParameters(const opt_variables_type& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
-      uniqueRadFun[i]->resetParameters(active);
+      uniqueRadFun[i]->resetParametersExclusive(active);
   }
 
   void checkInVariables(opt_variables_type& active) override
   {
     for (int i = 0; i < uniqueRadFun.size(); i++)
-      uniqueRadFun[i]->checkInVariables(active);
+      uniqueRadFun[i]->checkInVariablesExclusive(active);
   }
 
   void checkOutVariables(const opt_variables_type& active) override

@@ -105,16 +105,11 @@ public:
 
   bool isOptimizable() const override { return opt_C || opt_F; }
 
-  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
-  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
-  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
-
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) final
   {
     active.insertFrom(myVars);
     C->checkInVariables(active);
   }
-
 
   void checkOutVariables(const opt_variables_type& active) override
   {
@@ -123,7 +118,7 @@ public:
   }
 
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     int ia, IJ, JI;
     std::string id;

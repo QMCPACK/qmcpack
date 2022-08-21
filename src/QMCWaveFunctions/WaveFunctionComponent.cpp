@@ -199,35 +199,11 @@ void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
                            "must be overloaded when the WFC is optimizable.");
 }
 
-void WaveFunctionComponent::checkInVariables(opt_variables_type& active)
-{
-  if (isOptimizable())
-    throw std::logic_error("Bug!! " + getClassName() +
-                           "::checkInVariables "
-                           "must be overloaded when the WFC is optimizable.");
-}
-
 void WaveFunctionComponent::checkOutVariables(const opt_variables_type& active)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
                            "::checkOutVariables "
-                           "must be overloaded when the WFC is optimizable.");
-}
-
-void WaveFunctionComponent::resetParameters(const opt_variables_type& active)
-{
-  if (isOptimizable())
-    throw std::logic_error("Bug!! " + getClassName() +
-                           "::resetParameters "
-                           "must be overloaded when the WFC is optimizable.");
-}
-
-void WaveFunctionComponent::reportStatus(std::ostream& os)
-{
-  if (isOptimizable())
-    throw std::logic_error("Bug!! " + getClassName() +
-                           "::reportStatus "
                            "must be overloaded when the WFC is optimizable.");
 }
 
