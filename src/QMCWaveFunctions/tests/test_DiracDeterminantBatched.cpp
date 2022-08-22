@@ -748,6 +748,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //Check ratios and grads for both walkers for proposed move
   std::vector<PsiValueType> ratios(2);
   std::vector<GradType> grads(2);
+  std::vector<PsiValueType> spingrads(2);
   dd.mw_ratioGrad(dd_ref_list, p_ref_list, 1, ratios, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
@@ -755,6 +756,16 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
     REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
     REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  }
+  
+  dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+    REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
   }
 
   //reject move and check for initial values for mw_evalGrad
@@ -765,6 +776,15 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
     REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
     REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+  }
+
+  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
+    REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
+    REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
   }
 
   //now make and accept move, checking new values
@@ -784,6 +804,10 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(G_list[iw].get()[1][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
     REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
+
+  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
 
 }
 
