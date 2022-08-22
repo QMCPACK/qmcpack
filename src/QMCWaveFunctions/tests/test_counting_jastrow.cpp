@@ -341,8 +341,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
      9.2144952390e+00, 4.6068416473e+00,-9.3975889104e+01,-8.8298321426e+01, 1.5097063606e+01,
      1.8605794463e+01,-7.3647009565e+00,-5.9114663448e-01,-3.9243955679e+00,-7.8630886487e+00,
     -4.4437106408e+00,-7.0313362338e+00,-2.3986142270e+01,-4.0724297500e+01};
-  std::vector<ValueType> dlogpsi;
-  std::vector<ValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
   dlogpsi.resize(num_derivs);
   dhpsioverpsi.resize(num_derivs);
   std::fill(dlogpsi.begin(), dlogpsi.end(), 0);
@@ -351,9 +351,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars;
   optVars.clear();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   optVars.resetIndex();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   cj->checkOutVariables(optVars);
   optVars.print(std::cout);
 
@@ -377,9 +377,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars2;
   optVars2.clear();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   optVars2.resetIndex();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   cj2->checkOutVariables(optVars2);
   optVars2.print(std::cout);
 
@@ -393,7 +393,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test resetParameters, recompute
   for(int p = 0; p < num_derivs; ++p)
     optVars[p] = 0;
-  cj->resetParameters(optVars);
+  cj->resetParametersExclusive(optVars);
   cj->recompute(elec);
   REQUIRE( cj->get_log_value() == LogValueType(0) );
 #endif

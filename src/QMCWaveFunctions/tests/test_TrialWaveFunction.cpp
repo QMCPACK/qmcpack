@@ -204,8 +204,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
 
-  UniqueOptObjRefs opt_obj_refs;
-  psi.extractOptimizableObjectRefs(opt_obj_refs);
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
   REQUIRE(opt_obj_refs.size() == 1);
 
   // testing batched interfaces

@@ -16,14 +16,14 @@
 #include "MultiSlaterDetTableMethod.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "Platforms/OMPTarget/ompReduction.hpp"
+#include "Platforms/OMPTarget/ompReductionComplex.hpp"
 
 namespace qmcplusplus
 {
 MultiSlaterDetTableMethod::MultiSlaterDetTableMethod(ParticleSet& targetPtcl,
                                                      std::vector<std::unique_ptr<MultiDiracDeterminant>>&& dets,
                                                      bool use_pre_computing)
-    : WaveFunctionComponent("msd"),
+    : OptimizableObject("CI"),
       RatioTimer(*timer_manager.createTimer(getClassName() + "::ratio")),
       offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
       EvalGradTimer(*timer_manager.createTimer(getClassName() + "::evalGrad")),
@@ -701,20 +701,13 @@ void MultiSlaterDetTableMethod::extractOptimizableObjectRefs(UniqueOptObjRefs& o
     Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
-void MultiSlaterDetTableMethod::checkInVariables(opt_variables_type& active)
+void MultiSlaterDetTableMethod::checkInVariablesExclusive(opt_variables_type& active)
 {
-  if (CI_Optimizable)
+  if (CI_Optimizable && myVars->size())
   {
-    if (myVars->size())
-      active.insertFrom(*myVars);
+    myVars->setIndexDefault();
+    active.insertFrom(*myVars);
   }
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
-
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
-      Dets[id]->checkInVariables(active);
 }
 
 void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& active)
@@ -722,20 +715,12 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
   if (CI_Optimizable)
     myVars->getIndex(active);
 
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
-
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
+  for (size_t id = 0; id < Dets.size(); id++)
+    if (Dets[id]->isOptimizable())
       Dets[id]->checkOutVariables(active);
 }
 
-/** resetParameters with optVariables
- *
- * USE_resetParameters
- */
-void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active)
+void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_type& active)
 {
   if (CI_Optimizable)
   {
@@ -777,21 +762,12 @@ void MultiSlaterDetTableMethod::resetParameters(const opt_variables_type& active
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
   }
-  bool all_Optimizable = true;
-  for (size_t id = 0; id < Dets.size() && all_Optimizable; id++)
-    all_Optimizable = Dets[id]->isOptimizable();
-
-  if (all_Optimizable)
-    for (size_t id = 0; id < Dets.size(); id++)
-      Dets[id]->resetParameters(active);
 }
-void MultiSlaterDetTableMethod::reportStatus(std::ostream& os) {}
-
 
 void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& optvars,
-                                                    std::vector<ValueType>& dlogpsi,
-                                                    std::vector<ValueType>& dhpsioverpsi)
+                                                    Vector<ValueType>& dlogpsi,
+                                                    Vector<ValueType>& dhpsioverpsi)
 {
   evaluateDerivativesWF(P, optvars, dlogpsi);
   if (CI_Optimizable)
@@ -927,8 +903,8 @@ void MultiSlaterDetTableMethod::evaluateDerivatives(ParticleSet& P,
 
 void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
                                                                          const opt_variables_type& optvars,
-                                                                         std::vector<ValueType>& dlogpsi,
-                                                                         std::vector<ValueType>& dhpsioverpsi)
+                                                                         Vector<ValueType>& dlogpsi,
+                                                                         Vector<ValueType>& dhpsioverpsi)
 {
   //Currently, the MultiDiracDeterminant::evaluateDerivatives works with a legacy design, essentially requiring only up and down determinants.
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.
@@ -957,7 +933,7 @@ void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivatives(Particl
 
 void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
                                                       const opt_variables_type& optvars,
-                                                      std::vector<ValueType>& dlogpsi)
+                                                      Vector<ValueType>& dlogpsi)
 {
   if (CI_Optimizable)
   {
@@ -973,7 +949,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
 
     if (recalculate)
     {
-      std::vector<ValueType> dlogpsi_local;
+      Vector<ValueType> dlogpsi_local;
       evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_local);
 
       const size_t nparams = csf_data_ ? csf_data_->coeffs.size() - 1 : C->size() - 1;
@@ -992,7 +968,7 @@ void MultiSlaterDetTableMethod::evaluateDerivativesWF(ParticleSet& P,
 }
 
 void MultiSlaterDetTableMethod::evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
-                                                       std::vector<ValueType>& dlogpsi,
+                                                       Vector<ValueType>& dlogpsi,
                                                        int det_id) const
 {
   const bool newpos = det_id < 0 ? false : true;
@@ -1058,7 +1034,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
     }
 
   // calculate derivatives based on the reference electron position
-  std::vector<ValueType> dlogpsi_ref, dlogpsi_vp;
+  Vector<ValueType> dlogpsi_ref, dlogpsi_vp;
   if (recalculate)
     evaluateDerivativesMSD(psi_ratio_to_ref_det_, dlogpsi_ref);
 
@@ -1092,7 +1068,7 @@ void MultiSlaterDetTableMethod::evaluateDerivRatios(const VirtualParticleSet& VP
 
 void MultiSlaterDetTableMethod::evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                                            const opt_variables_type& optvars,
-                                                                           std::vector<ValueType>& dlogpsi)
+                                                                           Vector<ValueType>& dlogpsi)
 {
   //Currently, the MultiDiracDeterminant::evaluateDerivativesWF works with a legacy design, essentially requiring only up and down determinants.
   //e.g. for spinor cases, we only have one determinant so this interface doesn't work.

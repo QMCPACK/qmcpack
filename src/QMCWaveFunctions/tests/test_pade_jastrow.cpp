@@ -198,8 +198,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   REQUIRE(nparam == 3);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 

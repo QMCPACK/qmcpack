@@ -64,8 +64,6 @@ public:
     APP_ABORT("CompositeSPOSet::" + method + " has not been implemented");
   }
 
-  void resetParameters(const opt_variables_type& optVariables) override;
-
   //methods to be implemented in the future (possibly)
 #ifdef QMC_CUDA
   void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi) override;

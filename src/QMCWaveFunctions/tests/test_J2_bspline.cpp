@@ -103,10 +103,11 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   REQUIRE(opt_obj_refs.size() == 1);
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
-  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+  Vector<WaveFunctionComponent::ValueType> dlogpsi;
+  Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
-  j2->checkInVariables(optvars);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   j2->checkOutVariables(optvars);

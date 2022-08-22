@@ -80,8 +80,6 @@ private:
 public:
   using Walker_t = ParticleSet::Walker_t;
 
-  void resetParameters(const opt_variables_type& active) override;
-  void checkInVariables(opt_variables_type& active) override;
   void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);

@@ -43,6 +43,7 @@ public:
   ~SpinDensity() override {}
 
   //standard interface
+  std::string getClassName() const override { return "SpinDensity"; }
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& P, TrialWaveFunction& psi) final;
   bool put(xmlNodePtr cur) override;
   Return_t evaluate(ParticleSet& P) override;

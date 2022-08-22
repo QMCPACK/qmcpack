@@ -23,11 +23,7 @@ namespace qmcplusplus
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 WaveFunctionComponent::WaveFunctionComponent(const std::string& obj_name)
-    : OptimizableObject(obj_name),
-      UpdateMode(ORB_WALKER),
-      Bytes_in_WFBuffer(0),
-      my_name_(obj_name),
-      log_value_(0.0)
+    : UpdateMode(ORB_WALKER), Bytes_in_WFBuffer(0), my_name_(obj_name), log_value_(0.0)
 {}
 
 WaveFunctionComponent::~WaveFunctionComponent() = default;
@@ -198,13 +194,22 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
 void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
 {
   if (isOptimizable())
-    throw std::logic_error("Bug!! " + getClassName() + "::extractOptimizableObjectRefs "
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::extractOptimizableObjectRefs "
+                           "must be overloaded when the WFC is optimizable.");
+}
+
+void WaveFunctionComponent::checkOutVariables(const opt_variables_type& active)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::checkOutVariables "
                            "must be overloaded when the WFC is optimizable.");
 }
 
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
-                                                  std::vector<ValueType>& dlogpsi)
+                                                  Vector<ValueType>& dlogpsi)
 {
   throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
 }

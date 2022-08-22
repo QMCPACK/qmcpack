@@ -59,6 +59,20 @@ struct OptimizableFunctorBase : public OptimizableObject
   ///virtual destrutor
   virtual ~OptimizableFunctorBase() = default;
 
+  /** check in variational parameters to the global list of parameters used by the optimizer.
+   * @param active a super set of optimizable variables
+   */
+  using OptimizableObject::checkInVariablesExclusive;
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active) = 0;
+
+  /** reset the parameters during optimizations
+   */
+  using OptimizableObject::resetParametersExclusive;
+
   inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
 
   /** create a clone of this object

@@ -278,6 +278,8 @@ protected:
   std::vector<RandomGenerator*> MoverRng;
   std::string includeNonlocalH;
 
+  /// optimized parameter names
+  std::vector<std::string> variational_subset_names;
 
   /** Sum of energies and weights for averages
    *
@@ -317,6 +319,12 @@ protected:
 
   /// check the validity of the effective weight calculated by correlatedSampling
   bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
+
+  /// survey all the optimizable objects
+  UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
+
+  void resetOptimizableObjects(TrialWaveFunction& psi,
+                               const opt_variables_type& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

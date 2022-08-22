@@ -120,6 +120,9 @@ public:
 
   virtual ~OperatorBase() = default;
 
+  /// return true if this operator depends on a wavefunction
+  virtual bool dependsOnWaveFunction() const { return false; }
+
   //////// GETTER AND SETTER FUNCTIONS ////////////////
 
   /**
@@ -142,6 +145,9 @@ public:
    * @return std::string copy of my_name_ member
    */
   std::string getName() const noexcept;
+
+  /// return class name
+  virtual std::string getClassName() const = 0;
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
@@ -333,8 +339,8 @@ public:
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
-                                               const std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi);
+                                               const Vector<ValueType>& dlogpsi,
+                                               Vector<ValueType>& dhpsioverpsi);
 
   /** 
    * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  

@@ -882,6 +882,12 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
   make -j 24
   ls -l bin/qmcpack
 
+Installing on ALCF Polaris
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Polaris is a HPE Apollo Gen10+ based 44 petaflops system.
+Each node features a AMD EPYC 7543P CPU and 4 NVIDIA A100 GPUs.
+A build recipe for Polaris can be found at ``<qmcpack_source>/config/build_alcf_polaris_Clang.sh``
+
 Installing on ORNL OLCF Summit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

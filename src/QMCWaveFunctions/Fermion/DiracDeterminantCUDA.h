@@ -202,8 +202,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     throw std::runtime_error("Calling DiracDeterminantCUDA::evaluateDerivatives is illegal!");
   }

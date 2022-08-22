@@ -279,11 +279,11 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       if (needGrads)
       {
         //allocate vector
-        std::vector<Return_rt> rDsaved(NumOptimizables, 0.0);
-        std::vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
+        Vector<Return_rt> rDsaved(NumOptimizables, 0.0);
+        Vector<Return_rt> rHDsaved(NumOptimizables, 0.0);
 
-        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
-        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        Vector<Return_t> Dsaved(NumOptimizables, 0.0);
+        Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
@@ -295,8 +295,8 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
           rDsaved[i]  = std::real(Dsaved[i]);
           rHDsaved[i] = std::real(HDsaved[i]);
         }
-        copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
-        copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
+        std::copy(rDsaved.begin(), rDsaved.end(), (*DerivRecords[ip])[iw]);
+        std::copy(rHDsaved.begin(), rHDsaved.end(), (*HDerivRecords[ip])[iw]);
       }
       else
         etmp = hClones[ip]->evaluate(wRef);
@@ -404,8 +404,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       if (needGrads)
       {
         //allocate vector
-        std::vector<Return_t> Dsaved(NumOptimizables, 0.0);
-        std::vector<Return_t> HDsaved(NumOptimizables, 0.0);
+        Vector<Return_t> Dsaved(NumOptimizables, 0.0);
+        Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
         etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
@@ -417,12 +417,12 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         // dervative vectors
         der_rat_samp.at(0) = 1.0;
         for (int i = 0; i < Dsaved.size(); i++)
-          der_rat_samp.at(i + 1) = Dsaved.at(i);
+          der_rat_samp[i + 1] = Dsaved[i];
 
         // energy dervivatives
         le_der_samp.at(0) = etmp;
         for (int i = 0; i < HDsaved.size(); i++)
-          le_der_samp.at(i + 1) = HDsaved.at(i) + etmp * Dsaved.at(i);
+          le_der_samp[i + 1] = HDsaved[i] + etmp * Dsaved[i];
 
 #ifdef HAVE_LMY_ENGINE
         if (MinMethod == "adaptive")
@@ -509,9 +509,10 @@ void QMCCostFunction::resetPsi(bool final_reset)
   //cout << "######### QMCCostFunction::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
-  Psi.resetParameters(OptVariablesForPsi);
+
+  resetOptimizableObjects(Psi, OptVariablesForPsi);
   for (int i = 0; i < psiClones.size(); ++i)
-    psiClones[i]->resetParameters(OptVariablesForPsi);
+    resetOptimizableObjects(*psiClones[i], OptVariablesForPsi);
 }
 
 QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGrad)
@@ -547,11 +548,11 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
       Return_rt weight = saved[REWEIGHT] = vmc_or_dmc * (logpsi - saved[LOGPSI_FREE]);
       if (needGrad)
       {
-        std::vector<Return_t> Dsaved(NumOptimizables, 0);
-        std::vector<Return_t> HDsaved(NumOptimizables, 0);
+        Vector<Return_t> Dsaved(NumOptimizables, 0);
+        Vector<Return_t> HDsaved(NumOptimizables, 0);
 
-        std::vector<Return_rt> rDsaved(NumOptimizables, 0);
-        std::vector<Return_rt> rHDsaved(NumOptimizables, 0);
+        Vector<Return_rt> rDsaved(NumOptimizables, 0);
+        Vector<Return_rt> rHDsaved(NumOptimizables, 0);
         psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         saved[ENERGY_NEW] =

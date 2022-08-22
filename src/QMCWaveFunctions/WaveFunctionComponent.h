@@ -69,7 +69,7 @@ class TWFFastDerivWrapper;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-class WaveFunctionComponent : public QMCTraits, public OptimizableObject
+class WaveFunctionComponent : public QMCTraits
 {
 public:
   /** enum for a update mode */
@@ -136,6 +136,11 @@ public:
 
   /** true, if this component is fermionic */
   virtual bool isFermionic() const { return false; }
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active);
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
@@ -474,8 +479,8 @@ public:
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi) = 0;
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi) = 0;
 
   /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
    *  parameters
@@ -487,7 +492,7 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi);
+                                     Vector<ValueType>& dlogpsi);
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then

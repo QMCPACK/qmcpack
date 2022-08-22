@@ -21,8 +21,8 @@ namespace qmcplusplus
 {
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
                                                                                const opt_variables_type& optvars,
-                                                                               const std::vector<ValueType>& dlogpsi,
-                                                                               std::vector<ValueType>& dhpsioverpsi)
+                                                                               const Vector<ValueType>& dlogpsi,
+                                                                               Vector<ValueType>& dhpsioverpsi)
 {
   value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
@@ -65,8 +65,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  RealType r,
                                                                                  const PosType& dr,
                                                                                  const opt_variables_type& optvars,
-                                                                                 const std::vector<ValueType>& dlogpsi,
-                                                                                 std::vector<ValueType>& dhpsioverpsi)
+                                                                                 const Vector<ValueType>& dlogpsi,
+                                                                                 Vector<ValueType>& dhpsioverpsi)
 {
   const size_t num_vars = optvars.num_active_vars;
   dratio.resize(nknot, num_vars);

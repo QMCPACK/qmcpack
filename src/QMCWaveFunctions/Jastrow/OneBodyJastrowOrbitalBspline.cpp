@@ -32,15 +32,6 @@ void OneBodyJastrowOrbitalBspline<FT>::reserve(PointerPool<gpu::device_vector<CT
 {}
 
 template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& active)
-{
-  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::checkInVariables(active);
-  for (int i = 0; i < NumCenterGroups; i++)
-    if (JBase::J1UniqueFunctors[i] != nullptr)
-      GPUSplines[i]->set(*JBase::J1UniqueFunctors[i]);
-}
-
-template<class FT>
 void OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, std::unique_ptr<FT> j, int jg)
 {
   auto newSpline = std::make_unique<CudaSpline<CTS::RealType>>(*j);
@@ -505,15 +496,6 @@ void OneBodyJastrowOrbitalBspline<FT>::gradLapl(MCWalkerConfiguration& W, GradMa
       lapl(iw, ptcl) += this->GradLaplHost[4 * this->N * iw + +4 * ptcl + 3];
     }
   }
-}
-
-template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type& active)
-{
-  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::resetParameters(active);
-  for (int i = 0; i < NumCenterGroups; i++)
-    if (JBase::J1UniqueFunctors[i] != nullptr)
-      GPUSplines[i]->set(*this->J1UniqueFunctors[i]);
 }
 
 // explicit instantiations of templates

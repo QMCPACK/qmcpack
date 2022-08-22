@@ -147,7 +147,7 @@ public:
   /** extract underlying OptimizableObject references
    * @param opt_obj_refs aggregated list of optimizable object references
    */
-  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+  UniqueOptObjRefs extractOptimizableObjectRefs();
 
   /** Check in an optimizable parameter
    * @param o aggregated list of optimizable variables
@@ -453,8 +453,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi);
 
   static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -462,7 +462,7 @@ public:
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 

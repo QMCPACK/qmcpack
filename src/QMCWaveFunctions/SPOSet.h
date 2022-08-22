@@ -39,7 +39,7 @@ class ResourceCollection;
  * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
-class SPOSet : public QMCTraits, public OptimizableObject
+class SPOSet : public QMCTraits
 {
 public:
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
@@ -95,6 +95,11 @@ public:
    */
   virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
 
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active);
+
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
 
@@ -122,8 +127,8 @@ public:
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
                                    const int& LastIndex)
   {}
@@ -132,8 +137,8 @@ public:
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
                                    const std::vector<ValueType>& Coeff,
                                    const std::vector<size_t>& C2node_up,
@@ -163,7 +168,7 @@ public:
    */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi,
+                                     Vector<ValueType>& dlogpsi,
                                      const QTFull::ValueType& psiCurrent,
                                      const std::vector<ValueType>& Coeff,
                                      const std::vector<size_t>& C2node_up,

@@ -147,6 +147,7 @@ inline bool string2bool(const std::string& s)
   }
 }
 
+/// extract the contents of a string to a vector of something. separator is white spaces.
 template<class T>
 inline std::vector<T> convertStrToVec(const std::string& s)
 {

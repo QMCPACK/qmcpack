@@ -36,8 +36,8 @@ public:
   /// the same evaluateValueAndDerivatives as QMCHamiltonian
   FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
-                                               std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi,
+                                               Vector<ValueType>& dlogpsi,
+                                               Vector<ValueType>& dhpsioverpsi,
                                                bool compute_deriv);
 
   /// the same evaluate as QMCHamiltonian

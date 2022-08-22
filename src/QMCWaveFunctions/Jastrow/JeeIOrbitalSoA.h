@@ -320,20 +320,6 @@ public:
       opt_obj_refs.push_back(*functor);
   }
 
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& active) override
-  {
-    myVars.clear();
-
-    for (auto& ftPair : J3Unique)
-    {
-      ftPair.second->checkInVariables(active);
-      ftPair.second->checkInVariables(myVars);
-    }
-  }
-
   /** check out optimizable variables
    */
   void checkOutVariables(const opt_variables_type& active) override
@@ -363,30 +349,6 @@ public:
             VarOffset(ig, jg, kg).second = func_ijk->myVars.Index.size() + VarOffset(ig, jg, kg).first;
           }
     }
-  }
-
-  ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (!isOptimizable())
-      return;
-
-    for (auto& ftPair : J3Unique)
-      ftPair.second->resetParameters(active);
-
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ii = myVars.Index[i];
-      if (ii >= 0)
-        myVars[i] = active[ii];
-    }
-  }
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override
-  {
-    for (auto& ftPair : J3Unique)
-      ftPair.second->myVars.print(os);
   }
 
   void build_compact_list(const ParticleSet& P)
@@ -867,8 +829,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     resizeWFOptVectors();
 

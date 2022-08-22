@@ -163,10 +163,11 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   REQUIRE(opt_obj_refs.size() == 2);
 
   opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
-  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+  Vector<WaveFunctionComponent::ValueType> dlogpsi;
+  Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
 
-  j3->checkInVariables(optvars);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   j3->checkOutVariables(optvars);
