@@ -136,6 +136,7 @@ case "$1" in
               -DQMC_MPI=0 \
               -DCMAKE_CXX_FLAGS=-Werror \
               -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
