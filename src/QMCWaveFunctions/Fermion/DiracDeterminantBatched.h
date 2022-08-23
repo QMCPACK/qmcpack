@@ -72,6 +72,8 @@ public:
     std::vector<Value> ratios_local;
     // multi walker of grads
     std::vector<Grad> grad_new_local;
+    // multi walker of spingrads
+    std::vector<Value> spingrad_new_local;
   };
 
   /** constructor
