@@ -57,7 +57,7 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     add_rmg_test(${FULL_NAME}-scf ${NPROCS} ${NTHREADS} ${RMG_CPU_EXE} ${MY_WORKDIR} input)
     softlink_h5_rmg_waves(${FULL_NAME} ${BASE_NAME})
     add_rmg_convert_test(${FULL_NAME}-rmg2qmc ${BASE_NAME} ${MY_WORKDIR} ${BASE_NAME}.h5)
-    set_tests_properties(${FULL_NAME}-rmg2qmc PROPERTIES DEPENDS ${FULL_NAME}-scf)
+    set_tests_properties(${FULL_NAME}-rmg2qmc PROPERTIES DEPENDS "${FULL_NAME}-scf;LINK_${FULL_NAME}_h5_Waves")
 
   endfunction()
 
