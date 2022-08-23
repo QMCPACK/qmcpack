@@ -92,6 +92,10 @@ public:
    */
   OperatorBase* getHamiltonian(int i) { return H[i].get(); }
 
+  /** return components, auxH not included, depending on TWF.
+   */
+  RefVector<OperatorBase> getTWFDependentComponents();
+
 #if !defined(REMOVE_TRACEMANAGER)
   ///initialize trace data
   void initialize_traces(TraceManager& tm, ParticleSet& P);
@@ -270,19 +274,9 @@ public:
   FullPrecRealType evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
                                                Vector<ValueType>& dlogpsi,
-                                               Vector<ValueType>& dhpsioverpsi,
-                                               bool compute_deriv);
+                                               Vector<ValueType>& dhpsioverpsi);
 
   static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivatives(
-      const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-      const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-      const RefVectorWithLeader<ParticleSet>& p_list,
-      const opt_variables_type& optvars,
-      RecordArray<ValueType>& dlogpsi,
-      RecordArray<ValueType>& dhpsioverpsi,
-      bool compute_deriv);
-
-  static std::vector<QMCHamiltonian::FullPrecRealType> mw_evaluateValueAndDerivativesInner(
       const RefVectorWithLeader<QMCHamiltonian>& ham_list,
       const RefVectorWithLeader<TrialWaveFunction>& wf_list,
       const RefVectorWithLeader<ParticleSet>& p_list,

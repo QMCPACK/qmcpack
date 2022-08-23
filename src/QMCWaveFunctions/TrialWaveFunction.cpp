@@ -246,11 +246,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return log_real_;
 }
 
-void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
-                                         RealType& logpsi_fixed_r,
-                                         RealType& logpsi_opt_r,
-                                         ParticleSet::ParticleGradient& fixedG,
-                                         ParticleSet::ParticleLaplacian& fixedL)
+void TrialWaveFunction::evaluateDeltaLogSetup(ParticleSet& P,
+                                              RealType& logpsi_fixed_r,
+                                              RealType& logpsi_opt_r,
+                                              ParticleSet::ParticleGradient& fixedG,
+                                              ParticleSet::ParticleLaplacian& fixedL)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);
   P.G    = 0.0;

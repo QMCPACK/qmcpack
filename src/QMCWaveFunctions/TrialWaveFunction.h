@@ -220,11 +220,11 @@ public:
    * It is expected that evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient& fixedG,
-                        ParticleSet::ParticleLaplacian& fixedL);
+  void evaluateDeltaLogSetup(ParticleSet& P,
+                             RealType& logpsi_fixed,
+                             RealType& logpsi_opt,
+                             ParticleSet::ParticleGradient& fixedG,
+                             ParticleSet::ParticleLaplacian& fixedL);
 
   /** evaluate the sum of log value of optimizable many-body wavefunctions
    * @param wf_list vector of wavefunctions

@@ -1847,7 +1847,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved, true);
+  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff    = 1e-6;
