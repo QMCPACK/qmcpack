@@ -72,32 +72,40 @@ public:
 
   void setCommunicator(Communicate* c);
 
-  /** returns the title of the project
+  /** 
+   * @brief returns the title of the project
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
    * translate to title_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers"
    */
-  inline const std::string& getTitle() const { return title_; }
+  const std::string& getTitle() const noexcept;
 
-  /** returns the projectmain of the project, the series id is incremented at every QMC section
+  /** 
+   * @brief returns the projectmain of the project, the series id is incremented at every QMC section
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
    * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
    */
-  inline const std::string& currentMainRoot() const { return project_main_; }
+  const std::string& currentMainRoot() const noexcept;
 
-  /** returns the nextroot of the project, the series id is incremented at every QMC section
+  /** 
+   * @brief returns the nextroot of the project, the series id is incremented at every QMC section
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
    * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
    */
-  inline const std::string& nextRoot() const { return next_root_; }
+  const std::string& nextRoot() const noexcept;
 
-  /** return the root of the previous sequence
+  /** 
+   * @brief return the root of the previous sequence
    * @param oldroot is composed by the title_ and series_
    */
   bool previousRoot(std::string& oldroot) const;
 
-  int getSeriesIndex() const { return series_; }
-  int getMaxCPUSeconds() const { return max_cpu_secs_; }
-  DriverVersion getDriverVersion() const { return driver_version_; }
+  int getSeriesIndex() const noexcept;
+
+  int getMaxCPUSeconds() const noexcept;
+
+  DriverVersion getDriverVersion() const noexcept;
+
+  bool isComplex() const noexcept;
 
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
@@ -134,6 +142,9 @@ private:
 
   // The driver version of the project
   DriverVersion driver_version_;
+
+  // tracks if complex wavefunction is used, true: complex, false: real
+  bool is_complex_;
 };
 } // namespace qmcplusplus
 
