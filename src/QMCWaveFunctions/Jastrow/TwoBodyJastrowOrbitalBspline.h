@@ -75,7 +75,6 @@ public:
   using Walker_t = ParticleSet::Walker_t;
 
   void freeGPUmem() override;
-  void checkInVariables(opt_variables_type& active) override;
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
@@ -144,10 +143,6 @@ public:
                 std::vector<PosType>& quadPoints,
                 std::vector<ValueType>& psi_ratios) override;
 
-  void resetParameters(const opt_variables_type& active) override;
-
-  //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
-  //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
   TwoBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& pset)
       : J2OrbitalSoA<FT>(obj_name, pset),
         PtclRef(pset),

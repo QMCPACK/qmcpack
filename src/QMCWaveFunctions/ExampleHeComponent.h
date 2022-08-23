@@ -38,14 +38,9 @@ public:
   std::string getClassName() const override { return "ExampleHeComponent"; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
   bool isOptimizable() const override { return true; }
-  void checkInVariables(OptVariablesType& active) override { checkInVariablesExclusive(active); }
   void checkInVariablesExclusive(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
-  void resetParameters(const OptVariablesType& active) override { resetParametersExclusive(active); }
   void resetParametersExclusive(const OptVariablesType& active) override;
-
-
-  void reportStatus(std::ostream& os) override {}
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

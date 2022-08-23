@@ -61,23 +61,11 @@ public:
     */
   void checkOutVariables(const opt_variables_type& o) override;
 
-  /** check in an optimizable parameter
-        * @param o a super set of optimizable variables
-    */
-  void checkInVariables(opt_variables_type& o) override;
-
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
     opt_obj_refs.push_back(*LongRangeRPA);
     ShortRangeRPA->extractOptimizableObjectRefs(opt_obj_refs);
   }
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override;
-
-  /** reset the parameters during optimizations
-    */
-  void resetParameters(const opt_variables_type& active) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

@@ -678,7 +678,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     myVars.getIndex(active);
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     if (notOpt)
       return;
@@ -686,7 +686,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     active.insertFrom(myVars);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (notOpt)
       return;

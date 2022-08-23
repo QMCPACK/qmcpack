@@ -672,7 +672,7 @@ void kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   }
 }
 
-void kSpaceJastrow::checkInVariables(opt_variables_type& active)
+void kSpaceJastrow::checkInVariablesExclusive(opt_variables_type& active)
 {
   active.insertFrom(myVars);
   int nOne = OneBodyGvecs.size();
@@ -702,9 +702,7 @@ void kSpaceJastrow::checkInVariables(opt_variables_type& active)
 
 void kSpaceJastrow::checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
 
-void kSpaceJastrow::reportStatus(std::ostream& os) {}
-
-void kSpaceJastrow::resetParameters(const opt_variables_type& active)
+void kSpaceJastrow::resetParametersExclusive(const opt_variables_type& active)
 {
   int ii = 0;
 

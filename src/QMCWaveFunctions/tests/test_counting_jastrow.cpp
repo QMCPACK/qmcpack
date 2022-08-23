@@ -351,9 +351,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars;
   optVars.clear();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   optVars.resetIndex();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   cj->checkOutVariables(optVars);
   optVars.print(std::cout);
 
@@ -377,9 +377,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars2;
   optVars2.clear();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   optVars2.resetIndex();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   cj2->checkOutVariables(optVars2);
   optVars2.print(std::cout);
 
@@ -393,7 +393,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test resetParameters, recompute
   for(int p = 0; p < num_derivs; ++p)
     optVars[p] = 0;
-  cj->resetParameters(optVars);
+  cj->resetParametersExclusive(optVars);
   cj->recompute(elec);
   REQUIRE( cj->get_log_value() == LogValueType(0) );
 #endif

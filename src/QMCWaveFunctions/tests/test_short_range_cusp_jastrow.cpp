@@ -123,7 +123,7 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
   f.evaluateDerivatives(r, param_derivs);
 
   optimize::VariableSet var_param;
-  f.checkInVariables(var_param);
+  f.checkInVariablesExclusive(var_param);
   var_param.resetIndex();
   REQUIRE(var_param.size_of_active() == nparam);
 
@@ -136,13 +136,13 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
     RealType dudr_h     = 10000000.0; // initialize to a wrong value
     RealType d2udr2_h   = 10000000.0; // initialize to a wrong value
     var_param[var_name] = old_param + h;
-    f.resetParameters(var_param);
+    f.resetParametersExclusive(var_param);
     RealType val_h = f.evaluate(r, dudr_h, d2udr2_h);
 
     RealType dudr_m     = 20000000.0; // initialize to a wrong value
     RealType d2udr2_m   = 20000000.0; // initialize to a wrong value
     var_param[var_name] = old_param - h;
-    f.resetParameters(var_param);
+    f.resetParametersExclusive(var_param);
     RealType val_m = f.evaluate(r, dudr_m, d2udr2_m);
 
     const RealType val_dp = (val_h - val_m) / (2.0 * h);
@@ -155,7 +155,7 @@ TEST_CASE("ShortRangeCuspJastrowFunctor", "[wavefunction]")
     REQUIRE(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(eps));
 
     var_param[var_name] = old_param;
-    f.resetParameters(var_param);
+    f.resetParametersExclusive(var_param);
   }
 
   // Could do finite differences to verify the parameter derivatives

@@ -43,17 +43,6 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-    //if(Optimizable) {
-    if (BFTrans->isOptimizable())
-    {
-      BFTrans->checkInVariables(active);
-      for (int i = 0; i < Dets.size(); i++)
-        Dets[i]->checkInVariables(active);
-    }
-  }
-
   void checkOutVariables(const opt_variables_type& active) override
   {
     //if(Optimizable) {
@@ -65,19 +54,6 @@ public:
     }
   }
 
-  ///reset all the Dirac determinants, Optimizable is true
-  void resetParameters(const opt_variables_type& active) override
-  {
-    //if(Optimizable) {
-    if (BFTrans->isOptimizable())
-    {
-      BFTrans->resetParameters(active);
-      for (int i = 0; i < Dets.size(); i++)
-        Dets[i]->resetParameters(active);
-    }
-  }
-
-  void reportStatus(std::ostream& os) override {}
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;

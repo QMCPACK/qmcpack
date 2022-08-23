@@ -55,14 +55,7 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
-  void checkInVariables(opt_variables_type& active) override;
-
   void checkOutVariables(const opt_variables_type& active) override;
-
-  ///reset all the Dirac determinants, Optimizable is true
-  void resetParameters(const opt_variables_type& optVariables) override;
-
-  void reportStatus(std::ostream& os) override;
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 

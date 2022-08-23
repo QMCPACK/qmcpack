@@ -156,22 +156,10 @@ public:
     Phi->extractOptimizableObjectRefs(opt_obj_refs);
   }
 
-  inline void checkInVariables(opt_variables_type& active) override
-  {
-    if (Phi->isOptimizable())
-      Phi->checkInVariables(active);
-  }
-
   inline void checkOutVariables(const opt_variables_type& active) override
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
-  }
-
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (Phi->isOptimizable())
-      Phi->resetParameters(active);
   }
 
   /// create optimizable orbital rotation parameters
@@ -204,8 +192,6 @@ public:
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
 
-
-  inline void reportStatus(std::ostream& os) override {}
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 

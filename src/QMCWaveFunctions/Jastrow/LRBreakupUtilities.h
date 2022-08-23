@@ -476,9 +476,9 @@ struct ShortRangePartAdapter : OptimizableFunctorBase
   inline real_type evaluate(real_type r) { return f(r); }
   inline real_type f(real_type r) override { return myHandler->evaluate(r, 1.0 / r) - Uconst; }
   inline real_type df(real_type r) override { return myHandler->srDf(r, 1.0 / r); }
-  void checkInVariables(opt_variables_type& active) override {}
+  void checkInVariablesExclusive(opt_variables_type& active) override {}
   void checkOutVariables(const opt_variables_type& active) override {}
-  void resetParameters(const opt_variables_type& optVariables) override {}
+  void resetParametersExclusive(const opt_variables_type& optVariables) override {}
   bool put(xmlNodePtr cur) override { return true; }
   real_type Uconst;
   HandlerType* myHandler;
