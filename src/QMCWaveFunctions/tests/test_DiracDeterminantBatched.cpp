@@ -757,7 +757,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
     REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
-  
+
   dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
@@ -808,7 +808,6 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
     REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
-
 }
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")

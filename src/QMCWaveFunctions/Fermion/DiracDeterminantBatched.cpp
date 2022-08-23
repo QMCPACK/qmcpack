@@ -293,7 +293,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGradWithSpin(
   auto& phi_vgl_v          = mw_res.phi_vgl_v;
   auto& ratios_local       = mw_res.ratios_local;
   auto& grad_new_local     = mw_res.grad_new_local;
-  auto& spingrad_new_loacl = mw_res.spingrad_new_local;
+  auto& spingrad_new_local = mw_res.spingrad_new_local;
   {
     ScopedTimer local_timer(SPOVGLTimer);
     RefVectorWithLeader<SPOSet> phi_list(*Phi);
