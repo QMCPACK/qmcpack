@@ -39,7 +39,8 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       myName(aname),
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
-      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
+      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
+      eval_vals_derivs_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -618,9 +619,18 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(Par
   // by calling TWF::evaluateDerivatives inside BareKineticEnergy::evaluateValueAndDerivatives
   assert(dynamic_cast<BareKineticEnergy*>(H[0].get()) &&
          "BUG: The first componennt in Hamiltonian must be BareKineticEnergy.");
-  LocalEnergy = KineticEnergy = H[0]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  ScopedTimer local_timer(eval_vals_derivs_timer_);
+
+  {
+    ScopedTimer h_timer(my_timers_[0]);
+    LocalEnergy = KineticEnergy = H[0]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
+
   for (int i = 1; i < H.size(); ++i)
+  {
+    ScopedTimer h_timer(my_timers_[i]);
     LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
   return LocalEnergy;
 }
 

@@ -39,7 +39,7 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
   // build a temporary H_KE for later calling makeClone
   // need makeClone to setup internal my_index_ of a new copy.
   const auto components = H.getTWFDependentComponents();
-  QMCHamiltonian H_KE;
+  QMCHamiltonian H_KE("h_free");
   for (OperatorBase& component : components)
     H_KE.addOperator(component.makeClone(P, Psi), component.getName());
   H_KE.createResource(h0_res_);
