@@ -89,6 +89,6 @@ function(SOFTLINK_RMG_INPUT SOURCE TARGET PREFIX TEST_NAME)
                 cp ${SOURCE}/${PREFIX}.structure.xml ${SOURCE}-${TARGET}/${PREFIX}.structure.xml ; \
                 cp ${SOURCE}/${PREFIX}.wfnoj.xml ${SOURCE}-${TARGET}/${PREFIX}.wfnoj.xml ; \
                 cp ${SOURCE}/*.qmcpp.xml ${SOURCE}-${TARGET}/")
-  set_tests_properties(COPY_${SOURCE}_XML_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-scf)
+  set_tests_properties(COPY_${SOURCE}_XML_TO_${TARGET} PROPERTIES DEPENDS ${SOURCE}-rmg2qmc)
   set_property(TEST COPY_${SOURCE}_XML_TO_${TARGET} APPEND PROPERTY LABELS "rmg")
 endfunction()
