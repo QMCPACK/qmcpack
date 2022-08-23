@@ -43,6 +43,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     add_test(NAME ${TESTNAME} COMMAND $<TARGET_FILE:convert4qmc> -nojastrow -rmg ${TEST_INPUT} -prefix ${PREFIX})
     set_tests_properties(${TESTNAME} PROPERTIES WORKING_DIRECTORY ${WORKDIR})
     set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;rmg")
+    string(REGEX REPLACE "-rmg2qmc\$" "" FULL_NAME ${TESTNAME})
+    set_tests_properties(${FULL_NAME}-rmg2qmc PROPERTIES DEPENDS LINK_${FULL_NAME}_h5_Waves)
   endfunction()
 
   function(RUN_RMG_TEST BASE_NAME SRC_DIR NPROCS NTHREADS TEST_NAME)
@@ -57,7 +59,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
     add_rmg_test(${FULL_NAME}-scf ${NPROCS} ${NTHREADS} ${RMG_CPU_EXE} ${MY_WORKDIR} input)
     softlink_h5_rmg_waves(${FULL_NAME} ${BASE_NAME})
     add_rmg_convert_test(${FULL_NAME}-rmg2qmc ${BASE_NAME} ${MY_WORKDIR} ${BASE_NAME}.h5)
-    set_tests_properties(${FULL_NAME}-rmg2qmc PROPERTIES DEPENDS LINK_${FULL_NAME}_h5_Waves)
 
   endfunction()
 
