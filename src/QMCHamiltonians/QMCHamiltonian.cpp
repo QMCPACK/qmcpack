@@ -69,8 +69,7 @@ bool QMCHamiltonian::get(std::ostream& os) const
 {
   for (int i = 0; i < H.size(); i++)
   {
-    os.setf(std::ios::left);
-    os << "  " << std::setw(16) << H[i]->getName();
+    os << "  " << std::setw(16) << std::left << H[i]->getName();
     H[i]->get(os);
     os << "\n";
   }
