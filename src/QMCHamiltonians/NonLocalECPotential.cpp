@@ -27,6 +27,19 @@
 
 namespace qmcplusplus
 {
+
+struct NonLocalECPotential::NonLocalECPotentialMultiWalkerResource : public Resource
+{
+  NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential") {}
+
+  Resource* makeClone() const override;
+
+  ResourceCollection collection{"NLPPcollection"};
+  /// a crowds worth of per particle nonlocal ecp potential values
+  Matrix<Real> ve_samples;
+  Matrix<Real> vi_samples;
+};
+
 void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 /** constructor
@@ -131,17 +144,16 @@ void NonLocalECPotential::mw_evaluateWithToperator(const RefVectorWithLeader<Ope
     mw_evaluateImpl(o_list, wf_list, p_list, false, std::nullopt);
 }
 
-void NonLocalECPotential::mw_evaluatePerParticle(
-    const RefVectorWithLeader<OperatorBase>& o_list,
-    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const std::vector<ListenerVector<Real>>& listeners,
-    const std::vector<ListenerVector<Real>>& listeners_ions) const
+void NonLocalECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                                 const RefVectorWithLeader<ParticleSet>& p_list,
+                                                 const std::vector<ListenerVector<Real>>& listeners,
+                                                 const std::vector<ListenerVector<Real>>& listeners_ions) const
 {
   std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
   mw_evaluateImpl(o_list, wf_list, p_list, false, l_opt);
 }
-  
+
 void NonLocalECPotential::mw_evaluatePerParticleWithToperator(
     const RefVectorWithLeader<OperatorBase>& o_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
@@ -267,7 +279,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           bool Tmove,
                                           const std::optional<ListenerOption<Real>> listeners,
-					  bool keep_grid)
+                                          bool keep_grid)
 {
   auto& O_leader           = o_list.getCastedLeader<NonLocalECPotential>();
   ParticleSet& pset_leader = p_list.getLeader();
@@ -286,8 +298,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
 
     if (!keep_grid)
       for (int ipp = 0; ipp < O.PPset.size(); ipp++)
-	if (O.PPset[ipp])
-	  O.PPset[ipp]->randomize_grid(*O.myRNG);
+        if (O.PPset[ipp])
+          O.PPset[ipp]->randomize_grid(*O.myRNG);
 
     //loop over all the ions
     const auto& myTable = P.getDistTableAB(O.myTableIndex);
@@ -335,13 +347,14 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       }
   }
 
-  if (listeners) {
+  if (listeners)
+  {
     auto& ve_samples = O_leader.mw_res_->ve_samples;
     auto& vi_samples = O_leader.mw_res_->vi_samples;
     ve_samples.resize(nw, pset_leader.getTotalNum());
     vi_samples.resize(nw, O_leader.IonConfig.getTotalNum());
   }
-  
+
   auto pp_component = std::find_if(O_leader.PPset.begin(), O_leader.PPset.end(), [](auto& ptr) { return bool(ptr); });
   assert(pp_component != std::end(O_leader.PPset));
 
@@ -800,7 +813,7 @@ std::unique_ptr<OperatorBase> NonLocalECPotential::makeClone(ParticleSet& qp, Tr
       std::make_unique<NonLocalECPotential>(IonConfig, qp, psi, ComputeForces, use_DLA);
   for (int ig = 0; ig < PPset.size(); ++ig)
     if (PPset[ig])
-      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig],qp));
+      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
   return myclone;
 }
 

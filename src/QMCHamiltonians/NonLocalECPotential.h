@@ -39,19 +39,7 @@ class NonLocalECPotential : public OperatorBase, public ForceBase
 {
   using Real = QMCTraits::RealType;
 
-  struct NonLocalECPotentialMultiWalkerResource : public Resource
-  {
-    NonLocalECPotentialMultiWalkerResource() : Resource("NonLocalECPotential") {}
-
-    Resource* makeClone() const override;
-
-    ResourceCollection collection{"NLPPcollection"};
-
-    int num_walker = 0;
-    /// a crowds worth of per particle nonlocal ecp potential values
-    Matrix<Real> ve_samples;
-    Matrix<Real> vi_samples;
-  };
+  struct NonLocalECPotentialMultiWalkerResource;
 
 public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
@@ -192,7 +180,7 @@ protected:
                               const RefVectorWithLeader<ParticleSet>& p_list,
                               bool Tmove,
                               std::optional<ListenerOption<Real>> listeners,
-			      bool keepGrid = false);
+                              bool keepGrid = false);
 
   ///random number generator
   RandomGenerator* myRNG;

@@ -26,7 +26,8 @@ NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), R
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
-NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset) : NonLocalECPComponent(nl_ecpc)
+NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset)
+    : NonLocalECPComponent(nl_ecpc)
 {
   for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
     this->nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
@@ -509,7 +510,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
   {
     convertToReal(psi.evalGradSource(W, ions, jat), pulay_ref[jat]);
-    gradpotterm_   = 0;
+    gradpotterm_ = 0;
     for (size_t j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;

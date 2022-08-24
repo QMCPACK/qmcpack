@@ -93,12 +93,8 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   ParticleSet elec(simulation_cell);
   elec.setName("elec");
   elec.create({2, 1});
-  elec.R[0][0] = 0.4;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 1.0;
-  elec.R[1][1] = 0.0;
-  elec.R[1][2] = 0.0;
+  elec.R[0] = {0.4, 0.0, 0.0};
+  elec.R[1] = {1.0, 0.0, 0.0};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -198,9 +194,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
 
-  elec.R[0][0] = 0.5;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 2.0;
+  elec.R[0] = {0.5, 0.0, 2.0};
   elec.update();
 
   nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
