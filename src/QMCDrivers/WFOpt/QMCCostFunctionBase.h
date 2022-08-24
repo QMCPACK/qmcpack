@@ -184,8 +184,6 @@ protected:
 
   ///if true, do not write the *.opt.#.xml
   bool Write2OneXml;
-  ///if true, use analytic derivatives for the non-local potential component
-  bool useNLPPDeriv;
   /** |E-E_T|^PowerE is used for the cost function
    *
    * default PowerE=1
@@ -276,8 +274,9 @@ protected:
   ///Random number generators
   UPtrVector<RandomGenerator> RngSaved;
   std::vector<RandomGenerator*> MoverRng;
-  std::string includeNonlocalH;
 
+  /// optimized parameter names
+  std::vector<std::string> variational_subset_names;
 
   /** Sum of energies and weights for averages
    *
@@ -317,6 +316,11 @@ protected:
 
   /// check the validity of the effective weight calculated by correlatedSampling
   bool isEffectiveWeightValid(EffectiveWeight effective_weight) const;
+
+  /// survey all the optimizable objects
+  UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
+
+  void resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

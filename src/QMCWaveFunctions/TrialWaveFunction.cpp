@@ -79,11 +79,11 @@ TrialWaveFunction::~TrialWaveFunction()
  */
 void TrialWaveFunction::addComponent(std::unique_ptr<WaveFunctionComponent>&& aterm)
 {
-  std::string aname = aterm->ClassName;
-  if (!aterm->myName.empty())
-    aname += ":" + aterm->myName;
+  std::string aname = aterm->getClassName();
+  if (!aterm->getName().empty())
+    aname += ":" + aterm->getName();
 
-  if (aterm->is_fermionic)
+  if (aterm->isFermionic())
     app_log() << "  Added a fermionic WaveFunctionComponent " << aname << std::endl;
 
   for (auto& suffix : suffixes)
@@ -246,11 +246,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return log_real_;
 }
 
-void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
-                                         RealType& logpsi_fixed_r,
-                                         RealType& logpsi_opt_r,
-                                         ParticleSet::ParticleGradient& fixedG,
-                                         ParticleSet::ParticleLaplacian& fixedL)
+void TrialWaveFunction::evaluateDeltaLogSetup(ParticleSet& P,
+                                              RealType& logpsi_fixed_r,
+                                              RealType& logpsi_opt_r,
+                                              ParticleSet::ParticleGradient& fixedG,
+                                              ParticleSet::ParticleLaplacian& fixedL)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);
   P.G    = 0.0;
@@ -436,8 +436,8 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
   ScopedTimer local_timer(TWF_timers_[V_TIMER]);
   PsiValueType r(1.0);
   for (int i = 0; i < Z.size(); i++)
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(WFC_timers_[V_TIMER + TIMER_SKIP * i]);
       r *= Z[i]->ratio(P, iat);
@@ -463,8 +463,8 @@ void TrialWaveFunction::mw_calcRatio(const RefVectorWithLeader<TrialWaveFunction
   std::vector<PsiValueType> ratios_z(num_wf);
   for (int i = 0; i < num_wfc; i++)
   {
-    if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (wavefunction_components[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!wavefunction_components[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[V_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -861,12 +861,19 @@ void TrialWaveFunction::mw_evaluateGL(const RefVectorWithLeader<TrialWaveFunctio
   }
 }
 
+UniqueOptObjRefs TrialWaveFunction::extractOptimizableObjectRefs()
+{
+  UniqueOptObjRefs opt_obj_refs;
+  for (int i = 0; i < Z.size(); i++)
+    Z[i]->extractOptimizableObjectRefs(opt_obj_refs);
+  return opt_obj_refs;
+}
 
 void TrialWaveFunction::checkInVariables(opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->checkInVariables(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(active);
 }
 
 void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
@@ -878,16 +885,16 @@ void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
 
 void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->resetParameters(active);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.resetParametersExclusive(active);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->reportStatus(os);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+      obj.reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
@@ -986,8 +993,8 @@ void TrialWaveFunction::evaluateRatios(const VirtualParticleSet& VP, std::vector
   std::vector<ValueType> t(ratios.size());
   std::fill(ratios.begin(), ratios.end(), 1.0);
   for (int i = 0; i < Z.size(); ++i)
-    if (ct == ComputeType::ALL || (Z[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!Z[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (Z[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
       Z[i]->evaluateRatios(VP, t);
@@ -1014,8 +1021,8 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
   }
 
   for (int i = 0; i < wavefunction_components.size(); i++)
-    if (ct == ComputeType::ALL || (wavefunction_components[i]->is_fermionic && ct == ComputeType::FERMIONIC) ||
-        (!wavefunction_components[i]->is_fermionic && ct == ComputeType::NONFERMIONIC))
+    if (ct == ComputeType::ALL || (wavefunction_components[i]->isFermionic() && ct == ComputeType::FERMIONIC) ||
+        (!wavefunction_components[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(wf_leader.WFC_timers_[NL_TIMER + TIMER_SKIP * i]);
       const auto wfc_list(extractWFCRefList(wf_list, i));
@@ -1039,6 +1046,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
   std::vector<ValueType> t(ratios.size());
   for (int i = 0; i < Z.size(); ++i)
   {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivRatios(VP, optvars, t, dratio);
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
@@ -1064,15 +1072,18 @@ std::unique_ptr<TrialWaveFunction> TrialWaveFunction::makeClone(ParticleSet& tqp
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
                                             const opt_variables_type& optvars,
-                                            std::vector<ValueType>& dlogpsi,
-                                            std::vector<ValueType>& dhpsioverpsi)
+                                            Vector<ValueType>& dlogpsi,
+                                            Vector<ValueType>& dhpsioverpsi)
 {
   //     // First, zero out derivatives
   //  This should only be done for some variables.
   //     for (int j=0; j<dlogpsi.size(); j++)
   //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
   for (int i = 0; i < Z.size(); i++)
+  {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
     dhpsioverpsi[i] *= OneOverM;
@@ -1087,18 +1098,16 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
   const int nparam = dlogpsi.nparam();
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
-    std::vector<ValueType> tmp_dlogpsi(nparam);
-    std::vector<ValueType> tmp_dhpsioverpsi(nparam);
-    TrialWaveFunction& twf = wf_list[iw];
-    for (int i = 0; i < twf.Z.size(); i++)
-      twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+    Vector<ValueType> tmp_dlogpsi(nparam);
+    Vector<ValueType> tmp_dhpsioverpsi(nparam);
 
-    RealType OneOverM = twf.getReciprocalMass();
+    wf_list[iw].evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+
     for (int i = 0; i < nparam; i++)
     {
       dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);
       //orbitals do not know about mass of particle.
-      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i] * OneOverM);
+      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i]);
     }
   }
 }
@@ -1106,19 +1115,20 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
 
 void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               const opt_variables_type& optvars,
-                                              std::vector<ValueType>& dlogpsi)
+                                              Vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
+  {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
+  }
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
                                                 std::vector<ValueType>& dgradlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
-  {
     Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
-  }
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::KECorrection() const
@@ -1217,7 +1227,7 @@ void TrialWaveFunction::initializeTWFFastDerivWrapper(const ParticleSet& P, TWFF
 {
   for (int i = 0; i < Z.size(); ++i)
   {
-    if (Z[i]->is_fermionic)
+    if (Z[i]->isFermionic())
     {
       //OK, so this is a hack only for SlaterDeterminant objects.
       //Needs a bit of logic and protection before this reaches production.

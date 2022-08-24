@@ -308,7 +308,7 @@ protected:
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
-  const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
+  const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
   /** The timers for the driver.
    *

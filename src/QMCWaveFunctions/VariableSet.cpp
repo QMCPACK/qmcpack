@@ -173,10 +173,10 @@ void VariableSet::getIndex(const VariableSet& selected)
   }
 }
 
-void VariableSet::setDefaults(bool optimize_all)
+void VariableSet::setIndexDefault()
 {
   for (int i = 0; i < Index.size(); ++i)
-    Index[i] = optimize_all ? i : -1;
+    Index[i] = i;
 }
 
 void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) const

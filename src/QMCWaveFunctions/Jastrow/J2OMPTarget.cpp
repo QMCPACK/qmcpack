@@ -123,10 +123,10 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::checkInVariables(opt_variables_type& active)
+void J2OMPTarget<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
   for (auto& [key, functor] : J2Unique)
-    functor->checkInVariables(active);
+    opt_obj_refs.push_back(*functor);
 }
 
 template<typename FT>
@@ -165,33 +165,6 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
       }
       else
         OffSet[i].first = OffSet[i].second = -1;
-  }
-}
-
-template<typename FT>
-void J2OMPTarget<FT>::resetParameters(const opt_variables_type& active)
-{
-  if (!isOptimizable())
-    return;
-  for (auto& [key, functor] : J2Unique)
-    functor->resetParameters(active);
-
-  for (int i = 0; i < myVars.size(); ++i)
-  {
-    int ii = myVars.Index[i];
-    if (ii >= 0)
-      myVars[i] = active[ii];
-  }
-}
-
-template<typename FT>
-void J2OMPTarget<FT>::reportStatus(std::ostream& os)
-{
-  auto it(J2Unique.begin()), it_end(J2Unique.end());
-  while (it != it_end)
-  {
-    (*it).second->myVars.print(os);
-    ++it;
   }
 }
 
@@ -313,14 +286,14 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
-    : WaveFunctionComponent("J2OMPTarget", obj_name),
+    : WaveFunctionComponent(obj_name),
       N(p.getTotalNum()),
       N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
       my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {
-  if (myName.empty())
+  if (my_name_.empty())
     throw std::runtime_error("J2OMPTarget object name cannot be empty!");
 
   F.resize(NumGroups * NumGroups, nullptr);
@@ -396,7 +369,7 @@ void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
-  auto j2copy = std::make_unique<J2OMPTarget<FT>>(myName, tqp);
+  auto j2copy = std::make_unique<J2OMPTarget<FT>>(my_name_, tqp);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)
@@ -819,8 +792,8 @@ void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 template<typename FT>
 void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
                                           const opt_variables_type& active,
-                                          std::vector<ValueType>& dlogpsi,
-                                          std::vector<ValueType>& dhpsioverpsi)
+                                          Vector<ValueType>& dlogpsi,
+                                          Vector<ValueType>& dhpsioverpsi)
 {
   if (myVars.size() == 0)
     return;
@@ -855,7 +828,7 @@ void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
 template<typename FT>
 void J2OMPTarget<FT>::evaluateDerivativesWF(ParticleSet& P,
                                             const opt_variables_type& active,
-                                            std::vector<ValueType>& dlogpsi)
+                                            Vector<ValueType>& dlogpsi)
 {
   if (myVars.size() == 0)
     return;

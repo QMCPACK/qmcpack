@@ -15,6 +15,7 @@
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {

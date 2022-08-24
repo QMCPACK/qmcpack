@@ -73,10 +73,12 @@ public:
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p);
+  BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi);
   ///destructor
   ~BareKineticEnergy() override;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "BareKineticEnergy"; }
   void resetTargetParticleSet(ParticleSet& P) override {}
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -86,6 +88,17 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
+
+  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
+
+  void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const opt_variables_type& optvars,
+                                           const RecordArray<ValueType>& dlogpsi,
+                                           RecordArray<ValueType>& dhpsioverpsi) const override;
 
   /** Evaluate the contribution of this component for multiple walkers reporting
    *  to registered listeners from Estimators.
@@ -186,6 +199,8 @@ private:
   };
 
   ResourceHandle<MultiWalkerResource> mw_res_;
+
+  TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

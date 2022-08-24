@@ -133,6 +133,8 @@ void DiracDeterminantBatched<DET_ENGINE>::resize(int nel, int morb)
   dpsiV_host_view.attachReference(dpsiV.data(), NumOrbitals);
   d2psiV.resize(NumOrbitals);
   d2psiV_host_view.attachReference(d2psiV.data(), NumOrbitals);
+  dspin_psiV.resize(NumOrbitals);
+  dspin_psiV_host_view.attachReference(dspin_psiV.data(), NumOrbitals);
 }
 
 template<typename DET_ENGINE>
@@ -177,6 +179,22 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGrad(const RefVectorWithLeader<
   for (int iw = 0; iw < nw; iw++)
     checkG(grad_now[iw]);
 #endif
+}
+
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_ENGINE>::evalGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    ComplexType& spingrad)
+{
+  Phi->evaluate_spin(P, iat, psiV_host_view, dspin_psiV_host_view);
+  ScopedTimer local_timer(RatioTimer);
+  const int WorkingIndex = iat - FirstIndex;
+  Grad g                 = simd::dot(det_engine_.get_psiMinv()[WorkingIndex], dpsiM[WorkingIndex], NumOrbitals);
+  ComplexType spin_g     = simd::dot(det_engine_.get_psiMinv()[WorkingIndex], dspin_psiV.data(), NumOrbitals);
+  assert(checkG(g));
+  spingrad += spin_g;
+  return g;
 }
 
 template<typename DET_ENGINE>
@@ -248,6 +266,33 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
     ratios[iw] = det.curRatio = ratios_local[iw];
     grad_new[iw] += grad_new_local[iw];
   }
+}
+
+template<typename DET_ENGINE>
+typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGradWithSpin(
+    ParticleSet& P,
+    int iat,
+    Grad& grad_iat,
+    ComplexType& spingrad_iat)
+{
+  UpdateMode = ORB_PBYP_PARTIAL;
+
+  {
+    ScopedTimer local_timer(SPOVGLTimer);
+    Phi->evaluateVGL_spin(P, iat, psiV_host_view, dpsiV_host_view, d2psiV_host_view, dspin_psiV_host_view);
+  }
+
+  {
+    ScopedTimer local_timer(RatioTimer);
+    auto& psiMinv          = det_engine_.get_psiMinv();
+    const int WorkingIndex = iat - FirstIndex;
+    curRatio               = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
+    grad_iat += static_cast<Value>(static_cast<PsiValue>(1.0) / curRatio) *
+        simd::dot(psiMinv[WorkingIndex], dpsiV.data(), NumOrbitals);
+    spingrad_iat += static_cast<Value>(static_cast<PsiValue>(1.0) / curRatio) *
+        simd::dot(psiMinv[WorkingIndex], dspin_psiV.data(), NumOrbitals);
+  }
+  return curRatio;
 }
 
 
@@ -945,8 +990,8 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_recompute(const RefVectorWithLeader
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               const opt_variables_type& active,
-                                                              std::vector<Value>& dlogpsi,
-                                                              std::vector<Value>& dhpsioverpsi)
+                                                              Vector<Value>& dlogpsi,
+                                                              Vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }

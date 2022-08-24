@@ -39,7 +39,7 @@ class ResourceCollection;
  * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
-class SPOSet : public QMCTraits, public OptimizableObject
+class SPOSet : public QMCTraits
 {
 public:
   using IndexVector = OrbitalSetTraits<ValueType>::IndexVector;
@@ -90,6 +90,16 @@ public:
   /// Query if this SPOSet is optimizable
   virtual bool isOptimizable() const { return false; }
 
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active);
+
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
 
@@ -105,30 +115,27 @@ public:
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-  // store parameters before getting destroyed by rotation.
+  /// return true if this SPOSet can be wrappered by RotatedSPO
+  virtual bool isRotationSupported() const { return false; }
+  /// store parameters before getting destroyed by rotation.
   virtual void storeParamsBeforeRotation() {}
-  // apply rotation to all the orbitals
-  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false)
-  {
-    std::ostringstream o;
-    o << "SPOSet::applyRotation is not implemented by " << getClassName() << std::endl;
-    APP_ABORT(o.str());
-  }
+  /// apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
-                                   const int& LastIndex)
-  {}
+                                   const int& LastIndex);
+
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
                                    const std::vector<ValueType>& Coeff,
                                    const std::vector<size_t>& C2node_up,
@@ -150,15 +157,14 @@ public:
                                    const size_t N2,
                                    const size_t NP1,
                                    const size_t NP2,
-                                   const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                   const std::vector<std::vector<int>>& lookup_tbl);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi,
+                                     Vector<ValueType>& dlogpsi,
                                      const QTFull::ValueType& psiCurrent,
                                      const std::vector<ValueType>& Coeff,
                                      const std::vector<size_t>& C2node_up,
@@ -170,8 +176,7 @@ public:
                                      const ValueMatrix& Minv_up,
                                      const ValueMatrix& Minv_dn,
                                      const std::vector<int>& detData_up,
-                                     const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                     const std::vector<std::vector<int>>& lookup_tbl);
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals

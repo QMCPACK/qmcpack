@@ -68,7 +68,7 @@ if(NOT QMC_CUDA)
   endif()
 endif()
 
-set(COMMON_SRC test_variable_set.cpp)
+set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp)
 set(TRIALWF_SRC
     test_TrialWaveFunction.cpp
     test_wavefunction_factory.cpp

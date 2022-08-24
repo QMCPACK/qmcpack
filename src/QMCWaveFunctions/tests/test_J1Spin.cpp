@@ -108,10 +108,10 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 
   // check derivatives
   twf.evaluateLog(elec_);
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
-  std::vector<ValueType> cloned_dlogpsi(nparam);
-  std::vector<ValueType> cloned_dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> cloned_dlogpsi(nparam);
+  Vector<ValueType> cloned_dhpsioverpsi(nparam);
 
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   cloned_j1spin->evaluateDerivatives(elec_, active, cloned_dlogpsi, cloned_dhpsioverpsi);

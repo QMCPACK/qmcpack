@@ -27,11 +27,9 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 SlaterDet::SlaterDet(ParticleSet& targetPtcl,
                      std::vector<std::unique_ptr<Determinant_t>> dets,
                      const std::string& class_name)
-    : WaveFunctionComponent(class_name, ""), Dets(std::move(dets))
+    : Dets(std::move(dets))
 {
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -46,15 +44,10 @@ bool SlaterDet::isOptimizable() const
   return std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
 }
 
-void SlaterDet::checkInVariables(opt_variables_type& active)
+void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
-  myVars.clear();
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-    {
-      Dets[i]->checkInVariables(active);
-      Dets[i]->checkInVariables(myVars);
-    }
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
@@ -68,16 +61,6 @@ void SlaterDet::checkOutVariables(const opt_variables_type& active)
     }
   myVars.getIndex(active);
 }
-
-///reset all the Dirac determinants, Optimizable is true
-void SlaterDet::resetParameters(const opt_variables_type& active)
-{
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetParameters(active);
-}
-
-void SlaterDet::reportStatus(std::ostream& os) {}
 
 PsiValueType SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {

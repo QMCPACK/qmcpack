@@ -51,14 +51,6 @@ void TwoBodyJastrowOrbitalBspline<FT>::reserve(PointerPool<gpu::device_vector<CT
 {}
 
 template<class FT>
-void TwoBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& active)
-{
-  J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::checkInVariables(active);
-  for (int i = 0; i < this->NumGroups * this->NumGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
-}
-
-template<class FT>
 void TwoBodyJastrowOrbitalBspline<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
   CudaSpline<CTS::RealType>* newSpline = new CudaSpline<CTS::RealType>(*j);
@@ -587,14 +579,6 @@ void TwoBodyJastrowOrbitalBspline<FT>::gradLapl(MCWalkerConfiguration& W, GradMa
       lapl(iw, ptcl) += GradLaplHost[4 * this->N * iw + +4 * ptcl + 3];
     }
   }
-}
-
-template<class FT>
-void TwoBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type& active)
-{
-  J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType>>::resetParameters(active);
-  for (int i = 0; i < this->NumGroups * this->NumGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
 }
 
 // explicit instantiations of templates

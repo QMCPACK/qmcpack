@@ -49,6 +49,8 @@ public:
 
   virtual std::string getClassName() const override { return "LCAOrbitalSet"; }
 
+  bool isRotationSupported() const override { return true; }
+
   bool hasIonDerivs() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override;

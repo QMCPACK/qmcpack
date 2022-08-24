@@ -519,9 +519,9 @@ The input parameters are listed in the following table.
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | **Name**                 | **Datatype** | **Values**  | **Default** | **Description**                                  |
   +==========================+==============+=============+=============+==================================================+
-  | ``nonlocalpp``           | text         | yes, no     | no          | include non-local PP energy in the cost function |
+  | ``nonlocalpp``           | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``use_nonlocalpp_deriv`` | text         | yes, no     | yes         | Add non-local PP energy derivative contribution  |
+  | ``use_nonlocalpp_deriv`` | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | ``minwalkers``           | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
@@ -532,13 +532,7 @@ Additional information:
 
 - ``maxWeight`` The default should be good.
 
-- ``nonlocalpp`` The ``nonlocalpp`` contribution to the local energy depends on the
-  wavefunction. When a new set of parameters is proposed, this
-  contribution needs to be updated if the cost function consists of local
-  energy. Fortunately, nonlocal contribution is chosen small when making a
-  PP for small locality error. We can ignore its change and avoid the
-  expensive computational cost. An implementation issue with legacy GPU code is
-  that a large amount of memory is consumed with this option.
+- ``nonlocalpp`` and ``use_nonlocalpp_deriv`` are obsolete and will be treated as invalid options (trigger application abort) in future releases. From this point forward, the code behaves as prior versions of qmcpack did when both were set to ``yes``.
 
 - ``minwalkers`` This is a ``critical`` parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than ``minwalkers``,
   the proposed set of parameters is invalid.
@@ -550,6 +544,31 @@ The cost function consists of three components: energy, unreweighted variance, a
      <cost name="energy">                   0.95 </cost>
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
+
+Varational parameter selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The predominant way of selecting varational paramemters is via ``<wavefunction>`` input.
+``<coefficients>`` entries support ``optimize="yes"/"no"`` to enable/disable variational parameters in the wavefunction optimization.
+The secondary way of selecting varational paramemters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
+It allows controlling optimization granularity at each optimization step.
+If ``variational_subset`` is not provided or empty, all the varational paramemters are selected.
+If variational paramemters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
+
+The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
+
+::
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud </parameter>
+    </qmc>
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud eH </parameter>
+    </qmc>
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud eH CI </parameter>
+    </qmc>
 
 Optimizers
 ~~~~~~~~~~

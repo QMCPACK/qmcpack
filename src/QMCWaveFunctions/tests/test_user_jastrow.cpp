@@ -25,7 +25,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
 
   Communicate* c = OHMMS::Controller;
 
-  UserFunctor<RealType> uf;
+  UserFunctor<RealType> uf("test_functor");
 
   // This may or may not need to be present
   uf.setCusp(1.0);
@@ -90,7 +90,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   uf.evaluateDerivatives(r, param_derivs);
 
   optimize::VariableSet var_param;
-  uf.checkInVariables(var_param);
+  uf.checkInVariablesExclusive(var_param);
   var_param.resetIndex();
   REQUIRE(var_param.size_of_active() == nparam);
 
@@ -101,7 +101,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
     RealType old_param   = std::real(var_param[var_name]);
     var_param[var_name]  = old_param + h;
 
-    uf.resetParameters(var_param);
+    uf.resetParametersExclusive(var_param);
 
     RealType dudr_h;
     RealType d2udr2_h;
@@ -117,7 +117,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
     REQUIRE(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(h));
 
     var_param[var_name] = old_param;
-    uf.resetParameters(var_param);
+    uf.resetParametersExclusive(var_param);
   }
 
   // Could do finite differences to verify the parameter derivatives

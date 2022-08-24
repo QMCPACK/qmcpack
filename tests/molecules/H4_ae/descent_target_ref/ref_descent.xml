@@ -46,8 +46,6 @@
       <parameter name="omega"> -2.5 </parameter>
 
      <parameter name="useDrift">no</parameter>
-     <parameter name="nonlocalpp">no</parameter>
-     <parameter name="use_nonlocalpp_deriv">no</parameter>
      <parameter name="max_relative_cost_change">10.0</parameter>
      <parameter name="max_param_change">3</parameter>
      <parameter name="shift_i">0.01</parameter>

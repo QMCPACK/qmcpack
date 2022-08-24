@@ -781,7 +781,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->getClassName() << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -807,7 +807,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->getClassName() << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
@@ -1726,8 +1726,8 @@ void WaveFunctionTester::runDerivTest()
   wfvar_prime = wfVars;
   wfVars.print(fout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1833,8 +1833,8 @@ void WaveFunctionTester::runDerivNLPPTest()
   wfvar_prime = wfVars;
   wfVars.print(nlout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1847,7 +1847,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved, true);
+  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff    = 1e-6;
@@ -1935,8 +1935,8 @@ void WaveFunctionTester::runDerivCloneTest()
   wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
-  std::vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
-  std::vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
+  Vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
+  Vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
   std::vector<RealType> PGradient(Nvars, 0), og_PGradient(Nvars, 0);
   std::vector<RealType> HGradient(Nvars, 0), og_HGradient(Nvars, 0);
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);

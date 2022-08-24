@@ -144,8 +144,13 @@ public:
   // Finally, the call to resetParameters progates the new values (step 3).
   // The call to checkOutVariables is a prerequisite for resetParameters to set the local values successfully.
 
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  UniqueOptObjRefs extractOptimizableObjectRefs();
+
   /** Check in an optimizable parameter
-   * * @param o aggregated list of optimizable variables
+   * @param o aggregated list of optimizable variables
    *
    * Gather all the optimizable parameters from wavefunction components into a single list
    */
@@ -215,11 +220,11 @@ public:
    * It is expected that evaluateDeltaLog(P,false) is called later
    * and the external object adds the varying G and L and the fixed terms.
    */
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient& fixedG,
-                        ParticleSet::ParticleLaplacian& fixedL);
+  void evaluateDeltaLogSetup(ParticleSet& P,
+                             RealType& logpsi_fixed,
+                             RealType& logpsi_opt,
+                             ParticleSet::ParticleGradient& fixedG,
+                             ParticleSet::ParticleLaplacian& fixedL);
 
   /** evaluate the sum of log value of optimizable many-body wavefunctions
    * @param wf_list vector of wavefunctions
@@ -448,8 +453,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi);
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi);
 
   static void mw_evaluateParameterDerivatives(const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -457,7 +462,7 @@ public:
                                               RecordArray<ValueType>& dlogpsi,
                                               RecordArray<ValueType>& dhpsioverpsi);
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, std::vector<ValueType>& dlogpsi);
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi);
 

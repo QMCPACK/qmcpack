@@ -69,7 +69,7 @@ class TWFFastDerivWrapper;
  * which are required to be base class pointers of the same derived class type.
  * all the mw_ routines must be implemented in a way either stateless or maintains states of every walker.
  */
-class WaveFunctionComponent : public QMCTraits, public OptimizableObject
+class WaveFunctionComponent : public QMCTraits
 {
 public:
   /** enum for a update mode */
@@ -96,25 +96,19 @@ public:
   // the value type for psi(r')/psi(r)
   using PsiValueType = QTFull::ValueType;
 
-  /** true, if this component is fermionic */
-  bool is_fermionic;
-
   /** current update mode */
   int UpdateMode;
-  /** Name of the class derived from WaveFunctionComponent
-   */
-  const std::string ClassName;
-  /** Name of the object
-   * It is required to be different for objects of the same derived type like multiple J1.
-   * It can be left empty for object which is unique per many-body WF.
-   */
-  const std::string myName;
   ///list of variables this WaveFunctionComponent handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
   size_t Bytes_in_WFBuffer;
 
 protected:
+  /** Name of the object
+   * It is required to be different for objects of the same derived type like multiple J1.
+   * It can be left empty for object which is unique per many-body WF.
+   */
+  const std::string my_name_;
   /** Current \f$\log\phi \f$.
    *  Exception! Slater Determinant most of the time has inconsistent a log_value inconsistent with the determinants
    *  it contains dduring a move sequence. That case the log_value_ would be more safely calculated on the fly.
@@ -127,12 +121,26 @@ public:
   const LogValueType& get_log_value() const { return log_value_; }
 
   /// default constructor
-  WaveFunctionComponent(const std::string& class_name, const std::string& obj_name = "");
+  WaveFunctionComponent(const std::string& obj_name = "");
   ///default destructor
   virtual ~WaveFunctionComponent();
 
+  /// return object name
+  const std::string& getName() const { return my_name_; }
+
+  /// return class name
+  virtual std::string getClassName() const = 0;
+
   ///assembles the full value
   PsiValueType getValue() const { return LogToValue<PsiValueType>::convert(log_value_); }
+
+  /** true, if this component is fermionic */
+  virtual bool isFermionic() const { return false; }
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active);
 
   /** Register the component with the TWFFastDerivWrapper wrapper.  
    */
@@ -179,7 +187,7 @@ public:
 
   virtual void evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi_all)
   {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + getClassName() + " class.");
   }
 
   /** Prepare internal data for updating WFC correspond to a particle group
@@ -203,7 +211,7 @@ public:
    */
   virtual GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in " + ClassName + " class.");
+    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in " + getClassName() + " class.");
     return GradType();
   }
 
@@ -447,7 +455,14 @@ public:
    */
   virtual RealType KECorrection();
 
+  /** if true, this contains optimizable components
+   */
   virtual bool isOptimizable() const { return false; }
+
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
 
   /** Compute the derivatives of both the log of the wavefunction and kinetic energy
    * with respect to optimizable parameters.
@@ -464,8 +479,8 @@ public:
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi) = 0;
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi) = 0;
 
   /** Compute the derivatives of the log of the wavefunction with respect to optimizable parameters.
    *  parameters
@@ -477,7 +492,7 @@ public:
   */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi);
+                                     Vector<ValueType>& dlogpsi);
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
@@ -487,7 +502,8 @@ public:
 
   virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in, std::vector<ValueType>& dgradlogpsi)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName + " class.\n");
+    APP_ABORT("Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + getClassName() +
+              " class.\n");
   }
 
   virtual void finalizeOptimization() {}
@@ -541,7 +557,7 @@ public:
    */
   virtual void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addLog for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::addLog for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -553,7 +569,7 @@ public:
    */
   virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -561,7 +577,7 @@ public:
   // in the respective vectors
   virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& grad)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -571,7 +587,7 @@ public:
                      std::vector<GradType>& grad,
                      std::vector<ValueType>& lapl)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -581,7 +597,7 @@ public:
                          std::vector<GradType>& grad,
                          std::vector<ValueType>& lapl)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::calcRatio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::calcRatio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -592,7 +608,7 @@ public:
                         std::vector<GradType>& grad,
                         std::vector<ValueType>& lapl)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addRatio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::addRatio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -603,26 +619,26 @@ public:
                      std::vector<GradType>& grad,
                      std::vector<ValueType>& lapl)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
 
   virtual void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addGradient for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::addGradient for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
   virtual void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::calcGradient for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::calcGradient for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
   virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -635,19 +651,19 @@ public:
                              int kd,
                              int nw)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::det_lookahead for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::det_lookahead for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
   virtual void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
   virtual void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -657,7 +673,7 @@ public:
                         std::vector<PosType>& quadPoints,
                         std::vector<ValueType>& psi_ratios)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 
@@ -669,7 +685,7 @@ public:
                         gpu::device_vector<CUDA_PRECISION*>& RatioList,
                         int numQuadPoints)
   {
-    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + ClassName +
+    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + getClassName() +
               ".\n Required CUDA functionality not implemented. Contact developers.\n");
   }
 

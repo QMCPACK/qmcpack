@@ -40,6 +40,8 @@ public:
 
   ~RPAJastrow() override;
 
+  std::string getClassName() const override { return "RPAJastrow"; }
+
   bool put(xmlNodePtr cur);
 
   void buildOrbital(const std::string& name,
@@ -59,17 +61,11 @@ public:
     */
   void checkOutVariables(const opt_variables_type& o) override;
 
-  /** check in an optimizable parameter
-        * @param o a super set of optimizable variables
-    */
-  void checkInVariables(opt_variables_type& o) override;
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override;
-
-  /** reset the parameters during optimizations
-    */
-  void resetParameters(const opt_variables_type& active) override;
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    opt_obj_refs.push_back(*LongRangeRPA);
+    ShortRangeRPA->extractOptimizableObjectRefs(opt_obj_refs);
+  }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -93,8 +89,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
 private:

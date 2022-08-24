@@ -195,6 +195,8 @@ public:
 
   ~J1OrbitalSoA();
 
+  std::string getClassName() const override { return "J1OrbitalSoA"; }
+
   /* initialize storage */
   void initialize(const ParticleSet& els)
   {
@@ -299,8 +301,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     evaluateDerivativesWF(P, active, dlogpsi);
     bool recalculate(false);
@@ -329,7 +331,7 @@ public:
     }
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
     resizeWFOptVectors();
     bool recalculate(false);
@@ -501,7 +503,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(myName, Ions, tqp, use_offload_);
+    auto j1copy = std::make_unique<J1OrbitalSoA<FT>>(my_name_, Ions, tqp, use_offload_);
     for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
     {
       if (J1UniqueFunctors[i] != nullptr)
@@ -518,27 +520,13 @@ public:
   /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
   bool isOptimizable() const override { return true; }
 
-  void reportStatus(std::ostream& os) override
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
   {
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-    {
-      if (J1UniqueFunctors[i] != nullptr)
-        J1UniqueFunctors[i]->myVars.print(os);
-    }
+    for (auto& functor : J1UniqueFunctors)
+      if (functor)
+        opt_obj_refs.push_back(*functor);
   }
 
-  void checkInVariables(opt_variables_type& active) override
-  {
-    myVars.clear();
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-    {
-      if (J1UniqueFunctors[i] != nullptr)
-      {
-        J1UniqueFunctors[i]->checkInVariables(active);
-        J1UniqueFunctors[i]->checkInVariables(myVars);
-      }
-    }
-  }
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.clear();
@@ -570,21 +558,6 @@ public:
         J1UniqueFunctors[i]->checkOutVariables(active);
   }
 
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (!isOptimizable())
-      return;
-    for (size_t i = 0, n = J1UniqueFunctors.size(); i < n; ++i)
-      if (J1UniqueFunctors[i] != nullptr)
-        J1UniqueFunctors[i]->resetParameters(active);
-
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ii = myVars.Index[i];
-      if (ii >= 0)
-        myVars[i] = active[ii];
-    }
-  }
   /**@} */
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,

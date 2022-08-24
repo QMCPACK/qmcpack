@@ -126,12 +126,12 @@ void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
-                                                       RecordArray<ValueType>& dlogpsi,
+                                                       const RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const
 {
   const int nparam = dlogpsi.nparam();
-  std::vector<ValueType> tmp_dlogpsi(nparam);
-  std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+  Vector<ValueType> tmp_dlogpsi(nparam);
+  Vector<ValueType> tmp_dhpsioverpsi(nparam);
   for (int iw = 0; iw < o_list.size(); iw++)
   {
     for (int j = 0; j < nparam; j++)
@@ -177,9 +177,14 @@ void OperatorBase::mw_evaluatePerParticleWithToperator(
 
 OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
                                                                  const opt_variables_type& optvars,
-                                                                 const std::vector<ValueType>& dlogpsi,
-                                                                 std::vector<ValueType>& dhpsioverpsi)
+                                                                 const Vector<ValueType>& dlogpsi,
+                                                                 Vector<ValueType>& dhpsioverpsi)
 {
+  if (dependsOnWaveFunction())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateValueAndDerivatives"
+                           "must be overloaded when the OperatorBase depends on a wavefunction.");
+
   return evaluate(P);
 }
 

@@ -29,6 +29,7 @@ class SkPot : public OperatorBase
 public:
   SkPot(ParticleSet& elns);
 
+  std::string getClassName() const override { return "SkPot"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   [[noreturn]] Return_t evaluate(ParticleSet& P) override;

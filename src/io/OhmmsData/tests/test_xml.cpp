@@ -13,9 +13,6 @@
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-#include <stdio.h>
 #include <string>
 #include <vector>
 
@@ -126,65 +123,6 @@ TEST_CASE("putContent", "[xml]")
   // Will hang, don't test for now
   //putContent(f, item);
   //REQUIRE(f.size() == 2);
-}
-
-TEST_CASE("AttributeSet", "[xml]")
-{
-  const char* content = " \
-<simulation name=\"here\" deprecated_tag=\"lmn\"> \
-</simulation>";
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
-
-  xmlNodePtr root = doc.getRoot();
-  OhmmsAttributeSet pattrib;
-  string name  = "default_name";
-  string other = "default";
-  string deprecated_tag;
-  pattrib.add(name, "name");
-  pattrib.add(other, "other");
-  pattrib.add(deprecated_tag, "deprecated_tag", {"abc", "def"}, TagStatus::DEPRECATED);
-  try
-  {
-    pattrib.put(root);
-  }
-  catch(std::runtime_error& exception)
-  {
-    std::cout << "Caught exception : " << exception.what() << std::endl;
-    REQUIRE(std::string(exception.what()).find("is not valid") != std::string::npos);
-  }
-
-  REQUIRE(name == "here");
-  REQUIRE(other == "default");
-  REQUIRE(deprecated_tag == "lmn");
-}
-
-
-TEST_CASE("ParameterSet", "[xml]")
-{
-  const char* content = " \
-<simulation> \
-   <parameter name=\"p1\">1</parameter> \
-   <p2>2</p2> \
-</simulation>";
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(content);
-  REQUIRE(okay == true);
-
-  xmlNodePtr root = doc.getRoot();
-  ParameterSet param;
-  int p1_val = 0;
-  int p2_val = 0;
-  int p3_val = 0;
-  param.add(p1_val, "p1");
-  param.add(p2_val, "p2");
-  param.add(p3_val, "p3");
-  param.put(root);
-
-  REQUIRE(p1_val == 1);
-  REQUIRE(p2_val == 2);
-  REQUIRE(p3_val == 0);
 }
 
 TEST_CASE("write_file", "[xml]")

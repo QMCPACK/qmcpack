@@ -22,18 +22,15 @@ namespace qmcplusplus
 {
 // Modifies orbital set lcwc
 void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
-                         int num_centers,
-                         int orbital_set_size,
                          ParticleSet& targetPtcl,
                          ParticleSet& sourcePtcl,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id);
 
-void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, const std::string& id);
+/// save cusp correction info to a file.
+void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id);
 
-void generateCuspInfo(int orbital_set_size,
-                      int num_centers,
-                      Matrix<CuspCorrectionParameters>& info,
+void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const ParticleSet& targetPtcl,
                       const ParticleSet& sourcePtcl,
                       const LCAOrbitalSetWithCorrection& lcwc,

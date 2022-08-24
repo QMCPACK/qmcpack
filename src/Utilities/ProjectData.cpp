@@ -20,28 +20,42 @@
 #include "Utilities/qmc_common.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Message/UniformCommunicateError.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
+
+// PUBLIC
 //----------------------------------------------------------------------------
 // ProjectData
 //----------------------------------------------------------------------------
 // constructors and destructors
 ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion driver_version)
-    : m_title(atitle), m_host("none"), m_date("none"), m_series(0), m_cur(NULL), max_cpu_secs_(360000), driver_version_(driver_version)
+    : title_(atitle),
+      host_("none"),
+      date_("none"),
+      series_(0),
+      cur_(NULL),
+      max_cpu_secs_(360000),
+      driver_version_(driver_version),
+#ifdef QMC_COMPLEX
+      is_complex_(true)
+#else
+      is_complex_(false)
+#endif
 {
-  myComm  = OHMMS::Controller;
-  if (m_title.empty())
-    m_title = getDateAndTime("%Y%m%dT%H%M");
+  my_comm_ = OHMMS::Controller;
+  if (title_.empty())
+    title_ = getDateAndTime("%Y%m%dT%H%M");
 }
 
-void ProjectData::setCommunicator(Communicate* c) { myComm = c; }
+void ProjectData::setCommunicator(Communicate* c) { my_comm_ = c; }
 
 bool ProjectData::get(std::ostream& os) const
 {
-  os << "  Project = " << m_title << "\n";
+  os << "  Project = " << title_ << "\n";
   os << "  date    = " << getDateAndTime("%Y-%m-%d %H:%M:%S %Z\n");
-  os << "  host    = " << m_host << "\n";
+  os << "  host    = " << host_ << "\n";
   return true;
 }
 
@@ -51,16 +65,16 @@ bool ProjectData::put(std::istream& is)
   while (!is.eof())
   {
     if (isdigit(t1[0]))
-      m_series = atoi(t1.c_str());
+      series_ = atoi(t1.c_str());
     is >> t1;
     if (t1 == "series")
-      is >> m_series;
+      is >> series_;
     else if (t1 == "host")
-      is >> m_host;
+      is >> host_;
     else if (t1 == "date")
-      is >> m_date;
+      is >> date_;
     else
-      m_title = t1;
+      title_ = t1;
   }
   reset();
   return true;
@@ -68,101 +82,101 @@ bool ProjectData::put(std::istream& is)
 
 void ProjectData::advance()
 {
-  m_series++;
+  series_++;
   reset();
 }
 
 void ProjectData::rewind()
 {
-  if (m_series > 0)
-    m_series--;
+  if (series_ > 0)
+    series_--;
   reset();
 }
 
 /**\fn void ProjectData::reset()
- *\brief Construct the root name with m_title and m_series.
+ *\brief Construct the root name with title_ and m_series.
  */
 void ProjectData::reset()
 {
   //int nproc_g = OHMMS::Controller->size();
-  int nproc   = myComm->size();
-  int nodeid  = myComm->rank();
-  int groupid = myComm->getGroupID();
+  int nproc   = my_comm_->size();
+  int nodeid  = my_comm_->rank();
+  int groupid = my_comm_->getGroupID();
   char fileroot[256], nextroot[256];
 
   bool no_gtag = (qmc_common.mpi_groups == 1);
   int length{0};
   if (no_gtag) //qnproc_g == nproc)
-    length = sprintf(fileroot, "%s.s%03d", m_title.c_str(), m_series);
+    length = sprintf(fileroot, "%s.s%03d", title_.c_str(), series_);
   else
-    length = sprintf(fileroot, "%s.g%03d.s%03d", m_title.c_str(), groupid, m_series);
+    length = sprintf(fileroot, "%s.g%03d.s%03d", title_.c_str(), groupid, series_);
 
-  m_projectmain = std::string(fileroot, length);
+  project_main_ = std::string(fileroot, length);
   //set the communicator name
-  myComm->setName(fileroot);
+  my_comm_->setName(fileroot);
   if (no_gtag)
   {
     if (nproc > 1)
     {
-      sprintf(fileroot, ".s%03d.p%03d", m_series, nodeid);
-      sprintf(nextroot, ".s%03d.p%03d", m_series + 1, nodeid);
+      sprintf(fileroot, ".s%03d.p%03d", series_, nodeid);
+      sprintf(nextroot, ".s%03d.p%03d", series_ + 1, nodeid);
     }
     else
     {
-      sprintf(fileroot, ".s%03d", m_series);
-      sprintf(nextroot, ".s%03d", m_series + 1);
+      sprintf(fileroot, ".s%03d", series_);
+      sprintf(nextroot, ".s%03d", series_ + 1);
     }
   }
   else
   {
     if (nproc > 1)
     {
-      sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, m_series, nodeid);
-      sprintf(nextroot, ".g%03d.s%03d.p%03d", groupid, m_series + 1, nodeid);
+      sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, series_, nodeid);
+      sprintf(nextroot, ".g%03d.s%03d.p%03d", groupid, series_ + 1, nodeid);
     }
     else
     {
-      sprintf(fileroot, ".g%03d.s%03d", groupid, m_series);
-      sprintf(nextroot, ".g%03d.s%03d", groupid, m_series + 1);
+      sprintf(fileroot, ".g%03d.s%03d", groupid, series_);
+      sprintf(nextroot, ".g%03d.s%03d", groupid, series_ + 1);
     }
   }
-  m_projectroot = m_title;
-  m_projectroot.append(fileroot);
-  m_nextroot = m_title;
-  m_nextroot.append(nextroot);
+  project_root_ = title_;
+  project_root_.append(fileroot);
+  next_root_ = title_;
+  next_root_.append(nextroot);
   std::stringstream s;
-  s << m_series + 1;
-  if (m_cur)
-    xmlSetProp(m_cur, (const xmlChar*)"series", (const xmlChar*)(s.str().c_str()));
+  s << series_ + 1;
+  if (cur_)
+    xmlSetProp(cur_, (const xmlChar*)"series", (const xmlChar*)(s.str().c_str()));
 }
 
-bool ProjectData::PreviousRoot(std::string& oldroot) const
+bool ProjectData::previousRoot(std::string& oldroot) const
 {
   oldroot.erase(oldroot.begin(), oldroot.end());
-  if (m_series)
+  if (series_)
   {
     char fileroot[128];
     //int nproc_g = OHMMS::Controller->size();
-    int nproc    = myComm->size();
-    int nodeid   = myComm->rank();
-    int groupid  = myComm->getGroupID();
+    int nproc    = my_comm_->size();
+    int nodeid   = my_comm_->rank();
+    int groupid  = my_comm_->getGroupID();
     bool no_gtag = (qmc_common.mpi_groups == 1);
 
     if (no_gtag)
     {
       if (nproc > 1)
-        sprintf(fileroot, ".s%03d.p%03d", m_series - 1, nodeid);
+        sprintf(fileroot, ".s%03d.p%03d", series_ - 1, nodeid);
       else
-        sprintf(fileroot, ".s%03d", m_series - 1);
+        sprintf(fileroot, ".s%03d", series_ - 1);
     }
     else
     {
       if (nproc > 1)
-        sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, m_series - 1, nodeid);
+        sprintf(fileroot, ".g%03d.s%03d.p%03d", groupid, series_ - 1, nodeid);
       else
-        sprintf(fileroot, ".g%03d.s%03d", groupid, m_series - 1);
+        sprintf(fileroot, ".g%03d.s%03d", groupid, series_ - 1);
     }
-    oldroot = m_title;
+    oldroot = title_;
     oldroot.append(fileroot);
     return true;
   }
@@ -174,11 +188,11 @@ bool ProjectData::PreviousRoot(std::string& oldroot) const
 
 bool ProjectData::put(xmlNodePtr cur)
 {
-  m_cur   = cur;
-  m_title = getXMLAttributeValue(cur, "id");
+  cur_   = cur;
+  title_ = getXMLAttributeValue(cur, "id");
   const std::string series_str(getXMLAttributeValue(cur, "series"));
   if (!series_str.empty())
-    m_series = std::stoi(series_str);
+    series_ = std::stoi(series_str);
 
   std::string driver_version_str;
   ParameterSet m_param;
@@ -200,33 +214,48 @@ bool ProjectData::put(xmlNodePtr cur)
     }
     if (cname == "host")
     {
-      m_host = getHostName();
-      const XMLNodeString node_string(m_host);
+      host_ = getHostName();
+      const XMLNodeString node_string(host_);
       node_string.setXMLNodeContent(cur);
     }
     if (cname == "date")
     {
-      m_date = getDateAndTime();
-      const XMLNodeString node_string(m_date);
+      date_ = getDateAndTime();
+      const XMLNodeString node_string(date_);
       node_string.setXMLNodeContent(cur);
     }
     cur = cur->next;
   }
   ///second, add xml nodes, if missing
-  if (m_host == "none")
+  if (host_ == "none")
   {
-    m_host = getHostName();
-    xmlNewChild(m_cur, m_cur->ns, (const xmlChar*)"host", (const xmlChar*)(m_host.c_str()));
+    host_ = getHostName();
+    xmlNewChild(cur_, cur_->ns, (const xmlChar*)"host", (const xmlChar*)(host_.c_str()));
   }
-  if (m_date == "none")
+  if (date_ == "none")
   {
-    m_date = getDateAndTime();
-    xmlNewChild(m_cur, m_cur->ns, (const xmlChar*)"date", (const xmlChar*)(m_date.c_str()));
+    date_ = getDateAndTime();
+    xmlNewChild(cur_, cur_->ns, (const xmlChar*)"date", (const xmlChar*)(date_.c_str()));
   }
   reset();
   return true;
 }
 
+const std::string& ProjectData::getTitle() const noexcept { return title_; }
+
+const std::string& ProjectData::currentMainRoot() const noexcept { return project_main_; }
+
+const std::string& ProjectData::nextRoot() const noexcept { return next_root_; }
+
+int ProjectData::getSeriesIndex() const noexcept { return series_; }
+
+int ProjectData::getMaxCPUSeconds() const noexcept { return max_cpu_secs_; }
+
+ProjectData::DriverVersion ProjectData::getDriverVersion() const noexcept { return driver_version_; }
+
+bool ProjectData::isComplex() const noexcept { return is_complex_; }
+
+// PRIVATE
 ProjectData::DriverVersion ProjectData::lookupDriverVersion(const std::string& enum_value)
 {
   std::string enum_value_str(lowerCase(enum_value));

@@ -90,10 +90,12 @@ public:
   DiracDeterminantBatched(const DiracDeterminantBatched& s)            = delete;
   DiracDeterminantBatched& operator=(const DiracDeterminantBatched& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminant"; }
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<Value>& dlogpsi,
-                           std::vector<Value>& dhpsioverpsi) override;
+                           Vector<Value>& dlogpsi,
+                           Vector<Value>& dhpsioverpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -128,12 +130,16 @@ public:
                     std::vector<PsiValue>& ratios,
                     std::vector<Grad>& grad_new) const override;
 
+  PsiValue ratioGradWithSpin(ParticleSet& P, int iat, Grad& grad_iat, ComplexType& spingrad) override;
+
   Grad evalGrad(ParticleSet& P, int iat) override;
 
   void mw_evalGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                    const RefVectorWithLeader<ParticleSet>& p_list,
                    int iat,
                    std::vector<Grad>& grad_now) const override;
+
+  Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
 
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
@@ -265,6 +271,8 @@ public:
   Vector<Grad> dpsiV_host_view;
   DualVector<Value> d2psiV;
   Vector<Value> d2psiV_host_view;
+  DualVector<Value> dspin_psiV;
+  Vector<Value> dspin_psiV_host_view;
 
   /// psi(r')/psi(r) during a PbyP move
   PsiValue curRatio;

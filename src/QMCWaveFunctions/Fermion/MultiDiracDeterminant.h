@@ -146,21 +146,20 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
+  std::string getClassName() const override { return "MultiDiracDeterminant"; }
+
+  bool isFermionic() const final { return true; }
   inline bool isOptimizable() const final { return Phi->isOptimizable(); }
-  inline void checkInVariables(opt_variables_type& active) override
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
   {
-    if (Phi->isOptimizable())
-      Phi->checkInVariables(active);
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
   }
+
   inline void checkOutVariables(const opt_variables_type& active) override
   {
     if (Phi->isOptimizable())
       Phi->checkOutVariables(active);
-  }
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (Phi->isOptimizable())
-      Phi->resetParameters(active);
   }
 
   /// create optimizable orbital rotation parameters
@@ -170,14 +169,14 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
@@ -186,15 +185,13 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
                              const PsiValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
 
-
-  inline void reportStatus(std::ostream& os) override {}
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 

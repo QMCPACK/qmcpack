@@ -310,8 +310,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   }
 
   opt_variables_type optvars;
-  std::vector<ValueType> dlogpsi;
-  std::vector<ValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();

@@ -12,6 +12,7 @@
 #include "ScalarEstimatorInputs.h"
 #include "InputSection.h"
 #include "EstimatorInput.h"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {

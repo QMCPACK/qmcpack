@@ -21,16 +21,13 @@
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/XMLParsingString.h"
 #include "Message/CommOperators.h"
-#include <set>
+#include "Message/UniformCommunicateError.h"
 //#define QMCCOSTFUNCTION_DEBUG
 
 
 namespace qmcplusplus
 {
-QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
-                                         TrialWaveFunction& psi,
-                                         QMCHamiltonian& h,
-                                         Communicate* comm)
+QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
     : MPIObjectBase(comm),
       reportH5(false),
       CI_Opt(false),
@@ -56,7 +53,6 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
       msg_stream(0),
       m_wfPtr(NULL),
       m_doc_out(NULL),
-      includeNonlocalH("no"),
       debug_stream(0)
 {
   GEVType = "mixed";
@@ -65,8 +61,7 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w,
   //default: don't check fo MinNumWalkers
   MinNumWalkers = 0.3;
   SumValue.resize(SUM_INDEX_SIZE, 0.0);
-  IsValid      = true;
-  useNLPPDeriv = false;
+  IsValid = true;
 #if defined(QMCCOSTFUNCTION_DEBUG)
   char fname[16];
   sprintf(fname, "optdebug.p%d", OHMMS::Controller->mycontext());
@@ -131,7 +126,7 @@ QMCCostFunctionBase::Return_rt QMCCostFunctionBase::Cost(bool needGrad)
   resetPsi();
   //evaluate new local energies
   EffectiveWeight effective_weight = correlatedSampling(needGrad);
-  IsValid = isEffectiveWeightValid(effective_weight);
+  IsValid                          = isEffectiveWeightValid(effective_weight);
   return computedCost();
 }
 
@@ -191,9 +186,9 @@ void QMCCostFunctionBase::Report()
     if (msg_stream)
     {
       msg_stream->precision(8);
-      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue
-                  << std::setw(16) << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w
-                  << std::setw(16) << curVar << std::setw(16) << curVar_abs << std::endl;
+      *msg_stream << " curCost " << std::setw(5) << ReportCounter << std::setw(16) << CostValue << std::setw(16)
+                  << curAvg_w << std::setw(16) << curAvg << std::setw(16) << curVar_w << std::setw(16) << curVar
+                  << std::setw(16) << curVar_abs << std::endl;
       *msg_stream << " curVars " << std::setw(5) << ReportCounter;
       for (int i = 0; i < OptVariables.size(); i++)
         *msg_stream << std::setw(16) << OptVariables[i];
@@ -312,21 +307,32 @@ bool QMCCostFunctionBase::checkParameters()
  */
 bool QMCCostFunctionBase::put(xmlNodePtr q)
 {
+  std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
   std::string output_override_str("no");
+  astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
   m_param.add(MinNumWalkers, "minwalkers");
   m_param.add(MaxWeight, "maxWeight");
-  m_param.add(includeNonlocalH, "nonlocalpp");
-  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {"yes", "no"});
+  m_param.add(includeNonlocalH, "nonlocalpp", {}, TagStatus::DEPRECATED);
+  m_param.add(computeNLPPderiv, "use_nonlocalpp_deriv", {}, TagStatus::DEPRECATED);
   m_param.add(w_beta, "beta");
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
   m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
+
+  if (!includeNonlocalH.empty())
+    app_warning() << "'nonlocalpp' no more affects any part of the execution. Please remove it from your input file."
+                  << std::endl;
+  if (!computeNLPPderiv.empty())
+    app_warning()
+        << "'use_nonlocalpp_deriv' no more affects any part of the execution. Please remove it from your input file."
+        << std::endl;
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
@@ -334,14 +340,8 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   if (output_override_str == "yes")
     do_override_output = true;
 
-  if (includeNonlocalH == "yes")
-    includeNonlocalH = "NonLocalECP";
+  variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
 
-  if (computeNLPPderiv != "no" && includeNonlocalH != "no")
-  {
-    app_log() << "   Going to include the derivatives of " << includeNonlocalH << std::endl;
-    useNLPPDeriv = true;
-  }
   // app_log() << "  QMCCostFunctionBase::put " << std::endl;
   // m_param.get(app_log());
   Write2OneXml     = (writeXmlPerStep == "no");
@@ -399,10 +399,21 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
     }
     cur = cur->next;
   }
+
+  UniqueOptObjRefs opt_obj_refs = extractOptimizableObjects(Psi);
+  app_log() << " TrialWaveFunction \"" << Psi.getName() << "\" has " << opt_obj_refs.size()
+            << " optimizable objects:" << std::endl;
+  for (OptimizableObject& obj : opt_obj_refs)
+    app_log() << "   '" << obj.getName() << "'" << (obj.isOptimized() ? " optimized" : " fixed") << std::endl;
+
   //build optimizables from the wavefunction
   OptVariablesForPsi.clear();
-  Psi.checkInVariables(OptVariablesForPsi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.checkInVariablesExclusive(OptVariablesForPsi);
   OptVariablesForPsi.resetIndex();
+  app_log() << " Variational subset selects " << OptVariablesForPsi.size() << " parameters." << std::endl;
+
   //synchronize OptVariables and OptVariablesForPsi
   OptVariables  = OptVariablesForPsi;
   InitVariables = OptVariablesForPsi;
@@ -469,6 +480,9 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   {
     APP_ABORT("QMCCostFunctionBase::put No valid optimizable variables are found.");
   }
+  else
+    app_log() << " In total " << NumOptimizables << " parameters being optimized after applying constraints."
+              << std::endl;
   //     app_log() << "<active-optimizables> " << std::endl;
   //     OptVariables.print(app_log());
   //     app_log() << "</active-optimizables>" << std::endl;
@@ -1036,17 +1050,51 @@ void QMCCostFunctionBase::printCJParams(xmlNodePtr cur, std::string& rname)
 
 bool QMCCostFunctionBase::isEffectiveWeightValid(EffectiveWeight effective_weight) const
 {
-  app_log() << "Effective weight of all the samples measured by correlated sampling is "
-          << effective_weight << std::endl;
+  app_log() << "Effective weight of all the samples measured by correlated sampling is " << effective_weight
+            << std::endl;
   if (effective_weight < MinNumWalkers)
   {
-    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = " << MinNumWalkers << std::endl
+    WARNMSG("    Smaller than the user specified threshold \"minwalkers\" = "
+            << MinNumWalkers << std::endl
             << "  If this message appears frequently. You might have to be cautious. " << std::endl
             << "  Find info about parameter \"minwalkers\" in the user manual!");
     return false;
   }
 
   return true;
+}
+
+UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunction& psi) const
+{
+  const auto& names(variational_subset_names);
+  // survey all the optimizable objects
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  // check if input names are valid
+  for (auto& name : names)
+    if (std::find_if(opt_obj_refs.begin(), opt_obj_refs.end(),
+                     [&name](const OptimizableObject& obj) { return name == obj.getName(); }) == opt_obj_refs.end())
+    {
+      std::ostringstream msg;
+      msg << "Variational subset entry '" << name << "' doesn't exist in the trial wavefunction which contains";
+      for (OptimizableObject& obj : opt_obj_refs)
+        msg << " '" << obj.getName() << "'";
+      msg << "." << std::endl;
+      throw UniformCommunicateError(msg.str());
+    }
+
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.setOptimization(names.empty() || std::find_if(names.begin(), names.end(), [&obj](const std::string& name) {
+                                           return name == obj.getName();
+                                         }) != names.end());
+  return opt_obj_refs;
+}
+
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const
+{
+  const auto opt_obj_refs = extractOptimizableObjects(psi);
+  for (OptimizableObject& obj : opt_obj_refs)
+    if (obj.isOptimized())
+      obj.resetParametersExclusive(opt_variables);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

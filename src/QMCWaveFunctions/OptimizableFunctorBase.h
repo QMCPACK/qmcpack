@@ -59,6 +59,20 @@ struct OptimizableFunctorBase : public OptimizableObject
   ///virtual destrutor
   virtual ~OptimizableFunctorBase() = default;
 
+  /** check in variational parameters to the global list of parameters used by the optimizer.
+   * @param active a super set of optimizable variables
+   */
+  using OptimizableObject::checkInVariablesExclusive;
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active) = 0;
+
+  /** reset the parameters during optimizations
+   */
+  using OptimizableObject::resetParametersExclusive;
+
   inline void getIndex(const opt_variables_type& active) { myVars.getIndex(active); }
 
   /** create a clone of this object
@@ -118,6 +132,9 @@ struct OptimizableFunctorBase : public OptimizableObject
  * @param extent the functor is evaluated from [0, extent) unless extent < 0, in which case the functor is evaluated from [0, cutoff_radius)
  */
 void print(OptimizableFunctorBase& func, std::ostream& os, double extent = -1.0);
+
+/// return the id of the first coefficients. If not found, return an emtpy string
+std::string extractCoefficientsID(xmlNodePtr cur);
 
 } // namespace qmcplusplus
 

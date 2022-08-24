@@ -61,7 +61,11 @@ struct PadeFunctor : public OptimizableFunctorBase
   std::string ID_B;
 
   ///default constructor
-  PadeFunctor() : Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0") { reset(); }
+  PadeFunctor(const std::string& my_name)
+      : OptimizableFunctorBase(my_name), Opt_A(false), Opt_B(true), A(1.0), B0(1.0), Scale(1.0), ID_A("0"), ID_B("0")
+  {
+    reset();
+  }
 
   void setCusp(real_type cusp) override
   {
@@ -283,19 +287,17 @@ struct PadeFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
-    //myVars.print(std::cout);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
-    //myVars.print(std::cout);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size())
     {
@@ -332,8 +334,8 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
   std::string ID_C;
 
   ///constructor
-  Pade2ndOrderFunctor(real_type a = 1.0, real_type b = 1.0, real_type c = 1.0)
-      : A(a), B(b), C(c), ID_A("0"), ID_B("0"), ID_C("0")
+  Pade2ndOrderFunctor(const std::string& my_name, real_type a = 1.0, real_type b = 1.0, real_type c = 1.0)
+      : OptimizableFunctorBase(my_name), A(a), B(b), C(c), ID_A("0"), ID_B("0"), ID_C("0")
   {
     reset();
   }
@@ -586,10 +588,10 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     int i = 0;
     if (ID_A != "0")
@@ -911,10 +913,10 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size() == 0)
       return;
@@ -1014,11 +1016,11 @@ struct ScaledPadeFunctor : public OptimizableFunctorBase
 
   bool put(xmlNodePtr cur) override { return true; }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
-  inline void resetParameters(const opt_variables_type& active) override
+  inline void resetParametersExclusive(const opt_variables_type& active) override
   {
     OneOverC = 1.0 / C;
     B2       = 2.0 * B;
