@@ -53,7 +53,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       msg_stream(0),
       m_wfPtr(NULL),
       m_doc_out(NULL),
-      debug_stream(0)
+      debug_stream(0),
+      do_override_output(true)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -214,7 +215,13 @@ void QMCCostFunctionBase::reportParameters()
   {
     std::ostringstream vp_filename;
     vp_filename << RootName << ".vp.h5";
-    OptVariables.saveAsHDF(vp_filename.str());
+    hdf_archive hout;
+    OptVariables.saveAsHDF(vp_filename.str(), hout);
+
+    UniqueOptObjRefs opt_obj_refs = Psi.extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().saveExtraParameters(hout);
+
 
     char newxml[128];
     sprintf(newxml, "%s.opt.xml", RootName.c_str());
@@ -310,7 +317,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
-  std::string output_override_str("no");
   astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
@@ -322,7 +328,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
-  m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(do_override_output, "output_vp_override", {true});
   m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
@@ -336,9 +342,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
-
-  if (output_override_str == "yes")
-    do_override_output = true;
 
   variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
 
