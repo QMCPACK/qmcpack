@@ -347,8 +347,6 @@ The relevant portion of the input describing the linear optimization process is
       <parameter name="warmupSteps"    >  50       </parameter>
       <parameter name="blocks"         >  200      </parameter>
       <parameter name="subSteps"       >  1        </parameter>
-      <parameter name="nonlocalpp"     >  yes      </parameter>
-      <parameter name="useBuffer"      >  yes      </parameter>
       ...
     </qmc>
   </loop>
@@ -396,13 +394,6 @@ subSteps
    evaluation is expensive, so taking a few steps to decorrelate between
    measurements can be more efficient. Will be less efficient with many
    substeps.
-
-nonlocalpp,useBuffer
-   If ``nonlocalpp="no,"`` then the nonlocal part of the pseudopotential
-   is not included when computing the cost function. If
-   ``useBuffer="yes,"`` then temporary data is stored to speed up
-   nonlocal pseudopotential evaluation at the expense of memory
-   consumption.
 
 loop max
    Number of times to repeat the optimization. Using the resulting
@@ -962,8 +953,6 @@ Objects representing QMCPACK simulations are then constructed with the ``generat
                   warmupsteps          = 50,
                   blocks               = 200,
                   substeps             = 1,
-                  nonlocalpp           = True,
-                  usebuffer            = True,
                   walkers              = 1,
                   minwalkers           = 0.5,
                   maxweight            = 1e9,
