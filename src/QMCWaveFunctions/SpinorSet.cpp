@@ -250,9 +250,17 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
 
   up_spo_leader.mw_evaluateVGLandDetRatioGrads(up_spo_list, P_list, iat, invRow_ptr_list, up_phi_vgl_v, up_ratios,
                                                up_grads);
+  if (up_spo_leader.isOMPoffload())
+    up_phi_vgl_v.updateFrom();
+
   dn_spo_leader.mw_evaluateVGLandDetRatioGrads(dn_spo_list, P_list, iat, invRow_ptr_list, dn_phi_vgl_v, dn_ratios,
                                                dn_grads);
-
+  if (dn_spo_leader.isOMPoffload())
+    dn_phi_vgl_v.updateFrom();
+  
+  //To do: this is not optimized. Right now, we are building the spinors on the CPU and then updating the data to the GPU at the end
+  //with the updateTo(). Need to eventually rework this to be all on the GPU to avoid these data transfers, but this should work as an
+  //initial implementation
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
@@ -277,6 +285,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
     }
   }
 
+  //Now update data to device
   phi_vgl_v.updateTo();
 }
 
