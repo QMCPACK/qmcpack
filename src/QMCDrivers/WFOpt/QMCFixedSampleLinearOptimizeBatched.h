@@ -252,7 +252,7 @@ private:
   };
 
   /// LMY engine related options
-  LMYOptions LMY_options_;
+  LMYOptions options_LMY_;
 
   // ------------------------------------
 
