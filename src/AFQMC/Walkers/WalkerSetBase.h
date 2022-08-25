@@ -293,9 +293,9 @@ public:
 
   void resize_bp(int nbp, int nCV, int nref)
   {
-    assert(walker_buffer.size(1) == walker_size);
-    assert(bp_buffer.size(0) == bp_walker_size);
-    assert(walker_buffer.size(0) == bp_buffer.size(1));
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
+    assert(bp_buffer.size() == bp_walker_size);
+    assert(walker_buffer.size() == std::get<1>(bp_buffer.sizes()));
     // wlk_descriptor: {nmo, naea, naeb, nback_prop, nCV, nRefs, nHist}
     wlk_desc[3] = nbp;
     wlk_desc[4] = nCV;
