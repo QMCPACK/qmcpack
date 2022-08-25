@@ -63,7 +63,6 @@
       <parameter name="useDrift">  yes </parameter>
       <parameter name="bigchange">10.0</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="nonlocalpp"> yes </parameter>
       <parameter name="MinMethod">quartic</parameter>
       <parameter name="exp0">-6</parameter>
       <parameter name="alloweddifference"> 1.0e-5 </parameter>

@@ -300,7 +300,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   fixedG1.resize(nelec);
   fixedL1.resize(nelec);
 
-  psi.evaluateDeltaLog(elec1, logpsi_fixed_r1, logpsi_opt_r1, fixedG1, fixedL1);
+  psi.evaluateDeltaLogSetup(elec1, logpsi_fixed_r1, logpsi_opt_r1, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_list[0]));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_list[0]));
@@ -342,7 +342,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
 
   RealType logpsi_fixed_r1b;
   RealType logpsi_opt_r1b;
-  psi2.evaluateDeltaLog(elec1, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
+  psi2.evaluateDeltaLogSetup(elec1, logpsi_fixed_r1b, logpsi_opt_r1b, fixedG1, fixedL1);
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));
   CHECK(logpsi_opt_r1 == Approx(logpsi_opt_r1b));
@@ -365,7 +365,7 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   fixedL2.resize(nelec);
 
   psi2.setLogPsi(0.0);
-  psi2.evaluateDeltaLog(elec2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
+  psi2.evaluateDeltaLogSetup(elec2, logpsi_fixed_r2, logpsi_opt_r2, fixedG2, fixedL2);
 
 
   CHECK(logpsi_fixed_r1 == Approx(logpsi_fixed_r1b));

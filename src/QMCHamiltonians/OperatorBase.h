@@ -282,7 +282,7 @@ public:
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const opt_variables_type& optvars,
-                                                   RecordArray<ValueType>& dlogpsi,
+                                                   const RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
 
   /**

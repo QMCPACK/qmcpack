@@ -880,7 +880,6 @@ Appendix C: Wavefunction optimization XML block
         <parameter name="bigchange">10.0</parameter>
         <estimator name="LocalEnergy" hdf5="no"/>
         <parameter name="usebuffer"> yes </parameter>
-        <parameter name="nonlocalpp"> yes </parameter>
         <parameter name="MinMethod">quartic</parameter>
         <parameter name="exp0">-6</parameter>
         <parameter name="alloweddifference"> 1.0e-5 </parameter>
@@ -894,8 +893,6 @@ Options:
 -  bigchange: (default 50.0) Largest parameter change allowed
 
 -  usebuffer: (default no) Save useful information during VMC
-
--  nonlocalpp: (default no) Include nonlocal energy on 1-D min
 
 -  MinMethod: (default quartic) Method to calculate magnitude of
    parameter change quartic: fit quartic polynomial to four values of

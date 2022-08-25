@@ -304,21 +304,17 @@ struct UserFunctor : public OptimizableFunctorBase
   }
 
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
-    //myVars.print(std::cout);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
-    //myVars.print(std::cout);
   }
 
-  //void resetParameters(const opt_variables_type& active)
-
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size())
     {

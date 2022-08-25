@@ -195,11 +195,7 @@ public:
 
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
-  // functors doesn't contain hierarchical OptimizableObject. Simply redirect existing implentation.
-  void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
-  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
-
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     //reset parameters to zero after coefficient matrix has been updated
     for (int k = 0; k < myVars.size(); ++k)
@@ -213,7 +209,7 @@ public:
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     std::vector<RealType> param(m_act_rot_inds.size());
     for (int i = 0; i < m_act_rot_inds.size(); i++)

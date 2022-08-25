@@ -30,6 +30,8 @@ jobs:
             GCC9-MPI-Gcov-Complex,
             GCC11-NoMPI-Werror-Real,
             GCC11-NoMPI-Werror-Complex,
+            GCC11-NoMPI-Werror-Real-Mixed,
+            GCC11-NoMPI-Werror-Complex-Mixed,
             Clang10-NoMPI-ASan-Real,
             Clang10-NoMPI-ASan-Complex,
             Clang10-NoMPI-UBSan-Real,
@@ -72,6 +74,16 @@ jobs:
               options: -u 1001
 
           - jobname: GCC11-NoMPI-Werror-Complex
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              options: -u 1001
+
+          - jobname: GCC11-NoMPI-Werror-Real-Mixed
+            container:
+              image: williamfgc/qmcpack-ci:ubuntu2110-serial
+              options: -u 1001
+
+          - jobname: GCC11-NoMPI-Werror-Complex-Mixed
             container:
               image: williamfgc/qmcpack-ci:ubuntu2110-serial
               options: -u 1001

@@ -95,19 +95,10 @@ public:
    */
   virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
 
-  /** check in variational parameters to the global list of parameters used by the optimizer.
-   * @param active a super set of optimizable variables
-   */
-  virtual void checkInVariables(opt_variables_type& active);
-
   /** check out variational optimizable variables
    * @param active a super set of optimizable variables
    */
   virtual void checkOutVariables(const opt_variables_type& active);
-
-  /** reset the parameters during optimizations
-   */
-  virtual void resetParameters(const opt_variables_type& active);
 
   /// Query if this SPOSet uses OpenMP offload
   virtual bool isOMPoffload() const { return false; }
@@ -124,23 +115,20 @@ public:
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-  // store parameters before getting destroyed by rotation.
+  /// return true if this SPOSet can be wrappered by RotatedSPO
+  virtual bool isRotationSupported() const { return false; }
+  /// store parameters before getting destroyed by rotation.
   virtual void storeParamsBeforeRotation() {}
-  // apply rotation to all the orbitals
-  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false)
-  {
-    std::ostringstream o;
-    o << "SPOSet::applyRotation is not implemented by " << getClassName() << std::endl;
-    APP_ABORT(o.str());
-  }
+  /// apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
-                                   const int& LastIndex)
-  {}
+                                   const int& LastIndex);
+
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
@@ -169,8 +157,7 @@ public:
                                    const size_t N2,
                                    const size_t NP1,
                                    const size_t NP2,
-                                   const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                   const std::vector<std::vector<int>>& lookup_tbl);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
@@ -189,8 +176,7 @@ public:
                                      const ValueMatrix& Minv_up,
                                      const ValueMatrix& Minv_dn,
                                      const std::vector<int>& detData_up,
-                                     const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                     const std::vector<std::vector<int>>& lookup_tbl);
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals

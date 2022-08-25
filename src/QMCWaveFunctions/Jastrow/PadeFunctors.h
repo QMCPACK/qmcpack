@@ -287,19 +287,17 @@ struct PadeFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
-    //myVars.print(std::cout);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
-    //myVars.print(std::cout);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size())
     {
@@ -590,10 +588,10 @@ struct Pade2ndOrderFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     int i = 0;
     if (ID_A != "0")
@@ -915,10 +913,10 @@ struct PadeTwo2ndOrderFunctor : public OptimizableFunctorBase
     return true;
   }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size() == 0)
       return;
@@ -1018,11 +1016,11 @@ struct ScaledPadeFunctor : public OptimizableFunctorBase
 
   bool put(xmlNodePtr cur) override { return true; }
 
-  void checkInVariables(opt_variables_type& active) override { active.insertFrom(myVars); }
+  void checkInVariablesExclusive(opt_variables_type& active) override { active.insertFrom(myVars); }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
-  inline void resetParameters(const opt_variables_type& active) override
+  inline void resetParametersExclusive(const opt_variables_type& active) override
   {
     OneOverC = 1.0 / C;
     B2       = 2.0 * B;

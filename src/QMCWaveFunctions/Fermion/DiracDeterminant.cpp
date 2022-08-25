@@ -461,7 +461,8 @@ void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vect
 {
   ScopedTimer local_timer(SPOVTimer);
   Phi->evaluateValue(P, -1, psiV);
-  MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
+  Vector<ValueType> ratios_this_det(ratios.data() + FirstIndex, NumPtcls);
+  MatrixOperators::product(psiM, psiV, ratios_this_det);
 }
 
 

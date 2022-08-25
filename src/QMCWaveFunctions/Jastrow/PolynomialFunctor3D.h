@@ -1050,7 +1050,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (notOpt)
       return;
@@ -1070,7 +1070,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     reset_gamma();
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     if (notOpt)
       return;

@@ -50,17 +50,6 @@ void SlaterDet::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
     Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
-void SlaterDet::checkInVariables(opt_variables_type& active)
-{
-  myVars.clear();
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-    {
-      Dets[i]->checkInVariables(active);
-      Dets[i]->checkInVariables(myVars);
-    }
-}
-
 void SlaterDet::checkOutVariables(const opt_variables_type& active)
 {
   myVars.clear();
@@ -72,16 +61,6 @@ void SlaterDet::checkOutVariables(const opt_variables_type& active)
     }
   myVars.getIndex(active);
 }
-
-///reset all the Dirac determinants, Optimizable is true
-void SlaterDet::resetParameters(const opt_variables_type& active)
-{
-  if (isOptimizable())
-    for (int i = 0; i < Dets.size(); i++)
-      Dets[i]->resetParameters(active);
-}
-
-void SlaterDet::reportStatus(std::ostream& os) {}
 
 PsiValueType SlaterDet::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {

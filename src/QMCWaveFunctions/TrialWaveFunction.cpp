@@ -246,11 +246,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return log_real_;
 }
 
-void TrialWaveFunction::evaluateDeltaLog(ParticleSet& P,
-                                         RealType& logpsi_fixed_r,
-                                         RealType& logpsi_opt_r,
-                                         ParticleSet::ParticleGradient& fixedG,
-                                         ParticleSet::ParticleLaplacian& fixedL)
+void TrialWaveFunction::evaluateDeltaLogSetup(ParticleSet& P,
+                                              RealType& logpsi_fixed_r,
+                                              RealType& logpsi_opt_r,
+                                              ParticleSet::ParticleGradient& fixedG,
+                                              ParticleSet::ParticleLaplacian& fixedL)
 {
   ScopedTimer local_timer(TWF_timers_[RECOMPUTE_TIMER]);
   P.G    = 0.0;
@@ -892,9 +892,9 @@ void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
 {
-  for (int i = 0; i < Z.size(); i++)
-    if (Z[i]->isOptimizable())
-      Z[i]->reportStatus(os);
+  auto opt_obj_refs = extractOptimizableObjectRefs();
+  for (OptimizableObject& obj : opt_obj_refs)
+      obj.reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
@@ -1046,6 +1046,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
   std::vector<ValueType> t(ratios.size());
   for (int i = 0; i < Z.size(); ++i)
   {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivRatios(VP, optvars, t, dratio);
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
@@ -1079,7 +1080,10 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   //     for (int j=0; j<dlogpsi.size(); j++)
   //       dlogpsi[j] = dhpsioverpsi[j] = 0.0;
   for (int i = 0; i < Z.size(); i++)
+  {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
   //orbitals do not know about mass of particle.
   for (int i = 0; i < dhpsioverpsi.size(); i++)
     dhpsioverpsi[i] *= OneOverM;
@@ -1096,16 +1100,14 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
   {
     Vector<ValueType> tmp_dlogpsi(nparam);
     Vector<ValueType> tmp_dhpsioverpsi(nparam);
-    TrialWaveFunction& twf = wf_list[iw];
-    for (int i = 0; i < twf.Z.size(); i++)
-      twf.Z[i]->evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
 
-    RealType OneOverM = twf.getReciprocalMass();
+    wf_list[iw].evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
+
     for (int i = 0; i < nparam; i++)
     {
       dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);
       //orbitals do not know about mass of particle.
-      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i] * OneOverM);
+      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i]);
     }
   }
 }
@@ -1116,16 +1118,17 @@ void TrialWaveFunction::evaluateDerivativesWF(ParticleSet& P,
                                               Vector<ValueType>& dlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
+  {
+    ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
     Z[i]->evaluateDerivativesWF(P, optvars, dlogpsi);
+  }
 }
 
 void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient& G_in,
                                                 std::vector<ValueType>& dgradlogpsi)
 {
   for (int i = 0; i < Z.size(); i++)
-  {
     Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
-  }
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::KECorrection() const
