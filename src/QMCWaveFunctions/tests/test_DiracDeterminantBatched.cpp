@@ -748,7 +748,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   //Check ratios and grads for both walkers for proposed move
   std::vector<PsiValueType> ratios(2);
   std::vector<GradType> grads(2);
-  std::vector<PsiValueType> spingrads(2);
+  std::vector<ComplexType> spingrads(2);
   dd.mw_ratioGrad(dd_ref_list, p_ref_list, 1, ratios, grads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
