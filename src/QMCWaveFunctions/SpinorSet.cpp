@@ -275,13 +275,14 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
     grads[iw]     = (eis * up_grads[iw] * up_ratios[iw] + emis * dn_grads[iw] * dn_ratios[iw]) / ratios[iw];
     spingrads[iw] = eye * (eis * up_ratios[iw] - emis * dn_ratios[iw]) / ratios[iw];
 
+    //loop over vgl to construct spinor vgl
     for (int idim = 0; idim < DIM_VGL; idim++)
     {
-      ValueType* phi_g    = phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* up_phi_g = up_phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* dn_phi_g = dn_phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* phi_v    = phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* up_phi_v = up_phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* dn_phi_v = dn_phi_vgl_v.data_at(idim, iw, 0);
       for (int iorb = 0; iorb < norb_requested; iorb++)
-        phi_g[iorb] = eis * up_phi_g[iorb] + emis * dn_phi_g[iorb];
+        phi_v[iorb] = eis * up_phi_v[iorb] + emis * dn_phi_v[iorb];
     }
   }
 
