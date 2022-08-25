@@ -79,6 +79,7 @@ public:
   virtual std::string getClassName() const override { return "SplineR2R"; }
   virtual std::string getKeyword() const override { return "SplineR2R"; }
   bool isComplex() const override { return false; };
+  bool isRotationSupported() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
 

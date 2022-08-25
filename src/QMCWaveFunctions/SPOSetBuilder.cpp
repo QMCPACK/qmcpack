@@ -98,6 +98,9 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
+    if (!sposet_ref.isRotationSupported())
+      myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
+                                sposet_ref.getClassName() + "'.");
     auto rot_spo    = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)

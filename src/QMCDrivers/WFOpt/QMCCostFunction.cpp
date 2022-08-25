@@ -179,31 +179,23 @@ void QMCCostFunction::getConfigurations(const std::string& aroot)
     HDerivRecords.resize(NumThreads, 0);
   }
 
-  app_log() << "  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
-  outputManager.pause();
   //#pragma omp parallel for
   for (int ip = 0; ip < NumThreads; ++ip)
-  {
-    if (H_KE_Node[ip] == 0)
+    if (!H_KE_Node[ip])
     {
-      H_KE_Node[ip] = std::make_unique<HamiltonianRef>();
-      H_KE_Node[ip]->addOperator(*hClones[ip]->getHamiltonian("Kinetic"));
-      if (includeNonlocalH != "no")
+      auto components = hClones[ip]->getTWFDependentComponents();
+      if (ip == 0)
       {
-        OperatorBase* a(hClones[ip]->getHamiltonian(includeNonlocalH));
-        if (a)
-        {
-          app_log() << " Found non-local Hamiltonian element named " << includeNonlocalH << std::endl;
-          H_KE_Node[ip]->addOperator(*a);
-        }
-        else
-          app_log() << " Did not find non-local Hamiltonian element named " << includeNonlocalH << std::endl;
+        app_log() << " Found " << components.size() << " wavefunction dependent components in the Hamiltonian";
+        if (components.size())
+          for (const OperatorBase& component : components)
+            app_log() << " '" << component.getName() << "'";
+        app_log() << "." << std::endl;
       }
+      H_KE_Node[ip] = std::make_unique<HamiltonianRef>(components);
     }
-  }
 
   //load samples from SampleStack
-  outputManager.resume();
   app_log() << "   Number of samples loaded to each thread : ";
   wPerRank[0] = 0;
   for (int ip = 0; ip < NumThreads; ++ip)
@@ -259,8 +251,6 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
-    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH);
-    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -273,7 +263,8 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
+                                           *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -285,8 +276,7 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
 
         //FIXME the ifdef should be removed after the optimizer is made compatible with complex coefficients
@@ -303,9 +293,10 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
 
       e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp * etmp;
-      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-      if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->getValue();
+      saved[ENERGY_FIXED]                 = saved[ENERGY_TOT];
+      const auto twf_dependent_components = hClones[ip]->getTWFDependentComponents();
+      for (const OperatorBase& component : twf_dependent_components)
+        saved[ENERGY_FIXED] -= component.getValue();
     }
     //add them all using reduction
     et_tot += e0;
@@ -382,8 +373,6 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    OperatorBase* nlpp = (includeNonlocalH == "no") ? nullptr : hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
-    bool compute_nlpp  = useNLPPDeriv && nlpp;
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -398,7 +387,8 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
       wRef.loadSample(wRef, iw);
       wRef.update();
       Return_rt* restrict saved = (*RecordsOnNode[ip])[iw];
-      psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
+      psiClones[ip]->evaluateDeltaLogSetup(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],
+                                           *d2LogPsi[iwg]);
       saved[REWEIGHT] = 1.0;
       Return_rt etmp;
       if (needGrads)
@@ -407,8 +397,7 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         Vector<Return_t> Dsaved(NumOptimizables, 0.0);
         Vector<Return_t> HDsaved(NumOptimizables, 0.0);
 
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
-        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp);
+        etmp = hClones[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         // add non-differentiated derivative vector
         std::vector<Return_t> der_rat_samp(NumOptimizables + 1, 0.0);
@@ -446,9 +435,11 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
 
       e0 += saved[ENERGY_TOT] = etmp;
       e2 += etmp * etmp;
-      saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
-      if (nlpp)
-        saved[ENERGY_FIXED] -= nlpp->getValue();
+
+      saved[ENERGY_FIXED]                 = saved[ENERGY_TOT];
+      const auto twf_dependent_components = hClones[ip]->getTWFDependentComponents();
+      for (const OperatorBase& component : twf_dependent_components)
+        saved[ENERGY_FIXED] -= component.getValue();
     }
 
     //add them all using reduction
@@ -524,15 +515,14 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
 
-  const bool nlpp         = (includeNonlocalH != "no");
   Return_rt wgt_tot       = 0.0;
   Return_rt wgt_tot2      = 0.0;
   Return_rt inv_n_samples = 1.0 / NumSamples;
 #pragma omp parallel reduction(+ : wgt_tot, wgt_tot2)
   {
-    int ip                        = omp_get_thread_num();
-    bool compute_nlpp             = useNLPPDeriv && (includeNonlocalH != "no");
-    bool compute_all_from_scratch = (includeNonlocalH != "no"); //true if we have nlpp
+    const int ip = omp_get_thread_num();
+    //if we have more than KE depending on TWF, TWF must be fully recomputed.
+    const bool compute_all_from_scratch = hClones[ip]->getTWFDependentComponents().size() > 1;
 
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_rt wgt_node = 0.0, wgt_node2 = 0.0;
@@ -553,11 +543,9 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
 
         Vector<Return_rt> rDsaved(NumOptimizables, 0);
         Vector<Return_rt> rHDsaved(NumOptimizables, 0);
-        psiClones[ip]->evaluateDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved);
 
         saved[ENERGY_NEW] =
-            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved, compute_nlpp) +
-            saved[ENERGY_FIXED];
+            H_KE_Node[ip]->evaluateValueAndDerivatives(wRef, OptVariablesForPsi, Dsaved, HDsaved) + saved[ENERGY_FIXED];
         ;
 
         for (int i = 0; i < NumOptimizables; i++)
@@ -572,7 +560,6 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
             (*DerivRecords[ip])(iw, i)  = rDsaved[i];
             (*HDerivRecords[ip])(iw, i) = rHDsaved[i];
           }
-        //saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];
       }
       else
         saved[ENERGY_NEW] = H_KE_Node[ip]->evaluate(wRef) + saved[ENERGY_FIXED];

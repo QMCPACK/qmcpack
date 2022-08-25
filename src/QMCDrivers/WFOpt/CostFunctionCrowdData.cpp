@@ -19,7 +19,6 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
                                              ParticleSet& P,
                                              TrialWaveFunction& Psi,
                                              QMCHamiltonian& H,
-                                             std::vector<std::string>& H_KE_node_names,
                                              RandomGenerator& Rng)
     : h0_res_("h0 resource"), e0_(0.0), e2_(0.0), wgt_(0.0), wgt2_(0.0)
 {
@@ -39,9 +38,10 @@ CostFunctionCrowdData::CostFunctionCrowdData(int crowd_size,
 
   // build a temporary H_KE for later calling makeClone
   // need makeClone to setup internal my_index_ of a new copy.
-  QMCHamiltonian H_KE;
-  for (const std::string& node_name : H_KE_node_names)
-    H_KE.addOperator(H.getHamiltonian(node_name)->makeClone(P, Psi), node_name);
+  const auto components = H.getTWFDependentComponents();
+  QMCHamiltonian H_KE("h_free");
+  for (OperatorBase& component : components)
+    H_KE.addOperator(component.makeClone(P, Psi), component.getName());
   H_KE.createResource(h0_res_);
 
   for (int ib = 0; ib < crowd_size; ib++)

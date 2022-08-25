@@ -29,8 +29,6 @@ else()
     1
     12
     RMG_TEST_NAME)
-  set(LAST_TEST_NAME "${RMG_TEST_NAME}")
-
 
   # RMG_TEST_NAME is now rmg-Diamond2-1x1x1-gamma-ccECP-np-1
   # workdir is CMAKE_CURRENT_BINARY_DIR/RMG_TEST_NAME
@@ -68,7 +66,7 @@ else()
       DIAMOND2_GAMMA_SCALARS # VMC
     )
   
-    if(${THIS_TEST_NAME})
+    if(TEST ${THIS_TEST_NAME}-1-16)
       set_tests_properties(${THIS_TEST_NAME}-1-16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
     endif()
   

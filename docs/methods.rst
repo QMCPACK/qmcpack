@@ -519,9 +519,9 @@ The input parameters are listed in the following table.
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | **Name**                 | **Datatype** | **Values**  | **Default** | **Description**                                  |
   +==========================+==============+=============+=============+==================================================+
-  | ``nonlocalpp``           | text         | yes, no     | no          | include non-local PP energy in the cost function |
+  | ``nonlocalpp``           | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``use_nonlocalpp_deriv`` | text         | yes, no     | yes         | Add non-local PP energy derivative contribution  |
+  | ``use_nonlocalpp_deriv`` | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | ``minwalkers``           | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
@@ -532,13 +532,7 @@ Additional information:
 
 - ``maxWeight`` The default should be good.
 
-- ``nonlocalpp`` The ``nonlocalpp`` contribution to the local energy depends on the
-  wavefunction. When a new set of parameters is proposed, this
-  contribution needs to be updated if the cost function consists of local
-  energy. Fortunately, nonlocal contribution is chosen small when making a
-  PP for small locality error. We can ignore its change and avoid the
-  expensive computational cost. An implementation issue with legacy GPU code is
-  that a large amount of memory is consumed with this option.
+- ``nonlocalpp`` and ``use_nonlocalpp_deriv`` are obsolete and will be treated as invalid options (trigger application abort) in future releases. From this point forward, the code behaves as prior versions of qmcpack did when both were set to ``yes``.
 
 - ``minwalkers`` This is a ``critical`` parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than ``minwalkers``,
   the proposed set of parameters is invalid.

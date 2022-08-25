@@ -37,7 +37,7 @@ using Return_t = BareKineticEnergy::Return_t;
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : Ps(p), psi_(psi)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -125,6 +125,33 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
     }
   }
   return value_;
+}
+
+Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
+                                                        const opt_variables_type& optvars,
+                                                        const Vector<ValueType>& dlogpsi,
+                                                        Vector<ValueType>& dhpsioverpsi)
+{
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
+  psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  return evaluate(P);
+}
+
+void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            const opt_variables_type& optvars,
+                                                            const RecordArray<ValueType>& dlogpsi,
+                                                            RecordArray<ValueType>& dhpsioverpsi) const
+{
+  RefVectorWithLeader<TrialWaveFunction> wf_list(o_list.getCastedLeader<BareKineticEnergy>().psi_);
+  for (int i = 0; i < o_list.size(); i++)
+    wf_list.push_back(o_list.getCastedElement<BareKineticEnergy>(i).psi_);
+  mw_evaluate(o_list, wf_list, p_list);
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
+  TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars,
+                                                     const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -601,7 +628,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
 
 std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_unique<BareKineticEnergy>(*this);
+  return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
 #ifdef QMC_CUDA

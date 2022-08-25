@@ -24,6 +24,8 @@
 
 namespace qmcplusplus
 {
+
+// PUBLIC
 //----------------------------------------------------------------------------
 // ProjectData
 //----------------------------------------------------------------------------
@@ -35,7 +37,12 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       series_(0),
       cur_(NULL),
       max_cpu_secs_(360000),
-      driver_version_(driver_version)
+      driver_version_(driver_version),
+#ifdef QMC_COMPLEX
+      is_complex_(true)
+#else
+      is_complex_(false)
+#endif
 {
   my_comm_ = OHMMS::Controller;
   if (title_.empty())
@@ -234,6 +241,21 @@ bool ProjectData::put(xmlNodePtr cur)
   return true;
 }
 
+const std::string& ProjectData::getTitle() const noexcept { return title_; }
+
+const std::string& ProjectData::currentMainRoot() const noexcept { return project_main_; }
+
+const std::string& ProjectData::nextRoot() const noexcept { return next_root_; }
+
+int ProjectData::getSeriesIndex() const noexcept { return series_; }
+
+int ProjectData::getMaxCPUSeconds() const noexcept { return max_cpu_secs_; }
+
+ProjectData::DriverVersion ProjectData::getDriverVersion() const noexcept { return driver_version_; }
+
+bool ProjectData::isComplex() const noexcept { return is_complex_; }
+
+// PRIVATE
 ProjectData::DriverVersion ProjectData::lookupDriverVersion(const std::string& enum_value)
 {
   std::string enum_value_str(lowerCase(enum_value));
