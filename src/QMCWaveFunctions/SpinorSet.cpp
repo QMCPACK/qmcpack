@@ -269,7 +269,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
 
     for (int idim = 0; idim < DIM_VGL; idim++)
     {
-      ValueType* phi_g = phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* phi_g    = phi_vgl_v.data_at(idim, iw, 0);
       ValueType* up_phi_g = up_phi_vgl_v.data_at(idim, iw, 0);
       ValueType* dn_phi_g = dn_phi_vgl_v.data_at(idim, iw, 0);
       for (int iorb = 0; iorb < norb_requested; iorb++)
