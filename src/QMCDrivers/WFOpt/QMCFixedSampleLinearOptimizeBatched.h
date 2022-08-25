@@ -236,20 +236,23 @@ private:
     ///whether to do the third part of block lm
     bool block_third = false;
     ///whether to filter parameters for the lm
-    bool filter_param_ = false;
+    bool filter_param = false;
     ///whether to filter parameters for the lm
-    bool filter_info_ = false;
+    bool filter_info = false;
     ///threshold for filtering parameters for the lm
-    double ratio_threshold_ = 0.0;
+    double ratio_threshold = 0.0;
     ///whether to store samples for the lm
-    bool store_samples_ = false;
+    bool store_samples = false;
     ///type of the previous optimization method, updated by processOptXML before run
-    OptimizerType previous_optimizer_type_ = OptimizerType::NONE;
+    OptimizerType previous_optimizer_type = OptimizerType::NONE;
     ///type of the current optimization method, updated by processOptXML before run
-    OptimizerType current_optimizer_type_ = OptimizerType::NONE;
+    OptimizerType current_optimizer_type = OptimizerType::NONE;
     ///whether to use hybrid method
     bool doHybrid = false;
-  } LMY_options_;
+  };
+
+  /// LMY engine related options
+  LMYOptions LMY_options_;
 
   // ------------------------------------
 

@@ -122,10 +122,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   m_param.add(LMY_options_.num_shifts, "LMY_options_.num_shifts");
   m_param.add(LMY_options_.cost_increase_tol, "LMY_options_.cost_increase_tol");
   m_param.add(LMY_options_.target_shift_i, "LMY_options_.target_shift_i");
-  m_param.add(LMY_options_.filter_param_, "filter_param");
-  m_param.add(LMY_options_.ratio_threshold_, "deriv_threshold");
-  m_param.add(LMY_options_.store_samples_, "store_samples");
-  m_param.add(LMY_options_.filter_info_, "filter_info");
+  m_param.add(LMY_options_.filter_param, "filter_param");
+  m_param.add(LMY_options_.ratio_threshold, "deriv_threshold");
+  m_param.add(LMY_options_.store_samples, "store_samples");
+  m_param.add(LMY_options_.filter_info, "filter_info");
 
 
 #ifdef HAVE_LMY_ENGINE
@@ -316,15 +316,15 @@ bool QMCFixedSampleLinearOptimizeBatched::run()
   }
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::ADAPTIVE)
+  if (LMY_options_.current_optimizer_type == OptimizerType::ADAPTIVE)
     return adaptive_three_shift_run();
 
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::DESCENT)
+  if (LMY_options_.current_optimizer_type == OptimizerType::DESCENT)
     return descent_run();
 
 #endif
 
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
+  if (LMY_options_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     return one_shift_run();
 
   return previous_linear_methods_run();
@@ -657,19 +657,19 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
   auto iter = OptimizerNames.find(MinMethod);
   if (iter == OptimizerNames.end())
     throw std::runtime_error("Unknown MinMethod!\n");
-  LMY_options_.previous_optimizer_type_ = LMY_options_.current_optimizer_type_;
-  LMY_options_.current_optimizer_type_  = OptimizerNames.at(MinMethod);
+  LMY_options_.previous_optimizer_type = LMY_options_.current_optimizer_type;
+  LMY_options_.current_optimizer_type  = OptimizerNames.at(MinMethod);
 
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::DESCENT && !descentEngineObj)
+  if (LMY_options_.current_optimizer_type == OptimizerType::DESCENT && !descentEngineObj)
     descentEngineObj = std::make_unique<DescentEngine>(myComm, opt_xml);
 
   // sanity check
-  if (LMY_options_.targetExcited && LMY_options_.current_optimizer_type_ != OptimizerType::ADAPTIVE &&
-      LMY_options_.current_optimizer_type_ != OptimizerType::DESCENT)
+  if (LMY_options_.targetExcited && LMY_options_.current_optimizer_type != OptimizerType::ADAPTIVE &&
+      LMY_options_.current_optimizer_type != OptimizerType::DESCENT)
     APP_ABORT("LMY_options_.targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
 
 #ifdef _OPENMP
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
+  if (LMY_options_.current_optimizer_type == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
   {
     // throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer. Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
     app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
@@ -698,9 +698,9 @@ bool QMCFixedSampleLinearOptimizeBatched::processOptXML(xmlNodePtr opt_xml,
         "LMY_options_.cost_increase_tol must be non-negative in QMCFixedSampleLinearOptimizeBatched::put");
 
   // if this is the first time this function has been called, set the initial shifts
-  if (bestShift_i < 0.0 && (LMY_options_.current_optimizer_type_ == OptimizerType::ADAPTIVE || LMY_options_.doHybrid))
+  if (bestShift_i < 0.0 && (LMY_options_.current_optimizer_type == OptimizerType::ADAPTIVE || LMY_options_.doHybrid))
     bestShift_i = shift_i_input;
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::ONESHIFTONLY)
+  if (LMY_options_.current_optimizer_type == OptimizerType::ONESHIFTONLY)
     bestShift_i = shift_i_input;
   if (bestShift_s < 0.0)
     bestShift_s = shift_s_input;
@@ -1070,17 +1070,17 @@ void QMCFixedSampleLinearOptimizeBatched::solveShiftsWithoutLMYEngine(
 #ifdef HAVE_LMY_ENGINE
 bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 {
-  EngineObj->setStoringSamples(LMY_options_.store_samples_);
+  EngineObj->setStoringSamples(LMY_options_.store_samples);
 
   //Set whether LM will only update a filtered set of parameters
-  EngineObj->setFiltering(LMY_options_.filter_param_);
-  EngineObj->setFilterInfo(LMY_options_.filter_info_);
+  EngineObj->setFiltering(LMY_options_.filter_param);
+  EngineObj->setFilterInfo(LMY_options_.filter_info);
 
-  if (LMY_options_.filter_param_ && !LMY_options_.store_samples_)
+  if (LMY_options_.filter_param && !LMY_options_.store_samples)
     myComm->barrier_and_abort(" Error: Parameter Filtration requires storing the samples. \n");
 
-  if (LMY_options_.filter_param_)
-    EngineObj->setThreshold(LMY_options_.ratio_threshold_);
+  if (LMY_options_.filter_param)
+    EngineObj->setThreshold(LMY_options_.ratio_threshold);
 
   // remember what the cost function grads flag was
   const bool saved_grads_flag = optTarget->getneedGrads();
@@ -1131,7 +1131,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   }
 
   //Reset parameter number for vdeps to the total number in case filtration happened on a previous iteration
-  if (LMY_options_.filter_param_)
+  if (LMY_options_.filter_param)
   {
     formic::VarDeps tmp_vdeps(numParams, std::vector<double>());
     vdeps = tmp_vdeps;
@@ -1145,7 +1145,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   EngineObj->turn_on_update();
 
   //The initial intialization of the LM engine is handled differently if parameters are being filtered
-  if (!LMY_options_.filter_param_)
+  if (!LMY_options_.filter_param)
   {
     // initialize the engine if we do not use block lm or it's the first part of block lm
     EngineObj->initialize(LMY_options_.nblocks, 0, LMY_options_.nkept, previous_update, false);
@@ -1167,13 +1167,13 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   int new_num = 0;
 
   //To handle different cases for the LM's mode of operation, first check if samples are being stored
-  if (LMY_options_.store_samples_)
+  if (LMY_options_.store_samples)
   {
     //Need to clear lists from previous iter
     EngineObj->reset();
 
     //If samples are being stored, check for the subcase where parameters are also being filtered
-    if (LMY_options_.filter_param_)
+    if (LMY_options_.filter_param)
     {
       EngineObj->selectParameters();
 
@@ -1270,7 +1270,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   // get dimension of the linear method matrices
   int N = numParams + 1;
-  if (LMY_options_.filter_param_)
+  if (LMY_options_.filter_param)
     N = new_num + 1;
 
   // have the cost function prepare derivative vectors
@@ -1293,7 +1293,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   if (LMY_options_.block_lm)
   {
-    if (!LMY_options_.store_samples_)
+    if (!LMY_options_.store_samples)
     {
       optTarget->setneedGrads(true);
 
@@ -1315,7 +1315,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
       finish();
 
-      if (LMY_options_.filter_param_)
+      if (LMY_options_.filter_param)
       {
         engine_start(EngineObj, *descentEngineObj, MinMethod);
         EngineObj->buildMatricesFromDerivatives();
@@ -1330,7 +1330,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
   }
 
   //Need to wipe the stored samples after they are no longer needed and before the next iteration
-  if (LMY_options_.store_samples_)
+  if (LMY_options_.store_samples)
   {
     EngineObj->clear_histories();
   }
@@ -1367,7 +1367,7 @@ bool QMCFixedSampleLinearOptimizeBatched::adaptive_three_shift_run()
 
   //If paramters are being filtered need to expand the LM updates from the engine to the full parameter set.
   //There will be updates of 0 for parameters that were filtered out before derivative ratios were used by the engine.
-  if (LMY_options_.filter_param_)
+  if (LMY_options_.filter_param)
   {
     std::vector<std::vector<ValueType>> tmpParameterDirections;
     tmpParameterDirections.resize(shifts_i.size());
@@ -1808,11 +1808,11 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
   //Ensure LM engine knows it is being used as part of a hybrid run
   EngineObj->setOnHybrid(true);
 
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::ADAPTIVE)
+  if (LMY_options_.current_optimizer_type == OptimizerType::ADAPTIVE)
   {
     //If the optimization just switched to using the BLM, need to transfer a set
     //of vectors to the BLM engine.
-    if (LMY_options_.previous_optimizer_type_ == OptimizerType::DESCENT)
+    if (LMY_options_.previous_optimizer_type == OptimizerType::DESCENT)
     {
       descentEngineObj->resetStorageCount();
       std::vector<std::vector<ValueType>> hybridBLM_Input = descentEngineObj->retrieveHybridBLM_Input();
@@ -1824,7 +1824,7 @@ bool QMCFixedSampleLinearOptimizeBatched::hybrid_run()
     adaptive_three_shift_run();
   }
 
-  if (LMY_options_.current_optimizer_type_ == OptimizerType::DESCENT)
+  if (LMY_options_.current_optimizer_type == OptimizerType::DESCENT)
     descent_run();
 
   app_log() << "Finished a hybrid step" << std::endl;

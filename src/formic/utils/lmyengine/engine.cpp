@@ -1546,8 +1546,6 @@ void cqmc::engine::LMYEngine<S>::get_brlm_update_alg_part_two(const formic::VarD
  template<typename S>
  void cqmc::engine::LMYEngine<S>::store_sample(std::vector<S> & der_rat_samp,std::vector<S> & le_der_samp,std::vector<S> & ls_der_samp,double vgs_samp,double weight_samp,int sample_index)
  {
-
-    int myThread = omp_get_thread_num();
      for(int i = 0; i < le_der_samp.size();i++)
      {
          le_der_rat_history.at(sample_index,i) = le_der_samp[i];
