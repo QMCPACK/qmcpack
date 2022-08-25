@@ -85,13 +85,10 @@ bool HamiltonianPool::put(xmlNodePtr cur)
 
 bool HamiltonianPool::get(std::ostream& os) const
 {
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while (it != it_end)
+  for(auto& [name, factory] : myPool)
   {
-    os << "  Hamiltonian " << (*it).first << std::endl;
-    ;
-    (*it).second->getH()->get(os);
-    ++it;
+    os << "  Hamiltonian " << name << std::endl;
+    factory->getH()->get(os);
   }
   os << std::endl;
   return true;

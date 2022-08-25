@@ -196,54 +196,63 @@ private:
   RealType shift_s_base;
 
   // ------------------------------------
-  // Parameters in this section are used by one or more of the adaptive LM, descent, or hybrid optimizers
+  // Parameters in this struct are used by one or more of the adaptive LM, descent, or hybrid optimizers
 
-  /// number of shifts we will try
-  int num_shifts;
-  /// the maximum relative change in the cost function for the adaptive three-shift scheme
-  RealType max_relative_cost_change;
-  ///max amount a parameter may change relative to current wave function weight
-  RealType max_param_change;
-  /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
-  RealType cost_increase_tol;
-  /// the shift_i value that the adaptive shift method should aim for
-  RealType target_shift_i;
-  ///whether we are targeting an excited state
-  std::string targetExcitedStr;
-  ///whether we are targeting an excited state
-  bool targetExcited;
-  ///whether we are doing block algorithm
-  std::string block_lmStr;
-  ///whether we are doing block algorithm
-  bool block_lm;
-  ///number of blocks used in block algorithm
-  int nblocks;
-  ///number of old updates kept
-  int nolds;
-  ///number of directions kept
-  int nkept;
-  ///number of samples to do in correlated sampling part
-  int nsamp_comp;
-  ///the shift to use when targeting an excited state
-  RealType omega_shift;
-  ///whether to do the first part of block lm
-  bool block_first;
-  ///whether to do the second part of block lm
-  bool block_second;
-  ///whether to do the third part of block lm
-  bool block_third;
-
-  //name of the current optimization method, updated by processOptXML before run
+  //String inputs are listed outside the struct
+  ///name of the current optimization method, updated by processOptXML before run
   std::string MinMethod;
 
-  //type of the previous optimization method, updated by processOptXML before run
-  OptimizerType previous_optimizer_type_;
+  //LMY related input
+  struct LMYOptions
+  {
+    /// number of shifts we will try
+    int num_shifts = 3;
+    /// the maximum relative change in the cost function for the adaptive three-shift scheme
+    RealType max_relative_cost_change = 10.0;
+    ///max amount a parameter may change relative to current wave function weight
+    RealType max_param_change = 0.3;
+    /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
+    RealType cost_increase_tol = 0.0;
+    /// the shift_i value that the adaptive shift method should aim for
+    RealType target_shift_i = -1.0;
+    ///whether we are targeting an excited state
+    bool targetExcited = false;
+    ///whether we are doing block algorithm
+    bool block_lm = false;
+    ///number of blocks used in block algorithm
+    int nblocks = 1;
+    ///number of old updates kept
+    int nolds = 1;
+    ///number of directions kept
+    int nkept = 1;
+    ///number of samples to do in correlated sampling part
+    int nsamp_comp = 0;
+    ///the shift to use when targeting an excited state
+    RealType omega_shift = 0.0;
+    ///whether to do the first part of block lm
+    bool block_first = true;
+    ///whether to do the second part of block lm
+    bool block_second = false;
+    ///whether to do the third part of block lm
+    bool block_third = false;
+    ///whether to filter parameters for the lm
+    bool filter_param = false;
+    ///whether to filter parameters for the lm
+    bool filter_info = false;
+    ///threshold for filtering parameters for the lm
+    double ratio_threshold = 0.0;
+    ///whether to store samples for the lm
+    bool store_samples = false;
+    ///type of the previous optimization method, updated by processOptXML before run
+    OptimizerType previous_optimizer_type = OptimizerType::NONE;
+    ///type of the current optimization method, updated by processOptXML before run
+    OptimizerType current_optimizer_type = OptimizerType::NONE;
+    ///whether to use hybrid method
+    bool doHybrid = false;
+  };
 
-  //type of the current optimization method, updated by processOptXML before run
-  OptimizerType current_optimizer_type_;
-
-  //whether to use hybrid method
-  bool doHybrid;
+  /// LMY engine related options
+  LMYOptions options_LMY_;
 
   // ------------------------------------
 
