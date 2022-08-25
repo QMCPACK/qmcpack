@@ -758,6 +758,8 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
 
+  std::fill(ratios.begin(), ratios.end(), 0);
+  std::fill(grads.begin(), grads.end(), 0);
   dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {
@@ -769,6 +771,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   }
 
   //reject move and check for initial values for mw_evalGrad
+  std::fill(grads.begin(), grads.end(), 0);
   elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
   dd.mw_evalGrad(dd_ref_list, p_ref_list, 1, grads);
   for (int iw = 0; iw < grads.size(); iw++)
@@ -778,6 +781,8 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
   }
 
+  std::fill(grads.begin(), grads.end(), 0);
+  std::fill(spingrads.begin(), spingrads.end(), 0);
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
   {

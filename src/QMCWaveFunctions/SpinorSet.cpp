@@ -211,6 +211,75 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   }
 }
 
+void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                       const RefVectorWithLeader<ParticleSet>& P_list,
+                                                       int iat,
+                                                       const std::vector<const ValueType*>& invRow_ptr_list,
+                                                       OffloadMWVGLArray& phi_vgl_v,
+                                                       std::vector<ValueType>& ratios,
+                                                       std::vector<GradType>& grads,
+                                                       std::vector<ValueType>& spingrads) const
+{
+  auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
+  auto& P_leader   = P_list.getLeader();
+  assert(this == &spo_leader);
+  assert(phi_vgl_v.size(0) == DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
+  const size_t nw             = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size(2);
+
+  OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
+  up_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
+  dn_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
+  std::vector<ValueType> up_ratios(nw), dn_ratios(nw);
+  std::vector<GradType> up_grads(nw), dn_grads(nw);
+
+  SPOSet& up_spo_leader = *(spo_leader.spo_up);
+  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
+  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
+  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
+  up_spo_list.reserve(nw);
+  dn_spo_list.reserve(nw);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
+    up_spo_list.emplace_back(*(spinor.spo_up));
+    dn_spo_list.emplace_back(*(spinor.spo_dn));
+  }
+
+  up_spo_leader.mw_evaluateVGLandDetRatioGrads(up_spo_list, P_list, iat, invRow_ptr_list, up_phi_vgl_v, up_ratios,
+                                               up_grads);
+  dn_spo_leader.mw_evaluateVGLandDetRatioGrads(dn_spo_list, P_list, iat, invRow_ptr_list, dn_phi_vgl_v, dn_ratios,
+                                               dn_grads);
+
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
+    RealType coss           = std::cos(s);
+    RealType sins           = std::sin(s);
+
+    ValueType eis(coss, sins);
+    ValueType emis(coss, -sins);
+    ValueType eye(0, 1.0);
+
+    ratios[iw]    = eis * up_ratios[iw] + emis * dn_ratios[iw];
+    grads[iw]     = (eis * up_grads[iw] * up_ratios[iw] + emis * dn_grads[iw] * dn_ratios[iw]) / ratios[iw];
+    spingrads[iw] = eye * (eis * up_ratios[iw] - emis * dn_ratios[iw]) / ratios[iw];
+
+    for (int idim = 0; idim < DIM_VGL; idim++)
+    {
+      ValueType* phi_g = phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* up_phi_g = up_phi_vgl_v.data_at(idim, iw, 0);
+      ValueType* dn_phi_g = dn_phi_vgl_v.data_at(idim, iw, 0);
+      for (int iorb = 0; iorb < norb_requested; iorb++)
+        phi_g[iorb] = eis * up_phi_g[iorb] + emis * dn_phi_g[iorb];
+    }
+  }
+
+  phi_vgl_v.updateTo();
+}
+
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
                                      int first,
                                      int last,

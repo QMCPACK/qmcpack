@@ -313,7 +313,7 @@ public:
    * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
    * @param ratios, ratios of all walkers
    * @param grads, spatial gradients of all walkers
-   * @param spingras, spin gradients of all walkers
+   * @param spingrads, spin gradients of all walkers
    */
   virtual void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                                       const RefVectorWithLeader<ParticleSet>& P_list,
