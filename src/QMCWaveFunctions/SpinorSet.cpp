@@ -257,7 +257,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
                                                dn_grads);
   if (dn_spo_leader.isOMPoffload())
     dn_phi_vgl_v.updateFrom();
-  
+
   //To do: this is not optimized. Right now, we are building the spinors on the CPU and then updating the data to the GPU at the end
   //with the updateTo(). Need to eventually rework this to be all on the GPU to avoid these data transfers, but this should work as an
   //initial implementation
