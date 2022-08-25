@@ -203,53 +203,53 @@ private:
   std::string MinMethod;
 
   //LMY related input
-  struct
+  struct LMYOptions
   {
     /// number of shifts we will try
-    int num_shifts;
+    int num_shifts = 3;
     /// the maximum relative change in the cost function for the adaptive three-shift scheme
-    RealType max_relative_cost_change;
+    RealType max_relative_cost_change = 10.0;
     ///max amount a parameter may change relative to current wave function weight
-    RealType max_param_change;
+    RealType max_param_change = 0.3;
     /// the tolerance to cost function increases when choosing the best shift in the adaptive shift method
-    RealType cost_increase_tol;
+    RealType cost_increase_tol = 0.0;
     /// the shift_i value that the adaptive shift method should aim for
-    RealType target_shift_i;
+    RealType target_shift_i = -1.0;
     ///whether we are targeting an excited state
-    bool targetExcited;
+    bool targetExcited = false;
     ///whether we are doing block algorithm
-    bool block_lm;
+    bool block_lm = false;
     ///number of blocks used in block algorithm
-    int nblocks;
+    int nblocks = 1;
     ///number of old updates kept
-    int nolds;
+    int nolds = 1;
     ///number of directions kept
-    int nkept;
+    int nkept = 1;
     ///number of samples to do in correlated sampling part
-    int nsamp_comp;
+    int nsamp_comp = 0;
     ///the shift to use when targeting an excited state
-    RealType omega_shift;
+    RealType omega_shift = 0.0;
     ///whether to do the first part of block lm
-    bool block_first;
+    bool block_first = true;
     ///whether to do the second part of block lm
-    bool block_second;
+    bool block_second = false;
     ///whether to do the third part of block lm
-    bool block_third;
+    bool block_third = false;
     ///whether to filter parameters for the lm
-    bool filter_param_;
+    bool filter_param_ = false;
     ///whether to filter parameters for the lm
-    bool filter_info_;
+    bool filter_info_ = false;
     ///threshold for filtering parameters for the lm
-    double ratio_threshold_;
+    double ratio_threshold_ = 0.0;
     ///whether to store samples for the lm
-    bool store_samples_;
+    bool store_samples_ = false;
     ///type of the previous optimization method, updated by processOptXML before run
-    OptimizerType previous_optimizer_type_;
+    OptimizerType previous_optimizer_type_ = OptimizerType::NONE;
     ///type of the current optimization method, updated by processOptXML before run
-    OptimizerType current_optimizer_type_;
+    OptimizerType current_optimizer_type_ = OptimizerType::NONE;
     ///whether to use hybrid method
-    bool doHybrid;
-  };
+    bool doHybrid = false;
+  } LMY_options_;
 
   // ------------------------------------
 
