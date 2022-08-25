@@ -133,43 +133,43 @@ public:
         vn0(std::move(v0_)),
         E0(e0_)
   {
-    gnmu    = Luv.size(1);
-    grotnmu = rotMuv.size(1);
+    gnmu    = std::get<1>(Luv.sizes());
+    grotnmu = std::get<1>(rotMuv.sizes());
     if (haj.size() > 1)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     assert(comm);
     // current partition over 'u' for L/Piu
-    assert(Luv.size(0) == Piu.size(1));
+    assert(Luv.size() == std::get<1>(Piu.sizes()));
     for (int i = 0; i < rotcPua.size(); i++)
     {
       // rot Ps are not yet distributed
-      assert(rotcPua[i].size(0) == rotPiu.size(1));
+      assert(rotcPua[i].size() == std::get<1>(rotPiu.sizes()));
       if (walker_type == CLOSED)
-        assert(rotcPua[i].size(1) == nup);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(rotcPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(rotcPua[i].sizes()) == nup + ndown);
     }
     for (int i = 0; i < cPua.size(); i++)
     {
-      assert(cPua[i].size(0) == Luv.size(0));
+      assert(cPua[i].size() == Luv.size());
       if (walker_type == CLOSED)
-        assert(cPua[i].size(1) == nup);
+        assert(std::get<1>(cPua[i].sizes()) == nup);
       else if (walker_type == COLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
       else if (walker_type == NONCOLLINEAR)
-        assert(cPua[i].size(1) == nup + ndown);
+        assert(std::get<1>(cPua[i].sizes()) == nup + ndown);
     }
     if (walker_type == NONCOLLINEAR)
     {
-      assert(Piu.size(0) == 2 * NMO);
-      assert(rotPiu.size(0) == 2 * NMO);
+      assert(Piu.size() == 2 * NMO);
+      assert(rotPiu.size() == 2 * NMO);
     }
     else
     {
-      assert(Piu.size(0) == NMO);
-      assert(rotPiu.size(0) == NMO);
+      assert(Piu.size() == NMO);
+      assert(rotPiu.size() == NMO);
     }
   }
 
@@ -186,7 +186,7 @@ public:
   {
     using std::copy_n;
     using std::fill_n;
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
