@@ -423,8 +423,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(0), 1});
-    boost::multi::array_ref<const AType, 2> X_(to_address(X.origin()), {X.size(0), 1});
+    boost::multi::array_ref<      BType, 2> v_(to_address(v.origin()), {std::get<0>(v.sizes()), 1});
+    boost::multi::array_ref<const AType, 2> X_(to_address(X.origin()), {std::get<0>(X.sizes()), 1});
     return vHS(X_, v_, a, c);
   }
 
