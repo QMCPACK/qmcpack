@@ -244,31 +244,31 @@ MultiArray2DC&& gemm(T alpha, MultiArray2DA const& a, MultiArray2DB const& b, T 
   int K = -1;
   if (TA == 'N' and TB == 'N')
   {
-    M = a.size(1);
+    M = std::get<1>(a.sizes());
     N = b.size();
     K = a.size();
-    assert(a.size() == b.size(1) and c.size() == b.size() and c.size(1) == a.size(1));
+    assert(a.size() == std::get<1>(b.sizes()) and c.size() == b.size() and std::get<1>(c.sizes()) == std::get<1>(a.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C'))
   {
     M = a.size();
-    N = b.size(1);
-    K = a.size(1);
-    assert(a.size(1) == b.size() and c.size() == b.size(1) and c.size(1) == a.size());
+    N = std::get<1>(b.sizes());
+    K = std::get<1>(a.sizes());
+    assert(std::get<1>(a.sizes()) == b.size() and c.size() == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == a.size());
   }
   if ((TA == 'T' or TA == 'C') and TB == 'N')
   {
     M = a.size();
     N = b.size();
-    K = a.size(1);
-    assert(a.size(1) == b.size(1) and c.size() == b.size() and c.size(1) == a.size());
+    K = std::get<1>(a.sizes());
+    assert(std::get<1>(a.sizes()) == std::get<1>(b.sizes()) and c.size() == b.size() and std::get<1>(c.sizes()) == a.size());
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
     M = std::get<1>(a.sizes());
     N = std::get<1>(b.sizes());
     K = a.size();
-    assert(a.size() == b.size() and c.size() == b.size(1) and c.size(1) == a.size(1));
+    assert(a.size() == b.size() and c.size() == std::get<1>(b.sizes()) and std::get<1>(c.sizes()) == std::get<1>(a.sizes()));
   }
   gemm(TA, TB, M, N, K, alpha, pointer_dispatch(a.origin()), a.stride(), pointer_dispatch(b.origin()), b.stride(),
        beta, pointer_dispatch(c.origin()), c.stride());
