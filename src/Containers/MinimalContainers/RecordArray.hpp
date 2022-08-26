@@ -30,15 +30,14 @@ public:
   RecordArray() {}
 
   /// Constructor specifying the number of parameters and entries
-
-  RecordArray(int nparam, int nentry) : Base(nentry, nparam), num_entries_(nentry), num_params_(nparam) {}
+  RecordArray(size_t nentries, size_t nparams) : Base(nentries, nparams), num_entries_(nentries), num_params_(nparams) {}
 
   /// Change the size
-  void resize(int nparam, int nentry)
+  void resize(size_t nentries, size_t nparams)
   {
-    num_entries_ = nentry;
-    num_params_  = nparam;
-    Base::resize(nentry, nparam);
+    num_entries_ = nentries;
+    num_params_  = nparams;
+    Base::resize(nentries, nparams);
   }
 
   int getNumOfParams() const { return num_params_; }
@@ -47,9 +46,9 @@ public:
 
 private:
   // Number of entries (rows)
-  int num_entries_ = 0;
+  size_t num_entries_ = 0;
   // Number of parameters (columns)
-  int num_params_ = 0;
+  size_t num_params_ = 0;
 };
 } // namespace qmcplusplus
 

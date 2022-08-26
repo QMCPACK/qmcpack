@@ -222,8 +222,8 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 
   int nparam = 2;
   int nentry = 1;
-  RecordArray<ValueType> dlogpsi_list(nparam, nentry);
-  RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
+  RecordArray<ValueType> dlogpsi_list(nentry, nparam);
+  RecordArray<ValueType> dhpsi_over_psi_list(nentry, nparam);
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, opt_vars, dlogpsi_list, dhpsi_over_psi_list);
 

@@ -23,7 +23,7 @@ TEST_CASE("RecordArray basics", "[containers]")
 
   int nentry = 1;
   int nparam = 2;
-  records.resize(nparam, nentry);
+  records.resize(nentry, nparam);
 
   records[0][0] = 1.1;
   records[0][1] = 1.2;

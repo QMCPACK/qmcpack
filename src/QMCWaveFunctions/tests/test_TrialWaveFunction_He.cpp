@@ -163,8 +163,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   // Test list with one wavefunction
 
   int nentry = 1;
-  RecordArray<ValueType> dlogpsi_list(nparam, nentry);
-  RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
+  RecordArray<ValueType> dlogpsi_list(nentry, nparam);
+  RecordArray<ValueType> dhpsi_over_psi_list(nentry, nparam);
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
@@ -174,8 +174,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   // Test list with two wavefunctions
 
   nentry = 2;
-  dlogpsi_list.resize(nparam, nentry);
-  dhpsi_over_psi_list.resize(nparam, nentry);
+  dlogpsi_list.resize(nentry, nparam);
+  dhpsi_over_psi_list.resize(nentry, nparam);
 
   ParticleSet elec2(elec);
   elec2.R[0][0] = 0.9;
