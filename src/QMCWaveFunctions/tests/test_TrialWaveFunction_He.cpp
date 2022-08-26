@@ -27,9 +27,9 @@
 namespace qmcplusplus
 {
 std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
-                           ParticleSet& elec,
-                           ParticleSet& ions,
-                           const WaveFunctionFactory::PSetMap& particle_set_map)
+                                                         ParticleSet& elec,
+                                                         ParticleSet& ions,
+                                                         const WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -106,7 +106,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  auto twf_ptr    = wff.buildTWF(root);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 2);
@@ -163,19 +163,19 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
   // Test list with one wavefunction
 
   int nentry = 1;
-  RecordArray<ValueType> dlogpsi_list(nparam, nentry);
-  RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
+  RecordArray<ValueType> dlogpsi_list(nentry, nparam);
+  RecordArray<ValueType> dhpsi_over_psi_list(nentry, nparam);
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
-  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list.getValue(0, 0)));
-  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 0)));
+  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list[0][0]));
+  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list[0][0]));
 
   // Test list with two wavefunctions
 
   nentry = 2;
-  dlogpsi_list.resize(nparam, nentry);
-  dhpsi_over_psi_list.resize(nparam, nentry);
+  dlogpsi_list.resize(nentry, nparam);
+  dhpsi_over_psi_list.resize(nentry, nparam);
 
   ParticleSet elec2(elec);
   elec2.R[0][0] = 0.9;
@@ -192,11 +192,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   psi.evaluateDerivatives(elec2, var_param, dlogpsi2, dhpsioverpsi2);
 
-  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list.getValue(0, 0)));
-  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 0)));
+  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list[0][0]));
+  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list[0][0]));
 
-  CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list.getValue(0, 1)));
-  CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
+  CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list[1][0]));
+  CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list[1][0]));
 }
 
 
