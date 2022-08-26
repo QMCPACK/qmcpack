@@ -344,8 +344,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
           const int is = base_sample_index + ib;
           for (int j = 0; j < nparam; j++)
           {
-            DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-            HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+            DerivRecords[is][j]  = std::real(dlogpsi_array[ib][j]);
+            HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
@@ -577,8 +577,8 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               {
                 if (optVars.recompute(j))
                 {
-                  DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+                  DerivRecords[is][j]  = std::real(dlogpsi_array[ib][j]);
+                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
                 }
               }
             }

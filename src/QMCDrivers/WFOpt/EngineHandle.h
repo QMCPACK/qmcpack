@@ -96,7 +96,7 @@ public:
                   const RecordArray<Value>& dhpsioverpsi_array,
                   int base_sample_index) override
   {
-    int current_batch_size = dlogpsi_array.nentry();
+    const int current_batch_size = dlogpsi_array.getNumOfEntries();
     for (int local_index = 0; local_index < current_batch_size; local_index++)
     {
       der_rat_samp[0] = 1.0;
@@ -105,9 +105,9 @@ public:
       int num_params = der_rat_samp.size() - 1;
       for (int j = 0; j < num_params; j++)
       {
-        der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
-        le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
-            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+        der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
+        le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array[local_index][j]) +
+            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
       }
       //FIXME it should respect base_sample_index and avoid relying on threads.
       int ip = omp_get_thread_num();
@@ -141,7 +141,7 @@ public:
                   const RecordArray<Value>& dhpsioverpsi_array,
                   int base_sample_index) override
   {
-    int current_batch_size = dlogpsi_array.nentry();
+    int current_batch_size = dlogpsi_array.getNumOfEntries();
     for (int local_index = 0; local_index < current_batch_size; local_index++)
     {
       const int sample_index = base_sample_index + local_index;
@@ -151,9 +151,9 @@ public:
       int num_params = der_rat_samp.size() - 1;
       for (int j = 0; j < num_params; j++)
       {
-        der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
-        le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array.getValue(j, local_index)) +
-            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array.getValue(j, local_index));
+        der_rat_samp[j + 1] = static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
+        le_der_samp[j + 1]  = static_cast<FullPrecValue>(dhpsioverpsi_array[local_index][j]) +
+            le_der_samp[0] * static_cast<FullPrecValue>(dlogpsi_array[local_index][j]);
       }
 
 

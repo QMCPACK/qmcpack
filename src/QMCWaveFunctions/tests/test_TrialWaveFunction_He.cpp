@@ -27,9 +27,9 @@
 namespace qmcplusplus
 {
 std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
-                           ParticleSet& elec,
-                           ParticleSet& ions,
-                           const WaveFunctionFactory::PSetMap& particle_set_map)
+                                                         ParticleSet& elec,
+                                                         ParticleSet& ions,
+                                                         const WaveFunctionFactory::PSetMap& particle_set_map)
 {
   std::vector<int> agroup(2);
   int nelec = 2;
@@ -106,7 +106,7 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  auto twf_ptr    = wff.buildTWF(root);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 2);
@@ -168,8 +168,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, var_param, dlogpsi_list, dhpsi_over_psi_list);
 
-  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list.getValue(0, 0)));
-  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 0)));
+  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list[0][0]));
+  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list[0][0]));
 
   // Test list with two wavefunctions
 
@@ -192,11 +192,11 @@ TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]
 
   psi.evaluateDerivatives(elec2, var_param, dlogpsi2, dhpsioverpsi2);
 
-  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list.getValue(0, 0)));
-  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 0)));
+  CHECK(dlogpsi[0] == ValueApprox(dlogpsi_list[0][0]));
+  CHECK(dhpsioverpsi[0] == ValueApprox(dhpsi_over_psi_list[0][0]));
 
-  CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list.getValue(0, 1)));
-  CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list.getValue(0, 1)));
+  CHECK(dlogpsi2[0] == ValueApprox(dlogpsi_list[1][0]));
+  CHECK(dhpsioverpsi2[0] == ValueApprox(dhpsi_over_psi_list[1][0]));
 }
 
 
