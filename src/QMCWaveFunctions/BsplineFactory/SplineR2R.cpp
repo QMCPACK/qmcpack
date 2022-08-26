@@ -98,6 +98,17 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
     }
   }
 
+  ValueVector tmpS;
+  tmpS.resize(Nsplines*BasisSetSize);
+  for (auto i = 0; i < BasisSetSize; i++)
+  {
+      for (auto k = 0; k < Nsplines; k++)
+      {
+        const auto index = i * Nsplines + k;
+        tmpS[index] = *(spl_coefs + index);
+      }
+  }
+
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
   for (auto i = 0; i < BasisSetSize; i++)
   {
@@ -108,7 +119,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
       for (auto k = 0; k < Nsplines; k++)
       {
         const auto index = i * Nsplines + k;
-        newval += *(spl_coefs + index) * tmpU[k][j];
+        newval += tmpS[index] * tmpU[k][j];
       }
       *(spl_coefs + cur_elem) = newval;
     }
@@ -146,7 +157,7 @@ void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(bc_sign, myV, psi, first, last);
@@ -172,8 +183,11 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int last_real = kPoints.size() < last ? kPoints.size() : last;
+
+    int dotsize = last_real - first;
+    //if (dotsize > psi.size()) dotsize = psi.size();
 
     for (int iat = 0; iat < VP.getTotalNum(); ++iat)
     {
@@ -183,7 +197,9 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
       spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
       assign_v(bc_sign, myV, psi, first, last_real);
-      ratios_private[iat][tid] = simd::dot(psi.data() + first, psiinv.data() + first, last_real - first);
+
+      //ratios_private[iat][tid] = simd::dot(psi.data() + first, psiinv.data() + first, last_real - first);
+      ratios_private[iat][tid] = simd::dot(psi.data() + first, psiinv.data() + first, dotsize);
     }
   }
 
@@ -271,7 +287,7 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);

@@ -328,6 +328,18 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(psiM_rot[0][0] == Approx(val1));
   CHECK(psiM_rot[1][0] == Approx(val2));
 
+  double val3 = 0.;
+  double val4 = 0.;
+  for (auto i = 0; i < rot_mat.size1(); i++)
+  {
+    val3 += psiM_bare[0][i] * rot_mat[i][1];
+    val4 += psiM_bare[1][i] * rot_mat[i][1];
+  }
+
+  // value
+  CHECK(psiM_rot[0][1] == Approx(val3));
+  CHECK(psiM_rot[1][1] == Approx(val4));
+
   std::vector<double> grad1(3);
   std::vector<double> grad2(3);
   for (auto j = 0; j < grad1.size(); j++)
