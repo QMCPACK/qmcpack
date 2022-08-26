@@ -129,9 +129,13 @@ public:
     using grad_type  = GradMatrix::value_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      ValueVector l(d2logdet[i], OrbitalSetSize);
+      //std::cout << "subset of logdet, i = " << i << " oss = " << OrbitalSetSize << " v size = " << logdet.size() << " rows = " << logdet.rows() << " cols = " << logdet.cols() << std::endl;
+      //ValueVector v(logdet[i], OrbitalSetSize);
+      //GradVector g(dlogdet[i], OrbitalSetSize);
+      //ValueVector l(d2logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      ValueVector l(d2logdet[i], d2logdet.cols());
       evaluateVGL(P, iat, v, g, l);
     }
   }
