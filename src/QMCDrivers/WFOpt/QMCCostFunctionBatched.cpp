@@ -363,7 +363,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
           RecordsOnNode[is][ENERGY_NEW]   = etmp;
           RecordsOnNode[is][ENERGY_TOT]   = etmp;
           RecordsOnNode[is][REWEIGHT]     = 1.0;
-          RecordsOnNode[is][ENERGY_FIXED] = h_list[ib].getLocalPotential();
+          RecordsOnNode[is][ENERGY_FIXED] = RecordsOnNode[is][ENERGY_TOT];
+
 
           const auto twf_dependent_components = h_list[ib].getTWFDependentComponents();
           for (const OperatorBase& component: twf_dependent_components)
