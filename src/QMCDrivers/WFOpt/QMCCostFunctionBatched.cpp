@@ -213,8 +213,6 @@ void compute_batch_parameters(int sample_size, int batch_size, int& num_batches,
 /** evaluate everything before optimization */
 void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
 {
-  handle.prepareSampling(NumOptimizables);
-
   ScopedTimer tmp_timer(check_config_timer_);
 
   RealType et_tot = 0.0;
@@ -262,6 +260,7 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
   std::vector<int> samples_per_crowd_offsets(opt_num_crowds + 1);
   FairDivide(rank_local_num_samples_, opt_num_crowds, samples_per_crowd_offsets);
 
+  handle.prepareSampling(NumOptimizables, rank_local_num_samples_);
   // lambda to execute on each crowd
   auto evalOptConfig = [](int crowd_id, UPtrVector<CostFunctionCrowdData>& opt_crowds,
                           const std::vector<int>& samples_per_crowd_offsets, const std::vector<int>& walkers_per_crowd,
@@ -338,6 +337,8 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
         energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                                      dhpsioverpsi_array);
 
+        handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, base_sample_index);
+
         for (int ib = 0; ib < current_batch_size; ib++)
         {
           const int is = base_sample_index + ib;
@@ -348,8 +349,6 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
-
-          handle.takeSample(energy_list, dlogpsi_array, dhpsioverpsi_array, ib);
         }
       }
       else
