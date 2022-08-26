@@ -355,25 +355,25 @@ MultiArray2DC&& geam(T alpha, MultiArray2DA const& a, T beta, MultiArray2DB cons
   assert((TB == 'N') || (TB == 'T') || (TB == 'C'));
   if (TA == 'N' and TB == 'N')
   {
-    assert(a.size() == c.size() and a.size(1) == c.size(1));
-    assert(b.size() == c.size() and b.size(1) == c.size(1));
+    assert(a.size() == c.size() and std::get<1>(a.sizes()) == std::get<1>(c.sizes()));
+    assert(b.size() == c.size() and std::get<1>(b.sizes()) == std::get<1>(c.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and (TB == 'T' or TB == 'C'))
   {
-    assert(a.size(1) == c.size() and a.size() == c.size(1));
-    assert(b.size(1) == c.size() and b.size() == c.size(1));
+    assert(std::get<1>(a.sizes()) == c.size() and a.size() == std::get<1>(c.sizes()));
+    assert(std::get<1>(b.sizes()) == c.size() and b.size() == std::get<1>(c.sizes()));
   }
   if ((TA == 'T' or TA == 'C') and TB == 'N')
   {
-    assert(a.size(1) == c.size() and a.size() == c.size(1));
-    assert(b.size() == c.size() and b.size(1) == c.size(1));
+    assert(std::get<1>(a.sizes()) == c.size() and a.size() == std::get<1>(c.sizes()));
+    assert(b.size() == c.size() and std::get<1>(b.sizes()) == std::get<1>(c.sizes()));
   }
   if (TA == 'N' and (TB == 'T' or TB == 'C'))
   {
-    assert(a.size() == c.size() and a.size(1) == c.size(1));
-    assert(b.size(1) == c.size() and b.size() == c.size(1));
+    assert(a.size() == c.size() and std::get<1>(a.sizes()) == std::get<1>(c.sizes()));
+    assert(std::get<1>(b.sizes()) == c.size() and b.size() == std::get<1>(c.sizes()));
   }
-  geam(TA, TB, c.size(1), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), beta,
+  geam(TA, TB, std::get<1>(c.sizes()), c.size(), alpha, pointer_dispatch(a.origin()), a.stride(), beta,
        pointer_dispatch(b.origin()), b.stride(), pointer_dispatch(c.origin()), c.stride());
   return std::forward<MultiArray2DC>(c);
 }

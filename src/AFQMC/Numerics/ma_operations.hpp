@@ -43,10 +43,10 @@ template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::d
 bool is_hermitian(MultiArray2D const& A)
 {
   using ma::conj;
-  if (A.size() != A.size(1))
+  if (A.size() != std::get<1>(A.sizes()))
     return false;
   for (int i = 0; i != A.size(); ++i)
-    for (int j = i + 1; j != A.size(1); ++j)
+    for (int j = i + 1; j != std::get<1>(A.sizes()); ++j)
       if (std::abs(A[i][j] - ma::conj(A[j][i])) > 1e-12)
         return false;
   return true;
