@@ -72,6 +72,8 @@ public:
     std::vector<Value> ratios_local;
     // multi walker of grads
     std::vector<Grad> grad_new_local;
+    // multi walker of spingrads
+    std::vector<Value> spingrad_new_local;
   };
 
   /** constructor
@@ -129,6 +131,13 @@ public:
                     int iat,
                     std::vector<PsiValue>& ratios,
                     std::vector<Grad>& grad_new) const override;
+
+  void mw_ratioGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            std::vector<PsiValue>& ratios,
+                            std::vector<Grad>& grad_new,
+                            std::vector<ComplexType>& spingrad_new) const override;
 
   PsiValue ratioGradWithSpin(ParticleSet& P, int iat, Grad& grad_iat, ComplexType& spingrad) override;
 

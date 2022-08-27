@@ -150,6 +150,19 @@ void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& s
   phi_vgl_v.updateTo();
 }
 
+void SPOSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                    const RefVectorWithLeader<ParticleSet>& P_list,
+                                                    int iat,
+                                                    const std::vector<const ValueType*>& invRow_ptr_list,
+                                                    OffloadMWVGLArray& phi_vgl_v,
+                                                    std::vector<ValueType>& ratios,
+                                                    std::vector<GradType>& grads,
+                                                    std::vector<ValueType>& spingrads) const
+{
+  throw std::runtime_error("Need specialization of " + getClassName() +
+                           "::mw_evaluateVGLandDetRatioGradsWithSpin(). \n");
+}
+
 void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {
   throw std::runtime_error("Need specialization of SPOSet::evaluateThirdDeriv(). \n");

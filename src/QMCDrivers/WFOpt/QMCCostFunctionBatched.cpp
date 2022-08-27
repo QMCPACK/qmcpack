@@ -330,9 +330,9 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
       if (needGrads)
       {
         // Compute parameter derivatives of the wavefunction
-        int nparam = optVars.size();
-        RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
-        RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
+        const size_t nparams = optVars.size();
+        RecordArray<Return_t> dlogpsi_array(current_batch_size, nparams);
+        RecordArray<Return_t> dhpsioverpsi_array(current_batch_size, nparams);
 
         energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, optVars, dlogpsi_array,
                                                                      dhpsioverpsi_array);
@@ -342,10 +342,10 @@ void QMCCostFunctionBatched::checkConfigurations(EngineHandle& handle)
         for (int ib = 0; ib < current_batch_size; ib++)
         {
           const int is = base_sample_index + ib;
-          for (int j = 0; j < nparam; j++)
+          for (int j = 0; j < nparams; j++)
           {
-            DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-            HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+            DerivRecords[is][j]  = std::real(dlogpsi_array[ib][j]);
+            HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
           }
           RecordsOnNode[is][LOGPSI_FIXED] = opt_data.get_log_psi_fixed()[ib];
           RecordsOnNode[is][LOGPSI_FREE]  = opt_data.get_log_psi_opt()[ib];
@@ -560,9 +560,9 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
           if (needGrad)
           {
             // Parameter derivatives
-            int nparam = optVars.size();
-            RecordArray<Return_t> dlogpsi_array(nparam, current_batch_size);
-            RecordArray<Return_t> dhpsioverpsi_array(nparam, current_batch_size);
+            const size_t nparams = optVars.size();
+            RecordArray<Return_t> dlogpsi_array(current_batch_size, nparams);
+            RecordArray<Return_t> dhpsioverpsi_array(current_batch_size, nparams);
 
             // Energy
             auto energy_list = QMCHamiltonian::mw_evaluateValueAndDerivatives(h0_list, wf_list, p_list, optVars,
@@ -573,12 +573,12 @@ QMCCostFunctionBatched::EffectiveWeight QMCCostFunctionBatched::correlatedSampli
               const int is                  = base_sample_index + ib;
               auto etmp                     = energy_list[ib];
               RecordsOnNode[is][ENERGY_NEW] = etmp + RecordsOnNode[is][ENERGY_FIXED];
-              for (int j = 0; j < nparam; j++)
+              for (int j = 0; j < nparams; j++)
               {
                 if (optVars.recompute(j))
                 {
-                  DerivRecords[is][j]  = std::real(dlogpsi_array.getValue(j, ib));
-                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array.getValue(j, ib));
+                  DerivRecords[is][j]  = std::real(dlogpsi_array[ib][j]);
+                  HDerivRecords[is][j] = std::real(dhpsioverpsi_array[ib][j]);
                 }
               }
             }

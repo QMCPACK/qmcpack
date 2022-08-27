@@ -489,7 +489,6 @@ TEST_CASE("DiracDeterminantBatched_delayed_update", "[wavefunction][fermion]")
 template<class DET_ENGINE>
 void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInvertor matrix_inverter_kind)
 {
-
   using ParticlePos       = ParticleSet::ParticlePos;
   using ParticleGradient  = ParticleSet::ParticleGradient;
   using ParticleLaplacian = ParticleSet::ParticleLaplacian;
@@ -562,7 +561,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-  using DetType  = DiracDeterminantBatched<DET_ENGINE>;
+  using DetType = DiracDeterminantBatched<DET_ENGINE>;
   DetType dd(std::move(spinor_set), 0, nelec, delay_rank, matrix_inverter_kind);
   app_log() << " nelec=" << nelec << std::endl;
 
@@ -689,7 +688,135 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   REQUIRE(G[1][2] == ComplexApprox(grad_new[2]));
   REQUIRE(SG[1] == ComplexApprox(spingrad_new));
 
-  //TODO: add batched APIs and test
+  //move back to original config
+  elec_.makeMoveAndCheckWithSpin(1, -dr, -ds);
+  elec_.acceptMove(1);
+  dd.acceptMove(elec_, 1, true);
+
+  //test batched APIs
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection wfc_res("test_wfc_res");
+
+  elec_.createResource(pset_res);
+  dd.createResource(wfc_res);
+
+  ParticleSet elec_clone(elec_);
+  std::unique_ptr<WaveFunctionComponent> dd_clone(dd.makeCopy(dd.getPhi()->makeClone()));
+  auto& dd_clone_ref = dynamic_cast<DetType&>(*dd_clone);
+
+  RefVectorWithLeader<ParticleSet> p_ref_list(elec_, {elec_, elec_clone});
+  RefVectorWithLeader<WaveFunctionComponent> dd_ref_list(dd, {dd, *dd_clone});
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
+  ResourceCollectionTeamLock<WaveFunctionComponent> mw_wfc_lock(wfc_res, dd_ref_list);
+
+  G = 0;
+  L = 0;
+  ParticleGradient G2;
+  ParticleLaplacian L2;
+  G2.resize(nelec);
+  L2.resize(nelec);
+
+  //Check initial values for both walkers
+  RefVector<ParticleGradient> G_list  = {G, G2};
+  RefVector<ParticleLaplacian> L_list = {L, L2};
+  dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
+  for (int iw = 0; iw < dd_ref_list.size(); iw++)
+  {
+    PsiValueType ref = dd_ref_list[iw].getValue();
+    REQUIRE(std::log(ref) == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
+    REQUIRE(G_list[iw].get()[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
+    REQUIRE(G_list[iw].get()[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
+    REQUIRE(G_list[iw].get()[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
+    REQUIRE(G_list[iw].get()[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
+    REQUIRE(G_list[iw].get()[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
+    REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
+    REQUIRE(G_list[iw].get()[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
+    REQUIRE(G_list[iw].get()[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
+    REQUIRE(G_list[iw].get()[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
+    REQUIRE(L_list[iw].get()[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
+    REQUIRE(L_list[iw].get()[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
+    REQUIRE(L_list[iw].get()[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
+  }
+
+  //Move particle 1 in each walker
+  MCCoords<CoordsType::POS_SPIN> displs(2);
+  displs.positions = {dr, dr};
+  displs.spins     = {ds, ds};
+  elec_.mw_makeMove(p_ref_list, 1, displs);
+
+  //Check ratios and grads for both walkers for proposed move
+  std::vector<PsiValueType> ratios(2);
+  std::vector<GradType> grads(2);
+  std::vector<ComplexType> spingrads(2);
+  dd.mw_ratioGrad(dd_ref_list, p_ref_list, 1, ratios, grads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+    REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  }
+
+  std::fill(ratios.begin(), ratios.end(), 0);
+  std::fill(grads.begin(), grads.end(), 0);
+  dd.mw_ratioGradWithSpin(dd_ref_list, p_ref_list, 1, ratios, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(ratios[iw] == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+    REQUIRE(grads[iw][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    REQUIRE(grads[iw][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    REQUIRE(grads[iw][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+  }
+
+  //reject move and check for initial values for mw_evalGrad
+  std::fill(grads.begin(), grads.end(), 0);
+  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {false, false});
+  dd.mw_evalGrad(dd_ref_list, p_ref_list, 1, grads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
+    REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
+    REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+  }
+
+  /* uncomment when mw_evalGradWithSpin is implemented
+  std::fill(grads.begin(), grads.end(), 0);
+  std::fill(spingrads.begin(), spingrads.end(), 0);
+  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+  {
+    REQUIRE(grads[iw][0] == ComplexApprox(G_list[iw].get()[1][0]));
+    REQUIRE(grads[iw][1] == ComplexApprox(G_list[iw].get()[1][1]));
+    REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
+  }
+  */
+
+  //now make and accept move, checking new values
+  elec_.mw_makeMove(p_ref_list, 1, displs);
+  elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_ref_list, 1, {true, true});
+
+  G  = 0;
+  L  = 0;
+  G2 = 0;
+  L2 = 0;
+  dd.mw_evaluateLog(dd_ref_list, p_ref_list, G_list, L_list);
+  for (int iw = 0; iw < dd_ref_list.size(); iw++)
+  {
+    PsiValueType ref = dd_ref_list[iw].getValue();
+    REQUIRE(std::log(ref) == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
+    REQUIRE(G_list[iw].get()[1][0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+    REQUIRE(G_list[iw].get()[1][1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+    REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  }
+
+  /* uncomment when mw_evalGradWithSpin is implemented
+  dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
+  for (int iw = 0; iw < grads.size(); iw++)
+    REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+  */
 }
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")

@@ -89,6 +89,26 @@ public:
                               const RefVector<ValueVector>& d2psi_v_list,
                               const RefVector<ValueVector>& dspin_v_list) const override;
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
+   *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return.
+   *  Includes spin gradients
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
+   * @param ratios, ratios of all walkers
+   * @param grads, spatial gradients of all walkers
+   * @param spingrads, spin gradients of all walkers
+   */
+  void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                              const RefVectorWithLeader<ParticleSet>& P_list,
+                                              int iat,
+                                              const std::vector<const ValueType*>& invRow_ptr_list,
+                                              OffloadMWVGLArray& phi_vgl_v,
+                                              std::vector<ValueType>& ratios,
+                                              std::vector<GradType>& grads,
+                                              std::vector<ValueType>& spingrads) const override;
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles

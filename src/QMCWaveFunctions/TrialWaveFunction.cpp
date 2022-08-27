@@ -894,7 +894,7 @@ void TrialWaveFunction::reportStatus(std::ostream& os)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
-      obj.reportStatus(os);
+    obj.reportStatus(os);
 }
 
 void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
@@ -1095,20 +1095,13 @@ void TrialWaveFunction::mw_evaluateParameterDerivatives(const RefVectorWithLeade
                                                         RecordArray<ValueType>& dlogpsi,
                                                         RecordArray<ValueType>& dhpsioverpsi)
 {
-  const int nparam = dlogpsi.nparam();
+  const int nparam = dlogpsi.getNumOfParams();
   for (int iw = 0; iw < wf_list.size(); iw++)
   {
-    Vector<ValueType> tmp_dlogpsi(nparam);
-    Vector<ValueType> tmp_dhpsioverpsi(nparam);
+    Vector<ValueType> dlogpsi_record_view(dlogpsi[iw], nparam);
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
 
-    wf_list[iw].evaluateDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-
-    for (int i = 0; i < nparam; i++)
-    {
-      dlogpsi.setValue(i, iw, tmp_dlogpsi[i]);
-      //orbitals do not know about mass of particle.
-      dhpsioverpsi.setValue(i, iw, tmp_dhpsioverpsi[i]);
-    }
+    wf_list[iw].evaluateDerivatives(p_list[iw], optvars, dlogpsi_record_view, dhpsioverpsi_record_view);
   }
 }
 
