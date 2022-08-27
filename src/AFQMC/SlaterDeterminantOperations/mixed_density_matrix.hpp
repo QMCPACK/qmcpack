@@ -32,6 +32,15 @@ namespace SlaterDeterminantOperations
 {
 namespace base
 {
+
+template<class T> auto generic_sizes(T const& A)
+->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
+	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
+
+template<class T> auto generic_sizes(T const& A)
+->decltype(A.sizes()) {
+	return A.sizes(); }
+
 /*
  * Calculates the 1-body mixed density matrix:
  *   < A | c+i cj | B > / <A|B> = conj(A) * ( T(B) * conj(A) )^-1 * T(B) 
@@ -63,23 +72,23 @@ Tp MixedDensityMatrix(const MatA& hermA,
                       bool herm    = true)
 {
   // check dimensions are consistent
-  int NMO = (herm ? hermA.size(1) : hermA.size(0));
-  int NEL = (herm ? hermA.size(0) : hermA.size(1));
-  assert(NMO == B.size(0));
-  assert(NEL == B.size(1));
-  assert(NEL == T1.size(0));
-  assert(B.size(1) == T1.size(1));
+  int NMO = (herm ? std::get<1>(generic_sizes(hermA)) : std::get<0>(generic_sizes(hermA)));
+  int NEL = (herm ? std::get<0>(generic_sizes(hermA)) : std::get<1>(generic_sizes(hermA)));
+  assert(NMO == std::get<0>(B.sizes()));
+  assert(NEL == std::get<1>(B.sizes()));
+  assert(NEL == T1.size());
+  assert(std::get<1>(B.sizes()) == std::get<1>(T1.sizes()));
   if (compact)
   {
-    assert(C.size(0) == T1.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(T1.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
-    assert(T2.size(1) == B.size(0));
-    assert(T2.size(0) == T1.size(1));
-    assert(C.size(0) == NMO);
-    assert(C.size(1) == T2.size(1));
+    assert(std::get<1>(T2.sizes()) == B.size());
+    assert(T2.size() == std::get<1>(T1.sizes()));
+    assert(C.size() == NMO);
+    assert(std::get<1>(C.sizes()) == std::get<1>(T2.sizes()));
   }
 
   using ma::H;
@@ -951,7 +960,7 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
     if (N0 != Nn)
       ma::product(T(TNN(TNN.extension(0), {N0, Nn})), T(B), TNM.sliced(N0, Nn));
 
-    int sz           = TNM.size(1);
+    int sz           = std::get<1>(TNM.sizes());
     std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
     comm.barrier();
 
@@ -967,6 +976,15 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
 
 namespace batched
 {
+
+template<class T> auto generic_sizes(T const& A)
+->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
+	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
+
+template<class T> auto generic_sizes(T const& A)
+->decltype(A.sizes()) {
+	return A.sizes(); }
+
 template<class MatA, class MatB, class MatC, class Mat, class TVec, class IBuffer, class Tp>
 void MixedDensityMatrix(std::vector<MatA>& hermA,
                         std::vector<MatB>& Bi,
@@ -993,25 +1011,25 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   using ma::T;
 
   int nbatch = Bi.size();
-  int NMO    = (herm ? (*hermA[0]).size(1) : (*hermA[0]).size(0));
-  int NEL    = (herm ? (*hermA[0]).size(0) : (*hermA[0]).size(1));
+  int NMO    = (herm ? std::get<1>(generic_sizes(*hermA[0])) : std::get<0>(generic_sizes(*hermA[0])));
+  int NEL    = (herm ? std::get<0>(generic_sizes(*hermA[0])) : std::get<1>(generic_sizes(*hermA[0])));
 
-  assert((*Bi[0]).size(0) == NMO);
-  assert((*Bi[0]).size(1) == NEL);
-  assert(C.size(0) == nbatch);
-  assert(C.size(2) == NMO);
+  assert(std::get<0>((*Bi[0]).sizes()) == NMO);
+  assert(std::get<1>((*Bi[0]).sizes()) == NEL);
+  assert(C.size() == nbatch);
+  assert(std::get<2>(C.sizes()) == NMO);
   if (compact)
-    assert(C.size(1) == NEL);
+    assert(std::get<1>(C.sizes()) == NEL);
   else
-    assert(C.size(1) == NMO);
+    assert(std::get<1>(C.sizes()) == NMO);
   assert(ovlp.size() == nbatch);
-  assert(TNN3D.size(1) == NEL);
-  assert(TNN3D.size(2) == NEL);
+  assert(std::get<1>(TNN3D.sizes()) == NEL);
+  assert(std::get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(TNM3D.size(0) == nbatch);
-    assert(TNM3D.size(1) == NEL);
-    assert(TNM3D.size(2) == NMO);
+    assert(std::get<0>(TNM3D.sizes()) == nbatch);
+    assert(std::get<1>(TNM3D.sizes()) == NEL);
+    assert(std::get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
   assert(TNN3D.stride(1) == NEL); // needed by getriBatched

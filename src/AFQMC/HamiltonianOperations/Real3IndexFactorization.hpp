@@ -116,7 +116,7 @@ public:
         vn0(std::move(vn0_)),
         SM_TMats({1, 1}, shared_allocator<SPComplexType>{TG.TG_local()})
   {
-    local_nCV = Likn.size(1);
+    local_nCV = std::get<1>(Likn.sizes());
     TG.Node().barrier();
   }
 
@@ -129,7 +129,7 @@ public:
 
   CMatrix getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi::array<ComplexType, 1> const& vMF)
   {
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
     CMatrix H1({NMO, NMO});
@@ -436,11 +436,11 @@ public:
   {
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    assert(Likn.size(1) == X.size(0));
-    assert(Likn.size(0) == v.size(0));
-    assert(X.size(1) == v.size(1));
+    assert(std::get<1>(Likn.sizes()) == std::get<0>(X.sizes()));
+    assert(std::get<0>(Likn.sizes()) == std::get<0>(v.sizes()));
+    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     long ik0, ikN;
-    std::tie(ik0, ikN) = FairDivideBoundary(long(TG.TG_local().rank()), long(Likn.size(0)), long(TG.TG_local().size()));
+    std::tie(ik0, ikN) = FairDivideBoundary(long(TG.TG_local().rank()), long(Likn.size()), long(TG.TG_local().size()));
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
     if (not std::is_same<XType, SPComplexType>::value)
@@ -486,7 +486,7 @@ public:
 
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(to_address(vsp[ik0].origin()), vsp.size(1) * (ikN - ik0), to_address(v[ik0].origin()));
+      copy_n_cast(to_address(vsp[ik0].origin()), std::get<1>(vsp.sizes()) * (ikN - ik0), to_address(v[ik0].origin()));
     }
     TG.TG_local().barrier();
   }

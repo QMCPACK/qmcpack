@@ -127,9 +127,9 @@ public:
     size_t lnak(0);
     for (auto& v : Lnak)
       lnak += v.num_elements();
-    for (int i = 0; i < hij.size(0); i++)
+    for (int i = 0; i < std::get<0>(hij.sizes()); i++)
     {
-      for (int j = 0; j < hij.size(1); j++)
+      for (int j = 0; j < std::get<1>(hij.sizes()); j++)
       {
         hij_dev[i][j] = ComplexType(hij[i][j]);
       }
@@ -152,7 +152,7 @@ public:
   boost::multi::array<ComplexType, 2> getOneBodyPropagatorMatrix(TaskGroup_& TG,
                                                                  boost::multi::array<ComplexType, 1> const& vMF)
   {
-    int NMO = hij.size(0);
+    int NMO = hij.size();
     // in non-collinear case with SO, keep SO matrix here and add it
     // for now, stay collinear
 
@@ -400,9 +400,9 @@ public:
   {
     using XType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    assert(Likn.size(1) == X.size(0));
-    assert(Likn.size(0) == v.size(0));
-    assert(X.size(1) == v.size(1));
+    assert(std::get<1>(Likn.sizes()) == std::get<0>(X.sizes()));
+    assert(std::get<0>(Likn.sizes()) == std::get<0>(v.sizes()));
+    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
     if (not std::is_same<XType, SPComplexType>::value)

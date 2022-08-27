@@ -202,7 +202,7 @@ template<class T,
 MultiArray2D&& fill(MultiArray2D&& m, T const& value)
 {
   using qmcplusplus::afqmc::fill2D;
-  fill2D(m.size(0), m.size(1), pointer_dispatch(m.origin()), m.stride(0), value);
+  fill2D(std::get<0>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0), value);
   return std::forward<MultiArray2D>(m);
 }
 

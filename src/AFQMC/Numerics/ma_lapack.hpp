@@ -56,7 +56,7 @@ int getri_optimal_workspace_size(MultiArray2D&& A)
   assert(A.stride(1) == 1);
   assert(std::get<0>(A.sizes()) ==std::get<1>(A.sizes()));
   int lwork = -1;
-  getri_bufferSize(A.size(), pointer_dispatch(A.origin()), A.stride(0), lwork);
+  getri_bufferSize(A.size(), pointer_dispatch(A.origin()), A.stride(), lwork);
   return lwork;
 }
 
@@ -65,11 +65,11 @@ MultiArray2D&& getri(MultiArray2D&& A, MultiArray1D const& IPIV, Buffer&& WORK)
 {
   //	assert(A.stride(0) > std::max(std::size_t(1), A.size(1)));
   assert(A.stride(1) == 1);
-  assert(IPIV.size() >= size_t(A.size(0)));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size(0))));
+  assert(IPIV.size() >= size_t(A.size()));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  getri(A.size(0), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(IPIV.data()),
+  getri(A.size(), pointer_dispatch(A.origin()), A.stride(), pointer_dispatch(IPIV.data()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);

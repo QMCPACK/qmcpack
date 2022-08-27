@@ -232,6 +232,14 @@ MultiArray2DC&& product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B,
                                                                               std::forward<MultiArray2DC>(C));
 }
 
+template<class T> auto generic_sizes(T const& A)
+->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
+	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
+
+template<class T> auto generic_sizes(T const& A)
+->decltype(A.sizes()) {
+	return A.sizes(); }
+
 // sparse matrix-MultiArray interface
 template<
     class T,
@@ -260,16 +268,16 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   {
     assert(arg(A).size() == std::forward<MultiArray2DC>(C).size());
     assert( arg(A).size(1) == arg(B).size() );
-    assert( arg(B).size(1) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()) );
+    assert( std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()) );
   }
   else
   {
     assert(arg(A).size() == arg(B).size());
-    assert(arg(A).size(1) == std::forward<MultiArray2DC>(C).size());
-    assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+    assert(std::get<1>(generic_sizes(arg(A))) == std::forward<MultiArray2DC>(C).size());
+    assert(std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()));
   }
 
-  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(), arg(B).size(1), arg(A).size(1), elementA(alpha), "GxxCxx",
+  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(), std::get<1>(arg(B).sizes()), std::get<1>(generic_sizes(arg(A))), elementA(alpha), "GxxCxx",
         pointer_dispatch(arg(A).non_zero_values_data()), pointer_dispatch(arg(A).non_zero_indices2_data()),
         pointer_dispatch(arg(A).pointers_begin()), pointer_dispatch(arg(A).pointers_end()),
         pointer_dispatch(arg(B).origin()), arg(B).stride(), elementA(beta), pointer_dispatch(C.origin()), C.stride());
@@ -387,14 +395,6 @@ void BatchedProduct(char TA,
   using ma::gemmBatched;
   gemmBatched(TB, TA, M, N, K, element(alpha), Bi.data(), ldb, Ai.data(), lda, element(beta), Ci.data(), ldc, nbatch);
 }
-
-template<class T> auto generic_sizes(T const& A) 
-->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
-	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(A.sizes()) {
-	return A.sizes(); }
 
 // no batched sparse product yet, serialize call
 template<class T,
