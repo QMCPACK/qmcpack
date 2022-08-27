@@ -71,7 +71,7 @@ CSR construct_csr_matrix_single_input(MultiArray2D&& M, double cutoff, char TA, 
     else
     {
       nr = std::get<1>(M.sizes());
-      nc = std::get<1>(M.sizes());
+      nc = std::get<0>(M.sizes());
       counts.resize(nr);
       for (int_type i = 0; i < std::get<0>(M.sizes()); i++)
         for (int_type j = 0; j < std::get<1>(M.sizes()); j++)
