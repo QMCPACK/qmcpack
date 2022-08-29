@@ -375,7 +375,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/15.0.0-rc3/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
