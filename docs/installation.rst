@@ -415,11 +415,11 @@ and is not suitable for production. Additional implementation in QMCPACK as
 well as improvements in open-source and vendor compilers is required for production status 
 to be reached. The following compilers have been verified:
 
-- LLVM Clang 14. Support NVIDIA GPUs.
+- LLVM Clang 15. Support NVIDIA GPUs.
 
   ::
 
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON
+    -D ENABLE_OFFLOAD=ON
 
   Clang and its downstream compilers support two extra options
   
@@ -452,7 +452,7 @@ For example, using Clang 14 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
 
 Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
 
