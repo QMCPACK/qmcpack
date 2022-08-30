@@ -105,6 +105,8 @@ public:
 
   bool isOptimizable() const override { return opt_C || opt_F; }
 
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
   void checkInVariablesExclusive(opt_variables_type& active) final
   {
     active.insertFrom(myVars);
