@@ -1121,4 +1121,175 @@ RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVecto
   return HC_list;
 }
 
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                                                                    ParticleSet& ions,
+                                                                                    TrialWaveFunction& psi_in,
+                                                                                    ParticleSet::ParticlePos& dEdR,
+                                                                                    ParticleSet::ParticlePos& wf_grad)
+{
+  // ScopedTimer evaluatederivtimer(*timer_manager.createTimer("NEW::evaluateIonDerivsFast"));
+ // if (!psi_wrapper_.initialized)
+  {
+    psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
+  }
+  //resize everything;
+  int ngroups = psi_wrapper_.numGroups();
+
+  {
+    //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
+    M_.resize(ngroups);
+    M_gs_.resize(ngroups);
+    X_.resize(ngroups);
+    B_.resize(ngroups);
+    B_gs_.resize(ngroups);
+    Minv_.resize(ngroups);
+
+    for (int gid = 0; gid < ngroups; gid++)
+    {
+      const int sid    = psi_wrapper_.getTWFGroupIndex(gid);
+      const int norbs  = psi_wrapper_.numOrbitals(sid);
+      const int first  = P.first(gid);
+      const int last   = P.last(gid);
+      const int nptcls = last-first;
+
+      M_[sid].resize(nptcls, norbs);
+      B_[sid].resize(nptcls, norbs);
+
+      M_gs_[sid].resize(nptcls, nptcls);
+      Minv_[sid].resize(nptcls, nptcls);
+      B_gs_[sid].resize(nptcls, nptcls);
+      X_[sid].resize(nptcls, nptcls);
+    }
+
+    dM_.resize(OHMMS_DIM);
+    dM_gs_.resize(OHMMS_DIM);
+    dB_.resize(OHMMS_DIM);
+    dB_gs_.resize(OHMMS_DIM);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      dM_[idim].resize(ngroups);
+      dB_[idim].resize(ngroups);
+      dM_gs_[idim].resize(ngroups);
+      dB_gs_[idim].resize(ngroups);
+
+      for (int gid = 0; gid < ngroups; gid++)
+      {
+        const int sid    = psi_wrapper_.getTWFGroupIndex(gid);
+        const int norbs  = psi_wrapper_.numOrbitals(sid);
+        const int first  = P.first(gid);
+        const int last   = P.last(gid);
+        const int nptcls = last-first;
+
+        dM_[idim][sid].resize(nptcls, norbs);
+        dB_[idim][sid].resize(nptcls, norbs);
+        dM_gs_[idim][sid].resize(nptcls, nptcls);
+        dB_gs_[idim][sid].resize(nptcls, nptcls);
+      }
+    }
+    psi_wrapper_.wipeMatrices(M_);
+    psi_wrapper_.wipeMatrices(M_gs_);
+    psi_wrapper_.wipeMatrices(X_);
+    psi_wrapper_.wipeMatrices(B_);
+    psi_wrapper_.wipeMatrices(Minv_);
+    psi_wrapper_.wipeMatrices(B_gs_);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      psi_wrapper_.wipeMatrices(dM_[idim]);
+      psi_wrapper_.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_.wipeMatrices(dB_[idim]);
+      psi_wrapper_.wipeMatrices(dB_gs_[idim]);
+    }
+  }
+  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
+  ParticleSet::ParticleGradient pulay_(ions.getTotalNum());
+  ParticleSet::ParticleGradient hf_(ions.getTotalNum());
+  ParticleSet::ParticleGradient dedr_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos pulayterms_(ions.getTotalNum());
+  ParticleSet::ParticlePos hfdiag_(ions.getTotalNum());
+  wfgradraw_           = 0.0;
+  RealType localEnergy = 0.0;
+
+  {
+    // ScopedTimer getmtimer(*timer_manager.createTimer("NEW::getM"));
+    psi_wrapper_.getM(P, M_);
+  }
+  {
+    //  ScopedTimer invertmtimer(*timer_manager.createTimer("NEW::InvertMTimer"));
+    psi_wrapper_.getGSMatrices(M_, M_gs_);
+    psi_wrapper_.invertMatrices(M_gs_, Minv_);
+  }
+  //Build B-matrices.  Only for non-diagonal observables right now.
+  for (int i = 0; i < H.size(); ++i)
+  {
+    if (H[i]->is_nondiag)
+    {
+      // ScopedTimer bmattimer(*timer_manager.createTimer("NEW::Btimer"));
+      H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_, B_);
+    }
+    else
+    {
+      //   ScopedTimer othertimer(*timer_manager.createTimer("NEW::Other_Timer"));
+      localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi_in, hfdiag_, pulayterms_);
+    }
+  }
+
+  ValueType nondiag_cont   = 0.0;
+  RealType nondiag_cont_re = 0.0;
+
+  psi_wrapper_.getGSMatrices(B_, B_gs_);
+  nondiag_cont = psi_wrapper_.trAB(Minv_, B_gs_);
+  convertToReal(nondiag_cont, nondiag_cont_re);
+  localEnergy += nondiag_cont_re;
+
+  {
+    // ScopedTimer buildXtimer(*timer_manager.createTimer("NEW::buildX"));
+    psi_wrapper_.buildX(Minv_, B_gs_, X_);
+  }
+  //And now we compute the 3N force derivatives.  3 at a time for each atom.
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      psi_wrapper_.wipeMatrices(dM_[idim]);
+      psi_wrapper_.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_.wipeMatrices(dB_[idim]);
+      psi_wrapper_.wipeMatrices(dB_gs_[idim]);
+    }
+
+    {
+      //  ScopedTimer dmtimer(*timer_manager.createTimer("NEW::dM_timer"));
+      //ion derivative of slater matrix.
+      psi_wrapper_.getIonGradM(P, ions, iat, dM_);
+    }
+    for (int i = 0; i < H.size(); ++i)
+    {
+      if (H[i]->is_nondiag)
+      {
+        //   ScopedTimer dBtimer(*timer_manager.createTimer("NEW::dB_timer"));
+        H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_, iat, dB_);
+      }
+    }
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      // ScopedTimer computederivtimer(*timer_manager.createTimer("NEW::compute_deriv"));
+      psi_wrapper_.getGSMatrices(dB_[idim], dB_gs_[idim]);
+      psi_wrapper_.getGSMatrices(dM_[idim], dM_gs_[idim]);
+
+      ValueType fval          = 0.0;
+      fval                    = psi_wrapper_.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      dedr_complex[iat][idim] = fval;
+
+      ValueType wfcomp      = 0.0;
+      wfcomp                = psi_wrapper_.trAB(Minv_, dM_gs_[idim]);
+      wfgradraw_[iat][idim] = wfcomp;
+    }
+    convertToReal(dedr_complex[iat], dEdR[iat]);
+    convertToReal(wfgradraw_[iat], wf_grad[iat]);
+  }
+  dEdR += hfdiag_;
+  return localEnergy;
+}
 } // namespace qmcplusplus

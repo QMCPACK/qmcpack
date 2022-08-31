@@ -24,6 +24,7 @@
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -54,6 +55,7 @@ public:
   using BufferType       = OperatorBase::BufferType;
   using Walker_t         = OperatorBase::Walker_t;
   using WP               = WalkerProperties::Indexes;
+  using ValueMatrix      = SPOSet::ValueMatrix;
   enum
   {
     DIM = OHMMS_DIM
@@ -284,6 +286,20 @@ public:
       RecordArray<ValueType>& dlogpsi,
       RecordArray<ValueType>& dhpsioverpsi);
 
+  /** evaluate local energy and derivatives w.r.t ionic coordinates, but deterministically.  
+  * @param P target particle set (electrons)
+  * @param ions source particle set (ions)
+  * @param psi Trial wave function
+  * @param hf_terms  Re [(dH)Psi]/Psi
+  * @param pulay_terms Re [(H-E_L)dPsi]/Psi 
+  * @param wf_grad  Re (dPsi/Psi)
+  * @return Local Energy.
+  */
+  FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                                      ParticleSet& ions,
+                                                      TrialWaveFunction& psi,
+                                                      ParticleSet::ParticlePos& dedr,
+                                                      ParticleSet::ParticlePos& wf_grad);
 
   /** Evaluate the electron gradient of the local energy.
   * @param psi Trial Wave Function
@@ -466,6 +482,19 @@ private:
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
   static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
+  //This is for fast derivative evaluation.  
+  TWFFastDerivWrapper psi_wrapper_;
+  std::vector<ValueMatrix> X_;    //Working arrays for derivatives
+  std::vector<ValueMatrix> Minv_; //Working array for derivatives.
+  std::vector<ValueMatrix> B_;
+  std::vector<ValueMatrix> B_gs_;
+  std::vector<ValueMatrix> M_;
+  std::vector<ValueMatrix> M_gs_;
+
+  std::vector<std::vector<ValueMatrix>> dM_;
+  std::vector<std::vector<ValueMatrix>> dM_gs_;
+  std::vector<std::vector<ValueMatrix>> dB_;
+  std::vector<std::vector<ValueMatrix>> dB_gs_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
   TraceRequest request;
