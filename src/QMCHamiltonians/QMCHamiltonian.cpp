@@ -1223,7 +1223,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   //Build B-matrices.  Only for non-diagonal observables right now.
   for (int i = 0; i < H.size(); ++i)
   {
-    if (H[i]->is_nondiag)
+    if (H[i]->dependsOnWaveFunction())
     {
       // ScopedTimer bmattimer(*timer_manager.createTimer("NEW::Btimer"));
       H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_, B_);
@@ -1265,7 +1265,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     }
     for (int i = 0; i < H.size(); ++i)
     {
-      if (H[i]->is_nondiag)
+      if (H[i]->dependsOnWaveFunction())
       {
         //   ScopedTimer dBtimer(*timer_manager.createTimer("NEW::dB_timer"));
         H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_, iat, dB_);
