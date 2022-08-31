@@ -1128,7 +1128,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
                                                                                     ParticleSet::ParticlePos& wf_grad)
 {
   // ScopedTimer evaluatederivtimer(*timer_manager.createTimer("NEW::evaluateIonDerivsFast"));
- // if (!psi_wrapper_.initialized)
+  if (!psi_wrapper_.isInitialized())
   {
     psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
   }

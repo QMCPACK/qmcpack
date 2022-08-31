@@ -40,7 +40,7 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
-
+  inline TWFFastDerivWrapper():is_initialized(false){};
   /** @brief Add a particle group.
    *
    *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
@@ -86,6 +86,7 @@ public:
   inline IndexType numGroups() const { return spos_.size(); };
   SPOSet* getSPOSet(const IndexType sid) const { return spos_[sid]; };
   inline IndexType numOrbitals(const IndexType sid) const { return spos_[sid]->size(); };
+  inline bool isInitialized(){return is_initialized;};
   /** @} */
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -271,6 +272,7 @@ public:
 
 
 private:
+  bool is_initialized;
   std::vector<SPOSet*> spos_;
   std::vector<IndexType> groups_;
   std::vector<ValueMatrix> psi_M_;
