@@ -570,6 +570,28 @@ The following example shows optimizing subsets of parameters in stages in a sing
       <parameter name="variational_subset"> uu ud eH CI </parameter>
     </qmc>
 
+Variational parameter storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After each optimization step the new wavefunction is stored in a file with an ``.opt.xml`` suffix.
+This new wavefunction includes the updated variational parameters.
+
+Writing a new XML wavefunction becomes more complicated if parameters are stored elsewhere (e.g. multideterminant coefficients in an HDF file) and has problems scaling with the number of parameters.
+To address these issues the variational parameters are now written to an HDF file.
+The new "VP file" has the suffix ``.vp.h5`` and is written in conjunction with the ``.opt.xml`` file.
+
+The wavefunction file connects to the VP file with a tag (``override_variational_parameters``) in the ``.opt.xml`` file that points to the ``.vp.h5`` file.
+Should it be necessary to recover the previous behavior without the VP file, this tag can be be turned off with an ``output_vp_override`` parameter in the optimizer input block:
+``<parameter name="output_vp_override">no</parameter>``
+
+Both schemes for storing variational parameters coexist.  Two important points about the VP file:
+
+  * The values of the variational parameters in the VP file take precedence over the values in the XML wavefunction.
+  * When copying an optimized wavefunction, the ``.vp.h5`` file needs to be copied as well.
+
+For users that want to inspect or modify the VP file,
+the He_param test (in ``tests/molecules/He_param``) contains a python script (``convert_vp_format.py``) to read and write the VP file. The script converts to and from a simple text representation of the parameters.
+
+
 Optimizers
 ~~~~~~~~~~
 
