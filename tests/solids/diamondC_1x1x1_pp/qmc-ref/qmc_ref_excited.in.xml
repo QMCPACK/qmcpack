@@ -86,7 +86,7 @@
    <qmc method="vmc" move="pbyp">
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    10000           </parameter>
+      <parameter name="blocks"              >    10000            </parameter>
       <parameter name="steps"               >    7680.0          </parameter>
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
