@@ -95,14 +95,14 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc" move="pbyp" checkpoint="-1">
+   <qmc method="dmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="targetwalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
      <parameter name="warmupSteps">  100 </parameter>
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   100 </parameter>
-     <parameter name="blocks">  25000 </parameter>
+     <parameter name="blocks">  2500 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 
