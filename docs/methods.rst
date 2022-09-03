@@ -545,14 +545,14 @@ The cost function consists of three components: energy, unreweighted variance, a
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
 
-Varational parameter selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The predominant way of selecting varational paramemters is via ``<wavefunction>`` input.
+Variational parameter selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The predominant way of selecting variational parameters is via ``<wavefunction>`` input.
 ``<coefficients>`` entries support ``optimize="yes"/"no"`` to enable/disable variational parameters in the wavefunction optimization.
-The secondary way of selecting varational paramemters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
+The secondary way of selecting variational parameters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
 It allows controlling optimization granularity at each optimization step.
-If ``variational_subset`` is not provided or empty, all the varational paramemters are selected.
-If variational paramemters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
+If ``variational_subset`` is not provided or empty, all the variational parameters are selected.
+If variational parameters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
 
 The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
 
@@ -569,6 +569,28 @@ The following example shows optimizing subsets of parameters in stages in a sing
       ...
       <parameter name="variational_subset"> uu ud eH CI </parameter>
     </qmc>
+
+Variational parameter storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After each optimization step the new wavefunction is stored in a file with an ``.opt.xml`` suffix.
+This new wavefunction includes the updated variational parameters.
+
+Writing a new XML wavefunction becomes more complicated if parameters are stored elsewhere (e.g. multideterminant coefficients in an HDF file) and has problems scaling with the number of parameters.
+To address these issues the variational parameters are now written to an HDF file.
+The new "VP file" has the suffix ``.vp.h5`` and is written in conjunction with the ``.opt.xml`` file.
+
+The wavefunction file connects to the VP file with a tag (``override_variational_parameters``) in the ``.opt.xml`` file that points to the ``.vp.h5`` file.
+Should it be necessary to recover the previous behavior without the VP file, this tag can be be turned off with an ``output_vp_override`` parameter in the optimizer input block:
+``<parameter name="output_vp_override">no</parameter>``
+
+Both schemes for storing variational parameters coexist.  Two important points about the VP file:
+
+  * The values of the variational parameters in the VP file take precedence over the values in the XML wavefunction.
+  * When copying an optimized wavefunction, the ``.vp.h5`` file needs to be copied as well.
+
+For users that want to inspect or modify the VP file,
+the He_param test (in ``tests/molecules/He_param``) contains a python script (``convert_vp_format.py``) to read and write the VP file. The script converts to and from a simple text representation of the parameters.
+
 
 Optimizers
 ~~~~~~~~~~
