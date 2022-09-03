@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "AFQMC/Utilities/type_conversion.hpp"
+#include "AFQMC/Utilities/ArraySizeHelper.hpp"
 
 // pass all pointers through a dispatch() call that can be customized to map pointer types
 // then define it generically to returned the argument, and specialize it for array_ptr_raw_ptr_dispatch<T>
@@ -38,6 +39,7 @@ namespace ma
 {
 using qmcplusplus::afqmc::pointedType;
 using qmcplusplus::afqmc::to_address;
+using qmcplusplus::afqmc::generic_sizes;
 
 template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::dimensionality > 1)>::type>
 bool is_hermitian(MultiArray2D const& A)
@@ -231,14 +233,6 @@ MultiArray2DC&& product(T alpha, MultiArray2DA const& A, MultiArray2DB const& B,
   return ma::gemm<op_tag<MultiArray2DB>::value, op_tag<MultiArray2DA>::value>(alpha, arg(B), arg(A), beta,
                                                                               std::forward<MultiArray2DC>(C));
 }
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
-	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(A.sizes()) {
-	return A.sizes(); }
 
 // sparse matrix-MultiArray interface
 template<

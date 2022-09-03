@@ -22,6 +22,7 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
+#include "AFQMC/Utilities/ArraySizeHelper.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -32,15 +33,6 @@ namespace SlaterDeterminantOperations
 {
 namespace base
 {
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
-	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(A.sizes()) {
-	return A.sizes(); }
-
 /*
  * Calculates the 1-body mixed density matrix:
  *   < A | c+i cj | B > / <A|B> = conj(A) * ( T(B) * conj(A) )^-1 * T(B) 
@@ -976,15 +968,6 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
 
 namespace batched
 {
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(std::array<std::size_t, 2>{A.size(0), A.size(1)}) {
-	return std::array<std::size_t, 2>{A.size(0), A.size(1)}; }
-
-template<class T> auto generic_sizes(T const& A)
-->decltype(A.sizes()) {
-	return A.sizes(); }
-
 template<class MatA, class MatB, class MatC, class Mat, class TVec, class IBuffer, class Tp>
 void MixedDensityMatrix(std::vector<MatA>& hermA,
                         std::vector<MatB>& Bi,
