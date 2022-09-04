@@ -51,10 +51,10 @@ template<class T,
          typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type>
 void adotpby(T const alpha, MultiArray2Dx const& x, MultiArray2Dy const& y, Q const beta, MultiArray1D res)
 {
-  if (x.size(0) != y.size(0) || x.size(0) != res.size(0) || x.size(1) != y.size(1) || x.stride(1) != 1 ||
+  if (std::get<0>(x.sizes()) != std::get<0>(y.sizes()) || std::get<0>(x.sizes()) != std::get<0>(res.sizes()) || std::get<1>(x.sizes()) != std::get<1>(y.sizes()) || x.stride(1) != 1 ||
       y.stride(1) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in adotpby(2D).\n");
-  strided_adotpby(x.size(0), x.size(1), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()),
+  strided_adotpby(std::get<0>(x.sizes()), std::get<1>(x.sizes()), alpha, pointer_dispatch(x.origin()), x.stride(0), pointer_dispatch(y.origin()),
                   y.stride(0), beta, to_address(res.origin()), res.stride(0));
 }
 
@@ -202,7 +202,7 @@ template<class T,
 MultiArray2D&& fill(MultiArray2D&& m, T const& value)
 {
   using qmcplusplus::afqmc::fill2D;
-  fill2D(m.size(0), m.size(1), pointer_dispatch(m.origin()), m.stride(0), value);
+  fill2D(std::get<0>(m.sizes()), std::get<1>(m.sizes()), pointer_dispatch(m.origin()), m.stride(0), value);
   return std::forward<MultiArray2D>(m);
 }
 
