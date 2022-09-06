@@ -59,7 +59,8 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
     param_deriv_index_++;
   }
 
-  size_t max_name_len = std::string("Param_Name").size();
+  std::string_view param_name_header("Param_Name");
+  size_t max_name_len = param_name_header.size();
   for (int k = 0; k < num_params; k++)
   {
     std::string vname = costFunc.getParamName(k);
@@ -68,7 +69,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
   max_name_len += 2; // add some padding
 
   // clang-format off
-  app_log() << std::setw(max_name_len) << std::left << "Param_Name"
+  app_log() << std::setw(max_name_len) << std::left << param_name_header
             << std::setw(14) << std::right << " Value "
             << std::setw(20) << std::right << " Numeric "
             << std::setw(20) << std::right << " Analytic "
