@@ -47,7 +47,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
   }
 
   // Numerical gradient
-  costFunc.GradCost(numeric_grad, params, input_.finite_diff_delta());
+  costFunc.GradCost(numeric_grad, params, input_.get_finite_diff_delta());
 
   // Analytic gradient
   costFunc.GradCost(analytic_grad, params);
