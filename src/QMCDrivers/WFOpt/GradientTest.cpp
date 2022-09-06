@@ -106,7 +106,7 @@ void GradientTest::run(QMCCostFunctionBase& costFunc, const std::string& root_na
               << std::setprecision(10) << std::setw(20) << std::right << numeric_grad[k]
               << std::setw(20) << std::right << analytic_grad[k]
               << std::setw(14) << std::right << rel_diff_str.str() << over_threshold << std::endl;
-    // clang-format off
+    // clang-format on
 
     if (input_.do_param_output())
       param_deriv_file_ << std::setprecision(10) << analytic_grad[k] << " ";
