@@ -346,6 +346,18 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
   }
 }
 
+void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<ParticleSet>& P_list,
+                            int iat,
+                            const RefVector<ValueVector>& psi_v_list,
+                            const RefVector<GradVector>& dpsi_v_list,
+                            const RefVector<ValueVector>& d2psi_v_list) const
+{
+  assert(this == &spo_list.getLeader());
+  for (int iw = 0; iw < spo_list.size(); iw++)
+    spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+}
+
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
