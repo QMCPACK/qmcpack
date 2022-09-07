@@ -353,9 +353,22 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVector<GradVector>& dpsi_v_list,
                             const RefVector<ValueVector>& d2psi_v_list) const
 {
-  assert(this == &spo_list.getLeader());
+  // create a temp[nao], a temp_mw[VGL][nwalkers*nao], and tempv_mw[VGL][nwalkers*nmo]
+  vgl_type Temp(BasisSetSize);
+  vgl_type Temp_mw(spo_list.size()*BasisSetSize);
+  vgl_type Tempv_mw(spo_list.size()*psi_v_list[0].size());
+  // fill Temp
   for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
+    myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
+     Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
+  }
+  // build a stacked C_partial_view[nmo][nao]
+  // call gemm on temp_mw  and C.T
+
+  //default sposet implementation
+  // assert(this == &spo_list.getLeader());
+  // for (int iw = 0; iw < spo_list.size(); iw++)
+  //   spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
