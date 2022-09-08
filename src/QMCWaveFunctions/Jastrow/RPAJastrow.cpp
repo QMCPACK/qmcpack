@@ -200,7 +200,8 @@ void RPAJastrow::makeShortRange()
   Psi.push_back(std::move(j2));
 }
 
-void RPAJastrow::checkOutVariables(const opt_variables_type& active) {
+void RPAJastrow::checkOutVariables(const opt_variables_type& active)
+{
   LongRangeRPA->checkOutVariables(active);
   ShortRangeRPA->checkOutVariables(active);
 }

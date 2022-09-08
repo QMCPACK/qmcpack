@@ -106,10 +106,10 @@ void OneBodyJastrowCUDA<FT>::addLog(MCWalkerConfiguration& W, std::vector<RealTy
 
 template<class FT>
 void OneBodyJastrowCUDA<FT>::update(MCWalkerConfiguration* W,
-                                              std::vector<Walker_t*>& walkers,
-                                              int iat,
-                                              std::vector<bool>* acc,
-                                              int k)
+                                    std::vector<Walker_t*>& walkers,
+                                    int iat,
+                                    std::vector<bool>* acc,
+                                    int k)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CTS::RealType*)walkers[iw]->R_GPU.data();
@@ -121,10 +121,10 @@ void OneBodyJastrowCUDA<FT>::update(MCWalkerConfiguration* W,
 
 template<class FT>
 void OneBodyJastrowCUDA<FT>::ratio(MCWalkerConfiguration& W,
-                                             int iat,
-                                             std::vector<ValueType>& psi_ratios,
-                                             std::vector<GradType>& grad,
-                                             std::vector<ValueType>& lapl)
+                                   int iat,
+                                   std::vector<ValueType>& psi_ratios,
+                                   std::vector<GradType>& grad,
+                                   std::vector<ValueType>& lapl)
 {
   auto& walkers = W.WalkerList;
   int N         = W.Rnew_GPU.size();
@@ -197,10 +197,10 @@ void OneBodyJastrowCUDA<FT>::ratio(MCWalkerConfiguration& W,
 
 template<class FT>
 void OneBodyJastrowCUDA<FT>::calcRatio(MCWalkerConfiguration& W,
-                                                 int iat,
-                                                 std::vector<ValueType>& psi_ratios,
-                                                 std::vector<GradType>& grad,
-                                                 std::vector<ValueType>& lapl)
+                                       int iat,
+                                       std::vector<ValueType>& psi_ratios,
+                                       std::vector<GradType>& grad,
+                                       std::vector<ValueType>& lapl)
 {
   int N         = W.Rnew_GPU.size();
   auto& walkers = W.WalkerList;
@@ -245,11 +245,11 @@ void OneBodyJastrowCUDA<FT>::calcRatio(MCWalkerConfiguration& W,
 
 template<class FT>
 void OneBodyJastrowCUDA<FT>::addRatio(MCWalkerConfiguration& W,
-                                                int iat,
-                                                int k,
-                                                std::vector<ValueType>& psi_ratios,
-                                                std::vector<GradType>& grad,
-                                                std::vector<ValueType>& lapl)
+                                      int iat,
+                                      int k,
+                                      std::vector<ValueType>& psi_ratios,
+                                      std::vector<GradType>& grad,
+                                      std::vector<ValueType>& lapl)
 {
   int N         = W.Rnew_GPU.size();
   auto& walkers = W.WalkerList;
@@ -291,9 +291,9 @@ void OneBodyJastrowCUDA<FT>::addRatio(MCWalkerConfiguration& W,
 
 template<class FT>
 void OneBodyJastrowCUDA<FT>::NLratios(MCWalkerConfiguration& W,
-                                                std::vector<NLjob>& jobList,
-                                                std::vector<PosType>& quadPoints,
-                                                std::vector<ValueType>& psi_ratios)
+                                      std::vector<NLjob>& jobList,
+                                      std::vector<PosType>& quadPoints,
+                                      std::vector<ValueType>& psi_ratios)
 {
   auto& walkers         = W.WalkerList;
   float sim_cell_radius = W.getLattice().SimulationCellRadius;
@@ -357,10 +357,7 @@ void OneBodyJastrowCUDA<FT>::NLratios(MCWalkerConfiguration& W,
 }
 
 template<class FT>
-void OneBodyJastrowCUDA<FT>::calcGradient(MCWalkerConfiguration& W,
-                                                    int iat,
-                                                    int k,
-                                                    std::vector<GradType>& grad)
+void OneBodyJastrowCUDA<FT>::calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
 {
   CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers                 = W.WalkerList;
