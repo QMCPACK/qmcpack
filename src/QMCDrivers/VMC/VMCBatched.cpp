@@ -240,10 +240,9 @@ void VMCBatched::runVMCStep(int crowd_id,
 {
   Crowd& crowd = *(crowds[crowd_id]);
   crowd.setRNGForHamiltonian(context_for_steps[crowd_id]->get_random_gen());
-  const int max_steps  = sft.qmcdrv_input.get_max_steps();
   const IndexType step = sft.step;
   // Are we entering the the last step of a block to recompute at?
-  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
+  const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == sft.steps_per_block);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
   const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
@@ -265,6 +264,10 @@ void VMCBatched::process(xmlNodePtr node)
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
+    steps_per_block_ =
+        determineStepsPerBlock(awc.global_walkers, qmcdriver_input_.get_requested_samples(),
+                               qmcdriver_input_.get_requested_steps(), qmcdriver_input_.get_max_blocks());
+
     Base::initializeQMC(awc);
   }
   catch (const UniformCommunicateError& ue)
@@ -273,11 +276,11 @@ void VMCBatched::process(xmlNodePtr node)
   }
 }
 
-int VMCBatched::compute_samples_per_rank(const QMCDriverInput& qmcdriver_input, const IndexType local_walkers)
+size_t VMCBatched::compute_samples_per_rank(const size_t num_blocks,
+                                            const size_t samples_per_block,
+                                            const size_t local_walkers)
 {
-  int nblocks = qmcdriver_input.get_max_blocks();
-  int nsteps  = qmcdriver_input.get_max_steps();
-  return nblocks * nsteps * local_walkers;
+  return num_blocks * samples_per_block * local_walkers;
 }
 
 
@@ -299,7 +302,7 @@ bool VMCBatched::run()
   //start the main estimator
   estimator_manager_->startDriverRun();
 
-  StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_);
+  StateForThread vmc_state(qmcdriver_input_, vmcdriver_input_, *drift_modifier_, population_, steps_per_block_);
 
   LoopTimer<> vmc_loop;
   RunTimeControl<> runtimeControl(run_time_manager, project_data_.getMaxCPUSeconds(), project_data_.getTitle(),
@@ -359,11 +362,11 @@ bool VMCBatched::run()
         ? (1 + block) % qmcdriver_input_.get_blocks_between_recompute() == 0
         : false;
 
-    estimator_manager_->startBlock(qmcdriver_input_.get_max_steps());
+    estimator_manager_->startBlock(steps_per_block_);
 
     for (auto& crowd : crowds_)
-      crowd->startBlock(qmcdriver_input_.get_max_steps());
-    for (int step = 0; step < qmcdriver_input_.get_max_steps(); ++step)
+      crowd->startBlock(steps_per_block_);
+    for (int step = 0; step < steps_per_block_; ++step)
     {
       ScopedTimer local_timer(timers_.run_steps_timer);
       vmc_state.step = step;
@@ -433,7 +436,9 @@ bool VMCBatched::run()
 
 void VMCBatched::enable_sample_collection()
 {
-  int samples = compute_samples_per_rank(qmcdriver_input_, population_.get_num_local_walkers());
+  assert(steps_per_block_ > 0 && "VMCBatched::enable_sample_collection steps_per_block_ must be positive!");
+  int samples = compute_samples_per_rank(qmcdriver_input_.get_max_blocks(), steps_per_block_,
+                                         population_.get_num_local_walkers());
   samples_.setMaxSamples(samples, population_.get_num_ranks());
   collect_samples_ = true;
 
