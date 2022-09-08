@@ -353,18 +353,40 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                             const RefVector<GradVector>& dpsi_v_list,
                             const RefVector<ValueVector>& d2psi_v_list) const
 {
+    // need to change function call once we know output types
   // create a temp[nao], a temp_mw[VGL][nwalkers*nao], and tempv_mw[VGL][nwalkers*nmo]
   vgl_type Temp(BasisSetSize);
   vgl_type Temp_mw(spo_list.size()*BasisSetSize);
   vgl_type Tempv_mw(spo_list.size()*psi_v_list[0].size());
-  // fill Temp
-  for (int iw = 0; iw < spo_list.size(); iw++)
-    myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
-     Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
-  }
-  // build a stacked C_partial_view[nmo][nao]
-  // call gemm on temp_mw  and C.T
 
+  if (Identity)
+  {
+    // fill Temp
+    for (int iw = 0; iw < spo_list.size(); iw++) {
+      myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
+      Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
+    }
+    // Need better output format
+    // ValueVector psi_v_joined [1][nwalkers*nmo]
+    // ValueVector dpsi_v_joined [3][nwalkers*nmo]
+    // ValueVector d2psi_v_joined [1][nwalkers*nmo]
+    evaluate_vgl_impl(Temp_mw.data(), psi_v_joined, dpsi_v_joined, d2psi_v_joined);
+  }
+  else
+  {
+    ValueMatrix C_partial_view(C->data(), psi_v_list[0].size(), BasisSetSize);
+    ValueMatrix Stacked_C_partial_view(spo_list.size()*psi_v_list[0].size(), spo_list.size()*BasisSetSize);
+    // fill Temp
+    // build a stacked C_partial_view[nmo][nao]
+    for (int iw = 0; iw < spo_list.size(); iw++) {
+      myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
+      Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
+      Stacked_C_partial_view.add(C_partial_view.data(), psi_v_list[0].size(), BasisSetSize, iw*psi_v_list[0].size(), iw*BasisSetSize);
+    }
+    // call gemm on temp_mw and C.T
+    Product_ABt(Temp_mw, Stacked_C_partial_view, Tempv_mw);
+    evaluate_vgl_impl(Tempv_mw.data(), psi_v_joined, dpsi_v_joined, d2psi_v_joined);
+  }
   //default sposet implementation
   // assert(this == &spo_list.getLeader());
   // for (int iw = 0; iw < spo_list.size(); iw++)
