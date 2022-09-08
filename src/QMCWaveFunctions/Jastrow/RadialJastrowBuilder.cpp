@@ -50,7 +50,7 @@ class JastrowTypeHelper
 public:
   using J1Type     = J1OrbitalSoA<RadFuncType>;
   using J1SpinType = J1Spin<RadFuncType>;
-  using J2Type     = J2OrbitalSoA<RadFuncType>;
+  using J2Type     = J2OMPTarget<RadFuncType>;
 };
 
 #if defined(QMC_CUDA)
@@ -158,7 +158,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  auto J2 = std::make_unique<J2Type>(j2name, targetPtcl);
+  auto J2 = std::make_unique<J2Type>(j2name, targetPtcl, Implementation == RadialJastrowBuilder::detail::OMPTARGET);
 
   std::string init_mode("0");
   {

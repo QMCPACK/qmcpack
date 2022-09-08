@@ -68,6 +68,9 @@ public:
   using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
 
 private:
+  /// if true use offload
+  const bool use_offload_;
+
   /** initialize storage Uat,dUat, d2Uat */
   void resizeInternalStorage();
 
@@ -139,7 +142,7 @@ private:
   /**@} */
 
 public:
-  J2OMPTarget(const std::string& obj_name, ParticleSet& p);
+  J2OMPTarget(const std::string& obj_name, ParticleSet& p, bool use_offload);
   J2OMPTarget(const J2OMPTarget& rhs) = delete;
   ~J2OMPTarget() override;
 

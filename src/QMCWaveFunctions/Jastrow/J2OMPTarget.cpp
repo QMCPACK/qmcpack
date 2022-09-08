@@ -181,6 +181,12 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
                                         const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                                         std::vector<std::vector<ValueType>>& ratios) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateRatios(wfc_list, vp_list, ratios);
+    return;
+  }
+
   // add early return to prevent from accessing vp_list[0]
   if (wfc_list.size() == 0)
     return;
@@ -285,8 +291,9 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 }
 
 template<typename FT>
-J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
+J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p, bool use_offload)
     : WaveFunctionComponent(obj_name),
+      use_offload_(use_offload),
       N(p.getTotalNum()),
       N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
@@ -369,7 +376,7 @@ void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 template<typename FT>
 std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
 {
-  auto j2copy = std::make_unique<J2OMPTarget<FT>>(my_name_, tqp);
+  auto j2copy = std::make_unique<J2OMPTarget<FT>>(my_name_, tqp, use_offload_);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)
@@ -445,6 +452,12 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
                                    int iat,
                                    std::vector<PsiValueType>& ratios) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_calcRatio(wfc_list, p_list, iat, ratios);
+    return;
+  }
+
   //right now. Directly use FT::mw_evaluateVGL implementation.
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
@@ -523,6 +536,12 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
                                    std::vector<PsiValueType>& ratios,
                                    std::vector<GradType>& grad_new) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto& p_leader        = p_list.getLeader();
@@ -607,6 +626,12 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
                                            const std::vector<bool>& isAccepted,
                                            bool safe_to_delay) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_accept_rejectMove(wfc_list, p_list, iat, isAccepted, safe_to_delay);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   auto& p_leader        = p_list.getLeader();
@@ -685,6 +710,12 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                    const std::vector<bool>& recompute) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_recompute(wfc_list, p_list, recompute);
+    return;
+  }
+
   auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
   assert(this == &wfc_leader);
   for (int iw = 0; iw < wfc_list.size(); iw++)
@@ -709,6 +740,12 @@ void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionCompo
                                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateLog(wfc_list, p_list, G_list, L_list);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   const std::vector<bool> recompute_all(wfc_list.size(), true);
   mw_recompute(wfc_list, p_list, recompute_all);
@@ -749,6 +786,12 @@ void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCompon
                                     const RefVector<ParticleSet::ParticleLaplacian>& L_list,
                                     bool fromscratch) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateGL(wfc_list, p_list, G_list, L_list, fromscratch);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
