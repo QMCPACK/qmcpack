@@ -13,29 +13,31 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
-#define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
+#ifndef TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
+#define TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
 
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
+#include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
 #include "QMCWaveFunctions/detail/CUDA_legacy/NLjobGPU.h"
-#include "Configuration.h"
-#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {
 template<class FT>
-class OneBodyJastrowOrbitalBspline : public J1OrbitalSoA<FT>
+class TwoBodyJastrowCUDA : public J2OMPTarget<FT>
 {
 private:
   bool UsePBC;
+  int kcurr = 0;
+  // At the moment the CUDA Types are all set globally
   using CTS = CUDAGlobalTypes;
+
   // The following is so we can refer to type aliases(defs) below the
   // templated base class in the object hierarchy
   // Mostly QMCTraits here
-  using JBase = J1OrbitalSoA<FT>;
+  using JBase = J2OMPTarget<FT>;
   // Duplication that should be removed
   using RealType     = typename JBase::RealType;
   using ValueType    = typename JBase::ValueType;
@@ -45,22 +47,16 @@ private:
   using ValueMatrix  = typename JBase::ValueMatrix;
   using RealMatrix_t = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTS::RealType>*> GPUSplines;
-  std::vector<std::unique_ptr<CudaSpline<CTS::RealType>>> UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
-  ParticleSet& ElecRef;
+  ParticleSet& PtclRef;
   gpu::device_vector<CTS::RealType> L, Linv;
-
-  // Holds center positions
-  gpu::device_vector<CTS::RealType> C;
 
   gpu::device_vector<CTS::RealType*> UpdateListGPU;
   gpu::device_vector<CTS::RealType> SumGPU, GradLaplGPU, OneGradGPU;
 
   gpu::host_vector<CTS::RealType*> UpdateListHost;
   gpu::host_vector<CTS::RealType> SumHost, GradLaplHost, OneGradHost;
-  int NumCenterGroups, NumElecGroups;
-  std::vector<int> CenterFirst, CenterLast;
   gpu::host_vector<CTS::RealType> SplineDerivsHost;
   gpu::device_vector<CTS::RealType> SplineDerivsGPU;
   gpu::host_vector<CTS::RealType*> DerivListHost;
@@ -75,12 +71,12 @@ private:
   gpu::host_vector<CTS::RealType> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
   gpu::device_vector<CTS::RealType> NL_rMaxGPU, NL_QuadPointsGPU, NL_RatiosGPU;
 
-  int N;
-
 public:
   using Walker_t = ParticleSet::Walker_t;
 
-  void addFunc(int ig, std::unique_ptr<FT> j, int jg = -1);
+  void freeGPUmem() override;
+  //void addFunc(const std::string& aname, int ia, int ib, FT* j);
+  void addFunc(int ia, int ib, std::unique_ptr<FT> j);
   void recompute(MCWalkerConfiguration& W, bool firstTime) override;
   void reserve(PointerPool<gpu::device_vector<CTS::RealType>>& pool);
   void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi) override;
@@ -89,11 +85,11 @@ public:
               int iat,
               std::vector<bool>* acc,
               int k) override;
-
   void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList) override
   {
     /* This function doesn't really need to return the ratio */
   }
+
   void ratio(MCWalkerConfiguration& W,
              int iat,
              std::vector<ValueType>& psi_ratios,
@@ -129,7 +125,14 @@ public:
                      int kd,
                      int nw) override
   {
-    /* The one-body jastrow can be calculated for the entire k-block, so this function doesn't need to return anything */
+    /* The two-body jastrow depends on the accepted positions of other electrons,
+       hence needs to be calculated every time here */
+    if (k > 0 && !W.getklinear())
+    {
+      kcurr = k;
+      ratio(W, iat + k, psi_ratios, grad, lapl);
+      kcurr = 0;
+    }
   }
 
   void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad) override;
@@ -140,12 +143,11 @@ public:
                 std::vector<PosType>& quadPoints,
                 std::vector<ValueType>& psi_ratios) override;
 
-  OneBodyJastrowOrbitalBspline(const std::string& obj_name, ParticleSet& centers, ParticleSet& elecs, bool use_offload)
-      : J1OrbitalSoA<FT>(obj_name, centers, elecs, use_offload),
-        ElecRef(elecs),
+  TwoBodyJastrowCUDA(const std::string& obj_name, ParticleSet& pset, bool use_offload)
+      : J2OMPTarget<FT>(obj_name, pset, use_offload),
+        PtclRef(pset),
         L(obj_name + "L"),
         Linv(obj_name + "Linv"),
-        C(obj_name + "C"),
         UpdateListGPU(obj_name + "UpdateListGPU"),
         SumGPU(obj_name + "SumGPU"),
         GradLaplGPU(obj_name + "GradLaplGPU"),
@@ -160,48 +162,43 @@ public:
         NL_QuadPointsGPU(obj_name + "NL_QuadPointsGPU"),
         NL_RatiosGPU(obj_name + "NL_RatiosGPU")
   {
-    UsePBC           = elecs.getLattice().SuperCellEnum;
-    NumElecGroups    = elecs.groups();
-    SpeciesSet& sSet = centers.getSpeciesSet();
-    NumCenterGroups  = sSet.getTotalNum();
-    //      NumCenterGroups = centers.groups();
-    // std::cerr << "NumCenterGroups = " << NumCenterGroups << std::endl;
-    GPUSplines.resize(NumCenterGroups, 0);
+    UsePBC = pset.getLattice().SuperCellEnum;
+    app_log() << "UsePBC = " << UsePBC << std::endl;
+    GPUSplines.resize(this->NumGroups * this->NumGroups, 0);
     if (UsePBC)
     {
       gpu::host_vector<CTS::RealType> LHost(OHMMS_DIM * OHMMS_DIM), LinvHost(OHMMS_DIM * OHMMS_DIM);
       for (int i = 0; i < OHMMS_DIM; i++)
         for (int j = 0; j < OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)elecs.getLattice().a(i)[j];
-          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)elecs.getLattice().b(j)[i];
+          LHost[OHMMS_DIM * i + j]    = (CTS::RealType)pset.getLattice().a(i)[j];
+          LinvHost[OHMMS_DIM * i + j] = (CTS::RealType)pset.getLattice().b(j)[i];
         }
+      // for (int i=0; i<OHMMS_DIM; i++)
+      // 	for (int j=0; j<OHMMS_DIM; j++) {
+      // 	  double sum = 0.0;
+      // 	  for (int k=0; k<OHMMS_DIM; k++)
+      // 	    sum += LHost[OHMMS_DIM*i+k]*LinvHost[OHMMS_DIM*k+j];
+      // 	  if (i == j) sum -= 1.0;
+      // 	  if (std::abs(sum) > 1.0e-5) {
+      // 	    app_error() << "sum = " << sum << std::endl;
+      // 	    app_error() << "Linv * L != identity.\n";
+      // 	    abort();
+      // 	  }
+      // 	}
+      //       fprintf (stderr, "Identity should follow:\n");
+      //       for (int i=0; i<3; i++){
+      // 	for (int j=0; j<3; j++) {
+      // 	  CTS::RealType val = 0.0f;
+      // 	  for (int k=0; k<3; k++)
+      // 	    val += LinvHost[3*i+k]*LHost[3*k+j];
+      // 	  fprintf (stderr, "  %8.3f", val);
+      // 	}
+      // 	fprintf (stderr, "\n");
+      //       }
       L    = LHost;
       Linv = LinvHost;
     }
-    N = elecs.getTotalNum();
-    // Copy center positions to GPU, sorting by GroupID
-    gpu::host_vector<CTS::RealType> C_host(OHMMS_DIM * centers.getTotalNum());
-    int index = 0;
-    for (int cgroup = 0; cgroup < NumCenterGroups; cgroup++)
-    {
-      CenterFirst.push_back(index);
-      for (int i = 0; i < centers.getTotalNum(); i++)
-      {
-        if (centers.GroupID[i] == cgroup)
-        {
-          for (int dim = 0; dim < OHMMS_DIM; dim++)
-            C_host[OHMMS_DIM * index + dim] = centers.R[i][dim];
-          index++;
-        }
-      }
-      CenterLast.push_back(index - 1);
-    }
-    // gpu::host_vector<CTS::RealType> C_host(OHMMS_DIM*centers.getTotalNum());
-    // for (int i=0; i<centers.getTotalNum(); i++)
-    // 	for (int dim=0; dim<OHMMS_DIM; dim++)
-    // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
-    C = C_host;
   }
 };
 } // namespace qmcplusplus

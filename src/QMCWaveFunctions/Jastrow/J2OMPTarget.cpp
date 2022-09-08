@@ -293,10 +293,10 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 template<typename FT>
 J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p, bool use_offload)
     : WaveFunctionComponent(obj_name),
-      use_offload_(use_offload),
       N(p.getTotalNum()),
-      N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
+      use_offload_(use_offload),
+      N_padded(getAlignedSize<valT>(N)),
       my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {

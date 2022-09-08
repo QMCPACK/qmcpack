@@ -144,7 +144,7 @@ set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTable
 if(QMC_CUDA)
   set(FERMION_SRCS ${FERMION_SRCS} EinsplineSetCuda.cpp Fermion/DiracDeterminantCUDA.cpp Fermion/SlaterDetCUDA.cpp
                    TrialWaveFunction_CUDA.cpp)
-  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowOrbitalBspline.cpp Jastrow/TwoBodyJastrowOrbitalBspline.cpp)
+  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowCUDA.cpp Jastrow/TwoBodyJastrowCUDA.cpp)
 endif()
 
 ####################################

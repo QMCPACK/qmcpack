@@ -19,8 +19,8 @@
 #include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
 
 #if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowCUDA.h"
 #endif
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
@@ -59,9 +59,9 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J1Type      = OneBodyJastrowOrbitalBspline<RadFuncType>;
+  using J1Type      = OneBodyJastrowCUDA<RadFuncType>;
   using J1SpinType  = void;
-  using J2Type      = TwoBodyJastrowOrbitalBspline<RadFuncType>;
+  using J2Type      = TwoBodyJastrowCUDA<RadFuncType>;
 };
 #endif
 

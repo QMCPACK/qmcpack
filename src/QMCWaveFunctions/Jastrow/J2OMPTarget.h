@@ -67,6 +67,12 @@ public:
   using GradDerivVec  = ParticleAttrib<QTFull::GradType>;
   using ValueDerivVec = ParticleAttrib<QTFull::ValueType>;
 
+protected:
+  ///number of particles
+  const size_t N;
+  ///number of groups of the target particleset
+  const size_t NumGroups;
+
 private:
   /// if true use offload
   const bool use_offload_;
@@ -74,12 +80,8 @@ private:
   /** initialize storage Uat,dUat, d2Uat */
   void resizeInternalStorage();
 
-  ///number of particles
-  const size_t N;
   ///number of particles + padded
   const size_t N_padded;
-  ///number of groups of the target particleset
-  const size_t NumGroups;
   /// the group_id of each particle
   Vector<int, OffloadPinnedAllocator<int>> grp_ids;
   ///diff value
