@@ -145,10 +145,10 @@ void TwoBodyJastrowCUDA<FT>::addLog(MCWalkerConfiguration& W, std::vector<RealTy
 
 template<class FT>
 void TwoBodyJastrowCUDA<FT>::update(MCWalkerConfiguration* W,
-                                              std::vector<Walker_t*>& walkers,
-                                              int iat,
-                                              std::vector<bool>* acc,
-                                              int k)
+                                    std::vector<Walker_t*>& walkers,
+                                    int iat,
+                                    std::vector<bool>* acc,
+                                    int k)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CTS::RealType*)walkers[iw]->R_GPU.data();
@@ -161,10 +161,10 @@ void TwoBodyJastrowCUDA<FT>::update(MCWalkerConfiguration* W,
 // This currently does not actually compute the gradient or laplacian
 template<class FT>
 void TwoBodyJastrowCUDA<FT>::ratio(MCWalkerConfiguration& W,
-                                             int iat,
-                                             std::vector<ValueType>& psi_ratios,
-                                             std::vector<GradType>& grad,
-                                             std::vector<ValueType>& lapl)
+                                   int iat,
+                                   std::vector<ValueType>& psi_ratios,
+                                   std::vector<GradType>& grad,
+                                   std::vector<ValueType>& lapl)
 {
   auto& walkers = W.WalkerList;
   int N         = W.Rnew_GPU.size();
@@ -246,10 +246,10 @@ void TwoBodyJastrowCUDA<FT>::ratio(MCWalkerConfiguration& W,
 // This currently does not actually compute the gradient or laplacian
 template<class FT>
 void TwoBodyJastrowCUDA<FT>::calcRatio(MCWalkerConfiguration& W,
-                                                 int iat,
-                                                 std::vector<ValueType>& psi_ratios,
-                                                 std::vector<GradType>& grad,
-                                                 std::vector<ValueType>& lapl)
+                                       int iat,
+                                       std::vector<ValueType>& psi_ratios,
+                                       std::vector<GradType>& grad,
+                                       std::vector<ValueType>& lapl)
 {
   auto& walkers = W.WalkerList;
   int N         = W.Rnew_GPU.size();
@@ -318,11 +318,11 @@ void TwoBodyJastrowCUDA<FT>::calcRatio(MCWalkerConfiguration& W,
 
 template<class FT>
 void TwoBodyJastrowCUDA<FT>::addRatio(MCWalkerConfiguration& W,
-                                                int iat,
-                                                int k,
-                                                std::vector<ValueType>& psi_ratios,
-                                                std::vector<GradType>& grad,
-                                                std::vector<ValueType>& lapl)
+                                      int iat,
+                                      int k,
+                                      std::vector<ValueType>& psi_ratios,
+                                      std::vector<GradType>& grad,
+                                      std::vector<ValueType>& lapl)
 {
 #ifndef CPU_RATIO
   auto& walkers = W.WalkerList;
@@ -346,9 +346,9 @@ void TwoBodyJastrowCUDA<FT>::addRatio(MCWalkerConfiguration& W,
 
 template<class FT>
 void TwoBodyJastrowCUDA<FT>::NLratios(MCWalkerConfiguration& W,
-                                                std::vector<NLjob>& jobList,
-                                                std::vector<PosType>& quadPoints,
-                                                std::vector<ValueType>& psi_ratios)
+                                      std::vector<NLjob>& jobList,
+                                      std::vector<PosType>& quadPoints,
+                                      std::vector<ValueType>& psi_ratios)
 {
   CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers                 = W.WalkerList;
@@ -419,10 +419,7 @@ void TwoBodyJastrowCUDA<FT>::NLratios(MCWalkerConfiguration& W,
 }
 
 template<class FT>
-void TwoBodyJastrowCUDA<FT>::calcGradient(MCWalkerConfiguration& W,
-                                                    int iat,
-                                                    int k,
-                                                    std::vector<GradType>& grad)
+void TwoBodyJastrowCUDA<FT>::calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
 {
   CTS::RealType sim_cell_radius = W.getLattice().SimulationCellRadius;
   auto& walkers                 = W.WalkerList;

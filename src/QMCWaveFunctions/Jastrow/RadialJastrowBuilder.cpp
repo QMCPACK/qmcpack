@@ -15,8 +15,7 @@
 #include <PlatformSelector.hpp>
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 
 #if defined(QMC_CUDA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
@@ -50,7 +49,7 @@ class JastrowTypeHelper
 public:
   using J1Type     = J1OrbitalSoA<RadFuncType>;
   using J1SpinType = J1Spin<RadFuncType>;
-  using J2Type     = J2OMPTarget<RadFuncType>;
+  using J2Type     = TwoBodyJastrow<RadFuncType>;
 };
 
 #if defined(QMC_CUDA)
@@ -70,7 +69,7 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J2Type      = J2OMPTarget<RadFuncType>;
+  using J2Type      = TwoBodyJastrow<RadFuncType>;
 };
 
 RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
@@ -608,7 +607,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
-                                   J2OMPTarget<BsplineFunctor<RealType>>>::value,
+                                   TwoBodyJastrow<BsplineFunctor<RealType>>>::value,
                       "check consistent type");
         if (targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         {

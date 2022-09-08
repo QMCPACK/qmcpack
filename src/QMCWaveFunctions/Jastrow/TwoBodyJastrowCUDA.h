@@ -17,7 +17,7 @@
 #define TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
 
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 template<class FT>
-class TwoBodyJastrowCUDA : public J2OMPTarget<FT>
+class TwoBodyJastrowCUDA : public TwoBodyJastrow<FT>
 {
 private:
   bool UsePBC;
@@ -37,7 +37,7 @@ private:
   // The following is so we can refer to type aliases(defs) below the
   // templated base class in the object hierarchy
   // Mostly QMCTraits here
-  using JBase = J2OMPTarget<FT>;
+  using JBase = TwoBodyJastrow<FT>;
   // Duplication that should be removed
   using RealType     = typename JBase::RealType;
   using ValueType    = typename JBase::ValueType;
@@ -144,7 +144,7 @@ public:
                 std::vector<ValueType>& psi_ratios) override;
 
   TwoBodyJastrowCUDA(const std::string& obj_name, ParticleSet& pset, bool use_offload)
-      : J2OMPTarget<FT>(obj_name, pset, use_offload),
+      : TwoBodyJastrow<FT>(obj_name, pset, use_offload),
         PtclRef(pset),
         L(obj_name + "L"),
         Linv(obj_name + "Linv"),

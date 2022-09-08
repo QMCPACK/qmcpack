@@ -28,12 +28,13 @@
 #include "BsplineFunctor.h"
 #include "PadeFunctors.h"
 #include "UserFunctor.h"
+#include "FakeFunctor.h"
 
 namespace qmcplusplus
 {
 
 template<typename T>
-struct J2OMPTargetMultiWalkerMem;
+struct TwoBodyJastrowMultiWalkerMem;
 
 /** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
@@ -42,7 +43,7 @@ struct J2OMPTargetMultiWalkerMem;
  * For electrons, distinct pair correlation functions are used
  * for spins up-up/down-down and up-down/down-up.
  *
- * Based on J2OMPTarget.h with these considerations
+ * Based on TwoBodyJastrow.h with these considerations
  * - DistanceTable using SoA containers
  * - support mixed precision: FT::real_type != OHMMS_PRECISION
  * - loops over the groups: elminated PairID
@@ -51,7 +52,7 @@ struct J2OMPTargetMultiWalkerMem;
  * - Memory use is O(N). 
  */
 template<class FT>
-class J2OMPTarget : public WaveFunctionComponent
+class TwoBodyJastrow : public WaveFunctionComponent
 {
 public:
   ///alias FuncType
@@ -115,7 +116,7 @@ private:
   std::vector<GradDerivVec> gradLogPsi;
   std::vector<ValueDerivVec> lapLogPsi;
 
-  std::unique_ptr<J2OMPTargetMultiWalkerMem<RealType>> mw_mem_;
+  std::unique_ptr<TwoBodyJastrowMultiWalkerMem<RealType>> mw_mem_;
 
   void resizeWFOptVectors()
   {
@@ -144,9 +145,9 @@ private:
   /**@} */
 
 public:
-  J2OMPTarget(const std::string& obj_name, ParticleSet& p, bool use_offload);
-  J2OMPTarget(const J2OMPTarget& rhs) = delete;
-  ~J2OMPTarget() override;
+  TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, bool use_offload);
+  TwoBodyJastrow(const TwoBodyJastrow& rhs) = delete;
+  ~TwoBodyJastrow() override;
 
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
@@ -159,7 +160,7 @@ public:
   void releaseResource(ResourceCollection& collection,
                        const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
 
-  std::string getClassName() const override { return "J2OMPTarget"; }
+  std::string getClassName() const override { return "TwoBodyJastrow"; }
   bool isOptimizable() const override { return true; }
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   /** check out optimizable variables
@@ -241,14 +242,17 @@ public:
 
   const std::vector<FT*>& getPairFunctions() const { return F; }
 
+  // Accessors for unit testing
+  std::pair<int, int> getComponentOffset(int index) { return OffSet.at(index); }
+
+  opt_variables_type& getComponentVars() { return myVars; }
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& active,
-                             Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
@@ -256,8 +260,9 @@ public:
                            Matrix<ValueType>& dratios) override;
 };
 
-extern template class J2OMPTarget<BsplineFunctor<QMCTraits::RealType>>;
-extern template class J2OMPTarget<PadeFunctor<QMCTraits::RealType>>;
-extern template class J2OMPTarget<UserFunctor<QMCTraits::RealType>>;
+extern template class TwoBodyJastrow<BsplineFunctor<QMCTraits::RealType>>;
+extern template class TwoBodyJastrow<PadeFunctor<QMCTraits::RealType>>;
+extern template class TwoBodyJastrow<UserFunctor<QMCTraits::RealType>>;
+extern template class TwoBodyJastrow<FakeFunctor<QMCTraits::RealType>>;
 } // namespace qmcplusplus
 #endif

@@ -57,11 +57,10 @@ set(JASTROW_SRCS
     Jastrow/CountingJastrowBuilder.cpp
     Jastrow/RPAJastrow.cpp
     Jastrow/J1OrbitalSoA.cpp
-    Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
     LatticeGaussianProductBuilder.cpp)
 set(JASTROW_OMPTARGET_SRCS
-    Jastrow/J2OMPTarget.cpp
+    Jastrow/TwoBodyJastrow.cpp
     Jastrow/BsplineFunctor.cpp)
 set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalBuilder.cpp)
 
