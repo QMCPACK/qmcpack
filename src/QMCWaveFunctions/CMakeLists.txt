@@ -57,11 +57,10 @@ set(JASTROW_SRCS
     Jastrow/CountingJastrowBuilder.cpp
     Jastrow/RPAJastrow.cpp
     Jastrow/J1OrbitalSoA.cpp
-    Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
     LatticeGaussianProductBuilder.cpp)
 set(JASTROW_OMPTARGET_SRCS
-    Jastrow/J2OMPTarget.cpp
+    Jastrow/TwoBodyJastrow.cpp
     Jastrow/BsplineFunctor.cpp)
 set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalBuilder.cpp)
 
@@ -144,7 +143,7 @@ set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTable
 if(QMC_CUDA)
   set(FERMION_SRCS ${FERMION_SRCS} EinsplineSetCuda.cpp Fermion/DiracDeterminantCUDA.cpp Fermion/SlaterDetCUDA.cpp
                    TrialWaveFunction_CUDA.cpp)
-  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowOrbitalBspline.cpp Jastrow/TwoBodyJastrowOrbitalBspline.cpp)
+  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowCUDA.cpp Jastrow/TwoBodyJastrowCUDA.cpp)
 endif()
 
 ####################################

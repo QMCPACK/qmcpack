@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 
 #include <cstdio>
 #include <string>
@@ -84,7 +84,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-  using J2Type = J2OrbitalSoA<BsplineFunctor<RealType>>;
+  using J2Type = TwoBodyJastrow<BsplineFunctor<RealType>>;
   auto j2_uptr = jastrow.buildComponent(jas1);
   J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());
   REQUIRE(j2);

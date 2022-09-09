@@ -12,7 +12,7 @@
 #include "catch.hpp"
 
 #include <memory>
-#include "Jastrow/J2OrbitalSoA.h"
+#include "Jastrow/TwoBodyJastrow.h"
 #include "Jastrow/FakeFunctor.h"
 
 namespace qmcplusplus
@@ -20,25 +20,25 @@ namespace qmcplusplus
 
 using FakeJasFunctor = FakeFunctor<OHMMS_PRECISION>;
 
-TEST_CASE("J2OrbitalSoA simple", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow simple", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
   elec.setName("e");
   elec.create({1, 1});
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   opt_variables_type active;
   jorb.checkOutVariables(active);
 }
 
-TEST_CASE("J2OrbitalSoA one species and two variables", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow one species and two variables", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
   elec.setName("e");
   elec.create({1, 1});
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   auto j2_uptr = std::make_unique<FakeJasFunctor>("test_fake");
   auto& j2     = *j2_uptr;
@@ -79,12 +79,12 @@ ParticleSet get_two_species_particleset(const SimulationCell& simulation_cell)
 }
 
 // Two variables, both active
-TEST_CASE("J2OrbitalSoA two variables", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow two variables", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec = get_two_species_particleset(simulation_cell);
 
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   auto j2a_uptr = std::make_unique<FakeJasFunctor>("test_fake_a");
   auto& j2a     = *j2a_uptr;
@@ -146,12 +146,12 @@ TEST_CASE("J2OrbitalSoA two variables", "[wavefunction]")
 // Reproduce 2814.  If the variational parameter for the first Jastrow factor
 // is not active, the offsets are not correct.
 // "First" means the first in the function list F, which has species indices 0,0
-TEST_CASE("J2OrbitalSoA variables fail", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow variables fail", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec = get_two_species_particleset(simulation_cell);
 
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   auto j2a_uptr = std::make_unique<FakeJasFunctor>("test_fake_a");
   auto& j2a     = *j2a_uptr;
@@ -212,12 +212,12 @@ TEST_CASE("J2OrbitalSoA variables fail", "[wavefunction]")
 
 // Other variational parameters in the wavefunction (e.g. one-body Jastrow)
 
-TEST_CASE("J2OrbitalSoA other variables", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow other variables", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet elec = get_two_species_particleset(simulation_cell);
 
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   auto j2a_uptr = std::make_unique<FakeJasFunctor>("test_fake_a");
   auto j2a      = *j2a_uptr;
@@ -285,7 +285,7 @@ TEST_CASE("J2OrbitalSoA other variables", "[wavefunction]")
 // Reproduce 3137.  If the number of particle types equals the number of particles
 // the two body jastrow is not constructed correctly (except in the case of two
 // particles).
-TEST_CASE("J2OrbitalSoA Jastrow three particles of three types", "[wavefunction]")
+TEST_CASE("TwoBodyJastrow Jastrow three particles of three types", "[wavefunction]")
 {
   const SimulationCell simulation_cell;
   ParticleSet ions(simulation_cell);
@@ -309,8 +309,7 @@ TEST_CASE("J2OrbitalSoA Jastrow three particles of three types", "[wavefunction]
   elec.R[2][1] = 0.9679;
   elec.R[2][2] = 0.0128914;
 
-
-  J2OrbitalSoA<FakeJasFunctor> jorb("J2_fake", elec);
+  TwoBodyJastrow<FakeJasFunctor> jorb("J2_fake", elec, false);
 
   // 0 uu  (0,0)
   // 1 ud  (0,1)
