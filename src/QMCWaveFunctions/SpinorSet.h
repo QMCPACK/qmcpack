@@ -14,6 +14,7 @@
 #define QMCPLUSPLUS_SPINORSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
+#include "Utilities/ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -26,6 +27,15 @@ public:
   /** constructor */
   SpinorSet(const std::string& my_name);
   ~SpinorSet() override;
+
+  struct SpinorSetMultiWalkerResource : public Resource
+  {
+    SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
+    SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
+    Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
+  };
+
+  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
 
   std::string getClassName() const override { return "SpinorSet"; }
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
@@ -166,6 +176,13 @@ public:
                                   GradMatrix& gradphi) override;
 
   std::unique_ptr<SPOSet> makeClone() const override;
+
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
 
 private:
   //Sposet for the up and down channels of our spinors.

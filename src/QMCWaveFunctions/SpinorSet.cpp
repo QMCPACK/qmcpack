@@ -530,4 +530,59 @@ std::unique_ptr<SPOSet> SpinorSet::makeClone() const
   return myclone;
 }
 
+void SpinorSet::createResource(ResourceCollection& collection) const
+{
+  spo_up->createResource(collection);
+  spo_dn->createResource(collection);
+  auto index = collection.addResource(std::make_unique<SpinorSetMultiWalkerResource>());
+}
+
+void SpinorSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto& spo_leader      = spo_list.getCastedLeader<SpinorSet>();
+  IndexType nw          = spo_list.size();
+  SPOSet& up_spo_leader = *(spo_leader.spo_up);
+  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
+  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
+  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
+  up_spo_list.reserve(nw);
+  dn_spo_list.reserve(nw);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
+    up_spo_list.emplace_back(*(spinor.spo_up));
+    dn_spo_list.emplace_back(*(spinor.spo_dn));
+  }
+
+  up_spo_leader.acquireResource(collection, up_spo_list);
+  dn_spo_leader.acquireResource(collection, dn_spo_list);
+
+  auto res_ptr = dynamic_cast<SpinorSetMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("SpinorSet::acquireResource dynamic_cast failed");
+  spo_leader.mw_res_.reset(res_ptr);
+}
+
+void SpinorSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto& spo_leader      = spo_list.getCastedLeader<SpinorSet>();
+  IndexType nw          = spo_list.size();
+  SPOSet& up_spo_leader = *(spo_leader.spo_up);
+  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
+  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
+  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
+  up_spo_list.reserve(nw);
+  dn_spo_list.reserve(nw);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
+    up_spo_list.emplace_back(*(spinor.spo_up));
+    dn_spo_list.emplace_back(*(spinor.spo_dn));
+  }
+
+  up_spo_leader.releaseResource(collection, up_spo_list);
+  dn_spo_leader.releaseResource(collection, dn_spo_list);
+  collection.takebackResource(std::move(spo_leader.mw_res_));
+}
+
 } // namespace qmcplusplus
