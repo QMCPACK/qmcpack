@@ -1150,25 +1150,25 @@ void DensityMatrices(std::vector<MatA> const& Left,
   using ma::T;
 
   int nbatch = Right.size();
-  int NMO    = (herm ? (*Left[0]).size(1) : (*Left[0]).size(0));
-  int NEL    = (herm ? (*Left[0]).size(0) : (*Left[0]).size(1));
+  int NMO    = (herm ? std::get<1>((*Left[0]).sizes()) : std::get<0>((*Left[0]).sizes()));
+  int NEL    = (herm ? std::get<0>((*Left[0]).sizes()) : std::get<1>((*Left[0]).sizes()));
 
-  assert((*Right[0]).size(0) == NMO);
-  assert((*Right[0]).size(1) == NEL);
+  assert(std::get<0>((*Right[0]).sizes()) == NMO);
+  assert(std::get<1>((*Right[0]).sizes()) == NEL);
   assert(G.size() == nbatch);
-  assert((*G[0]).size(1) == NMO);
+  assert(std::get<1>((*G[0]).sizes()) == NMO);
   if (compact)
-    assert((*G[0]).size(0) == NEL);
+    assert((*G[0]).size() == NEL);
   else
-    assert((*G[0]).size(0) == NMO);
+    assert((*G[0]).size() == NMO);
   assert(ovlp.size() == nbatch);
-  assert(TNN3D.size(1) == NEL);
-  assert(TNN3D.size(2) == NEL);
+  assert(std::get<1>(TNN3D.sizes()) == NEL);
+  assert(std::get<2>(TNN3D.sizes()) == NEL);
   if (not compact)
   {
-    assert(TNM3D.size(0) == nbatch);
-    assert(TNM3D.size(1) == NEL);
-    assert(TNM3D.size(2) == NMO);
+    assert(std::get<0>(TNM3D.sizes()) == nbatch);
+    assert(std::get<1>(TNM3D.sizes()) == NEL);
+    assert(std::get<2>(TNM3D.sizes()) == NMO);
   }
   assert(IWORK.num_elements() >= nbatch * (NEL + 1));
 

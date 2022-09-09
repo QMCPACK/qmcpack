@@ -99,9 +99,9 @@ inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const Sp
   // W[nwalk][2][NMO][NAEA]
 
   assert(locV.dimensionality == 2);
-  assert(Gc.size(1) == Gcloc.size(1));
-  assert(Vakbl.size(0) == Gcloc.size(0));
-  assert(Gc.size(0) == Vakbl.size(1));
+  assert(std::get<1>(Gc.sizes()) == std::get<1>(Gcloc.sizes()));
+  assert(Vakbl.size(0) == std::get<0>(Gcloc.sizes()));
+  assert(std::get<0>(Gc.sizes()) == Vakbl.size(1));
 
   using Type      = typename std::decay<EMat>::type::element;
   const Type half = Type(0.5);

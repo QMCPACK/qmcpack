@@ -82,8 +82,8 @@ public:
   template<class MatA, class MatB, class MatC>
   T MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, T LogOverlapFactor, bool compact, bool herm = true)
   {
-    int NMO  = (herm ? hermA.size(1) : hermA.size(0));
-    int NAEA = (herm ? hermA.size(0) : hermA.size(1));
+    int NMO  = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
+    int NAEA = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNM({NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());

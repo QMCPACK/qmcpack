@@ -233,10 +233,10 @@ public:
     static_assert(pointedType<MatB>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
-    int NMO    = (herm ? (*hermA[0]).size(1) : (*hermA[0]).size(0));
-    int NAEA   = (herm ? (*hermA[0]).size(0) : (*hermA[0]).size(1));
+    int NMO    = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
+    int NAEA   = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
     int nbatch = Bi.size();
-    assert(C.size(0) == nbatch);
+    assert(C.size() == nbatch);
     assert(ovlp.size() == nbatch);
     int n1 = nbatch, n2 = NAEA, n3 = NMO;
     if (compact)
