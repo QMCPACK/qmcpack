@@ -5,11 +5,11 @@
   <!-- input from gaussian converter -->
   <include href="H4.ptcl.xml"/>
   <include href="H4.wfs.xml"/>
-  <hamiltonian name="h0" type="generic" target="e"> 
-    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
     <pairpot name="IonElec"  type="coulomb" source="ion0"/>
-    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
-  </hamiltonian> 
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
 
 <loop max="6">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
