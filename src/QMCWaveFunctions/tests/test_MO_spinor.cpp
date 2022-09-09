@@ -259,9 +259,9 @@ void test_lcao_spinor()
   ResourceCollection spo_res("test_spo_res");
   spo->createResource(spo_res);
   SpinorSet& spinor = spo_list.getCastedLeader<SpinorSet>();
-  CHECK(spinor.mw_res_ == nullptr);
+  REQUIRE(!spinor.isResourceOwned());
   ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
-  CHECK(spinor.mw_res_ != nullptr);
+  REQUIRE(spinor.isResourceOwned());
 
   SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());

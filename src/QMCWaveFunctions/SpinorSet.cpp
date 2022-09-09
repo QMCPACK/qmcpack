@@ -14,6 +14,13 @@
 
 namespace qmcplusplus
 {
+struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
+{
+  SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
+  SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
+  Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
+};
+
 SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
 SpinorSet::~SpinorSet() = default;
 

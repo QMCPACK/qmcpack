@@ -28,15 +28,6 @@ public:
   SpinorSet(const std::string& my_name);
   ~SpinorSet() override;
 
-  struct SpinorSetMultiWalkerResource : public Resource
-  {
-    SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
-    SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
-    Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
-  };
-
-  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
-
   std::string getClassName() const override { return "SpinorSet"; }
   bool isOptimizable() const override { return spo_up->isOptimizable() || spo_dn->isOptimizable(); }
   bool isOMPoffload() const override { return spo_up->isOMPoffload() || spo_dn->isOMPoffload(); }
@@ -183,8 +174,13 @@ public:
 
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
 
+  /// check if the multi walker resource is owned. For testing only.
+  bool isResourceOwned() const { return bool(mw_res_); }
 
 private:
+  struct SpinorSetMultiWalkerResource;
+  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
+
   //Sposet for the up and down channels of our spinors.
   std::unique_ptr<SPOSet> spo_up;
   std::unique_ptr<SPOSet> spo_dn;
