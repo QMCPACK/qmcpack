@@ -20,6 +20,9 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
   SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
   SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
   Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
+  OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
+  std::vector<ValueType> up_ratios, dn_ratios;
+  std::vector<GradType> up_grads, dn_grads;
 };
 
 SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
@@ -229,11 +232,20 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);
 
-  OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
+  auto& mw_res       = *spo_leader.mw_res_;
+  auto& up_phi_vgl_v = mw_res.up_phi_vgl_v;
+  auto& dn_phi_vgl_v = mw_res.dn_phi_vgl_v;
+  auto& up_ratios    = mw_res.up_ratios;
+  auto& dn_ratios    = mw_res.dn_ratios;
+  auto& up_grads     = mw_res.up_grads;
+  auto& dn_grads     = mw_res.dn_grads;
+
   up_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
   dn_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
-  std::vector<ValueType> up_ratios(nw), dn_ratios(nw);
-  std::vector<GradType> up_grads(nw), dn_grads(nw);
+  up_ratios.resize(nw);
+  dn_ratios.resize(nw);
+  up_grads.resize(nw);
+  dn_grads.resize(nw);
 
   auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
   auto& up_spo_leader             = up_spo_list.getLeader();
