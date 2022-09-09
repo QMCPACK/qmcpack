@@ -133,7 +133,7 @@ public:
         app_error() << " Error in realspace_correlators: Problems reading orbital: 0  0" << std::endl;
         APP_ABORT("");
       }
-      npoints = orb.size(0);
+      npoints = orb.size();
       if (npoints < 1)
       {
         app_error() << " Error in realspace_correlators: npoints < 1. " << std::endl;
@@ -168,7 +168,7 @@ public:
             app_error() << " Error in realspace_correlators: Problems reading orbital: " << k << " " << i << std::endl;
             APP_ABORT("");
           }
-          if (orb.size(0) != npoints)
+          if (orb.size() != npoints)
           {
             app_error() << " Error in realspace_correlators: Inconsistent orbital size: " << k << " " << i << std::endl;
             APP_ABORT("");
@@ -226,12 +226,12 @@ public:
     using std::copy_n;
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    int npts(Orbitals.size(1));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    int npts(std::get<1>(Orbitals.sizes()));
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
@@ -244,11 +244,11 @@ public:
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != 3 || DMWork.size(2) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != 3 || std::get<2>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -261,9 +261,9 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != nw || DMWork.size(1) != 3 || DMWork.size(2) != dm_size ||
-          Gr_host.size(0) != nw || Gr_host.size(1) != nsp || Gr_host.size(2) != npts || Gr_host.size(3) != npts ||
-          DMAverage.size(0) != nave || DMAverage.size(1) != 3 || DMAverage.size(2) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != 3 || std::get<2>(DMWork.sizes()) != dm_size ||
+          std::get<0>(Gr_host.sizes()) != nw || std::get<1>(Gr_host.sizes()) != nsp || std::get<2>(Gr_host.sizes()) != npts || std::get<3>(Gr_host.sizes()) != npts ||
+          std::get<0>(DMAverage.sizes()) != nave || std::get<1>(DMAverage.sizes()) != 3 || std::get<2>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 

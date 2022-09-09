@@ -124,9 +124,9 @@ public:
         stdCMatrix R;
         if (!dump.readEntry(R, "RotationMatrix"))
           APP_ABORT("Error reading RotationMatrix.\n");
-        if (R.size(1) != NMO)
+        if (std::get<1>(R.sizes()) != NMO)
           APP_ABORT("Error Wrong dimensions in RotationMatrix.\n");
-        dim[0] = R.size(0);
+        dim[0] = R.size();
         dim[1] = 0;
         // conjugate rotation matrix
         std::transform(R.origin(), R.origin() + R.num_elements(), R.origin(),
@@ -149,7 +149,7 @@ public:
       }
       TG.Node().barrier();
 
-      dm_size = XRot.size(0) * XRot.size(0) * XRot.size(0) * XRot.size(0);
+      dm_size = XRot.size() * XRot.size() * XRot.size() * XRot.size();
     }
     else
     {
@@ -188,22 +188,22 @@ public:
     static_assert(std::decay<MatG_host>::type::dimensionality == 4, "Wrong dimensionality");
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -212,8 +212,8 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork.size(0) != nw || DMWork.size(1) != dm_size || DMAverage.size(0) != nave ||
-          DMAverage.size(1) != dm_size)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size || std::get<0>(DMAverage.sizes()) != nave ||
+          std::get<1>(DMAverage.sizes()) != dm_size)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
