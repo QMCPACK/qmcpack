@@ -44,8 +44,8 @@ void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   assert(E.dimensionality == 2);
   assert(Ov.dimensionality == 1);
   assert(E.size(0) == wset.size());
-  assert(Ov.size(0) == wset.size());
-  assert(E.size(1) == 3);
+  assert(std::get<0>(Ov.sizes()) == wset.size());
+  assert(std::get<1>(E.sizes()) == 3);
 
   ComplexType zero(0.0);
   auto Gsize = dm_size(false);

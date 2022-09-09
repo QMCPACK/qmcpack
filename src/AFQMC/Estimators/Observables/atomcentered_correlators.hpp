@@ -484,7 +484,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     TG.TG_local().barrier();
     // this is meant to be small, so serializing
     if (TG.TG_local().root())

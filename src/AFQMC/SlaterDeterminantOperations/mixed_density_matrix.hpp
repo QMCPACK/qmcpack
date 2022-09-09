@@ -382,15 +382,15 @@ Tp MixedDensityMatrix_noHerm_wSVD(const MatA& A,
                                   bool compact = true)
 {
   // check dimensions are consistent
-  assert(A.size(0) == B.size(0));
-  assert(A.size(1) == B.size(1));
-  assert(A.size(1) == U.size(0)); // [U] = [NxN]
-  assert(A.size(1) == U.size(1));
-  assert(A.size(1) == VT.size(0)); // [V] = [NxN]
-  assert(A.size(1) == VT.size(1));
-  assert(A.size(1) <= (6 * S.size(0) + 1)); // [S] = [N+1]
-  assert(A.size(1) == UA.size(0));          // [UA] = [NxM]
-  assert(A.size(0) == UA.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(U.sizes())); // [U] = [NxN]
+  assert(std::get<1>(A.sizes()) == std::get<1>(U.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(VT.sizes())); // [V] = [NxN]
+  assert(std::get<1>(A.sizes()) == std::get<1>(VT.sizes()));
+  assert(std::get<1>(A.sizes()) <= (6 * S.size() + 1)); // [S] = [N+1]
+  assert(std::get<1>(A.sizes()) == std::get<0>(UA.sizes()));          // [UA] = [NxM]
+  assert(std::get<0>(A.sizes()) == std::get<1>(UA.sizes()));
   if (compact)
   {
     assert(C.size(0) == B.size(1));
