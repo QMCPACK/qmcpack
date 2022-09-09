@@ -328,7 +328,7 @@ Batched ``vmc`` driver (experimental)
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``blocks``                     | integer      | :math:`\geq 0`          | 1           | Number of blocks                                |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``steps``                      | integer      | :math:`\geq 0`          | 1           | Number of steps per block                       |
+  | ``steps``                      | integer      | :math:`\geq 0`          | dep.        | Number of steps per block                       |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``warmupsteps``                | integer      | :math:`\geq 0`          | 0           | Number of steps for warming up                  |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
@@ -338,7 +338,7 @@ Batched ``vmc`` driver (experimental)
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``timestep``                   | real         | :math:`> 0`             | 0.1         | Time step for each electron move                |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
-  | ``samples`` (not ready)        | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run    |
+  | ``samples``                    | integer      | :math:`\geq 0`          | 0           | Number of walker samples for in this VMC run    |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
   | ``storeconfigs`` (not ready)   | integer      | all values              | 0           | Write configurations to files                   |
   +--------------------------------+--------------+-------------------------+-------------+-------------------------------------------------+
@@ -376,7 +376,7 @@ Additional information:
   equilibration. Property measurements are not performed during
   warm-up steps.
 
-- ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
+- ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block. If ``samples`` is provided in the input file but not ``steps``, its value is chosen based on ``samples`` see below. If neither ``samples`` nor ``steps`` is provided, ``steps`` is set to one.
 
 - ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
   all-electron move.  Because the local energy is evaluated only at
@@ -396,7 +396,7 @@ Additional information:
   acceptance ratio should be close to 50% for an efficient
   simulation.
 
-- ``samples`` (not ready)
+- ``samples`` If ``samples`` and ``steps`` are both provided, ``samples`` requires to be smaller than the product of ``total_walkers``, ``steps`` and ``blocks``. If ``steps`` is not provided, ``steps`` is set to the smallest integer that makes ``samples`` smaller than the product of ``total_walkers``, ``steps`` and ``blocks``.
 
 - ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
   files.

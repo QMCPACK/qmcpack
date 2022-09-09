@@ -303,6 +303,11 @@ protected:
                                                                     RealType reserve_walkers,
                                                                     int num_crowds);
 
+  static size_t determineStepsPerBlock(IndexType global_walkers,
+                                       IndexType requested_samples,
+                                       IndexType requested_steps,
+                                       IndexType blocks);
+
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
 
   /// check logpsi and grad and lap against values computed from scratch
@@ -382,8 +387,9 @@ protected:
    */
   int walker_dump_period;
 
-
   IndexType current_step_;
+  /// actual number of steps per block
+  size_t steps_per_block_ = 0;
 
   ///counter for number of moves accepted
   IndexType nAccept;

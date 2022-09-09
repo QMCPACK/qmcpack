@@ -47,19 +47,24 @@ public:
   struct StateForThread
   {
     const QMCDriverInput& qmcdrv_input;
-    const DMCDriverInput& dmcdrv_input;
     const DriftModifierBase& drift_modifier;
     const MCPopulation& population;
     SFNBranch& branch_engine;
     IndexType recalculate_properties_period;
-    IndexType step            = -1;
+    const size_t steps_per_block;
+    IndexType step = -1;
     bool is_recomputing_block = false;
+
     StateForThread(const QMCDriverInput& qmci,
-                   const DMCDriverInput& dmci,
                    DriftModifierBase& drift_mod,
                    SFNBranch& branch_eng,
-                   MCPopulation& pop)
-        : qmcdrv_input(qmci), dmcdrv_input(dmci), drift_modifier(drift_mod), population(pop), branch_engine(branch_eng)
+                   MCPopulation& pop,
+                   const size_t steps_per_block)
+        : qmcdrv_input(qmci),
+          drift_modifier(drift_mod),
+          population(pop),
+          branch_engine(branch_eng),
+          steps_per_block(steps_per_block)
     {}
   };
 

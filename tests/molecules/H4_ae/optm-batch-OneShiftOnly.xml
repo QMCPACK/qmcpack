@@ -1,6 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="H4-OneShiftOnly" series="0"/>
+  <project id="H4-OneShiftOnly" series="0">
+    <parameter name="driver_version">batch</parameter>
+  </project>
   <!--random seed="605"/-->
   <!-- input from gaussian converter -->
   <include href="H4.ptcl.xml"/>
@@ -13,10 +15,8 @@
 
 <loop max="6">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="walkers">    1  </parameter>
     <parameter name="blocks">   128  </parameter>
-    <parameter name="warmupsteps"> 50 </parameter>
-    <parameter name="steps"> 128 </parameter>
+    <parameter name="warmupsteps"> 10 </parameter>
     <parameter name="substeps"> 10 </parameter>
     <parameter name="timestep"> 0.5 </parameter>
     <parameter name="useDrift">  yes </parameter>
