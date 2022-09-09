@@ -147,13 +147,10 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   auto& P_leader   = P_list.getLeader();
   assert(this == &spo_leader);
 
-  IndexType nw          = spo_list.size();
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
+  IndexType nw                    = spo_list.size();
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   std::vector<ValueVector> mw_up_psi_work, mw_dn_psi_work;
   std::vector<GradVector> mw_up_dpsi_work, mw_dn_dpsi_work;
@@ -179,10 +176,6 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   GradVector tmp_grad_vec(OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-
     mw_up_psi_work.emplace_back(tmp_val_vec);
     up_psi_v_list.emplace_back(mw_up_psi_work.back());
     mw_dn_psi_work.emplace_back(tmp_val_vec);
@@ -242,19 +235,9 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   std::vector<ValueType> up_ratios(nw), dn_ratios(nw);
   std::vector<GradType> up_grads(nw), dn_grads(nw);
 
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
-
-  for (int iw = 0; iw < nw; iw++)
-  {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-  }
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   up_spo_leader.mw_evaluateVGLandDetRatioGrads(up_spo_list, P_list, iat, invRow_ptr_list, up_phi_vgl_v, up_ratios,
                                                up_grads);
@@ -356,12 +339,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   IndexType nw    = spo_list.size();
   IndexType nelec = P_leader.getTotalNum();
 
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   std::vector<ValueMatrix> mw_up_logdet, mw_dn_logdet;
   std::vector<GradMatrix> mw_up_dlogdet, mw_dn_dlogdet;
@@ -387,10 +367,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   GradMatrix tmp_grad_mat(nelec, OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-
     mw_up_logdet.emplace_back(tmp_val_mat);
     up_logdet_list.emplace_back(mw_up_logdet.back());
     mw_dn_logdet.emplace_back(tmp_val_mat);
