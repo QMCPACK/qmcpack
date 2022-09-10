@@ -240,8 +240,8 @@ public:
   template<class MatA, class MatB>
   void resize(int n, MatA&& A, MatB&& B)
   {
-    assert(A.size(0) == wlk_desc[0]);
-    assert(A.size(1) == wlk_desc[1]);
+    assert(std::get<0>(A.sizes()) == wlk_desc[0]);
+    assert(std::get<1>(A.sizes()) == wlk_desc[1]);
     if (walkerType == COLLINEAR)
     {
       assert(B.size(0) == wlk_desc[0]);
@@ -258,7 +258,7 @@ public:
         while (pos < n)
         {
           using std::fill_n;
-          fill_n(W[pos].origin(), W[pos].size(0), ComplexType(0, 0));
+          fill_n(W[pos].origin(), W[pos].size(), ComplexType(0, 0));
           reference w0(W[pos], data_displ, wlk_desc);
           //w0.SlaterMatrix(Alpha) = A;
           auto&& SM_(*w0.SlaterMatrix(Alpha));
