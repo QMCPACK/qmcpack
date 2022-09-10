@@ -403,7 +403,7 @@ private:
   template<class MatG, class CVec>
   void acc_no_rotation(MatG&& G, CVec&& Xw)
   {
-    int nw(G.size(0));
+    int nw(G.size());
     assert(G[0].num_elements() == dm_size);
 
     int i0, iN;
@@ -427,19 +427,19 @@ private:
   template<class MatG, class CVec>
   void acc_with_rotation(MatG&& G, CVec&& Xw)
   {
-    int nw(G.size(0));
-    assert(G.size(2) == G.size(3));
-    assert(G.size(2) == XRot.size(1));
+    int nw(G.size());
+    assert(std::get<2>(G.sizes()) == std::get<3>(G.sizes()));
+    assert(std::get<2>(G.sizes()) == std::get<1>(XRot.sizes()));
 
     if (walker_type == NONCOLLINEAR)
       APP_ABORT("Error: Not yet implemented: acc_with_rotation && noncollinear.\n");
 
     int i0, iN;
-    std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(XRot.size(0)), TG.TG_local().size());
+    std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(XRot.size()), TG.TG_local().size());
 
     // can batch in the future if too slow
     // Grot = Xc * G * H(Xc)
-    int nX   = XRot.size(0);
+    int nX   = XRot.size();
     int npts = (iN - i0) * nX;
     DeviceBufferManager buffer_manager;
     StaticMatrix T1({(iN - i0), NMO}, buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -451,7 +451,7 @@ private:
     int cnt = 0;
     for (int iw = 0; iw < nw; iw++)
     {
-      if (i0 == iN || i0 == XRot.size(0))
+      if (i0 == iN || i0 == XRot.size())
         break;
       if (TG.TG_local().root())
         denom[iw] += Xw[iw];
@@ -460,7 +460,7 @@ private:
       copy_n(T2.origin(), T2.num_elements(), Grot.origin());
       if (print_from_list)
       {
-        for (int i = 0; i < index_list.size(0); i++)
+        for (int i = 0; i < index_list.size(); i++)
         {
           if (index_list[i][0] >= i0 && index_list[i][0] < iN)
           {
@@ -478,7 +478,7 @@ private:
         copy_n(T2.origin(), T2.num_elements(), Grot.origin());
         if (print_from_list)
         {
-          for (int i = 0, ie = index_list.size(0); i < ie; i++)
+          for (int i = 0, ie = index_list.size(); i < ie; i++)
           {
             if (index_list[i][0] >= i0 && index_list[i][0] < iN)
             {

@@ -301,9 +301,9 @@ public:
   {
     using vType = typename std::decay<MatB>::type::element;
     using XType = typename std::decay_t<typename MatA::element>;
-    assert(Spvn.size(1) == X.size(0));
-    assert(Spvn.size(0) == v.size(0));
-    assert(X.size(1) == v.size(1));
+    assert(std::get<1>(Spvn.sizes()) == std::get<0>(X.sizes()));
+    assert(std::get<0>(Spvn.sizes()) == std::get<0>(v.sizes()));
+    assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
 
     // setup buffer space if changing precision in X or v
     size_t vmem(0), Xmem(0);
@@ -345,7 +345,7 @@ public:
     comm->barrier();
 
     boost::multi::array_ref<SPComplexType, 2> v_(to_address(vsp[Spvn_view.local_origin()[0]].origin()),
-                                                 {long(Spvn_view.size(0)), long(vsp.size(1))});
+                                                 {long(std::get<0>(Spvn_view.sizes())), long(std::get<1>(vsp.sizes()))});
     ma::product(SPValueType(a), Spvn_view, Xsp, SPValueType(c), v_);
 
     // copy data back if changing precision

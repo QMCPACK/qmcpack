@@ -257,21 +257,21 @@ public:
     double scl = (walker_type == COLLINEAR) ? 0.5 : 1.0;
     if (transposed_G_for_vbias_)
     {
-      assert(G.size(0) == v.size(1));
-      assert(G.size(1) == size_of_G_for_vbias());
+      assert(std::get<0>(G.sizes()) == std::get<1>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == size_of_G_for_vbias());
       HamOp.vbias(G(G.extension(0), {0, long(OrbMats[0].size(0) * NMO)}), std::forward<MatA>(v), scl * a, 0.0);
       if (walker_type == COLLINEAR) {
         APP_ABORT(" Error in PHMSD::vbias: transposed_G_for_vbias_ should be false. \n");
-        HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size(0) * NMO), G.size(1)}),                                       std::forward<MatA>(v), scl * a, 1.0);
+        HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size() * NMO), std::get<1>(G.sizes())}),                                       std::forward<MatA>(v), scl * a, 1.0);
       }
     }
     else
     {
-      assert(G.size(0) == size_of_G_for_vbias());
-      assert(G.size(1) == v.size(1));
-      HamOp.vbias(G.sliced(0, OrbMats[0].size(0) * NMO), std::forward<MatA>(v), scl * a, 0.0);
+      assert(G.size() == size_of_G_for_vbias());
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
+      HamOp.vbias(G.sliced(0, OrbMats[0].size() * NMO), std::forward<MatA>(v), scl * a, 0.0);
       if (walker_type == COLLINEAR)
-        HamOp.vbias(G.sliced(OrbMats[0].size(0) * NMO, G.size(0)), std::forward<MatA>(v), scl * a, 1.0);
+        HamOp.vbias(G.sliced(OrbMats[0].size() * NMO, G.size()), std::forward<MatA>(v), scl * a, 1.0);
     }
     TG.local_barrier();
   }
@@ -284,11 +284,11 @@ public:
   template<class MatX, class MatA>
   void vHS(MatX&& X, MatA&& v, double a = 1.0)
   {
-    assert(X.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(X.sizes()) == HamOp.local_number_of_cholesky_vectors());
     if (transposed_vHS_)
-      assert(X.size(1) == v.size(0));
+      assert(std::get<1>(X.sizes()) == std::get<0>(v.sizes()));
     else
-      assert(X.size(1) == v.size(1));
+      assert(std::get<1>(X.sizes()) == std::get<1>(v.sizes()));
     HamOp.vHS(std::forward<MatX>(X), std::forward<MatA>(v), a);
     TG.local_barrier();
   }

@@ -306,7 +306,7 @@ private:
   void acc_no_rotation(MatG&& G, CVec&& Xw)
   {
     // doing this 1 walker at a time and not worrying about speed
-    int nw(G.size(0));
+    int nw(G.size());
 
     int i0, iN;
     std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), NMO * NMO, TG.TG_local().size());

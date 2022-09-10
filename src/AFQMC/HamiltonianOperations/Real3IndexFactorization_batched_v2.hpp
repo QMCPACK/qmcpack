@@ -557,12 +557,12 @@ public:
   template<class Mat, class MatB>
   void generalizedFockMatrix(Mat&& G, MatB&& Fp, MatB&& Fm)
   {
-    int nwalk = G.size(0);
+    int nwalk = G.size();
     int nspin = (walker_type == COLLINEAR ? 2 : 1);
-    int NMO   = hij.size(0);
+    int NMO   = hij.size();
     int nel[2];
-    assert(Fp.size(0) == nwalk);
-    assert(Fm.size(0) == nwalk);
+    assert(Fp.size() == nwalk);
+    assert(Fm.size() == nwalk);
     assert(G[0].num_elements() == nspin * NMO * NMO);
     assert(Fp[0].num_elements() == nspin * NMO * NMO);
     assert(Fm[0].num_elements() == nspin * NMO * NMO);

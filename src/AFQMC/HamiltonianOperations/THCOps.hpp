@@ -1058,11 +1058,11 @@ protected:
     static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatD>::type::dimensionality == 3, "Wrong dimensionality");
-    int nmo_ = int(rotPiu.size(0));
-    int nu   = int(rotMuv.size(0)); // potentially distributed over nodes
-    int nv   = int(rotMuv.size(1)); // not distributed over nodes
-    int nw   = int(G.size(0));
-    assert(rotPiu.size(1) == nv);
+    int nmo_ = int(std::get<0>(rotPiu.sizes()));
+    int nu   = int(std::get<0>(rotMuv.sizes())); // potentially distributed over nodes
+    int nv   = int(std::get<1>(rotMuv.sizes())); // not distributed over nodes
+    int nw   = int(G.size());
+    assert(std::get<1>(rotPiu.sizes()) == nv);
     int v0, vN;
     std::tie(v0, vN) = FairDivideBoundary(comm->rank(), nv, comm->size());
     int k0, kN;
