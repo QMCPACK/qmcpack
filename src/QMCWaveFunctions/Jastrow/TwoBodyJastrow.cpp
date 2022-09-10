@@ -13,7 +13,7 @@
 // -*- C++ -*-
 
 
-#include "J2OMPTarget.h"
+#include "TwoBodyJastrow.h"
 #include "CPU/SIMD/algorithm.hpp"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 
 template<typename T>
-struct J2OMPTargetMultiWalkerMem : public Resource
+struct TwoBodyJastrowMultiWalkerMem : public Resource
 {
   // fused buffer for fast transfer in mw_accept
   Vector<char, OffloadPinnedAllocator<char>> mw_update_buffer;
@@ -40,25 +40,25 @@ struct J2OMPTargetMultiWalkerMem : public Resource
   /// memory pool for cur_u, cur_du, cur_d2u [3][Nw][N_padded]. 3 is for value, first and second derivatives.
   Vector<T, OffloadPinnedAllocator<T>> mw_cur_allu;
 
-  J2OMPTargetMultiWalkerMem() : Resource("J2OMPTargetMultiWalkerMem") {}
+  TwoBodyJastrowMultiWalkerMem() : Resource("TwoBodyJastrowMultiWalkerMem") {}
 
-  J2OMPTargetMultiWalkerMem(const J2OMPTargetMultiWalkerMem&) : J2OMPTargetMultiWalkerMem() {}
+  TwoBodyJastrowMultiWalkerMem(const TwoBodyJastrowMultiWalkerMem&) : TwoBodyJastrowMultiWalkerMem() {}
 
-  Resource* makeClone() const override { return new J2OMPTargetMultiWalkerMem(*this); }
+  Resource* makeClone() const override { return new TwoBodyJastrowMultiWalkerMem(*this); }
 };
 
 template<typename FT>
-void J2OMPTarget<FT>::createResource(ResourceCollection& collection) const
+void TwoBodyJastrow<FT>::createResource(ResourceCollection& collection) const
 {
-  collection.addResource(std::make_unique<J2OMPTargetMultiWalkerMem<RealType>>());
+  collection.addResource(std::make_unique<TwoBodyJastrowMultiWalkerMem<RealType>>());
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection,
-                                      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void TwoBodyJastrow<FT>::acquireResource(ResourceCollection& collection,
+                                         const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
-  auto res_ptr     = dynamic_cast<J2OMPTargetMultiWalkerMem<RealType>*>(collection.lendResource().release());
+  auto& wfc_leader = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
+  auto res_ptr     = dynamic_cast<TwoBodyJastrowMultiWalkerMem<RealType>*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("VirtualParticleSet::acquireResource dynamic_cast failed");
   wfc_leader.mw_mem_.reset(res_ptr);
@@ -68,7 +68,7 @@ void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection,
   for (size_t iw = 0; iw < nw; iw++)
   {
     // copy per walker Uat, dUat, d2Uat to shared buffer and attach buffer
-    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
 
     Vector<valT, aligned_allocator<valT>> Uat_view(mw_allUat.data() + iw * N_padded, N);
     Uat_view = wfc.Uat;
@@ -91,16 +91,16 @@ void J2OMPTarget<FT>::acquireResource(ResourceCollection& collection,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
-                                      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
+void TwoBodyJastrow<FT>::releaseResource(ResourceCollection& collection,
+                                         const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& wfc_leader = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   const size_t nw  = wfc_list.size();
   auto& mw_allUat  = wfc_leader.mw_mem_->mw_allUat;
   for (size_t iw = 0; iw < nw; iw++)
   {
     // detach buffer and copy per walker Uat, dUat, d2Uat from shared buffer
-    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
 
     Vector<valT, aligned_allocator<valT>> Uat_view(mw_allUat.data() + iw * N_padded, N);
     wfc.Uat.free();
@@ -123,14 +123,14 @@ void J2OMPTarget<FT>::releaseResource(ResourceCollection& collection,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+void TwoBodyJastrow<FT>::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
 {
   for (auto& [key, functor] : J2Unique)
     opt_obj_refs.push_back(*functor);
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
+void TwoBodyJastrow<FT>::checkOutVariables(const opt_variables_type& active)
 {
   myVars.clear();
   for (auto& [key, functor] : J2Unique)
@@ -169,7 +169,7 @@ void J2OMPTarget<FT>::checkOutVariables(const opt_variables_type& active)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+void TwoBodyJastrow<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   for (int k = 0; k < ratios.size(); ++k)
     ratios[k] =
@@ -177,14 +177,20 @@ void J2OMPTarget<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vector<V
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                        const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
-                                        std::vector<std::vector<ValueType>>& ratios) const
+void TwoBodyJastrow<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                           const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                                           std::vector<std::vector<ValueType>>& ratios) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateRatios(wfc_list, vp_list, ratios);
+    return;
+  }
+
   // add early return to prevent from accessing vp_list[0]
   if (wfc_list.size() == 0)
     return;
-  auto& wfc_leader        = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& wfc_leader        = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   auto& vp_leader         = vp_list.getLeader();
   const auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
   auto& mw_vals           = wfc_leader.mw_mem_->mw_vals;
@@ -206,7 +212,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
   for (int iw = 0; iw < nw; ++iw)
   {
     const VirtualParticleSet& vp = vp_list[iw];
-    const auto& wfc              = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    const auto& wfc              = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     for (int k = 0; k < vp.getTotalNum(); ++k, ivp++)
       ratios[iw][k] = std::exp(wfc.Uat[mw_refPctls[ivp]] - mw_vals[ivp]);
   }
@@ -214,7 +220,7 @@ void J2OMPTarget<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionCo
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::registerData(ParticleSet& P, WFBufferType& buf)
+void TwoBodyJastrow<FT>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (Bytes_in_WFBuffer == 0)
   {
@@ -235,7 +241,7 @@ void J2OMPTarget<FT>::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void TwoBodyJastrow<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   Uat.attachReference(buf.lendReference<valT>(N), N);
   dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded * DIM));
@@ -243,9 +249,9 @@ void J2OMPTarget<FT>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet& P,
-                                                                     WFBufferType& buf,
-                                                                     bool fromscratch)
+typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::updateBuffer(ParticleSet& P,
+                                                                           WFBufferType& buf,
+                                                                           bool fromscratch)
 {
   log_value_ = computeGL(P.G, P.L);
   buf.forward(Bytes_in_WFBuffer);
@@ -253,7 +259,7 @@ typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::updateBuffer(ParticleSet
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::valT J2OMPTarget<FT>::computeU(const ParticleSet& P, int iat, const DistRow& dist)
+typename TwoBodyJastrow<FT>::valT TwoBodyJastrow<FT>::computeU(const ParticleSet& P, int iat, const DistRow& dist)
 {
   valT curUat(0);
   const int igt = P.GroupID[iat] * NumGroups;
@@ -268,7 +274,7 @@ typename J2OMPTarget<FT>::valT J2OMPTarget<FT>::computeU(const ParticleSet& P, i
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
+typename TwoBodyJastrow<FT>::posT TwoBodyJastrow<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
 {
   posT grad;
   for (int idim = 0; idim < DIM; ++idim)
@@ -285,16 +291,17 @@ typename J2OMPTarget<FT>::posT J2OMPTarget<FT>::accumulateG(const valT* restrict
 }
 
 template<typename FT>
-J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
+TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, bool use_offload)
     : WaveFunctionComponent(obj_name),
       N(p.getTotalNum()),
-      N_padded(getAlignedSize<valT>(N)),
       NumGroups(p.groups()),
+      use_offload_(use_offload),
+      N_padded(getAlignedSize<valT>(N)),
       my_table_ID_(p.addTable(p)),
       j2_ke_corr_helper(p, F)
 {
   if (my_name_.empty())
-    throw std::runtime_error("J2OMPTarget object name cannot be empty!");
+    throw std::runtime_error("TwoBodyJastrow object name cannot be empty!");
 
   F.resize(NumGroups * NumGroups, nullptr);
 
@@ -313,10 +320,10 @@ J2OMPTarget<FT>::J2OMPTarget(const std::string& obj_name, ParticleSet& p)
 }
 
 template<typename FT>
-J2OMPTarget<FT>::~J2OMPTarget() = default;
+TwoBodyJastrow<FT>::~TwoBodyJastrow() = default;
 
 template<typename FT>
-void J2OMPTarget<FT>::resizeInternalStorage()
+void TwoBodyJastrow<FT>::resizeInternalStorage()
 {
   Uat.resize(N);
   dUat.resize(N);
@@ -333,7 +340,7 @@ void J2OMPTarget<FT>::resizeInternalStorage()
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
+void TwoBodyJastrow<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 {
   assert(ia < NumGroups);
   assert(ib < NumGroups);
@@ -367,9 +374,9 @@ void J2OMPTarget<FT>::addFunc(int ia, int ib, std::unique_ptr<FT> j)
 }
 
 template<typename FT>
-std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& tqp) const
+std::unique_ptr<WaveFunctionComponent> TwoBodyJastrow<FT>::makeClone(ParticleSet& tqp) const
 {
-  auto j2copy = std::make_unique<J2OMPTarget<FT>>(my_name_, tqp);
+  auto j2copy = std::make_unique<TwoBodyJastrow<FT>>(my_name_, tqp, use_offload_);
   std::map<const FT*, FT*> fcmap;
   for (int ig = 0; ig < NumGroups; ++ig)
     for (int jg = ig; jg < NumGroups; ++jg)
@@ -403,13 +410,13 @@ std::unique_ptr<WaveFunctionComponent> J2OMPTarget<FT>::makeClone(ParticleSet& t
  * @param d2u starting second deriv
  */
 template<typename FT>
-void J2OMPTarget<FT>::computeU3(const ParticleSet& P,
-                                int iat,
-                                const DistRow& dist,
-                                RealType* restrict u,
-                                RealType* restrict du,
-                                RealType* restrict d2u,
-                                bool triangle)
+void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
+                                   int iat,
+                                   const DistRow& dist,
+                                   RealType* restrict u,
+                                   RealType* restrict du,
+                                   RealType* restrict d2u,
+                                   bool triangle)
 {
   const int jelmax = triangle ? iat : N;
   constexpr valT czero(0);
@@ -431,7 +438,7 @@ void J2OMPTarget<FT>::computeU3(const ParticleSet& P,
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, int iat)
+typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode = ORB_PBYP_RATIO;
@@ -440,14 +447,20 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratio(ParticleSet& P, in
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                   const RefVectorWithLeader<ParticleSet>& p_list,
-                                   int iat,
-                                   std::vector<PsiValueType>& ratios) const
+void TwoBodyJastrow<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      int iat,
+                                      std::vector<PsiValueType>& ratios) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_calcRatio(wfc_list, p_list, iat, ratios);
+    return;
+  }
+
   //right now. Directly use FT::mw_evaluateVGL implementation.
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& wfc_leader      = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   auto& p_leader        = p_list.getLeader();
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
@@ -464,7 +477,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
 
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
     ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
   }
@@ -472,7 +485,7 @@ void J2OMPTarget<FT>::mw_calcRatio(const RefVectorWithLeader<WaveFunctionCompone
 
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void TwoBodyJastrow<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   const auto& d_table = P.getDistTableAA(my_table_ID_);
   const auto& dist    = d_table.getTempDists();
@@ -499,13 +512,13 @@ void J2OMPTarget<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueTy
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::GradType J2OMPTarget<FT>::evalGrad(ParticleSet& P, int iat)
+typename TwoBodyJastrow<FT>::GradType TwoBodyJastrow<FT>::evalGrad(ParticleSet& P, int iat)
 {
   return GradType(dUat[iat]);
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   UpdateMode = ORB_PBYP_PARTIAL;
 
@@ -517,14 +530,20 @@ typename J2OMPTarget<FT>::PsiValueType J2OMPTarget<FT>::ratioGrad(ParticleSet& P
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                   const RefVectorWithLeader<ParticleSet>& p_list,
-                                   int iat,
-                                   std::vector<PsiValueType>& ratios,
-                                   std::vector<GradType>& grad_new) const
+void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      int iat,
+                                      std::vector<PsiValueType>& ratios,
+                                      std::vector<GradType>& grad_new) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_ratioGrad(wfc_list, p_list, iat, ratios, grad_new);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& wfc_leader      = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   auto& p_leader        = p_list.getLeader();
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
@@ -541,7 +560,7 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
 
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& wfc   = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
     ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
     for (int idim = 0; idim < DIM; idim++)
@@ -550,7 +569,7 @@ void J2OMPTarget<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionCompone
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
+void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 {
   // get the old u, du, d2u
   const auto& d_table = P.getDistTableAA(my_table_ID_);
@@ -601,14 +620,20 @@ void J2OMPTarget<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                           const RefVectorWithLeader<ParticleSet>& p_list,
-                                           int iat,
-                                           const std::vector<bool>& isAccepted,
-                                           bool safe_to_delay) const
+void TwoBodyJastrow<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                              const RefVectorWithLeader<ParticleSet>& p_list,
+                                              int iat,
+                                              const std::vector<bool>& isAccepted,
+                                              bool safe_to_delay) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_accept_rejectMove(wfc_list, p_list, iat, isAccepted, safe_to_delay);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
-  auto& wfc_leader      = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  auto& wfc_leader      = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   auto& p_leader        = p_list.getLeader();
   const auto& dt_leader = p_leader.getDistTableAA(my_table_ID_);
   const int nw          = wfc_list.size();
@@ -620,7 +645,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
 
   for (int iw = 0; iw < nw; iw++)
   {
-    auto& wfc = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.log_value_ += wfc.Uat[iat] - mw_vgl[iw][0];
   }
 
@@ -631,7 +656,7 @@ void J2OMPTarget<FT>::mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctio
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::recompute(const ParticleSet& P)
+void TwoBodyJastrow<FT>::recompute(const ParticleSet& P)
 {
   const auto& d_table = P.getDistTableAA(my_table_ID_);
   for (int ig = 0; ig < NumGroups; ++ig)
@@ -681,11 +706,17 @@ void J2OMPTarget<FT>::recompute(const ParticleSet& P)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                   const RefVectorWithLeader<ParticleSet>& p_list,
-                                   const std::vector<bool>& recompute) const
+void TwoBodyJastrow<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const std::vector<bool>& recompute) const
 {
-  auto& wfc_leader = wfc_list.getCastedLeader<J2OMPTarget<FT>>();
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_recompute(wfc_list, p_list, recompute);
+    return;
+  }
+
+  auto& wfc_leader = wfc_list.getCastedLeader<TwoBodyJastrow<FT>>();
   assert(this == &wfc_leader);
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (recompute[iw])
@@ -694,36 +725,42 @@ void J2OMPTarget<FT>::mw_recompute(const RefVectorWithLeader<WaveFunctionCompone
 }
 
 template<typename FT>
-typename J2OMPTarget<FT>::LogValueType J2OMPTarget<FT>::evaluateLog(const ParticleSet& P,
-                                                                    ParticleSet::ParticleGradient& G,
-                                                                    ParticleSet::ParticleLaplacian& L)
+typename TwoBodyJastrow<FT>::LogValueType TwoBodyJastrow<FT>::evaluateLog(const ParticleSet& P,
+                                                                          ParticleSet::ParticleGradient& G,
+                                                                          ParticleSet::ParticleLaplacian& L)
 {
   recompute(P);
   return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                     const RefVectorWithLeader<ParticleSet>& p_list,
-                                     const RefVector<ParticleSet::ParticleGradient>& G_list,
-                                     const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
+void TwoBodyJastrow<FT>::mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                        const RefVectorWithLeader<ParticleSet>& p_list,
+                                        const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                        const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateLog(wfc_list, p_list, G_list, L_list);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   const std::vector<bool> recompute_all(wfc_list.size(), true);
   mw_recompute(wfc_list, p_list, recompute_all);
 
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& wfc      = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc      = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.log_value_ = wfc.computeGL(G_list[iw], L_list[iw]);
   }
 }
 
 
 template<typename FT>
-typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSet::ParticleGradient& G,
-                                                                      ParticleSet::ParticleLaplacian& L) const
+typename TwoBodyJastrow<FT>::QTFull::RealType TwoBodyJastrow<FT>::computeGL(ParticleSet::ParticleGradient& G,
+                                                                            ParticleSet::ParticleLaplacian& L) const
 {
   for (int iat = 0; iat < N; ++iat)
   {
@@ -734,31 +771,37 @@ typename J2OMPTarget<FT>::QTFull::RealType J2OMPTarget<FT>::computeGL(ParticleSe
 }
 
 template<typename FT>
-WaveFunctionComponent::LogValueType J2OMPTarget<FT>::evaluateGL(const ParticleSet& P,
-                                                                ParticleSet::ParticleGradient& G,
-                                                                ParticleSet::ParticleLaplacian& L,
-                                                                bool fromscratch)
+WaveFunctionComponent::LogValueType TwoBodyJastrow<FT>::evaluateGL(const ParticleSet& P,
+                                                                   ParticleSet::ParticleGradient& G,
+                                                                   ParticleSet::ParticleLaplacian& L,
+                                                                   bool fromscratch)
 {
   return log_value_ = computeGL(G, L);
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
-                                    const RefVectorWithLeader<ParticleSet>& p_list,
-                                    const RefVector<ParticleSet::ParticleGradient>& G_list,
-                                    const RefVector<ParticleSet::ParticleLaplacian>& L_list,
-                                    bool fromscratch) const
+void TwoBodyJastrow<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                                       const RefVectorWithLeader<ParticleSet>& p_list,
+                                       const RefVector<ParticleSet::ParticleGradient>& G_list,
+                                       const RefVector<ParticleSet::ParticleLaplacian>& L_list,
+                                       bool fromscratch) const
 {
+  if (!use_offload_)
+  {
+    WaveFunctionComponent::mw_evaluateGL(wfc_list, p_list, G_list, L_list, fromscratch);
+    return;
+  }
+
   assert(this == &wfc_list.getLeader());
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
-    auto& wfc      = wfc_list.getCastedElement<J2OMPTarget<FT>>(iw);
+    auto& wfc      = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.log_value_ = wfc.computeGL(G_list[iw], L_list[iw]);
   }
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
+void TwoBodyJastrow<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));
@@ -790,10 +833,10 @@ void J2OMPTarget<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
-                                          const opt_variables_type& active,
-                                          Vector<ValueType>& dlogpsi,
-                                          Vector<ValueType>& dhpsioverpsi)
+void TwoBodyJastrow<FT>::evaluateDerivatives(ParticleSet& P,
+                                             const opt_variables_type& active,
+                                             Vector<ValueType>& dlogpsi,
+                                             Vector<ValueType>& dhpsioverpsi)
 {
   if (myVars.size() == 0)
     return;
@@ -826,9 +869,9 @@ void J2OMPTarget<FT>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateDerivativesWF(ParticleSet& P,
-                                            const opt_variables_type& active,
-                                            Vector<ValueType>& dlogpsi)
+void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
+                                               const opt_variables_type& active,
+                                               Vector<ValueType>& dlogpsi)
 {
   if (myVars.size() == 0)
     return;
@@ -924,10 +967,10 @@ void J2OMPTarget<FT>::evaluateDerivativesWF(ParticleSet& P,
 }
 
 template<typename FT>
-void J2OMPTarget<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                          const opt_variables_type& optvars,
-                                          std::vector<ValueType>& ratios,
-                                          Matrix<ValueType>& dratios)
+void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                             const opt_variables_type& optvars,
+                                             std::vector<ValueType>& ratios,
+                                             Matrix<ValueType>& dratios)
 {
   evaluateRatios(VP, ratios);
   if (myVars.size() == 0)
@@ -994,7 +1037,8 @@ void J2OMPTarget<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
   }
 }
 
-template class J2OMPTarget<BsplineFunctor<QMCTraits::RealType>>;
-template class J2OMPTarget<PadeFunctor<QMCTraits::RealType>>;
-template class J2OMPTarget<UserFunctor<QMCTraits::RealType>>;
+template class TwoBodyJastrow<BsplineFunctor<QMCTraits::RealType>>;
+template class TwoBodyJastrow<PadeFunctor<QMCTraits::RealType>>;
+template class TwoBodyJastrow<UserFunctor<QMCTraits::RealType>>;
+template class TwoBodyJastrow<FakeFunctor<QMCTraits::RealType>>;
 } // namespace qmcplusplus
