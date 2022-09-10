@@ -270,7 +270,7 @@ public:
     static_assert(pointedType<MatC>::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<TVec>::type::dimensionality == 1, "Wrong dimensionality");
     int NMO    = (herm ? (*Left[0]).size(1) : (*Left[0]).size(0));
-    int NAEA   = (herm ? (*Left[0]).size(0) : (*Left[0]).size(1));
+    int NAEA   = (herm ? (*Left[0]).size(0) : std::get<1>((*Left[0]).sizes()));
     int nbatch = Left.size();
     assert(Right.size() == nbatch);
     assert(G.size() == nbatch);
