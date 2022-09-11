@@ -759,7 +759,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   TG.TG_local().all_reduce_in_place_n(to_address(Ov.origin()), nw, std::plus<>());
   if (transpose)
   {
-    for (size_t iw = 0; iw < G.size(0); ++iw)
+    for (size_t iw = 0; iw < G.size(); ++iw)
       if (iw % TG.TG_local().size() == TG.TG_local().rank())
       {
         auto ov_ = ComplexType(1.0, 0.0) / Ov[iw];
@@ -769,7 +769,7 @@ void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool com
   else
   {
     auto Ov_         = Ov.origin();
-    const size_t nw_ = G.size(1);
+    const size_t nw_ = std::get<1>(G.sizes());
     for (int ik = 0; ik < G.size(0); ++ik)
       if (ik % TG.TG_local().size() == TG.TG_local().rank())
       {

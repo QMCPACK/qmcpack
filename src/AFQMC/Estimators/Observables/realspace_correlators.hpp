@@ -252,7 +252,7 @@ public:
       {
         DMWork = mpi3CTensor({nw, 3, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (Gr_host.size(0) != nw || Gr_host.size(1) != nsp || Gr_host.size(2) != npts || Gr_host.size(3) != npts)
+      if (std::get<0>(Gr_host.sizes()) != nw || std::get<1>(Gr_host.sizes()) != nsp || std::get<2>(Gr_host.sizes()) != npts || std::get<3>(Gr_host.sizes()) != npts)
       {
         Gr_host = mpi3C4Tensor({nw, nsp, npts, npts}, shared_allocator<ComplexType>{TG.TG_local()});
       }
@@ -280,7 +280,7 @@ public:
 
       // T1[iw][ispin][i][r] = sum_j G[iw][ispin][i][j] * Psi(j,r)
       int i0, iN;
-      std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(G2D.size(0)), TG.TG_local().size());
+      std::tie(i0, iN) = FairDivideBoundary(TG.TG_local().rank(), int(std::get<0>(G2D.sizes())), TG.TG_local().size());
       ma::product(G2D.sliced(i0, iN), Orbitals, T.sliced(i0, iN));
       TG.TG_local().barrier();
 

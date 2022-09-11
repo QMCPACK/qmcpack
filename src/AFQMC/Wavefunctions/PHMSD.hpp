@@ -303,7 +303,7 @@ public:
     int nw = wset.size();
     if (ovlp.num_elements() != nw)
       ovlp.reextent(iextensions<1u>{nw});
-    if (eloc.size(0) != nw || eloc.size(1) != 3)
+    if (std::get<0>(eloc.sizes()) != nw || std::get<1>(eloc.sizes()) != 3)
       eloc.reextent({nw, 3});
     Energy(wset, eloc, ovlp);
     TG.local_barrier();
@@ -487,8 +487,8 @@ public:
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
     int ndet = number_of_references_for_back_propagation();
-    assert(A.size(0) == ndet);
-    if (RefOrbMats.size(0) == 0)
+    assert(A.size() == ndet);
+    if (RefOrbMats.size() == 0)
     {
       TG.Node().barrier(); // for safety
       int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
@@ -498,14 +498,14 @@ public:
       if (TG.Node().root())
       {
         boost::multi::array<ComplexType, 2> OA_({
-			static_cast<boost::multi::size_t>(OrbMats[0].size(1)),
-			static_cast<boost::multi::size_t>(OrbMats[0].size(0))
+			static_cast<boost::multi::size_t>(std::get<1>(OrbMats[0].sizes())),
+			static_cast<boost::multi::size_t>(std::get<0>(OrbMats[0].sizes()))
 		});
         boost::multi::array<ComplexType, 2> OB_({0, 0});
         if (OrbMats.size() > 1)
           OB_.reextent({
-            static_cast<boost::multi::size_t>(OrbMats[1].size(1)),
-            static_cast<boost::multi::size_t>(OrbMats[1].size(0))
+            static_cast<boost::multi::size_t>(std::get<1>(OrbMats[1].sizes())),
+            static_cast<boost::multi::size_t>(std::get<0>(OrbMats[1].sizes()))
           });
         ma::Matrix2MAREF('H', OrbMats[0], OA_);
         if (OrbMats.size() > 1)
@@ -538,13 +538,13 @@ public:
       }                    // TG.Node().root()
       TG.Node().barrier(); // for safety
     }
-    assert(RefOrbMats.size(0) == ndet);
-    assert(RefOrbMats.size(1) == A.size(1));
+    assert(std::get<0>(RefOrbMats.sizes()) == ndet);
+    assert(std::get<1>(RefOrbMats.sizes()) == std::get<1>(A.sizes()));
     auto&& RefOrbMats_(boost::multi::static_array_cast<ComplexType, ComplexType*>(RefOrbMats));
     auto&& A_(boost::multi::static_array_cast<ComplexType, Ptr>(A));
     using std::copy_n;
     int n0, n1;
-    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(A.size(1)), TG.getNCoresPerTG());
+    std::tie(n0, n1) = FairDivideBoundary(TG.getLocalTGRank(), int(std::get<1>(A.sizes())), TG.getNCoresPerTG());
     for (int i = 0; i < ndet; i++)
       copy_n(RefOrbMats_[i].origin() + n0, n1 - n0, A_[i].origin() + n0);
     TG.TG_local().barrier();
