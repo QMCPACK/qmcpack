@@ -280,13 +280,13 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   auto* phi_vgl_ptr    = phi_vgl_v.data();
   auto* up_phi_vgl_ptr = up_phi_vgl_v.data();
   auto* dn_phi_vgl_ptr = dn_phi_vgl_v.data();
-  PRAGMA_OFFLOAD("omp target teams distribute map(to:spins_ptr[0:nw])");
+  PRAGMA_OFFLOAD("omp target teams distribute map(to:spins_ptr[0:nw])")
   for (int iw = 0; iw < nw; iw++)
   {
     RealType c, s;
     omptarget::sincos(spins_ptr[iw], &s, &c);
     ValueType eis(c, s), emis(c, -s);
-    PRAGMA_OFFLOAD("omp parallel for collapse(2)");
+    PRAGMA_OFFLOAD("omp parallel for collapse(2)")
     for (int idim = 0; idim < DIM_VGL; idim++)
       for (int iorb = 0; iorb < norb_requested; iorb++)
       {
