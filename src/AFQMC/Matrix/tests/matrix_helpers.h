@@ -56,8 +56,8 @@ template<class M1,
          typename = void>
 void verify_approx(M1 const& A, M2 const& B)
 {
-  REQUIRE(A.size(0) == B.size(0));
-  for (int i = 0; i < A.size(0); i++)
+  REQUIRE(A.size() == B.size());
+  for (int i = 0; i < A.size(); i++)
     verify_approx(A[i], B[i]);
 }
 

@@ -290,9 +290,9 @@ void Matrix2MAREF(char TA, CSR const& A, MultiArray2D& M)
   using Type     = typename MultiArray2D::element;
   using int_type = typename CSR::int_type;
   assert(TA == 'N' || TA == 'H' || TA == 'T' || TA == 'Z');
-  if ((TA == 'N' || TA == 'Z') && ((M.size(0) != A.size(0)) || (M.size(1) != A.size(1))))
+  if ((TA == 'N' || TA == 'Z') && ((std::get<0>(M.sizes()) != std::get<0>(A.sizes())) || (std::get<1>(M.sizes()) != std::get<1>(A.sizes()))))
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
-  else if ((TA == 'T' || TA == 'H') && ((M.size(0) != A.size(1)) || (M.size(1) != A.size(0))))
+  else if ((TA == 'T' || TA == 'H') && ((std::get<0>(M.sizes()) != std::get<1>(A.sizes())) || (std::get<1>(M.sizes()) != std::get<0>(A.sizes()))))
     throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   using std::fill_n;
   fill_n(M.origin(), M.num_elements(), Type(0));
@@ -439,34 +439,34 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
     TA = 'C';
   if (TA == 'Z')
   {
-    for (int i = 0; i < M.size(0); i++)
-      for (int j = 0; j < M.size(1); j++)
+    for (int i = 0; i < std::get<0>(M.sizes()); i++)
+      for (int j = 0; j < std::get<1>(M.sizes()); j++)
         M[i][j] = ma::conj(A[i][j]);
   }
   else if (not std::is_same<ptrA, ptrM>::value)
   {
     if (TA == 'N')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[i][j];
     }
     else if (TA == 'T')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[j][i];
     }
     else if (TA == 'C')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = ma::conj(A[j][i]);
     }
   }
   else
   {
-    geam(TA, TA, M.size(1), M.size(0), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
+    geam(TA, TA, std::get<1>(M.sizes()), std::get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
          pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
   }
 }
@@ -483,12 +483,12 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   assert(TA == 'N' || TA == 'H' || TA == 'T' || TA == 'Z');
   if (TA == 'N' || TA == 'Z')
   {
-    if (M.size(0) != A.size(0) or M.size(1) != A.size(1))
+    if (std::get<0>(M.sizes()) != std::get<0>(A.sizes()) or std::get<1>(M.sizes()) != std::get<1>(A.sizes()))
       throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   }
   else if (TA == 'T' || TA == 'H')
   {
-    if (M.size(0) != A.size(1) or M.size(1) != A.size(0))
+    if (std::get<0>(M.sizes()) != std::get<1>(A.sizes()) or std::get<1>(M.sizes()) != std::get<0>(A.sizes()))
       throw std::runtime_error(" Error: Wrong dimensions in Matrix2MAREF.\n");
   }
   else
@@ -504,34 +504,34 @@ void Matrix2MAREF(char TA, MA const& A, MultiArray2D& M)
   if (TA == 'Z')
   {
     // bad i gpu's
-    for (int i = 0; i < M.size(0); i++)
-      for (int j = 0; j < M.size(1); j++)
+    for (int i = 0; i < std::get<0>(M.sizes()); i++)
+      for (int j = 0; j < std::get<1>(M.sizes()); j++)
         M[i][j] = ma::conj(A[i][j]);
   }
   else if (not std::is_same<ptrA, ptrM>::value)
   {
     if (TA == 'N')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[i][j];
     }
     else if (TA == 'T')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = A[j][i];
     }
     else if (TA == 'C')
     {
-      for (int i = 0; i < M.size(0); i++)
-        for (int j = 0; j < M.size(1); j++)
+      for (int i = 0; i < std::get<0>(M.sizes()); i++)
+        for (int j = 0; j < std::get<1>(M.sizes()); j++)
           M[i][j] = ma::conj(A[j][i]);
     }
   }
   else
   {
-    geam(TA, TA, M.size(1), M.size(0), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
+    geam(TA, TA, std::get<1>(M.sizes()), std::get<0>(M.sizes()), Type2(1.0), pointer_dispatch(A.origin()), A.stride(0), Type2(0.0),
          pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(M.origin()), M.stride(0));
   }
 }

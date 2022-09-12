@@ -251,7 +251,7 @@ public:
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork.size(0) != nw || DMWork.size(1) != dm_size)
+      if (std::get<0>(DMWork.sizes()) != nw || std::get<1>(DMWork.sizes()) != dm_size)
       {
         DMWork = mpi3CMatrix({nw, dm_size}, shared_allocator<ComplexType>{TG.TG_local()});
       }
