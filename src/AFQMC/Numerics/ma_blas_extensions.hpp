@@ -439,8 +439,8 @@ void Matrix2MA(char TA, MA const& A, MultiArray2D& M)
     TA = 'C';
   if (TA == 'Z')
   {
-    for (int i = 0; i < M.size(0); i++)
-      for (int j = 0; j < M.size(1); j++)
+    for (int i = 0; i < std::get<0>(M.sizes()); i++)
+      for (int j = 0; j < std::get<1>(M.sizes()); j++)
         M[i][j] = ma::conj(A[i][j]);
   }
   else if (not std::is_same<ptrA, ptrM>::value)

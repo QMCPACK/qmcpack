@@ -546,14 +546,14 @@ Tp OverlapForWoodbury(const MatA& hermA,
                       TBuffer& WORK)
 {
   // check dimensions are consistent
-  int NEL = B.size(1);
+  int NEL = std::get<1>(B.sizes());
   assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == TMN.size(0));
-  assert(B.size(1) == TMN.size(1));
-  assert(B.size(1) == TNN.size(0));
-  assert(B.size(1) == TNN.size(1));
+  assert(hermA.size(0) == std::get<0>(TMN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
   assert(hermA.size(0) == QQ0.size(0));
-  assert(B.size(1) == QQ0.size(1));
+  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
 
   using ma::T;
 
@@ -824,18 +824,18 @@ Tp OverlapForWoodbury(const MatA& hermA,
                       communicator& comm)
 {
   // check dimensions are consistent
-  int NEL = B.size(1);
+  int NEL = std::get<1>(B.sizes());
   assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == TMN.size(0));
-  assert(B.size(1) == TMN.size(1));
-  assert(B.size(1) == TNN.size(0));
-  assert(B.size(1) == TNN.size(1));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(TMN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
   assert(hermA.size(0) == QQ0.size(0));
-  assert(B.size(1) == QQ0.size(1));
+  assert(std::get<1>(B.sizes()) == QQ0.size(1));
 
   using ma::T;
 
-  int N0, Nn, sz = B.size(1);
+  int N0, Nn, sz = std::get<1>(B.sizes());
   std::tie(N0, Nn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   Tp ovlp;
@@ -852,7 +852,7 @@ Tp OverlapForWoodbury(const MatA& hermA,
   comm.broadcast_n(&ovlp, 1, 0);
 
   int M0, Mn;
-  sz               = TMN.size(0);
+  sz               = TMN.size();
   std::tie(M0, Mn) = FairDivideBoundary(comm.rank(), sz, comm.size());
 
   // QQ0 = TMN * inv(TNN)
@@ -889,18 +889,18 @@ Tp MixedDensityMatrixForWoodbury(const MatA& hermA,
                                  bool compact = true)
 {
   // check dimensions are consistent
-  int NEL = B.size(1);
-  assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == TAB.size(0));
-  assert(B.size(1) == TAB.size(1));
-  assert(B.size(1) == TNN.size(0));
-  assert(B.size(1) == TNN.size(1));
-  assert(hermA.size(0) == QQ0.size(0));
-  assert(B.size(1) == QQ0.size(1));
+  int NEL = std::get<1>(B.sizes());
+  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TAB.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
   if (compact)
   {
-    assert(C.size(0) == TNN.size(1));
-    assert(C.size(1) == B.size(0));
+    assert(std::get<0>(C.sizes()) == std::get<1>(TNN.sizes()));
+    assert(std::get<1>(C.sizes()) == std::get<0>(B.sizes()));
   }
   else
   {
