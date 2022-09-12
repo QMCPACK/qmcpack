@@ -12,6 +12,7 @@
 
 #include "SpinorSet.h"
 #include "Utilities/ResourceCollection.h"
+#include "Platforms/OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -23,6 +24,7 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
   OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
   std::vector<ValueType> up_ratios, dn_ratios;
   std::vector<GradType> up_grads, dn_grads;
+  std::vector<RealType> spins;
 };
 
 SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
@@ -239,6 +241,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   auto& dn_ratios    = mw_res.dn_ratios;
   auto& up_grads     = mw_res.up_grads;
   auto& dn_grads     = mw_res.dn_grads;
+  auto& spins        = mw_res.spins;
 
   up_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
   dn_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
@@ -246,6 +249,7 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   dn_ratios.resize(nw);
   up_grads.resize(nw);
   dn_grads.resize(nw);
+  spins.resize(nw);
 
   auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
   auto& up_spo_leader             = up_spo_list.getLeader();
@@ -253,20 +257,12 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
 
   up_spo_leader.mw_evaluateVGLandDetRatioGrads(up_spo_list, P_list, iat, invRow_ptr_list, up_phi_vgl_v, up_ratios,
                                                up_grads);
-  if (up_spo_leader.isOMPoffload())
-    up_phi_vgl_v.updateFrom();
-
   dn_spo_leader.mw_evaluateVGLandDetRatioGrads(dn_spo_list, P_list, iat, invRow_ptr_list, dn_phi_vgl_v, dn_ratios,
                                                dn_grads);
-  if (dn_spo_leader.isOMPoffload())
-    dn_phi_vgl_v.updateFrom();
-
-  //To do: this is not optimized. Right now, we are building the spinors on the CPU and then updating the data to the GPU at the end
-  //with the updateTo(). Need to eventually rework this to be all on the GPU to avoid these data transfers, but this should work as an
-  //initial implementation
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
+    spins[iw]               = s;
     RealType coss           = std::cos(s);
     RealType sins           = std::sin(s);
 
@@ -277,20 +273,27 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
     ratios[iw]    = eis * up_ratios[iw] + emis * dn_ratios[iw];
     grads[iw]     = (eis * up_grads[iw] * up_ratios[iw] + emis * dn_grads[iw] * dn_ratios[iw]) / ratios[iw];
     spingrads[iw] = eye * (eis * up_ratios[iw] - emis * dn_ratios[iw]) / ratios[iw];
-
-    //loop over vgl to construct spinor vgl
-    for (int idim = 0; idim < DIM_VGL; idim++)
-    {
-      ValueType* phi_v    = phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* up_phi_v = up_phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* dn_phi_v = dn_phi_vgl_v.data_at(idim, iw, 0);
-      for (int iorb = 0; iorb < norb_requested; iorb++)
-        phi_v[iorb] = eis * up_phi_v[iorb] + emis * dn_phi_v[iorb];
-    }
   }
 
-  //Now update data to device
-  phi_vgl_v.updateTo();
+  auto* spins_ptr = spins.data();
+  //This data lives on the device
+  auto* phi_vgl_ptr    = phi_vgl_v.data();
+  auto* up_phi_vgl_ptr = up_phi_vgl_v.data();
+  auto* dn_phi_vgl_ptr = dn_phi_vgl_v.data();
+  PRAGMA_OFFLOAD("omp target teams distribute map(to:spins_ptr[0:nw])");
+  for (int iw = 0; iw < nw; iw++)
+  {
+    RealType c, s;
+    omptarget::sincos(spins_ptr[iw], &s, &c);
+    ValueType eis(c, s), emis(c, -s);
+    PRAGMA_OFFLOAD("omp parallel for collapse(2)");
+    for (int idim = 0; idim < DIM_VGL; idim++)
+      for (int iorb = 0; iorb < norb_requested; iorb++)
+      {
+        auto offset         = idim * nw * norb_requested + iw * norb_requested + iorb;
+        phi_vgl_ptr[offset] = eis * up_phi_vgl_ptr[offset] + emis * dn_phi_vgl_ptr[offset];
+      }
+  }
 }
 
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
