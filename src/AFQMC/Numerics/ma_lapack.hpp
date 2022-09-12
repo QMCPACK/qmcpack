@@ -93,11 +93,11 @@ MultiArray2D&& geqrf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
   //assert(A.stride(0) > std::max(std::size_t(1), A.size(0)));
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size(0))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
-  geqrf(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.origin()),
+  geqrf(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.origin()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -148,8 +148,8 @@ MultiArray2D&& gqr(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size(0))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size())));
 
   int status = -1;
   gqr(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
@@ -225,7 +225,7 @@ MultiArray2D&& gesvd(char jobU,
   // in F: At = (U * S * VT)t = VTt * S * Ut
   // so I need to switch U <--> VT when calling fortran interface
   int status = -1;
-  gesvd(jobVT, jobU, A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(S.origin()),
+  gesvd(jobVT, jobU, std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(S.origin()),
         pointer_dispatch(VT.origin()), VT.stride(0), // !!!
         pointer_dispatch(U.origin()), U.stride(0),   // !!!
         pointer_dispatch(WORK.data()), WORK.size(), pointer_dispatch(RWORK.origin()), status);

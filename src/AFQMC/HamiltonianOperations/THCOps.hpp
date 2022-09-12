@@ -257,9 +257,9 @@ public:
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
     // G[nel][nmo]
-    assert(E.size(0) == G.size(0));
-    assert(E.size(1) == 3);
-    int nwalk = G.size(0);
+    assert(std::get<0>(E.sizes()) == std::get<0>(G.sizes()));
+    assert(std::get<1>(E.sizes()) == 3);
+    int nwalk = G.size();
     int getKr = Kr != nullptr;
     int getKl = Kl != nullptr;
 
@@ -274,17 +274,17 @@ public:
     if (not(addEJ || addEXX))
       return;
 
-    int nmo_  = rotPiu.size(0);
-    int nu    = rotMuv.size(0);
+    int nmo_  = rotPiu.size();
+    int nu    = rotMuv.size();
     int nu0   = rotnmu0;
-    int nv    = rotMuv.size(1);
-    int nel_  = rotcPua[0].size(1);
+    int nv    = std::get<1>(rotMuv.sizes());
+    int nel_  = std::get<1>(rotcPua[0].sizes());
     int nspin = (walker_type == COLLINEAR) ? 2 : 1;
-    assert(G.size(1) == nel_ * nmo_);
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
     if (addEJ and getKl)
-      assert(Kl->size(0) == nwalk && Kl->size(1) == nu);
+      assert(std::get<0>(Kl->sizes()) == nwalk && std::get<1>(Kl->sizes()) == nu);
     if (addEJ and getKr)
-      assert(Kr->size(0) == nwalk && Kr->size(1) == nu);
+      assert(std::get<0>(Kr->sizes()) == nwalk && std::get<1>(Kr->sizes()) == nu);
     using ma::T;
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
@@ -1058,11 +1058,11 @@ protected:
     static_assert(std::decay<MatB>::type::dimensionality == 3, "Wrong dimensionality");
     static_assert(std::decay<MatC>::type::dimensionality == 2, "Wrong dimensionality");
     static_assert(std::decay<MatD>::type::dimensionality == 3, "Wrong dimensionality");
-    int nmo_ = int(rotPiu.size(0));
-    int nu   = int(rotMuv.size(0)); // potentially distributed over nodes
-    int nv   = int(rotMuv.size(1)); // not distributed over nodes
-    int nw   = int(G.size(0));
-    assert(rotPiu.size(1) == nv);
+    int nmo_ = int(std::get<0>(rotPiu.sizes()));
+    int nu   = int(std::get<0>(rotMuv.sizes())); // potentially distributed over nodes
+    int nv   = int(std::get<1>(rotMuv.sizes())); // not distributed over nodes
+    int nw   = int(G.size());
+    assert(std::get<1>(rotPiu.sizes()) == nv);
     int v0, vN;
     std::tie(v0, vN) = FairDivideBoundary(comm->rank(), nv, comm->size());
     int k0, kN;

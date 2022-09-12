@@ -166,6 +166,7 @@ public:
     return static_cast<size_type>(pointers_end_[i] - pointers_begin_[i]);
   }
   auto shape() const { return std::array<size_type, 2>{{size(), size2_}}; }
+  auto sizes() const {return shape();}
   template<typename integer_type = size_type>
   auto size(integer_type d) const
   {

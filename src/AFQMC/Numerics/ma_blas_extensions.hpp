@@ -213,10 +213,10 @@ template<class MultiArray3D,
          typename = typename std::enable_if<std::decay<MultiArray2D>::type::dimensionality == 2>>
 void get_diagonal_strided(MultiArray3D const& B, MultiArray2D&& A)
 {
-  if (A.size(0) != B.size(0) || A.size(1) != B.size(1) || A.size(1) != B.size(2) || A.stride(1) != 1 ||
+  if (std::get<0>(A.sizes()) != std::get<0>(B.sizes()) || std::get<1>(A.sizes()) != std::get<1>(B.sizes()) || std::get<1>(A.sizes()) != std::get<2>(B.sizes()) || A.stride(1) != 1 ||
       B.stride(2) != 1)
     throw std::runtime_error(" Error: Inconsistent matrix dimensions in get_diagonal_strided.\n");
-  get_diagonal_strided(A.size(0), A.size(1), pointer_dispatch(B.origin()), B.stride(1), B.stride(0),
+  get_diagonal_strided(std::get<0>(A.sizes()), std::get<1>(A.sizes()), pointer_dispatch(B.origin()), B.stride(1), B.stride(0),
                        pointer_dispatch(A.origin()), A.stride(0));
 }
 
