@@ -253,7 +253,7 @@ public:
   template<class MatG, class MatA>
   void vbias(const MatG& G, MatA&& v, double a = 1.0)
   {
-    assert(v.size(0) == HamOp.local_number_of_cholesky_vectors());
+    assert(std::get<0>(v.sizes()) == HamOp.local_number_of_cholesky_vectors());
     double scl = (walker_type == COLLINEAR) ? 0.5 : 1.0;
     if (transposed_G_for_vbias_)
     {

@@ -128,7 +128,7 @@ public:
   /*
    * Returns the maximum number of walkers in the set that can be stored without reallocation.
    */
-  int capacity() const { return int(walker_buffer.size(0)); }
+  int capacity() const { return int(std::get<0>(walker_buffer.sizes())); }
 
   /*
    * Returns the maximum number of fields in the set that can be stored without reallocation. 
@@ -369,7 +369,7 @@ public:
   RealType GlobalWeight() const
   {
     RealType res = 0;
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     if (TG.TG_local().root())
     {
       boost::multi::array<ComplexType, 1> buff(iextensions<1u>{tot_num_walkers});
@@ -387,20 +387,20 @@ public:
   void push_walkers(Mat&& M)
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-    if (tot_num_walkers + M.size(0) > capacity())
+    if (tot_num_walkers + M.size() > capacity())
       APP_ABORT("Insufficient capacity");
-    if (single_walker_size() + single_walker_bp_size() != M.size(1))
+    if (single_walker_size() + single_walker_bp_size() != std::get<1>(M.sizes()))
       APP_ABORT("Incorrect dimensions.");
     if (M.stride(1) != 1)
       APP_ABORT("Incorrect strides.");
     if (!TG.TG_local().root())
     {
-      tot_num_walkers += M.size(0);
+      tot_num_walkers += M.size();
       return;
     }
     auto&& W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     auto&& BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
-    for (int i = 0; i < M.size(0); i++)
+    for (int i = 0; i < M.size(); i++)
     {
       W[tot_num_walkers] = M[i].sliced(0, walker_size);
       if (wlk_desc[3] > 0)
@@ -413,16 +413,16 @@ public:
   void pop_walkers(Mat&& M)
   {
     static_assert(std::decay<Mat>::type::dimensionality == 2, "Wrong dimensionality");
-    if (tot_num_walkers < int(M.size(0)))
+    if (tot_num_walkers < int(M.size()))
       APP_ABORT("Insufficient walkers");
     if (wlk_desc[3] > 0)
     {
-      if (walker_size + bp_walker_size != int(M.size(1)))
+      if (walker_size + bp_walker_size != int(std::get<1>(M.sizes())))
         APP_ABORT("Incorrect dimensions.");
     }
     else
     {
-      if (walker_size != int(M.size(1)))
+      if (walker_size != int(std::get<1>(M.sizes())))
         APP_ABORT("Incorrect dimensions.");
     }
     if (M.stride(1) != 1)
@@ -430,12 +430,12 @@ public:
 
     if (!TG.TG_local().root())
     {
-      tot_num_walkers -= int(M.size(0));
+      tot_num_walkers -= int(M.size());
       return;
     }
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     auto BPW(boost::multi::static_array_cast<bp_element, bp_pointer>(bp_buffer));
-    for (int i = 0; i < M.size(0); i++)
+    for (int i = 0; i < M.size(); i++)
     {
       M[i].sliced(0, walker_size) = W[tot_num_walkers - 1];
       if (wlk_desc[3] > 0)
@@ -457,13 +457,13 @@ public:
     int nW = 0;
     for (auto it = itbegin; it != itend; ++it)
       nW += it->second;
-    if (int(M.size(0)) < std::max(0, nW - targetN_per_TG))
+    if (int(std::get<0>(M.sizes())) < std::max(0, nW - targetN_per_TG))
     {
       std::cout << " Error in WalkerSetBase::branch(): Not enough space in excess matrix. \n"
-                << M.size(0) << " " << nW << " " << targetN_per_TG << std::endl;
+                << std::get<0>(M.sizes()) << " " << nW << " " << targetN_per_TG << std::endl;
       APP_ABORT("Error in WalkerSetBase::branch(): Not enough space in excess matrix.\n");
     }
-    if (int(M.size(1)) < walker_size + ((wlk_desc[3] > 0) ? bp_walker_size : 0))
+    if (int(std::get<1>(M.sizes())) < walker_size + ((wlk_desc[3] > 0) ? bp_walker_size : 0))
       APP_ABORT("Error in WalkerSetBase::branch(): Wrong dimensions in excess matrix.\n");
 
     // if all walkers are dead, don't bother with routine, reset tot_num_walkers and return
@@ -573,7 +573,7 @@ public:
   {
     if (!TG.TG_local().root())
       return;
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     auto W(boost::multi::static_array_cast<element, pointer>(walker_buffer));
     ma::scal(ComplexType(w0), W({0, tot_num_walkers}, data_displ[WEIGHT]));
     if (scale_last_history)
@@ -726,7 +726,7 @@ public:
   // LogOverlapFactor_new = LogOverlapFactor + f/nx
   void adjustLogOverlapFactor(const double f)
   {
-    assert(walker_buffer.size(1) == walker_size);
+    assert(std::get<1>(walker_buffer.sizes()) == walker_size);
     double nx = (walkerType == NONCOLLINEAR ? 1.0 : 2.0);
     if (TG.TG_local().root())
     {

@@ -120,11 +120,11 @@ MultiArray2D&& gelqf(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
   assert(A.stride(1) > 0);
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size(1))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(std::get<1>(A.sizes()))));
 
   int status = -1;
-  gelqf(A.size(1), A.size(0), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()),
+  gelqf(std::get<1>(A.sizes()), std::get<0>(A.sizes()), pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()),
         pointer_dispatch(WORK.data()), WORK.size(), status);
   assert(status == 0);
   return std::forward<MultiArray2D>(A);
@@ -176,11 +176,11 @@ MultiArray2D&& glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 {
   assert(A.stride(1) == 1);
   assert(TAU.stride(0) == 1);
-  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))));
-  assert(WORK.size() >= std::max(std::size_t(1), size_t(A.size(1))));
+  assert(TAU.size() >= std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))));
+  assert(WORK.size() >= std::max(std::size_t(1), size_t(std::get<1>(A.sizes()))));
 
   int status = -1;
-  glq(A.size(1), A.size(0), std::max(std::size_t(1), size_t(std::min(A.size(0), A.size(1)))),
+  glq(std::get<1>(A.sizes()), std::get<0>(A.sizes()), std::max(std::size_t(1), size_t(std::min(std::get<0>(A.sizes()), std::get<1>(A.sizes())))),
       pointer_dispatch(A.origin()), A.stride(0), pointer_dispatch(TAU.data()), pointer_dispatch(WORK.data()),
       WORK.size(), status);
   assert(status == 0);
@@ -190,9 +190,9 @@ MultiArray2D&& glq(MultiArray2D&& A, Array1D&& TAU, Buffer&& WORK)
 template<class MultiArray2D, typename = typename std::enable_if_t<MultiArray2D::dimensionality == 2>>
 MultiArray2D&& potrf(MultiArray2D&& A)
 {
-  assert(A.size(0) == A.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
   int INFO;
-  potrf('U', A.size(0), pointer_dispatch(A.origin()), A.stride(0), INFO);
+  potrf('U', A.size(), pointer_dispatch(A.origin()), A.stride(0), INFO);
   if (INFO != 0)
     throw std::runtime_error(" error in ma::potrf: Error code != 0");
 }
@@ -316,10 +316,10 @@ std::pair<MultiArray1D, MultiArray2D> symEigSelect(MultiArray2DA& A, int neig)
   static_assert(std::is_same<Type, TypeA>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-  assert(A.size(0) == A.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
   assert(A.stride(1) == 1);
-  assert(A.size(0) > 0);
-  int N   = A.size(0);
+  assert(std::get<0>(A.sizes()) > 0);
+  int N   = std::get<0>(A.sizes());
   int LDA = A.stride(0);
 
   MultiArray1D eigVal(extensions{neig});
@@ -394,14 +394,14 @@ std::pair<MultiArray1D, MultiArray2D> genEigSelect(MultiArray2DA& A, MultiArray2
   static_assert(std::is_same<TypeA, TypeB>::value, "Wrong types.");
   using RealType   = typename qmcplusplus::afqmc::remove_complex<Type>::value_type;
   using extensions = typename boost::multi::layout_t<1u>::extensions_type;
-  assert(A.size(0) == A.size(1));
-  assert(A.size(0) == S.size(0));
-  assert(S.size(0) == S.size(1));
+  assert(std::get<0>(A.sizes()) == std::get<1>(A.sizes()));
+  assert(std::get<0>(A.sizes()) == std::get<0>(S.sizes()));
+  assert(std::get<0>(S.sizes()) == std::get<1>(S.sizes()));
   assert(A.stride(1) == 1);
-  assert(A.size(0) > 0);
+  assert(std::get<0>(A.sizes()) > 0);
   assert(S.stride(1) == 1);
-  assert(S.size(0) > 0);
-  int N   = A.size(0);
+  assert(std::get<0>(S.sizes()) > 0);
+  int N   = std::get<0>(A.sizes());
   int LDA = A.stride(0);
   int LDS = S.stride(0);
 
