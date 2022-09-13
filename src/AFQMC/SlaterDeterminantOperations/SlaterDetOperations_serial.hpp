@@ -357,8 +357,8 @@ public:
     // QR on the transpose
     if (Ai.size() == 0)
       return;
-    int NMO    = (*Ai[0]).size(0);
-    int NAEA   = (*Ai[0]).size(1);
+    int NMO    = std::get<0>((*Ai[0]).sizes());
+    int NAEA   = std::get<1>((*Ai[0]).sizes());
     int nbatch = Ai.size();
     TTensor AT({nbatch, NAEA, NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix T_({nbatch, NMO}, buffer_manager.get_generator().template get_allocator<T>());

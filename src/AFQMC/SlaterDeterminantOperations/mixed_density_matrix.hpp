@@ -22,7 +22,6 @@
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
 #include "AFQMC/Numerics/tensor_operations.hpp"
-#include "AFQMC/Utilities/ArraySizeHelper.hpp"
 #include "Utilities/FairDivide.h"
 
 namespace qmcplusplus
@@ -64,8 +63,8 @@ Tp MixedDensityMatrix(const MatA& hermA,
                       bool herm    = true)
 {
   // check dimensions are consistent
-  int NMO = (herm ? std::get<1>(generic_sizes(hermA)) : std::get<0>(generic_sizes(hermA)));
-  int NEL = (herm ? std::get<0>(generic_sizes(hermA)) : std::get<1>(generic_sizes(hermA)));
+  int NMO = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
+  int NEL = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
   assert(NMO == std::get<0>(B.sizes()));
   assert(NEL == std::get<1>(B.sizes()));
   assert(NEL == T1.size());
@@ -547,12 +546,12 @@ Tp OverlapForWoodbury(const MatA& hermA,
 {
   // check dimensions are consistent
   int NEL = std::get<1>(B.sizes());
-  assert(hermA.size(1) == B.size(0));
-  assert(hermA.size(0) == std::get<0>(TMN.sizes()));
+  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(TMN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(hermA.size(0) == QQ0.size(0));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
 
   using ma::T;
@@ -825,13 +824,13 @@ Tp OverlapForWoodbury(const MatA& hermA,
 {
   // check dimensions are consistent
   int NEL = std::get<1>(B.sizes());
-  assert(hermA.size(1) == B.size(0));
+  assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
   assert(std::get<0>(hermA.sizes()) == std::get<0>(TMN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<1>(TMN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<0>(TNN.sizes()));
   assert(std::get<1>(B.sizes()) == std::get<1>(TNN.sizes()));
-  assert(hermA.size(0) == QQ0.size(0));
-  assert(std::get<1>(B.sizes()) == QQ0.size(1));
+  assert(std::get<0>(hermA.sizes()) == std::get<0>(QQ0.sizes()));
+  assert(std::get<1>(B.sizes()) == std::get<1>(QQ0.sizes()));
 
   using ma::T;
 
@@ -994,8 +993,8 @@ void MixedDensityMatrix(std::vector<MatA>& hermA,
   using ma::T;
 
   int nbatch = Bi.size();
-  int NMO    = (herm ? std::get<1>(generic_sizes(*hermA[0])) : std::get<0>(generic_sizes(*hermA[0])));
-  int NEL    = (herm ? std::get<0>(generic_sizes(*hermA[0])) : std::get<1>(generic_sizes(*hermA[0])));
+  int NMO    = (herm ? std::get<1>((*hermA[0]).sizes()) : std::get<0>((*hermA[0]).sizes()));
+  int NEL    = (herm ? std::get<0>((*hermA[0]).sizes()) : std::get<1>((*hermA[0]).sizes()));
 
   assert(std::get<0>((*Bi[0]).sizes()) == NMO);
   assert(std::get<1>((*Bi[0]).sizes()) == NEL);

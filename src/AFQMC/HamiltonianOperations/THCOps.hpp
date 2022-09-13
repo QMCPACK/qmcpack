@@ -824,8 +824,8 @@ public:
   {
     using GType = typename std::decay_t<typename MatA::element>;
     using vType = typename std::decay<MatB>::type::element;
-    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, G.size(0)});
+    boost::multi::array_ref<vType, 2, decltype(v.origin())> v_(v.origin(), {std::get<0>(v.sizes()), 1});
+    boost::multi::array_ref<GType const, 2, decltype(G.origin())> G_(G.origin(), {1, std::get<0>(G.sizes())});
     vbias(G_, v_, a, c, k);
   }
 
@@ -839,14 +839,14 @@ public:
     using vType = typename std::decay<MatB>::type::element;
     if (k > 0)
       APP_ABORT(" Error: THC not yet implemented for multiple references.\n");
-    int nwalk = G.size(0);
-    int nmo_  = Piu.size(0);
-    int nu    = Piu.size(1);
-    int nel_  = cPua[0].size(1);
+    int nwalk = std::get<0>(G.sizes());
+    int nmo_  = std::get<0>(Piu.sizes());
+    int nu    = std::get<1>(Piu.sizes());
+    int nel_  = std::get<1>(cPua[0].sizes());
 #if defined(QMC_COMPLEX)
-    int nchol = 2 * Luv.size(1);
+    int nchol = 2 * std::get<1>(Luv.sizes());
 #else
-    int nchol = Luv.size(1);
+    int nchol = std::get<1>(Luv.sizes());
 #endif
     assert(std::get<1>(v.sizes()) == nwalk);
     assert(std::get<0>(v.sizes()) == nchol);
@@ -964,16 +964,16 @@ protected:
   template<class MatA, class MatB>
   void Guu_from_compact(MatA const& G, MatB&& Guu)
   {
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
-    int nel_ = cPua[0].size(1);
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
+    int nel_ = std::get<1>(cPua[0].sizes());
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nw           = G.size(0);
+    int nw           = std::get<0>(G.sizes());
 
-    assert(G.size(0) == Guu.size(1));
-    assert(G.size(1) == nel_ * nmo_);
-    assert(Guu.size(0) == nu);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<1>(G.sizes()) == nel_ * nmo_);
+    assert(std::get<0>(Guu.sizes()) == nu);
 
     ComplexType a = (walker_type == CLOSED) ? ComplexType(2.0) : ComplexType(1.0);
     Array<SPComplexType, 2> T1({(uN - u0), nw * nel_},
@@ -1007,15 +1007,15 @@ protected:
   void Guu_from_full(MatA const& G, MatB&& Guu)
   {
     using std::fill_n;
-    int nmo_ = int(Piu.size(0));
-    int nu   = int(Piu.size(1));
+    int nmo_ = int(std::get<0>(Piu.sizes()));
+    int nu   = int(std::get<1>(Piu.sizes()));
     int u0, uN;
     std::tie(u0, uN) = FairDivideBoundary(comm->rank(), nu, comm->size());
-    int nwalk        = G.size(0);
+    int nwalk        = G.size();
 
-    assert(G.size(0) == Guu.size(1));
-    assert(Guu.size(0) == nu);
-    assert(G.size(1) == nmo_ * nmo_);
+    assert(std::get<0>(G.sizes()) == std::get<1>(Guu.sizes()));
+    assert(std::get<0>(Guu.sizes()) == nu);
+    assert(std::get<1>(G.sizes()) == nmo_ * nmo_);
 
     // calculate how many walkers can be done concurrently
     long Bytes = default_buffer_size_in_MB * 1024L * 1024L;

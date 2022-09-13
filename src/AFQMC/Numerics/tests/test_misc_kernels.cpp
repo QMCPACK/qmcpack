@@ -76,13 +76,13 @@ TEST_CASE("axpyBatched", "[Numerics][misc_kernels]")
   Tensor2D<std::complex<double>> x({3, 4}, 1.0, alloc);
   Tensor1D<std::complex<double>> a(iextensions<1u>{3}, 2.0, alloc);
   std::vector<pointer<std::complex<double>>> x_batched, y_batched;
-  for (int i = 0; i < x.size(0); i++)
+  for (int i = 0; i < std::get<0>(x.sizes()); i++)
   {
     x_batched.emplace_back(x[i].origin());
     y_batched.emplace_back(y[i].origin());
   }
   using ma::axpyBatched;
-  axpyBatched(x.size(1), to_address(a.origin()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
+  axpyBatched(std::get<1>(x.sizes()), to_address(a.origin()), x_batched.data(), 1, y_batched.data(), 1, x_batched.size());
   // 1 + 2 = 3.
   Tensor2D<std::complex<double>> ref({3, 4}, 3.0, alloc);
   verify_approx(y, ref);

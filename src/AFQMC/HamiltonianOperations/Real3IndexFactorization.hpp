@@ -500,8 +500,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(0), 1});
-    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {std::get<0>(v.sizes()), 1});
+    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {std::get<0>(G.sizes()), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -556,13 +556,13 @@ public:
     boost::multi::array_ref<SPComplexType, 2> vsp(vptr, v.extensions());
     TG.TG_local().barrier();
 
-    if (haj.size(0) == 1)
+    if (haj.size() == 1)
     {
-      assert(Lakn.size(0) == G.size(0));
-      assert(Lakn.size(1) == v.size(0));
-      assert(G.size(1) == v.size(1));
+      assert(std::get<0>(Lakn.sizes()) == std::get<0>(G.sizes()));
+      assert(std::get<1>(Lakn.sizes()) == std::get<0>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
       std::tie(ic0, icN) =
-          FairDivideBoundary(long(TG.TG_local().rank()), long(Lakn.size(1)), long(TG.TG_local().size()));
+          FairDivideBoundary(long(TG.TG_local().rank()), long(std::get<1>(Lakn.sizes())), long(TG.TG_local().size()));
 
       if (walker_type == CLOSED)
         a *= 2.0;
@@ -572,11 +572,11 @@ public:
     else
     {
       // multideterminant is not half-rotated, so use Likn
-      assert(Likn.size(0) == G.size(0));
-      assert(Likn.size(1) == v.size(0));
-      assert(G.size(1) == v.size(1));
+      assert(std::get<0>(Likn.sizes()) == std::get<0>(G.sizes()));
+      assert(std::get<1>(Likn.sizes()) == std::get<0>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
       std::tie(ic0, icN) =
-          FairDivideBoundary(long(TG.TG_local().rank()), long(Likn.size(1)), long(TG.TG_local().size()));
+          FairDivideBoundary(long(TG.TG_local().rank()), long(std::get<1>(Likn.sizes())), long(TG.TG_local().size()));
 
       if (walker_type == CLOSED)
         a *= 2.0;
@@ -586,7 +586,7 @@ public:
     // copy data back if changing precision
     if (not std::is_same<vType, SPComplexType>::value)
     {
-      copy_n_cast(to_address(vsp[ic0].origin()), vsp.size(1) * (icN - ic0), to_address(v[ic0].origin()));
+      copy_n_cast(to_address(vsp[ic0].origin()), std::get<1>(vsp.sizes()) * (icN - ic0), to_address(v[ic0].origin()));
     }
     TG.TG_local().barrier();
   }

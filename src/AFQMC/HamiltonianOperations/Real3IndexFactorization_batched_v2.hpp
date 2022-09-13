@@ -123,7 +123,7 @@ public:
         Lnak(std::move(move_vector<shmSpC3Tensor>(std::move(vnak)))),
         vn0(std::move(vn0_))
   {
-    local_nCV = Likn.size(1);
+    local_nCV = std::get<1>(Likn.sizes());
     size_t lnak(0);
     for (auto& v : Lnak)
       lnak += v.num_elements();
@@ -454,8 +454,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(0), 1});
-    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2, decltype(v.origin())> v_(v.origin(), {v.size(), 1});
+    boost::multi::array_ref<AType const, 2, decltype(G.origin())> G_(G.origin(), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -506,25 +506,25 @@ public:
     boost::multi::array_cref<SPComplexType const, 2, const_sp_pointer> Gsp(Gptr, G.extensions());
     boost::multi::array_ref<SPComplexType, 2, sp_pointer> vsp(vptr, v.extensions());
 
-    if (haj.size(0) == 1)
+    if (haj.size() == 1)
     {
-      int nwalk = v.size(1);
+      int nwalk = std::get<1>(v.sizes());
       if (walker_type == COLLINEAR)
       {
-        assert(G.size(1) == v.size(1));
+        assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
         int NMO, nel[2];
-        NMO    = Lnak[0].size(2);
-        nel[0] = Lnak[0].size(1);
-        nel[1] = Lnak[1].size(1);
+        NMO    = std::get<2>(Lnak[0].sizes());
+        nel[0] = std::get<1>(Lnak[0].sizes());
+        nel[1] = std::get<1>(Lnak[1].sizes());
         double c_[2];
         c_[0] = c;
         c_[1] = c;
         if (std::abs(c) < 1e-8)
           c_[1] = 1.0;
-        assert((nel[0]+nel[1])*NMO == G.size(0));
+        assert((nel[0]+nel[1])*NMO == std::get<0>(G.sizes()));
         for (int ispin = 0, is0 = 0; ispin < 2; ispin++)
         {
-          assert(Lnak[ispin].size(0) == v.size(0));
+          assert(std::get<0>(Lnak[ispin].sizes()) == std::get<0>(v.sizes()));
           SpCMatrix_ref Ln(make_device_ptr(Lnak[ispin].origin()), {local_nCV, nel[ispin] * NMO});
           ma::product(SPComplexType(a), Ln, Gsp.sliced(is0, is0 + nel[ispin] * NMO), SPComplexType(c_[ispin]), vsp);
           is0 += nel[ispin] * NMO;
@@ -532,19 +532,19 @@ public:
       }
       else
       {
-        assert(G.size(1) == v.size(1));
-        assert(Lnak[0].size(1) * Lnak[0].size(2) == G.size(0));
-        assert(Lnak[0].size(0) == v.size(0));
-        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV, Lnak[0].size(1) * Lnak[0].size(2)});
+        assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
+        assert(std::get<1>(Lnak[0].sizes()) * std::get<2>(Lnak[0].sizes()) == std::get<0>(G.sizes()));
+        assert(std::get<0>(Lnak[0].sizes()) == std::get<0>(v.sizes()));
+        SpCMatrix_ref Ln(make_device_ptr(Lnak[0].origin()), {local_nCV, std::get<1>(Lnak[0].sizes()) * std::get<2>(Lnak[0].sizes())});
         ma::product(SPComplexType(a), Ln, Gsp, SPComplexType(c), vsp);
       }
     }
     else
     {
       // multideterminant is not half-rotated, so use Likn
-      assert(Likn.size(0) == G.size(0));
-      assert(Likn.size(1) == v.size(0));
-      assert(G.size(1) == v.size(1));
+      assert(std::get<0>(Likn.sizes()) == std::get<0>(G.sizes()));
+      assert(std::get<1>(Likn.sizes()) == std::get<0>(v.sizes()));
+      assert(std::get<1>(G.sizes()) == std::get<1>(v.sizes()));
 
       ma::product(SPValueType(a), ma::T(Likn), Gsp, SPValueType(c), vsp);
     }

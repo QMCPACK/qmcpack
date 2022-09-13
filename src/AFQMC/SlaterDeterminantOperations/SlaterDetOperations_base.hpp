@@ -191,7 +191,7 @@ public:
   template<class MatA>
   T Overlap(const MatA& A, T LogOverlapFactor)
   {
-    int NAEA = A.size(1);
+    int NAEA = std::get<1>(A.sizes());
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
@@ -211,7 +211,7 @@ public:
   template<class MatA, class MatB>
   T Overlap_noHerm(const MatA& A, const MatB& B, T LogOverlapFactor)
   {
-    int NAEA = A.size(1);
+    int NAEA = std::get<1>(A.sizes());
     TMatrix TNN({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     TMatrix TNN2({NAEA, NAEA}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NAEA + 1}, buffer_manager.get_generator().template get_allocator<int>());
