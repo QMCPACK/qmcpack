@@ -12,6 +12,7 @@
 
 #include "SpinorSet.h"
 #include "Utilities/ResourceCollection.h"
+#include "Platforms/OMPTarget/OMPTargetMath.hpp"
 
 namespace qmcplusplus
 {
@@ -20,6 +21,10 @@ struct SpinorSet::SpinorSetMultiWalkerResource : public Resource
   SpinorSetMultiWalkerResource() : Resource("SpinorSet") {}
   SpinorSetMultiWalkerResource(const SpinorSetMultiWalkerResource&) : SpinorSetMultiWalkerResource() {}
   Resource* makeClone() const override { return new SpinorSetMultiWalkerResource(*this); }
+  OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
+  std::vector<ValueType> up_ratios, dn_ratios;
+  std::vector<GradType> up_grads, dn_grads;
+  std::vector<RealType> spins;
 };
 
 SpinorSet::SpinorSet(const std::string& my_name) : SPOSet(my_name), spo_up(nullptr), spo_dn(nullptr) {}
@@ -147,13 +152,10 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   auto& P_leader   = P_list.getLeader();
   assert(this == &spo_leader);
 
-  IndexType nw          = spo_list.size();
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
+  IndexType nw                    = spo_list.size();
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   std::vector<ValueVector> mw_up_psi_work, mw_dn_psi_work;
   std::vector<GradVector> mw_up_dpsi_work, mw_dn_dpsi_work;
@@ -179,10 +181,6 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   GradVector tmp_grad_vec(OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-
     mw_up_psi_work.emplace_back(tmp_val_vec);
     up_psi_v_list.emplace_back(mw_up_psi_work.back());
     mw_dn_psi_work.emplace_back(tmp_val_vec);
@@ -236,42 +234,35 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);
 
-  OffloadMWVGLArray up_phi_vgl_v, dn_phi_vgl_v;
+  auto& mw_res       = *spo_leader.mw_res_;
+  auto& up_phi_vgl_v = mw_res.up_phi_vgl_v;
+  auto& dn_phi_vgl_v = mw_res.dn_phi_vgl_v;
+  auto& up_ratios    = mw_res.up_ratios;
+  auto& dn_ratios    = mw_res.dn_ratios;
+  auto& up_grads     = mw_res.up_grads;
+  auto& dn_grads     = mw_res.dn_grads;
+  auto& spins        = mw_res.spins;
+
   up_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
   dn_phi_vgl_v.resize(DIM_VGL, nw, norb_requested);
-  std::vector<ValueType> up_ratios(nw), dn_ratios(nw);
-  std::vector<GradType> up_grads(nw), dn_grads(nw);
+  up_ratios.resize(nw);
+  dn_ratios.resize(nw);
+  up_grads.resize(nw);
+  dn_grads.resize(nw);
+  spins.resize(nw);
 
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
-
-  for (int iw = 0; iw < nw; iw++)
-  {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-  }
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   up_spo_leader.mw_evaluateVGLandDetRatioGrads(up_spo_list, P_list, iat, invRow_ptr_list, up_phi_vgl_v, up_ratios,
                                                up_grads);
-  if (up_spo_leader.isOMPoffload())
-    up_phi_vgl_v.updateFrom();
-
   dn_spo_leader.mw_evaluateVGLandDetRatioGrads(dn_spo_list, P_list, iat, invRow_ptr_list, dn_phi_vgl_v, dn_ratios,
                                                dn_grads);
-  if (dn_spo_leader.isOMPoffload())
-    dn_phi_vgl_v.updateFrom();
-
-  //To do: this is not optimized. Right now, we are building the spinors on the CPU and then updating the data to the GPU at the end
-  //with the updateTo(). Need to eventually rework this to be all on the GPU to avoid these data transfers, but this should work as an
-  //initial implementation
   for (int iw = 0; iw < nw; iw++)
   {
     ParticleSet::Scalar_t s = P_list[iw].activeSpin(iat);
+    spins[iw]               = s;
     RealType coss           = std::cos(s);
     RealType sins           = std::sin(s);
 
@@ -282,20 +273,27 @@ void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader
     ratios[iw]    = eis * up_ratios[iw] + emis * dn_ratios[iw];
     grads[iw]     = (eis * up_grads[iw] * up_ratios[iw] + emis * dn_grads[iw] * dn_ratios[iw]) / ratios[iw];
     spingrads[iw] = eye * (eis * up_ratios[iw] - emis * dn_ratios[iw]) / ratios[iw];
-
-    //loop over vgl to construct spinor vgl
-    for (int idim = 0; idim < DIM_VGL; idim++)
-    {
-      ValueType* phi_v    = phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* up_phi_v = up_phi_vgl_v.data_at(idim, iw, 0);
-      ValueType* dn_phi_v = dn_phi_vgl_v.data_at(idim, iw, 0);
-      for (int iorb = 0; iorb < norb_requested; iorb++)
-        phi_v[iorb] = eis * up_phi_v[iorb] + emis * dn_phi_v[iorb];
-    }
   }
 
-  //Now update data to device
-  phi_vgl_v.updateTo();
+  auto* spins_ptr = spins.data();
+  //This data lives on the device
+  auto* phi_vgl_ptr    = phi_vgl_v.data();
+  auto* up_phi_vgl_ptr = up_phi_vgl_v.data();
+  auto* dn_phi_vgl_ptr = dn_phi_vgl_v.data();
+  PRAGMA_OFFLOAD("omp target teams distribute map(to:spins_ptr[0:nw])")
+  for (int iw = 0; iw < nw; iw++)
+  {
+    RealType c, s;
+    omptarget::sincos(spins_ptr[iw], &s, &c);
+    ValueType eis(c, s), emis(c, -s);
+    PRAGMA_OFFLOAD("omp parallel for collapse(2)")
+    for (int idim = 0; idim < DIM_VGL; idim++)
+      for (int iorb = 0; iorb < norb_requested; iorb++)
+      {
+        auto offset         = idim * nw * norb_requested + iw * norb_requested + iorb;
+        phi_vgl_ptr[offset] = eis * up_phi_vgl_ptr[offset] + emis * dn_phi_vgl_ptr[offset];
+      }
+  }
 }
 
 void SpinorSet::evaluate_notranspose(const ParticleSet& P,
@@ -356,12 +354,9 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   IndexType nw    = spo_list.size();
   IndexType nelec = P_leader.getTotalNum();
 
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
 
   std::vector<ValueMatrix> mw_up_logdet, mw_dn_logdet;
   std::vector<GradMatrix> mw_up_dlogdet, mw_dn_dlogdet;
@@ -387,10 +382,6 @@ void SpinorSet::mw_evaluate_notranspose(const RefVectorWithLeader<SPOSet>& spo_l
   GradMatrix tmp_grad_mat(nelec, OrbitalSetSize);
   for (int iw = 0; iw < nw; iw++)
   {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-
     mw_up_logdet.emplace_back(tmp_val_mat);
     up_logdet_list.emplace_back(mw_up_logdet.back());
     mw_dn_logdet.emplace_back(tmp_val_mat);
@@ -547,24 +538,12 @@ void SpinorSet::createResource(ResourceCollection& collection) const
 
 void SpinorSet::acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
 {
-  auto& spo_leader      = spo_list.getCastedLeader<SpinorSet>();
-  IndexType nw          = spo_list.size();
-  SPOSet& up_spo_leader = *(spo_leader.spo_up);
-  SPOSet& dn_spo_leader = *(spo_leader.spo_dn);
-  RefVectorWithLeader<SPOSet> up_spo_list(up_spo_leader);
-  RefVectorWithLeader<SPOSet> dn_spo_list(dn_spo_leader);
-  up_spo_list.reserve(nw);
-  dn_spo_list.reserve(nw);
-  for (int iw = 0; iw < nw; iw++)
-  {
-    SpinorSet& spinor = spo_list.getCastedElement<SpinorSet>(iw);
-    up_spo_list.emplace_back(*(spinor.spo_up));
-    dn_spo_list.emplace_back(*(spinor.spo_dn));
-  }
-
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& spo_leader                = spo_list.getCastedLeader<SpinorSet>();
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
   up_spo_leader.acquireResource(collection, up_spo_list);
   dn_spo_leader.acquireResource(collection, dn_spo_list);
-
   auto res_ptr = dynamic_cast<SpinorSetMultiWalkerResource*>(collection.lendResource().release());
   if (!res_ptr)
     throw std::runtime_error("SpinorSet::acquireResource dynamic_cast failed");
@@ -572,6 +551,18 @@ void SpinorSet::acquireResource(ResourceCollection& collection, const RefVectorW
 }
 
 void SpinorSet::releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const
+{
+  auto [up_spo_list, dn_spo_list] = extractSpinComponentRefList(spo_list);
+  auto& spo_leader                = spo_list.getCastedLeader<SpinorSet>();
+  auto& up_spo_leader             = up_spo_list.getLeader();
+  auto& dn_spo_leader             = dn_spo_list.getLeader();
+  up_spo_leader.releaseResource(collection, up_spo_list);
+  dn_spo_leader.releaseResource(collection, dn_spo_list);
+  collection.takebackResource(std::move(spo_leader.mw_res_));
+}
+
+std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> SpinorSet::extractSpinComponentRefList(
+    const RefVectorWithLeader<SPOSet>& spo_list) const
 {
   auto& spo_leader      = spo_list.getCastedLeader<SpinorSet>();
   IndexType nw          = spo_list.size();
@@ -587,10 +578,7 @@ void SpinorSet::releaseResource(ResourceCollection& collection, const RefVectorW
     up_spo_list.emplace_back(*(spinor.spo_up));
     dn_spo_list.emplace_back(*(spinor.spo_dn));
   }
-
-  up_spo_leader.releaseResource(collection, up_spo_list);
-  dn_spo_leader.releaseResource(collection, dn_spo_list);
-  collection.takebackResource(std::move(spo_leader.mw_res_));
+  return std::make_pair(up_spo_list, dn_spo_list);
 }
 
 } // namespace qmcplusplus

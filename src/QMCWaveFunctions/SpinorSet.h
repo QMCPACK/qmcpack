@@ -180,6 +180,9 @@ private:
   struct SpinorSetMultiWalkerResource;
   std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
 
+  std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> extractSpinComponentRefList(
+      const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   //Sposet for the up and down channels of our spinors.
   std::unique_ptr<SPOSet> spo_up;
   std::unique_ptr<SPOSet> spo_dn;
