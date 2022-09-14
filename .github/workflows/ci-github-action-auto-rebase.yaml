@@ -2,6 +2,7 @@ on:
   pull_request_target:
     types: [edited, auto_merge_enabled]
     branches:
+      - github_actions_automatic_rebase
       - develop
       - main
   push:
@@ -30,6 +31,8 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
 
   trigger-rebase:
     if: github.event_name == 'push'
@@ -45,3 +48,5 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}

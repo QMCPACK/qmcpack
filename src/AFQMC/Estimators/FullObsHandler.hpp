@@ -193,7 +193,7 @@ public:
       APP_ABORT("Runtime Error: iav out of range in full1rdm::accumulate. \n\n\n");
 
     int nw(wset.size());
-    int nrefs(Refs.size(1));
+    int nrefs(std::get<1>(Refs.sizes()));
     double LogOverlapFactor(wset.getLogOverlapFactor());
     LocalTGBufferManager shm_buffer_manager;
     StaticSHM4Tensor G4D({nw, nspins, std::get<0>(Gdims), std::get<1>(Gdims)},

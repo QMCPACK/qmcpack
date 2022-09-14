@@ -129,22 +129,13 @@ void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader
                                                        const RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const
 {
-  const int nparam = dlogpsi.nparam();
-  Vector<ValueType> tmp_dlogpsi(nparam);
-  Vector<ValueType> tmp_dhpsioverpsi(nparam);
+  const int nparam = dlogpsi.getNumOfParams();
   for (int iw = 0; iw < o_list.size(); iw++)
   {
-    for (int j = 0; j < nparam; j++)
-    {
-      tmp_dlogpsi[j] = dlogpsi.getValue(j, iw);
-    }
+    const Vector<ValueType> dlogpsi_record_view(const_cast<ValueType*>(dlogpsi[iw]), nparam);
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
 
-    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-
-    for (int j = 0; j < nparam; j++)
-    {
-      dhpsioverpsi.setValue(j, iw, dhpsioverpsi.getValue(j, iw) + tmp_dhpsioverpsi[j]);
-    }
+    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, dlogpsi_record_view, dhpsioverpsi_record_view);
   }
 }
 

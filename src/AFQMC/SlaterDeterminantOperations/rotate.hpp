@@ -500,13 +500,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   int Qdim = NAEA * (kN_alpha - k0_alpha) + NAEB * (kN_beta - k0_beta);
   if (transpose)
   {
-    assert(Q.size(0) == nvec);
-    assert(Q.size(1) == Qdim);
+    assert(std::get<0>(Q.sizes()) == nvec);
+    assert(std::get<1>(Q.sizes()) == Qdim);
   }
   else
   {
-    assert(Q.size(0) == Qdim);
-    assert(Q.size(1) == nvec);
+    assert(std::get<0>(Q.sizes()) == Qdim);
+    assert(std::get<1>(Q.sizes()) == nvec);
   }
   std::tie(ak0, ak1) = FairDivideBoundary(coreid, Qdim, ncores);
 

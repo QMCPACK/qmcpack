@@ -654,3 +654,16 @@ function(
     set_property(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
   endif()
 endfunction()
+
+# Add a test to see if a file exists in the desired location.
+function(add_test_check_file_existence TEST_DEP_IN FILE_NAME SHOULD_SUCCEED)
+  if(TEST ${TEST_DEP_IN})
+    get_test_property(${TEST_DEP_IN} WORKING_DIRECTORY TEST_DEP_IN_WORK_DIR)
+    set(TESTNAME ${TEST_DEP_IN}-exists-${FILE_NAME})
+    add_test(NAME ${TESTNAME} COMMAND ls ${TEST_DEP_IN_WORK_DIR}/${FILE_NAME})
+    if (NOT SHOULD_SUCCEED)
+      set_property(TEST ${TESTNAME} PROPERTY WILL_FAIL TRUE)
+    endif()
+    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS ${TEST_DEP_IN})
+  endif()
+endfunction()

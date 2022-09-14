@@ -107,6 +107,12 @@ if(NOT QMC_CUDA)
     2
     check.sh
     false)
+
+  add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s000.config.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s000.random.h5 TRUE)
+  add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s001.config.h5 FALSE)
+  add_test_check_file_existence(deterministic-restart_batch-8-2 qmc_short_batch.s001.random.h5 FALSE)
+
   run_restart_and_check(
     deterministic-restart_batch
     "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"

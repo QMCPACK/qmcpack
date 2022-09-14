@@ -43,10 +43,10 @@ template<class MultiArray2D, typename = typename std::enable_if<(MultiArray2D::d
 bool is_hermitian(MultiArray2D const& A)
 {
   using ma::conj;
-  if (A.size() != A.size(1))
+  if (A.size() != std::get<1>(A.sizes()))
     return false;
-  for (int i = 0; i != A.size(); ++i)
-    for (int j = i + 1; j != A.size(1); ++j)
+  for (int i = 0; i != std::get<0>(A.sizes()); ++i)
+    for (int j = i + 1; j != std::get<1>(A.sizes()); ++j)
       if (std::abs(A[i][j] - ma::conj(A[j][i])) > 1e-12)
         return false;
   return true;
@@ -260,16 +260,16 @@ MultiArray2DC&& product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B,
   {
     assert(arg(A).size() == std::forward<MultiArray2DC>(C).size());
     assert( arg(A).size(1) == arg(B).size() );
-    assert( arg(B).size(1) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()) );
+    assert( std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()) );
   }
   else
   {
     assert(arg(A).size() == arg(B).size());
-    assert(arg(A).size(1) == std::forward<MultiArray2DC>(C).size());
-    assert(arg(B).size(1) == std::forward<MultiArray2DC>(C).size(1));
+    assert(std::get<1>(arg(A).sizes()) == std::forward<MultiArray2DC>(C).size());
+    assert(std::get<1>(arg(B).sizes()) == std::get<1>(std::forward<MultiArray2DC>(C).sizes()));
   }
 
-  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(), arg(B).size(1), arg(A).size(1), elementA(alpha), "GxxCxx",
+  csrmm(op_tag<SparseMatrixA>::value, arg(A).size(), std::get<1>(arg(B).sizes()), std::get<1>(arg(A).sizes()), elementA(alpha), "GxxCxx",
         pointer_dispatch(arg(A).non_zero_values_data()), pointer_dispatch(arg(A).non_zero_indices2_data()),
         pointer_dispatch(arg(A).pointers_begin()), pointer_dispatch(arg(A).pointers_end()),
         pointer_dispatch(arg(B).origin()), arg(B).stride(), elementA(beta), pointer_dispatch(C.origin()), C.stride());
@@ -428,7 +428,7 @@ void BatchedProduct(char TA,
 
   for (int i = 0; i < nbatch; i++)
   {
-    csrmm(TA, (*A[i]).size(), (*B[i]).size(1), (*A[i]).size(1), elementA(alpha), "GxxCxx",
+    csrmm(TA, (*A[i]).size(), std::get<1>((*B[i]).sizes()), std::get<1>((*A[i]).sizes()), elementA(alpha), "GxxCxx",
           pointer_dispatch((*A[i]).non_zero_values_data()), pointer_dispatch((*A[i]).non_zero_indices2_data()),
           pointer_dispatch((*A[i]).pointers_begin()), pointer_dispatch((*A[i]).pointers_end()),
           pointer_dispatch((*B[i]).origin()), (*B[i]).stride(), elementA(beta), pointer_dispatch((*C[i]).origin()),

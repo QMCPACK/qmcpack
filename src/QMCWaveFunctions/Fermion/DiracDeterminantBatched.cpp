@@ -269,6 +269,59 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGrad(const RefVectorWithLeader
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_ratioGradWithSpin(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<PsiValue>& ratios,
+    std::vector<Grad>& grad_new,
+    std::vector<ComplexType>& spingrad_new) const
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  wfc_leader.guardMultiWalkerRes();
+  auto& mw_res             = *wfc_leader.mw_res_;
+  auto& phi_vgl_v          = mw_res.phi_vgl_v;
+  auto& ratios_local       = mw_res.ratios_local;
+  auto& grad_new_local     = mw_res.grad_new_local;
+  auto& spingrad_new_local = mw_res.spingrad_new_local;
+  {
+    ScopedTimer local_timer(SPOVGLTimer);
+    RefVectorWithLeader<SPOSet> phi_list(*Phi);
+    phi_list.reserve(wfc_list.size());
+    RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
+    engine_list.reserve(wfc_list.size());
+    const int WorkingIndex = iat - FirstIndex;
+    for (int iw = 0; iw < wfc_list.size(); iw++)
+    {
+      auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+      phi_list.push_back(*det.Phi);
+      engine_list.push_back(det.det_engine_);
+    }
+
+    auto psiMinv_row_dev_ptr_list = DET_ENGINE::mw_getInvRow(engine_list, WorkingIndex, !Phi->isOMPoffload());
+
+    phi_vgl_v.resize(DIM_VGL, wfc_list.size(), NumOrbitals);
+    ratios_local.resize(wfc_list.size());
+    grad_new_local.resize(wfc_list.size());
+    spingrad_new_local.resize(wfc_list.size());
+
+    wfc_leader.Phi->mw_evaluateVGLandDetRatioGradsWithSpin(phi_list, p_list, iat, psiMinv_row_dev_ptr_list, phi_vgl_v,
+                                                           ratios_local, grad_new_local, spingrad_new_local);
+  }
+
+  wfc_leader.UpdateMode = ORB_PBYP_PARTIAL;
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& det      = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    det.UpdateMode = ORB_PBYP_PARTIAL;
+    ratios[iw] = det.curRatio = ratios_local[iw];
+    grad_new[iw] += grad_new_local[iw];
+    spingrad_new[iw] += spingrad_new_local[iw];
+  }
+}
+
+template<typename DET_ENGINE>
 typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGradWithSpin(
     ParticleSet& P,
     int iat,
