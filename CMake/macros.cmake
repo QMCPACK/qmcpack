@@ -98,7 +98,7 @@ function(MAYBE_SYMLINK SRC_DIR DST_DIR)
   if(QMC_SYMLINK_TEST_FILES)
     file(CREATE_LINK ${SRC_DIR} ${DST_DIR} SYMBOLIC)
   else()
-    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
+    configure_file(${SRC_DIR} ${DST_DIR} COPYONLY)
   endif()
 endfunction()
 
