@@ -100,7 +100,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
 
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  const auto new_coefs = new ValueType[coefs_tot_size];
+  std::vector<RealType> new_coefs(coefs_tot_size, 0);
   for (auto i = 0; i < BasisSetSize; i++)
   {
     for (auto j = 0; j < Nsplines; j++)
@@ -112,18 +112,16 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         const auto index = i * Nsplines + k;
         newval += *(spl_coefs + index) * tmpU[k][j];
       }
-      *(new_coefs + cur_elem) = newval;
+      new_coefs[cur_elem] = newval;
     }
   }
 
-  // Update the coefs, then delete the temporary array
-  for (auto i=0; i<coefs_tot_size; i++)
-    {
-      *(spl_coefs + i) = *(new_coefs + i);
-    }
-  
-  delete new_coefs;
-  
+  // Update the coefs
+  for (auto i = 0; i < coefs_tot_size; i++)
+  {
+    *(spl_coefs + i) = new_coefs[i];
+  }
+
   /*
     // Here is my attempt to use gemm but it doesn't work...
     int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
