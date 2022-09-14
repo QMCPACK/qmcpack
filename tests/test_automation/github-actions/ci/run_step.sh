@@ -162,19 +162,20 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang14-MPI-CUDA-AFQMC-Offload"*)
+      *"Clang15-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
               "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
-        export OMPI_CC=/opt/llvm/14.0.1/bin/clang
-        export OMPI_CXX=/opt/llvm/14.0.1/bin/clang++
+        # todo: update to llvm 15 release, currently using release candidate
+        export OMPI_CC=/opt/llvm/15.0.0-rc3/bin/clang
+        export OMPI_CXX=/opt/llvm/15.0.0-rc3/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/15.0.0-rc3/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/15.0.0-rc3/bin/clang++" >> $GITHUB_ENV
 
         # Confirm that cuda 11.2 gets picked up by the compiler
-        /opt/llvm/14.0.1/bin/clang++ -v
+        /opt/llvm/15.0.0-rc3/bin/clang++ -v
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -183,7 +184,6 @@ case "$1" in
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
               -DENABLE_OFFLOAD=ON \
-              -DUSE_OBJECT_TARGET=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -375,7 +375,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/15.0.0-rc3/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]

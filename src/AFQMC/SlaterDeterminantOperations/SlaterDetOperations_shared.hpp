@@ -74,8 +74,8 @@ public:
                        bool compact = false,
                        bool herm    = true)
   {
-    int NMO  = (herm ? hermA.size(1) : hermA.size(0));
-    int NAEA = (herm ? hermA.size(0) : hermA.size(1));
+    int NMO  = (herm ? std::get<1>(hermA.sizes()) : std::get<0>(hermA.sizes()));
+    int NAEA = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
     set_shm_buffer(comm, NAEA * (NAEA + NMO));
     assert(SM_TMats->num_elements() >= NAEA * (NAEA + NMO));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
@@ -96,12 +96,12 @@ public:
                                   communicator& comm,
                                   bool compact = false)
   {
-    int Nact = hermA.size(0);
-    int NEL  = B.size(1);
-    int NMO  = B.size(0);
-    assert(hermA.size(1) == B.size(0));
-    assert(QQ0.size(0) == Nact);
-    assert(QQ0.size(1) == NEL);
+    int Nact = std::get<0>(hermA.sizes());
+    int NEL  = std::get<1>(B.sizes());
+    int NMO  = std::get<0>(B.sizes());
+    assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(QQ0.sizes()) == Nact);
+    assert(std::get<1>(QQ0.sizes()) == NEL);
 
     set_shm_buffer(comm, NEL * (NEL + Nact + NMO));
     assert(SM_TMats->num_elements() >= NEL * (NEL + Nact + NMO));
@@ -122,7 +122,7 @@ public:
   template<class MatA, class MatB>
   T Overlap(const MatA& hermA, const MatB& B, T LogOverlapFactor, communicator& comm, bool herm = true)
   {
-    int NAEA = (herm ? hermA.size(0) : hermA.size(1));
+    int NAEA = (herm ? std::get<0>(hermA.sizes()) : std::get<1>(hermA.sizes()));
     set_shm_buffer(comm, 2 * NAEA * NAEA);
     assert(SM_TMats->num_elements() >= 2 * NAEA * NAEA);
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NAEA, NAEA});
@@ -139,11 +139,11 @@ public:
                        MatC&& QQ0,
                        communicator& comm)
   {
-    int Nact = hermA.size(0);
-    int NEL  = B.size(1);
-    assert(hermA.size(1) == B.size(0));
-    assert(QQ0.size(0) == Nact);
-    assert(QQ0.size(1) == NEL);
+    int Nact = std::get<0>(hermA.sizes());
+    int NEL  = std::get<1>(B.sizes());
+    assert(std::get<1>(hermA.sizes()) == std::get<0>(B.sizes()));
+    assert(std::get<0>(QQ0.sizes()) == Nact);
+    assert(std::get<1>(QQ0.sizes()) == NEL);
     set_shm_buffer(comm, NEL * (Nact + NEL));
     assert(SM_TMats->num_elements() >= NEL * (Nact + NEL));
     boost::multi::array_ref<T, 2> TNN(to_address(SM_TMats->origin()), {NEL, NEL});
@@ -164,14 +164,14 @@ public:
                  bool noncollinear = false)
   {
     int npol = noncollinear ? 2 : 1;
-    int NMO  = A.size(0);
-    int NAEA = A.size(1);
+    int NMO  = std::get<0>(A.sizes());
+    int NAEA = std::get<1>(A.sizes());
     int M    = NMO / npol;
     assert(NMO % npol == 0);
-    assert(P1.size(0) == NMO);
-    assert(P1.size(1) == NMO);
-    assert(V.size(0) == M);
-    assert(V.size(1) == M);
+    assert(std::get<0>(P1.sizes()) == NMO);
+    assert(std::get<1>(P1.sizes()) == NMO);
+    assert(std::get<0>(V.sizes()) == M);
+    assert(std::get<1>(V.sizes()) == M);
     set_shm_buffer(comm, NAEA * (NMO + 2 * M));
     assert(SM_TMats->num_elements() >= NAEA * (NMO + 2 * M));
     boost::multi::array_ref<T, 2> T0(to_address(SM_TMats->origin()), {NMO, NAEA});

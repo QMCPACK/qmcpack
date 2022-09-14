@@ -94,7 +94,7 @@
      <parameter name="timestep">  1.0 </parameter>
      <parameter name="usedrift">   no </parameter>
    </qmc>
-   <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+   <qmc method="dmc" move="pbyp" gpu="yes">
      <estimator name="LocalEnergy" hdf5="no"/>
      <parameter name="targetwalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
