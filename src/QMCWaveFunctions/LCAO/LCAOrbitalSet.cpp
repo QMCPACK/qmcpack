@@ -361,48 +361,31 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
 }
 
 void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
-                            const RefVectorWithLeader<ParticleSet>& P_list,
-                            int iat,
-                            OffloadMWVGLArray& psi_vgl_v) const
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   OffloadMWVGLArray& psi_vgl_v) const
 {
-    // need to change function call once we know output types
-  // create a temp[nao], a temp_mw[VGL][nwalkers*nao], and tempv_mw[VGL][nwalkers*nmo]
-  vgl_type Temp(BasisSetSize);
-  vgl_type Temp_mw(spo_list.size()*BasisSetSize);
-  vgl_type Tempv_mw(spo_list.size()*psi_v_list[0].size());
+  vgl_type Temp_mw(spo_list.size() * BasisSetSize);
+  vgl_type Tempv_mw(spo_list.size() * psi_v_list[0].size());
 
   if (Identity)
   {
-    // fill Temp
-    for (int iw = 0; iw < spo_list.size(); iw++) {
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
       myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
-      Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
+      evaluate_vgl_impl2(Temp, iw, psi_vgl_v);
     }
-    // Need better output format
-    // ValueVector psi_v_joined [1][nwalkers*nmo]
-    // ValueVector dpsi_v_joined [3][nwalkers*nmo]
-    // ValueVector d2psi_v_joined [1][nwalkers*nmo]
-    evaluate_vgl_impl(Temp_mw.data(), psi_v_joined, dpsi_v_joined, d2psi_v_joined);
   }
   else
   {
     ValueMatrix C_partial_view(C->data(), psi_v_list[0].size(), BasisSetSize);
-    ValueMatrix Stacked_C_partial_view(spo_list.size()*psi_v_list[0].size(), spo_list.size()*BasisSetSize);
-    // fill Temp
-    // build a stacked C_partial_view[nmo][nao]
-    for (int iw = 0; iw < spo_list.size(); iw++) {
+    for (int iw = 0; iw < spo_list.size(); iw++)
+    {
       myBasisSet->evaluateVGL(P_list[iw], iat, Temp);
-      Temp_mw.add(Temp.data(),5,BasisSetSize,0,iw*BasisSetSize);
-      Stacked_C_partial_view.add(C_partial_view.data(), psi_v_list[0].size(), BasisSetSize, iw*psi_v_list[0].size(), iw*BasisSetSize);
+      Product_ABt(Temp, C_partial_view, Tempv);
+      evaluate_vgl_impl2(Tempv, iw, psi_vgl_v);
     }
-    // call gemm on temp_mw and C.T
-    Product_ABt(Temp_mw, Stacked_C_partial_view, Tempv_mw);
-    evaluate_vgl_impl(Tempv_mw.data(), psi_v_joined, dpsi_v_joined, d2psi_v_joined);
   }
-  //default sposet implementation
-  // assert(this == &spo_list.getLeader());
-  // for (int iw = 0; iw < spo_list.size(); iw++)
-  //   spo_list[iw].evaluateVGL(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw]);
 }
 
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
@@ -425,12 +408,12 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
 }
 
 void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
-                                            const RefVectorWithLeader<ParticleSet>& P_list,
-                                            int iat,
-                                            const std::vector<const ValueType*>& invRow_ptr_list,
-                                            OffloadMWVGLArray& phi_vgl_v,
-                                            std::vector<ValueType>& ratios,
-                                            std::vector<GradType>& grads) const
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   const std::vector<const ValueType*>& invRow_ptr_list,
+                                                   OffloadMWVGLArray& phi_vgl_v,
+                                                   std::vector<ValueType>& ratios,
+                                                   std::vector<GradType>& grads) const
 {
   assert(this == &spo_list.getLeader());
   assert(phi_vgl_v.size(0) == DIM_VGL);
@@ -438,34 +421,31 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   const size_t nw             = spo_list.size();
   const size_t norb_requested = phi_vgl_v.size(2);
   // object to hold gradient
-  
+
   GradVector dphi_v(norb_requested);
-  // to do: 
+  // to do:
   // first step; evaluateVGL call first happens outside of loop
   // naively pull out value vectors to work with existing ratio/grad construction
   // do we need gradient to SoA in VGL?
-  mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v)
+  mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
   for (int iw = 0; iw < nw; iw++)
   {
     //create data objects to hold values of wave function and second derivative
     //phi_vgl_v.data_at(0, iw, 0)  constructs another vector which shares the memory location of another containers data.
-    // specifically phi_vgl_v wf value information for a specific walker 
+    // specifically phi_vgl_v wf value information for a specific walker
     ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
-    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
-    // assigns the value of these matrices according to new particle position in Plist to  spo_list, currently one walker at a time.
-    // spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
-
-    // 
-    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
-    grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
-
-    // transpose the array of gradients to SoA in phi_vgl_v
+    GradVector dphi_v(norb_requested);
     for (size_t idim = 0; idim < DIM; idim++)
     {
       ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
       for (size_t iorb = 0; iorb < norb_requested; iorb++)
-        phi_g[iorb] = dphi_v[iorb][idim];
+        dphi_v[iorb][idim] = phi_g[iorb];
     }
+    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
+    // assigns the value of these matrices according to new particle position in Plist to  spo_list, currently one walker at a time.
+    // spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
+    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
+    grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
   }
   // phi_vgl_v.updateTo();
 }
