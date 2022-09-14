@@ -40,11 +40,15 @@ if(NOT CXX17_LIBRARY_OKAY)
     message("Compiler detected is g++.\n  Use version 9.0 or newer for complete C++17 standard library support.")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(
-      "Compiler detected is clang++.\n  If not using libcxx, ensure a GCC toolchain version equal or greater than 9.0 gets picked up.  Check with 'clang++ -v'."
+      "Compiler detected is clang++.\n  If not using libcxx, ensure a GCC toolchain version equal or greater "
+      "than 9.0 gets picked up. Check with 'clang++ -v'. Or use the --gcc-toolchain compiler option "
+      "(added to CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     message(
-      "Compiler detected is icpc.\n  Ensure a GCC version equal or greater than 9.0 is also on the PATH such that its C++17 library can be used.  Or use the -cxxlib switch to point to a newer GCC install."
+      "Compiler detected is icpc.\n  Ensure a GCC version equal or greater than 9.0 is also on the PATH "
+       "such that its C++17 library can be used. Check with 'icpc -v'. Or use the -cxxlib compiler option "
+       "(added to CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   endif()
   message("  Output of test compile is in ${COMPILE_FAIL_OUTPUT}")

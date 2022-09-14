@@ -1,6 +1,6 @@
 # Check compiler version
 if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
-  message(FATAL_ERROR "Requires gcc 9.0 or higher ")
+  message(FATAL_ERROR "Requires GCC 9.0 or higher ")
 endif()
 
 # Enable OpenMP
