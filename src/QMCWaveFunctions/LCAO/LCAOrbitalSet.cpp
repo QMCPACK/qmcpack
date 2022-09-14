@@ -133,6 +133,20 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
   std::copy_n(temp.data(4), output_size, d2psi.data());
 }
 
+inline void LCAOrbitalSet::evaluate_vgl_impl2(const vgl_type& temp, const size_t iw, OffloadMWVGLArray& psi_vgl_v) const
+{
+  const size_t output_size = psi_vgl_v.size(2);
+  std::copy_n(temp.data(0), output_size, psi_vgl_v.data_at(0, iw, 0));
+  for (size_t idim = 0; idim < DIM; idim++)
+  {
+    ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
+    for (size_t iorb = 0; iorb < output_size; iorb++)
+      phi_g[iorb] = temp.data(idim + 1)[iorb];
+  }
+  std::copy_n(Temp.data(4), output_size, psi.data_at(4, iw, 0));
+}
+
+
 inline void LCAOrbitalSet::evaluate_vgh_impl(const vgh_type& temp,
                                              ValueVector& psi,
                                              GradVector& dpsi,
