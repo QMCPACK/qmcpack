@@ -98,6 +98,10 @@ function(MAYBE_SYMLINK SRC_FILE DST_FILE)
   if(QMC_SYMLINK_TEST_FILES)
     file(CREATE_LINK ${SRC_FILE} ${DST_FILE} SYMBOLIC)
   else()
+    # file(COPY ...) takes a destination directory and doesn't rename the file.
+    # cmake_path requires CMake v3.20 and file(COPY_FILE ...) requires CMake v3.21.
+    # Instead we use configure_file, which takes an input and output filename and
+    # updates files that change in the source directory or qmc_dir.
     configure_file(${SRC_FILE} ${DST_FILE} COPYONLY)
   endif()
 endfunction()
