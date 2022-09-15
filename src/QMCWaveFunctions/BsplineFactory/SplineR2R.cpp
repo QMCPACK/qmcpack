@@ -117,10 +117,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
 
   // Update the coefs
-  for (auto i = 0; i < coefs_tot_size; i++)
-  {
-    *(spl_coefs + i) = new_coefs[i];
-  }
+  std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
 
   /*
     // Here is my attempt to use gemm but it doesn't work...
