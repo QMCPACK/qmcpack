@@ -1537,9 +1537,9 @@ void QMCFixedSampleLinearOptimize::start()
     Timer t2;
     optTarget->getConfigurations(h5FileRoot);
     optTarget->setRng(vmcEngine->getRngRefs());
-    NullEngineHandle handle;
 
     // Compute wfn parameter derivatives
+    NullEngineHandle handle;
     optTarget->checkConfigurations(handle);
 
     // check recomputed variance against VMC

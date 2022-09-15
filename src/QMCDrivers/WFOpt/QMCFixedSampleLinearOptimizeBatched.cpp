@@ -428,7 +428,7 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
       {
-        ScopedTimer local(generate_samples_timer_);
+        ScopedTimer local(eigenvalue_timer_);
         getLowestEigenvector(Right, currentParameterDirections);
         objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
       }
@@ -1673,7 +1673,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
   RealType lowestEV = 0.;
   {
-    ScopedTimer local(generate_samples_timer_);
+    ScopedTimer local(eigenvalue_timer_);
     lowestEV = getLowestEigenvector(prdMat, parameterDirections);
   }
 
