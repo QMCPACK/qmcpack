@@ -94,11 +94,11 @@ function(COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR ${ARGN})
 endfunction()
 
 # Symlink or copy an individual file
-function(MAYBE_SYMLINK SRC_DIR DST_DIR)
+function(MAYBE_SYMLINK SRC_FILE DST_FILE)
   if(QMC_SYMLINK_TEST_FILES)
-    file(CREATE_LINK ${SRC_DIR} ${DST_DIR} SYMBOLIC)
+    file(CREATE_LINK ${SRC_FILE} ${DST_FILE} SYMBOLIC)
   else()
-    configure_file(${SRC_DIR} ${DST_DIR} COPYONLY)
+    configure_file(${SRC_FILE} ${DST_FILE} COPYONLY)
   endif()
 endfunction()
 
