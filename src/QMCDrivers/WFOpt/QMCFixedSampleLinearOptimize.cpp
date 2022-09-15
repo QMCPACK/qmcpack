@@ -94,12 +94,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       param_tol(1e-4),
       generate_samples_timer_(*timer_manager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      derivative_timer_(
-          *timer_manager.createTimer("QMCLinearOptimize::optTarget->checkConfigurations()", timer_level_medium)),
-      buildmat_timer_(*timer_manager.createTimer("QMCLinearOptimize::optTarget->fillOverlapHamiltonianMatrices()",
-                                                 timer_level_medium)),
+      buildmat_timer_(
+          *timer_manager.createTimer("QMCLinearOptimize::fillOverlapHamiltonianMatrices()", timer_level_medium)),
       eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
-      invert_matrix_timer_(*timer_manager.createTimer("QMCLinearOptimize::invert_matrix", timer_level_medium)),
+      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimize::CostFunction", timer_level_medium))
 {
@@ -308,7 +306,10 @@ bool QMCFixedSampleLinearOptimize::run()
     if (apply_inverse)
     {
       Matrix<RealType> RightT(Left);
-      invert_matrix(RightT, false);
+      {
+        ScopedTimer local(involvmat_timer_);
+        invert_matrix(RightT, false);
+      }
       Left = 0;
       product(RightT, Right, Left);
       //       Now the left matrix is the Hamiltonian with the inverse of the overlap applied ot it.
@@ -344,10 +345,12 @@ bool QMCFixedSampleLinearOptimize::run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      eigenvalue_timer_.start();
-      getLowestEigenvector(Right, currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
-      eigenvalue_timer_.stop();
+
+      {
+        ScopedTimer local(eigenvalue_timer_);
+        getLowestEigenvector(Right, currentParameterDirections);
+        Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+      }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -1299,9 +1302,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  buildmat_timer_.start();
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
-  buildmat_timer_.stop();
+  {
+    ScopedTimer local(buildmat_timer_);
+    optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
+  }
   invMat.copy(ovlMat);
 
   if (do_output_matrices_)
@@ -1319,9 +1323,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   }
 
   // compute the inverse of the overlap matrix
-  invert_matrix_timer_.start();
-  invert_matrix(invMat, false);
-  invert_matrix_timer_.stop();
+  {
+    ScopedTimer local(involvmat_timer_);
+    invert_matrix(invMat, false);
+  }
 
   // apply the overlap shift
   for (int i = 1; i < N; i++)
@@ -1337,9 +1342,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  eigenvalue_timer_.start();
-  getLowestEigenvector(prdMat, parameterDirections);
-  eigenvalue_timer_.stop();
+  {
+    ScopedTimer local(eigenvalue_timer_);
+    getLowestEigenvector(prdMat, parameterDirections);
+  }
 
   // compute the scaling constant to apply to the update
   Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
@@ -1534,9 +1540,7 @@ void QMCFixedSampleLinearOptimize::start()
     NullEngineHandle handle;
 
     // Compute wfn parameter derivatives
-    derivative_timer_.start();
     optTarget->checkConfigurations(handle);
-    derivative_timer_.stop();
 
     // check recomputed variance against VMC
     auto sigma2_vmc   = vmcEngine->getBranchEngine()->vParam[SimpleFixedNodeBranch::SBVP::SIGMA2];

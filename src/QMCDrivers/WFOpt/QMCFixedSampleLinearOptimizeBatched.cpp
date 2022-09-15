@@ -89,14 +89,8 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
       generate_samples_timer_(
           *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
-      derivative_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::optTarget->checkConfigurations()", timer_level_medium)),
-      buildmat_timer_(
-          *timer_manager.createTimer("QMCLinearOptimizeBatched::optTarget->fillOverlapHamiltonianMatrices()",
-                                     timer_level_medium)),
-
       eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
-      invert_matrix_timer_(*timer_manager.createTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
+      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
@@ -212,9 +206,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
   //get configuration from the previous run
   Timer t1;
   initialize_timer_.start();
-  derivative_timer_.start();
   optTarget->getConfigurations("");
-  derivative_timer_.stop();
   optTarget->setRng(vmcEngine->getRngRefs());
   NullEngineHandle handle;
   optTarget->checkConfigurations(handle);
@@ -435,10 +427,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      eigenvalue_timer_.start();
-      getLowestEigenvector(Right, currentParameterDirections);
-      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
-      eigenvalue_timer_.stop();
+      {
+        ScopedTimer local(generate_samples_timer_);
+        getLowestEigenvector(Right, currentParameterDirections);
+        objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+      }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -1630,9 +1623,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  buildmat_timer_.start();
   optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
-  buildmat_timer_.stop();
   invMat.copy(ovlMat);
 
   if (do_output_matrices_csv_)
@@ -1661,9 +1652,10 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   }
 
   // compute the inverse of the overlap matrix
-  invert_matrix_timer_.start();
-  invert_matrix(invMat, false);
-  invert_matrix_timer_.stop();
+  {
+    ScopedTimer local(involvmat_timer_);
+    invert_matrix(invMat, false);
+  }
 
   // apply the overlap shift
   for (int i = 1; i < N; i++)
@@ -1679,9 +1671,11 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  eigenvalue_timer_.start();
-  RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
-  eigenvalue_timer_.stop();
+  RealType lowestEV = 0.;
+  {
+    ScopedTimer local(generate_samples_timer_);
+    lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  }
 
   // compute the scaling constant to apply to the update
   objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);
