@@ -263,7 +263,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-MPI-CUDA-AFQMC"*)
+      *"GCC9-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -278,7 +278,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-NoMPI-Legacy-CUDA"*)
+      *"GCC9-NoMPI-Legacy-CUDA"*)
         echo 'Configure for building with Legacy CUDA'
         cmake -GNinja \
               -DQMC_CUDA=1 \
@@ -289,7 +289,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-NoMPI-MKL-"*)
+      *"GCC9-NoMPI-MKL-"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel2020/mkl/bin/mklvars.sh intel64
