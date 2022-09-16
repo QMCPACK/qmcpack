@@ -864,6 +864,15 @@ class Convert4qmc(Simulation):
         output = open(os.path.join(self.locdir,self.outfile),'r').read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
 
+        orbs = self.input.orbitals
+        if orbs is not None and orbs.endswith('.h5'):
+            cwd = os.getcwd()
+            os.chdir(self.locdir)
+            orbfile = self.get_prefix()+'.orbs.h5'
+            os.system('ln -s {} {}'.format(orbs,orbfile))
+            os.chdir(cwd)
+        #end if
+
         success = 'QMCGaussianParserBase::dump' in output
         for filename in self.list_output_files():
             success &= os.path.exists(os.path.join(self.locdir,filename))
