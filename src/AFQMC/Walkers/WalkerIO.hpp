@@ -378,10 +378,10 @@ bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
       int NMO, NAEA, NAEB = 0;
       { // to limit the scope
         auto w = wset[0];
-        NMO    = (*w.SlaterMatrix(Alpha)).size(0);
-        NAEA   = (*w.SlaterMatrix(Alpha)).size(1);
+        NMO    = std::get<0>((*w.SlaterMatrix(Alpha)).sizes());
+        NAEA   = std::get<1>((*w.SlaterMatrix(Alpha)).sizes());
         if (walker_type == COLLINEAR)
-          NAEB = (*w.SlaterMatrix(Beta)).size(1);
+          NAEB = std::get<1>((*w.SlaterMatrix(Beta)).sizes());
         if (walker_type == NONCOLLINEAR)
           NMO /= 2;
       }

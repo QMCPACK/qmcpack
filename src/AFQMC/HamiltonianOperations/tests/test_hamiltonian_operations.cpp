@@ -235,7 +235,7 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     TG.local_barrier();
     ComplexType Xsum = 0, Xsum2 = 0;
-    for (int i = 0; i < X.size(0); i++)
+    for (int i = 0; i < X.size(); i++)
     {
       Xsum += X[i][0];
       Xsum2 += ComplexType(0.5) * X[i][0] * X[i][0];
@@ -260,12 +260,12 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     ComplexType Vsum = 0;
     if (HOps.transposed_vHS())
     {
-      for (int i = 0; i < vHS.size(1); i++)
+      for (int i = 0; i < std::get<1>(vHS.sizes()); i++)
         Vsum += vHS[0][i];
     }
     else
     {
-      for (int i = 0; i < vHS.size(0); i++)
+      for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
         Vsum += vHS[i][0];
     }
     if (std::abs(file_data.Vsum) > 1e-8)

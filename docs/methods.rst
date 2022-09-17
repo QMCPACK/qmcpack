@@ -1274,7 +1274,7 @@ Parameter gradients
 ~~~~~~~~~~~~~~~~~~~
 The gradients of the energy with respect to the variational parameters can be checked and optionally written to a file.
 The check compares the analytic derivatives with a finite difference approximation.
-These are activated by giving a ``gradient_test`` method in and ``optimize`` block, as follows:
+These are activated by giving a ``gradient_test`` method in an ``optimize`` block, as follows:
 
 ::
 
@@ -1294,6 +1294,8 @@ It contains one line per loop iteration, to allow using existing tools to comput
   +=======================+==============+=============+=============+============================================+
   | ``output_param_file`` | text         | yes, no     | no          |  Output parameter gradients to a file      |
   +-----------------------+--------------+-------------+-------------+--------------------------------------------+
+  | ``finite_diff_delta`` | double       | :math:`> 0` | 1e-5        |  Finite difference delta                   |
+  +-----------------------+--------------+-------------+-------------+--------------------------------------------+
 
 The input would look like the following:
 
@@ -1305,6 +1307,21 @@ The input would look like the following:
       </optimize>
       ... rest of optimizer input ...
 
+
+The output has columns for the parameter name, value, analytic gradient, numeric gradient, and relative difference (in percent). Following the relative difference, there may be exclamation marks which highlight large differences that likely indicate a problem.
+
+Sample output looks like:
+
+::
+
+ Param_Name                         Value             Numeric            Analytic        Percent
+ updet_orb_rot_0000_0002      0.000000e+00   -1.8622037512e-02    4.6904958207e-02      3.52e+02 !!!
+ updet_orb_rot_0001_0002      0.000000e+00    1.6733860519e-03    3.9023863136e-03     -1.33e+02 !!!
+ downdet_orb_rot_0000_0002    0.000000e+00   -9.3267917833e-03   -8.0747281231e-03      1.34e+01 !!!
+ downdet_orb_rot_0001_0002    0.000000e+00   -4.3276838557e-03    2.6684235669e-02      7.17e+02 !!!
+ uu_0                         0.000000e+00   -1.2724910770e-02   -1.2724906671e-02      3.22e-05
+ uu_1                         0.000000e+00    2.0305884219e-02    2.0305883999e-02      1.08e-06
+ uu_2                         0.000000e+00   -1.1644597731e-03   -1.1644591818e-03      5.08e-05
 
 
 Output of intermediate values

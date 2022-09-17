@@ -65,10 +65,10 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
     assert(PsiT.size() % 2 == 0);
   int nspins = ((type != COLLINEAR) ? 1 : 2);
   int ndet   = PsiT.size() / nspins;
-  int nup    = PsiT[0].size(0);
+  int nup    = std::get<0>(PsiT[0].sizes());
   int ndown  = 0;
   if (nspins == 2)
-    ndown = PsiT[1].size(0);
+    ndown = std::get<0>(PsiT[1].sizes());
   int NEL = nup + ndown;
 
   // distribute work over equivalent nodes in TGprop.TG() across TG.Global()
@@ -186,11 +186,11 @@ HamiltonianOperations RealDenseHamiltonian::getHamiltonianOperations(bool pureSD
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n";
       APP_ABORT("");
     }
-    if (Likn.size(0) != NMO * NMO || Likn.size(1) != local_ncv)
+    if (std::get<0>(Likn.sizes()) != NMO * NMO || std::get<1>(Likn.sizes()) != local_ncv)
     {
       app_error() << " Error in RealDenseHamiltonian::getHamiltonianOperations():"
                   << " Problems reading /Hamiltonian/DenseFactorized/L. \n"
-                  << " Unexpected dimensions: " << Likn.size(0) << " " << Likn.size(1) << std::endl;
+                  << " Unexpected dimensions: " << std::get<0>(Likn.sizes()) << " " << std::get<1>(Likn.sizes()) << std::endl;
       APP_ABORT("");
     }
     dump.pop();

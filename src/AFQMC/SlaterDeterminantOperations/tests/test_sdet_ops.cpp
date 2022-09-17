@@ -62,10 +62,10 @@ void myREQUIRE(const std::complex<double>& a, const std::complex<double>& b)
 template<class M1, class M2>
 void check(M1&& A, M2& B)
 {
-  REQUIRE(A.size(0) == B.size(0));
-  REQUIRE(A.size(1) == B.size(1));
-  for (int i = 0; i < A.size(0); i++)
-    for (int j = 0; j < A.size(1); j++)
+  REQUIRE(std::get<0>(A.sizes()) == std::get<0>(B.sizes()));
+  REQUIRE(std::get<1>(A.sizes()) == std::get<1>(B.sizes()));
+  for (int i = 0; i < std::get<0>(A.sizes()); i++)
+    for (int j = 0; j < std::get<1>(A.sizes()); j++)
       myREQUIRE(A[i][j], B[i][j]);
 }
 
@@ -663,12 +663,12 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   array A({NEL, NMO});
   array B({NMO, NEL});
 
-  for (int i = 0, k = 0; i < A.size(0); i++)
-    for (int j = 0; j < A.size(1); j++, k++)
+  for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
+    for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
       A[i][j] = m_a[k];
 
-  for (int i = 0, k = 0; i < B.size(0); i++)
-    for (int j = 0; j < B.size(1); j++, k++)
+  for (int i = 0, k = 0; i < std::get<0>(B.sizes()); i++)
+    for (int j = 0; j < std::get<1>(B.sizes()); j++, k++)
       B[i][j] = m_b[k];
 
   array_ref Aref(m_a.data(), {NEL, NMO});
@@ -836,12 +836,12 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   array A({NMO, NEL}); // Will be transposed when Acsr is built
   array B({NMO, NEL});
 
-  for (int i = 0, k = 0; i < A.size(0); i++)
-    for (int j = 0; j < A.size(1); j++, k++)
+  for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
+    for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
       A[i][j] = m_a[k];
 
-  for (int i = 0, k = 0; i < B.size(0); i++)
-    for (int j = 0; j < B.size(1); j++, k++)
+  for (int i = 0, k = 0; i < std::get<0>(B.sizes()); i++)
+    for (int j = 0; j < std::get<1>(B.sizes()); j++, k++)
       B[i][j] = m_b[k];
 
   boost::multi::array_ref<Type, 2> Bref(m_b.data(), {NMO, NEL});

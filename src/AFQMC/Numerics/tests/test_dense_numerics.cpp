@@ -321,11 +321,11 @@ void test_dense_matrix_mult()
     array<std::complex<double>, 2> A({3, 3});
     array<std::complex<double>, 2> B({3, 3});
 
-    for (int i = 0, k = 0; i < A.size(0); i++)
-      for (int j = 0; j < A.size(1); j++, k++)
+    for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
+      for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
         A[i][j] = m_a[k];
-    for (int i = 0, k = 0; i < A.size(0); i++)
-      for (int j = 0; j < A.size(1); j++, k++)
+    for (int i = 0, k = 0; i < std::get<0>(A.sizes()); i++)
+      for (int j = 0; j < std::get<1>(A.sizes()); j++, k++)
         B[i][j] = m_b[k];
 
     array<std::complex<double>, 2> C = ma::exp(A);

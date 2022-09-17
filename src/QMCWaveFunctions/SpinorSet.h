@@ -167,7 +167,22 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
+  void createResource(ResourceCollection& collection) const override;
+
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<SPOSet>& spo_list) const override;
+
+  /// check if the multi walker resource is owned. For testing only.
+  bool isResourceOwned() const { return bool(mw_res_); }
+
 private:
+  struct SpinorSetMultiWalkerResource;
+  std::unique_ptr<SpinorSetMultiWalkerResource> mw_res_;
+
+  std::pair<RefVectorWithLeader<SPOSet>, RefVectorWithLeader<SPOSet>> extractSpinComponentRefList(
+      const RefVectorWithLeader<SPOSet>& spo_list) const;
+
   //Sposet for the up and down channels of our spinors.
   std::unique_ptr<SPOSet> spo_up;
   std::unique_ptr<SPOSet> spo_dn;

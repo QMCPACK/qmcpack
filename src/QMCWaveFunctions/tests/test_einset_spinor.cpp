@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
+#include "QMCWaveFunctions/SpinorSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -476,6 +477,16 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  //test resource APIs
+  //First resource is created, and then passed to the collection so it should be null
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
+  SpinorSet& spinor = spo_list.getCastedLeader<SpinorSet>();
+  REQUIRE(!spinor.isResourceOwned());
+  //team lock calls the acquireResource, so now the leader's resource shouldn't be null
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+  REQUIRE(spinor.isResourceOwned());
 
   SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
