@@ -4,12 +4,18 @@ set(TEST_CXX17_SOURCE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/try_c
 file(
   WRITE ${TEST_CXX17_SOURCE}
   "// Test for C++17 standard library support
-#include <variant>
-#include <string>
+#include <array>
+#include <cstddef>
+#include <memory_resource>
 
 int main(int argc, char **argv)
 {
-    std::variant<int, float, std::string> intFloatString;
+    // allocate memory on the stack
+    std::array<std::byte, 20000> buf;
+
+    // without fallback memory allocation on heap
+    std::pmr::monotonic_buffer_resource pool{ buf.data(), buf.size(),
+                                              std::pmr::null_memory_resource() };
     return 0;
 }
 ")
@@ -28,17 +34,21 @@ if(NOT CXX17_LIBRARY_OKAY)
   set(COMPILE_FAIL_OUTPUT cpp17_compile_fail.txt)
   file(WRITE "${CMAKE_BINARY_DIR}/${COMPILE_FAIL_OUTPUT}" "${COMPILE_OUTPUT}")
 
-  message(STATUS "C++17 standard library support not found")
+  message(STATUS "C++17 standard library support not found or incomplete")
   message("compiler is ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    message("Compiler detected is g++.\n  Use version 7.0 or newer for C++17 standard library support.")
+    message("Compiler detected is g++.\n  Use version 9.0 or newer for complete C++17 standard library support.")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(
-      "Compiler detected is clang++.\n  If not using libcxx, ensure a g++ version greater than 7.0 is also on the path so that its C++17 library can be used."
+      "Compiler detected is clang++.\n  If not using libcxx, ensure a GCC toolchain version equal or greater "
+      "than 9.0 gets picked up. Check with 'clang++ -v'. Or use the --gcc-toolchain compiler option "
+      "(added to CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     message(
-      "Compiler detected is icpc.\n  Ensure a gcc version greater than 7.0 is also on the path so that its C++17 library can be used.  Or use the -cxxlib switch to point to a newer gcc install."
+      "Compiler detected is icpc.\n  Ensure a GCC version equal or greater than 9.0 is also on the PATH "
+       "such that its C++17 library can be used. Check with 'icpc -v'. Or use the -cxxlib compiler option "
+       "(added to CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   endif()
   message("  Output of test compile is in ${COMPILE_FAIL_OUTPUT}")
