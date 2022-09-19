@@ -88,7 +88,7 @@ private:
   Forces sw_grad_;
 
   bool useSpaceWarp_;
-
+  bool fastDerivatives_;
   ///The space warp transformation class.
   SpaceWarpTransformation swt_;
 };

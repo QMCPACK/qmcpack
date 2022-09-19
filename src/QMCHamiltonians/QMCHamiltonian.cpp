@@ -1132,6 +1132,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   {
     psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
   }
+  P.update();
   //resize everything;
   int ngroups = psi_wrapper_.numGroups();
 
@@ -1235,11 +1236,18 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     }
   }
 
+  app_log()<<"B[0] = "<<B_[0]<<std::endl;
+  app_log()<<"B[1] = "<<B_[1]<<std::endl;
+  app_log()<<"M[0] = "<<M_[0]<<std::endl;
+  app_log()<<"M[1] = "<<M_[1]<<std::endl;
+  app_log()<<"Minv[0] = "<<Minv_[0]<<std::endl;
+  app_log()<<"Minv[1] = "<<Minv_[1]<<std::endl;
   ValueType nondiag_cont   = 0.0;
   RealType nondiag_cont_re = 0.0;
 
   psi_wrapper_.getGSMatrices(B_, B_gs_);
   nondiag_cont = psi_wrapper_.trAB(Minv_, B_gs_);
+  app_log()<<"Tr(AB) = "<<nondiag_cont<<std::endl;
   convertToReal(nondiag_cont, nondiag_cont_re);
   localEnergy += nondiag_cont_re;
 
@@ -1289,7 +1297,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     convertToReal(dedr_complex[iat], dEdR[iat]);
     convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
-  dEdR += hfdiag_;
+  dEdR += hfdiag_; 
   return localEnergy;
 }
 } // namespace qmcplusplus

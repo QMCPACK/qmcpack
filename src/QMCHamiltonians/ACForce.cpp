@@ -26,6 +26,7 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       ham_(H),
       first_force_index_(-1),
       useSpaceWarp_(false),
+      fastDerivatives_(false),
       swt_(target, source)
 {
   setName("ACForce");
@@ -54,14 +55,17 @@ bool ACForce::put(xmlNodePtr cur)
 {
   std::string useSpaceWarpString("no");
   std::string ionionforce("yes");
+  std::string fasteval("no");
   RealType swpow(4);
   OhmmsAttributeSet attr;
   attr.add(useSpaceWarpString, "spacewarp"); //"yes" or "no"
   attr.add(swpow, "swpow");                  //Real number"
   attr.add(delta_, "delta");                 //Real number"
+  attr.add(fasteval,"fast_derivatives");
   attr.put(cur);
 
   useSpaceWarp_ = (useSpaceWarpString == "yes") || (useSpaceWarpString == "true");
+  fastDerivatives_ = (fasteval == "yes") || (fasteval == "true");
   swt_.setPow(swpow);
 
   if (useSpaceWarp_)
@@ -92,7 +96,10 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_grad_     = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  value_ = ham_.evaluateIonDerivs(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
+  if(fastDerivatives_)
+    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_, hf_force_, wf_grad_);
+  else
+    value_ = ham_.evaluateIonDerivsDeterministic(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
 
   if (useSpaceWarp_)
   {
@@ -103,6 +110,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
     ham_.evaluateElecGrad(P, psi_, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
+  app_log()<<" VALUE="<<value_<<std::endl;
   return 0.0;
 };
 
