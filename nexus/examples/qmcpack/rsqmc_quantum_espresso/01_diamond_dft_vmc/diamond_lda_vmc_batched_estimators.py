@@ -3,6 +3,8 @@
 '''
 This example is similar to diamond_lda_vmc.py (legacy drivers) 
 but for the batched drivers.
+
+This example includes currently supported estimators.
 '''
 
 from nexus import settings,job,run_project
@@ -10,6 +12,7 @@ from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack
+from qmcpack_input import spindensity,momentumdistribution,onebodydensitymatrices,sposet
 
 settings(
     pseudo_dir = '../../pseudopotentials',
@@ -37,11 +40,12 @@ system = generate_physical_system(
 
 scf = generate_pwscf(
     identifier   = 'scf',
-    path         = 'diamond/scf',
+    path         = 'diamond_est/scf',
     job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'scf',
     input_dft    = 'lda', 
+    nbnd         = 8,      # needed for density matrix
     ecutwfc      = 200,   
     conv_thr     = 1e-8, 
     system       = system,
@@ -52,7 +56,7 @@ scf = generate_pwscf(
 
 nscf = generate_pwscf(
     identifier   = 'nscf',
-    path         = 'diamond/nscf',
+    path         = 'diamond_est/nscf',
     job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'nscf',
@@ -67,7 +71,7 @@ nscf = generate_pwscf(
 
 conv = generate_pw2qmcpack(
     identifier   = 'conv',
-    path         = 'diamond/nscf',
+    path         = 'diamond_est/nscf',
     job          = job(cores=16,app='pw2qmcpack.x'),
     write_psir   = False,
     dependencies = (nscf,'orbitals'),
@@ -75,7 +79,7 @@ conv = generate_pw2qmcpack(
 
 opt = generate_qmcpack(
     identifier   = 'opt',
-    path         = 'diamond/optJ2_batched',
+    path         = 'diamond_est/optJ2_batched',
     job          = job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = system,
@@ -88,9 +92,22 @@ opt = generate_qmcpack(
     dependencies = (conv,'orbitals'),
     )
 
+estimators = [
+    spindensity(grid=(8,8,8)),
+    momentumdistribution(samples=20,kmax=4),
+    #onebodydensitymatrices(
+    #    basis         = sposet(type='bspline',size=32),
+    #    reuse         = True,
+    #    integrator    = 'uniform_grid',
+    #    points        = 6,
+    #    center        = (0,0,0),
+    #    check_overlap = False,
+    #    ),
+    ]
+
 qmc = generate_qmcpack(
     identifier       = 'vmc',
-    path             = 'diamond/vmc_batched',
+    path             = 'diamond_est/vmc_batched',
     job              = job(cores=16,threads=4,app='qmcpack'),
     input_type       = 'basic',
     system           = system,
@@ -99,6 +116,7 @@ qmc = generate_qmcpack(
     qmc              = 'vmc',
     driver           = 'batched',
     walkers_per_rank = 4,  # specify this way to get 1 walker per thread
+    estimators       = estimators,
     dependencies     = [(conv,'orbitals'),
                         (opt,'jastrow')],
     )
