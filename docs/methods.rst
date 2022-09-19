@@ -545,14 +545,14 @@ The cost function consists of three components: energy, unreweighted variance, a
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
 
-Varational parameter selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The predominant way of selecting varational paramemters is via ``<wavefunction>`` input.
+Variational parameter selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The predominant way of selecting variational parameters is via ``<wavefunction>`` input.
 ``<coefficients>`` entries support ``optimize="yes"/"no"`` to enable/disable variational parameters in the wavefunction optimization.
-The secondary way of selecting varational paramemters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
+The secondary way of selecting variational parameters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
 It allows controlling optimization granularity at each optimization step.
-If ``variational_subset`` is not provided or empty, all the varational paramemters are selected.
-If variational paramemters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
+If ``variational_subset`` is not provided or empty, all the variational parameters are selected.
+If variational parameters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
 
 The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
 
@@ -569,6 +569,28 @@ The following example shows optimizing subsets of parameters in stages in a sing
       ...
       <parameter name="variational_subset"> uu ud eH CI </parameter>
     </qmc>
+
+Variational parameter storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After each optimization step the new wavefunction is stored in a file with an ``.opt.xml`` suffix.
+This new wavefunction includes the updated variational parameters.
+
+Writing a new XML wavefunction becomes more complicated if parameters are stored elsewhere (e.g. multideterminant coefficients in an HDF file) and has problems scaling with the number of parameters.
+To address these issues the variational parameters are now written to an HDF file.
+The new "VP file" has the suffix ``.vp.h5`` and is written in conjunction with the ``.opt.xml`` file.
+
+The wavefunction file connects to the VP file with a tag (``override_variational_parameters``) in the ``.opt.xml`` file that points to the ``.vp.h5`` file.
+Should it be necessary to recover the previous behavior without the VP file, this tag can be be turned off with an ``output_vp_override`` parameter in the optimizer input block:
+``<parameter name="output_vp_override">no</parameter>``
+
+Both schemes for storing variational parameters coexist.  Two important points about the VP file:
+
+  * The values of the variational parameters in the VP file take precedence over the values in the XML wavefunction.
+  * When copying an optimized wavefunction, the ``.vp.h5`` file needs to be copied as well.
+
+For users that want to inspect or modify the VP file,
+the He_param test (in ``tests/molecules/He_param``) contains a python script (``convert_vp_format.py``) to read and write the VP file. The script converts to and from a simple text representation of the parameters.
+
 
 Optimizers
 ~~~~~~~~~~
@@ -1252,7 +1274,7 @@ Parameter gradients
 ~~~~~~~~~~~~~~~~~~~
 The gradients of the energy with respect to the variational parameters can be checked and optionally written to a file.
 The check compares the analytic derivatives with a finite difference approximation.
-These are activated by giving a ``gradient_test`` method in and ``optimize`` block, as follows:
+These are activated by giving a ``gradient_test`` method in an ``optimize`` block, as follows:
 
 ::
 
@@ -1272,6 +1294,8 @@ It contains one line per loop iteration, to allow using existing tools to comput
   +=======================+==============+=============+=============+============================================+
   | ``output_param_file`` | text         | yes, no     | no          |  Output parameter gradients to a file      |
   +-----------------------+--------------+-------------+-------------+--------------------------------------------+
+  | ``finite_diff_delta`` | double       | :math:`> 0` | 1e-5        |  Finite difference delta                   |
+  +-----------------------+--------------+-------------+-------------+--------------------------------------------+
 
 The input would look like the following:
 
@@ -1283,6 +1307,21 @@ The input would look like the following:
       </optimize>
       ... rest of optimizer input ...
 
+
+The output has columns for the parameter name, value, analytic gradient, numeric gradient, and relative difference (in percent). Following the relative difference, there may be exclamation marks which highlight large differences that likely indicate a problem.
+
+Sample output looks like:
+
+::
+
+ Param_Name                         Value             Numeric            Analytic        Percent
+ updet_orb_rot_0000_0002      0.000000e+00   -1.8622037512e-02    4.6904958207e-02      3.52e+02 !!!
+ updet_orb_rot_0001_0002      0.000000e+00    1.6733860519e-03    3.9023863136e-03     -1.33e+02 !!!
+ downdet_orb_rot_0000_0002    0.000000e+00   -9.3267917833e-03   -8.0747281231e-03      1.34e+01 !!!
+ downdet_orb_rot_0001_0002    0.000000e+00   -4.3276838557e-03    2.6684235669e-02      7.17e+02 !!!
+ uu_0                         0.000000e+00   -1.2724910770e-02   -1.2724906671e-02      3.22e-05
+ uu_1                         0.000000e+00    2.0305884219e-02    2.0305883999e-02      1.08e-06
+ uu_2                         0.000000e+00   -1.1644597731e-03   -1.1644591818e-03      5.08e-05
 
 
 Output of intermediate values

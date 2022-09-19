@@ -244,7 +244,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     auto itT = Tuv.origin();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
-    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(Tuv.size(1)), NMO});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(std::get<1>(Tuv.sizes())), NMO});
     ma::product(T(Tuv), H(Piu__), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu__({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 
@@ -295,7 +295,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
     auto itT = Tuv.origin();
     for (size_t i = 0; i < Muv.num_elements(); ++i, ++itT, ++itM)
       *(itT) = ma::conj(*itT) * (*itM);
-    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(Tuv.size(1)), NMO});
+    boost::multi::array<SPValueType, 2> T_({static_cast<boost::multi::size_t>(std::get<1>(Tuv.sizes())), NMO});
     ma::product(T(Tuv), H(Piu), T_);
     ma::product(SPValueType(-0.5), T(T_), T(Piu({0, long(NMO)}, {long(c0), long(cN)})), SPValueType(0.0), v0_);
 

@@ -241,11 +241,11 @@ public:
     using std::copy_n;
     using std::fill_n;
     // assumes G[nwalk][spin][M][M]
-    int nw(G.size(0));
-    assert(G.size(0) == wgt.size(0));
-    assert(wgt.size(0) == nw);
-    assert(Xw.size(0) == nw);
-    assert(ovlp.size(0) >= nw);
+    int nw(G.size());
+    assert(G.size() == wgt.size());
+    assert(wgt.size() == nw);
+    assert(Xw.size() == nw);
+    assert(ovlp.size() >= nw);
     assert(G.num_elements() == G_host.num_elements());
     assert(G.extensions() == G_host.extensions());
 
@@ -258,27 +258,27 @@ public:
     // check structure dimensions
     if (iref == 0)
     {
-      if (denom.size(0) != nw)
+      if (denom.size() != nw)
       {
         denom = mpi3CVector(iextensions<1u>{nw}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork1D.size(0) != nw || DMWork1D.size(1) != 3 || DMWork1D.size(2) != nsites)
+      if (std::get<0>(DMWork1D.sizes()) != nw || std::get<1>(DMWork1D.sizes()) != 3 || std::get<2>(DMWork1D.sizes()) != nsites)
       {
         DMWork1D = mpi3CTensor({nw, 3, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (DMWork2D.size(0) != nw || DMWork2D.size(1) != 3 || DMWork2D.size(2) != ns2)
+      if (std::get<0>(DMWork2D.sizes()) != nw || std::get<1>(DMWork2D.sizes()) != 3 || std::get<2>(DMWork2D.sizes()) != ns2)
       {
         DMWork2D = mpi3CTensor({nw, 3, ns2}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (NwIJ.size(0) != nsp || NwIJ.size(1) != nw || NwIJ.size(2) != nsites || NwIJ.size(3) != nsites)
+      if (std::get<0>(NwIJ.sizes()) != nsp || std::get<1>(NwIJ.sizes()) != nw || std::get<2>(NwIJ.sizes()) != nsites || std::get<3>(NwIJ.sizes()) != nsites)
       {
         NwIJ = mpi3C4Tensor({nsp, nw, nsites, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (NwI.size(0) != nsp || NwI.size(1) != nw || NwI.size(2) != nsites)
+      if (std::get<0>(NwI.sizes()) != nsp || std::get<1>(NwI.sizes()) != nw || std::get<2>(NwI.sizes()) != nsites)
       {
         NwI = mpi3CTensor({nsp, nw, nsites}, shared_allocator<ComplexType>{TG.TG_local()});
       }
-      if (shapes.size(0) < 2 * nw * nsites * nsites)
+      if (shapes.size() < 2 * nw * nsites * nsites)
         shapes = IVector(iextensions<1u>{2 * nw * nsites * nsites}, IAllocator{});
       fill_n(denom.origin(), denom.num_elements(), ComplexType(0.0, 0.0));
       fill_n(DMWork1D.origin(), DMWork1D.num_elements(), ComplexType(0.0, 0.0));
@@ -286,12 +286,12 @@ public:
     }
     else
     {
-      if (denom.size(0) != nw || DMWork1D.size(0) != nw || DMWork1D.size(1) != 3 || DMWork1D.size(2) != nsites ||
-          DMWork2D.size(0) != nw || DMWork2D.size(1) != 3 || DMWork2D.size(2) != ns2 || NwI.size(0) != nsp ||
-          NwI.size(1) != nw || NwI.size(2) != nsites || NwIJ.size(0) != nsp || NwIJ.size(1) != nw ||
-          NwIJ.size(2) != nsites || NwIJ.size(3) != nsites || DMAverage1D.size(0) != nave || DMAverage1D.size(1) != 3 ||
-          DMAverage1D.size(2) != nsites || DMAverage2D.size(0) != nave || DMAverage2D.size(1) != 3 ||
-          DMAverage2D.size(2) != ns2)
+      if (std::get<0>(denom.sizes()) != nw || std::get<0>(DMWork1D.sizes()) != nw || std::get<1>(DMWork1D.sizes()) != 3 || std::get<2>(DMWork1D.sizes()) != nsites ||
+          std::get<0>(DMWork2D.sizes()) != nw || std::get<1>(DMWork2D.sizes()) != 3 || std::get<2>(DMWork2D.sizes()) != ns2 || std::get<0>(NwI.sizes()) != nsp ||
+          std::get<1>(NwI.sizes()) != nw || std::get<2>(NwI.sizes()) != nsites || std::get<0>(NwIJ.sizes()) != nsp || std::get<1>(NwIJ.sizes()) != nw ||
+          std::get<2>(NwIJ.sizes()) != nsites || std::get<3>(NwIJ.sizes()) != nsites || std::get<0>(DMAverage1D.sizes()) != nave || std::get<1>(DMAverage1D.sizes()) != 3 ||
+          std::get<2>(DMAverage1D.sizes()) != nsites || std::get<0>(DMAverage2D.sizes()) != nave || std::get<1>(DMAverage2D.sizes()) != 3 ||
+          std::get<2>(DMAverage2D.sizes()) != ns2)
         APP_ABORT(" Error: Invalid state in accumulate_reference. \n\n\n");
     }
 
@@ -484,7 +484,7 @@ public:
   template<class HostCVec>
   void accumulate_block(int iav, HostCVec&& wgt, bool impsamp)
   {
-    int nw(denom.size(0));
+    int nw(denom.size());
     TG.TG_local().barrier();
     // this is meant to be small, so serializing
     if (TG.TG_local().root())

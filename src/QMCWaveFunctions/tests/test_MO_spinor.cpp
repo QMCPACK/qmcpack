@@ -19,6 +19,7 @@
 #include "Particle/DistanceTable.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Utilities/ResourceCollection.h"
+#include "QMCWaveFunctions/SpinorSet.h"
 
 namespace qmcplusplus
 {
@@ -72,7 +73,7 @@ void test_lcao_spinor()
      <basisset transform="yes"/> 
      <sposet name="myspo" size="1"/> 
    </sposet_builder> 
-   </tmp>)XML"; 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -252,6 +253,15 @@ void test_lcao_spinor()
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  //test resource APIs
+  //First resource is created, and then passed to the colleciton so it should be null
+  ResourceCollection spo_res("test_spo_res");
+  spo->createResource(spo_res);
+  SpinorSet& spinor = spo_list.getCastedLeader<SpinorSet>();
+  REQUIRE(!spinor.isResourceOwned());
+  ResourceCollectionTeamLock<SPOSet> mw_spo_lock(spo_res, spo_list);
+  REQUIRE(spinor.isResourceOwned());
 
   SPOSet::ValueMatrix psiM_2(elec_.R.size(), spo->getOrbitalSetSize());
   SPOSet::GradMatrix dpsiM_2(elec_.R.size(), spo->getOrbitalSetSize());
@@ -724,7 +734,7 @@ void test_lcao_spinor_ion_derivs()
      <basisset transform="yes"/> 
      <sposet name="myspo" size="1"/> 
    </sposet_builder> 
-   </tmp>)XML"; 
+   </tmp>)XML";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

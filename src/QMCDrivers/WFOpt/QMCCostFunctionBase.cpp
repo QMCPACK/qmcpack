@@ -53,7 +53,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(ParticleSet& w, TrialWaveFunction& psi,
       msg_stream(0),
       m_wfPtr(NULL),
       m_doc_out(NULL),
-      debug_stream(0)
+      debug_stream(0),
+      do_override_output(true)
 {
   GEVType = "mixed";
   //paramList.resize(10);
@@ -310,7 +311,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   std::string includeNonlocalH;
   std::string writeXmlPerStep("no");
   std::string computeNLPPderiv;
-  std::string output_override_str("no");
   astring variational_subset_str;
   ParameterSet m_param;
   m_param.add(writeXmlPerStep, "dumpXML");
@@ -322,7 +322,7 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(GEVType, "GEVMethod");
   m_param.add(targetExcitedStr, "targetExcited");
   m_param.add(omega_shift, "omega");
-  m_param.add(output_override_str, "output_vp_override", {"no", "yes"});
+  m_param.add(do_override_output, "output_vp_override", {true});
   m_param.add(variational_subset_str, "variational_subset");
   m_param.put(q);
 
@@ -336,9 +336,6 @@ bool QMCCostFunctionBase::put(xmlNodePtr q)
 
   targetExcitedStr = lowerCase(targetExcitedStr);
   targetExcited    = (targetExcitedStr == "yes");
-
-  if (output_override_str == "yes")
-    do_override_output = true;
 
   variational_subset_names = convertStrToVec<std::string>(variational_subset_str.s);
 

@@ -1887,7 +1887,7 @@ class wavefunction(QIxml):
     attributes = ['name','target','id','ref']+['info','type']
     #            afqmc
     parameters = ['filetype','filename','cutoff']
-    elements   = ['sposet_builder','determinantset','jastrow']
+    elements   = ['sposet_builder','determinantset','jastrow','override_variational_parameters']
     identifier = 'name','id'
 #end class wavefunction
 
@@ -2078,6 +2078,11 @@ jastrow = QIxmlFactory(
     types   = dict(one_body=jastrow1,two_body=jastrow2,jastrow1=jastrow1,jastrow2=jastrow2,eei=jastrow3,jastrow3=jastrow3,kspace=kspace_jastrow,kspace_jastrow=kspace_jastrow,rpa=rpa_jastrow,rpa_jastrow=rpa_jastrow),
     typekey = 'type'
     )
+
+class override_variational_parameters(QIxml):
+    attributes = ['href']
+#end class override_variational_parameters
+
 
 
 class hamiltonian(QIxml):
@@ -2667,7 +2672,7 @@ classes = [   #standard classes
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
-    host,date,user,rpa_jastrow,momentum,
+    host,date,user,rpa_jastrow,momentum,override_variational_parameters,
     # afqmc classes
     afqmcinfo,walkerset,propagator,execute,back_propagation,onerdm
     ]
