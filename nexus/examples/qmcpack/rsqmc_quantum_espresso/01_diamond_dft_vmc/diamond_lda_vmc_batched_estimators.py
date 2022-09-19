@@ -95,14 +95,14 @@ opt = generate_qmcpack(
 estimators = [
     spindensity(grid=(8,8,8)),
     momentumdistribution(samples=20,kmax=4),
-    #onebodydensitymatrices(
-    #    basis         = sposet(type='bspline',size=32),
-    #    reuse         = True,
-    #    integrator    = 'uniform_grid',
-    #    points        = 6,
-    #    center        = (0,0,0),
-    #    check_overlap = False,
-    #    ),
+    onebodydensitymatrices(
+        basis         = sposet(type='bspline',size=16),
+        reuse         = True,
+        integrator    = 'uniform_grid',
+        points        = 6,
+        center        = (0,0,0),
+        check_overlap = False,
+        ),
     ]
 
 qmc = generate_qmcpack(
