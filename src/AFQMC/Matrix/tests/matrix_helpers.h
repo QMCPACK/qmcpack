@@ -17,6 +17,8 @@
 #include <complex>
 #include <type_traits>
 
+#include "multi/array.hpp"
+
 using std::complex;
 using std::string;
 
