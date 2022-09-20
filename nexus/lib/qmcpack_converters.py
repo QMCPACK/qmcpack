@@ -868,13 +868,19 @@ class Convert4qmc(Simulation):
         # Instead, the file produced directly by e.g. Pyscf is used instead.
         # Therefore, make a symlink to the previously produced file in 
         # place of the orbs.h5 file.
-        orbs = self.input.orbitals
-        if orbs is not None and orbs.endswith('.h5'):
-            cwd = os.getcwd()
-            os.chdir(self.locdir)
-            orbfile = self.get_prefix()+'.orbs.h5'
-            os.system('ln -s {} {}'.format(orbs,orbfile))
-            os.chdir(cwd)
+        orbs     = self.input.orbitals
+        finished = self.job.finished
+        h5_orbs  = orbs is not None and orbs.endswith('.h5')
+        if finished and h5_orbs:
+            orbfile     = self.get_prefix()+'.orbs.h5'
+            orbfilepath = os.path.join(self.locdir,orbfile)
+            h5_orbs_missing = not os.path.exists(orbfilepath)
+            if h5_orbs_missing:
+                cwd = os.getcwd()
+                os.chdir(self.locdir)
+                os.system('ln -s {} {}'.format(orbs,orbfile))
+                os.chdir(cwd)
+            #end if
         #end if
 
         success = 'QMCGaussianParserBase::dump' in output
