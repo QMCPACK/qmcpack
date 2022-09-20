@@ -297,13 +297,13 @@ public:
     ma::transpose(AT, A);
     scale_columns(std::get<0>(A.sizes()), std::get<1>(A.sizes()), A.origin(), A.stride(0), scl.origin());
 #else
-    int NMO = A.size(0);
+    int NMO = A.size();
     TVector TAU(iextensions<1u>{NMO}, buffer_manager.get_generator().template get_allocator<T>());
     TVector WORK(iextensions<1u>{work_size}, buffer_manager.get_generator().template get_allocator<T>());
     IVector IWORK(iextensions<1u>{NMO + 1}, buffer_manager.get_generator().template get_allocator<int>());
     ma::gelqf(std::forward<Mat>(A), TAU, WORK);
     T res(0.0);
-    for (int i = 0; i < A.size(1); i++)
+    for (int i = 0; i < std::get<1>(A.sizes()); i++)
     {
       if (real(A[i][i]) < 0)
         IWORK[i] = -1;
@@ -313,8 +313,8 @@ public:
     }
     res = std::exp(res - LogOverlapFactor);
     ma::glq(std::forward<Mat>(A), TAU, WORK);
-    for (int i = 0; i < A.size(0); ++i)
-      for (int j = 0; j < A.size(1); ++j)
+    for (int i = 0; i < std::get<0>(A.sizes()); ++i)
+      for (int j = 0; j < std::get<1>(A.sizes()); ++j)
         A[i][j] *= T(IWORK[j]);
 #endif
     return res;
