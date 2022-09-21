@@ -441,8 +441,8 @@ auto Sizes(boost::multi::array<T, 2, As...> const& m)
 
 template<class Matrix>
 auto Sizes(Matrix const& m)
-->decltype(std::array<long, 2>{static_cast<long>(m.size(0)), static_cast<long>(m.size(1))}) {
-	return std::array<long, 2>{static_cast<long>(m.size(0)), static_cast<long>(m.size(1))}; }
+->decltype(std::array<long, 2>{static_cast<long>(std::get<0>(m.sizes())), static_cast<long>(std::get<1>(m.sizes()))}) {
+	return std::array<long, 2>{static_cast<long>(std::get<0>(m.sizes())), static_cast<long>(std::get<1>(m.sizes()))}; }
 
 /* 
    * Computes the density matrix for a given reference. 
