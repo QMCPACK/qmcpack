@@ -1126,8 +1126,8 @@ public:
   void vHS(MatA& Xw, MatB&& v, double a = 1., double c = 0.)
   {
     int nkpts = nopk.size();
-    int nwalk = Xw.size(1);
-    assert(v.size(0) == nwalk);
+    int nwalk = std::get<1>(Xw.sizes());
+    assert(v.size() == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -1139,7 +1139,7 @@ public:
     SPComplexType halfa(0.5 * a, 0.0);
     size_t local_memory_needs = nmo_max * nmo_max * nwalk;
     if (TMats.num_elements() < local_memory_needs)
-      TMats.reextent({local_memory_needs, 1});
+      TMats.reextent({static_cast<ptrdiff_t>(local_memory_needs), 1});
 
     using vType = typename std::decay<MatB>::type::element;
     boost::multi::array_ref<vType, 3> v3D(to_address(v.origin()), {nwalk, nmo_tot, nmo_tot});
