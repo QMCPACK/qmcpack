@@ -48,6 +48,9 @@ std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunct
 std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
   std::unique_ptr<ACForce> myclone = std::make_unique<ACForce>(ions_, qp, psi_in, ham_in);
+  myclone->fastDerivatives_=fastDerivatives_;
+  myclone->useSpaceWarp_=useSpaceWarp_;
+  myclone->first_force_index_=first_force_index_;
   return myclone;
 }
 
