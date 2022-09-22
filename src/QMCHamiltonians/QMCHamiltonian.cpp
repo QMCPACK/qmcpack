@@ -30,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -40,7 +39,8 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
       ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
-      eval_vals_derivs_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
+      eval_vals_derivs_timer_(
+          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -1152,7 +1152,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
       const int norbs  = psi_wrapper_.numOrbitals(sid);
       const int first  = P.first(gid);
       const int last   = P.last(gid);
-      const int nptcls = last-first;
+      const int nptcls = last - first;
 
       M_[sid].resize(nptcls, norbs);
       B_[sid].resize(nptcls, norbs);
@@ -1181,7 +1181,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
         const int norbs  = psi_wrapper_.numOrbitals(sid);
         const int first  = P.first(gid);
         const int last   = P.last(gid);
-        const int nptcls = last-first;
+        const int nptcls = last - first;
 
         dM_[idim][sid].resize(nptcls, norbs);
         dB_[idim][sid].resize(nptcls, norbs);
@@ -1252,11 +1252,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
-    //The total wavefunction derivative has two contributions.  One from determinantal piece, 
-    //One from the Jastrow.  Jastrow is easy, so we evaluate it here, then add on the 
-    //determinantal piece at the end of this block.  
+    //The total wavefunction derivative has two contributions.  One from determinantal piece,
+    //One from the Jastrow.  Jastrow is easy, so we evaluate it here, then add on the
+    //determinantal piece at the end of this block.
 
-    wfgradraw_[iat] = psi_wrapper_.evaluateJastrowGradSource(P,ions,iat);
+    wfgradraw_[iat] = psi_wrapper_.evaluateJastrowGradSource(P, ions, iat);
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_.wipeMatrices(dM_[idim]);
@@ -1289,14 +1289,14 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
       fval                    = psi_wrapper_.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
       dedr_complex[iat][idim] = fval;
 
-      ValueType wfcomp      = 0.0;
-      wfcomp                = psi_wrapper_.trAB(Minv_, dM_gs_[idim]);
-      wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.  
+      ValueType wfcomp = 0.0;
+      wfcomp           = psi_wrapper_.trAB(Minv_, dM_gs_[idim]);
+      wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);
     convertToReal(wfgradraw_[iat], wf_grad[iat]);
   }
-  dEdR += hfdiag_; 
+  dEdR += hfdiag_;
   return localEnergy;
 }
 } // namespace qmcplusplus
