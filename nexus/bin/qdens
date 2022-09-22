@@ -64,7 +64,6 @@ try:
     qmcpack_input = import_nexus_module('qmcpack_input')
     QmcpackInput    = qmcpack_input.QmcpackInput
     spindensity_xml = qmcpack_input.spindensity
-    spindensity_new_xml = qmcpack_input.spindensity_new  # temporary
     density_xml = qmcpack_input.density  # temporary
     del qmcpack_input
 except:
@@ -78,7 +77,6 @@ except:
     from numerics import simplestats,simstats
     from qmcpack_input import QmcpackInput
     from qmcpack_input import spindensity as spindensity_xml
-    from qmcpack_input import spindensity_new as spindensity_new_xml # temporary
     from qmcpack_input import density as density_xml
 #end try
 
@@ -1042,12 +1040,10 @@ class QMCDensityProcessor(QDBase):
                     # the if statement below is a nasty hack to temporarily support 
                     # the name mismatch between the input file and stat.h5 currently 
                     # enforced by the (new) batched spin denisity class in qmcpack
-                    if isinstance(xml,spindensity_new_xml):
-                        name = 'SpinDensity' # override all user input, just like qmcpack
-                    elif isinstance(xml,density_xml):
+                    if isinstance(xml,density_xml):
                         name = 'Density' # override all user input, just like qmcpack
                     #end if
-                    if name not in grids and isinstance(xml,(spindensity_xml,spindensity_new_xml)):
+                    if name not in grids and isinstance(xml,spindensity_xml):
                         sd = xml
                         if 'grid' in sd:
                             grids[name] = sd.grid
