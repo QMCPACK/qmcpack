@@ -113,7 +113,6 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
     ham_.evaluateElecGrad(P, psi_, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
-  app_log()<<" VALUE="<<value_<<std::endl;
   return 0.0;
 };
 
