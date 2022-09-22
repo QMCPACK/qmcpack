@@ -1131,6 +1131,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   if (!psi_wrapper_.isInitialized())
   {
     psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
+    psi_wrapper_.finalizeConstruction();
   }
   P.update();
   //resize everything;
