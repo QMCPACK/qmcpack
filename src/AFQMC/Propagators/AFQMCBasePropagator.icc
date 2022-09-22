@@ -732,7 +732,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
                        to_address(vbias.origin()), to_address(HWs.origin()), to_address(MF.origin()),
                        to_address(X.origin()));
 #else
-  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size(0)), long(nsteps), long(nwalk)});
+  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size()), long(nsteps), long(nwalk)});
   int m0, mN;
   std::tie(m0, mN) = FairDivideBoundary(TG.TG_local().rank(), nCV, TG.TG_local().size());
   TG.local_barrier();
