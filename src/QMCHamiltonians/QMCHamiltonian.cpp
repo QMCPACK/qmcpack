@@ -1237,18 +1237,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     }
   }
 
-  app_log()<<"B[0] = "<<B_[0]<<std::endl;
-  app_log()<<"B[1] = "<<B_[1]<<std::endl;
-  app_log()<<"M[0] = "<<M_[0]<<std::endl;
-  app_log()<<"M[1] = "<<M_[1]<<std::endl;
-  app_log()<<"Minv[0] = "<<Minv_[0]<<std::endl;
-  app_log()<<"Minv[1] = "<<Minv_[1]<<std::endl;
   ValueType nondiag_cont   = 0.0;
   RealType nondiag_cont_re = 0.0;
 
   psi_wrapper_.getGSMatrices(B_, B_gs_);
   nondiag_cont = psi_wrapper_.trAB(Minv_, B_gs_);
-  app_log()<<"Tr(AB) = "<<nondiag_cont<<std::endl;
   convertToReal(nondiag_cont, nondiag_cont_re);
   localEnergy += nondiag_cont_re;
 
@@ -1259,6 +1252,11 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
   {
+    //The total wavefunction derivative has two contributions.  One from determinantal piece, 
+    //One from the Jastrow.  Jastrow is easy, so we evaluate it here, then add on the 
+    //determinantal piece at the end of this block.  
+
+    wfgradraw_[iat] = psi_wrapper_.evaluateJastrowGradSource(P,ions,iat);
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       psi_wrapper_.wipeMatrices(dM_[idim]);
@@ -1293,7 +1291,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
 
       ValueType wfcomp      = 0.0;
       wfcomp                = psi_wrapper_.trAB(Minv_, dM_gs_[idim]);
-      wfgradraw_[iat][idim] = wfcomp;
+      wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.  
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);
     convertToReal(wfgradraw_[iat], wf_grad[iat]);
