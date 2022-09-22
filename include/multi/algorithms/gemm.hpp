@@ -26,6 +26,7 @@ inline auto naive_gemm(Talpha const& alpha, MatrixA const& A, MatrixB const& B, 
 			std::transform(std::execution::unseq,
 				begin(crowi), end(crowi), begin(~B), begin(crowi),
 				[&](auto&& c, auto const& brow) {
+					// cppcheck-suppress cppcheckError  .. internal cppcheck error
 					return sum2(alpha*std::transform_reduce(std::execution::unseq, begin(arowi), end(arowi), begin(brow), decltype(+c){0.}, sum2, prod2), beta*std::forward<decltype(c)>(c));
 				}
 		);
