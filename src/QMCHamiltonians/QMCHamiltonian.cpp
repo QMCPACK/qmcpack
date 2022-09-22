@@ -1127,7 +1127,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
                                                                                     ParticleSet::ParticlePos& dEdR,
                                                                                     ParticleSet::ParticlePos& wf_grad)
 {
-  // ScopedTimer evaluatederivtimer(*timer_manager.createTimer("NEW::evaluateIonDerivsFast"));
+  ScopedTimer evaluatederivtimer(*timer_manager.createTimer("FastDeriv::evaluateIonDerivsFast"));
   if (!psi_wrapper_.isInitialized())
   {
     psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
@@ -1214,7 +1214,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   RealType localEnergy = 0.0;
 
   {
-    // ScopedTimer getmtimer(*timer_manager.createTimer("NEW::getM"));
+    ScopedTimer getmtimer(*timer_manager.createTimer("FastDeriv::getM"));
     psi_wrapper_.getM(P, M_);
   }
   {
@@ -1227,7 +1227,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   {
     if (H[i]->dependsOnWaveFunction())
     {
-      // ScopedTimer bmattimer(*timer_manager.createTimer("NEW::Btimer"));
+      ScopedTimer bmattimer(*timer_manager.createTimer("FastDeriv::B"));
       H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_, B_);
     }
     else
@@ -1246,7 +1246,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   localEnergy += nondiag_cont_re;
 
   {
-    // ScopedTimer buildXtimer(*timer_manager.createTimer("NEW::buildX"));
+    ScopedTimer buildXtimer(*timer_manager.createTimer("FastDeriv::buildX"));
     psi_wrapper_.buildX(Minv_, B_gs_, X_);
   }
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
@@ -1266,7 +1266,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     }
 
     {
-      //  ScopedTimer dmtimer(*timer_manager.createTimer("NEW::dM_timer"));
+      ScopedTimer dmtimer(*timer_manager.createTimer("FastDeriv::dM"));
       //ion derivative of slater matrix.
       psi_wrapper_.getIonGradM(P, ions, iat, dM_);
     }
@@ -1274,14 +1274,14 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     {
       if (H[i]->dependsOnWaveFunction())
       {
-        //   ScopedTimer dBtimer(*timer_manager.createTimer("NEW::dB_timer"));
+        ScopedTimer dBtimer(*timer_manager.createTimer("FastDeriv::dB"));
         H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_, iat, dB_);
       }
     }
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      // ScopedTimer computederivtimer(*timer_manager.createTimer("NEW::compute_deriv"));
+      ScopedTimer computederivtimer(*timer_manager.createTimer("FastDeriv::compute_deriv"));
       psi_wrapper_.getGSMatrices(dB_[idim], dB_gs_[idim]);
       psi_wrapper_.getGSMatrices(dM_[idim], dM_gs_[idim]);
 
