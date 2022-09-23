@@ -76,4 +76,11 @@ if(add_test)
     16
     check_collectables_h5dat.py
     dat-h5_allp)
+  simple_run_and_check(
+    estimator-acforce-legacy
+    "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
+    vmc.legacy.in.xml
+    1
+    16
+    check_forces.py)
 endif()
