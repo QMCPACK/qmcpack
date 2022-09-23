@@ -1131,7 +1131,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   ScopedTimer evaluatederivtimer(*timer_manager.createTimer("FastDeriv::evaluateIonDerivsFast"));
   P.update();
   //resize everything;
-  int ngroups = psi_wrapper_in.numGroups();
+  const int ngroups = psi_wrapper_in.numGroups();
 
   {
     //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
