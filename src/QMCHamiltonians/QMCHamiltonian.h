@@ -297,7 +297,8 @@ public:
   */
   FullPrecRealType evaluateIonDerivsDeterministicFast(ParticleSet& P,
                                                       ParticleSet& ions,
-                                                      TrialWaveFunction& psi,
+                                                      TrialWaveFunction& psi_in,
+                                                      TWFFastDerivWrapper& psi_wrapper,
                                                       ParticleSet::ParticlePos& dedr,
                                                       ParticleSet::ParticlePos& wf_grad);
 

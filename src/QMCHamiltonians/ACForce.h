@@ -89,6 +89,8 @@ private:
 
   bool useSpaceWarp_;
   bool fastDerivatives_;
+  
+  TWFFastDerivWrapper psi_wrapper_;
   ///The space warp transformation class.
   SpaceWarpTransformation swt_;
 };

@@ -37,6 +37,7 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
   wf_grad_.resize(nIons);
   sw_pulay_.resize(nIons);
   sw_grad_.resize(nIons);
+  psi_in.initializeTWFFastDerivWrapper(elns_, psi_wrapper_);
 };
 
 std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -100,7 +101,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if(fastDerivatives_)
-    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_, hf_force_, wf_grad_);
+    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_,psi_wrapper_, hf_force_, wf_grad_);
   else
     value_ = ham_.evaluateIonDerivsDeterministic(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
 

@@ -1124,18 +1124,14 @@ RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVecto
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
                                                                                     ParticleSet& ions,
                                                                                     TrialWaveFunction& psi_in,
+                                                                                    TWFFastDerivWrapper& psi_wrapper_in,
                                                                                     ParticleSet::ParticlePos& dEdR,
                                                                                     ParticleSet::ParticlePos& wf_grad)
 {
   ScopedTimer evaluatederivtimer(*timer_manager.createTimer("FastDeriv::evaluateIonDerivsFast"));
-  if (!psi_wrapper_.isInitialized())
-  {
-    psi_in.initializeTWFFastDerivWrapper(P, psi_wrapper_);
-    psi_wrapper_.finalizeConstruction();
-  }
   P.update();
   //resize everything;
-  int ngroups = psi_wrapper_.numGroups();
+  int ngroups = psi_wrapper_in.numGroups();
 
   {
     //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
@@ -1148,8 +1144,8 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
 
     for (int gid = 0; gid < ngroups; gid++)
     {
-      const int sid    = psi_wrapper_.getTWFGroupIndex(gid);
-      const int norbs  = psi_wrapper_.numOrbitals(sid);
+      const int sid    = psi_wrapper_in.getTWFGroupIndex(gid);
+      const int norbs  = psi_wrapper_in.numOrbitals(sid);
       const int first  = P.first(gid);
       const int last   = P.last(gid);
       const int nptcls = last - first;
@@ -1177,8 +1173,8 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
 
       for (int gid = 0; gid < ngroups; gid++)
       {
-        const int sid    = psi_wrapper_.getTWFGroupIndex(gid);
-        const int norbs  = psi_wrapper_.numOrbitals(sid);
+        const int sid    = psi_wrapper_in.getTWFGroupIndex(gid);
+        const int norbs  = psi_wrapper_in.numOrbitals(sid);
         const int first  = P.first(gid);
         const int last   = P.last(gid);
         const int nptcls = last - first;
@@ -1189,19 +1185,19 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
         dB_gs_[idim][sid].resize(nptcls, nptcls);
       }
     }
-    psi_wrapper_.wipeMatrices(M_);
-    psi_wrapper_.wipeMatrices(M_gs_);
-    psi_wrapper_.wipeMatrices(X_);
-    psi_wrapper_.wipeMatrices(B_);
-    psi_wrapper_.wipeMatrices(Minv_);
-    psi_wrapper_.wipeMatrices(B_gs_);
+    psi_wrapper_in.wipeMatrices(M_);
+    psi_wrapper_in.wipeMatrices(M_gs_);
+    psi_wrapper_in.wipeMatrices(X_);
+    psi_wrapper_in.wipeMatrices(B_);
+    psi_wrapper_in.wipeMatrices(Minv_);
+    psi_wrapper_in.wipeMatrices(B_gs_);
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      psi_wrapper_.wipeMatrices(dM_[idim]);
-      psi_wrapper_.wipeMatrices(dM_gs_[idim]);
-      psi_wrapper_.wipeMatrices(dB_[idim]);
-      psi_wrapper_.wipeMatrices(dB_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
     }
   }
   ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
@@ -1215,12 +1211,12 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
 
   {
     ScopedTimer getmtimer(*timer_manager.createTimer("FastDeriv::getM"));
-    psi_wrapper_.getM(P, M_);
+    psi_wrapper_in.getM(P, M_);
   }
   {
     //  ScopedTimer invertmtimer(*timer_manager.createTimer("NEW::InvertMTimer"));
-    psi_wrapper_.getGSMatrices(M_, M_gs_);
-    psi_wrapper_.invertMatrices(M_gs_, Minv_);
+    psi_wrapper_in.getGSMatrices(M_, M_gs_);
+    psi_wrapper_in.invertMatrices(M_gs_, Minv_);
   }
   //Build B-matrices.  Only for non-diagonal observables right now.
   for (int i = 0; i < H.size(); ++i)
@@ -1228,7 +1224,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     if (H[i]->dependsOnWaveFunction())
     {
       ScopedTimer bmattimer(*timer_manager.createTimer("FastDeriv::B"));
-      H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_, B_);
+      H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_in, B_);
     }
     else
     {
@@ -1240,14 +1236,14 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   ValueType nondiag_cont   = 0.0;
   RealType nondiag_cont_re = 0.0;
 
-  psi_wrapper_.getGSMatrices(B_, B_gs_);
-  nondiag_cont = psi_wrapper_.trAB(Minv_, B_gs_);
+  psi_wrapper_in.getGSMatrices(B_, B_gs_);
+  nondiag_cont = psi_wrapper_in.trAB(Minv_, B_gs_);
   convertToReal(nondiag_cont, nondiag_cont_re);
   localEnergy += nondiag_cont_re;
 
   {
     ScopedTimer buildXtimer(*timer_manager.createTimer("FastDeriv::buildX"));
-    psi_wrapper_.buildX(Minv_, B_gs_, X_);
+    psi_wrapper_in.buildX(Minv_, B_gs_, X_);
   }
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
   for (int iat = 0; iat < ions.getTotalNum(); iat++)
@@ -1256,41 +1252,41 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     //One from the Jastrow.  Jastrow is easy, so we evaluate it here, then add on the
     //determinantal piece at the end of this block.
 
-    wfgradraw_[iat] = psi_wrapper_.evaluateJastrowGradSource(P, ions, iat);
+    wfgradraw_[iat] = psi_wrapper_in.evaluateJastrowGradSource(P, ions, iat);
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      psi_wrapper_.wipeMatrices(dM_[idim]);
-      psi_wrapper_.wipeMatrices(dM_gs_[idim]);
-      psi_wrapper_.wipeMatrices(dB_[idim]);
-      psi_wrapper_.wipeMatrices(dB_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
     }
 
     {
       ScopedTimer dmtimer(*timer_manager.createTimer("FastDeriv::dM"));
       //ion derivative of slater matrix.
-      psi_wrapper_.getIonGradM(P, ions, iat, dM_);
+      psi_wrapper_in.getIonGradM(P, ions, iat, dM_);
     }
     for (int i = 0; i < H.size(); ++i)
     {
       if (H[i]->dependsOnWaveFunction())
       {
         ScopedTimer dBtimer(*timer_manager.createTimer("FastDeriv::dB"));
-        H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_, iat, dB_);
+        H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_in, iat, dB_);
       }
     }
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
       ScopedTimer computederivtimer(*timer_manager.createTimer("FastDeriv::compute_deriv"));
-      psi_wrapper_.getGSMatrices(dB_[idim], dB_gs_[idim]);
-      psi_wrapper_.getGSMatrices(dM_[idim], dM_gs_[idim]);
+      psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
+      psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
 
       ValueType fval          = 0.0;
-      fval                    = psi_wrapper_.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      fval                    = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
       dedr_complex[iat][idim] = fval;
 
       ValueType wfcomp = 0.0;
-      wfcomp           = psi_wrapper_.trAB(Minv_, dM_gs_[idim]);
+      wfcomp           = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
       wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.
     }
     convertToReal(dedr_complex[iat], dEdR[iat]);
