@@ -83,4 +83,11 @@ if(add_test)
     1
     16
     check_forces.py)
+  simple_run_and_check(
+    estimator-acforce-fast
+    "${qmcpack_SOURCE_DIR}/tests/estimator/acforce"
+    vmc.fast.in.xml
+    1
+    16
+    check_forces.py vmc.fast.s000.scalar.dat)
 endif()

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="vmc.legacy" series="0">
+   <project id="vmc" series="0">
       <application name="qmcpack" role="molecu" class="serial" version="1.0"/>
    </project>
    <random seed="1"/>
