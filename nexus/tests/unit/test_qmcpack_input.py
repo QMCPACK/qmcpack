@@ -2,7 +2,7 @@
 import versions
 import testing
 from testing import divert_nexus_log,restore_nexus_log
-from testing import value_eq,object_eq
+from testing import value_eq,object_eq,check_object_eq
 
 associated_files = dict()
 
@@ -343,6 +343,7 @@ def generate_serial_references():
         #end if
     #end for
     #  generated initial jastrow rather than optimized one
+    ref['simulation/project/driver_version'] =  'legacy'
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/coeff'] = np.array([0.44140587,0.26944819,0.15547533,0.08413778,0.04227037,0.01951441,0.00820536,0.00312028])
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/id'] = 'ud'
     ref['simulation/qmcsystem/wavefunctions/psi0/jastrows/J2/correlations/ud/coefficients/type'] = 'Array'
@@ -384,13 +385,14 @@ def generate_serial_references():
 
     #   batched driver
     ref = ref.copy()
+    ref['simulation/project/driver_version'] =  'batched'
     for k in list(ref.keys()):
         if 'estimator' in k or 'calculations' in k or 'MPC' in k:
             del ref[k]
         #end if
     #end for
     ref['simulation/calculations/0/blocks'] = 70
-    ref['simulation/calculations/0/method'] = 'vmc_batch'
+    ref['simulation/calculations/0/method'] = 'vmc'
     ref['simulation/calculations/0/move'] = 'pbyp'
     ref['simulation/calculations/0/steps'] = 5
     ref['simulation/calculations/0/substeps'] = 2
@@ -399,7 +401,7 @@ def generate_serial_references():
     ref['simulation/calculations/0/walkers_per_rank'] = 64
     ref['simulation/calculations/0/warmupsteps'] = 20
     ref['simulation/calculations/1/blocks'] = 80
-    ref['simulation/calculations/1/method'] = 'dmc_batch'
+    ref['simulation/calculations/1/method'] = 'dmc'
     ref['simulation/calculations/1/move'] = 'pbyp'
     ref['simulation/calculations/1/nonlocalmoves'] = 'yes'
     ref['simulation/calculations/1/steps'] = 5
@@ -407,7 +409,7 @@ def generate_serial_references():
     ref['simulation/calculations/1/walkers_per_rank'] = 64
     ref['simulation/calculations/1/warmupsteps'] = 2
     ref['simulation/calculations/2/blocks'] = 600
-    ref['simulation/calculations/2/method'] = 'dmc_batch'
+    ref['simulation/calculations/2/method'] = 'dmc'
     ref['simulation/calculations/2/move'] = 'pbyp'
     ref['simulation/calculations/2/nonlocalmoves'] = 'yes'
     ref['simulation/calculations/2/steps'] = 5
@@ -515,27 +517,24 @@ def get_serial_references():
 
 
 def check_vs_serial_reference(qi,name):
+    from generic import obj
     sr = get_serial_references()[name]
     assert(len(sr)>0)
     sq = qi.serial()
-    extra = set(sq.keys())-set(sr.keys())
-    for k in extra:
-        if not k.startswith('_metadata'):
-            print(k)
-        #end if
-        assert(k.startswith('_metadata'))
-    #end for
-    for k in sorted(sr.keys()):
-        if k not in sq:
-            print(k)
-        elif not value_eq(sq[k],sr[k]):
-            print(k)
-            print(sr[k])
-            print(sq[k])
-        #end if
-        assert(k in sq)
-        assert(value_eq(sq[k],sr[k]))
-    #end for
+    def remove_metadata(s):
+        metadata_keys = []
+        for k in s.keys():
+            if k.startswith('_metadata'):
+                metadata_keys.append(k)
+            #end if
+        #end for
+        for k in metadata_keys:
+            del s[k]
+        #end for
+    #end def remove_metadata
+    remove_metadata(sq)
+    remove_metadata(sr)
+    assert check_object_eq(sq,obj(sr),bypass=True,verbose=True)
 #end def check_vs_serial_reference
 
 
