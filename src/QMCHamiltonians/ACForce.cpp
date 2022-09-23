@@ -57,19 +57,19 @@ std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunct
 
 bool ACForce::put(xmlNodePtr cur)
 {
-  std::string useSpaceWarpString("no");
   std::string ionionforce("yes");
-  std::string fasteval("no");
   RealType swpow(4);
   OhmmsAttributeSet attr;
-  attr.add(useSpaceWarpString, "spacewarp"); //"yes" or "no"
+  attr.add(useSpaceWarp_, "spacewarp",{false}); //"yes" or "no"
   attr.add(swpow, "swpow");                  //Real number"
   attr.add(delta_, "delta");                 //Real number"
-  attr.add(fasteval,"fast_derivatives");
+  attr.add(fastDerivatives_,"fast_derivatives",{false});
   attr.put(cur);
 
-  useSpaceWarp_ = (useSpaceWarpString == "yes") || (useSpaceWarpString == "true");
-  fastDerivatives_ = (fasteval == "yes") || (fasteval == "true");
+  if (fastDerivatives_)
+    app_log()<< "ACForce is using the fast force algorithm\n";
+  else
+    app_log()<< "ACForce is using the default algorithm\n";
   swt_.setPow(swpow);
 
   if (useSpaceWarp_)
