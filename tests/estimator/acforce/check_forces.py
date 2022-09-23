@@ -4,7 +4,28 @@ import sys
 import numpy as np
 import math
 
-
+#Ray Clay:  
+# This integration test is based on the same initial system as was used for the unit tests in 
+# src/QMCHamiltonians/tests/test_ion_derivs.cpp.  
+#
+#The way this tests works is we run 16 MPI processes, and we propagate
+#for 5 VMC steps. We fix the seed to make this test deterministic.  
+# We do this with the legacy force estimator and the fast force estimator and compare
+# the energies and various force subcomponents for both code paths.  Everything should
+# be identical except for the timings*
+#
+# *The legacy force driver makes a distinction between Hellman-Feynman and Zero Variance terms, 
+# whereas the fast force only works with dE/dR = Hellman-Feynman + ZV.  To use the same set of reference
+# values for both, we compare ACForce = ACForce_hf(Hellman-Feynman) + ACForce_pulay(ZV term).  For the fast
+# force algorithm, ACForce_pulay=0.0.  
+#
+# Correctness of the values is assessed by:
+#  1.) cross comparison between fast and legacy code paths, 
+#  2.) Dropping the VMC timestep to 0.0 and comparing the energy and force components against the unit test values.  
+#  
+#  The following reference values are taken from the final step of the VMC.  
+#
+#
 reference_key = { "Index" : 0,
   "LocalEnergy" : 1,
   "LocalPotential" : 3,
@@ -76,10 +97,13 @@ if __name__ == "__main__":
   #3D system, so.
   ndim=3
 
+  #We compare floating point values, so this needs to be included.  
   relative_tol=1e-5
 
+  #Grab the last line of the VMC run.  
   result=grab_data_line("vmc.s000.scalar.dat",4)
   all_pass=True
+  
   if not math.isclose(reference_vals["LocalEnergy"],result[reference_key["LocalEnergy"]],rel_tol=relative_tol):
     print("Error.  LocalEnergy Ref = ",reference_vals["LocalEnergy"], " Val = ",result[reference_key["LocalEnergy"]])
     all_pass=False
