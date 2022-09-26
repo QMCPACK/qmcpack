@@ -57,10 +57,6 @@ public:
   void addGroup(const ParticleSet& P, const IndexType groupid, SPOSet* spo);
   inline void addJastrow(WaveFunctionComponent* j) { jastrow_list_.push_back(j); };
 
-  //This function gets called after all the Jastrow and SPOSet objects have been registered.
-  //Not pretty, but plays nicest with the fact that TrialWavefunction handles the construction
-  //of the wrapper.
-  inline void finalizeConstruction() { is_initialized_ = true; }
   /** @brief Takes particle set groupID and returns the TWF internal index for it.  
    *
    *  ParticleSet groups can be registered in whichever order.  However, the internal indexing 
@@ -87,7 +83,6 @@ public:
   inline IndexType numGroups() const { return spos_.size(); };
   SPOSet* getSPOSet(const IndexType sid) const { return spos_[sid]; };
   inline IndexType numOrbitals(const IndexType sid) const { return spos_[sid]->size(); };
-  inline bool isInitialized() { return is_initialized_; };
   /** @} */
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -273,7 +268,6 @@ public:
 
 
 private:
-  bool is_initialized_;
   std::vector<SPOSet*> spos_;
   std::vector<IndexType> groups_;
   std::vector<ValueMatrix> psi_M_;
