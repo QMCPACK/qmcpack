@@ -1238,6 +1238,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   CHECK(fnlpp[1][1] == Approx(1.1362118534918864));
   CHECK(fnlpp[1][2] == Approx(-4.5825638607333019));
 #endif
+  //This is to test the fast force API in QMCHamiltonian.
+  ParticleSet::ParticlePos dedr(ions.getTotalNum());
+  ParticleSet::ParticlePos dpsidr(ions.getTotalNum());
+  ham.evaluateIonDerivsDeterministicFast(elec,ions,*psi,twf,dedr,dpsidr);
 }
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
