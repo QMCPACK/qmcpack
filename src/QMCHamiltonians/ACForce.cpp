@@ -49,9 +49,9 @@ std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunct
 std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi_in, QMCHamiltonian& ham_in)
 {
   std::unique_ptr<ACForce> myclone = std::make_unique<ACForce>(ions_, qp, psi_in, ham_in);
-  myclone->fastDerivatives_=fastDerivatives_;
-  myclone->useSpaceWarp_=useSpaceWarp_;
-  myclone->first_force_index_=first_force_index_;
+  myclone->fastDerivatives_        = fastDerivatives_;
+  myclone->useSpaceWarp_           = useSpaceWarp_;
+  myclone->first_force_index_      = first_force_index_;
   return myclone;
 }
 
@@ -60,16 +60,16 @@ bool ACForce::put(xmlNodePtr cur)
   std::string ionionforce("yes");
   RealType swpow(4);
   OhmmsAttributeSet attr;
-  attr.add(useSpaceWarp_, "spacewarp",{false}); //"yes" or "no"
-  attr.add(swpow, "swpow");                  //Real number"
-  attr.add(delta_, "delta");                 //Real number"
-  attr.add(fastDerivatives_,"fast_derivatives",{false});
+  attr.add(useSpaceWarp_, "spacewarp", {false}); //"yes" or "no"
+  attr.add(swpow, "swpow");                      //Real number"
+  attr.add(delta_, "delta");                     //Real number"
+  attr.add(fastDerivatives_, "fast_derivatives", {false});
   attr.put(cur);
 
   if (fastDerivatives_)
-    app_log()<< "ACForce is using the fast force algorithm\n";
+    app_log() << "ACForce is using the fast force algorithm\n";
   else
-    app_log()<< "ACForce is using the default algorithm\n";
+    app_log() << "ACForce is using the default algorithm\n";
   swt_.setPow(swpow);
 
   if (useSpaceWarp_)
@@ -100,8 +100,8 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   sw_grad_     = 0;
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
-  if(fastDerivatives_)
-    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_,psi_wrapper_, hf_force_, wf_grad_);
+  if (fastDerivatives_)
+    value_ = ham_.evaluateIonDerivsDeterministicFast(P, ions_, psi_, psi_wrapper_, hf_force_, wf_grad_);
   else
     value_ = ham_.evaluateIonDerivsDeterministic(P, ions_, psi_, hf_force_, pulay_force_, wf_grad_);
 
