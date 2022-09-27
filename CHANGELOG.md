@@ -2,7 +2,7 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-##  [3.15.0] - 2022-9-29
+##  [3.15.0] - 2022-09-29
 
 This is a recommended release for all users. There are many quality of life
 improvements, bugfixes throughout the application, and updates to the associated
