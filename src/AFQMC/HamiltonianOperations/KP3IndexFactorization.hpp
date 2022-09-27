@@ -334,7 +334,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(
           " Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions \n");
 
@@ -703,7 +703,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions\n");
 
     size_t mem_needs(nwalk * nkpts * nkpts * nspin * nocca_max * nmo_max);
@@ -844,7 +844,7 @@ public:
     //       Not sure how to do it for COLLINEAR.
     if (addEXX)
     {
-      if (Qwn.size(0) != nwalk || Qwn.size(1) != nsampleQ)
+      if (std::get<0>(Qwn.sizes()) != nwalk || std::get<1>(Qwn.sizes()) != nsampleQ)
         Qwn.reextent({nwalk, nsampleQ});
       comm->barrier();
       if (comm->root())
@@ -1114,8 +1114,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {1, v.size(0)});
-    boost::multi::array_ref<AType, 2> X_(to_address(X.origin()), {X.size(0), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {1, v.size()});
+    boost::multi::array_ref<AType, 2> X_(to_address(X.origin()), {X.size(), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -1315,8 +1315,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(0), 1});
-    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(), 1});
+    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -1331,9 +1331,9 @@ public:
     using vType = typename std::decay<MatB>::type::element;
     int nkpts   = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
-    int nwalk = Gw.size(1);
-    assert(v.size(0) == 2 * local_nCV);
-    assert(v.size(1) == nwalk);
+    int nwalk = std::get<1>(Gw.sizes());
+    assert(std::get<0>(v.sizes()) == 2 * local_nCV);
+    assert(std::get<1>(v.sizes()) == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -1385,7 +1385,7 @@ public:
 
     {
       size_t i0, iN;
-      std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(v.size(0)), size_t(comm->size()));
+      std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(v.size()), size_t(comm->size()));
       for (size_t i = i0; i < iN; ++i)
         ma::scal(c, v[i]);
     }
@@ -1750,8 +1750,8 @@ private:
   template<class MatA, class MatB>
   void GwAK_to_GAKw(MatA const& GwAK, MatB&& GAKw)
   {
-    int nwalk = GwAK.size(0);
-    int nAK   = GwAK.size(1);
+    int nwalk = std::get<0>(GwAK.sizes());
+    int nAK   = std::get<1>(GwAK.sizes());
     for (int w = 0; w < nwalk; w++)
       for (int AK = 0; AK < nAK; AK++)
         GAKw[AK][w] = GwAK[w][AK];
