@@ -318,10 +318,10 @@ public:
                     bool addEXX = true)
   {
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -688,10 +688,10 @@ public:
     // need to finish modifications for distribution of Q
 
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -1664,7 +1664,7 @@ private:
   {
     int nspin = (walker_type == COLLINEAR ? 2 : 1);
     int npol  = (walker_type == NONCOLLINEAR ? 2 : 1);
-    int nwalk = GKaKj.size(1);
+    int nwalk = std::get<1>(GKaKj.sizes());
     int nkpts = nopk.size();
     assert(GKaKj.num_elements() == (nocca_tot + noccb_tot) * npol * nmo_tot * nwalk);
     assert(GKKaj.num_elements() == nspin * nkpts * nkpts * npol * akmax * nwalk);
