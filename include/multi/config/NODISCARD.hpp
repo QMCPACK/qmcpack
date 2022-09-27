@@ -1,8 +1,5 @@
-#ifdef COMPILATION// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4-*-
-echo $X
-$CXXX $CXXFLAGS $0 -o $0.$X &&$0.$X&&rm $0.$X;exit
-#endif
-// © Alfredo A. Correa 2019-2020
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2019-2022 Alfredo A. Correa
 
 #ifndef MULTI_CONFIG_NODISCARD_HPP
 #define MULTI_CONFIG_NODISCARD_HPP
@@ -18,7 +15,7 @@ $CXXX $CXXFLAGS $0 -o $0.$X &&$0.$X&&rm $0.$X;exit
 	#if (__has_cpp_attribute(nodiscard)>=201907) and (__cplusplus>201703L)
 		#define NODISCARD(MsG) [[nodiscard(MsG)]]
 	#else
-		#define NODISCARD(MsG) [[nodiscard]]
+		#define NODISCARD(MsG) [[nodiscard]]  // NOLINT(cppcoreguidelines-macro-usage) TODO(correaa) check if this is needed in C++17
 	#endif
 #elif __has_cpp_attribute(gnu::warn_unused_result)
 	#define NODISCARD(MsG) [[gnu::warn_unused_result]]
@@ -39,32 +36,4 @@ $CXXX $CXXFLAGS $0 -o $0.$X &&$0.$X&&rm $0.$X;exit
 	#endif
 #endif
 
-#if defined(__INCLUDE_LEVEL__) and not __INCLUDE_LEVEL__
-
-#include "../config/MAYBE_UNUSED.hpp"
-
-NODISCARD("because...") int f(){return 5;}
-
-struct A{
-	NODISCARD("because...")
-	friend
-	int ff(){return 5.;}
-};
-
-struct NODISCARD_CLASS("because...") B{};
-
-B create_B(){return B{};}
-
-int main(){
-	int i; 
-	i = f(); // ok
-//	f();  // warning
-	++i;
-	(void)i;
-	
-	MAYBE_UNUSED auto b = create_B();
-}
 #endif
-#endif
-
-

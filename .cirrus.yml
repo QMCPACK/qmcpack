@@ -1,0 +1,14 @@
+freebsd_instance:
+  image_family: freebsd-13-0
+
+task:
+  install_script: pkg install -y ...
+  script:
+    - pkg install --no-install-recommends -y --quiet clang pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - clang++ --version
+    - mkdir build && cd build
+    - CXX="clang++" cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+
