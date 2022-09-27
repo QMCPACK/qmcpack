@@ -203,8 +203,8 @@ def read_eshdf_eig_data(filename, Ef_list):
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
     if len(Ef_list) != ns:
-      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-      error(msg)
+        E_fermi = Ef_list[0]
+        Ef_list = np.array([E_fermi, E_fermi])
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
