@@ -51,7 +51,7 @@ be required, we recommend trying these drivers now and reporting any issues.
   [\#4118](https://github.com/QMCPACK/qmcpack/pull/4118) )
 * Updated walker counts in several of the performance tests. Due to the changed
   but more representative workloads, new performance timings should not be
-  compared with older runs (e.g. [\4112](https://github.com/QMCPACK/qmcpack/pull/4112) )
+  compared with older runs (e.g. [\#4112](https://github.com/QMCPACK/qmcpack/pull/4112) )
 * Maximum system sizes run in the performance tests can be specified in CMake
   via QMC_PERFORMANCE_NIO_MAX_ATOMS, QMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS, and
   QMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS (e.g. [\#4134](https://github.com/QMCPACK/qmcpack/pull/4134) )
