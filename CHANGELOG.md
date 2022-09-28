@@ -26,7 +26,8 @@ be required, we recommend trying these drivers now and reporting any issues.
 * Substantial improvements to the performance portable / batched implementation.
   Using LLVM 15.0, high performance production calculations can be performed on
   NVIDIA GPUs for several wavefunction types, in addition to running on all CPU
-  systems. As introduced in v3.14.0, the optional project data input parameter
+  systems.
+* As introduced in v3.14.0, the optional project data input parameter
   `driver_version` specifies whether legacy or batched drivers are used. In
   future versions of QMCPACK this tag will be required to avoid ambiguity and
   allow e.g. the batched VMC driver to be obtained via `vmc` in addition to
