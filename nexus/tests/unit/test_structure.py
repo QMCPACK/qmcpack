@@ -1372,7 +1372,9 @@ if versions.scipy_available:
         r = np.linalg.norm(dr,axis=1)
         dilation = 2*r*np.exp(-r)
         for i in range(npos):
-            gr.pos[i] += dilation[i]/r[i]*dr[i]
+            if r[i]>0:
+                gr.pos[i] += dilation[i]/r[i]*dr[i]
+            #end if
         #end for
 
         # Represent the unrelaxed large cell

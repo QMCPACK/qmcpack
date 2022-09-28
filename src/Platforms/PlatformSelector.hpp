@@ -23,20 +23,19 @@ enum class PlatformKind
 {
   CPU,
   OMPTARGET,
-  CUDA
+  CUDA,
+  SYCL
 };
 
 enum class SelectorKind
 {
   CPU_OMPTARGET,
-  CPU_OMPTARGET_CUDA
+  CPU_OMPTARGET_CUDA,
+  CPU_OMPTARGET_SYCL,
 };
 
 template<SelectorKind KIND>
-class PlatformSelector;
-
-template<>
-class PlatformSelector<SelectorKind::CPU_OMPTARGET>
+class PlatformSelector
 {
 public:
   static const std::vector<std::string> candidate_values;
@@ -46,13 +45,19 @@ public:
 using CPUOMPTargetSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
 
 template<>
-class PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>
-{
-public:
-  static const std::vector<std::string> candidate_values;
-  static PlatformKind selectPlatform(std::string_view value);
-};
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET>::candidate_values;
+template<>
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>::candidate_values;
+template<>
+const std::vector<std::string> PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL>::candidate_values;
 
-using CPUOMPTargetCUDASelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
+#if defined(ENABLE_CUDA)
+using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
+#elif defined(ENABLE_SYCL)
+using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL>;
+#else
+using CPUOMPTargetVendorSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET>;
+#endif
+
 } // namespace qmcplusplus
 #endif

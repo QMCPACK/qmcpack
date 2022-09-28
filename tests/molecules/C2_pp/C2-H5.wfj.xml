@@ -10,7 +10,7 @@
         <occupation mode="ground"/>
         <coefficient size="58" spindataset="0"/>
       </sposet>
-      <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
+      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
         <detlist size="240" type="DETS" nca="0" ncb="0" nea="4" neb="4" nstates="58" cutoff="1e-20" href="C2.h5"/>
       </multideterminant>
     </determinantset>

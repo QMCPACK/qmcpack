@@ -61,6 +61,7 @@ private:
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
+
 protected:
   ///primitive cell
   CrystalLattice<ST, 3> PrimLattice;
@@ -72,14 +73,30 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineR2R()
-  {
-    is_complex = false;
-    className  = "SplineR2R";
-    KeyWord    = "SplineR2R";
-  }
+  SplineR2R(const std::string& my_name) : BsplineSet(my_name) {}
+
+  SplineR2R(const SplineR2R& in);
+  virtual std::string getClassName() const override { return "SplineR2R"; }
+  virtual std::string getKeyword() const override { return "SplineR2R"; }
+  bool isComplex() const override { return false; };
+  bool isRotationSupported() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
+
+  /* 
+     Implements orbital rotations via [1,2]. 
+     Should be called by RotatedSPOs::apply_rotation()
+     
+     This implementation requires that NSPOs > Nelec. In other words,
+     if you want to run a orbopt wfn, you must include some virtual orbitals!
+     
+     Some results (using older Berkeley branch) were published in [3].
+     
+     [1] Filippi & Fahy, JCP 112, (2000)
+     [2] Toulouse & Umrigar, JCP 126, (2007)
+     [3] Townsend et al., PRB 102, (2020)
+  */
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
   inline void resizeStorage(size_t n, size_t nvals)
   {

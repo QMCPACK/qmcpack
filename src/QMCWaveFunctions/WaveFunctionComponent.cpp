@@ -22,19 +22,9 @@ namespace qmcplusplus
 // for return types
 using PsiValueType = WaveFunctionComponent::PsiValueType;
 
-WaveFunctionComponent::WaveFunctionComponent(const std::string& class_name, const std::string& obj_name)
-    : IsOptimizing(false),
-      Optimizable(true),
-      is_fermionic(false),
-      UpdateMode(ORB_WALKER),
-      ClassName(class_name),
-      myName(obj_name),
-      Bytes_in_WFBuffer(0),
-      log_value_(0.0)
-{
-  if (ClassName.empty())
-    throw std::runtime_error("WaveFunctionComponent ClassName cannot be empty!");
-}
+WaveFunctionComponent::WaveFunctionComponent(const std::string& obj_name)
+    : UpdateMode(ORB_WALKER), Bytes_in_WFBuffer(0), my_name_(obj_name), log_value_(0.0)
+{}
 
 WaveFunctionComponent::~WaveFunctionComponent() = default;
 
@@ -44,7 +34,6 @@ void WaveFunctionComponent::mw_evaluateLog(const RefVectorWithLeader<WaveFunctio
                                            const RefVector<ParticleSet::ParticleLaplacian>& L_list) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateLog(p_list[iw], G_list[iw], L_list[iw]);
 }
@@ -62,7 +51,6 @@ void WaveFunctionComponent::mw_recompute(const RefVectorWithLeader<WaveFunctionC
                                          const std::vector<bool>& recompute) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (recompute[iw])
       wfc_list[iw].recompute(p_list[iw]);
@@ -73,7 +61,6 @@ void WaveFunctionComponent::mw_prepareGroup(const RefVectorWithLeader<WaveFuncti
                                             int ig) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].prepareGroup(p_list[iw], ig);
 }
@@ -96,7 +83,6 @@ void WaveFunctionComponent::mw_evalGrad(const RefVectorWithLeader<WaveFunctionCo
                                         std::vector<GradType>& grad_now) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     grad_now[iw] = wfc_list[iw].evalGrad(p_list[iw], iat);
 }
@@ -108,7 +94,6 @@ void WaveFunctionComponent::mw_evalGradWithSpin(const RefVectorWithLeader<WaveFu
                                                 std::vector<ComplexType>& spingrad_now) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     grad_now[iw] = wfc_list[iw].evalGradWithSpin(p_list[iw], iat, spingrad_now[iw]);
 }
@@ -119,7 +104,6 @@ void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<PsiValueType>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratio(p_list[iw], iat);
 }
@@ -127,7 +111,7 @@ void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionC
 
 PsiValueType WaveFunctionComponent::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
+  APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + getClassName() + " class.");
   return ValueType();
 }
 
@@ -151,7 +135,6 @@ void WaveFunctionComponent::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<GradType>& grad_new) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGrad(p_list[iw], iat, grad_new[iw]);
 }
@@ -164,7 +147,6 @@ void WaveFunctionComponent::mw_ratioGradWithSpin(const RefVectorWithLeader<WaveF
                                                  std::vector<ComplexType>& spingrad_new) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     ratios[iw] = wfc_list[iw].ratioGradWithSpin(p_list[iw], iat, grad_new[iw], spingrad_new[iw]);
 }
@@ -176,7 +158,6 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
                                                  bool safe_to_delay) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     if (isAccepted[iw])
       wfc_list[iw].acceptMove(p_list[iw], iat, safe_to_delay);
@@ -187,7 +168,6 @@ void WaveFunctionComponent::mw_accept_rejectMove(const RefVectorWithLeader<WaveF
 void WaveFunctionComponent::mw_completeUpdates(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].completeUpdates();
 }
@@ -207,23 +187,38 @@ void WaveFunctionComponent::mw_evaluateGL(const RefVectorWithLeader<WaveFunction
                                           bool fromscratch) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateGL(p_list[iw], G_list[iw], L_list[iw], fromscratch);
 }
 
+void WaveFunctionComponent::extractOptimizableObjectRefs(UniqueOptObjRefs&)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::extractOptimizableObjectRefs "
+                           "must be overloaded when the WFC is optimizable.");
+}
+
+void WaveFunctionComponent::checkOutVariables(const opt_variables_type& active)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::checkOutVariables "
+                           "must be overloaded when the WFC is optimizable.");
+}
+
 void WaveFunctionComponent::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& active,
-                                                  std::vector<ValueType>& dlogpsi)
+                                                  Vector<ValueType>& dlogpsi)
 {
-  throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + ClassName);
+  throw std::runtime_error("WaveFunctionComponent::evaluateDerivativesWF is not implemented by " + getClassName());
 }
 
 /*@todo makeClone should be a pure virtual function
  */
 std::unique_ptr<WaveFunctionComponent> WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
-  APP_ABORT("Implement WaveFunctionComponent::makeClone " + ClassName + " class.");
+  APP_ABORT("Implement WaveFunctionComponent::makeClone " + getClassName() + " class.");
   return std::unique_ptr<WaveFunctionComponent>();
 }
 
@@ -239,7 +234,7 @@ void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
 void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;
-  o << "WaveFunctionComponent::evaluateRatios is not implemented by " << ClassName;
+  o << "WaveFunctionComponent::evaluateRatios is not implemented by " << getClassName();
   APP_ABORT(o.str());
 }
 
@@ -248,7 +243,6 @@ void WaveFunctionComponent::mw_evaluateRatios(const RefVectorWithLeader<WaveFunc
                                               std::vector<std::vector<ValueType>>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
-#pragma omp parallel for
   for (int iw = 0; iw < wfc_list.size(); iw++)
     wfc_list[iw].evaluateRatios(vp_list[iw], ratios[iw]);
 }
@@ -265,7 +259,7 @@ void WaveFunctionComponent::evaluateDerivRatios(const VirtualParticleSet& VP,
 void WaveFunctionComponent::registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const
 {
   std::ostringstream o;
-  o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << ClassName;
+  o << "WaveFunctionComponent::registerTWFFastDerivWrapper is not implemented by " << getClassName();
   APP_ABORT(o.str());
 }
 

@@ -24,6 +24,7 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "QMCDrivers/DMC/WalkerControl.h"
 #include "QMCDrivers/SFNBranch.h"
+#include "EstimatorInputDelegates.h"
 #include "MemoryUsage.h"
 #include "QMCWaveFunctions/TWFGrads.hpp"
 #include "TauParams.hpp"
@@ -33,25 +34,29 @@ namespace qmcplusplus
 using std::placeholders::_1;
 using WP = WalkerProperties::Indexes;
 
-// clang-format off
 /** Constructor maintains proper ownership of input parameters
  *
  *  Note you must call the Base constructor before the derived class sets QMCType
  */
 DMCBatched::DMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
+                       const std::optional<EstimatorManagerInput>& global_emi,
                        DMCDriverInput&& input,
+                       WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop),
-                   "DMCBatched::", comm,
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   global_emi,
+                   wc,
+                   std::move(pop),
+                   "DMCBatched::",
+                   comm,
                    "DMCBatched",
                    std::bind(&DMCBatched::setNonLocalMoveHandler, this, _1)),
       dmcdriver_input_(input),
       dmc_timers_("DMCBatched::")
-{
-}
-// clang-format on
+{}
 
 DMCBatched::~DMCBatched() = default;
 
@@ -103,7 +108,7 @@ void DMCBatched::advanceWalkers(const StateForThread& sft,
   }
 
   const int num_walkers   = crowd.size();
-  auto& pset_leader = walker_elecs.getLeader();
+  auto& pset_leader       = walker_elecs.getLeader();
   const int num_particles = pset_leader.getTotalNum();
 
   MCCoords<CT> drifts(num_walkers), drifts_reverse(num_walkers);
@@ -356,7 +361,7 @@ void DMCBatched::runDMCStep(int crowd_id,
   // Are we entering the the last step of a block to recompute at?
   const bool recompute_this_step  = (sft.is_recomputing_block && (step + 1) == max_steps);
   const bool accumulate_this_step = true;
-  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, dmc_timers, *context_for_steps[crowd_id],
                                          recompute_this_step, accumulate_this_step);
@@ -375,7 +380,7 @@ void DMCBatched::process(xmlNodePtr node)
                                 qmcdriver_input_.get_walkers_per_rank(), dmcdriver_input_.get_reserve(),
                                 qmcdriver_input_.get_num_crowds());
 
-    Base::startup(node, awc);
+    Base::initializeQMC(awc);
   }
   catch (const UniformCommunicateError& ue)
   {
@@ -428,18 +433,22 @@ bool DMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
-  }
 
-  print_mem("DMCBatched after initialLogEvaluation", app_summary());
-
-  {
     FullPrecRealType energy, variance;
     population_.measureGlobalEnergyVariance(*myComm, energy, variance);
     // false indicates we do not support kill at node crossings.
     branch_engine_->initParam(population_, energy, variance, dmcdriver_input_.get_reconfiguration(), false);
     walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
+
+    print_mem("DMCBatched after initialLogEvaluation", app_summary());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("InitialLogEvaluation");
   }
 
+  // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
+  myComm->barrier();
+
+  ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
   for (int block = 0; block < num_blocks; ++block)
@@ -468,13 +477,15 @@ bool DMCBatched::run()
         int iter                 = block * qmcdriver_input_.get_max_steps() + step;
         const int population_now = walker_controller_->branch(iter, population_, iter == 0);
         branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
-                                                   population_.get_golden_electrons()->getTotalNum());
+                                                   population_.get_golden_electrons().getTotalNum());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }
 
       population_.redistributeWalkers(crowds_);
     }
     print_mem("DMCBatched after a block", app_debug_stream());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("Block " + std::to_string(block));
     endBlock();
     dmc_loop.stop();
 

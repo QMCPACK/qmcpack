@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
@@ -23,17 +23,17 @@ class WaveFunctionPool;
 class QMCHamiltonian;
 class TrialWaveFunction;
 class SampleStack;
-class MCWalkerConfiguration;
-class HamiltonianPool;
 class QMCFixedSampleLinearOptimizeBatched;
 class ProjectData;
 
-QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const ProjectData& project_data,
-                                                              MCWalkerConfiguration& w,
-                                                              MCPopulation&& pop,
-                                                              SampleStack& samples,
-                                                              Communicate* comm);
+std::unique_ptr<QMCFixedSampleLinearOptimizeBatched> QMCWFOptLinearFactoryNew(
+    xmlNodePtr cur,
+    const ProjectData& project_data,
+    const std::optional<EstimatorManagerInput>& global_emi,
+    WalkerConfigurations& wc,
+    MCPopulation&& pop,
+    SampleStack& samples,
+    Communicate* comm);
 } // namespace qmcplusplus
 
 #endif

@@ -16,8 +16,6 @@
 
 
 #include "QMCGaussianParserBase.h"
-#include "ParticleIO/XMLParticleIO.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -27,7 +25,9 @@
 #include <sstream>
 #include <bitset>
 #include <iomanip>
-
+#include "ParticleIO/XMLParticleIO.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "ModernStringUtils.hpp"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
 const int OhmmsAsciiParser::bufferSize;
@@ -43,7 +43,11 @@ const std::vector<double> QMCGaussianParserBase::gCoreTable = {
     18, 18, 18, 18, 18, 18, 18, 18, 18, 18, /*N-Zn*/
     28, 28, 28, 28, 28, 36,                 /*Ga-Kr*/
     36, 36, 36, 36, 36, 36, 36, 36, 36, 36, /*Rb-Cd*/
-    46, 46, 46, 46, 46, 54                  /*In-Xe*/
+    46, 46, 46, 46, 46, 54,                 /*In-Xe*/
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*Cs-  */
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*   Lu*/
+    60, 60, 60, 60, 60, 60, 60, 60, 60,     /*Hf-Hg*/
+    78, 78, 78, 78, 78, 78,                 /*Tl-Rn*/
 };
 
 QMCGaussianParserBase::QMCGaussianParserBase()

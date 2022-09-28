@@ -15,6 +15,7 @@
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
 #include "CPU/math.hpp"
+#include "OptimizableObject.h"
 
 namespace qmcplusplus
 {

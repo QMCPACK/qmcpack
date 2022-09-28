@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
@@ -18,58 +18,99 @@
 #include "Estimators/EstimatorManagerNew.h"
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Estimators/tests/EstimatorManagerNewTest.h"
-
+#include "SpinDensityInput.h"
+#include "MomentumDistributionInput.h"
+#include "OneBodyDensityMatricesInput.h"
+#include "ScalarEstimatorInputs.h"
+#include "EstimatorManagerInputTest.h"
+#include "Particle/tests/MinimalParticlePool.h"
+#include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include <stdio.h>
 #include <sstream>
 
 namespace qmcplusplus
 {
 
-TEST_CASE("EstimatorManagerNew", "[estimators]")
+TEST_CASE("EstimatorManagerNew::EstimatorManager(comm)", "[estimators]")
+{
+  Communicate* c = OHMMS::Controller;
+  using namespace testing;
+
+  QMCHamiltonian ham;
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
+
+  // Just checking here that we have an empty estimator manager in embt.
+
+  CHECK(embt.em.getNumEstimators() == 0);
+  CHECK(embt.em.getNumScalarEstimators() == 0);
+}
+
+TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)", "[estimators]")
+{
+  Communicate* comm = OHMMS::Controller;
+
+  using namespace testing;
+  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi(estimators_doc.getRoot());
+
+
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto& pset             = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham              = *(hamiltonian_pool.getPrimary());
+  EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
+
+  CHECK(emn.getNumEstimators() == 2);
+  CHECK(emn.getNumScalarEstimators() == 0);
+}
+
+TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
 
-  testing::EstimatorManagerNewTest embt(c, 1);
+  QMCHamiltonian ham;
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
+  // by design we have done no averaging here
+  // the division by total weight happens only when a block is over and the
+  // accumulated data has been reduced down.  So here there should just be simple sums.
 
-  REQUIRE(embt.em.size() == 0);
+  REQUIRE(embt.testReplaceMainEstimator());
 
-  REQUIRE(embt.testAddGetEstimator());
+  embt.fakeMainScalarSamples();
+  embt.collectMainEstimators();
+  double correct_value = 5.0;
+  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  correct_value = 8.0;
+  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  correct_value = 11.0;
+  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  correct_value = 14.0;
+  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
 {
   Communicate* c = OHMMS::Controller;
 
-  testing::EstimatorManagerNewTest embt(c, 1);
+  QMCHamiltonian ham;
+  testing::EstimatorManagerNewTest embt(ham, c, 1);
   // by design we have done no averaging here
   // the division by total weight happens only when a block is over and the
   // accumulated data has been reduced down.  So here there should just be simple sums.
 
-  embt.fakeSomeScalarSamples();
-  embt.collectScalarEstimators();
-  double correct_value = 5.0;  
-  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
-  correct_value = 8.0;  
-  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
-  correct_value = 11.0;  
-  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
-  correct_value = 14.0;  
-  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
-
+  embt.fakeScalarSamplesAndCollect();
+  double correct_value = 11.0;
+  CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  correct_value = 20.0;
+  CHECK(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  correct_value = 29.0;
+  CHECK(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  correct_value = 38.0;
+  CHECK(embt.em.get_AverageCache()[3] == Approx(correct_value));
 }
-
-
-TEST_CASE("EstimatorManagerNew::collectOperatorEstimators", "[estimators]")
-{
-  Communicate* c = OHMMS::Controller;
-
-  testing::EstimatorManagerNewTest embt(c, 1);
-  // by design we have done no averaging here
-  // the division by total weight happens only when a block is over and the
-  // accumulated data has been reduced down.  So here there should just be simple sums.
-
-}
-
 
 TEST_CASE("EstimatorManagerNew adhoc addVector operator", "[estimators]")
 {

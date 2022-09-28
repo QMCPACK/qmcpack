@@ -285,9 +285,9 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     p          = 0;
     {
       Vd_trace->combine();
-      const ParticleSet& Ps            = *Pdynamic;
-      const std::vector<TraceReal>& Ts = Td_trace->sample;
-      const std::vector<TraceReal>& Vs = Vd_trace->sample;
+      const ParticleSet& Ps = *Pdynamic;
+      const auto& Ts        = Td_trace->sample;
+      const auto& Vs        = Vd_trace->sample;
       for (int i = 0; i < Ps.getTotalNum(); i++)
       {
         EDValues(p, W) = w;
@@ -299,8 +299,8 @@ EnergyDensityEstimator::Return_t EnergyDensityEstimator::evaluate(ParticleSet& P
     if (Pstatic)
     {
       Vs_trace->combine();
-      const ParticleSet& Ps            = *Pstatic;
-      const std::vector<TraceReal>& Vs = Vs_trace->sample;
+      const ParticleSet& Ps = *Pstatic;
+      const auto& Vs        = Vs_trace->sample;
       if (!ion_points)
         for (int i = 0; i < Ps.getTotalNum(); i++)
         {

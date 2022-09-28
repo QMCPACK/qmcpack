@@ -56,16 +56,12 @@ ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 
 MCWalkerConfiguration* ParticleSetPool::getWalkerSet(const std::string& pname)
 {
-  ParticleSet* mc = 0;
-  if (myPool.size() == 1)
-    mc = myPool.begin()->second.get();
-  else
-    mc = getParticleSet(pname);
-  if (mc == 0)
+  auto mc = dynamic_cast<MCWalkerConfiguration*>(getParticleSet(pname));
+  if (mc == nullptr)
   {
     throw std::runtime_error("ParticleSePool::getWalkerSet missing " + pname);
   }
-  return dynamic_cast<MCWalkerConfiguration*>(mc);
+  return mc;
 }
 
 void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
@@ -87,8 +83,17 @@ bool ParticleSetPool::readSimulationCellXML(xmlNodePtr cur)
 {
   ReportEngine PRE("ParticleSetPool", "putLattice");
 
-  LatticeParser a(simulation_cell_->lattice_);
-  bool lattice_defined = a.put(cur);
+  bool lattice_defined = false;
+  try
+  {
+    LatticeParser a(simulation_cell_->lattice_);
+    lattice_defined = a.put(cur);
+  }
+  catch (const UniformCommunicateError& ue)
+  {
+    myComm->barrier_and_abort(ue.what());
+  }
+
   if (lattice_defined)
   {
     app_log() << "  Overwriting global supercell " << std::endl;

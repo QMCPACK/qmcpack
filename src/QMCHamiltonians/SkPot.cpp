@@ -43,7 +43,6 @@ SkPot::Return_t SkPot::evaluate(ParticleSet& P)
 {
   throw std::runtime_error("SkPot::evaluate not implemented. There was an implementation with"
                            " complex-valued storage that may be resurrected using real-valued storage.");
-  return value_;
 }
 
 bool SkPot::put(xmlNodePtr cur)

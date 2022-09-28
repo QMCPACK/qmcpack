@@ -145,20 +145,22 @@ public:
   ///alias FuncType
   using FuncType = FT;
 
-  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs, bool is_master = false)
-      : WaveFunctionComponent("JeeIOrbitalSoA", obj_name),
+  JeeIOrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& elecs)
+      : WaveFunctionComponent(obj_name),
         ee_Table_ID_(elecs.addTable(elecs, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         ei_Table_ID_(elecs.addTable(ions, DTModes::NEED_FULL_TABLE_ANYTIME | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         Ions(ions)
   {
-    if (myName.empty())
+    if (my_name_.empty())
       throw std::runtime_error("JeeIOrbitalSoA object name cannot be empty!");
     init(elecs);
   }
 
+  std::string getClassName() const override { return "JeeIOrbitalSoA"; }
+
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& elecs) const override
   {
-    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(myName, Ions, elecs, false);
+    auto eeIcopy = std::make_unique<JeeIOrbitalSoA<FT>>(my_name_, Ions, elecs);
     std::map<const FT*, FT*> fcmap;
     for (int iG = 0; iG < iGroups; iG++)
       for (int eG1 = 0; eG1 < eGroups; eG1++)
@@ -177,8 +179,7 @@ public:
     // Ye: I don't like the following memory allocated by default.
     eeIcopy->myVars.clear();
     eeIcopy->myVars.insertFrom(myVars);
-    eeIcopy->VarOffset   = VarOffset;
-    eeIcopy->Optimizable = Optimizable;
+    eeIcopy->VarOffset = VarOffset;
     return eeIcopy;
   }
 
@@ -311,18 +312,12 @@ public:
     }
   }
 
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& active) override
-  {
-    myVars.clear();
+  bool isOptimizable() const override { return true; }
 
-    for (auto& ftPair : J3Unique)
-    {
-      ftPair.second->checkInVariables(active);
-      ftPair.second->checkInVariables(myVars);
-    }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override
+  {
+    for (auto& [key, functor] : J3Unique)
+      opt_obj_refs.push_back(*functor);
   }
 
   /** check out optimizable variables
@@ -354,30 +349,6 @@ public:
             VarOffset(ig, jg, kg).second = func_ijk->myVars.Index.size() + VarOffset(ig, jg, kg).first;
           }
     }
-  }
-
-  ///reset the value of all the unique Two-Body Jastrow functions
-  void resetParameters(const opt_variables_type& active) override
-  {
-    if (!Optimizable)
-      return;
-
-    for (auto& ftPair : J3Unique)
-      ftPair.second->resetParameters(active);
-
-    for (int i = 0; i < myVars.size(); ++i)
-    {
-      int ii = myVars.Index[i];
-      if (ii >= 0)
-        myVars[i] = active[ii];
-    }
-  }
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override
-  {
-    for (auto& ftPair : J3Unique)
-      ftPair.second->myVars.print(os);
   }
 
   void build_compact_list(const ParticleSet& P)
@@ -425,6 +396,7 @@ public:
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
+    assert(VP.getTotalNum() == ratios.size());
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
                            computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
@@ -857,13 +829,12 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     resizeWFOptVectors();
 
     bool recalculate(false);
-    std::vector<bool> rcsingles(myVars.size(), false);
     for (int k = 0; k < myVars.size(); ++k)
     {
       int kk = myVars.where(k);
@@ -871,7 +842,6 @@ public:
         continue;
       if (optvars.recompute(kk))
         recalculate = true;
-      rcsingles[k] = true;
     }
 
     if (recalculate)
@@ -973,6 +943,92 @@ public:
 #endif
         }
         dhpsioverpsi[kk] = (ValueType)sum;
+      }
+    }
+  }
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override
+  {
+    assert(VP.getTotalNum() == ratios.size());
+    evaluateRatios(VP, ratios);
+
+    bool recalculate(false);
+    for (int k = 0; k < myVars.size(); ++k)
+    {
+      int kk = myVars.where(k);
+      if (kk < 0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate = true;
+    }
+
+    if (recalculate)
+    {
+      constexpr valT czero(0);
+
+      const auto& refPS    = VP.refPS;
+      const auto& ee_dists = refPS.getDistTableAA(ee_Table_ID_).getDistances();
+      const auto& ei_dists = refPS.getDistTableAB(ei_Table_ID_).getDistances();
+
+      const auto& vpe_dists = VP.getDistTableAB(ee_Table_ID_).getDistances();
+      const auto& vpi_dists = VP.getDistTableAB(ei_Table_ID_).getDistances();
+
+      const int nVP = VP.getTotalNum();
+      std::vector<Vector<RealType>> dLogPsi_vp(nVP);
+      for (auto& dLogPsi : dLogPsi_vp)
+      {
+        dLogPsi.resize(myVars.size());
+        dLogPsi = czero;
+      }
+
+      const int kel = VP.refPtcl;
+      const int kg  = refPS.getGroupID(kel);
+
+      for (int iat = 0; iat < Nion; ++iat)
+      {
+        const int ig = Ions.getGroupID(iat);
+        for (int jg = 0; jg < eGroups; ++jg)
+        {
+          FT& func             = *F(ig, jg, kg);
+          const size_t nparams = func.getNumParameters();
+          std::vector<RealType> dlog_ref(nparams), dlog(nparams);
+          for (int jind = 0; jind < elecs_inside(jg, iat).size(); jind++)
+          {
+            const int jel = elecs_inside(jg, iat)[jind];
+            if (jel == kel)
+              continue;
+            const valT r_Ij     = elecs_inside_dist(jg, iat)[jind];
+            const valT r_Ik_ref = ei_dists[kel][iat];
+            const valT r_jk_ref = jel < kel ? ee_dists[kel][jel] : ee_dists[jel][kel];
+
+            if (!func.evaluateDerivatives(r_jk_ref, r_Ij, r_Ik_ref, dlog_ref))
+              std::fill(dlog_ref.begin(), dlog_ref.end(), czero);
+
+            for (int ivp = 0; ivp < nVP; ivp++)
+            {
+              const valT r_Ik = vpi_dists[ivp][iat];
+              const valT r_jk = vpe_dists[ivp][jel];
+              if (!func.evaluateDerivatives(r_jk, r_Ij, r_Ik, dlog))
+                std::fill(dlog.begin(), dlog.end(), czero);
+              const int first = VarOffset(ig, jg, kg).first;
+              const int last  = VarOffset(ig, jg, kg).second;
+              for (int p = first, ip = 0; p < last; p++, ip++)
+                dLogPsi_vp[ivp][p] -= dlog[ip] - dlog_ref[ip];
+            }
+          }
+        }
+      }
+
+      for (int k = 0; k < myVars.size(); ++k)
+      {
+        int kk = myVars.where(k);
+        if (kk < 0)
+          continue;
+        for (int ivp = 0; ivp < nVP; ivp++)
+          dratios[ivp][kk] = (ValueType)dLogPsi_vp[ivp][k];
       }
     }
   }

@@ -3,16 +3,18 @@
 #include "QMCDrivers/QMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimizeBatched.h"
+#include "Estimators/EstimatorInputDelegates.h"
 
 namespace qmcplusplus
 {
-
-QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
-                                                              const ProjectData& project_data,
-                                                              MCWalkerConfiguration& w,
-                                                              MCPopulation&& pop,
-                                                              SampleStack& samples,
-                                                              Communicate* comm)
+std::unique_ptr<QMCFixedSampleLinearOptimizeBatched> QMCWFOptLinearFactoryNew(
+    xmlNodePtr cur,
+    const ProjectData& project_data,
+    const std::optional<EstimatorManagerInput>& global_emi,
+    WalkerConfigurations& wc,
+    MCPopulation&& pop,
+    SampleStack& samples,
+    Communicate* comm)
 {
   app_summary() << "\n========================================"
                    "\n  Reading WFOpt driver XML input section"
@@ -24,9 +26,9 @@ QMCFixedSampleLinearOptimizeBatched* QMCWFOptLinearFactoryNew(xmlNodePtr cur,
   VMCDriverInput vmcdriver_input;
   vmcdriver_input.readXML(cur);
 
-  QMCFixedSampleLinearOptimizeBatched* opt =
-      new QMCFixedSampleLinearOptimizeBatched(project_data, w, std::move(qmcdriver_input), std::move(vmcdriver_input),
-                                              std::move(pop), samples, comm);
+  auto opt = std::make_unique<QMCFixedSampleLinearOptimizeBatched>(project_data, std::move(qmcdriver_input), global_emi,
+                                                                   std::move(vmcdriver_input), wc, std::move(pop),
+                                                                   samples, comm);
   return opt;
 }
 

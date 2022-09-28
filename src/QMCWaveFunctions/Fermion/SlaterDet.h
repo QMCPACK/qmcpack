@@ -48,14 +48,14 @@ public:
   ///destructor
   ~SlaterDet() override;
 
-  void checkInVariables(opt_variables_type& active) override;
+  std::string getClassName() const override { return "SlaterDet"; }
+
+  bool isFermionic() const final { return true; }
+  bool isOptimizable() const override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
 
   void checkOutVariables(const opt_variables_type& active) override;
-
-  ///reset all the Dirac determinants, Optimizable is true
-  void resetParameters(const opt_variables_type& optVariables) override;
-
-  void reportStatus(std::ostream& os) override;
 
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const override;
 
@@ -237,8 +237,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value
@@ -254,7 +254,7 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
-  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, std::vector<ValueType>& dlogpsi) override
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& active, Vector<ValueType>& dlogpsi) override
   {
     // First zero out values, since each determinant only adds on
     // its contribution (i.e. +=) , rather than setting the value

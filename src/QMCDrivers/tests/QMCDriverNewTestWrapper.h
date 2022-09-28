@@ -29,9 +29,16 @@ class QMCDriverNewTestWrapper : public QMCDriverNew
 {
 public:
   using Base = QMCDriverNew;
-  QMCDriverNewTestWrapper(QMCDriverInput&& input, MCPopulation&& population, SampleStack samples, Communicate* comm)
+  QMCDriverNewTestWrapper(const ProjectData& test_project,
+                          QMCDriverInput&& input,
+                          WalkerConfigurations& wc,
+                          MCPopulation&& population,
+                          SampleStack samples,
+                          Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
+                     std::nullopt,
+                     wc,
                      std::move(population),
                      "QMCDriverTestWrapper::",
                      comm,
@@ -49,7 +56,7 @@ public:
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
-    Base::startup(node, awc);
+    Base::initializeQMC(awc);
   }
 
   void testAdjustGlobalWalkerCount()
@@ -130,8 +137,7 @@ public:
     void operator()(int num_crowds);
   };
 
-private:
-  ProjectData test_project;
+  void testMeasureImbalance() { measureImbalance("Test"); }
 };
 
 template<class CONCURRENCY>

@@ -18,9 +18,12 @@
 #define QMCPLUSPLUS_BAREKINETICENERGY_H
 
 #include "QMCHamiltonians/OperatorBase.h"
+#include <ResourceCollection.h>
+#include <ResourceHandle.h>
 
 namespace qmcplusplus
 {
+
 /** @ingroup hamiltonian
   @brief Evaluate the kinetic energy with a single mass
 
@@ -70,10 +73,12 @@ public:
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-  BareKineticEnergy(ParticleSet& p);
+  BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi);
   ///destructor
   ~BareKineticEnergy() override;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "BareKineticEnergy"; }
   void resetTargetParticleSet(ParticleSet& P) override {}
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -83,6 +88,38 @@ public:
 #endif
 
   Return_t evaluate(ParticleSet& P) override;
+
+  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
+
+  void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const opt_variables_type& optvars,
+                                           const RecordArray<ValueType>& dlogpsi,
+                                           RecordArray<ValueType>& dhpsioverpsi) const override;
+
+  /** Evaluate the contribution of this component for multiple walkers reporting
+   *  to registered listeners from Estimators.
+   */
+  void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              const std::vector<ListenerVector<RealType>>& listeners,
+                              const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
+
+  /** For BareKineticEnergy since it does override any Toperator evals this needs to decay to
+   *  mw_evaluatePerParticle.
+   *
+   *  This method must be overrideen since the default behavior is to decay to mw_evaluateWithToperator
+   *  and its default behavior is to call mw_evaluate.
+   */
+  void mw_evaluatePerParticleWithToperator(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const std::vector<ListenerVector<RealType>>& listeners,
+                                           const std::vector<ListenerVector<RealType>>& ion_listeners) const override;
 
   /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
  *  
@@ -110,7 +147,7 @@ public:
   void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 
   void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                         const ParticleSet& source,
+                                         ParticleSet& source,
                                          const TWFFastDerivWrapper& psi,
                                          const int iat,
                                          std::vector<std::vector<ValueMatrix>>& Bforce) override;
@@ -138,6 +175,32 @@ public:
   // Nothing is done on GPU here, just copy into vector
   void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 #endif
+  /** initialize a shared resource and hand it to a collection
+   */
+  void createResource(ResourceCollection& collection) const override;
+
+  /** acquire a shared resource from a collection
+   */
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  /** return a shared resource to a collection
+   */
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+private:
+  struct MultiWalkerResource : public Resource
+  {
+    MultiWalkerResource() : Resource("BareKineticEnergy") {}
+
+    Resource* makeClone() const override { return new MultiWalkerResource(*this); }
+
+    Vector<RealType> t_samples;
+    Vector<std::complex<RealType>> tcmp_samples;
+  };
+
+  ResourceHandle<MultiWalkerResource> mw_res_;
+
+  TrialWaveFunction& psi_;
 };
 
 } // namespace qmcplusplus

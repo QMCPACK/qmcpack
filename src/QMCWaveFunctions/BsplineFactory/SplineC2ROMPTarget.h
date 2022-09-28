@@ -25,6 +25,7 @@
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "Utilities/FairDivide.h"
 #include "Utilities/TimerManager.h"
+#include <ResourceHandle.h>
 #include "SplineOMPTargetMultiWalkerMem.h"
 
 namespace qmcplusplus
@@ -81,7 +82,7 @@ private:
   std::shared_ptr<OffloadVector<ST>> GGt_offload;
   std::shared_ptr<OffloadVector<ST>> PrimLattice_G_offload;
 
-  std::unique_ptr<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_;
+  ResourceHandle<SplineOMPTargetMultiWalkerMem<ST, TT>> mw_mem_;
 
   ///team private ratios for reduction, numVP x numTeams
   Matrix<TT, OffloadPinnedAllocator<TT>> ratios_private;
@@ -110,35 +111,20 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMPTarget()
-      : BsplineSet(true),
+  SplineC2ROMPTarget(const std::string& my_name)
+      : BsplineSet(my_name),
         offload_timer_(*timer_manager.createTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
-  {
-    is_complex = true;
-    className  = "SplineC2ROMPTarget";
-    KeyWord    = "SplineC2R";
-  }
-
-  SplineC2ROMPTarget(const SplineC2ROMPTarget& in)
-      : BsplineSet(in),
-        offload_timer_(in.offload_timer_),
-        PrimLattice(in.PrimLattice),
-        GGt(in.GGt),
-        nComplexBands(in.nComplexBands),
-        SplineInst(in.SplineInst),
-        mKK(in.mKK),
-        myKcart(in.myKcart),
-        GGt_offload(in.GGt_offload),
-        PrimLattice_G_offload(in.PrimLattice_G_offload),
-        myV(in.myV),
-        myL(in.myL),
-        myG(in.myG),
-        myH(in.myH),
-        mygH(in.mygH)
   {}
+
+  SplineC2ROMPTarget(const SplineC2ROMPTarget& in);
+
+  virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
+  virtual std::string getKeyword() const override { return "SplineC2R"; }
+  bool isComplex() const override { return true; };
+  bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
   {
@@ -291,7 +277,7 @@ public:
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
-                                              VGLVector& phi_vgl_v,
+                                              OffloadMWVGLArray& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
                                               std::vector<GradType>& grads) const override;
 

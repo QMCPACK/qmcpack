@@ -23,6 +23,7 @@ set(SRCS
     FakeOperatorEstimator.cpp
     EstimatorManagerBaseTest.cpp
     EstimatorManagerNewTest.cpp
+    EstimatorManagerInputTest.cpp
     test_manager.cpp
     test_EstimatorManagerNew.cpp
     test_trace_manager.cpp
@@ -31,6 +32,7 @@ set(SRCS
     test_SpinDensityNew.cpp
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
+    test_ScalarEstimatorInputs.cpp
     )
 
 # OneBodyDensityMatrices are not tested with legacy CUDA
@@ -50,6 +52,8 @@ if(USE_OBJECT_TARGET)
     qmcham_unit
     qmcwfs
     qmcparticle
+    qmcwfs_omptarget
+    qmcparticle_omptarget
     qmcutil
     platform_omptarget_LA
     utilities_for_test)
@@ -72,6 +76,8 @@ if(HAVE_MPI)
       qmcdriver_unit
       qmcwfs
       qmcparticle
+      qmcwfs_omptarget
+      qmcparticle_omptarget
       qmcutil
       platform_omptarget_LA
       utilities_for_test)

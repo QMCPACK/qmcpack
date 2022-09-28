@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "config.h"
+#include "cuda_error.h"
 #ifndef QMC_CUDA2HIP
 #include <cuda_runtime_api.h>
 #include <cublas_v2.h>

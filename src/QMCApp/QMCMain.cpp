@@ -38,11 +38,13 @@
 #include "Message/Communicate.h"
 #include "Message/UniformCommunicateError.h"
 #include "Concurrency/OpenMP.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include <cstring>
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/qmc_common.h"
+#include "MemoryUsage.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -89,7 +91,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI group ID              = " << myComm->getGroupID()
       << "\n  Number of ranks in group  = " << myComm->size()
       << "\n  MPI ranks per node        = " << node_comm.size()
-#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP)
+#if defined(ENABLE_OFFLOAD) || defined(ENABLE_CUDA) || defined(ENABLE_HIP) || defined(ENABLE_SYCL)
       << "\n  Accelerators per node     = " << DeviceManager::getGlobal().getNumDevices()
 #endif
       << std::endl;
@@ -124,7 +126,8 @@ QMCMain::QMCMain(Communicate* c)
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP)
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && \
+    !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
 #else // GPU case
 #if defined(ENABLE_OFFLOAD)
@@ -142,6 +145,8 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
 #elif defined(QMC_CUDA)
   app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
+#elif defined(ENABLE_SYCL)
+  app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
 #endif // GPU case end
 
@@ -150,7 +155,9 @@ QMCMain::QMCMain(Communicate* c)
                 << timer_manager.get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
-  app_summary().flush();
+
+  print_mem("when QMCPACK starts", app_summary());
+  app_summary() << std::endl;
 }
 
 ///destructor
@@ -300,7 +307,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.currentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -316,6 +323,7 @@ bool QMCMain::execute()
     else
     {
       xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
     }
     saveXml();
   }
@@ -450,11 +458,7 @@ bool QMCMain::validateXML()
   {
     std::string cname((const char*)cur->name);
     bool inputnode = true;
-    if (cname == "parallel")
-    {
-      putCommunicator(cur);
-    }
-    else if (cname == "particleset")
+    if (cname == "particleset")
     {
       ptclPool->put(cur);
     }
@@ -486,7 +490,7 @@ bool QMCMain::validateXML()
     }
     else if (cname == "qmcsystem")
     {
-      processPWH(cur);
+      inputnode = processPWH(cur);
     }
     else if (cname == "init")
     {
@@ -566,6 +570,21 @@ bool QMCMain::processPWH(xmlNodePtr cur)
       inputnode = true;
       hamPool->put(cur);
     }
+    else if (cname == "estimators")
+    {
+      inputnode = true;
+      try
+      {
+        if (estimator_manager_input_)
+          throw UniformCommunicateError(
+              "QMCMain::validateXML. Illegal Input, only one global <estimators> node is permitted");
+        estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, cur);
+      }
+      catch (const UniformCommunicateError& ue)
+      {
+        myComm->barrier_and_abort(ue.what());
+      }
+    }
     else
     //add to m_qmcaction
     {
@@ -596,7 +615,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     try
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, *qmcSystem, *ptclPool, *psiPool, *hamPool, myComm);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool,
+                                                  *hamPool, myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)
@@ -618,7 +638,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
+    qmc_driver->setStatus(myProject.currentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.

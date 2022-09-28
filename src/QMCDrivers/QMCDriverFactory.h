@@ -25,6 +25,7 @@
 #include "QMCDrivers/DriverTraits.h"
 #include "QMCDrivers/MCPopulation.h"
 #include "Particle/ParticleSetPool.h"
+#include "Estimators/EstimatorManagerInput.h"
 
 class Communicate;
 
@@ -63,8 +64,7 @@ public:
    *  In the application context project data can indicate the input be read in the context of
    *  the batched driver architecture.
    *  param[in] cur            qmc section node
-   *  param[in] force_batch    forces input to be evaluated as if project driver type = batched
-   *                           false does not force unbatched!
+   *  param[in] emi            std::optional<EstimatorManagerInput> if it is there it is the global estimator manager input.
    */
   DriverAssemblyState readSection(xmlNodePtr cur) const;
 
@@ -74,6 +74,7 @@ public:
    */
   std::unique_ptr<QMCDriverInterface> createQMCDriver(xmlNodePtr cur,
                                                       DriverAssemblyState& das,
+                                                      const std::optional<EstimatorManagerInput>& emi,
                                                       MCWalkerConfiguration& qmc_system,
                                                       ParticleSetPool& particle_pool,
                                                       WaveFunctionPool& wave_function_pool,

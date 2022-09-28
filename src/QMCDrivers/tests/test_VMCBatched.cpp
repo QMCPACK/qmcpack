@@ -15,6 +15,7 @@
 #include "QMCDrivers/VMC/VMCDriverInput.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/tests/ValidQMCInputSections.h"
+#include "EstimatorInputDelegates.h"
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
@@ -32,8 +33,6 @@ public:
   VMCBatchedTest()
   {
     Concurrency::OverrideMaxCapacity<> override(8);
-    Communicate* comm;
-    OHMMS::Controller->initialize(0, NULL);
     comm_ = OHMMS::Controller;
   }
 
@@ -41,9 +40,6 @@ public:
   {
     using namespace testing;
     Concurrency::OverrideMaxCapacity<> override(8);
-    Communicate* comm;
-    OHMMS::Controller->initialize(0, NULL);
-    comm = OHMMS::Controller;
 
     Libxml2Document doc;
     doc.parseFromString(valid_vmc_input_sections[valid_vmc_input_vmc_batch_index]);
@@ -51,9 +47,9 @@ public:
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
-    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm_);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm_, particle_pool);
+    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
   }
 
 private:

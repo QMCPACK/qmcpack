@@ -38,12 +38,6 @@ std::unique_ptr<SPOSet> PWRealOrbitalSet::makeClone() const
   return myclone;
 }
 
-
-void PWRealOrbitalSet::resetParameters(const opt_variables_type& active)
-{
-  //DO NOTHING FOR NOW
-}
-
 void PWRealOrbitalSet::setOrbitalSetSize(int norbs) {}
 
 void PWRealOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
@@ -96,7 +90,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs, int jorb
 void PWRealOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   myBasisSet->evaluate(P.activeR(iat));
-  MatrixOperators::product(CC, myBasisSet->Zv, tempPsi.data());
+  MatrixOperators::product(CC, myBasisSet->Zv, tempPsi);
   for (int j = 0; j < OrbitalSetSize; j++)
     psi[j] = tempPsi[j].real();
 }

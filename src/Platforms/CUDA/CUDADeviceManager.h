@@ -50,6 +50,7 @@ public:
         default_device_num = cuda_default_device_num;
       else if (default_device_num != cuda_default_device_num)
         throw std::runtime_error("Inconsistent assigned CUDA devices with the previous record!");
+
 #pragma omp parallel
       {
         cudaErrorCheck(cudaSetDevice(cuda_default_device_num), "cudaSetDevice failed!");

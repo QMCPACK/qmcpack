@@ -76,6 +76,12 @@ function(COPY_DIRECTORY_USING_SYMLINK_LIMITED SRC_DIR DST_DIR ${ARGN})
   symlink_list_of_files("${FILE_FOLDER_NAMES}" "${DST_DIR}")
   list(TRANSFORM ARGN PREPEND "${SRC_DIR}/")
   symlink_list_of_files("${ARGN}" "${DST_DIR}")
+# Special handling for .txt input files; assumed to be an ensemble run. Link referenced ensemble inputs
+  if ( ${ARGN} MATCHES ".txt")
+    file(STRINGS ${ARGN} ENSEMBLE_INPUTS)
+    list(TRANSFORM ENSEMBLE_INPUTS PREPEND "${SRC_DIR}/")   
+    symlink_list_of_files("${ENSEMBLE_INPUTS}" "${DST_DIR}")
+  endif()
 endfunction()
 
 # Control copy vs. symlink with top-level variable
@@ -88,11 +94,15 @@ function(COPY_DIRECTORY_MAYBE_USING_SYMLINK SRC_DIR DST_DIR ${ARGN})
 endfunction()
 
 # Symlink or copy an individual file
-function(MAYBE_SYMLINK SRC_DIR DST_DIR)
+function(MAYBE_SYMLINK SRC_FILE DST_FILE)
   if(QMC_SYMLINK_TEST_FILES)
-    file(CREATE_LINK ${SRC_DIR} ${DST_DIR} SYMBOLIC)
+    file(CREATE_LINK ${SRC_FILE} ${DST_FILE} SYMBOLIC)
   else()
-    file(COPY ${SRC_DIR} DESTINATION ${DST_DIR})
+    # file(COPY ...) takes a destination directory and doesn't rename the file.
+    # cmake_path requires CMake v3.20 and file(COPY_FILE ...) requires CMake v3.21.
+    # Instead we use configure_file, which takes an input and output filename and
+    # updates files that change in the source directory or qmc_dir.
+    configure_file(${SRC_FILE} ${DST_FILE} COPYONLY)
   endif()
 endfunction()
 
@@ -185,6 +195,10 @@ function(
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
     add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
+    set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY LABELS "QMCPACK")
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
@@ -304,7 +318,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "latdev"
       "EnergyEstim__nume_real"
       "kecorr"
-      "mpc")
+      "mpc"
+      "soecp")
     list(
       APPEND
       CHECK_SCALAR_FLAG
@@ -337,7 +352,8 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       "--latdev"
       "--el"
       "--kec"
-      "--mpc")
+      "--mpc"
+      "--sopp")
 
     set(TEST_ADDED FALSE)
     set(TEST_LABELS "")
@@ -351,12 +367,6 @@ else(QMC_NO_SLOW_CUSTOM_TESTING_COMMANDS)
       TEST_ADDED
       TEST_LABELS
       ${INPUT_FILE})
-    if(TEST_ADDED)
-      set_property(
-        TEST ${FULL_NAME}
-        APPEND
-        PROPERTY LABELS "QMCPACK")
-    endif()
 
     if(TEST_ADDED AND NOT SHOULD_SUCCEED)
       set_property(TEST ${FULL_NAME} APPEND PROPERTY WILL_FAIL TRUE)
@@ -646,5 +656,18 @@ function(
   if(TEST_ADDED)
     set_property(TEST ${FULLNAME} APPEND PROPERTY TIMEOUT ${TIME})
     set_property(TEST ${FULLNAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+  endif()
+endfunction()
+
+# Add a test to see if a file exists in the desired location.
+function(add_test_check_file_existence TEST_DEP_IN FILE_NAME SHOULD_SUCCEED)
+  if(TEST ${TEST_DEP_IN})
+    get_test_property(${TEST_DEP_IN} WORKING_DIRECTORY TEST_DEP_IN_WORK_DIR)
+    set(TESTNAME ${TEST_DEP_IN}-exists-${FILE_NAME})
+    add_test(NAME ${TESTNAME} COMMAND ls ${TEST_DEP_IN_WORK_DIR}/${FILE_NAME})
+    if (NOT SHOULD_SUCCEED)
+      set_property(TEST ${TESTNAME} PROPERTY WILL_FAIL TRUE)
+    endif()
+    set_tests_properties(${TESTNAME} PROPERTIES DEPENDS ${TEST_DEP_IN})
   endif()
 endfunction()

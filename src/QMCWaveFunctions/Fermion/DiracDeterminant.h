@@ -27,6 +27,9 @@
 #if defined(ENABLE_CUDA)
 #include "QMCWaveFunctions/Fermion/DelayedUpdateCUDA.h"
 #endif
+#if defined(ENABLE_SYCL)
+#include "QMCWaveFunctions/Fermion/DelayedUpdateSYCL.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -67,10 +70,12 @@ public:
   DiracDeterminant(const DiracDeterminant& s)            = delete;
   DiracDeterminant& operator=(const DiracDeterminant& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminant"; }
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -265,6 +270,9 @@ private:
 extern template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)
 extern template class DiracDeterminant<DelayedUpdateCUDA<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
+#endif
+#if defined(ENABLE_SYCL)
+extern template class DiracDeterminant<DelayedUpdateSYCL<QMCTraits::ValueType, QMCTraits::QTFull::ValueType>>;
 #endif
 
 } // namespace qmcplusplus

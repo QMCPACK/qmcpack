@@ -27,7 +27,7 @@ namespace qmcplusplus
    * @param h QMCHamiltonian to define the components
    * @param hcopy number of copies of QMCHamiltonians
    */
-CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
+CSEnergyEstimator::CSEnergyEstimator(const QMCHamiltonian& h, int hcopy)
 {
   int NumObservables = h.sizeOfObservables();
 
@@ -45,6 +45,25 @@ CSEnergyEstimator::CSEnergyEstimator(QMCHamiltonian& h, int hcopy)
   scalars_saved.resize(scalars.size());
 }
 
+CSEnergyEstimator::CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h) : input_(input)
+{
+  int NumObservables = h.sizeOfObservables();
+
+  NumCopies        = input_.get_n_psi();
+  FirstHamiltonian = h.startIndex();
+  LastHamiltonian  = FirstHamiltonian + NumObservables;
+
+  //add names
+  h_components.push_back("LocEne");
+  h_components.push_back("LocPot");
+  for (int i = 0; i < NumObservables; ++i)
+    h_components.push_back(h.getObservableName(i));
+
+  scalars.resize(NumCopies + h_components.size() * (NumCopies + NumCopies * (NumCopies - 1) / 2));
+  scalars_saved.resize(scalars.size());
+}
+  
+  
 CSEnergyEstimator* CSEnergyEstimator::clone() { return new CSEnergyEstimator(*this); }
 
 /**  add the local energy, variance and all the Hamiltonian components to the scalar record container

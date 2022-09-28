@@ -4,13 +4,18 @@ LABEL maintainer="williamfgc@yahoo.com"
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get clean &&\
     apt-get update -y &&\
-    apt-get upgrade -y apt-utils
+    apt-get upgrade -y apt-utils &&\
+    apt-get install -y gpg wget
 
 # Dependencies
+RUN wget https://apt.kitware.com/kitware-archive.sh &&\
+    sh kitware-archive.sh
+
 RUN export DEBIAN_FRONTEND=noninteractive &&\
     apt-get install gcc g++ \ 
     clang \
     clang-format \
+    clang-tidy \
     gcovr \
     python3 \
     cmake \

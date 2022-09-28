@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "Utilities/TimerManager.h"
+#include "BareKineticEnergy.h"
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -29,6 +30,7 @@
 
 namespace qmcplusplus
 {
+
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -37,7 +39,8 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       myName(aname),
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
-      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname, timer_level_medium))
+      ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
+      eval_vals_derivs_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -66,8 +69,7 @@ bool QMCHamiltonian::get(std::ostream& os) const
 {
   for (int i = 0; i < H.size(); i++)
   {
-    os.setf(std::ios::left);
-    os << "  " << std::setw(16) << H[i]->getName();
+    os << "  " << std::setw(16) << std::left << H[i]->getName();
     H[i]->get(os);
     os << "\n";
   }
@@ -522,7 +524,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluateDeterministic(P);
     if (std::isnan(LocalEnergyComponent))
-      APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->getName() + " returns NaN\n");
+      APP_ABORT("QMCHamiltonian::evaluateDeterministic component " + H[i]->getName() + " returns NaN\n");
     LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -538,8 +540,9 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
 }
 void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset)
 {
+  // It's much better to be able to see where this is coming from.  It is caught just fine.
   if (std::isnan(op.getValue()))
-    APP_ABORT("QMCHamiltonian::evaluate component " + op.getName() + " returns NaN\n");
+    throw std::runtime_error("QMCHamiltonian::updateNonKinetic component " + op.getName() + " returns NaN\n");
   // The following is a ridiculous breach of encapsulation.
   ham.LocalEnergy += op.getValue();
   op.setObservables(ham.Observables);
@@ -608,21 +611,29 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateValueAndDerivatives(ParticleSet& P,
                                                                              const opt_variables_type& optvars,
-                                                                             std::vector<ValueType>& dlogpsi,
-                                                                             std::vector<ValueType>& dhpsioverpsi,
-                                                                             bool compute_deriv)
+                                                                             Vector<ValueType>& dlogpsi,
+                                                                             Vector<ValueType>& dhpsioverpsi)
 {
-  LocalEnergy = KineticEnergy = H[0]->evaluate(P);
-  if (compute_deriv)
-    for (int i = 1; i < H.size(); ++i)
-      LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
-  else
-    for (int i = 1; i < H.size(); ++i)
-      LocalEnergy += H[i]->evaluate(P);
+  // The first componennt must be BareKineticEnergy for both handling KineticEnergy and dlogpsi computation
+  // by calling TWF::evaluateDerivatives inside BareKineticEnergy::evaluateValueAndDerivatives
+  assert(dynamic_cast<BareKineticEnergy*>(H[0].get()) &&
+         "BUG: The first componennt in Hamiltonian must be BareKineticEnergy.");
+  ScopedTimer local_timer(eval_vals_derivs_timer_);
+
+  {
+    ScopedTimer h_timer(my_timers_[0]);
+    LocalEnergy = KineticEnergy = H[0]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
+
+  for (int i = 1; i < H.size(); ++i)
+  {
+    ScopedTimer h_timer(my_timers_[i]);
+    LocalEnergy += H[i]->evaluateValueAndDerivatives(P, optvars, dlogpsi, dhpsioverpsi);
+  }
   return LocalEnergy;
 }
 
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivativesInner(
+std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivatives(
     const RefVectorWithLeader<QMCHamiltonian>& ham_list,
     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
     const RefVectorWithLeader<ParticleSet>& p_list,
@@ -661,26 +672,6 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAn
 
   return local_energies;
 }
-
-std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateValueAndDerivatives(
-    const RefVectorWithLeader<QMCHamiltonian>& ham_list,
-    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
-    const RefVectorWithLeader<ParticleSet>& p_list,
-    const opt_variables_type& optvars,
-    RecordArray<ValueType>& dlogpsi,
-    RecordArray<ValueType>& dhpsioverpsi,
-    bool compute_deriv)
-{
-  std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
-  if (compute_deriv)
-    local_energies =
-        QMCHamiltonian::mw_evaluateValueAndDerivativesInner(ham_list, wf_list, p_list, optvars, dlogpsi, dhpsioverpsi);
-  else
-    local_energies = QMCHamiltonian::mw_evaluate(ham_list, wf_list, p_list);
-
-  return local_energies;
-}
-
 
 QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateVariableEnergy(ParticleSet& P, bool free_nlpp)
 {
@@ -924,6 +915,15 @@ OperatorBase* QMCHamiltonian::getHamiltonian(const std::string& aname)
     if (auxH[i]->getName() == aname)
       return auxH[i].get();
   return nullptr;
+}
+
+RefVector<OperatorBase> QMCHamiltonian::getTWFDependentComponents()
+{
+  RefVector<OperatorBase> components;
+  for (int i = 0; i < H.size(); i++)
+    if (H[i]->dependsOnWaveFunction())
+      components.push_back(*H[i]);
+  return components;
 }
 
 void QMCHamiltonian::resetTargetParticleSet(ParticleSet& P)

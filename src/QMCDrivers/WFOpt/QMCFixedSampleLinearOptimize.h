@@ -17,18 +17,22 @@
 #ifndef QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 #define QMCPLUSPLUS_QMCFSLINEAROPTIMIZATION_VMCSINGLE_H
 
-#include "QMCDrivers/WFOpt/QMCLinearOptimize.h"
 #include "Optimize/NRCOptimization.h"
 #ifdef HAVE_LMY_ENGINE
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
+#include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/Optimizers/DescentEngine.h"
 #include "QMCDrivers/Optimizers/HybridEngine.h"
-#include "QMCDrivers/WFOpt/OutputMatrix.h"
+#include "OutputMatrix.h"
+#include "LinearMethod.h"
 
 namespace qmcplusplus
 {
+
+class GradientTest;
+
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
@@ -36,7 +40,7 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize : public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, private NRCOptimization<QMCTraits::RealType>
 {
 public:
   ///Constructor.
@@ -53,6 +57,10 @@ public:
   bool processOptXML(xmlNodePtr cur, const std::string& vmcMove, bool reportH5, bool useGPU);
 
   RealType Func(RealType dl) override;
+
+  void setWaveFunctionNode(xmlNodePtr cur) { wfNode = cur; }
+
+  QMCRunType getRunType() override { return QMCRunType::LINEAR_OPTIMIZE; }
 
 private:
   inline bool ValidCostFunction(bool valid)
@@ -83,6 +91,11 @@ private:
   // use hybrid approach of descent and blocked linear method for optimization
   bool hybrid_run();
 #endif
+
+  // Perform test of parameter gradients
+  bool test_run();
+
+  std::unique_ptr<GradientTest> testEngineObj;
 
 
   void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
@@ -117,9 +130,6 @@ private:
                           const int bi,
                           const bool gu);
 
-  int NumOfVMCWalkers;
-  ///Number of iterations maximum before generating new configurations.
-  int Max_iterations;
   int nstabilizers;
   RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
   std::string GEVtype, StabilizerMethod, GEVSplit;
@@ -187,6 +197,8 @@ private:
   //whether to use hybrid method
   bool doHybrid;
 
+  bool doGradientTest;
+
   // Output Hamiltonian and overlap matrices
   bool do_output_matrices_;
 
@@ -198,6 +210,38 @@ private:
 
   // Freeze variational parameters.  Do not update them during each step.
   bool freeze_parameters_;
+
+  std::vector<RealType> optdir, optparam;
+  ///total number of VMC walkers
+  int NumOfVMCWalkers;
+  ///Number of iterations maximum before generating new configurations.
+  int Max_iterations;
+  ///target cost function to optimize
+  std::unique_ptr<QMCCostFunctionBase> optTarget;
+  ///vmc engine
+  std::unique_ptr<QMCDriver> vmcEngine;
+  ///xml node to be dumped
+  xmlNodePtr wfNode;
+
+  RealType param_tol;
+
+  ///common operation to start optimization, used by the derived classes
+  void start();
+#ifdef HAVE_LMY_ENGINE
+  void engine_start(cqmc::engine::LMYEngine<ValueType>* EngineObj,
+                    DescentEngine& descentEngineObj,
+                    std::string MinMethod);
+#endif
+  ///common operation to finish optimization, used by the derived classes
+  void finish();
+  void generateSamples();
+
+  NewTimer& generate_samples_timer_;
+  NewTimer& initialize_timer_;
+  NewTimer& eigenvalue_timer_;
+  NewTimer& line_min_timer_;
+  NewTimer& cost_function_timer_;
+  Timer t1;
 };
 } // namespace qmcplusplus
 #endif

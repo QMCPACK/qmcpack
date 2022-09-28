@@ -50,6 +50,9 @@ public:
     for (int i = 0; i < data.size(); ++i)
       scalars[i](data[i], wgt);
   }
+
+  const std::string type_str = "ColletiblesEstimatorNotSupportedInBatchedVersion";
+  const std::string& getSubTypeStr() const override { return type_str; }
 };
 } // namespace qmcplusplus
 #endif

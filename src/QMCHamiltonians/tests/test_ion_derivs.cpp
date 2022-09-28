@@ -775,7 +775,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
-  //This is already defined in QMCHamiltonian, but keep it here for easy access.
+  //Enum to give human readable indexing into QMCHamiltonian. 
   enum observ_id
   {
     KINETIC = 0,
@@ -786,8 +786,6 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
-
-  int IONINDEX = 1;
 
   //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
   //These matrices are not necessarily square to accomodate orb opt and multidets.
@@ -983,6 +981,264 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
 #endif
 }
 
+TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
+{
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "====================Ion Derivative Test:  Prototype Single Slater+Jastrow===========\n";
+  app_log() << "========================================================================================\n";
+  app_log() << "========================================================================================\n";
+  using RealType  = QMCTraits::RealType;
+  using ValueType = QMCTraits::ValueType;
+
+  Communicate* c = OHMMS::Controller;
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto &ions(*ions_ptr), elec(*elec_ptr);
+
+  //Build a CN test molecule.
+  create_CN_particlesets(elec, ions);
+  //////////////////////////////////
+  /////////////////////////////////
+  //Incantation to read and build a TWF from cn.wfnoj//
+  Libxml2Document doc2;
+  bool okay = doc2.parse("cn.wfj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace("e", std::move(elec_ptr));
+  particle_set_map.emplace("ion0", std::move(ions_ptr));
+
+  WaveFunctionFactory wff(elec, particle_set_map, c);
+  HamiltonianFactory::PsiPoolType psi_map;
+  psi_map.emplace("psi0", wff.buildTWF(root2));
+
+  TrialWaveFunction* psi = psi_map["psi0"].get();
+  REQUIRE(psi != nullptr);
+  //end incantation
+
+  TWFFastDerivWrapper twf;
+
+  psi->initializeTWFFastDerivWrapper(elec, twf);
+  SPOSet::ValueVector values;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
+  values.resize(9);
+  dpsi.resize(9);
+  d2psi.resize(9);
+
+  HamiltonianFactory hf("h0", elec, particle_set_map, psi_map, c);
+
+  QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
+
+  //This is already defined in QMCHamiltonian, but keep it here for easy access.
+  enum observ_id
+  {
+    KINETIC = 0,
+    ELECELEC,
+    IONION,
+    LOCALECP,
+    NONLOCALECP
+  };
+
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  //This builds and initializes all the auxiliary matrices needed to do fast derivative evaluation.
+  //These matrices are not necessarily square to accomodate orb opt and multidets.
+
+  ValueMatrix upmat; //Up slater matrix.
+  ValueMatrix dnmat; //Down slater matrix.
+  int Nup  = 5;      //These are hard coded until the interface calls get implemented/cleaned up.
+  int Ndn  = 4;
+  int Norb = 14;
+  upmat.resize(Nup, Norb);
+  dnmat.resize(Ndn, Norb);
+
+  //The first two lines consist of vectors of matrices.  The vector index corresponds to the species ID.
+  //For example, matlist[0] will be the slater matrix for up electrons, matlist[1] will be for down electrons.
+  std::vector<ValueMatrix> matlist; //Vector of slater matrices.
+  std::vector<ValueMatrix> B, X;    //Vector of B matrix, and auxiliary X matrix.
+
+  //The first index corresponds to the x,y,z force derivative.  Current interface assumes that the ion index is fixed,
+  // so these vectors of vectors of matrices store the derivatives of the M and B matrices.
+  // dB[0][0] is the x component of the iat force derivative of the up B matrix, dB[0][1] is for the down B matrix.
+
+  std::vector<std::vector<ValueMatrix>> dM; //Derivative of slater matrix.
+  std::vector<std::vector<ValueMatrix>> dB; //Derivative of B matrices.
+  matlist.push_back(upmat);
+  matlist.push_back(dnmat);
+
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+  dM.push_back(matlist);
+
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+  dB.push_back(matlist);
+
+  B.push_back(upmat);
+  B.push_back(dnmat);
+
+  X.push_back(upmat);
+  X.push_back(dnmat);
+
+  twf.getM(elec, matlist);
+
+  OperatorBase* kinop = ham.getHamiltonian(KINETIC);
+
+  kinop->evaluateOneBodyOpMatrix(elec, twf, B);
+
+
+  std::vector<ValueMatrix> minv;
+  std::vector<ValueMatrix> B_gs, M_gs; //We are creating B and M matrices for assumed ground-state occupations.
+                                       //These are N_s x N_s square matrices (N_s is number of particles for species s).
+  B_gs.push_back(upmat);
+  B_gs.push_back(dnmat);
+  M_gs.push_back(upmat);
+  M_gs.push_back(dnmat);
+  minv.push_back(upmat);
+  minv.push_back(dnmat);
+
+
+  //  twf.getM(elec, matlist);
+  std::vector<std::vector<ValueMatrix>> dB_gs;
+  std::vector<std::vector<ValueMatrix>> dM_gs;
+  std::vector<ValueMatrix> tmp_gs;
+  twf.getGSMatrices(B, B_gs);
+  twf.getGSMatrices(matlist, M_gs);
+  twf.invertMatrices(M_gs, minv);
+  twf.buildX(minv, B_gs, X);
+  for (int id = 0; id < matlist.size(); id++)
+  {
+    //    int ptclnum = twf.numParticles(id);
+    int ptclnum = (id == 0 ? Nup : Ndn); //hard coded until twf interface comes online.
+    ValueMatrix gs_m;
+    gs_m.resize(ptclnum, ptclnum);
+    tmp_gs.push_back(gs_m);
+  }
+
+
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+  dB_gs.push_back(tmp_gs);
+
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+  dM_gs.push_back(tmp_gs);
+
+  //Finally, we have all the data structures with the right dimensions.  Continue.
+
+  ParticleSet::ParticleGradient fkin_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fkin(ions.getTotalNum());
+
+
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    kinop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fkin_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fkin_complex[ionid], fkin[ionid]);
+  }
+
+
+  ValueType keval = 0.0;
+  RealType keobs  = 0.0;
+  keval           = twf.trAB(minv, B_gs);
+  convertToReal(keval, keobs);
+  CHECK(keobs == Approx(7.6732404154e+00));
+
+#if defined(MIXED_PRECISION)
+  CHECK(fkin[0][0] == Approx(-3.3359153349010735).epsilon(1e-4));
+  CHECK(fkin[0][1] == Approx(30.0487085581835309).epsilon(1e-4));
+  CHECK(fkin[0][2] == Approx(126.5885230360197369).epsilon(1e-4));
+  CHECK(fkin[1][0] == Approx(2.7271604366774223).epsilon(1e-4));
+  CHECK(fkin[1][1] == Approx(-3.5321234918228579).epsilon(1e-4));
+  CHECK(fkin[1][2] == Approx(5.8844148870917925).epsilon(1e-4));
+#else
+  CHECK(fkin[0][0] == Approx(-3.3359153349010735));
+  CHECK(fkin[0][1] == Approx(30.0487085581835309));
+  CHECK(fkin[0][2] == Approx(126.5885230360197369));
+  CHECK(fkin[1][0] == Approx(2.7271604366774223));
+  CHECK(fkin[1][1] == Approx(-3.5321234918228579));
+  CHECK(fkin[1][2] == Approx(5.8844148870917925));
+#endif
+  app_log() << " KEVal = " << keval << std::endl;
+
+  app_log() << " Now evaluating nonlocalecp\n";
+  OperatorBase* nlppop = ham.getHamiltonian(NONLOCALECP);
+  app_log() << "nlppop = " << nlppop << std::endl;
+  app_log() << "  Evaluated.  Calling evaluteOneBodyOpMatrix\n";
+
+
+  twf.wipeMatrices(B);
+  twf.wipeMatrices(B_gs);
+  twf.wipeMatrices(X);
+  nlppop->evaluateOneBodyOpMatrix(elec, twf, B);
+  twf.getGSMatrices(B, B_gs);
+  twf.buildX(minv, B_gs, X);
+
+  ValueType nlpp    = 0.0;
+  RealType nlpp_obs = 0.0;
+  nlpp              = twf.trAB(minv, B_gs);
+  convertToReal(nlpp, nlpp_obs);
+
+  app_log() << "NLPP = " << nlpp << std::endl;
+
+  CHECK(nlpp_obs == Approx(1.37365415248e+01));
+
+  ParticleSet::ParticleGradient fnlpp_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos fnlpp(ions.getTotalNum());
+  for (int ionid = 0; ionid < ions.getTotalNum(); ionid++)
+  {
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.wipeMatrices(dB[idim]);
+      twf.wipeMatrices(dM[idim]);
+    }
+
+    twf.getIonGradM(elec, ions, ionid, dM);
+    nlppop->evaluateOneBodyOpMatrixForceDeriv(elec, ions, twf, ionid, dB);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      twf.getGSMatrices(dB[idim], dB_gs[idim]);
+      twf.getGSMatrices(dM[idim], dM_gs[idim]);
+      fnlpp_complex[ionid][idim] = twf.computeGSDerivative(minv, X, dM_gs[idim], dB_gs[idim]);
+    }
+    convertToReal(fnlpp_complex[ionid], fnlpp[ionid]);
+  }
+
+#if defined(MIXED_PRECISION)
+  CHECK(fnlpp[0][0] == Approx(27.1517161490208956).epsilon(2e-4));
+  CHECK(fnlpp[0][1] == Approx(-42.8268964286715459).epsilon(2e-4));
+  CHECK(fnlpp[0][2] == Approx(-101.5046844660360961).epsilon(2e-4));
+  CHECK(fnlpp[1][0] == Approx(2.2255825024686260).epsilon(2e-4));
+  CHECK(fnlpp[1][1] == Approx(1.1362118534918864).epsilon(2e-4));
+  CHECK(fnlpp[1][2] == Approx(-4.5825638607333019).epsilon(2e-4));
+#else
+  CHECK(fnlpp[0][0] == Approx(27.1517161490208956));
+  CHECK(fnlpp[0][1] == Approx(-42.8268964286715459));
+  CHECK(fnlpp[0][2] == Approx(-101.5046844660360961));
+  CHECK(fnlpp[1][0] == Approx(2.2255825024686260));
+  CHECK(fnlpp[1][1] == Approx(1.1362118534918864));
+  CHECK(fnlpp[1][2] == Approx(-4.5825638607333019));
+#endif
+}
 /*TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
 {
   app_log() << "====Ion Derivative Test: Single Slater+Jastrow====\n";

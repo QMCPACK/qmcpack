@@ -17,6 +17,7 @@
 
 #include "config.h"
 #include "determinant_update.h"
+#include "CUDA_legacy/gpu_misc.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -27,7 +28,6 @@
 //#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
 #include "uninitialized_array.hpp"
 #endif
-#include "CUDA_legacy/gpu_misc.h"
 
 #define DET_BLOCK_SIZE 8
 
@@ -2390,9 +2390,9 @@ void test_all_ratios_kernel()
 {
   int N = 128;
   float *A, *A_d, *Ainv, *Ainv_d, *ratio, *ratio_d;
-  cudaMalloc((void**)&A_d, N * N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&ratio_d, 1 * N * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&A_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&ratio_d, 1 * N * sizeof(float)));
   A     = (float*)malloc(N * N * sizeof(float));
   Ainv  = (float*)malloc(N * N * sizeof(float));
   ratio = (float*)malloc(1 * N * sizeof(float));
@@ -2403,13 +2403,13 @@ void test_all_ratios_kernel()
       A[i * N + j]    = 1.0f + drand48();
       Ainv[i * N + j] = 1.0f + drand48();
     }
-  cudaMemcpyAsync(A_d, A, N * N * sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_d, Ainv, N * N * sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(A_d, A, N * N * sizeof(float), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_d, Ainv, N * N * sizeof(float), cudaMemcpyHostToDevice));
   float **A_list, **A_list_d, **Ainv_list, **Ainv_list_d, **ratio_list, **ratio_list_d;
   int numMats = 2000;
-  cudaMalloc((void**)&A_list_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_list_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&ratio_list_d, numMats * sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&A_list_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_list_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&ratio_list_d, numMats * sizeof(float*)));
   A_list     = (float**)malloc(numMats * sizeof(float*));
   Ainv_list  = (float**)malloc(numMats * sizeof(float*));
   ratio_list = (float**)malloc(numMats * sizeof(float*));
@@ -2419,9 +2419,9 @@ void test_all_ratios_kernel()
     Ainv_list[i]  = Ainv_d;
     ratio_list[i] = ratio_d;
   }
-  cudaMemcpyAsync(A_list_d, A_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_list_d, Ainv_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(ratio_list_d, ratio_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(A_list_d, A_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_list_d, Ainv_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(ratio_list_d, ratio_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
   clock_t start = clock();
   for (int i = 0; i < 1000; i++)
     calc_all_ratios(Ainv_list_d, A_list_d, ratio_list_d, N, N, numMats);
@@ -2431,7 +2431,7 @@ void test_all_ratios_kernel()
   fprintf(stderr, "end = %ld\n", end);
   double rate = 1000.0 / time;
   fprintf(stderr, "Rate = %1.2f generations per second.\n", rate);
-  cudaMemcpy(ratio, ratio_d, N * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(ratio, ratio_d, N * sizeof(float), cudaMemcpyDeviceToHost));
   // for (int i=0; i<N; i++) {
   //   ratio2[i] = 0.0f;
   //   for (int j=0; j<N; j++)
@@ -2445,9 +2445,9 @@ void test_all_grad_lapl_kernel()
 {
   int N = 128;
   float *A, *A_d, *Ainv, *Ainv_d, *ratio, *ratio_d;
-  cudaMalloc((void**)&A_d, 4 * N * N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&ratio_d, 4 * N * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&A_d, 4 * N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&ratio_d, 4 * N * sizeof(float)));
   A     = (float*)malloc(4 * N * N * sizeof(float));
   Ainv  = (float*)malloc(1 * N * N * sizeof(float));
   ratio = (float*)malloc(4 * N * sizeof(float));
@@ -2459,13 +2459,13 @@ void test_all_grad_lapl_kernel()
       for (int k = 0; k < 4; k++)
         A[4 * (i * N + j) + k] = 1.0f + drand48();
     }
-  cudaMemcpyAsync(A_d, A, 4 * N * N * sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_d, Ainv, 1 * N * N * sizeof(float), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(A_d, A, 4 * N * N * sizeof(float), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_d, Ainv, 1 * N * N * sizeof(float), cudaMemcpyHostToDevice));
   float **A_list, **A_list_d, **Ainv_list, **Ainv_list_d, **ratio_list, **ratio_list_d;
   int numMats = 2000;
-  cudaMalloc((void**)&A_list_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_list_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&ratio_list_d, numMats * sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&A_list_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_list_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&ratio_list_d, numMats * sizeof(float*)));
   A_list     = (float**)malloc(numMats * sizeof(float*));
   Ainv_list  = (float**)malloc(numMats * sizeof(float*));
   ratio_list = (float**)malloc(numMats * sizeof(float*));
@@ -2475,14 +2475,14 @@ void test_all_grad_lapl_kernel()
     Ainv_list[i]  = Ainv_d;
     ratio_list[i] = ratio_d;
   }
-  cudaMemcpyAsync(A_list_d, A_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_list_d, Ainv_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(ratio_list_d, ratio_list, numMats * sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(A_list_d, A_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_list_d, Ainv_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(ratio_list_d, ratio_list, numMats * sizeof(float*), cudaMemcpyHostToDevice));
   struct timeval tstart, tend;
   gettimeofday(&tstart, NULL);
   for (int i = 0; i < 1; i++)
     calc_grad_lapl(Ainv_list_d, A_list_d, ratio_list_d, N, N, numMats);
-  cudaMemcpy(ratio, ratio_d, 4 * N * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(ratio, ratio_d, 4 * N * sizeof(float), cudaMemcpyDeviceToHost));
   gettimeofday(&tend, NULL);
   double start = (double)tstart.tv_sec + 1.0e-6 * (double)tstart.tv_usec;
   double end   = (double)tend.tv_sec + 1.0e-6 * (double)tend.tv_usec;
@@ -2853,11 +2853,11 @@ void test_update()
   Ainv_h = (float*)malloc(N * N * sizeof(float));
   A_h    = (float*)malloc(N * N * sizeof(float));
   u_h    = (float*)malloc(N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&u_d, N * sizeof(float));
-  cudaMalloc((void**)&Ainv_u_d, N * sizeof(float));
-  cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&u_d, N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_u_d, N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float)));
   float **AinvList, **Ainv_uList, **AList, **Ainv_colkList, **uList;
   AList         = (float**)malloc(NUM_MATS * sizeof(float*));
   AinvList      = (float**)malloc(NUM_MATS * sizeof(float*));
@@ -2865,24 +2865,24 @@ void test_update()
   Ainv_colkList = (float**)malloc(NUM_MATS * sizeof(float*));
   uList         = (float**)malloc(NUM_MATS * sizeof(float*));
   float **AList_d, **AinvList_d, **Ainv_uList_d, **Ainv_colkList_d, **uList_d;
-  cudaMalloc((void**)&AList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_uList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_colkList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&uList_d, numMats * sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&AList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_uList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_colkList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&uList_d, numMats * sizeof(float*)));
   for (int mat = 0; mat < numMats; mat++)
   {
-    cudaMalloc((void**)&(AList[mat]), N * N * sizeof(float) + 1000);
-    cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float) + 1000);
-    cudaMalloc((void**)&(Ainv_uList[mat]), N * sizeof(float) + 1000);
-    cudaMalloc((void**)&(Ainv_colkList[mat]), N * sizeof(float) + 1000);
-    cudaMalloc((void**)&(uList[mat]), N * sizeof(float) + 1000);
+    cudaCheck(cudaMalloc((void**)&(AList[mat]), N * N * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(Ainv_uList[mat]), N * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(Ainv_colkList[mat]), N * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(uList[mat]), N * sizeof(float) + 1000));
   }
-  cudaMemcpyAsync(AList_d, AList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_uList_d, Ainv_uList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_colkList_d, Ainv_colkList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(uList_d, uList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(AList_d, AList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_uList_d, Ainv_uList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_colkList_d, Ainv_colkList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(uList_d, uList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
   srand48((long int)12341313);
   int row = 0;
   for (int mat = 0; mat < numMats; mat++)
@@ -2904,9 +2904,9 @@ void test_update()
     }
     // for (int i=0; i<N; i++)
     //   u_h[i] = A_h[row*N+i];
-    cudaMemcpyAsync(AList[mat], A_h, N * N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(uList[mat], u_h, N * sizeof(float), cudaMemcpyHostToDevice);
+    cudaCheck(cudaMemcpyAsync(AList[mat], A_h, N * N * sizeof(float), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyAsync(uList[mat], u_h, N * sizeof(float), cudaMemcpyHostToDevice));
   }
   dim3 dimBlock2(64);
   dim3 dimGrid2((N + 63) / 64, NUM_MATS);
@@ -2918,10 +2918,10 @@ void test_update()
     update_inverse_cuda2<float, 64>
         <<<dimGrid2, dimBlock2>>>(AList_d, AinvList_d, uList_d, Ainv_uList_d, Ainv_colkList_d, N, N, row);
   }
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
   double end = omp_get_wtime();
   fprintf(stderr, "Rate = %12.8f updates per second.\n", (double)(100 * NUM_MATS) / (end - start));
-  cudaMemcpy(Ainv_h, AinvList[0], N * N * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(Ainv_h, AinvList[0], N * N * sizeof(float), cudaMemcpyDeviceToHost));
   /*  for (int j=0; j<16; j++)
     for (int i=0; i<N; i++)
       A[(row+j)*N+i] += delta_h[j*N+i];
@@ -2949,11 +2949,11 @@ void test_update_transpose()
   Ainv_h = (float*)malloc(N * N * sizeof(float));
   A_h    = (float*)malloc(N * N * sizeof(float));
   u_h    = (float*)malloc(N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&u_d, N * sizeof(float));
-  cudaMalloc((void**)&Ainv_u_d, N * sizeof(float));
-  cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&u_d, N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_u_d, N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float)));
   float **AinvList, **Ainv_uList, **AList, **Ainv_colkList, **uList;
   AList         = (float**)malloc(NUM_MATS * sizeof(float*));
   AinvList      = (float**)malloc(NUM_MATS * sizeof(float*));
@@ -2961,24 +2961,24 @@ void test_update_transpose()
   Ainv_colkList = (float**)malloc(NUM_MATS * sizeof(float*));
   uList         = (float**)malloc(NUM_MATS * sizeof(float*));
   float **AList_d, **AinvList_d, **Ainv_uList_d, **Ainv_colkList_d, **uList_d;
-  cudaMalloc((void**)&AList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_uList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_colkList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&uList_d, numMats * sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&AList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_uList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_colkList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&uList_d, numMats * sizeof(float*)));
   for (int mat = 0; mat < numMats; mat++)
   {
-    cudaMalloc((void**)&(AList[mat]), N * N * sizeof(float));
-    cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float));
-    cudaMalloc((void**)&(Ainv_uList[mat]), N * sizeof(float));
-    cudaMalloc((void**)&(Ainv_colkList[mat]), N * sizeof(float));
-    cudaMalloc((void**)&(uList[mat]), N * sizeof(float));
+    cudaCheck(cudaMalloc((void**)&(AList[mat]), N * N * sizeof(float)));
+    cudaCheck(cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float)));
+    cudaCheck(cudaMalloc((void**)&(Ainv_uList[mat]), N * sizeof(float)));
+    cudaCheck(cudaMalloc((void**)&(Ainv_colkList[mat]), N * sizeof(float)));
+    cudaCheck(cudaMalloc((void**)&(uList[mat]), N * sizeof(float)));
   }
-  cudaMemcpyAsync(AList_d, AList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_uList_d, Ainv_uList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_colkList_d, Ainv_colkList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(uList_d, uList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(AList_d, AList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_uList_d, Ainv_uList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_colkList_d, Ainv_colkList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(uList_d, uList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
   srand48((long int)12341313);
   int row = 1;
   for (int mat = 0; mat < numMats; mat++)
@@ -3000,9 +3000,9 @@ void test_update_transpose()
     }
     // for (int i=0; i<N; i++)
     //   u_h[i] = A_h[row*N+i];
-    cudaMemcpyAsync(AList[mat], A_h, N * N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(uList[mat], u_h, N * sizeof(float), cudaMemcpyHostToDevice);
+    cudaCheck(cudaMemcpyAsync(AList[mat], A_h, N * N * sizeof(float), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyAsync(uList[mat], u_h, N * sizeof(float), cudaMemcpyHostToDevice));
   }
   dim3 dimBlock(DET_BLOCK_SIZE);
   dim3 dimGrid(NUM_MATS);
@@ -3014,11 +3014,11 @@ void test_update_transpose()
     // update_inverse_transpose_cuda_2pass<float,DET_BLOCK_SIZE,N><<<dimGrid,dimBlock>>>
     //   (AList_d, AinvList_d, uList_d, N, N, row);
   }
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
   clock_t end = clock();
   fprintf(stderr, "Rate = %12.8f updates per second.\n",
           (double)(1000 * NUM_MATS) / ((double)(end - start) / (double)CLOCKS_PER_SEC));
-  cudaMemcpy(Ainv_h, AinvList[1], N * N * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(Ainv_h, AinvList[1], N * N * sizeof(float), cudaMemcpyDeviceToHost));
   for (int i = 0; i < N; i++)
     A[row * N + i] = u_h[i];
   for (int i = 0; i < N; i++)
@@ -3054,10 +3054,10 @@ void test_woodbury()
   Ainv_delta_h = (float*)malloc(N * M * sizeof(float));
   Anew_h       = (float*)malloc(N * N * sizeof(float));
   Anew_inv_h   = (float*)malloc(N * N * sizeof(float));
-  cudaMalloc((void**)&Ainv_d, N * N * sizeof(float));
-  cudaMalloc((void**)&delta_d, N * M * sizeof(float));
-  cudaMalloc((void**)&Ainv_delta_d, N * M * sizeof(float));
-  cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float));
+  cudaCheck(cudaMalloc((void**)&Ainv_d, N * N * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&delta_d, N * M * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_delta_d, N * M * sizeof(float)));
+  cudaCheck(cudaMalloc((void**)&Ainv_colk_d, N * sizeof(float)));
   float **AinvList, **Ainv_deltaList, **AList, **Ainv_colkList, **deltaList, **invBlockList;
   AList          = (float**)malloc(NUM_MATS * sizeof(float*));
   AinvList       = (float**)malloc(NUM_MATS * sizeof(float*));
@@ -3066,28 +3066,22 @@ void test_woodbury()
   deltaList      = (float**)malloc(NUM_MATS * sizeof(float*));
   invBlockList   = (float**)malloc(NUM_MATS * sizeof(float*));
   float **AList_d, **AinvList_d, **Ainv_deltaList_d, **Ainv_colkList_d, **deltaList_d, **invBlockList_d;
-  cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&Ainv_deltaList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&deltaList_d, numMats * sizeof(float*));
-  cudaMalloc((void**)&invBlockList_d, numMats * sizeof(float*));
+  cudaCheck(cudaMalloc((void**)&AinvList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&Ainv_deltaList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&deltaList_d, numMats * sizeof(float*)));
+  cudaCheck(cudaMalloc((void**)&invBlockList_d, numMats * sizeof(float*)));
   for (int mat = 0; mat < numMats; mat++)
   {
     //    cudaMalloc((void**)&(AList[mat])        , N*N*sizeof(float)+1000);
-    cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float) + 1000);
-    cudaMalloc((void**)&(Ainv_deltaList[mat]), N * M * sizeof(float) + 1000);
-    cudaMalloc((void**)&(deltaList[mat]), N * M * sizeof(float) + 1000);
-    cudaMalloc((void**)&(invBlockList[mat]), M * M * sizeof(float) + 1000);
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess)
-    {
-      fprintf(stderr, "CUDA error in test_woodbury malloc:\n  %s\n", cudaGetErrorString(err));
-      abort();
-    }
+    cudaCheck(cudaMalloc((void**)&(AinvList[mat]), N * N * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(Ainv_deltaList[mat]), N * M * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(deltaList[mat]), N * M * sizeof(float) + 1000));
+    cudaCheck(cudaMalloc((void**)&(invBlockList[mat]), M * M * sizeof(float) + 1000));
   }
-  cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ainv_deltaList_d, Ainv_deltaList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(deltaList_d, deltaList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(invBlockList_d, invBlockList, numMats * sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(AinvList_d, AinvList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ainv_deltaList_d, Ainv_deltaList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(deltaList_d, deltaList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(invBlockList_d, invBlockList, numMats * sizeof(float*), cudaMemcpyHostToDevice));
   srand48((long int)12341313);
   int row = 0;
   for (int mat = 0; mat < numMats; mat++)
@@ -3124,14 +3118,8 @@ void test_woodbury()
     //   delta_h[i] = A_h[row*N+i];
     // cudaMemcpyAsync (AList[mat], A_h, N*N*sizeof(float),
     // 		cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpyAsync(deltaList[mat], delta_h, N * M * sizeof(float), cudaMemcpyHostToDevice);
-  }
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf(stderr, "CUDA error in test_woodbury memcopy's:\n  %s\n", cudaGetErrorString(err));
-    abort();
+    cudaCheck(cudaMemcpyAsync(AinvList[mat], Ainv_h, N * N * sizeof(float), cudaMemcpyHostToDevice));
+    cudaCheck(cudaMemcpyAsync(deltaList[mat], delta_h, N * M * sizeof(float), cudaMemcpyHostToDevice));
   }
   dim3 dimBlock2(64);
   dim3 dimGrida((N + 15) / 16, numMats);
@@ -3145,25 +3133,13 @@ void test_woodbury()
     woodbury_update_16b<float>
         <<<dimGridb, dimBlock2>>>(AinvList_d, deltaList_d, Ainv_deltaList_d, invBlockList_d, N, N, updateBlock);
   }
-  cudaDeviceSynchronize();
-  err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf(stderr, "CUDA error in woodbury_update_16:\n  %s\n", cudaGetErrorString(err));
-    abort();
-  }
+  cudaCheck(cudaDeviceSynchronize());
   double end = omp_get_wtime();
   fprintf(stderr, "Rate = %12.8f updates per second.\n", (double)(100 * NUM_MATS) / (end - start));
   fprintf(stderr, "About to copy %ld back\n", N * M * sizeof(float));
-  cudaMemcpy(Ainv_delta_h, Ainv_deltaList[0], N * M * sizeof(float), cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(Ainv_delta_h, Ainv_deltaList[0], N * M * sizeof(float), cudaMemcpyDeviceToHost));
   fprintf(stderr, "About to copy %ld back\n", N * N * sizeof(float));
-  cudaMemcpy(Anew_inv_h, AinvList[0], N * N * sizeof(float), cudaMemcpyDeviceToHost);
-  err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf(stderr, "CUDA error in test_woodbury memcopy back:\n  %s\n", cudaGetErrorString(err));
-    abort();
-  }
+  cudaCheck(cudaMemcpy(Anew_inv_h, AinvList[0], N * N * sizeof(float), cudaMemcpyDeviceToHost));
   fprintf(stderr, "Copied result back.\n");
   float Ainv_delta[N * M];
   for (int i = 0; i < N * M; i++)

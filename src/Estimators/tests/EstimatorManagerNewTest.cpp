@@ -2,12 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
+
+#include "catch.hpp"
 
 #include "EstimatorManagerNewTest.h"
 #include "Estimators/ScalarEstimatorBase.h"
@@ -19,7 +21,7 @@ namespace qmcplusplus
 {
 namespace testing
 {
-EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) : em(comm), comm_(comm)
+EstimatorManagerNewTest::EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks) : em(ham, comm), comm_(comm)
 {
   int num_ranks = comm_->size();
   if (num_ranks != ranks)
@@ -28,22 +30,27 @@ EstimatorManagerNewTest::EstimatorManagerNewTest(Communicate* comm, int ranks) :
   app_log() << "running on " << num_ranks << '\n';
 }
 
-bool EstimatorManagerNewTest::testAddGetEstimator()
+bool EstimatorManagerNewTest::testReplaceMainEstimator()
 {
   // Must create on heap since the EstimatorManager destructor deletes all estimators
   auto fake_est_uptr      = std::make_unique<FakeEstimator>();
   FakeEstimator* fake_est = fake_est_uptr.get();
 
-  em.add(std::move(fake_est_uptr), "fake");
+  em.addMainEstimator(std::move(fake_est_uptr));
 
-  ScalarEstimatorBase* est2 = em.getEstimator("fake");
-  FakeEstimator* fake_est2  = dynamic_cast<FakeEstimator*>(est2);
+  CHECK(em.main_estimator_->getSubTypeStr() == "fake");	
 
-  return fake_est2 == fake_est;
+  auto fake_est2 = std::make_unique<FakeEstimator>();
+  fake_est2->type_ = "Fake2";
+
+  em.addMainEstimator(std::move(fake_est2));
+
+  return em.main_estimator_->getSubTypeStr() == "Fake2";
 }
 
-void EstimatorManagerNewTest::fakeSomeScalarSamples()
+void EstimatorManagerNewTest::fakeMainScalarSamples()
 {
+  estimators_.clear();
   FakeEstimator fake_estimator;
   fake_estimator.scalars.resize(4);
   fake_estimator.scalars_saved.resize(4);
@@ -63,6 +70,50 @@ void EstimatorManagerNewTest::fakeSomeScalarSamples()
   estimators_[2].scalars[3](2.0);
 
   em.get_AverageCache().resize(4);
+}
+  
+void EstimatorManagerNewTest::fakeScalarSamplesAndCollect()
+{
+  estimators_.clear();
+  FakeEstimator fake_estimator;
+  fake_estimator.scalars.resize(4);
+  fake_estimator.scalars_saved.resize(4);
+  fake_estimator.scalars[0](1.0);
+  fake_estimator.scalars[1](2.0);
+  fake_estimator.scalars[2](3.0);
+  fake_estimator.scalars[3](4.0);
+
+  //three estimators
+  estimators_.push_back(fake_estimator);
+  estimators_.push_back(fake_estimator);
+  estimators_.push_back(fake_estimator);
+
+  estimators_[2].scalars[0](2.0);
+  estimators_[2].scalars[1](2.0);
+  estimators_[2].scalars[2](2.0);
+  estimators_[2].scalars[3](2.0);
+
+  std::vector<FakeEstimator> estimators2;
+  estimators2.push_back(fake_estimator);
+  estimators2.push_back(fake_estimator);
+  estimators2.push_back(fake_estimator);
+
+  std::vector<FakeEstimator> estimators3;
+  estimators3.push_back(fake_estimator);
+  estimators3.push_back(fake_estimator);
+  estimators3.push_back(fake_estimator);
+  
+  em.addScalarEstimator(std::make_unique<FakeEstimator>());
+  em.addScalarEstimator(std::make_unique<FakeEstimator>());
+  em.addScalarEstimator(std::make_unique<FakeEstimator>());
+
+  scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators_));
+  scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators2));
+  scalar_estimators_.push_back(makeRefVector<ScalarEstimatorBase>(estimators3));
+  
+  em.get_AverageCache().resize(4);
+
+  em.collectScalarEstimators(scalar_estimators_);
 }
 
 void EstimatorManagerNewTest::fakeSomeOperatorEstimatorSamples(int rank)
@@ -92,12 +143,12 @@ std::vector<QMCTraits::RealType> EstimatorManagerNewTest::generateGoodOperatorDa
   return data;
 }
 
-void EstimatorManagerNewTest::collectScalarEstimators()
+void EstimatorManagerNewTest::collectMainEstimators()
 {
-  RefVector<ScalarEstimatorBase> est_list = makeRefVector<ScalarEstimatorBase>(estimators_);
-  em.collectScalarEstimators(est_list);
+  auto crowd_main_estimators = makeRefVector<ScalarEstimatorBase>(estimators_);
+  em.collectMainEstimators(crowd_main_estimators);
 }
-
+  
 void EstimatorManagerNewTest::testReduceOperatorEstimators() { em.reduceOperatorEstimators(); }
 
 } // namespace testing

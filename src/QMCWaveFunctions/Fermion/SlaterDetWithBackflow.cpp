@@ -18,25 +18,30 @@
 
 namespace qmcplusplus
 {
+
 SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl,
                                              std::vector<std::unique_ptr<Determinant_t>> dets,
                                              std::unique_ptr<BackflowTransformation> BF)
-    : WaveFunctionComponent("SlaterDetWithBackflow"), Dets(std::move(dets)), BFTrans(std::move(BF))
+    : Dets(std::move(dets)), BFTrans(std::move(BF))
 {
   assert(BFTrans);
   assert(Dets.size() == targetPtcl.groups());
-
-  is_fermionic = true;
-
-  Optimizable = BFTrans->isOptimizable();
-  for (const auto& det : Dets)
-    Optimizable = Optimizable || det->Optimizable;
 }
 
 ///destructor
-SlaterDetWithBackflow::~SlaterDetWithBackflow()
+SlaterDetWithBackflow::~SlaterDetWithBackflow() = default;
+
+bool SlaterDetWithBackflow::isOptimizable() const
 {
-  ///clean up SPOSet
+  return BFTrans->isOptimizable() ||
+      std::any_of(Dets.begin(), Dets.end(), [](const auto& det) { return det->isOptimizable(); });
+}
+
+void SlaterDetWithBackflow::extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs)
+{
+  opt_obj_refs.push_back(*BFTrans);
+  for (int i = 0; i < Dets.size(); i++)
+    Dets[i]->extractOptimizableObjectRefs(opt_obj_refs);
 }
 
 void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -88,7 +93,7 @@ std::unique_ptr<WaveFunctionComponent> SlaterDetWithBackflow::makeClone(Particle
   for (const auto& det : Dets)
     dets.push_back(det->makeCopyWithBF(det->getPhi()->makeClone(), *bf));
   auto myclone = std::make_unique<SlaterDetWithBackflow>(tqp, std::move(dets), std::move(bf));
-  assert(myclone->Optimizable == Optimizable);
+  assert(myclone->isOptimizable() == isOptimizable());
   return myclone;
 }
 
@@ -97,7 +102,10 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   // testing derivatives of G and L
   app_log() << "testing derivatives of G and L \n";
   opt_variables_type wfVars, wfvar_prime;
-  checkInVariables(wfVars);
+  UniqueOptObjRefs opt_obj_refs;
+  extractOptimizableObjectRefs(opt_obj_refs);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(wfVars);
   checkOutVariables(wfVars);
   int Nvars   = wfVars.size();
   wfvar_prime = wfVars;
@@ -132,7 +140,8 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
   {
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluateDerivatives(P);
     G0 = 0.0;
     G1 = 0.0;
@@ -145,20 +154,25 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
       DiracDeterminantWithBackflow* Dets_ = dynamic_cast<DiracDeterminantWithBackflow*>(Dets[k].get());
       Dets_->evaluateDerivatives(P, wfVars, dlogpsi, dhpsi, &G0, &L0, i);
     }
+
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + dh;
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluate(P);
     for (int k = 0; k < Dets.size(); k++)
       psi1 += Dets[k]->evaluateLog(P, G1, L1);
+
     for (int j = 0; j < Nvars; j++)
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] - dh;
-    resetParameters(wfvar_prime);
+    for (OptimizableObject& obj : opt_obj_refs)
+      obj.checkInVariablesExclusive(wfvar_prime);
     BFTrans->evaluate(P);
     for (int k = 0; k < Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P, G2, L2);
+
     ParticleSet::SingleParticleValue tmp = 0.0;
     for (int q = 0; q < P.getTotalNum(); q++)
       tmp += (L1[q] - L2[q]) / (2.0 * dh);
@@ -172,15 +186,16 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
                 << std::endl;
     }
   }
-  resetParameters(wfVars);
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(wfVars);
   APP_ABORT("Testing bF derivs \n");
 }
 
 
 void SlaterDetWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi)
+                                                Vector<ValueType>& dlogpsi,
+                                                Vector<ValueType>& dhpsioverpsi)
 {
   //testDerivGL(P);
   if (BFTrans->isOptimizable())

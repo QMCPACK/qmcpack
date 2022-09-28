@@ -16,7 +16,8 @@
 
 namespace qmcplusplus
 {
-SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) : length(l), center(c)
+SHOSet::SHOSet(const std::string& my_name, RealType l, PosType c, const std::vector<SHOState*>& sho_states)
+    : SPOSet(my_name), length(l), center(c)
 {
   state_info.resize(sho_states.size());
   for (int s = 0; s < sho_states.size(); ++s)
@@ -28,8 +29,6 @@ SHOSet::SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states) 
 void SHOSet::initialize()
 {
   using std::sqrt;
-
-  className = "SHOSet";
 
   OrbitalSetSize = state_info.size();
 
@@ -137,22 +136,21 @@ void SHOSet::evaluate_vgl(PosType r, ValueVector& psi, GradVector& dpsi, ValueVe
 
 void SHOSet::evaluate_hermite(const PosType& xpos)
 {
-  int shift = 0;
-  for (int d = 0; d < DIM; ++d, shift += nmax)
+  for (int d = 0; d < DIM; ++d)
   {
     int nh = qn_max[d];
     if (nh > 0)
     {
-      RealType x         = xpos[d];
-      hermite(0 + shift) = 1.0;
-      RealType Hnm2      = 0.0;
-      RealType Hnm1      = 1.0;
+      RealType x    = xpos[d];
+      hermite(d, 0) = 1.0;
+      RealType Hnm2 = 0.0;
+      RealType Hnm1 = 1.0;
       for (int n = 1; n < nh; ++n)
       {
-        RealType Hn        = 2 * (x * Hnm1 - (n - 1) * Hnm2);
-        hermite(n + shift) = Hn;
-        Hnm2               = Hnm1;
-        Hnm1               = Hn;
+        RealType Hn   = 2 * (x * Hnm1 - (n - 1) * Hnm2);
+        hermite(d, n) = Hn;
+        Hnm2          = Hnm1;
+        Hnm1          = Hn;
       }
     }
   }
@@ -162,24 +160,21 @@ void SHOSet::evaluate_hermite(const PosType& xpos)
 void SHOSet::evaluate_d0(const PosType& xpos, ValueVector& psi)
 {
   using std::exp;
-  int shift = 0;
-  for (int d = 0; d < DIM; ++d, shift += nmax)
+  for (int d = 0; d < DIM; ++d)
   {
     RealType x = xpos[d];
     RealType g = exp(-.5 * x * x);
     for (int n = 0; n < qn_max[d]; ++n)
     {
-      int ns      = n + shift;
-      bvalues(ns) = prefactors[n] * g * hermite(ns);
+      bvalues(d, n) = prefactors[n] * g * hermite(d, n);
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
   {
     const SHOState& state = state_info[s];
     RealType phi          = 1.0;
-    int shift             = 0;
-    for (int d = 0; d < DIM; ++d, shift += nmax)
-      phi *= bvalues(shift + state.quantum_number[d]);
+    for (int d = 0; d < DIM; ++d)
+      phi *= bvalues(d, state.quantum_number[d]);
     psi[s] = phi;
   }
 }
@@ -188,26 +183,23 @@ void SHOSet::evaluate_d0(const PosType& xpos, ValueVector& psi)
 void SHOSet::evaluate_d1(const PosType& xpos, ValueVector& psi, GradVector& dpsi)
 {
   RealType ol = 1.0 / length;
-  int shift   = 0;
-  for (int d = 0; d < DIM; ++d, shift += nmax)
+  for (int d = 0; d < DIM; ++d)
   {
     RealType x    = xpos[d];
     RealType Hnm1 = 0.0;
     for (int n = 0; n < qn_max[d]; ++n)
     {
-      int ns      = n + shift;
-      RealType Hn = hermite(ns);
-      bvalues(ns) = (-x + 2 * n * Hnm1 / Hn) * ol;
-      Hnm1        = Hn;
+      RealType Hn   = hermite(d, n);
+      bvalues(d, n) = (-x + 2 * n * Hnm1 / Hn) * ol;
+      Hnm1          = Hn;
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
   {
     const SHOState& state = state_info[s];
     TinyVector<ValueType, DIM> dphi;
-    int shift = 0;
-    for (int d = 0; d < DIM; ++d, shift += nmax)
-      dphi[d] = bvalues(shift + state.quantum_number[d]);
+    for (int d = 0; d < DIM; ++d)
+      dphi[d] = bvalues(d, state.quantum_number[d]);
     dphi *= psi[s];
     dpsi[s] = dphi;
   }
@@ -217,24 +209,21 @@ void SHOSet::evaluate_d1(const PosType& xpos, ValueVector& psi, GradVector& dpsi
 void SHOSet::evaluate_d2(const PosType& xpos, ValueVector& psi, ValueVector& d2psi)
 {
   RealType ol2 = 1.0 / (length * length);
-  int shift    = 0;
-  for (int d = 0; d < DIM; ++d, shift += nmax)
+  for (int d = 0; d < DIM; ++d)
   {
     RealType x  = xpos[d];
     RealType x2 = x * x;
     for (int n = 0; n < qn_max[d]; ++n)
     {
-      int ns      = n + shift;
-      bvalues(ns) = (-1.0 + x2 - 2 * n) * ol2;
+      bvalues(d, n) = (-1.0 + x2 - 2 * n) * ol2;
     }
   }
   for (int s = 0; s < state_info.size(); ++s)
   {
     const SHOState& state = state_info[s];
     ValueType d2phi       = 0.0;
-    int shift             = 0;
-    for (int d = 0; d < DIM; ++d, shift += nmax)
-      d2phi += bvalues(shift + state.quantum_number[d]);
+    for (int d = 0; d < DIM; ++d)
+      d2phi += bvalues(d, state.quantum_number[d]);
     d2phi *= psi[s];
     d2psi[s] = d2phi;
   }
@@ -532,9 +521,6 @@ void SHOSet::test_overlap()
   app_log() << "end SHOSet::test_overlap" << std::endl;
 }
 
-
-//methods to be implemented later
-void SHOSet::resetParameters(const opt_variables_type& optVariables) { not_implemented("resetParameters"); }
 
 void SHOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
 {

@@ -20,7 +20,8 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Utilities/TimerManager.h"
 #include "Platforms/PinnedAllocator.h"
-#include "OMPTarget/OMPallocator.hpp"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "ResourceCollection.h"
 
 namespace qmcplusplus
 {
@@ -62,16 +63,12 @@ struct CSFData
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDetTableMethod : public WaveFunctionComponent
+class MultiSlaterDetTableMethod : public WaveFunctionComponent, public OptimizableObject
 {
 public:
-  void registerTimers();
-  NewTimer &RatioTimer, &MWRatioTimer, &OffloadRatioTimer, &OffloadGradTimer;
-  NewTimer &EvalGradTimer, &MWEvalGradTimer, &RatioGradTimer, &MWRatioGradTimer;
+  NewTimer &RatioTimer, &offload_timer;
+  NewTimer &EvalGradTimer, &RatioGradTimer;
   NewTimer &PrepareGroupTimer, &UpdateTimer, &AccRejTimer, &EvaluateTimer;
-
-  template<typename DT>
-  using OffloadPinnedAllocator = OMPallocator<DT, PinnedAlignedAllocator<DT>>;
 
   template<typename DT>
   using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
@@ -98,10 +95,13 @@ public:
   ///destructor
   ~MultiSlaterDetTableMethod() override;
 
-  void checkInVariables(opt_variables_type& active) override;
+  std::string getClassName() const override { return "MultiSlaterDetTableMethod"; }
+  bool isFermionic() const final { return true; }
+  bool isOptimizable() const override { return true; }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   void checkOutVariables(const opt_variables_type& active) override;
-  void resetParameters(const opt_variables_type& active) override;
-  void reportStatus(std::ostream& os) override;
+  void checkInVariablesExclusive(opt_variables_type& active) override;
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();
@@ -114,7 +114,16 @@ public:
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;
 
+  /*  void mw_evaluateLog(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                      const RefVectorWithLeader<ParticleSet>& p_list,
+                      const RefVector<ParticleSet::ParticleGradient>& G_list,
+                      const RefVector<ParticleSet::ParticleLaplacian>& L_list) const override ;
+*/
   void prepareGroup(ParticleSet& P, int ig) override;
+
+  void mw_prepareGroup(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                       const RefVectorWithLeader<ParticleSet>& p_list,
+                       int ig) const override;
 
   GradType evalGrad(ParticleSet& P, int iat) override;
   //evalGrad, but returns the spin gradient as well
@@ -153,19 +162,36 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
   void restore(int iat) override;
 
+  void mw_accept_rejectMove(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                            const RefVectorWithLeader<ParticleSet>& p_list,
+                            int iat,
+                            const std::vector<bool>& isAccepted,
+                            bool safe_to_delay = false) const override;
+
   void registerData(ParticleSet& P, WFBufferType& buf) override;
   LogValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
+  void createResource(ResourceCollection& collection) const override;
+  void acquireResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+  void releaseResource(ResourceCollection& collection,
+                       const RefVectorWithLeader<WaveFunctionComponent>& wfc_list) const override;
+
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi) override;
+                             Vector<ValueType>& dlogpsi) override;
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
 
   /** initialize a few objects and states by the builder
    * YL: it should be part of the constructor. It cannot be added to the constructor
@@ -216,10 +242,8 @@ private:
                                                    GradType& g_at,
                                                    ComplexType& sg_at);
 
-  // an implementation of ratio. Use precomputed data
-  PsiValueType ratio_impl(ParticleSet& P, int iat);
-  // an implementation of ratio. No use of precomputed data
-  PsiValueType ratio_impl_no_precompute(ParticleSet& P, int iat);
+  // compute the new multi determinant to reference determinant ratio based on temporarycoordinates.
+  PsiValueType computeRatio_NewMultiDet_to_NewRefDet(int det_id) const;
 
   /** precompute C_otherDs for a given particle group
    * @param P a particle set
@@ -229,12 +253,21 @@ private:
 
   void evaluateMultiDiracDeterminantDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi);
+                                                Vector<ValueType>& dlogpsi,
+                                                Vector<ValueType>& dhpsioverpsi);
 
   void evaluateMultiDiracDeterminantDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
-                                                  std::vector<ValueType>& dlogpsi);
+                                                  Vector<ValueType>& dlogpsi);
+
+  /** compute parameter derivatives of CI/CSF coefficients
+   * @param multi_det_to_ref multideterminant over the reference single determinant
+   * @param dlogpsi saved derivatives
+   * @param det_id provide this argument to affect determinant group id for virtual moves
+   */
+  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
+                              Vector<ValueType>& dlogpsi,
+                              int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;
@@ -269,9 +302,6 @@ private:
   /// C_n x D^1_n x D^2_n ... D^3_n with one D removed. Summed by group. [spin, unique det id]
   //std::vector<Vector<ValueType, OffloadPinnedAllocator<ValueType>>> C_otherDs;
   std::vector<OffloadVector<ValueType>> C_otherDs;
-  /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
-  OffloadVector<const ValueType*> C_otherDs_ptr_list;
-  OffloadVector<const ValueType*> det_value_ptr_list;
 
   ParticleSet::ParticleGradient myG, myG_temp;
   ParticleSet::ParticleLaplacian myL, myL_temp;
@@ -281,6 +311,37 @@ private:
   ParticleSet::ParticleGradient gmPG;
   std::vector<Matrix<RealType>> dpsia, dLa;
   std::vector<Array<GradType, OHMMS_DIM>> dGa;
+
+  struct MultiSlaterDetTableMethodMultiWalkerResource : public Resource
+  {
+    MultiSlaterDetTableMethodMultiWalkerResource() : Resource("MultiSlaterDetTableMethod") {}
+    MultiSlaterDetTableMethodMultiWalkerResource(const MultiSlaterDetTableMethodMultiWalkerResource&)
+        : MultiSlaterDetTableMethodMultiWalkerResource()
+    {}
+
+    Resource* makeClone() const override { return new MultiSlaterDetTableMethodMultiWalkerResource(*this); }
+
+    /// grads of each unique determinants for multiple walkers
+    Matrix<ValueType, OffloadAllocator<ValueType>> mw_grads;
+    /// a collection of device pointers of multiple walkers fused for fast H2D transfer.
+    OffloadVector<const ValueType*> C_otherDs_ptr_list;
+    OffloadVector<const ValueType*> det_value_ptr_list;
+  };
+
+  std::unique_ptr<MultiSlaterDetTableMethodMultiWalkerResource> mw_res_;
+
+  // helper function for extracting a list of WaveFunctionComponent from a list of TrialWaveFunction
+  RefVectorWithLeader<MultiDiracDeterminant> extract_DetRef_list(
+      const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+      int det_id) const
+  {
+    RefVectorWithLeader<MultiDiracDeterminant> det_list(
+        *wfc_list.getCastedLeader<MultiSlaterDetTableMethod>().Dets[det_id]);
+    det_list.reserve(wfc_list.size());
+    for (WaveFunctionComponent& wfc : wfc_list)
+      det_list.push_back(*static_cast<MultiSlaterDetTableMethod&>(wfc).Dets[det_id]);
+    return det_list;
+  }
 };
 
 } // namespace qmcplusplus

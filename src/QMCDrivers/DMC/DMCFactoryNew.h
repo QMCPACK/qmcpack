@@ -32,7 +32,16 @@ private:
 public:
   DMCFactoryNew(xmlNodePtr cur, const int dmc_mode) : dmc_mode_(dmc_mode), input_node_(cur) {}
 
-  QMCDriverInterface* create(const ProjectData& project_data, MCPopulation&& pop, Communicate* comm);
+  /** create a DMCBatched driver.
+   *  \param[in]   project_data   containing so basic options including DriverVersion and max_cpu_seconds
+   *  \param[in]   global_emi     optional global estimator manager input passed by value to insure copy,
+   *                              a global input should not be consumed by driver.
+   */
+  std::unique_ptr<QMCDriverInterface> create(const ProjectData& project_data,
+                                             const std::optional<EstimatorManagerInput> global_emi,
+                                             WalkerConfigurations& wc,
+                                             MCPopulation&& pop,
+                                             Communicate* comm);
 };
 } // namespace qmcplusplus
 

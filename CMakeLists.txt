@@ -1,23 +1,26 @@
 ######################################################################
 # CMake version and policies
 ######################################################################
-cmake_minimum_required(VERSION 3.15.0)
+cmake_minimum_required(VERSION 3.17.0)
+# Note that cmake_minimum_required affects policy defaults.
+# All policies known to the running version of CMake and introduced in
+# cmake_minimum_required version or earlier will be set to use NEW behavior
 
-# CMP0074: CMake find_package will use <PackageName>_ROOT CMake variable
-# and environment variable in search path.
-# various Find<Package>.cmake modules may not follow this policy
-# CMP0075: check_include_file_cxx and other follow CMAKE_REQUIRED_LIBRARIES
-# when doing link check
-cmake_policy(SET CMP0074 NEW)
-cmake_policy(SET CMP0075 NEW)
+if (POLICY CMP0127)
+  cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
+endif()
 
 ######################################################################
 # QMCPACK project
 ######################################################################
 project(
   qmcpack
-  VERSION 3.14.0
+  VERSION 3.15.0
   LANGUAGES C CXX)
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 #--------------------------------------------------------------------
 # Directory where customize cmake files reside
@@ -62,6 +65,7 @@ endif()
 option(ENABLE_HIP "Build with with GPU support through explicit HIP source code" OFF)
 option(ENABLE_ROCM "Build with with GPU support through ROCM libraries" OFF)
 option(ENABLE_OFFLOAD "Enable OpenMP offload" OFF)
+option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # Use CMake object library targets to workaround clang linker not being able to handle fat
 # binary archives which contain both host and device codes, for example OpenMP offload regions.
 # CMake does not propagate indirect object files by design.
@@ -75,6 +79,10 @@ endif(ENABLE_CUDA AND QMC_CUDA)
 if(ENABLE_OFFLOAD AND QMC_CUDA)
   message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
 endif()
+
+if(ENABLE_CUDA AND ENABLE_SYCL)
+  message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
+endif(ENABLE_CUDA AND ENABLE_SYCL)
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
 if(ENABLE_CUDA
@@ -360,7 +368,6 @@ message(STATUS "ENABLE_OMP_TASKLOOP is set to ${ENABLE_OMP_TASKLOOP}")
 # Set up OpenMP offload compile options
 #---------------------------------------------------------
 set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT OFF)
-set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT OFF)
 if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
   message(STATUS "OpenMP offload CXX flags: ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPENMP_OFFLOAD_COMPILE_OPTIONS}")
@@ -371,26 +378,11 @@ if(ENABLE_OFFLOAD AND DEFINED OPENMP_OFFLOAD_COMPILE_OPTIONS)
     # when using OpenMP offload to AMD GPU together with HIP.
     set(QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT ON)
   endif()
-  if(${COMPILER} MATCHES "Clang" AND OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "amdgcn")
-    # As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for
-    # ROCM/AOMP compilers when using OpenMP offload to AMD GPU.
-    set(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT ON)
-  endif()
 endif()
 # Some OpenMP offload runtime libraries have composibility issue with a vendor native runtime.
 # A workaround is making the vendor native runtime responsible for memory allocations and OpenMP associate/disassocate them.
 cmake_dependent_option(QMC_OFFLOAD_MEM_ASSOCIATED "Manage OpenMP memory allocations via the vendor runtime"
                        ${QMC_OFFLOAD_MEM_ASSOCIATED_DEFAULT} "ENABLE_OFFLOAD;ENABLE_CUDA" OFF)
-cmake_dependent_option(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL "ROCM compiler offload bug workaround"
-                       ${QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL_DEFAULT} "ENABLE_OFFLOAD" OFF)
-
-if(QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL)
-  message(
-    WARNING "QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON hurts performance. "
-            "As of 11/2021, QMC_OFFLOAD_ROCM_WORKAROUND_BRANCH_IN_PARALLEL=ON is needed for "
-            "ROCM/AOMP compilers when using OpenMP offload to AMD GPU. See bug report "
-            "https://github.com/ROCm-Developer-Tools/aomp/issues/255")
-endif()
 
 #-------------------------------------------------------------------------------------
 # consider making this always on if OpenMP is no longer UB with Thread Support Library
@@ -496,6 +488,23 @@ if(NOT TEST_CXX_COMPILE_MAIN)
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
 endif()
 
+
+#--------------------------------------------------------------
+# Workaround for breakage of OMP Target kernels at -O0 by Clang
+#--------------------------------------------------------------
+# When the build type is Debug, default -O0 compilation is broken by
+# Clang 15 as of 5d2ce7663b10c107328a4ae0c678165209e64619.
+# Previous compilers are not suggested for clang offload builds.
+#
+# You can set this option to false on the command line to check
+# if this problem has been fixed.
+
+if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
+  option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
+endif()
+mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
+
+
 ######################################################################
 # Check external libraries.
 ######################################################################
@@ -536,13 +545,7 @@ endif()
 
 message(STATUS "LAPACK linker flags: ${LAPACK_LINKER_FLAGS}")
 message(STATUS "LAPACK libraries: ${LAPACK_LIBRARIES}")
-set_target_properties(Math::BLAS_LAPACK PROPERTIES INTERFACE_LINK_LIBRARIES
-                                                   "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
-
-#create scalar_vector_functions target
-add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
-#create fftw3 target
-add_library(Math::FFTW3 INTERFACE IMPORTED)
+target_link_libraries(Math::BLAS_LAPACK INTERFACE "${LAPACK_LINKER_FLAGS};${LAPACK_LIBRARIES}")
 
 # Detects MKL header files and other components.
 if(LAPACK_LIBRARIES MATCHES "mkl_core")
@@ -550,6 +553,7 @@ if(LAPACK_LIBRARIES MATCHES "mkl_core")
 endif()
 
 if(MKL_FOUND)
+  target_link_libraries(Math::BLAS_LAPACK INTERFACE MKL::BLAS_LAPACK)
   set(MATH_VENDOR_GUESS "INTEL_VML")
 endif()
 
@@ -564,6 +568,8 @@ endif()
 #-------------------------------------------------------------------
 #  set up scalar/vector math libraries
 #-------------------------------------------------------------------
+add_library(Math::scalar_vector_functions INTERFACE IMPORTED)
+
 set(VALID_MATH_VENDORS "GENERIC" "INTEL_VML" "IBM_MASS" "AMD_LIBM")
 if(NOT DEFINED MATH_VENDOR_GUESS)
   set(MATH_VENDOR_GUESS "GENERIC")
@@ -598,22 +604,21 @@ include(CheckSincos)
 #-------------------------------------------------------------------
 #  set up FFTW3 library
 #-------------------------------------------------------------------
+add_library(Math::FFTW3 INTERFACE IMPORTED)
 set(FFTW_FOUND 0)
 if(HAVE_MKL)
   if(HAVE_MKL_FFTW3)
     set(FFTW_FOUND 1)
+    target_link_libraries(Math::FFTW3 INTERFACE MKL::FFTW3)
   endif()
 endif()
 if(NOT FFTW_FOUND)
-  find_package(FFTW)
+  find_package(FFTW REQUIRED)
+  target_link_libraries(Math::FFTW3 INTERFACE FFTW::FFTW3)
 endif()
-if(FFTW_FOUND)
-  set(HAVE_LIBFFTW 1)
-  message(STATUS "Found FFTW")
-else(FFTW_FOUND)
-  #  MESSAGE(STATUS "Disabling FFTW")
-  message(FATAL_ERROR "Could not find required library FFTW. Verify FFTW_HOME")
-endif(FFTW_FOUND)
+
+set(HAVE_LIBFFTW 1)
+target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_LIBFFTW")
 
 set(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} ${FORTRAN_LIBRARIES})
 
@@ -651,8 +656,6 @@ endif()
 find_package(HDF5 COMPONENTS C)
 
 if(HDF5_FOUND)
-  set(HAVE_LIBHDF5 1)
-
   if(HDF5_IS_PARALLEL)
     message(STATUS "Parallel HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
@@ -690,13 +693,11 @@ if(HDF5_FOUND)
   endif()
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
-  set_target_properties(
-    IO::HDF5
-    PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIR}" INTERFACE_COMPILE_DEFINITIONS
-                                                                   "HAVE_LIBHDF5;H5_USE_16_API" INTERFACE_LINK_LIBRARIES
-                                                                                                "${HDF5_LIBRARIES}")
+  target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_16_API")
+  target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
-    set_property(TARGET IO::HDF5 APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "ENABLE_PHDF5")
+    target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
   endif(ENABLE_PHDF5)
 else(HDF5_FOUND)
   message(FATAL_ERROR "HDF5 not found. Set HDF5_ROOT")
@@ -708,7 +709,7 @@ endif(HDF5_FOUND)
 set(Boost_NO_BOOST_CMAKE on)
 find_package(Boost 1.61.0 REQUIRED)
 if(Boost_FOUND)
-  set_property(TARGET Boost::boost APPEND PROPERTY INTERFACE_COMPILE_DEFINITIONS "HAVE_LIBBOOST")
+  target_compile_definitions(Boost::boost INTERFACE "HAVE_LIBBOOST")
   message(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 else()
   message(FATAL_ERROR "Need boost 1.61.0 or higher.  Set BOOST_ROOT")
@@ -725,19 +726,31 @@ if(QMC_CUDA OR ENABLE_CUDA)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
-    # a few production machines use CUDA 10 which only supports C++14.
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 14)
+      set(CMAKE_CUDA_STANDARD 17)
     endif()
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     set(CMAKE_CUDA_EXTENSIONS OFF)
+    # CMAKE_CUDA_STANDARD doesn't affect nvcc detection and using unsupported compilers may choke the detection.
+    # This happens when Clang default to C++17. Setting CMAKE_CUDA_FLAGS directly works around the issue.
+    # but CUDA_FLAGS in flags.make may contain -std=c++17 twice with no harm.
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++${CMAKE_CUDA_STANDARD}")
+
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
+    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
+    endif()
+
     enable_language(CUDA)
-    find_package(CUDAToolkit REQUIRED)
+    if(QMC_CUDA)
+      include(TestCUDAHostCompatibility)
+    endif()
+    find_package(CUDAToolkit 11.0 REQUIRED)
     if(NOT TARGET CUDA::cublas)
       message(
         FATAL_ERROR
-          "Found an incomplete CUDA toolkit installation. "
-          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit. "
+          "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
+          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
           "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
     endif()
     # Automatically set the default NVCC flags
@@ -785,7 +798,7 @@ if(ENABLE_ROCM)
     message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
     find_path(
       HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS /opt/rocm
+      HINTS $ENV{ROCM_PATH} /opt/rocm
       PATH_SUFFIXES hip/cmake)
     if(HIP_MODULE_FILE_DIR)
       message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
@@ -806,10 +819,8 @@ if(ENABLE_ROCM)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
   # architecture flags
-  set(HIP_ARCH
-      "gfx906,gfx908"
-      CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++14")
+  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
+  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
   list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
   list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
   # warning suppression
@@ -852,6 +863,27 @@ if(ENABLE_HIP)
 endif(ENABLE_HIP)
 
 #-------------------------------------------------------------------
+#  set up SYCL compiler options and libraries
+#-------------------------------------------------------------------
+if(ENABLE_SYCL)
+  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
+  if(CMAKE_VERSION VERSION_LESS 3.20.0)
+    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
+  endif()
+  add_library(SYCL::host INTERFACE IMPORTED)
+  add_library(SYCL::device INTERFACE IMPORTED)
+  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE} NO_DEFAULT_PATH)
+  target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
+  target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
+  if(TARGET MKL::sycl)
+    target_link_libraries(MKL::sycl INTERFACE OneAPI::DPCPP-host)
+  endif()
+endif(ENABLE_SYCL)
+
+ #-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 

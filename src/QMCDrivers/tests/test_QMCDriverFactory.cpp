@@ -31,6 +31,7 @@
 #include "QMCDrivers/DMC/DMC.h"
 #include "QMCDrivers/VMC/VMCBatched.h"
 #include "QMCDrivers/DMC/DMCBatched.h"
+#include "EstimatorInputDelegates.h"
 
 namespace qmcplusplus
 {
@@ -57,7 +58,7 @@ auto createDriver(Communicate* comm,
   QMCDriverPools dr_pools(comm);
   std::string target("e");
   MCWalkerConfiguration* qmc_system = dr_pools.particle.getWalkerSet(target);
-  return driver_factory.createQMCDriver(node, das, *qmc_system, dr_pools.particle, dr_pools.wavefunction,
+  return driver_factory.createQMCDriver(node, das, std::nullopt, *qmc_system, dr_pools.particle, dr_pools.wavefunction,
                                         dr_pools.hamiltonian, comm);
 }
 
@@ -86,7 +87,7 @@ TEST_CASE("QMCDriverFactory create VMC Driver", "[qmcapp]")
   // std::unique_ptr<QMCDriverInterface> qmc_driver;
 
   // qmc_driver =
-  //   driver_factory.createQMCDriver(node, das, *qmc_system, dr_pools.particle, dr_pools.wavefunction, dr_pools.hamiltonian, comm);
+  //   driver_factory.createQMCDrivernode, das, *qmc_system, dr_pools.particle, dr_pools.wavefunction, dr_pools.hamiltonian, comm);
 
   auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
 
@@ -175,7 +176,6 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
   SECTION("driver version behavior")
   {
     ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
-
     QMCDriverFactory driver_factory(test_project);
 
     Libxml2Document doc;
@@ -186,7 +186,6 @@ TEST_CASE("QMCDriverFactory create DMCBatched driver", "[qmcapp]")
     REQUIRE(das.new_run_type == QMCRunType::DMC_BATCH);
 
     auto qmc_driver = testing::createDriver(comm, driver_factory, node, das);
-
     REQUIRE(qmc_driver != nullptr);
     REQUIRE_NOTHROW(dynamic_cast<DMCBatched&>(*qmc_driver));
     REQUIRE_THROWS(dynamic_cast<DMC&>(*qmc_driver));

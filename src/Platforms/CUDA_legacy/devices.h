@@ -41,13 +41,13 @@
 inline int get_num_appropriate_devices()
 {
   int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
+  cudaCheck(cudaGetDeviceCount(&deviceCount));
   gpu::device_group_numbers.resize(deviceCount);
   int num_appropriate = 0;
   for (int device = 0; device < deviceCount; ++device)
   {
     cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    cudaCheck(cudaGetDeviceProperties(&deviceProp, device));
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) || deviceProp.major >= 2)
     {
       gpu::device_group_numbers[num_appropriate] = device;
@@ -217,19 +217,19 @@ inline int get_device_num()
 inline void set_appropriate_device_num(int num)
 {
   int deviceCount;
-  cudaGetDeviceCount(&deviceCount);
+  cudaCheck(cudaGetDeviceCount(&deviceCount));
   int num_appropriate = 0, device = 0;
   bool set_cuda_device = false;
   for (device = 0; device < deviceCount; ++device)
   {
     cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, device);
+    cudaCheck(cudaGetDeviceProperties(&deviceProp, device));
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) || deviceProp.major >= 2)
     {
       num_appropriate++;
       if (num_appropriate == num + 1)
       {
-        cudaSetDevice(device);
+        cudaCheck(cudaSetDevice(device));
         set_cuda_device = true;
         std::ostringstream out;
         out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device;
@@ -252,7 +252,7 @@ inline void Finalize_CUDA()
   gpu::finalizeCublas();
   gpu::finalizeCUDAEvents();
   gpu::finalizeCUDAStreams();
-  cudaDeviceReset();
+  cudaCheck(cudaDeviceReset());
 }
 
 /** Initialize Cuda device on current MPI rank

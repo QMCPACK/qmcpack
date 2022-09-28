@@ -147,7 +147,17 @@ void ObservableHelper::write(const value_type* first_v, const value_type* /*firs
   if (rank)
   {
     H5Sset_extent_simple(space1_id, rank, &curdims[0], &maxdims[0]);
-    H5Sselect_hyperslab(space1_id, H5S_SELECT_SET, &offsets[0], NULL, &mydims[0], NULL);
+    // According to the HDF5 manual (https://support.hdfgroup.org/HDF5/doc/RM/H5S/H5Sselect_hyperslab.htm)
+    // , the fifth argument (count) means the number of hyper-slabs to select along each dimensions 
+    // while the sixth argument (block) is the size of each hyper-slab.
+    // To write a single hyper-slab of size counts in a dataset, we call
+    // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
+    // The vector "ones" means we want to write one hyper-slab (block) along each dimensions.
+    // The result is equivalent to calling 
+    // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+    // , but it implies writing count hyper-slabs along each dimension and each hyper-slab is of size one.
+    const std::vector<hsize_t> ones(rank, 1);
+    H5Sselect_hyperslab(space1_id, H5S_SELECT_SET, &offsets[0], NULL, ones.data(), &mydims[0]);
     H5Dextend(value1_id, &curdims[0]);
     hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
     herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, first_v + lower_bound);

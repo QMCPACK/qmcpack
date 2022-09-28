@@ -16,6 +16,7 @@
 
 
 #include "AtomicOrbitalCuda.h"
+#include "CUDA_legacy/gpu_misc.h"
 #include <cstdio>
 #include <vector>
 #include <complex>
@@ -66,7 +67,7 @@ init_atomic_cuda()
                     0.0,      0.0,     -3.0,     1.0,
                     0.0,      0.0,      1.0,     0.0
                   };
-  cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice));
 }
 
 
@@ -3587,10 +3588,10 @@ void TestYlmComplex()
     dtheta_host[i] = dtheta_device+2*i*numlm;
     dphi_host[i]   = dphi_device + 2*i*numlm;
   }
-  cudaMemcpyAsync(rhat_device, rhost, 3*numr*sizeof(float),  cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ylm_ptr, Ylm_host, numr*sizeof(float*),    cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(dtheta_ptr, dtheta_host, numr*sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(dphi_ptr,  dphi_host, numr*sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(rhat_device, rhost, 3*numr*sizeof(float),  cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ylm_ptr, Ylm_host, numr*sizeof(float*),    cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(dtheta_ptr, dtheta_host, numr*sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(dphi_ptr,  dphi_host, numr*sizeof(float*), cudaMemcpyHostToDevice));
   dim3 dimBlock(BS);
   dim3 dimGrid((numr+BS-1)/BS);
   clock_t start, end;
@@ -3600,17 +3601,17 @@ void TestYlmComplex()
     CalcYlmComplex<float,5,BS><<<dimGrid,dimBlock>>>
     (rhat_device, Ylm_ptr, dtheta_ptr, dphi_ptr, numr);
   }
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
   end = clock();
   fprintf (stderr, "Ylm rate = %1.8f\n",
            10000*numr/((double)(end-start)/(double)CLOCKS_PER_SEC));
   complex<float> Ylm[numr*numlm], dtheta[numr*numlm], dphi[numr*numlm];
-  cudaMemcpy(Ylm, Ylm_device, 2*numr*numlm*sizeof(float),
-             cudaMemcpyDeviceToHost);
-  cudaMemcpy(dtheta, dtheta_device, 2*numr*numlm*sizeof(float),
-             cudaMemcpyDeviceToHost);
-  cudaMemcpy(dphi, dphi_device, 2*numr*numlm*sizeof(float),
-             cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(Ylm, Ylm_device, 2*numr*numlm*sizeof(float)),
+            cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(dtheta, dtheta_device, 2*numr*numlm*sizeof(float)),
+            cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(dphi, dphi_device, 2*numr*numlm*sizeof(float)),
+            cudaMemcpyDeviceToHost);
   int n = 999;
   vector<complex<double> > Ylm_cpu(numlm), dtheta_cpu(numlm), dphi_cpu(numlm);
   CalcYlm (rlist[n], Ylm_cpu, dtheta_cpu, dphi_cpu, lmax);
@@ -3681,10 +3682,10 @@ void TestYlmReal()
     dtheta_host[i] = dtheta_device + i*block_size;
     dphi_host[i]   = dphi_device   + i*block_size;
   }
-  cudaMemcpyAsync(rhat_device, rhost, 3*numr*sizeof(float), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(Ylm_ptr, Ylm_host, numr*sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(dtheta_ptr, dtheta_host, numr*sizeof(float*), cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(dphi_ptr,  dphi_host, numr*sizeof(float*), cudaMemcpyHostToDevice);
+  cudaCheck(cudaMemcpyAsync(rhat_device, rhost, 3*numr*sizeof(float), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(Ylm_ptr, Ylm_host, numr*sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(dtheta_ptr, dtheta_host, numr*sizeof(float*), cudaMemcpyHostToDevice));
+  cudaCheck(cudaMemcpyAsync(dphi_ptr,  dphi_host, numr*sizeof(float*), cudaMemcpyHostToDevice));
   dim3 dimBlock(BS);
   dim3 dimGrid((numr+BS-1)/BS);
   clock_t start, end;
@@ -3694,24 +3695,17 @@ void TestYlmReal()
     CalcYlmReal<float,lmax,BS><<<dimGrid,dimBlock>>>
     (rhat_device, Ylm_ptr, dtheta_ptr, dphi_ptr, numr);
   }
-  cudaDeviceSynchronize();
+  cudaCheck(cudaDeviceSynchronize());
   end = clock();
   fprintf (stderr, "Ylm rate = %1.8f\n",
            10000*numr/((double)(end-start)/(double)CLOCKS_PER_SEC));
-  err = cudaGetLastError();
-  if (err != cudaSuccess)
-  {
-    fprintf (stderr, "CUDA error in CalcYlmReal:\n  %s\n",
-             cudaGetErrorString(err));
-    abort();
-  }
   float Ylm[numr*block_size], dtheta[numr*block_size], dphi[numr*block_size];
-  cudaMemcpy(Ylm, Ylm_device, numr*block_size*sizeof(float),
-             cudaMemcpyDeviceToHost);
-  cudaMemcpy(dtheta, dtheta_device, numr*block_size*sizeof(float),
-             cudaMemcpyDeviceToHost);
-  cudaMemcpy(dphi, dphi_device, numr*block_size*sizeof(float),
-             cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(Ylm, Ylm_device, numr*block_size*sizeof(float)),
+            cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(dtheta, dtheta_device, numr*block_size*sizeof(float)),
+            cudaMemcpyDeviceToHost);
+  cudaCheck(cudaMemcpy(dphi, dphi_device, numr*block_size*sizeof(float)),
+            cudaMemcpyDeviceToHost);
   int n = 999;
   vector<double> Ylm_cpu(numlm), dtheta_cpu(numlm), dphi_cpu(numlm);
   CalcYlm (rlist[n], Ylm_cpu, dtheta_cpu, dphi_cpu, lmax);

@@ -79,7 +79,7 @@ TEST_CASE("determinant_from_getrf", "[Numerics][determinant]")
   double log_factor   = 0.0;
   double detx         = 0.06317052169675352;
   using ma::determinant_from_getrf;
-  double ovlp = determinant_from_getrf(x.size(0), lu.origin(), lu.size(1), pivot.origin(), log_factor);
+  double ovlp = determinant_from_getrf(std::get<0>(x.sizes()), lu.origin(), std::get<1>(lu.sizes()), pivot.origin(), log_factor);
   REQUIRE(ovlp == Approx(detx));
 }
 
@@ -104,8 +104,8 @@ TEST_CASE("strided_determinant_from_getrf", "[Numerics][determinant]")
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::strided_determinant_from_getrf;
-  strided_determinant_from_getrf(x.size(0), lus.origin(), lu.size(1), lu.num_elements(), pivot.origin(), pivot.size(1),
-                                 log_factor, to_address(ovlps.origin()), lus.size(0));
+  strided_determinant_from_getrf(std::get<0>(x.sizes()), lus.origin(), std::get<1>(lu.sizes()), lu.num_elements(), pivot.origin(), std::get<1>(pivot.sizes()),
+                                 log_factor, to_address(ovlps.origin()), std::get<0>(lus.sizes()));
   REQUIRE(ovlps[0] == Approx(detx));
   REQUIRE(ovlps[1] == Approx(detx));
   REQUIRE(ovlps[2] == Approx(detx));
@@ -132,7 +132,7 @@ TEST_CASE("batched_determinant_from_getrf", "[Numerics][determinant]")
   double log_factor      = 0.0;
   double detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
-  batched_determinant_from_getrf(x.size(0), lu_array.data(), lu.size(1), pivot.origin(), pivot.size(1), log_factor,
+  batched_determinant_from_getrf(std::get<0>(x.sizes()), lu_array.data(), std::get<1>(lu.sizes()), pivot.origin(), std::get<1>(pivot.sizes()), log_factor,
                                  to_address(ovlps.origin()), lu_array.size());
   REQUIRE(ovlps[0] == Approx(detx));
   REQUIRE(ovlps[1] == Approx(detx));
@@ -160,7 +160,7 @@ TEST_CASE("batched_determinant_from_getrf_complex", "[Numerics][determinant]")
   std::complex<double> log_factor      = 0.0;
   std::complex<double> detx            = 0.06317052169675352;
   using ma::batched_determinant_from_getrf;
-  batched_determinant_from_getrf(x.size(0), lu_array.data(), lu.size(1), pivot.origin(), pivot.size(1), log_factor,
+  batched_determinant_from_getrf(std::get<0>(x.sizes()), lu_array.data(), std::get<1>(lu.sizes()), pivot.origin(), std::get<1>(pivot.sizes()), log_factor,
                                  to_address(ovlps.origin()), lu_array.size());
   REQUIRE(ovlps[0] == ComplexApprox(detx));
   REQUIRE(ovlps[1] == ComplexApprox(detx));

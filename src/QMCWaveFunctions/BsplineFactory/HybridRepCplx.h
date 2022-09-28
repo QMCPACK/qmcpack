@@ -53,11 +53,10 @@ private:
   using SPLINEBASE::myV;
 
 public:
-  HybridRepCplx()
-  {
-    this->className = "Hybrid" + this->className;
-    this->KeyWord   = "Hybrid" + this->KeyWord;
-  }
+  HybridRepCplx(const std::string& my_name) : SPLINEBASE(my_name) {}
+
+  std::string getClassName() const final { return "Hybrid" + SPLINEBASE::getClassName(); }
+  std::string getKeyword() const final { return "Hybrid" + SPLINEBASE::getKeyword(); }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepCplx>(*this); }
 

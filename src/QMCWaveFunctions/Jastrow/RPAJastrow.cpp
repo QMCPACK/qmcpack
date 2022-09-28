@@ -18,7 +18,7 @@
 
 #include "RPAJastrow.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
@@ -31,10 +31,7 @@
 
 namespace qmcplusplus
 {
-RPAJastrow::RPAJastrow(ParticleSet& target) : WaveFunctionComponent("RPAJastrow"), targetPtcl(target)
-{
-  Optimizable = true;
-}
+RPAJastrow::RPAJastrow(ParticleSet& target) : targetPtcl(target) {}
 
 RPAJastrow::~RPAJastrow() = default;
 
@@ -173,11 +170,11 @@ void RPAJastrow::makeShortRange()
   RealType tiny = 1e-6;
   Rcut          = myHandler->get_rc() - tiny;
   //create numerical functor of type BsplineFunctor<RealType>.
-  auto nfunc_uptr = std::make_unique<FuncType>();
+  auto nfunc_uptr = std::make_unique<FuncType>(my_name_ + "_short");
   nfunc           = nfunc_uptr.get();
   ShortRangePartAdapter<RealType> SRA(myHandler.get());
   SRA.setRmax(Rcut);
-  auto j2        = std::make_unique<J2OrbitalSoA<BsplineFunctor<RealType>>>("RPA", targetPtcl);
+  auto j2        = std::make_unique<TwoBodyJastrow<BsplineFunctor<RealType>>>("RPA", targetPtcl, false);
   size_t nparam  = 12;  // number of Bspline parameters
   size_t npts    = 100; // number of 1D grid points for basis functions
   RealType cusp  = SRA.df(0);
@@ -203,20 +200,10 @@ void RPAJastrow::makeShortRange()
   Psi.push_back(std::move(j2));
 }
 
-void RPAJastrow::resetParameters(const opt_variables_type& active)
+void RPAJastrow::checkOutVariables(const opt_variables_type& active)
 {
-  //This code was removed in 6 April 2017.  To reimplement, please consult a revision
-  //earlier than this.
-}
-
-void RPAJastrow::checkOutVariables(const opt_variables_type& active) {}
-
-void RPAJastrow::checkInVariables(opt_variables_type& active) {}
-
-void RPAJastrow::reportStatus(std::ostream& os)
-{
-  for (int i = 0; i < Psi.size(); i++)
-    Psi[i]->reportStatus(os);
+  LongRangeRPA->checkOutVariables(active);
+  ShortRangeRPA->checkOutVariables(active);
 }
 
 RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,

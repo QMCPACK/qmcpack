@@ -1,8 +1,8 @@
 .. _github_actions:
 
-======  =======  ===  ===  =======
-Github  Actions  CI   on   QMCPACK
-======  =======  ===  ===  =======
+
+Github Actions CI on QMCPACK
+============================
 
 QMCPACK uses GitHub Actions as part of the suite of continuous integration (CI) checks before a pull request can be merged in the main `develop` branch. Github Actions is an event driven automation tool that allows us to automatically execute commands in response to QMCPACK repo related actions. For example, merging a branch into master might then trigger our test scripts to run.
 
@@ -17,52 +17,56 @@ Summary of Test Jobs
 
 The following is a summary of the jobs run in the CI process required for a PR:
 
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Job Name with                                     | Runner   | Tests         | Time     | Trigger  |
-| Build Info                                        | Host     | ctest -L      | min      | event    |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC9-MPI-Gcov-(Real*, Complex*)                   | GitHub   | deterministic | (60, 60) | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC9-NoMPI-Debug-Real                             | GitHub   | deterministic | 17       | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC9-NoMPI-NoOMP-(Real, Complex)                  | GitHub   | deterministic | (31, 32) | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC9-NoMPI-Sandbox-Real                           | GitHub   | deterministic | (5)      | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC11-NoMPI-Werror-(Real, Complex)                | GitHub   | deterministic | (60, 60) | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Clang10-NoMPI-ASan-(Real, Complex)                | GitHub   | deterministic | (60, 60) | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Clang10-NoMPI-UBSan-Real                          | GitHub   | deterministic | 60       | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Clang12-NoMPI-Offload-Real                        | GitHub   | unit          | 35       | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| macOS-GCC11-NoMPI-Real                            | GitHub   | deterministic | 27       | PR/merge |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)-Mixed      | sulfur   | deterministic | (2, 2)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)            | sulfur   | deterministic | (2 ,2)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-NoMPI-MKL-(Real, Complex)-Mixed              | sulfur   | deterministic | (2, 2)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-NoMPI-MKL-(Real, Complex)                    | sulfur   | deterministic | (2, 2)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-MPI-CUDA-AFQMC-(Real, Complex)-Mixed         | nitrogen | deterministic | (6, 6)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| GCC8-MPI-CUDA-AFQMC-(Real, Complex)               | nitrogen | deterministic | (6, 6)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed      | sulfur   | deterministic | 6        | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real            | sulfur   | deterministic | 6        | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Intel19-MPI-CUDA-AFQMC-(Real, Complex)-Mixed      | sulfur   | deterministic | (6, 6)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| Intel19-MPI-CUDA-AFQMC-(Real, Complex)            | sulfur   | deterministic | (6, 6)   | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)-Mixed | nitrogen | deterministic | (10, 10) | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
-| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)       | nitrogen | deterministic | (12, 12) | manual   |
-+---------------------------------------------------+----------+---------------+----------+----------+
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Job Name with                                            | Runner   | Tests         | Time     | Trigger  |
+| Build Info                                               | Host     | ctest -L      | min      | event    |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-MPI-Gcov-(Real*, Complex*)                          | GitHub   | deterministic | (60, 60) | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-NoMPI-Debug-Real                                    | GitHub   | deterministic | 17       | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-NoMPI-NoOMP-(Real, Complex)                         | GitHub   | deterministic | (31, 32) | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC9-NoMPI-Sandbox-Real                                  | GitHub   | deterministic | (5)      | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC11-NoMPI-Werror-(Real, Complex)                       | GitHub   | deterministic | (60, 60) | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Clang10-NoMPI-ASan-(Real, Complex)                       | GitHub   | deterministic | (60, 60) | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Clang10-NoMPI-UBSan-Real                                 | GitHub   | deterministic | 60       | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Clang12-NoMPI-Offload-Real                               | GitHub   | unit          | 35       | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| macOS-GCC11-NoMPI-Real                                   | GitHub   | deterministic | 27       | PR/merge |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)-Mixed             | sulfur   | deterministic | (2, 2)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-Legacy-CUDA-(Real, Complex)                   | sulfur   | deterministic | (2 ,2)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-MKL-(Real, Complex)-Mixed                     | sulfur   | deterministic | (2, 2)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-NoMPI-MKL-(Real, Complex)                           | sulfur   | deterministic | (2, 2)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)-Mixed                | nitrogen | deterministic | (6, 6)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| GCC8-MPI-CUDA-AFQMC-(Real, Complex)                      | nitrogen | deterministic | (6, 6)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed             | sulfur   | deterministic | 6        | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Clang14Dev-MPI-CUDA-AFQMC-Offload-Real                   | sulfur   | deterministic | 6        | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Intel19-MPI-CUDA-AFQMC-(Real, Complex)-Mixed             | sulfur   | deterministic | (6, 6)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| Intel19-MPI-CUDA-AFQMC-(Real, Complex)                   | sulfur   | deterministic | (6, 6)   | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)-Mixed        | nitrogen | deterministic | (10, 10) | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-CUDA2HIP-(Real, Complex)              | nitrogen | deterministic | (12, 12) | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-(Real, Complex)-Mixed | nitrogen | deterministic | (10, 10) | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
+| ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-(Real, Complex)       | nitrogen | deterministic | (12, 12) | manual   |
++----------------------------------------------------------+----------+---------------+----------+----------+
 
 Jobs running on GitHub hosted runners are triggered automatically. Permission from an admin is required to run jobs on self-hosted runners (e.g. sulfur) for security reasons. In addition, jobs running on GitHub hosted runners run automatically in parallel and the time each job takes may vary depending on system utilization. For information on the underlying hardware see the GitHub Actions `docs on the topic <https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners>`_.  
 
@@ -161,7 +165,7 @@ linux (GCC11-NoMPI-Werror-Real)
 +---------------+------------------------------------------------------------------------------------------------------------------------------+
 
 linux (GCC9-NoMPI-Debug-Real)
-""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""
 +---------------+--------------------------------------------------------------------------------------------------------------+
 | Compiler      | GCC                                                                                                          |
 +---------------+--------------------------------------------------------------------------------------------------------------+
@@ -591,9 +595,9 @@ gpu-cuda (Intel19-MPI-CUDA-AFQMC-Real-Mixed)
 
 gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex-Mixed)
 """""""""""""""""""""""""""""""""""""""""""""""
-+---------------+------------------------------------------------------------------------------------------------------------------------+
-| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh) |
-|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                            |
++---------------+---------------------------------------------------------------------------------------------------------------------------+
+| NOTE          | For Intel builds, the environment script that ships with the Intel compiler needs to be sourced (e.g. compilervars.sh)    |
+|               | ex. source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux                                               |
 +---------------+---------------------------------------------------------------------------------------------------------------------------+
 | Compiler      | Intel                                                                                                                     |
 +---------------+---------------------------------------------------------------------------------------------------------------------------+
@@ -686,7 +690,7 @@ gpu-cuda (Intel19-MPI-CUDA-AFQMC-Complex)
 
 
 gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed)
-"""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""
 +---------------+---------------------------------------------------------------------------------------------------+
 | Compiler      | Clang13                                                                                           |
 +---------------+---------------------------------------------------------------------------------------------------+
@@ -714,7 +718,7 @@ gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed)
 
 
 gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real)
-"""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""
 +---------------+---------------------------------------------------------------------------------------------------+
 | Compiler      | Clang13                                                                                           |
 +---------------+---------------------------------------------------------------------------------------------------+
@@ -742,7 +746,7 @@ gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Real)
 
 
 gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed)
-"""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""
 +---------------+---------------------------------------------------------------------------------------------------+
 | Compiler      | Clang13                                                                                           |
 +---------------+---------------------------------------------------------------------------------------------------+
@@ -770,7 +774,7 @@ gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed)
 
 
 gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex)
-"""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""
 +---------------+---------------------------------------------------------------------------------------------------+
 | Compiler      | Clang13                                                                                           |
 +---------------+---------------------------------------------------------------------------------------------------+
@@ -778,7 +782,119 @@ gpu-hip (ROCm-Clang13-NoMPI-CUDA2HIP-Complex)
 |               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
 |               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
 |               | -DQMC_MPI=0 \                                                                                     |
-|               | -DENABLE_CUDA=ON \                                                                                |
+|               | -DENABLE_CUDA=ON \                                                                               |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=1 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Complex) with full double floating point precision                                 |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~12 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Real-Mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_CUDA=1 \                                                                                    |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Real) with mixed single/double floating point precision                            |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~10 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Real)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_CUDA=1 \                                                                                    |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=0 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=0 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Real) with full double floating point precision                                    |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~12 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Complex-Mixed)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_CUDA=1 \                                                                                    |
+|               | -DQMC_MPI=0 \                                                                                     |
+|               | -DQMC_CUDA2HIP=ON \                                                                               |
+|               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
+|               | -DQMC_COMPLEX=1 \                                                                                 |
+|               | -DQMC_MIXED_PRECISION=1 \                                                                         |
+|               | -DCMAKE_BUILD_TYPE=RelWithDebInfo ..`                                                             |
++---------------+---------------------------------------------------------------------------------------------------+
+| Test Command  | `export LD_LIBRARY_PATH=/usr/local/cuda/lib/:/usr/local/cuda/lib64/:${LD_LIBRARY_PATH} \          |
+|               | && export OMPI_MCA_btl=self && export LD_LIBRARY_PATH=/usr/lib/llvm-12/lib/:${LD_LIBRARY_PATH} \  |
+|               | && export LIBOMP_USE_HIDDEN_HELPER_TASK=0 \                                                       |
+|               | && export LD_LIBRARY_PATH=/opt/llvm/01d59c0de822/lib:/usr/lib64/openmpi/lib/:${LD_LIBRARY_PATH} \ |
+|               | && ctest --output-on-failure -L deterministic -j 16`                                              |
++---------------+---------------------------------------------------------------------------------------------------+
+| Objective     | Build for AMD (Complex) with mixed single/double floating point precision                         |
++---------------+---------------------------------------------------------------------------------------------------+
+| Duration      | ~10 Minutes                                                                                       |
++---------------+---------------------------------------------------------------------------------------------------+
+
+
+gpu-hip (ROCm-Clang13-NoMPI-Legacy-CUDA2HIP-Complex)
+"""""""""""""""""""""""""""""""""""""""""""""""""
++---------------+---------------------------------------------------------------------------------------------------+
+| Compiler      | Clang13                                                                                           |
++---------------+---------------------------------------------------------------------------------------------------+
+| Build Command | `export CUDACXX=/usr/local/cuda/bin/nvcc \                                                        |
+|               | && cmake -GNinja -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \                                    |
+|               | -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \                                                 |
+|               | -DQMC_CUDA=1 \                                                                                    |
+|               | -DQMC_MPI=0 \                                                                                     |
 |               | -DQMC_CUDA2HIP=ON \                                                                               |
 |               | -DCMAKE_PREFIX_PATH=/opt/OpenBLAS/0.3.18 \                                                        |
 |               | -DQMC_COMPLEX=1 \                                                                                 |
@@ -829,3 +945,30 @@ Generate code coverage reports once all tests have reported.
 Upload Coverage
 ---------------
 Upload the generated code coverage to `CodeCov <https://codecov.io/gh/QMCPACK/qmcpack/tree/develop/src>`_ where the badges on our repo will then be updated. Only done by jobs with name `*-coverage`.
+
+
+
+Static Analysis Workflow
+========================
+
+A manually triggered workflow on the GitHub Actions tab can generate the required checks using the `clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`_ static analyzer. The current approach is to set checks in the `qmcpack/src/.clang-tidy` configuration file and run using `clang-tidy` v14 on GitHub Actions runners. The workflow is not part of CI, and it's currently used for reporting potential warnings on the GitHub Actions logs as they are addressed on the `develop` branch as part of refactoring efforts for code quality. 
+
+To run the workflow:
+- Go to the Actions tab
+- Click on the `static` workflow on the left
+- Click on `Run workflow` on the right
+- Use workflow from `Branch:develop` and click on the `Run workflow` button
+
+**Note:** the current `.clang-tidy` configuration file is compatible with clang v14 and runs on the `williamfgc/qmcpack-ci:ubuntu22-openmpi` docker image. To run locally on a Linux system use: `docker run -it user williamfgc/qmcpack-ci:ubuntu22-openmpi /bin/bash` or refer to the :ref:`running_docker`` section.
+
+To build locally enabling `clang-tidy`` static checks defined in `qmcpack/src/.clang-tidy` use the CMake `-DCMAKE_CXX_CLANG_TIDY` option as follows:
+
+.. code-block:: bash
+
+    cmake -GNinja \
+          -DCMAKE_C_COMPILER=clang \
+          -DCMAKE_CXX_COMPILER=clang++ \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_CLANG_TIDY='clang-tidy' \
+          /path/to/qmcpack
+

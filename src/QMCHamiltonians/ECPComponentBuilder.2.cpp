@@ -54,33 +54,34 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   int ndown = 1;
   int nup   = 0;
   int nso   = 0;
-  Llocal    = -1;
   OhmmsAttributeSet aAttrib;
-  int quadRule = -1;
+  int quad_rule = -1;
+  int local_channel = -1;
   aAttrib.add(eunits, "units");
   aAttrib.add(format, "format");
   aAttrib.add(ndown, "npots-down");
   aAttrib.add(nup, "npots-up");
-  aAttrib.add(Llocal, "l-local");
-  aAttrib.add(quadRule, "nrule");
+  aAttrib.add(local_channel, "l-local");
+  aAttrib.add(quad_rule, "nrule");
   aAttrib.add(Srule, "srule");
   aAttrib.add(nso, "npots-so");
 
   xmlNodePtr cur_semilocal = semiPtr[0];
   aAttrib.put(cur_semilocal);
 
-  if (quadRule > -1 && Nrule > -1)
+  // settle Nrule. Priority: current value (from input file) > PP XML file > lmax derived
+  if (quad_rule > -1 && Nrule > -1)
   {
     app_warning() << " Nrule setting found in both qmcpack input (Nrule = " << Nrule
-                  << ") and pseudopotential file (Nrule = " << quadRule << ")."
+                  << ") and pseudopotential file (Nrule = " << quad_rule << ")."
                   << " Using nrule setting in qmcpack input file." << std::endl;
   }
-  else if (quadRule > -1 && Nrule == -1)
+  else if (quad_rule > -1 && Nrule == -1)
   {
     app_log() << " Nrule setting found in pseudopotential file and used." << std::endl;
-    Nrule = quadRule;
+    Nrule = quad_rule;
   }
-  else if (quadRule == -1 && Nrule > -1)
+  else if (quad_rule == -1 && Nrule > -1)
     app_log() << " Nrule setting found in qmcpack input file and used." << std::endl;
   else
   {
@@ -197,12 +198,34 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
     }
     cur_vps = cur_vps->next;
   }
+
   if (rmax < 0)
     rmax = 1.8;
-  if (angList.size() == 1)
+
+  // settle Llocal. Priority: current value (from input file) > PP XML file
+  if (local_channel > -1 && Llocal > -1)
+  {
+    app_warning() << " l-local setting found in both qmcpack input (l-local = " << Llocal
+                  << ") and pseudopotential file (l-local = " << local_channel << ")."
+                  << " Using l-local setting in qmcpack input file." << std::endl;
+  }
+  else if (local_channel > -1 && Llocal == -1)
+  {
+    app_log() << " l-local setting found in pseudopotential file and used." << std::endl;
+    Llocal = local_channel;
+  }
+  else if (local_channel == -1 && Llocal > -1)
+    app_log() << " l-local setting found in qmcpack input file and used." << std::endl;
+  else if (angList.size() == 1)
   {
     Llocal = Lmax;
     app_log() << "    Only one vps is found. Set the local component=" << Lmax << std::endl;
+  }
+  else
+  {
+    app_error() << "The local channel is specified in neither the pseudopotential file nor the input file.\n"
+                << "Please add \'l-local=\"n\"\' attribute to either file.\n";
+    myComm->barrier_and_abort("ECPComponentBuilder::doBreakUp");
   }
 
   if (angListSO.size() != nso)
@@ -280,7 +303,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
         vnnso[i][j] *= grid_global->r(j);
   }
   app_log() << "   Number of angular momentum channels " << angList.size() << std::endl;
-  app_log() << "   Maximum angular momentum channel " << Lmax << std::endl;
+  app_log() << "   Maximum angular momentum channel (Lmax) " << Lmax << std::endl;
   doBreakUp(angList, vnn, rmax, Vprefactor);
 
   //If any spinorbit terms are found...
@@ -451,11 +474,11 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
                                     RealType rmax,
                                     mRealType Vprefactor)
 {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(QMC_CUDA2HIP)
   int device;
-  cudaGetDevice(&device);
+  cudaCheck(cudaGetDevice(&device));
   cudaDeviceProp deviceProp;
-  cudaGetDeviceProperties(&deviceProp, device);
+  cudaCheck(cudaGetDeviceProperties(&deviceProp, device));
   const int max_points = deviceProp.maxTexture1D - 1;
 #else
   const int max_points = 100000;
@@ -487,13 +510,8 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
   // If d is not reset, we generate an error in the interpolated PP!
   d        = agrid->Delta;
   int ngIn = vnn.cols() - 2;
-  if (Llocal == -1 && Lmax > 0)
-  {
-    app_error() << "The local channel is not specified in the pseudopotential file.\n"
-                << "Please add \'l-local=\"n\"\' attribute the semilocal section of the fsatom XML file.\n";
-    myComm->barrier_and_abort("ECPComponentBuilder::doBreakUp");
-    // Llocal = Lmax;
-  }
+
+  assert(angList.size() > 0 && "ECPComponentBuilder::doBreakUp angList cannot be empty!");
   //find the index of local
   int iLlocal = -1;
   for (int l = 0; l < angList.size(); l++)

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -43,7 +43,7 @@ public:
   const MultiWalkerDispatchers dispatchers_;
 
 public:
-  CrowdWithWalkers(SetupPools& pools) : em(pools.comm), dispatchers_(true)
+  CrowdWithWalkers(SetupPools& pools) : em(*pools.hamiltonian_pool->getPrimary(), pools.comm), dispatchers_(true)
   {
     crowd_ptr    = std::make_unique<Crowd>(em, driverwalker_resource_collection_, dispatchers_);
     Crowd& crowd = *crowd_ptr;
@@ -78,8 +78,10 @@ public:
 TEST_CASE("Crowd integration", "[drivers]")
 {
   Communicate* comm = OHMMS::Controller;
-
-  EstimatorManagerNew em(comm);
+  using namespace testing;
+  SetupPools pools;
+  
+  EstimatorManagerNew em(*pools.hamiltonian_pool->getPrimary(), comm);
 
   const MultiWalkerDispatchers dispatchers(true);
   DriverWalkerResourceCollection driverwalker_resource_collection_;

@@ -39,12 +39,16 @@ public:
   using Lattice = POLT::ParticleLayout;
   using QMCT    = QMCTraits;
 
-  /** Constructor for SpinDensityInput that contains an explicitly defined cell
+  /** Constructor for SpinDensityNew that contains an explicitly defined cell
+   *  part of legacy input handling, Deprecated
    */
   SpinDensityNew(SpinDensityInput&& sdi, const SpeciesSet& species, DataLocality dl = DataLocality::crowd);
-  /** Constructor for SpinDensityInput without explicitly defined cell
+
+  /** Constructor
    *
-   *  the crystal lattice should come from the same particle set as the species set.
+   *  If the sdi contains a cell definition the Lattice passed will be ignored.
+   *
+   *  Other wise the crystal lattice should come from the same particle set as the species set.
    *  in case you are tempted to just pass the ParticleSet don't. It clouds the data dependence of
    *  constructing the estimator and creates a strong coupling between the classes.
    *

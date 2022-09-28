@@ -21,16 +21,18 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"
+#include "Platforms/Host/OutputManager.h"
 #include <cmath>
 #include "Utilities/qmc_common.h"
 
 
 namespace qmcplusplus
 {
-ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule)
+ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c, int nrule, int llocal)
     : MPIObjectBase(c),
       NumNonLocal(0),
       Lmax(0),
+      Llocal(llocal),
       Nrule(nrule),
       Srule(8),
       AtomicNumber(0),
@@ -222,7 +224,8 @@ void ECPComponentBuilder::printECPTable()
 {
   if (!qmc_common.io_node || qmc_common.mpi_groups > 1)
     return;
-
+  if (!outputManager.isActive(Verbosity::DEBUG))
+    return;
   char fname[12];
   sprintf(fname, "%s.pp.dat", Species.c_str());
   std::ofstream fout(fname);

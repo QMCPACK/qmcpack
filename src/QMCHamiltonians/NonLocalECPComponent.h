@@ -94,7 +94,7 @@ private:
 
   /// scratch spaces used by evaluateValueAndDerivatives
   Matrix<ValueType> dratio;
-  std::vector<ValueType> dlogpsi_vp;
+  Vector<ValueType> dlogpsi_vp;
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
@@ -241,8 +241,8 @@ public:
                                        RealType r,
                                        const PosType& dr,
                                        const opt_variables_type& optvars,
-                                       const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi);
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi);
 
   /** 
    * @brief Evaluate contribution to B of election iel and ion iat.  Filippi scheme for computing fast derivatives.
@@ -281,7 +281,7 @@ public:
    * @return Void
    */
   void evaluateOneBodyOpMatrixdRContribution(ParticleSet& P,
-                                             const ParticleSet& source,
+                                             ParticleSet& source,
                                              const int iat,
                                              const int iat_src,
                                              const TWFFastDerivWrapper& psi,

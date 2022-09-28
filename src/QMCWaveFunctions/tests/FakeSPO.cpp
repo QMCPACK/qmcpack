@@ -15,9 +15,8 @@
 namespace qmcplusplus
 {
 
-FakeSPO::FakeSPO()
+FakeSPO::FakeSPO() : SPOSet("one_FakeSPO")
 {
-  className = "FakeSPO";
   a.resize(3, 3);
 
   a(0, 0) = 2.3;

@@ -32,11 +32,15 @@ class EstimatorManagerNewTest
 public:
   using QMCT = QMCTraits;
   
-  EstimatorManagerNewTest(Communicate* comm, int ranks);
+  EstimatorManagerNewTest(const QMCHamiltonian& ham, Communicate* comm, int ranks);
+  /** Quickly add main scalar samples using FakeEstimator mock estimator. */
+  void fakeMainScalarSamples();
   /** Quickly add scalar samples using FakeEstimator mock estimator. */
-  void fakeSomeScalarSamples();
+  void fakeScalarSamplesAndCollect();
   /** Quickly add scalar samples using FakeOperatorEstimator mock estimator. */
   void fakeSomeOperatorEstimatorSamples(int rank);
+  /** call private EMB method and collect EMBTs estimators_ as main_estimators*/
+  void collectMainEstimators();
   /** call private EMB method and colelct EMBTs estimators_ */
   void collectScalarEstimators();
   /** reduce the OperatorEstimators onto the EstimatorManagerNew copy. */
@@ -46,8 +50,8 @@ public:
    * only used by test_manager_mpi.cpp so implemented there.  
    */
   std::vector<QMCT::RealType> generateGoodOperatorData(int num_ranks);
-  /// test add and get estimator
-  bool testAddGetEstimator();
+  /// test replacing the main estimator
+  bool testReplaceMainEstimator();
   
   bool testMakeBlockAverages();
   void testReduceOperatorEstimators();
@@ -58,6 +62,7 @@ public:
 private:
   Communicate* comm_;
   std::vector<FakeEstimator> estimators_;
+  std::vector<RefVector<ScalarEstimatorBase>> scalar_estimators_;
 };
 
 }

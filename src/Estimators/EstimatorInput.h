@@ -20,16 +20,15 @@
  *  Many variables have default values we don't want overwritten and that we want expressed in native c++
  *  Define macro to avoid repeating code for this lambda
  */
-#define LAMBDA_setIfInInput [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); }
+#define LAMBDA_setIfInInput \
+  [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); }
 
 namespace qmcplusplus
 {
-
 namespace estimatorinput
 {
 
 void checkCenterCorner(InputSection& input_section, const std::string& error_tag);
-
 
 } // namespace estimatorinput
 } // namespace qmcplusplus

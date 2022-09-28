@@ -41,7 +41,9 @@ struct LRCoulombSingleton
   {
     ESLER = 0,
     EWALD,
-    NATOLI
+    NATOLI,
+    QUASI2D,
+    STRICT2D
   };
   static lr_type this_lr_type;
   ///Stores the energ optimized LR handler.
@@ -52,6 +54,8 @@ struct LRCoulombSingleton
   static std::unique_ptr<LRHandlerType> getHandler(ParticleSet& ref);
   ///This returns a force/stress optimized LR handler.  If non existent, it creates one.
   static std::unique_ptr<LRHandlerType> getDerivHandler(ParticleSet& ref);
+  /// return true if quasi 2D is selected
+  static bool isQuasi2D() { return LRCoulombSingleton::this_lr_type == LRCoulombSingleton::QUASI2D; }
 
   //The following two helper functions are provided to spline the short-range component
   //of the coulomb potential and its derivative.  This is much faster than evaluating

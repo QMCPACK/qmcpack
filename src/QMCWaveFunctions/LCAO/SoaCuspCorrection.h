@@ -47,13 +47,14 @@ class SoaCuspCorrection
   size_t NumTargets;
   ///number of quantum particles
   const int myTableIndex;
-  ///size of the basis set
-  int BasisSetSize;
+  /** Maximal number of supported MOs
+   * this is not the AO basis because cusp correction is applied on the MO directly.
+   */
+  int MaxOrbSize;
 
   ///COMPLEX WON'T WORK
   using COT = CuspCorrectionAtomicBasis<RealType>;
 
-  int unused = 1;
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number of centers (atoms)
@@ -73,10 +74,9 @@ public:
   /** copy constructor */
   SoaCuspCorrection(const SoaCuspCorrection& a);
 
-
-  /** set BasisSetSize and allocate mVGL container
+  /** set the number of orbitals this cusp correction may serve. call this before adding any correction centers.
    */
-  void setBasisSetSize(int nbs);
+  void setOrbitalSetSize(int norbs);
 
   /** compute VGL
    * @param P quantum particleset
@@ -94,7 +94,7 @@ public:
    *
    * Always uses getTempDists() and getTempDispls()
    */
-  void evaluateV(const ParticleSet& P, int iat, ValueType* restrict vals);
+  void evaluateV(const ParticleSet& P, int iat, ValueVector& psi);
 
   /** add a new set of Centered Atomic Orbitals
    * @param icenter the index of the center
@@ -103,7 +103,10 @@ public:
   void add(int icenter, std::unique_ptr<COT> aos);
 
   void addVGL(const ParticleSet& P, int iat, VGLVector& vgl) { evaluateVGL(P, iat, vgl); }
-  void addV(const ParticleSet& P, int iat, ValueType* restrict vals) { evaluateV(P, iat, vals); }
+  void addV(const ParticleSet& P, int iat, ValueVector& psi)
+  {
+    evaluateV(P, iat, psi);
+  }
   void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix& vals, GradMatrix& dpsi, ValueMatrix& d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);

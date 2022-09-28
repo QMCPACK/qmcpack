@@ -16,9 +16,7 @@
 
 #include "HDFWalkerInputManager.h"
 #include "OhmmsData/AttributeSet.h"
-#if defined(HAVE_LIBHDF5)
 #include "Particle/HDFWalkerInput_0_4.h"
-#endif
 #include "Message/Communicate.h"
 #include "hdf/HDFVersion.h"
 
@@ -28,7 +26,6 @@ HDFWalkerInputManager::HDFWalkerInputManager(WalkerConfigurations& wc_list, size
 
 HDFWalkerInputManager::~HDFWalkerInputManager() {}
 
-#if defined(HAVE_LIBHDF5)
 bool HDFWalkerInputManager::put(xmlNodePtr cur)
 {
   //reference revision number
@@ -60,14 +57,5 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   if (success)
     CurrentFileRoot = cfile;
   return success;
-}
-#else
-bool HDFWalkerInputManager::put(xmlNodePtr cur) { return false; }
-#endif
-
-void HDFWalkerInputManager::rewind(const std::string& h5root, int blocks)
-{
-  //   HDFWalkerInputCollect WO(h5root);
-  //   WO.rewind(wc_list_,blocks);
 }
 } // namespace qmcplusplus

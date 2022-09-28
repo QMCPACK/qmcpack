@@ -187,7 +187,17 @@ bool h5d_read(hid_t grp,
 
   hid_t dataspace = H5Dget_space(h1);
   hid_t memspace  = H5Screate_simple(ndims, counts, NULL);
-  herr_t ret      = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+  // According to the HDF5 manual (https://support.hdfgroup.org/HDF5/doc/RM/H5S/H5Sselect_hyperslab.htm)
+  // , the fifth argument (count) means the number of hyper-slabs to select along each dimensions 
+  // while the sixth argument (block) is the size of each hyper-slab.
+  // To write a single hyper-slab of size counts in a dataset, we call
+  // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
+  // The vector "ones" means we want to write one hyper-slab (block) along each dimensions.
+  // The result is equivalent to calling 
+  // H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+  // , but it implies writing count hyper-slabs along each dimension and each hyper-slab is of size one.
+  const std::vector<hsize_t> ones(ndims, 1);
+  herr_t ret      = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
   hid_t h5d_type_id = get_h5_datatype(*first);
   ret               = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
@@ -216,13 +226,15 @@ inline bool h5d_write(hid_t grp,
   hid_t h1          = H5Dopen(grp, aname.c_str());
   hid_t filespace, memspace;
   herr_t ret = -1;
+
+  const std::vector<hsize_t> ones(ndims, 1);
   if (h1 < 0) //missing create one
   {
     hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
     hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
 
     hid_t filespace = H5Dget_space(dataset);
-    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
     hid_t memspace = H5Screate_simple(ndims, counts, NULL);
     ret            = H5Dwrite(dataset, h5d_type_id, memspace, filespace, xfer_plist, first);
@@ -235,7 +247,7 @@ inline bool h5d_write(hid_t grp,
   else
   {
     filespace = H5Dget_space(h1);
-    ret       = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+    ret       = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
     memspace = H5Screate_simple(ndims, counts, NULL);
     ret      = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
@@ -272,10 +284,11 @@ bool h5d_read(hid_t grp,
   if (ndims != H5Sget_simple_extent_ndims(dataspace))
     throw std::runtime_error(aname + " dataspace does not match ");
   // check gcounts???
-  herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+  const std::vector<hsize_t> ones(std::max(ndims, mem_ndims), 1);
+  herr_t ret = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
   hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
-  herr_t mem_ret = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
+  herr_t mem_ret = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, ones.data(), mem_counts);
 
   hid_t h5d_type_id = get_h5_datatype(*first);
   ret               = H5Dread(h1, h5d_type_id, memspace, dataspace, xfer_plist, first);
@@ -309,16 +322,18 @@ inline bool h5d_write(hid_t grp,
   hid_t h5d_type_id = get_h5_datatype(*first);
   hid_t h1          = H5Dopen(grp, aname.c_str());
   herr_t ret        = -1;
+
+  const std::vector<hsize_t> ones(std::max(ndims, mem_ndims), 1);
   if (h1 < 0) //missing create one
   {
     hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
     hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
 
     hid_t filespace = H5Dget_space(dataset);
-    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
     hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
-    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
+    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, ones.data(), mem_counts);
     ret            = H5Dwrite(dataset, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Dclose(memspace);
@@ -329,10 +344,10 @@ inline bool h5d_write(hid_t grp,
   else
   {
     hid_t filespace = H5Dget_space(h1);
-    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, counts, NULL);
+    ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
 
     hid_t memspace = H5Screate_simple(mem_ndims, mem_gcounts, NULL);
-    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, mem_counts, NULL);
+    ret            = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, mem_offsets, NULL, ones.data(), mem_counts);
     ret            = H5Dwrite(h1, h5d_type_id, memspace, filespace, xfer_plist, first);
 
     H5Sclose(filespace);
@@ -429,7 +444,8 @@ inline bool h5d_append(hid_t grp,
     //set the extent
     herr_t hse = H5Sset_extent_simple(dataspace, ndims, end.data(), max_dims.data());
     //select hyperslab/slice of multidimensional data for appended write
-    herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start.data(), NULL, dims, NULL);
+    const std::vector<hsize_t> ones(ndims, 1);
+    herr_t hsh = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, start.data(), NULL, ones.data(), dims);
     //create memory space describing current data block
     memspace = H5Screate_simple(ndims, dims, NULL);
     //append the datablock to the dataset

@@ -64,17 +64,13 @@ SOECPComponent::ComplexType SOECPComponent::sMatrixElements(RealType s1, RealTyp
   {
   case 0:
     return ComplexType(std::cos(s1 + s2), 0.0);
-    break;
   case 1:
     return ComplexType(std::sin(s1 + s2), 0.0);
-    break;
   case 2:
     return ComplexType(0.0, std::sin(s1 - s2));
-    break;
   default:
     APP_ABORT("SOECPComponent::sMatrixElements invalid operator dimension\n");
     return 0;
-    break;
   }
 }
 
@@ -91,22 +87,18 @@ SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int 
                         std::sqrt(l * (l + 1) - m2 * (m2 - 1)) * kroneckerDelta(m1, m2 - 1),
                     zero);
     return val;
-    break;
   case 1:
     val = onehalf *
         ComplexType(0.0,
                     std::sqrt(l * (l + 1) - m2 * (m2 - 1)) * kroneckerDelta(m1, m2 - 1) -
                         std::sqrt(l * (l + 1) - m2 * (m2 + 1)) * kroneckerDelta(m1, m2 + 1));
     return val;
-    break;
   case 2:
     val = ComplexType(m2 * kroneckerDelta(m1, m2), zero);
     return val;
-    break;
   default:
     APP_ABORT("SOECPComponent::lMatrixElements Invalid operator dimension\n");
     return 0;
-    break;
   }
 }
 
@@ -144,18 +136,8 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
           ComplexType ldots(0.0);
           for (int d = 0; d < 3; d++)
             ldots += lmMatrixElements(l, m1, m2, d) * sMatrixElements(sold, snew, d);
-          //Seemingly Numerics/Ylm takes unit vector with order z,x,y...why
-          RealType rmag = std::sqrt(dr[0] * dr[0] + dr[1] * dr[1] + dr[2] * dr[2]);
-          PosType rr    = dr / rmag;
-          PosType tmp;
-          tmp[0]         = rr[2];
-          tmp[1]         = rr[0];
-          tmp[2]         = rr[1];
-          ComplexType Y  = Ylm(l, m1, tmp);
-          tmp[0]         = rrotsgrid_m[j][2];
-          tmp[1]         = rrotsgrid_m[j][0];
-          tmp[2]         = rrotsgrid_m[j][1];
-          ComplexType cY = std::conj(Ylm(l, m2, tmp));
+          ComplexType Y  = sphericalHarmonic(l, m1, dr);
+          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m[j]));
           msums += Y * cY * ldots;
         }
       }

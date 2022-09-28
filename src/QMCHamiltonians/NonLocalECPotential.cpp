@@ -517,7 +517,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
 }
 
 void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                            const ParticleSet& source,
+                                                            ParticleSet& source,
                                                             const TWFFastDerivWrapper& psi,
                                                             const int iat_source,
                                                             std::vector<std::vector<ValueMatrix>>& Bforce)

@@ -10,6 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "VMCBatched.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/ParallelExecutor.hpp"
 #include "Concurrency/Info.hpp"
 #include "Message/UniformCommunicateError.h"
@@ -27,11 +28,20 @@ namespace qmcplusplus
    */
 VMCBatched::VMCBatched(const ProjectData& project_data,
                        QMCDriverInput&& qmcdriver_input,
+                       const std::optional<EstimatorManagerInput>& global_emi,
                        VMCDriverInput&& input,
+                       WalkerConfigurations& wc,
                        MCPopulation&& pop,
                        SampleStack& samples,
                        Communicate* comm)
-    : QMCDriverNew(project_data, std::move(qmcdriver_input), std::move(pop), "VMCBatched::", comm, "VMCBatched"),
+    : QMCDriverNew(project_data,
+                   std::move(qmcdriver_input),
+                   global_emi,
+                   wc,
+                   std::move(pop),
+                   "VMCBatched::",
+                   comm,
+                   "VMCBatched"),
       vmcdriver_input_(input),
       samples_(samples),
       collect_samples_(false)
@@ -66,7 +76,7 @@ void VMCBatched::advanceWalkers(const StateForThread& sft,
 
   timers.movepbyp_timer.start();
   const int num_walkers   = crowd.size();
-  auto& walker_leader = walker_elecs.getLeader();
+  auto& walker_leader     = walker_elecs.getLeader();
   const int num_particles = walker_leader.getTotalNum();
   // Note std::vector<bool> is not like the rest of stl.
   std::vector<bool> moved(num_walkers, false);
@@ -236,7 +246,7 @@ void VMCBatched::runVMCStep(int crowd_id,
   const bool recompute_this_step = (sft.is_recomputing_block && (step + 1) == max_steps);
   // For VMC we don't call this method for warmup steps.
   const bool accumulate_this_step = true;
-  const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+  const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
   if (spin_move)
     advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute_this_step,
                                          accumulate_this_step);
@@ -255,7 +265,7 @@ void VMCBatched::process(xmlNodePtr node)
         adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
-    Base::startup(node, awc);
+    Base::initializeQMC(awc);
   }
   catch (const UniformCommunicateError& ue)
   {
@@ -299,10 +309,12 @@ bool VMCBatched::run()
     ScopedTimer local_timer(timers_.init_walkers_timer);
     ParallelExecutor<> section_start_task;
     section_start_task(crowds_.size(), initialLogEvaluation, std::ref(crowds_), std::ref(step_contexts_));
+    print_mem("VMCBatched after initialLogEvaluation", app_summary());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("InitialLogEvaluation");
   }
 
-  print_mem("VMCBatched after initialLogEvaluation", app_summary());
-
+  ScopedTimer local_timer(timers_.production_timer);
   ParallelExecutor<> crowd_task;
 
   if (qmcdriver_input_.get_warmup_steps() > 0)
@@ -313,7 +325,7 @@ bool VMCBatched::run()
       Crowd& crowd                    = *(crowds[crowd_id]);
       const bool recompute            = false;
       const bool accumulate_this_step = false;
-      const bool spin_move            = sft.population.get_golden_electrons()->isSpinor();
+      const bool spin_move            = sft.population.get_golden_electrons().isSpinor();
       if (spin_move)
         advanceWalkers<CoordsType::POS_SPIN>(sft, crowd, timers, *context_for_steps[crowd_id], recompute,
                                              accumulate_this_step);
@@ -331,7 +343,12 @@ bool VMCBatched::run()
 
     app_log() << "Warm-up is completed!" << std::endl;
     print_mem("VMCBatched after Warmup", app_log());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("Warmup");
   }
+
+  // this barrier fences all previous load imbalance. Avoid block 0 timing pollution.
+  myComm->barrier();
 
   for (int block = 0; block < num_blocks; ++block)
   {
@@ -362,6 +379,8 @@ bool VMCBatched::run()
       }
     }
     print_mem("VMCBatched after a block", app_debug_stream());
+    if (qmcdriver_input_.get_measure_imbalance())
+      measureImbalance("Block " + std::to_string(block));
     endBlock();
     vmc_loop.stop();
 

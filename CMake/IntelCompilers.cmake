@@ -126,8 +126,11 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
       endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
     else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
       # use -march=native
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+      # skipped in OneAPI 2022.0 when using SYCL which caused linking failure.
+      if (NOT (CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 2022.0 AND ENABLE_SYCL))
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+      endif()
     endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   endif()
 

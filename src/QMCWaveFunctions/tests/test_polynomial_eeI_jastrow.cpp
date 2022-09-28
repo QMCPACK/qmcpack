@@ -36,7 +36,7 @@ using PsiValueType = WaveFunctionComponent::PsiValueType;
 
 TEST_CASE("PolynomialFunctor3D functor zero", "[wavefunction]")
 {
-  PolynomialFunctor3D functor;
+  PolynomialFunctor3D functor("test_functor");
 
   double r = 1.2;
   double u = functor.evaluate(r, r, r);
@@ -64,7 +64,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   ions_.update();
 
   elec_.setName("elec");
-  elec_.create({2,2});
+  elec_.create({2, 2});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -158,11 +158,16 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   REQUIRE(std::real(ratio_2) == Approx(0.8302245609));
   REQUIRE(std::real(ratio_3) == Approx(0.7987703724));
 
-  opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
-  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+  UniqueOptObjRefs opt_obj_refs;
+  j3->extractOptimizableObjectRefs(opt_obj_refs);
+  REQUIRE(opt_obj_refs.size() == 2);
 
-  j3->checkInVariables(optvars);
+  opt_variables_type optvars;
+  Vector<WaveFunctionComponent::ValueType> dlogpsi;
+  Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   j3->checkOutVariables(optvars);
@@ -170,10 +175,10 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   dhpsioverpsi.resize(NumOptimizables);
   j3->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
-  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)
-    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
-  std::cout << std::endl;
+    app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+  app_log() << std::endl;
 
   REQUIRE(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
   REQUIRE(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
@@ -188,6 +193,14 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
   REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+
+  std::fill(ratios2.begin(), ratios2.end(), 0);
+  Matrix<ValueType> dratio(2, NumOptimizables);
+  j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
+
+  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
+  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(dratio[0][43]) == Approx(-1.4282569e+03));
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");

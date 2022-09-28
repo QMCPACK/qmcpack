@@ -188,17 +188,6 @@ struct qmc_allocator_traits<qmcplusplus::CUDAAllocator<T>>
   static const bool is_host_accessible = false;
   static const bool is_dual_space      = false;
   static void fill_n(T* ptr, size_t n, const T& value) { qmcplusplus::CUDAfill_n(ptr, n, value); }
-  static void updateTo(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyToDevice(device_ptr, host_ptr, n);
-  }
-
-  static void updateFrom(CUDAAllocator<T>& alloc, T* host_ptr, size_t n)
-  {
-    T* device_ptr = alloc.getDevicePtr(host_ptr);
-    copyFromDevice(host_ptr, device_ptr, n);
-  }
 };
 
 /** allocator for CUDA host pinned memory

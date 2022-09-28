@@ -41,6 +41,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/WFOpt/QMCWFOptFactoryNew.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
@@ -101,7 +102,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   const int nchars = qmc_mode.size();
 
   using DV = ProjectData::DriverVersion;
-  switch (project_data_.get_driver_version())
+  switch (project_data_.getDriverVersion())
   {
   case DV::BATCH:
 #if defined(QMC_CUDA)
@@ -157,6 +158,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
 
 std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr cur,
                                                                       DriverAssemblyState& das,
+                                                                      const std::optional<EstimatorManagerInput>& emi,
                                                                       MCWalkerConfiguration& qmc_system,
                                                                       ParticleSetPool& particle_pool,
                                                                       WaveFunctionPool& wavefunction_pool,
@@ -230,7 +232,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
     VMCFactory fac(das.what_to_do.to_ulong(), cur);
-    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling));
+    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(qmc_system);
     //qmcDriver = fac.create(qmc_system,*psiclone,*primaryH,particle_pool,hamiltonian_pool);
@@ -238,26 +240,25 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::VMC_BATCH)
   {
     VMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
-                                qmc_system.getSampleStack(), comm));
+    new_driver = fac.create(project_data_, emi, qmc_system,
+                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                            qmc_system.getSampleStack(), comm);
   }
   else if (das.new_run_type == QMCRunType::DMC)
   {
     DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
-    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling));
+    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
   }
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {
     DMCFactoryNew fac(cur, das.what_to_do[UPDATE_MODE]);
-    new_driver.reset(fac.create(project_data_,
-                                MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi, primaryH),
-                                comm));
+    new_driver = fac.create(project_data_, emi, qmc_system,
+                            MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH), comm);
   }
   else if (das.new_run_type == QMCRunType::RMC)
   {
     RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
-    new_driver.reset(fac.create(qmc_system, *primaryPsi, *primaryH, comm));
+    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm);
   }
   else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
   {
@@ -276,13 +277,11 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear_batch\" is not safe with CPU mixed precision. "
               "Please use full precision build instead.");
 #endif
-    QMCFixedSampleLinearOptimizeBatched* opt =
-        QMCWFOptLinearFactoryNew(cur, project_data_, qmc_system,
-                                 MCPopulation(comm->size(), comm->rank(), qmc_system, &qmc_system, primaryPsi,
-                                              primaryH),
-                                 qmc_system.getSampleStack(), comm);
+    auto opt = QMCWFOptLinearFactoryNew(cur, project_data_, emi, qmc_system,
+                                        MCPopulation(comm->size(), comm->rank(), &qmc_system, primaryPsi, primaryH),
+                                        qmc_system.getSampleStack(), comm);
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
-    new_driver.reset(opt);
+    new_driver = std::move(opt);
   }
   else if (das.new_run_type == QMCRunType::WF_TEST)
   {

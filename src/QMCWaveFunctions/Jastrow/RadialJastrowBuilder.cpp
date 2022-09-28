@@ -15,12 +15,11 @@
 #include <PlatformSelector.hpp>
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/J2OMPTarget.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 
 #if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowCUDA.h"
 #endif
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
@@ -33,6 +32,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/ShortRangeCuspFunctor.h"
 #include "QMCWaveFunctions/Jastrow/UserFunctor.h"
+#include "Platforms/Host/OutputManager.h"
 #include <iostream>
 
 
@@ -49,7 +49,7 @@ class JastrowTypeHelper
 public:
   using J1Type     = J1OrbitalSoA<RadFuncType>;
   using J1SpinType = J1Spin<RadFuncType>;
-  using J2Type     = J2OrbitalSoA<RadFuncType>;
+  using J2Type     = TwoBodyJastrow<RadFuncType>;
 };
 
 #if defined(QMC_CUDA)
@@ -58,9 +58,9 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J1Type      = OneBodyJastrowOrbitalBspline<RadFuncType>;
+  using J1Type      = OneBodyJastrowCUDA<RadFuncType>;
   using J1SpinType  = void;
-  using J2Type      = TwoBodyJastrowOrbitalBspline<RadFuncType>;
+  using J2Type      = TwoBodyJastrowCUDA<RadFuncType>;
 };
 #endif
 
@@ -69,7 +69,7 @@ class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJa
 {
 public:
   using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J2Type      = J2OMPTarget<RadFuncType>;
+  using J2Type      = TwoBodyJastrow<RadFuncType>;
 };
 
 RadialJastrowBuilder::RadialJastrowBuilder(Communicate* comm, ParticleSet& target, ParticleSet& source)
@@ -157,7 +157,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  auto J2 = std::make_unique<J2Type>(j2name, targetPtcl);
+  auto J2 = std::make_unique<J2Type>(j2name, targetPtcl, Implementation == RadialJastrowBuilder::detail::OMPTARGET);
 
   std::string init_mode("0");
   {
@@ -230,7 +230,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
       app_summary() << "    Radial function for species: " << spA << " - " << spB << std::endl;
       app_debug() << "    RadialJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
 
-      auto functor = std::make_unique<RadFuncType>();
+      const auto coef_id = extractCoefficientsID(cur);
+      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? j2name + "_" + spA + spB : coef_id);
       functor->setCusp(cusp);
       functor->setPeriodic(targetPtcl.getLattice().SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius   = targetPtcl.getLattice().WignerSeitzRadius;
@@ -242,7 +243,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
       app_summary() << std::endl;
 
-      if (is_manager())
+      if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
         char fname[32];
         sprintf(fname, "J2.%s.%s.g%03d.dat", NameOpt.c_str(), pairType.c_str(), getGroupID());
@@ -254,7 +255,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
     }
     cur = cur->next;
   }
-  J2->setOptimizable(true);
 
   // compute Chiesa Correction based on the current J2 parameters
   J2->ChiesaKEcorrection();
@@ -274,7 +274,7 @@ void RadialJastrowBuilder::computeJ2uk(const std::vector<RadFuncType*>& functors
   RealType vol        = targetPtcl.getLattice().Volume;
   int nsp             = targetPtcl.groups();
   FILE* fout          = 0;
-  if (is_manager())
+  if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
   {
     char fname[16];
     sprintf(fname, "uk.%s.g%03d.dat", NameOpt.c_str(), getGroupID());
@@ -367,7 +367,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
   SpeciesSet& sSet = SourcePtcl->getSpeciesSet();
   SpeciesSet& tSet = targetPtcl.getSpeciesSet();
   bool success     = false;
-  bool Opt(true);
   while (kids != NULL)
   {
     std::string kidsname(lowerCase(castXMLCharToChar(kids->name)));
@@ -382,7 +381,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.add(speciesB, "speciesB");
       rAttrib.add(cusp, "cusp");
       rAttrib.put(kids);
-      auto functor = std::make_unique<RadFuncType>();
+
+      const auto coef_id = extractCoefficientsID(kids);
+      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? jname + "_"  + speciesA + speciesB : coef_id);
       functor->setPeriodic(SourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
       functor->setCusp(cusp);
@@ -404,7 +405,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
                     << (speciesB.empty() ? targetPtcl.getName() : speciesB) << std::endl;
       functor->put(kids);
       app_summary() << std::endl;
-      if (is_manager())
+      if (is_manager() && outputManager.isActive(Verbosity::DEBUG))
       {
         char fname[128];
         if (speciesB.size())
@@ -429,11 +430,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
     }
     kids = kids->next;
   }
+
   if (success)
-  {
-    J1->setOptimizable(Opt);
     return J1;
-  }
   else
   {
     PRE.error("BsplineJastrowBuilder failed to add an One-Body Jastrow.");
@@ -464,7 +463,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
   params.add(Rs, "rs");
   params.add(Kc, "kc");
   params.put(cur);
-  bool Opt(true);
 
   std::string jname = input_name.empty() ? Jastfunction : input_name;
 
@@ -509,7 +507,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1<RPAFunctor
     J1->addFunc(ig, std::move(nfunc));
   }
 
-  J1->setOptimizable(Opt);
   return J1;
 }
 
@@ -610,7 +607,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
       {
         static_assert(std::is_same<JastrowTypeHelper<BsplineFunctor<RealType>, OMPTARGET>::J2Type,
-                                   J2OMPTarget<BsplineFunctor<RealType>>>::value,
+                                   TwoBodyJastrow<BsplineFunctor<RealType>>>::value,
                       "check consistent type");
         if (targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         {

@@ -34,6 +34,7 @@ TEST_CASE("PlatformSelector", "[platform]")
 
   SECTION("CPU_OMPTARGET_CUDA")
   {
+    using CPUOMPTargetCUDASelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_CUDA>;
 #if defined(ENABLE_CUDA)
     CHECK(CPUOMPTargetCUDASelector::selectPlatform("yes") == PlatformKind::CUDA);
     CHECK(CPUOMPTargetCUDASelector::selectPlatform("") == PlatformKind::CUDA);
@@ -48,6 +49,25 @@ TEST_CASE("PlatformSelector", "[platform]")
     CHECK(CPUOMPTargetCUDASelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
     CHECK(CPUOMPTargetCUDASelector::selectPlatform("cpu") == PlatformKind::CPU);
     CHECK(CPUOMPTargetCUDASelector::selectPlatform("no") == PlatformKind::CPU);
+  }
+
+  SECTION("CPU_OMPTARGET_SYCL")
+  {
+    using CPUOMPTargetSYCLSelector = PlatformSelector<SelectorKind::CPU_OMPTARGET_SYCL>;
+#if defined(ENABLE_SYCL)
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("yes") == PlatformKind::SYCL);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("") == PlatformKind::SYCL);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("sycl") == PlatformKind::SYCL);
+#elif defined(ENABLE_OFFLOAD)
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("yes") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("") == PlatformKind::OMPTARGET);
+#else
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("yes") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("") == PlatformKind::CPU);
+#endif
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("omptarget") == PlatformKind::OMPTARGET);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("cpu") == PlatformKind::CPU);
+    CHECK(CPUOMPTargetSYCLSelector::selectPlatform("no") == PlatformKind::CPU);
   }
 }
 } // namespace qmcplusplus

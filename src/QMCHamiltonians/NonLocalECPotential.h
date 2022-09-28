@@ -37,6 +37,8 @@ public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi, bool computeForces, bool enable_DLA);
   ~NonLocalECPotential() override;
 
+  bool dependsOnWaveFunction() const override { return true; }
+  std::string getClassName() const override { return "NonLocalECPotential"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -72,7 +74,7 @@ public:
   void evaluateOneBodyOpMatrix(ParticleSet& P, const TWFFastDerivWrapper& psi, std::vector<ValueMatrix>& B) override;
 
   void evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                         const ParticleSet& source,
+                                         ParticleSet& source,
                                          const TWFFastDerivWrapper& psi,
                                          const int iat,
                                          std::vector<std::vector<ValueMatrix>>& Bforce) override;
@@ -98,8 +100,8 @@ public:
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
-                                       const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi) override;
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
 
   /** Do nothing */
   bool put(xmlNodePtr cur) override { return true; }

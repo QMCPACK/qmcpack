@@ -35,11 +35,6 @@ std::unique_ptr<SPOSet> PWOrbitalSet::makeClone() const
   return myclone;
 }
 
-void PWOrbitalSet::resetParameters(const opt_variables_type& optVariables)
-{
-  //DO NOTHING FOR NOW
-}
-
 void PWOrbitalSet::setOrbitalSetSize(int norbs) {}
 
 void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
@@ -94,7 +89,7 @@ void PWOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi
   //Evaluate the basis-set at these coordinates:
   //myBasisSet->evaluate(P,iat);
   myBasisSet->evaluate(P.activeR(iat));
-  MatrixOperators::product(*C, myBasisSet->Zv, &psi[0]);
+  MatrixOperators::product(*C, myBasisSet->Zv, psi);
 }
 
 void PWOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)

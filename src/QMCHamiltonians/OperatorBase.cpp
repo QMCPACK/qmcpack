@@ -2,18 +2,19 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/**@file OperatorBase.cpp
+/**@file
  *@brief Definition of OperatorBase
  */
 #include "Message/Communicate.h"
@@ -112,28 +113,29 @@ void OperatorBase::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     o_list[iw].evaluate(p_list[iw]);
 }
 
+void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const std::vector<ListenerVector<RealType>>& listeners,
+                                          const std::vector<ListenerVector<RealType>>& listeners_ions) const
+{
+  mw_evaluate(o_list, wf_list, p_list);
+}
+
+
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
-                                                       RecordArray<ValueType>& dlogpsi,
+                                                       const RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const
 {
-  const int nparam = dlogpsi.nparam();
-  std::vector<ValueType> tmp_dlogpsi(nparam);
-  std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+  const int nparam = dlogpsi.getNumOfParams();
   for (int iw = 0; iw < o_list.size(); iw++)
   {
-    for (int j = 0; j < nparam; j++)
-    {
-      tmp_dlogpsi[j] = dlogpsi.getValue(j, iw);
-    }
+    const Vector<ValueType> dlogpsi_record_view(const_cast<ValueType*>(dlogpsi[iw]), nparam);
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
 
-    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-
-    for (int j = 0; j < nparam; j++)
-    {
-      dhpsioverpsi.setValue(j, iw, dhpsioverpsi.getValue(j, iw) + tmp_dhpsioverpsi[j]);
-    }
+    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, dlogpsi_record_view, dhpsioverpsi_record_view);
   }
 }
 
@@ -145,14 +147,35 @@ void OperatorBase::mw_evaluateWithToperator(const RefVectorWithLeader<OperatorBa
                                             const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                             const RefVectorWithLeader<ParticleSet>& p_list) const
 {
+  // Only in NLPP evaluateWithToperator doesn't decay to evaluate. All other derived classes don't
+  // provide evaluateWithToperator specialization but may provide mw_evaluate optimization.
+  // Thus decaying to mw_evaluate is better than decalying to a loop over evaluateWithToperator
   mw_evaluate(o_list, wf_list, p_list);
+}
+
+void OperatorBase::mw_evaluatePerParticleWithToperator(
+    const RefVectorWithLeader<OperatorBase>& o_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const std::vector<ListenerVector<RealType>>& listeners,
+    const std::vector<ListenerVector<RealType>>& listeners_ions) const
+{
+  // This may or may not be what is expected.
+  // It the responsibility of the derived type to override this if the
+  // desired behavior is instead to call mw_evaluatePerParticle
+  mw_evaluateWithToperator(o_list, wf_list, p_list);
 }
 
 OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
                                                                  const opt_variables_type& optvars,
-                                                                 const std::vector<ValueType>& dlogpsi,
-                                                                 std::vector<ValueType>& dhpsioverpsi)
+                                                                 const Vector<ValueType>& dlogpsi,
+                                                                 Vector<ValueType>& dhpsioverpsi)
 {
+  if (dependsOnWaveFunction())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateValueAndDerivatives"
+                           "must be overloaded when the OperatorBase depends on a wavefunction.");
+
   return evaluate(P);
 }
 
@@ -232,6 +255,7 @@ bool OperatorBase::getMode(const int i) const noexcept { return update_mode_[i];
 
 bool OperatorBase::isNonLocal() const noexcept { return update_mode_[NONLOCAL]; }
 
+bool OperatorBase::hasListener() const noexcept { return has_listener_; }
 
 #if !defined(REMOVE_TRACEMANAGER)
 

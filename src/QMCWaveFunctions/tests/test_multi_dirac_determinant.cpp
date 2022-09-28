@@ -69,7 +69,7 @@ public:
   T customized_evaluate()
   {
     build_interal_data(EXT_LEVEL);
-    return calcSmallDeterminant(EXT_LEVEL, dots, it_things.data());
+    return calcSmallDeterminant(EXT_LEVEL, dots.data(), it_things.data(),dots.cols());
   }
 };
 

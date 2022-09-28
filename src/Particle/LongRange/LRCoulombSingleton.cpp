@@ -22,6 +22,7 @@
 #include "LongRange/LRHandlerSRCoulomb.h"
 #include "LongRange/EwaldHandlerQuasi2D.h"
 #include "LongRange/EwaldHandler3D.h"
+#include "LongRange/EwaldHandler2D.h"
 #include <numeric>
 namespace qmcplusplus
 {
@@ -60,38 +61,35 @@ std::unique_ptr<LRCoulombSingleton::LRHandlerType> LRCoulombSingleton::getHandle
 {
   if (CoulombHandler == 0)
   {
-    if (ref.getSK().SuperCellEnum == SUPERCELL_SLAB)
+    if (this_lr_type == ESLER)
+    {
+      app_log() << "\n  Creating CoulombHandler with the Esler Optimized Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>>(ref);
+    }
+    else if (this_lr_type == EWALD)
+    {
+      app_log() << "\n  Creating CoulombHandler with the 3D Ewald Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<EwaldHandler3D>(ref);
+    }
+    else if (this_lr_type == NATOLI)
+    {
+      app_log() << "\n  Creating CoulombHandler with the Natoli Optimized Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
+    }
+    else if (this_lr_type == STRICT2D)
+    {
+      app_log() << "\n  Creating CoulombHandler with the 2D Ewald Breakup. " << std::endl;
+      CoulombHandler = std::make_unique<EwaldHandler2D>(ref);
+    }
+    else if (this_lr_type == QUASI2D)
     {
       app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
       CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
     }
-    else //if(ref.getLRBox().SuperCellEnum == SUPERCELL_BULK)
+    else
     {
-      if (this_lr_type == ESLER)
-      {
-        app_log() << "\n  Creating CoulombHandler with the Esler Optimized Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<LRHandlerTemp<CoulombFunctor<mRealType>, LPQHIBasis>>(ref);
-      }
-      else if (this_lr_type == EWALD)
-      {
-        app_log() << "\n  Creating CoulombHandler with the 3D Ewald Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<EwaldHandler3D>(ref);
-      }
-      else if (this_lr_type == NATOLI)
-      {
-        app_log() << "\n  Creating CoulombHandler with the Natoli Optimized Breakup. " << std::endl;
-        CoulombHandler = std::make_unique<LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>>(ref);
-      }
-      else
-      {
-        APP_ABORT("\n  Long range breakup method not recognized.\n");
-      }
+      APP_ABORT("\n  Long range breakup method not recognized.\n");
     }
-//        else if(ref.getLRBox().SuperCellEnum == SUPERCELL_SLAB)
-//        {
-//          app_log() << "\n   Creating CoulombHandler using quasi-2D Ewald method for the slab. " << std::endl;
-//          CoulombHandler = std::make_unique<EwaldHandlerQuasi2D>(ref);
-//        }
     CoulombHandler->initBreakup(ref);
     return std::unique_ptr<LRHandlerType>(CoulombHandler->makeClone(ref));
   }

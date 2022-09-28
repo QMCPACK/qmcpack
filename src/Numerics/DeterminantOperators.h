@@ -29,14 +29,9 @@
 #include "CPU/SIMD/inner_product.hpp"
 #include "Numerics/determinant_operators.h"
 #include "type_traits/template_types.hpp"
-#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
-template<typename DT>
-using OffloadVector = Vector<DT, OffloadPinnedAllocator<DT>>;
-template<typename DT>
-using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 /** LU factorization of double */
 inline void LUFactorization(int n, int m, double* restrict a, int n0, int* restrict piv)
 {
@@ -238,28 +233,6 @@ inline typename MatA::value_type DetRatioByColumn(const MatA& Minv, const VecB& 
   return simd::dot(Minv.cols(), Minv.data() + colchanged, Minv.cols(), newv.data(), 1);
 }
 
-/** determinant ratio with a column substitution
- * @param Minv inverse matrix
- * @param newv column vector
- * @param colchanged column index to be replaced
- * @return \f$ M^{new}/M\f$
- */
-
-
-template<typename T>
-inline void mw_DetRatioByColumn(const int nw,
-                                int colchanged,
-                                const RefVector<OffloadMatrix<T>>& Minv_list,
-                                const RefVector<OffloadVector<T>>& newv_list,
-                                std::vector<T>& curRatio_list)
-
-{
-  //use BLAS dot since the stride is not uniform
-  for (size_t iw = 0; iw < nw; iw++)
-    curRatio_list[iw] = simd::dot(Minv_list[iw].get().cols(), Minv_list[iw].get().data() + colchanged,
-                                  Minv_list[iw].get().cols(), newv_list[iw].get().data(), 1);
-}
-
 /** update a inverse matrix by a row substitution
  * @param Minv in/out inverse matrix
  * @param newrow row vector
@@ -268,11 +241,11 @@ inline void mw_DetRatioByColumn(const int nw,
  * @param rowchanged row index to be replaced
  * @param c_ratio determinant-ratio with the row replacement
  */
-template<typename T>
-inline void InverseUpdateByRow(OffloadMatrix<T>& Minv,
-                               Vector<T>& newrow,
-                               OffloadVector<T>& rvec,
-                               OffloadVector<T>& rvecinv,
+template<typename T, typename ALLOC>
+inline void InverseUpdateByRow(Matrix<T, ALLOC>& Minv,
+                               Vector<T, ALLOC>& newrow,
+                               Vector<T, ALLOC>& rvec,
+                               Vector<T, ALLOC>& rvecinv,
                                int rowchanged,
                                T c_ratio)
 {
@@ -290,11 +263,11 @@ inline void InverseUpdateByRow(OffloadMatrix<T>& Minv,
   //for(int k=0; k<ncols; k++) Minv(rowchanged,k) *= ratio_inv;
 }
 
-template<typename T>
-inline void InverseUpdateByColumn(OffloadMatrix<T>& Minv,
-                                  OffloadVector<T>& newcol,
-                                  OffloadVector<T>& rvec,
-                                  OffloadVector<T>& rvecinv,
+template<typename T, typename ALLOC>
+inline void InverseUpdateByColumn(Matrix<T, ALLOC>& Minv,
+                                  Vector<T, ALLOC>& newcol,
+                                  Vector<T, ALLOC>& rvec,
+                                  Vector<T, ALLOC>& rvecinv,
                                   int colchanged,
                                   T c_ratio)
 {
@@ -309,20 +282,6 @@ inline void InverseUpdateByColumn(OffloadMatrix<T>& Minv,
   //  for(int k=0; k<nrows; k++) Minv(k,i) += temp*Minv(k,colchanged);
   //}
   //for(int k=0; k<nrows; k++) Minv(k,colchanged) *= ratio_inv;
-}
-
-template<typename T>
-inline void mw_InverseUpdateByColumn(const int nw,
-                                     const RefVector<OffloadMatrix<T>>& Minv_list,
-                                     const RefVector<OffloadVector<T>>& newcol_list,
-                                     const RefVector<OffloadVector<T>>& rvec_list,
-                                     const RefVector<OffloadVector<T>>& rvecinv_list,
-                                     int colchanged,
-                                     std::vector<T> ratiolist)
-{
-  for (size_t iw = 0; iw < nw; iw++)
-    det_col_update(Minv_list[iw].get().data(), newcol_list[iw].get().data(), Minv_list[iw].get().rows(), colchanged,
-                   ratiolist[iw], rvec_list[iw].get().data(), rvecinv_list[iw].get().data());
 }
 } // namespace qmcplusplus
 #endif

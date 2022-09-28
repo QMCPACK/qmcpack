@@ -42,6 +42,7 @@ public:
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
   ~LatticeDeviationEstimator() override {}
 
+  std::string getClassName() const override { return "LatticeDeviationEstimator"; }
   bool put(xmlNodePtr cur) override;         // read input xml node, required
   bool get(std::ostream& os) const override; // class description, required
 

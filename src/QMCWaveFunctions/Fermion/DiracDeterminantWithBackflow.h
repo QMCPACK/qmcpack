@@ -61,11 +61,13 @@ public:
   DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s)            = delete;
   DiracDeterminantWithBackflow& operator=(const DiracDeterminantWithBackflow& s) = delete;
 
+  std::string getClassName() const override { return "DiracDeterminantWithBackflow"; }
+
   // in general, assume that P is the quasiparticle set
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -127,10 +129,9 @@ public:
    */
   std::unique_ptr<DiracDeterminantWithBackflow> makeCopyWithBF(std::unique_ptr<SPOSet>&& spo,
                                                                BackflowTransformation& BF) const;
-  std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
+  [[noreturn]] std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const override
   {
     throw std::runtime_error("makeCopy spo should not be called.");
-    return nullptr;
   }
 
   void testDerivFjj(ParticleSet& P, int pa);

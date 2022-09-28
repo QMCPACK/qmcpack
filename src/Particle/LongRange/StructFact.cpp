@@ -21,6 +21,7 @@
 #include "Utilities/qmc_common.h"
 #include "OMPTarget/OMPTargetMath.hpp"
 #include "RealSpacePositionsOMPTarget.h"
+#include "LRCoulombSingleton.h"
 
 namespace qmcplusplus
 {
@@ -31,7 +32,7 @@ StructFact::StructFact(const ParticleLayout& lattice, const KContainer& k_lists)
       StorePerParticle(false),
       update_all_timer_(*timer_manager.createTimer("StructFact::update_all_part", timer_level_fine))
 {
-  if (qmc_common.use_ewald && lattice.SuperCellEnum == SUPERCELL_SLAB)
+  if (LRCoulombSingleton::isQuasi2D())
   {
     app_log() << "  Setting StructFact::SuperCellEnum=SUPERCELL_SLAB " << std::endl;
     SuperCellEnum = SUPERCELL_SLAB;

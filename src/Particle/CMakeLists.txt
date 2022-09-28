@@ -28,8 +28,6 @@ set(PARTICLE
     SampleStack.cpp
     createDistanceTableAA.cpp
     createDistanceTableAB.cpp
-    createDistanceTableAAOMPTarget.cpp
-    createDistanceTableABOMPTarget.cpp
     HDFWalkerInputManager.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
@@ -37,6 +35,7 @@ set(PARTICLE
     LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandlerQuasi2D.cpp
     LongRange/EwaldHandler3D.cpp
+    LongRange/EwaldHandler2D.cpp
     LongRange/LRCoulombSingleton.cpp)
 
 set(PARTICLEIO ParticleTags.cpp ParticleIO/LatticeIO.cpp ParticleIO/XMLParticleIO.cpp HDFWalkerOutput.cpp
@@ -51,6 +50,22 @@ endif(USE_OBJECT_TARGET)
 target_include_directories(qmcparticle PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(qmcparticle PRIVATE platform_cpu_LA)
 target_link_libraries(qmcparticle PUBLIC qmcnumerics qmcutil platform_runtime)
+set(PARTICLE_OMPTARGET_SRCS
+    createDistanceTableAAOMPTarget.cpp
+    createDistanceTableABOMPTarget.cpp)
+
+if(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget OBJECT ${PARTICLE_OMPTARGET_SRCS})
+else(USE_OBJECT_TARGET)
+  add_library(qmcparticle_omptarget ${PARTICLE_OMPTARGET_SRCS})
+endif(USE_OBJECT_TARGET)
+
+target_include_directories(qmcparticle_omptarget PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(qmcparticle_omptarget PUBLIC qmcutil containers)
+
+target_compile_options(qmcparticle_omptarget PRIVATE "$<$<BOOL:${ENABLE_OFFLOAD_CLANG_DEBUG_O3}>:$<$<CONFIG:DEBUG>:-O3>>")
+
+target_link_libraries(qmcparticle PUBLIC qmcparticle_omptarget)
 
 if(QMC_CUDA)
   if(NOT QMC_CUDA2HIP)

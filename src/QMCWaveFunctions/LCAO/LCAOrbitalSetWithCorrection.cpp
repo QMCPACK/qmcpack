@@ -14,17 +14,17 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions,
+LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(const std::string& my_name,
+                                                         ParticleSet& ions,
                                                          ParticleSet& els,
-                                                         std::unique_ptr<basis_type>&& bs,
-                                                         bool optimize)
-    : LCAOrbitalSet(std::move(bs), optimize), cusp(ions, els)
+                                                         std::unique_ptr<basis_type>&& bs)
+    : LCAOrbitalSet(my_name, std::move(bs)), cusp(ions, els)
 {}
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
   LCAOrbitalSet::setOrbitalSetSize(norbs);
-  cusp.setBasisSetSize(norbs);
+  cusp.setOrbitalSetSize(norbs);
 }
 
 
@@ -36,7 +36,7 @@ std::unique_ptr<SPOSet> LCAOrbitalSetWithCorrection::makeClone() const
 void LCAOrbitalSetWithCorrection::evaluateValue(const ParticleSet& P, int iat, ValueVector& psi)
 {
   LCAOrbitalSet::evaluateValue(P, iat, psi);
-  cusp.addV(P, iat, psi.data());
+  cusp.addV(P, iat, psi);
 }
 
 void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P,

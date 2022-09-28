@@ -23,6 +23,8 @@
 #include "PinnedAllocator.h"
 #if defined(ENABLE_CUDA)
 #include "CUDA/CUDAallocator.hpp"
+#elif defined(ENABLE_SYCL)
+#include "SYCL/SYCLallocator.hpp"
 #endif
 
 namespace qmcplusplus

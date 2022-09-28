@@ -128,8 +128,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_grid]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -137,7 +136,6 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, SpeciesSet)", "[estimators]")
   SpinDensityInput sdi_copy         = sdi;
   SpinDensityNew(std::move(sdi), species_set);
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
-  CHECK_THROWS(SpinDensityNew(std::move(sdi_copy), lattice, species_set));
 }
 
 TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[estimators]")
@@ -146,8 +144,7 @@ TEST_CASE("SpinDensityNew::SpinDensityNew(SPInput, Lattice, SpeciesSet)", "[esti
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -168,8 +165,7 @@ TEST_CASE("SpinDensityNew::spawnCrowdClone()", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[testing::valid_spindensity_input_no_cell]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies                      = species_set.addSpecies("C");
   int iattribute                    = species_set.addAttribute("membersize");
@@ -191,8 +187,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies = species_set.addSpecies("u");
   ispecies     = species_set.addSpecies("d");
@@ -246,8 +241,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::crowd)", "[estimators]")
     bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
     SpeciesSet species_set;
     int ispecies = species_set.addSpecies("u");
     ispecies     = species_set.addSpecies("d");
@@ -284,8 +278,7 @@ TEST_CASE("SpinDensityNew::collect(DataLocality::rank)", "[estimators]")
     bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    SpinDensityInput sdi;
-    sdi.readXML(node);
+    SpinDensityInput sdi(node);
     SpeciesSet species_set;
     int ispecies = species_set.addSpecies("u");
     ispecies     = species_set.addSpecies("d");
@@ -323,8 +316,7 @@ TEST_CASE("SpinDensityNew algorithm comparison", "[estimators]")
   bool okay = doc.parseFromString(testing::valid_spin_density_input_sections[0]);
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
-  SpinDensityInput sdi;
-  sdi.readXML(node);
+  SpinDensityInput sdi(node);
   SpeciesSet species_set;
   int ispecies = species_set.addSpecies("u");
   ispecies     = species_set.addSpecies("d");

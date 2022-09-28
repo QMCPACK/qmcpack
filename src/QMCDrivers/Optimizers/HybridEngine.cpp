@@ -68,8 +68,6 @@ bool HybridEngine::processXML(const xmlNodePtr opt_xml)
 //Retrieves the appropriate XML input for the current optimization method
 xmlNodePtr HybridEngine::getSelectedXML()
 {
-  step_num_++;
-
   return saved_xml_opt_methods_[identifyMethodIndex()];
 }
 

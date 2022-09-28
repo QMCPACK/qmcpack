@@ -17,11 +17,9 @@ namespace qmcplusplus
 void GradientTestInput::readXML(xmlNodePtr xml_input)
 {
   ParameterSet param;
-  std::string do_output_file = "no";
-  param.add(do_output_file, "output_param_file");
+  param.add(do_param_output_, "output_param_file", {false});
+  param.add(finite_diff_delta_, "finite_diff_delta");
   param.put(xml_input);
-
-  do_param_output_ = (do_output_file != "no");
 }
 
 

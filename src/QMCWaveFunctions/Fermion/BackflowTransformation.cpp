@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 BackflowTransformation::BackflowTransformation(ParticleSet& els)
-    : QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
+    : OptimizableObject("bf"), QP(els), cutOff(0.0), myTableIndex_(els.addTable(els))
 {
   NumTargets = els.getTotalNum();
   Bmat.resize(NumTargets);
@@ -115,7 +115,7 @@ void BackflowTransformation::checkOutVariables(const opt_variables_type& active)
     bfFuns[i]->checkOutVariables(active);
 }
 
-bool BackflowTransformation::isOptimizable()
+bool BackflowTransformation::isOptimizable() const
 {
   for (int i = 0; i < bfFuns.size(); i++)
     if (bfFuns[i]->isOptimizable())
@@ -388,8 +388,7 @@ void BackflowTransformation::evaluateDerivatives(const ParticleSet& P)
   Bmat_full = 0.0;
   Cmat      = 0.0;
   Ymat      = 0.0;
-  for (int i = 0; i < Xmat.size(); i++)
-    Xmat(i) = 0;
+  std::fill_n(Xmat.data(), Xmat.size(), 0);
   for (int i = 0; i < NumTargets; i++)
   {
     QP.R[i] = P.R[i];
@@ -414,9 +413,7 @@ void BackflowTransformation::testDeriv(const ParticleSet& P)
   Bmat_full = 0.0;
   Cmat      = 0.0;
   Ymat      = 0.0;
-  //       Xmat=DummyHess;
-  for (int i = 0; i < Xmat.size(); i++)
-    Xmat(i) = 0;
+  std::fill_n(Xmat.data(), Xmat.size(), 0);
   for (int i = 0; i < NumTargets; i++)
   {
     QP.R[i] = P.R[i];

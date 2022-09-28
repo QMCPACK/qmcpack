@@ -64,12 +64,13 @@ struct SHOSet : public SPOSet
   Array<RealType, 2> d2_values;
 
   //construction/destruction
-  SHOSet(RealType l, PosType c, const std::vector<SHOState*>& sho_states);
+  SHOSet(const std::string& my_name, RealType l, PosType c, const std::vector<SHOState*>& sho_states);
 
   ~SHOSet() override;
 
-  void initialize();
+  std::string getClassName() const override { return "SHOSet"; }
 
+  void initialize();
 
   //SPOSet interface methods
   std::unique_ptr<SPOSet> makeClone() const override;
@@ -110,7 +111,6 @@ struct SHOSet : public SPOSet
 
 
   //methods to be implemented in the future (possibly)
-  void resetParameters(const opt_variables_type& optVariables) override;
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& dddlogdet) override;
   void evaluate_notranspose(const ParticleSet& P,
                             int first,

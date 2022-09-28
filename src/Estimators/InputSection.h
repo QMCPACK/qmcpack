@@ -22,27 +22,30 @@
 
 #include "Message/UniformCommunicateError.h"
 
-
 namespace qmcplusplus
 {
-
 
 class InputSection
 {
 public:
-  using Real               = QMCTraits::RealType;
-  using Position           = QMCTraits::PosType;
-  static constexpr int DIM = QMCTraits::DIM;
+  using Real     = QMCTraits::RealType;
+  using Position = QMCTraits::PosType;
+
 protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
   //   Enables minimal listing of variable classification and default values in derived classes.
   //   Expand later to include allowed_values for input correctness checking
+
+  // Becuase it hurts to read all the trailing _ in the constructors of input section subtypes
+  // NOLINTBEGIN(readability-indentifier-naming)
+
   std::string section_name; // name of the input section
 
   std::unordered_set<std::string> attributes; // list of attribute variables
   std::unordered_set<std::string> parameters; // list of parameter variables
-  std::unordered_set<std::string> required;   // list of required variables
+  std::unordered_set<std::string> delegates;
+  std::unordered_set<std::string> required; // list of required variables
 
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
@@ -55,14 +58,15 @@ protected:
    */
   std::unordered_set<std::string> enums;
   std::unordered_map<std::string, std::any> default_values; // default values for optional variables
+  // NOLINTEND(readability-indentifier-naming)
 
 private:
   // Storage for variable values read from XML, etc.
-  std::unordered_map<std::string, std::any> values;
+  std::unordered_map<std::string, std::any> values_;
 
 public:
   // Query if a variable has been set
-  bool has(const std::string& name) const { return values.find(name) != values.end(); }
+  bool has(const std::string& name) const { return values_.find(name) != values_.end(); }
 
   // Enable read-only access to variable values.
   //   Needs updating to allow copy-less return.
@@ -75,7 +79,7 @@ public:
       return std::any_cast<T>(any_enum);
     }
     else
-      return std::any_cast<T>(values.at(name));
+      return std::any_cast<T>(values_.at(name));
   }
 
   /** set var if input section has read the tag
@@ -106,26 +110,27 @@ public:
 
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
-  
-/** Get string represtation of enum class type value from enum_val
+
+  /** Get string represtation of enum class type value from enum_val
  *  
  *  This is just a way to get around the lack of a bidirectional map type.
  */
-template<typename ENUM_T>
-static std::string reverseLookupInputEnumMap(ENUM_T enum_val, const std::unordered_map<std::string, std::any>& enum_map)
-{
-  std::string lookup_str = "not found";
-  for (const auto& enum_node : enum_map)
+  template<typename ENUM_T>
+  static std::string reverseLookupInputEnumMap(ENUM_T enum_val,
+                                               const std::unordered_map<std::string, std::any>& enum_map)
   {
-    if (enum_node.second.type() == typeid(decltype(enum_val)) &&
-        enum_val == std::any_cast<decltype(enum_val)>(enum_node.second))
+    std::string lookup_str = "not found";
+    for (const auto& enum_node : enum_map)
     {
-      lookup_str = enum_node.first;
-      break;
+      if (enum_node.second.type() == typeid(decltype(enum_val)) &&
+          enum_val == std::any_cast<decltype(enum_val)>(enum_node.second))
+      {
+        lookup_str = enum_node.first;
+        break;
+      }
     }
+    return lookup_str;
   }
-  return lookup_str;
-}  
 
 protected:
   /** Do validation for a particular subtype of InputSection
@@ -147,10 +152,9 @@ protected:
    *
    *  can't be bothered then just define your enum option as a string.
    */
-  virtual std::any assignAnyEnum(const std::string& tag) const
+  [[noreturn]] virtual std::any assignAnyEnum(const std::string& tag) const
   {
     throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
-    return std::any();
   }
 
   /** Assign any enum helper for InputSection derived class
@@ -162,35 +166,38 @@ protected:
    *                            {"evaluator-loop", Evaluator::LOOP},
    *                            {"evaluator-matrix", Evaluator::MATRIX}};
    */
-  static std::any lookupAnyEnum(const std::string& enum_name, const std::string& enum_value, const std::unordered_map<std::string, std::any>& enum_map);
+  static std::any lookupAnyEnum(const std::string& enum_name,
+                                const std::string& enum_value,
+                                const std::unordered_map<std::string, std::any>& enum_map);
 
 private:
   // Query functions
-  bool is_attribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }
-  bool is_parameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
-  bool is_required(const std::string& name) const { return required.find(name) != required.end(); }
+  bool isAttribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }
+  bool isParameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
+  bool isDelegate(const std::string& name) const { return delegates.find(name) != delegates.end(); }
+  bool isRequired(const std::string& name) const { return required.find(name) != required.end(); }
 
-  bool is_enum_string(const std::string& name) const { return enums.find(name) != enums.end(); }
-  bool is_string(const std::string& name) const { return strings.find(name) != strings.end(); }
-  bool is_multi_string(const std::string& name) const { return multi_strings.find(name) != multi_strings.end(); }
-  bool is_bool(const std::string& name) const { return bools.find(name) != bools.end(); }
-  bool is_integer(const std::string& name) const { return integers.find(name) != integers.end(); }
-  bool is_real(const std::string& name) const { return reals.find(name) != reals.end(); }
-  bool is_position(const std::string& name) const { return positions.find(name) != positions.end(); }
+  bool isEnumString(const std::string& name) const { return enums.find(name) != enums.end(); }
+  bool isString(const std::string& name) const { return strings.find(name) != strings.end(); }
+  bool isMultiString(const std::string& name) const { return multi_strings.find(name) != multi_strings.end(); }
+  bool isBool(const std::string& name) const { return bools.find(name) != bools.end(); }
+  bool isInteger(const std::string& name) const { return integers.find(name) != integers.end(); }
+  bool isReal(const std::string& name) const { return reals.find(name) != reals.end(); }
+  bool isPosition(const std::string& name) const { return positions.find(name) != positions.end(); }
   bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); }
 
   // Set default values for optional inputs.
-  void set_defaults();
+  void setDefaults();
 
   // Perform typed read and assignment of input variables from strings
-  void set_from_stream(const std::string& name, std::istringstream& svalue);
+  void setFromStream(const std::string& name, std::istringstream& svalue);
 
   // Perform typed assignment of input variables from intrinsic types
   template<typename T>
-  void set_from_value(const std::string& name, const T& svalue);
+  void setFromValue(const std::string& name, const T& svalue);
 
   // Check validity of inputs
-  void check_valid();
+  void checkValid();
 
 
   // Simple write of contents.

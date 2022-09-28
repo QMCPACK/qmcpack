@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
+#include "Particle/HDFWalkerIO.h"
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
@@ -49,7 +50,6 @@ class Communicate;
 namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
-class HDFWalkerOutput;
 class TraceManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
@@ -102,7 +102,6 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
-  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -114,11 +113,23 @@ protected:
     std::vector<IndexType> walkers_per_crowd;
     RealType reserve_walkers;
   };
+  /** Do common section starting tasks for VMC and DMC
+   *
+   * set up population_, crowds_, rngs and step_contexts_
+   */
+  void initializeQMC(const AdjustedWalkerCounts& awc);
+
+  /// inject additional barrier and measure load imbalance.
+  void measureImbalance(const std::string& tag) const;
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
+  void endBlock();
 
 public:
   /// Constructor.
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
+               const std::optional<EstimatorManagerInput>& global_emi,
+               WalkerConfigurations& wc,
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
@@ -181,9 +192,6 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  ///set global offsets of the walkers
-  void setWalkerOffsets();
-
   inline RefVector<RandomGenerator> getRngRefs() const
   {
     RefVector<RandomGenerator> RngRefs;
@@ -209,6 +217,8 @@ public:
   IndexType get_num_living_walkers() const { return population_.get_walkers().size(); }
   IndexType get_num_dead_walkers() const { return population_.get_dead_walkers().size(); }
 
+  const QMCDriverInput& getQMCDriverInput() const { return qmcdriver_input_; }
+
   /** @ingroup Legacy interface to be dropped
    *  @{
    */
@@ -223,15 +233,6 @@ public:
    *        this stage of driver initialization is hit.
    */
   void process(xmlNodePtr cur) override = 0;
-
-  /** Do common section starting tasks
-   *
-   *  \todo This should not take xmlNodePtr
-   *        It should either take BranchEngineInput and EstimatorInput
-   *        And these are the arguments to the branch_engine and estimator_manager
-   *        Constructors or these objects should be created elsewhere.
-   */
-  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
@@ -307,7 +308,7 @@ protected:
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
-  const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
+  const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
   /** The timers for the driver.
    *
@@ -325,6 +326,10 @@ protected:
     NewTimer& hamiltonian_timer;
     NewTimer& collectables_timer;
     NewTimer& estimators_timer;
+    NewTimer& imbalance_timer;
+    NewTimer& endblock_timer;
+    NewTimer& startup_timer;
+    NewTimer& production_timer;
     NewTimer& resource_timer;
     DriverTimers(const std::string& prefix)
         : checkpoint_timer(*timer_manager.createTimer(prefix + "CheckPoint", timer_level_medium)),
@@ -336,11 +341,15 @@ protected:
           hamiltonian_timer(*timer_manager.createTimer(prefix + "Hamiltonian", timer_level_medium)),
           collectables_timer(*timer_manager.createTimer(prefix + "Collectables", timer_level_medium)),
           estimators_timer(*timer_manager.createTimer(prefix + "Estimators", timer_level_medium)),
+          imbalance_timer(*timer_manager.createTimer(prefix + "Imbalance", timer_level_medium)),
+          endblock_timer(*timer_manager.createTimer(prefix + "BlockEndDataAggregation", timer_level_medium)),
+          startup_timer(*timer_manager.createTimer(prefix + "Startup", timer_level_medium)),
+          production_timer(*timer_manager.createTimer(prefix + "Production", timer_level_medium)),
           resource_timer(*timer_manager.createTimer(prefix + "Resources", timer_level_medium))
     {}
   };
 
-  const QMCDriverInput qmcdriver_input_;
+  QMCDriverInput qmcdriver_input_;
 
   /** @ingroup Driver mutable input values
    *
@@ -389,8 +398,6 @@ protected:
 
   ///type of qmc: assigned by subclasses
   const std::string QMCType;
-  ///root of all the output files
-  std::string root_name_;
 
   /** the entire (on node) walker population
    * it serves VMCBatch and DMCBatch right now but will be polymorphic
@@ -415,7 +422,7 @@ protected:
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
@@ -456,6 +463,12 @@ protected:
 
   /// project info for accessing global fileroot and series id
   const ProjectData& project_data_;
+
+  // reference to the captured WalkerConfigurations
+  WalkerConfigurations& walker_configs_ref_;
+
+  /// update the global offsets of walker configurations after active walkers being touched.
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

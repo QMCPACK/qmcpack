@@ -21,7 +21,6 @@
 #include "Utilities/for_testing/RandomForTest.h"
 #include "Platforms/DualAllocatorAliases.hpp"
 #include "Platforms/CUDA/CUDALinearAlgebraHandles.h"
-#include "Platforms/tests/CUDA/test_device_value_kernels.hpp"
 
 // Legacy CPU inversion for temporary testing
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"

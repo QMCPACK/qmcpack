@@ -9,8 +9,7 @@ jobs:
     if: |
       github.repository_owner == 'QMCPACK' &&
       github.event.issue.pull_request &&
-      ( startsWith(github.event.comment.body, 'Test this please') || 
-        startsWith(github.event.comment.body, 'Start testing in-house') )
+      startsWith(github.event.comment.body, 'Test this please')
 
     runs-on: [self-hosted, Linux, X64, ornl-sulfur-1]
 
@@ -21,10 +20,10 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC8-NoMPI-MKL-Real-Mixed, # mixed precision
-            GCC8-NoMPI-MKL-Complex-Mixed,
-            GCC8-NoMPI-MKL-Real, # full precision
-            GCC8-NoMPI-MKL-Complex,
+            GCC9-NoMPI-MKL-Real-Mixed, # mixed precision
+            GCC9-NoMPI-MKL-Complex-Mixed,
+            GCC9-NoMPI-MKL-Real, # full precision
+            GCC9-NoMPI-MKL-Complex,
           ]
 
     steps:
@@ -43,7 +42,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -72,7 +71,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -116,12 +115,14 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC8-NoMPI-Legacy-CUDA-Real-Mixed, # mixed precision
-            GCC8-NoMPI-Legacy-CUDA-Complex-Mixed,
-            GCC8-NoMPI-Legacy-CUDA-Real, # full precision
-            GCC8-NoMPI-Legacy-CUDA-Complex,
-            Clang14Dev-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload requires development llvm14
-            Clang14Dev-MPI-CUDA-AFQMC-Offload-Real,
+            GCC9-NoMPI-Legacy-CUDA-Real-Mixed, # mixed precision
+            GCC9-NoMPI-Legacy-CUDA-Complex-Mixed,
+            GCC9-NoMPI-Legacy-CUDA-Real, # full precision
+            GCC9-NoMPI-Legacy-CUDA-Complex,
+            Clang15-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
+            Clang15-MPI-CUDA-AFQMC-Offload-Real,
+            Clang15-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
+            Clang15-MPI-CUDA-AFQMC-Offload-Complex,
             Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
             Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
             Intel19-MPI-CUDA-AFQMC-Real,
@@ -143,7 +144,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -172,7 +173,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -221,6 +222,10 @@ jobs:
             ROCm-Clang13-NoMPI-CUDA2HIP-Real,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real-Mixed,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex-Mixed,
+            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex,
           ]
 
     steps:
@@ -239,7 +244,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -268,7 +273,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
@@ -312,10 +317,10 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC8-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
-            GCC8-MPI-CUDA-AFQMC-Complex-Mixed,
-            GCC8-MPI-CUDA-AFQMC-Real,
-            GCC8-MPI-CUDA-AFQMC-Complex,
+            GCC9-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
+            GCC9-MPI-CUDA-AFQMC-Complex-Mixed,
+            GCC9-MPI-CUDA-AFQMC-Real,
+            GCC9-MPI-CUDA-AFQMC-Complex,
           ]
 
     steps:
@@ -334,7 +339,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.1.0
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -363,7 +368,7 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           token: ${{secrets.GITHUB_TOKEN}}
           repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}

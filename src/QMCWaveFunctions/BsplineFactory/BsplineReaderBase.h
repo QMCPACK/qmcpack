@@ -122,7 +122,7 @@ struct BsplineReaderBase
 
     bspline->HalfG            = 0;
     TinyVector<int, 3> bconds = mybuilder->TargetPtcl.getLattice().BoxBConds;
-    if (!bspline->is_complex)
+    if (!bspline->isComplex())
     {
       //no k-point folding, single special k point (G, L ...)
       TinyVector<double, 3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
@@ -165,7 +165,9 @@ struct BsplineReaderBase
 
   /** create the actual spline sets
    */
-  virtual std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) = 0;
+  virtual std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
+                                                    int spin,
+                                                    const BandInfoGroup& bandgroup) = 0;
 
   /** setting common parameters
    */

@@ -66,15 +66,32 @@ if(HAVE_MKL)
   message(STATUS "MKL found: HAVE_MKL=${HAVE_MKL}, HAVE_MKL_FFTW3=${HAVE_MKL_FFTW3}")
 
   #Add BLAS_LAPACK header
-  target_compile_definitions(Math::BLAS_LAPACK INTERFACE "HAVE_MKL")
-  target_include_directories(Math::BLAS_LAPACK INTERFACE "${MKL_INCLUDE}")
+  add_library(MKL::BLAS_LAPACK INTERFACE IMPORTED)
+  target_compile_definitions(MKL::BLAS_LAPACK INTERFACE "HAVE_MKL")
+  target_include_directories(MKL::BLAS_LAPACK INTERFACE "${MKL_INCLUDE}")
 
   if(HAVE_MKL_FFTW3)
-    target_compile_definitions(Math::FFTW3 INTERFACE "HAVE_MKL;HAVE_LIBFFTW")
-    target_include_directories(Math::FFTW3 INTERFACE "${MKL_FFTW3}")
-    target_link_libraries(Math::FFTW3 INTERFACE "${MKL_LIBRARIES}")
+    add_library(MKL::FFTW3 INTERFACE IMPORTED)
+    target_compile_definitions(MKL::FFTW3 INTERFACE "HAVE_MKL")
+    target_include_directories(MKL::FFTW3 INTERFACE "${MKL_FFTW3}")
+    target_link_libraries(MKL::FFTW3 INTERFACE "${MKL_LIBRARIES}")
   endif(HAVE_MKL_FFTW3)
 else(HAVE_MKL)
   set(MKL_FOUND FALSE)
   message(STATUS "MKL header files not found")
 endif(HAVE_MKL)
+
+# check for mkl_sycl
+if(HAVE_MKL AND ENABLE_SYCL)
+  find_library(MKL_SYCL mkl_sycl
+    HINTS ${MKL_ROOT} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
+    PATH_SUFFIXES lib/intel64
+    REQUIRED
+  )
+
+  if(MKL_SYCL)
+    add_library(MKL::sycl INTERFACE IMPORTED)
+    target_include_directories(MKL::sycl INTERFACE "${MKL_INCLUDE}")
+    target_link_libraries(MKL::sycl INTERFACE ${MKL_SYCL})
+  endif()
+endif()

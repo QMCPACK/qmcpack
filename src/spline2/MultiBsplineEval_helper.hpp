@@ -52,8 +52,13 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int nmax)
   }
   else
   {
+#if defined(__INTEL_LLVM_COMPILER) || defined(__INTEL_CLANG_COMPILER)
+    T ipart = std::floor(x);
+    dx = x - ipart;
+#else
     T ipart;
     dx  = std::modf(x, &ipart);
+#endif
     ind = static_cast<int>(ipart);
     // upper bound
     if (ind > nmax)

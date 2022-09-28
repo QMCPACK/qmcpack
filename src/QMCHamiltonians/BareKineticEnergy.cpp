@@ -37,7 +37,7 @@ using Return_t = BareKineticEnergy::Return_t;
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p) : Ps(p)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : Ps(p), psi_(psi)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
@@ -125,6 +125,33 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
     }
   }
   return value_;
+}
+
+Return_t BareKineticEnergy::evaluateValueAndDerivatives(ParticleSet& P,
+                                                        const opt_variables_type& optvars,
+                                                        const Vector<ValueType>& dlogpsi,
+                                                        Vector<ValueType>& dhpsioverpsi)
+{
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
+  psi_.evaluateDerivatives(P, optvars, const_cast<Vector<ValueType>&>(dlogpsi), dhpsioverpsi);
+  return evaluate(P);
+}
+
+void BareKineticEnergy::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
+                                                            const RefVectorWithLeader<ParticleSet>& p_list,
+                                                            const opt_variables_type& optvars,
+                                                            const RecordArray<ValueType>& dlogpsi,
+                                                            RecordArray<ValueType>& dhpsioverpsi) const
+{
+  RefVectorWithLeader<TrialWaveFunction> wf_list(o_list.getCastedLeader<BareKineticEnergy>().psi_);
+  for (int i = 0; i < o_list.size(); i++)
+    wf_list.push_back(o_list.getCastedElement<BareKineticEnergy>(i).psi_);
+  mw_evaluate(o_list, wf_list, p_list);
+  // const_cast is needed because TWF::evaluateDerivatives calculates dlogpsi.
+  // KineticEnergy must be the first element in the hamiltonian array.
+  TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, optvars,
+                                                     const_cast<RecordArray<ValueType>&>(dlogpsi), dhpsioverpsi);
 }
 
 /**@brief Function to compute the value, direct ionic gradient terms, and pulay terms for the local kinetic energy.
@@ -251,11 +278,19 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
                                                 const TWFFastDerivWrapper& psi,
                                                 std::vector<ValueMatrix>& B)
 {
-  IndexType ngroups = P.groups();
+  ParticleSet::ParticleGradient G;
+  ParticleSet::ParticleLaplacian L;
+
+  const IndexType nelec = P.getTotalNum();
+  G.resize(nelec);
+  L.resize(nelec);
+
+  const IndexType ngroups = P.groups();
   assert(B.size() == ngroups);
   std::vector<ValueMatrix> M;
   std::vector<GradMatrix> grad_M;
   std::vector<ValueMatrix> lapl_M;
+  std::vector<ValueMatrix> gradJdotgradPhi;
   for (int ig = 0; ig < ngroups; ig++)
   {
     const IndexType sid    = psi.getTWFGroupIndex(ig);
@@ -272,24 +307,61 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
     M.push_back(zeromat);
     grad_M.push_back(zerogradmat);
     lapl_M.push_back(zeromat);
+    gradJdotgradPhi.push_back(zeromat);
   }
 
   psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.evaluateJastrowVGL(P, G, L);
+
   for (int ig = 0; ig < ngroups; ig++)
   {
-    const IndexType sid = psi.getTWFGroupIndex(ig);
-    lapl_M[ig] *= MinusOver2M[ig];
-    B[sid] += lapl_M[ig];
+    const IndexType sid    = psi.getTWFGroupIndex(ig);
+    const IndexType norbs  = psi.numOrbitals(sid);
+    const IndexType first  = P.first(ig);
+    const IndexType last   = P.last(ig);
+    const IndexType nptcls = last - first;
+    for (int iel = first; iel < last; iel++)
+    {
+      for (int iorb = 0; iorb < norbs; iorb++)
+      {
+        gradJdotgradPhi[sid][iel - first][iorb] = RealType(2.0) * dot(GradType(G[iel]), grad_M[sid][iel - first][iorb]);
+        B[sid][iel - first][iorb] += RealType(MinusOver2M[ig]) *
+            (lapl_M[sid][iel - first][iorb] + gradJdotgradPhi[sid][iel - first][iorb] +
+             ValueType(L[iel] + dot(G[iel], G[iel])) * M[sid][iel - first][iorb]);
+      }
+    }
   }
 }
 
 void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
-                                                          const ParticleSet& source,
+                                                          ParticleSet& source,
                                                           const TWFFastDerivWrapper& psi,
                                                           const int iat,
                                                           std::vector<std::vector<ValueMatrix>>& Bforce)
 {
-  IndexType ngroups = P.groups();
+  const IndexType ngroups = P.groups();
+  const IndexType nelec   = P.getTotalNum();
+
+  ParticleSet::ParticleGradient Gtmp, G;
+  ParticleSet::ParticleLaplacian Ltmp, L;
+  Gtmp.resize(nelec);
+  G.resize(nelec);
+  Ltmp.resize(nelec);
+  L.resize(nelec);
+
+  std::vector<ValueMatrix> M;
+  std::vector<GradMatrix> grad_M;
+  std::vector<ValueMatrix> lapl_M;
+
+  TinyVector<ParticleSet::ParticleGradient, OHMMS_DIM> dG;
+  TinyVector<ParticleSet::ParticleLaplacian, OHMMS_DIM> dL;
+
+  for (int dim = 0; dim < OHMMS_DIM; dim++)
+  {
+    dG[dim] = Gtmp;
+    dL[dim] = Ltmp;
+  }
+
   assert(Bforce.size() == OHMMS_DIM);
   assert(Bforce[0].size() == ngroups);
   std::vector<ValueMatrix> mtmp;
@@ -308,9 +380,14 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     zerogradmat.resize(nptcls, norbs);
 
     mtmp.push_back(zeromat);
+    M.push_back(zeromat);
+    grad_M.push_back(zerogradmat);
+    lapl_M.push_back(zeromat);
   }
 
+
   std::vector<std::vector<ValueMatrix>> dm, dlapl;
+  std::vector<std::vector<GradMatrix>> dgmat;
   dm.push_back(mtmp);
   dm.push_back(mtmp);
   dm.push_back(mtmp);
@@ -319,14 +396,137 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   dlapl.push_back(mtmp);
   dlapl.push_back(mtmp);
 
-  psi.getIonGradIonGradELaplM(P, source, iat, dm, dlapl);
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+  dgmat.push_back(grad_M);
+
+  psi.getEGradELaplM(P, M, grad_M, lapl_M);
+  psi.getIonGradIonGradELaplM(P, source, iat, dm, dgmat, dlapl);
+  psi.evaluateJastrowVGL(P, G, L);
+  psi.evaluateJastrowGradSource(P, source, iat, dG, dL);
   for (int idim = 0; idim < OHMMS_DIM; idim++)
     for (int ig = 0; ig < ngroups; ig++)
     {
-      const IndexType sid = psi.getTWFGroupIndex(ig);
-      dlapl[idim][ig] *= MinusOver2M[ig];
-      Bforce[idim][sid] += dlapl[idim][ig];
+      const IndexType sid    = psi.getTWFGroupIndex(ig);
+      const IndexType norbs  = psi.numOrbitals(sid);
+      const IndexType first  = P.first(ig);
+      const IndexType last   = P.last(ig);
+      const IndexType nptcls = last - first;
+
+      for (int iel = first; iel < last; iel++)
+      {
+        for (int iorb = 0; iorb < norbs; iorb++)
+        {
+          Bforce[idim][sid][iel - first][iorb] = RealType(MinusOver2M[ig]) *
+              (dlapl[idim][sid][iel - first][iorb] +
+               RealType(2.0) *
+                   (dot(GradType(G[iel]), dgmat[idim][sid][iel - first][iorb]) +
+                    dot(GradType(dG[idim][iel]), grad_M[sid][iel - first][iorb])) +
+               M[sid][iel - first][iorb] * ValueType(dL[idim][iel] + 2.0 * dot(dG[idim][iel], G[iel])) +
+               ValueType(L[iel] + dot(G[iel], G[iel])) * dm[idim][sid][iel - first][iorb]);
+        }
+      }
     }
+}
+
+void BareKineticEnergy::createResource(ResourceCollection& collection) const
+{
+  auto new_res        = std::make_unique<MultiWalkerResource>();
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void BareKineticEnergy::acquireResource(ResourceCollection& collection,
+                                        const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
+  auto res_ptr   = dynamic_cast<MultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("BareKineticEnergy::acquireResource dynamic_cast failed");
+  O_leader.mw_res_.reset(res_ptr);
+}
+
+void BareKineticEnergy::releaseResource(ResourceCollection& collection,
+                                        const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<BareKineticEnergy>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
+}
+
+void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                               const RefVectorWithLeader<ParticleSet>& p_list,
+                                               const std::vector<ListenerVector<RealType>>& listeners,
+                                               const std::vector<ListenerVector<RealType>>& ion_listeners) const
+{
+  auto& o_leader = o_list.getCastedLeader<BareKineticEnergy>();
+  auto& p_leader = p_list.getLeader();
+  assert(this == &o_list.getLeader());
+
+  auto num_particles                        = p_leader.getTotalNum();
+  auto& name                                = o_leader.name_;
+  Vector<RealType>& t_samp                  = o_leader.mw_res_->t_samples;
+  Vector<std::complex<RealType>>& tcmp_samp = o_leader.mw_res_->tcmp_samples;
+
+  auto num_species = p_leader.getSpeciesSet().getTotalNum();
+  t_samp.resize(num_particles);
+  tcmp_samp.resize(num_particles);
+  const RealType clambda(-OneOver2M);
+  auto evaluate_walker_per_particle = [num_particles, name, &t_samp, &tcmp_samp,
+                                       clambda](const int walker_index, const BareKineticEnergy& bke,
+                                                const ParticleSet& pset,
+                                                const std::vector<ListenerVector<RealType>>& listeners) {
+    RealType value = 0;
+    std::fill(t_samp.begin(), t_samp.end(), 0.0);
+    std::fill(tcmp_samp.begin(), tcmp_samp.end(), 0.0);
+
+    std::complex<RealType> t1 = 0.0;
+    if (bke.SameMass)
+      for (int i = 0; i < num_particles; i++)
+      {
+        t1           = pset.L[i] + dot(pset.G[i], pset.G[i]);
+        t1           = clambda * t1;
+        t_samp[i]    = real(t1);
+        tcmp_samp[i] = t1;
+        value += real(t1);
+      }
+    else
+    {
+      for (int s = 0; s < bke.MinusOver2M.size(); ++s)
+      {
+        FullPrecRealType mlambda = bke.MinusOver2M[s];
+        for (int i = pset.first(s); i < pset.last(s); ++i)
+        {
+          //t1 = mlambda*( pset.L[i] + dot(pset.G[i],pset.G[i]) );
+          t1 = pset.L[i] + dot(pset.G[i], pset.G[i]);
+          t1 *= mlambda;
+          t_samp[i]    = real(t1);
+          tcmp_samp[i] = t1;
+          value += real(t1);
+        }
+      }
+    }
+    for (auto& listener : listeners)
+    {
+      listener.report(walker_index, name, t_samp);
+    }
+    return value;
+  };
+
+  for (int iw = 0; iw < o_list.size(); iw++)
+  {
+    auto& bare_kinetic_energy  = o_list.getCastedElement<BareKineticEnergy>(iw);
+    bare_kinetic_energy.value_ = evaluate_walker_per_particle(iw, bare_kinetic_energy, p_list[iw], listeners);
+  }
+}
+
+void BareKineticEnergy::mw_evaluatePerParticleWithToperator(
+    const RefVectorWithLeader<OperatorBase>& o_list,
+    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    const std::vector<ListenerVector<RealType>>& listeners,
+    const std::vector<ListenerVector<RealType>>& ion_listeners) const
+{
+  mw_evaluatePerParticle(o_list, wf_list, p_list, listeners, ion_listeners);
 }
 
 #if !defined(REMOVE_TRACEMANAGER)
@@ -428,7 +628,7 @@ bool BareKineticEnergy::get(std::ostream& os) const
 
 std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  return std::make_unique<BareKineticEnergy>(*this);
+  return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
 #ifdef QMC_CUDA

@@ -150,14 +150,19 @@ struct SmallMatrixDetCalculator
 template<unsigned NEXCITED>
 class CustomizedMatrixDet;
 
+inline size_t flat_idx(const int i, const int a, const int n) { return a + i * n; }
+
 template<>
 class CustomizedMatrixDet<1>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const VALUE* table_matrix, const int* it, const size_t nb_cols)
   {
-    return dotProducts(*it, *(it + 1));
+    const int i = *it;
+    const int a = *(it + 1);
+    const int n = nb_cols;
+    return table_matrix[flat_idx(i, a, nb_cols)];
   }
 };
 
@@ -166,14 +171,17 @@ class CustomizedMatrixDet<2>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const VALUE* table_matrix, const int* it, const size_t nb_cols)
   {
     const int i = *it;
     const int j = *(it + 1);
     const int a = *(it + 2);
     const int b = *(it + 3);
-    return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i, a), dotProducts(i, b), dotProducts(j, a),
-                                                     dotProducts(j, b));
+    const int n = nb_cols;
+    return SmallMatrixDetCalculator<VALUE>::evaluate(table_matrix[flat_idx(i, a, nb_cols)],
+                                                     table_matrix[flat_idx(i, b, nb_cols)],
+                                                     table_matrix[flat_idx(j, a, nb_cols)],
+                                                     table_matrix[flat_idx(j, b, nb_cols)]);
   }
 };
 
@@ -182,7 +190,7 @@ class CustomizedMatrixDet<3>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const VALUE* table_matrix, const int* it, const size_t nb_cols)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
@@ -190,9 +198,15 @@ public:
     const int a1 = *(it + 3);
     const int a2 = *(it + 4);
     const int a3 = *(it + 5);
-    return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3),
-                                                     dotProducts(i2, a1), dotProducts(i2, a2), dotProducts(i2, a3),
-                                                     dotProducts(i3, a1), dotProducts(i3, a2), dotProducts(i3, a3));
+    return SmallMatrixDetCalculator<VALUE>::evaluate(table_matrix[flat_idx(i1, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i1, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i1, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a3, nb_cols)]);
   }
 };
 
@@ -201,7 +215,7 @@ class CustomizedMatrixDet<4>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const VALUE* table_matrix, const int* it, const size_t nb_cols)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
@@ -211,12 +225,22 @@ public:
     const int a2 = *(it + 5);
     const int a3 = *(it + 6);
     const int a4 = *(it + 7);
-    return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3),
-                                                     dotProducts(i1, a4), dotProducts(i2, a1), dotProducts(i2, a2),
-                                                     dotProducts(i2, a3), dotProducts(i2, a4), dotProducts(i3, a1),
-                                                     dotProducts(i3, a2), dotProducts(i3, a3), dotProducts(i3, a4),
-                                                     dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3),
-                                                     dotProducts(i4, a4));
+    return SmallMatrixDetCalculator<VALUE>::evaluate(table_matrix[flat_idx(i1, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i1, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i1, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i1, a4, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i2, a4, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i3, a4, nb_cols)],
+                                                     table_matrix[flat_idx(i4, a1, nb_cols)],
+                                                     table_matrix[flat_idx(i4, a2, nb_cols)],
+                                                     table_matrix[flat_idx(i4, a3, nb_cols)],
+                                                     table_matrix[flat_idx(i4, a4, nb_cols)]);
   }
 };
 
@@ -225,7 +249,7 @@ class CustomizedMatrixDet<5>
 {
 public:
   template<typename VALUE>
-  static VALUE evaluate(const OffloadMatrix<VALUE>& dotProducts, const int* it)
+  static VALUE evaluate(const VALUE* table_matrix, const int* it, const size_t nb_cols)
   {
     const int i1 = *it;
     const int i2 = *(it + 1);
@@ -237,38 +261,43 @@ public:
     const int a3 = *(it + 7);
     const int a4 = *(it + 8);
     const int a5 = *(it + 9);
-    return SmallMatrixDetCalculator<VALUE>::evaluate(dotProducts(i1, a1), dotProducts(i1, a2), dotProducts(i1, a3),
-                                                     dotProducts(i1, a4), dotProducts(i1, a5), dotProducts(i2, a1),
-                                                     dotProducts(i2, a2), dotProducts(i2, a3), dotProducts(i2, a4),
-                                                     dotProducts(i2, a5), dotProducts(i3, a1), dotProducts(i3, a2),
-                                                     dotProducts(i3, a3), dotProducts(i3, a4), dotProducts(i3, a5),
-                                                     dotProducts(i4, a1), dotProducts(i4, a2), dotProducts(i4, a3),
-                                                     dotProducts(i4, a4), dotProducts(i4, a5), dotProducts(i5, a1),
-                                                     dotProducts(i5, a2), dotProducts(i5, a3), dotProducts(i5, a4),
-                                                     dotProducts(i5, a5));
+    return SmallMatrixDetCalculator<
+        VALUE>::evaluate(table_matrix[flat_idx(i1, a1, nb_cols)], table_matrix[flat_idx(i1, a2, nb_cols)],
+                         table_matrix[flat_idx(i1, a3, nb_cols)], table_matrix[flat_idx(i1, a4, nb_cols)],
+                         table_matrix[flat_idx(i1, a5, nb_cols)], table_matrix[flat_idx(i2, a1, nb_cols)],
+                         table_matrix[flat_idx(i2, a2, nb_cols)], table_matrix[flat_idx(i2, a3, nb_cols)],
+                         table_matrix[flat_idx(i2, a4, nb_cols)], table_matrix[flat_idx(i2, a5, nb_cols)],
+                         table_matrix[flat_idx(i3, a1, nb_cols)], table_matrix[flat_idx(i3, a2, nb_cols)],
+                         table_matrix[flat_idx(i3, a3, nb_cols)], table_matrix[flat_idx(i3, a4, nb_cols)],
+                         table_matrix[flat_idx(i3, a5, nb_cols)], table_matrix[flat_idx(i4, a1, nb_cols)],
+                         table_matrix[flat_idx(i4, a2, nb_cols)], table_matrix[flat_idx(i4, a3, nb_cols)],
+                         table_matrix[flat_idx(i4, a4, nb_cols)], table_matrix[flat_idx(i4, a5, nb_cols)],
+                         table_matrix[flat_idx(i5, a1, nb_cols)], table_matrix[flat_idx(i5, a2, nb_cols)],
+                         table_matrix[flat_idx(i5, a3, nb_cols)], table_matrix[flat_idx(i5, a4, nb_cols)],
+                         table_matrix[flat_idx(i5, a5, nb_cols)]);
   }
 };
 
 template<typename VALUE>
-inline VALUE calcSmallDeterminant(size_t n, const OffloadMatrix<VALUE>& dotProducts, const int* it)
+inline VALUE calcSmallDeterminant(size_t n, const VALUE* table_matrix, const int* it, const size_t nb_cols)
 {
   switch (n)
   {
   case 1:
-    return CustomizedMatrixDet<1>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<1>::evaluate(table_matrix, it, nb_cols);
   case 2:
-    return CustomizedMatrixDet<2>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<2>::evaluate(table_matrix, it, nb_cols);
   case 3:
-    return CustomizedMatrixDet<3>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<3>::evaluate(table_matrix, it, nb_cols);
   case 4:
-    return CustomizedMatrixDet<4>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<4>::evaluate(table_matrix, it, nb_cols);
   case 5:
-    return CustomizedMatrixDet<5>::evaluate(dotProducts, it);
+    return CustomizedMatrixDet<5>::evaluate(table_matrix, it, nb_cols);
   default:
     throw std::runtime_error("calculateSmallDeterminant only handles the number of excitations <= 5.");
   }
-  return 0.0;
 }
+
 
 } // namespace qmcplusplus
 #endif

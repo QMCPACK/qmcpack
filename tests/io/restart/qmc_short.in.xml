@@ -83,11 +83,11 @@
    </qmcsystem>
    <qmc method="vmc" move="pbyp" checkpoint="0">
       <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    10              </parameter>
-      <parameter name="steps"               >    8.0             </parameter>
+      <parameter name="blocks"              >    3               </parameter>
+      <parameter name="steps"               >    8               </parameter>
       <parameter name="subSteps"            >    2               </parameter>
       <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
+      <parameter name="warmupSteps"         >    10              </parameter>
    </qmc>
    <qmc method="vmc" move="pbyp" checkpoint="-1">
       <parameter name="walkers"             >    16              </parameter>

@@ -24,9 +24,11 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OptimizableObject.h"
 #ifdef QMC_CUDA
 #include "type_traits/CUDATypes.h"
 #endif
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -56,24 +58,21 @@ public:
   using Walker_t    = ParticleSet::Walker_t;
   using SPOPool_t   = std::map<std::string, SPOSet*>;
 
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+
   /** constructor */
-  SPOSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false);
+  SPOSet(const std::string& my_name);
 
   /** destructor
    *
    * Derived class destructor needs to pay extra attention to freeing memory shared among clones of SPOSet.
    */
-  virtual ~SPOSet() {}
-
-  // accessor function to Optimizable
-  inline bool isOptimizable() const { return Optimizable; }
+  virtual ~SPOSet() = default;
 
   /** return the size of the orbital set
    * Ye: this needs to be replaced by getOrbitalSetSize();
    */
   inline int size() const { return OrbitalSetSize; }
-
-  inline const std::string& getClassName() const { return className; }
 
   /** print basic SPOSet information
    */
@@ -88,13 +87,25 @@ public:
    */
   inline int getOrbitalSetSize() const { return OrbitalSetSize; }
 
-  /** Query if this SPOSet uses OpenMP offload
-  */
-  inline bool isOMPoffload() const { return useOMPoffload; }
+  /// Query if this SPOSet is optimizable
+  virtual bool isOptimizable() const { return false; }
+
+  /** extract underlying OptimizableObject references
+   * @param opt_obj_refs aggregated list of optimizable object references
+   */
+  virtual void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs);
+
+  /** check out variational optimizable variables
+   * @param active a super set of optimizable variables
+   */
+  virtual void checkOutVariables(const opt_variables_type& active);
+
+  /// Query if this SPOSet uses OpenMP offload
+  virtual bool isOMPoffload() const { return false; }
 
   /** Query if this SPOSet has an explicit ion dependence. returns true if it does.
   */
-  inline bool hasIonDerivs() const { return ionDerivs; }
+  virtual bool hasIonDerivs() const { return false; }
 
   /// check a few key parameters before putting the SPO into a determinant
   virtual void checkObject() const {}
@@ -104,36 +115,27 @@ public:
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
-  // store parameters before getting destroyed by rotation.
+  /// return true if this SPOSet can be wrappered by RotatedSPO
+  virtual bool isRotationSupported() const { return false; }
+  /// store parameters before getting destroyed by rotation.
   virtual void storeParamsBeforeRotation() {}
-  // apply rotation to all the orbitals
-  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false)
-  {
-    std::ostringstream o;
-    o << "SPOSet::applyRotation is not implemented by " << className << std::endl;
-    APP_ABORT(o.str());
-  }
-  /// reset parameters to the values from optimizer
-  virtual void resetParameters(const opt_variables_type& optVariables) = 0;
-
-  /// check in/out parameters to the global list of parameters used by the optimizer
-  virtual void checkInVariables(opt_variables_type& active) {}
-  virtual void checkOutVariables(const opt_variables_type& active) {}
+  /// apply rotation to all the orbitals
+  virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
-                                   const int& LastIndex)
-  {}
+                                   const int& LastIndex);
+
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
-                                   std::vector<ValueType>& dlogpsi,
-                                   std::vector<ValueType>& dhpsioverpsi,
+                                   Vector<ValueType>& dlogpsi,
+                                   Vector<ValueType>& dhpsioverpsi,
                                    const ValueType& psiCurrent,
                                    const std::vector<ValueType>& Coeff,
                                    const std::vector<size_t>& C2node_up,
@@ -155,15 +157,14 @@ public:
                                    const size_t N2,
                                    const size_t NP1,
                                    const size_t NP2,
-                                   const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                   const std::vector<std::vector<int>>& lookup_tbl);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
   virtual void evaluateDerivativesWF(ParticleSet& P,
                                      const opt_variables_type& optvars,
-                                     std::vector<ValueType>& dlogpsi,
+                                     Vector<ValueType>& dlogpsi,
                                      const QTFull::ValueType& psiCurrent,
                                      const std::vector<ValueType>& Coeff,
                                      const std::vector<size_t>& C2node_up,
@@ -175,8 +176,7 @@ public:
                                      const ValueMatrix& Minv_up,
                                      const ValueMatrix& Minv_dn,
                                      const std::vector<int>& detData_up,
-                                     const std::vector<std::vector<int>>& lookup_tbl)
-  {}
+                                     const std::vector<std::vector<int>>& lookup_tbl);
 
   /** set the OrbitalSetSize
    * @param norbs number of single-particle orbitals
@@ -283,8 +283,8 @@ public:
                                       const RefVector<ValueVector>& d2psi_v_list,
                                       const RefVector<ValueVector>& dspin_v_list) const;
 
-  /** evaluate the values, gradients and laplacians of this single-particle orbital sets
-   *  and determinant ratio and grads of multiple walkers
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
+   *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param P_list the list of ParticleSet pointers in a walker batch
    * @param iat active particle
@@ -295,9 +295,29 @@ public:
                                               const RefVectorWithLeader<ParticleSet>& P_list,
                                               int iat,
                                               const std::vector<const ValueType*>& invRow_ptr_list,
-                                              VGLVector& phi_vgl_v,
+                                              OffloadMWVGLArray& phi_vgl_v,
                                               std::vector<ValueType>& ratios,
                                               std::vector<GradType>& grads) const;
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
+   *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return.
+   *  Includes spin gradients
+   * @param spo_list the list of SPOSet pointers in a walker batch
+   * @param P_list the list of ParticleSet pointers in a walker batch
+   * @param iat active particle
+   * @param phi_vgl_v orbital values, gradients and laplacians of all the walkers
+   * @param ratios, ratios of all walkers
+   * @param grads, spatial gradients of all walkers
+   * @param spingrads, spin gradients of all walkers
+   */
+  virtual void mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                                      int iat,
+                                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                                      OffloadMWVGLArray& phi_vgl_v,
+                                                      std::vector<ValueType>& ratios,
+                                                      std::vector<GradType>& grads,
+                                                      std::vector<ValueType>& spingrads) const;
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set
    * @param P current ParticleSet
@@ -489,7 +509,7 @@ public:
   /** make a clone of itself
    * every derived class must implement this to have threading working correctly.
    */
-  virtual std::unique_ptr<SPOSet> makeClone() const;
+  [[noreturn]] virtual std::unique_ptr<SPOSet> makeClone() const;
 
   /** Used only by cusp correction in AOS LCAO.
    * Ye: the SoA LCAO moves all this responsibility to the builder.
@@ -504,10 +524,11 @@ public:
    */
   virtual void finalizeConstruction() {}
 
-  /// set object name
-  void setName(const std::string& name) { myName = name; }
   /// return object name
-  const std::string& getName() const { return myName; }
+  const std::string& getName() const { return my_name_; }
+
+  /// return class name
+  virtual std::string getClassName() const = 0;
 
 #ifdef QMC_CUDA
   /** Evaluate the SPO value at an explicit position.
@@ -547,20 +568,12 @@ public:
 #endif
 
 protected:
-  ///true, if the derived class uses OpenMP offload and statisfies a few assumptions
-  const bool useOMPoffload;
-  ///true, if the derived class has non-zero ionic derivatives.
-  const bool ionDerivs;
-  ///true if SPO is optimizable
-  const bool Optimizable;
+  /// name of the object, unique identifier
+  const std::string my_name_;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
-  ///name of the class
-  std::string className;
-  /// name of the object, unique identifier
-  std::string myName;
 };
 
 using SPOSetPtr = SPOSet*;

@@ -21,7 +21,7 @@ namespace CUDA
 {
 using namespace thrust::cuda_cub::core;
 }
-}
+} // namespace qmcplusplus
 #else
 #include <hip/hip_complex.h>
 #include "ROCm/cuda2hip.h"
@@ -44,19 +44,18 @@ __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
                                           const int lda,
                                           T* const temp[],
                                           T* const rcopy[],
-                                          const T* const dphi_in[],
-                                          const T* const d2phi_in[],
+                                          const T* const phi_vgl_in[],
+                                          const size_t phi_vgl_stride,
                                           T* const dphi_out[],
                                           T* const d2phi_out[])
 {
-  const int iw                      = blockIdx.x;
-  const T* __restrict__ Ainv_iw     = Ainv[iw];
-  T* __restrict__ temp_iw           = temp[iw];
-  T* __restrict__ rcopy_iw          = rcopy[iw];
-  const T* __restrict__ dphi_in_iw  = dphi_in[iw];
-  const T* __restrict__ d2phi_in_iw = d2phi_in[iw];
-  T* __restrict__ dphi_out_iw       = dphi_out[iw];
-  T* __restrict__ d2phi_out_iw      = d2phi_out[iw];
+  const int iw                    = blockIdx.x;
+  const T* __restrict__ Ainv_iw   = Ainv[iw];
+  T* __restrict__ temp_iw         = temp[iw];
+  T* __restrict__ rcopy_iw        = rcopy[iw];
+  const T* __restrict__ phi_in_iw = phi_vgl_in[iw];
+  T* __restrict__ dphi_out_iw     = dphi_out[iw];
+  T* __restrict__ d2phi_out_iw    = d2phi_out[iw];
 
   const int tid = threadIdx.x;
   if (tid == 0)
@@ -72,10 +71,10 @@ __global__ void copyAinvRow_saveGL_kernel(const int rowchanged,
 
       // the following copying data on the device is not part of SM-1
       // it is intended to copy dphiV and d2phiV from temporary to final without a separate kernel.
-      dphi_out_iw[col_id * 3]     = dphi_in_iw[col_id * 3];
-      dphi_out_iw[col_id * 3 + 1] = dphi_in_iw[col_id * 3 + 1];
-      dphi_out_iw[col_id * 3 + 2] = dphi_in_iw[col_id * 3 + 2];
-      d2phi_out_iw[col_id]        = d2phi_in_iw[col_id];
+      dphi_out_iw[col_id * 3]     = phi_in_iw[col_id + phi_vgl_stride];
+      dphi_out_iw[col_id * 3 + 1] = phi_in_iw[col_id + phi_vgl_stride * 2];
+      dphi_out_iw[col_id * 3 + 2] = phi_in_iw[col_id + phi_vgl_stride * 3];
+      d2phi_out_iw[col_id]        = phi_in_iw[col_id + phi_vgl_stride * 4];
     }
   }
 }
@@ -87,8 +86,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     float* const temp[],
                                     float* const rcopy[],
-                                    const float* const dphi_in[],
-                                    const float* const d2phi_in[],
+                                    const float* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     float* const dphi_out[],
                                     float* const d2phi_out[],
                                     const int batch_count)
@@ -100,7 +99,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   copyAinvRow_saveGL_kernel<float, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, Ainv, lda, temp, rcopy,
-                                                                             dphi_in, d2phi_in, dphi_out, d2phi_out);
+                                                                             phi_vgl_in, phi_vgl_stride, dphi_out,
+                                                                             d2phi_out);
   return cudaPeekAtLastError();
 }
 
@@ -111,8 +111,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     double* const temp[],
                                     double* const rcopy[],
-                                    const double* const dphi_in[],
-                                    const double* const d2phi_in[],
+                                    const double* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     double* const dphi_out[],
                                     double* const d2phi_out[],
                                     const int batch_count)
@@ -124,7 +124,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   copyAinvRow_saveGL_kernel<double, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, Ainv, lda, temp, rcopy,
-                                                                              dphi_in, d2phi_in, dphi_out, d2phi_out);
+                                                                              phi_vgl_in, phi_vgl_stride, dphi_out,
+                                                                              d2phi_out);
   return cudaPeekAtLastError();
 }
 
@@ -135,8 +136,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     std::complex<float>* const temp[],
                                     std::complex<float>* const rcopy[],
-                                    const std::complex<float>* const dphi_in[],
-                                    const std::complex<float>* const d2phi_in[],
+                                    const std::complex<float>* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     std::complex<float>* const dphi_out[],
                                     std::complex<float>* const d2phi_out[],
                                     const int batch_count)
@@ -147,8 +148,10 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  copyAinvRow_saveGL_kernel<cuComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuComplex**)Ainv, lda, (cuComplex**)temp, (cuComplex**)rcopy,
-                                                                             (const cuComplex**)dphi_in, (const cuComplex**)d2phi_in, (cuComplex**)dphi_out, (cuComplex**)d2phi_out);
+  copyAinvRow_saveGL_kernel<cuComplex, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuComplex**)Ainv, lda, (cuComplex**)temp,
+                                          (cuComplex**)rcopy, (const cuComplex**)phi_vgl_in, phi_vgl_stride,
+                                          (cuComplex**)dphi_out, (cuComplex**)d2phi_out);
   return cudaPeekAtLastError();
 }
 
@@ -159,8 +162,8 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
                                     const int lda,
                                     std::complex<double>* const temp[],
                                     std::complex<double>* const rcopy[],
-                                    const std::complex<double>* const dphi_in[],
-                                    const std::complex<double>* const d2phi_in[],
+                                    const std::complex<double>* const phi_vgl_in[],
+                                    const size_t phi_vgl_stride,
                                     std::complex<double>* const dphi_out[],
                                     std::complex<double>* const d2phi_out[],
                                     const int batch_count)
@@ -171,8 +174,10 @@ cudaError_t copyAinvRow_saveGL_cuda(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  copyAinvRow_saveGL_kernel<cuDoubleComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuDoubleComplex**)Ainv, lda, (cuDoubleComplex**)temp, (cuDoubleComplex**)rcopy,
-                                                                              (const cuDoubleComplex**)dphi_in, (const cuDoubleComplex**)d2phi_in, (cuDoubleComplex**)dphi_out, (cuDoubleComplex**)d2phi_out);
+  copyAinvRow_saveGL_kernel<cuDoubleComplex, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(rowchanged, n, (const cuDoubleComplex**)Ainv, lda, (cuDoubleComplex**)temp,
+                                          (cuDoubleComplex**)rcopy, (const cuDoubleComplex**)phi_vgl_in, phi_vgl_stride,
+                                          (cuDoubleComplex**)dphi_out, (cuDoubleComplex**)d2phi_out);
   return cudaPeekAtLastError();
 }
 
@@ -261,7 +266,9 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  calcGradients_kernel<thrust::complex<float>, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<float>**)Ainvrow, (const thrust::complex<float>**)dpsiMrow, (thrust::complex<float>*)grads_now);
+  calcGradients_kernel<thrust::complex<float>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<float>**)Ainvrow,
+                                          (const thrust::complex<float>**)dpsiMrow, (thrust::complex<float>*)grads_now);
   return cudaPeekAtLastError();
 }
 
@@ -278,7 +285,10 @@ cudaError_t calcGradients_cuda(cudaStream_t& hstream,
   const int COLBS = 64;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  calcGradients_kernel<thrust::complex<double>, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<double>**)Ainvrow, (const thrust::complex<double>**)dpsiMrow, (thrust::complex<double>*)grads_now);
+  calcGradients_kernel<thrust::complex<double>, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(n, (const thrust::complex<double>**)Ainvrow,
+                                          (const thrust::complex<double>**)dpsiMrow,
+                                          (thrust::complex<double>*)grads_now);
   return cudaPeekAtLastError();
 }
 
@@ -289,9 +299,8 @@ __global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
                                                      T* const binv[],
                                                      const int binv_lda,
                                                      const T* const ratio_inv,
-                                                     const T* const phi_in[],
-                                                     const T* const dphi_in[],
-                                                     const T* const d2phi_in[],
+                                                     const T* const phi_vgl_in[],
+                                                     const size_t phi_vgl_stride,
                                                      T* const phi_out[],
                                                      T* const dphi_out[],
                                                      T* const d2phi_out[],
@@ -304,14 +313,12 @@ __global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
   if (iw < n_accepted)
   {
     // real accept, settle y and Z
-    int* __restrict__ delay_list_iw   = delay_list[iw];
-    T* __restrict__ binvrow_iw        = binv[iw] + delay_count * binv_lda;
-    const T* __restrict__ phi_in_iw   = phi_in[iw];
-    const T* __restrict__ dphi_in_iw  = dphi_in[iw];
-    const T* __restrict__ d2phi_in_iw = d2phi_in[iw];
-    T* __restrict__ phi_out_iw        = phi_out[iw];
-    T* __restrict__ dphi_out_iw       = dphi_out[iw];
-    T* __restrict__ d2phi_out_iw      = d2phi_out[iw];
+    int* __restrict__ delay_list_iw = delay_list[iw];
+    T* __restrict__ binvrow_iw      = binv[iw] + delay_count * binv_lda;
+    const T* __restrict__ phi_in_iw = phi_vgl_in[iw];
+    T* __restrict__ phi_out_iw      = phi_out[iw];
+    T* __restrict__ dphi_out_iw     = dphi_out[iw];
+    T* __restrict__ d2phi_out_iw    = d2phi_out[iw];
 
     if (tid == 0)
     {
@@ -335,10 +342,10 @@ __global__ void add_delay_list_save_sigma_VGL_kernel(int* const delay_list[],
       {
         // copy phiV, dphiV and d2phiV from temporary to final without a separate kernel.
         phi_out_iw[col_id]          = phi_in_iw[col_id];
-        dphi_out_iw[col_id * 3]     = dphi_in_iw[col_id * 3];
-        dphi_out_iw[col_id * 3 + 1] = dphi_in_iw[col_id * 3 + 1];
-        dphi_out_iw[col_id * 3 + 2] = dphi_in_iw[col_id * 3 + 2];
-        d2phi_out_iw[col_id]        = d2phi_in_iw[col_id];
+        dphi_out_iw[col_id * 3]     = phi_in_iw[col_id + phi_vgl_stride];
+        dphi_out_iw[col_id * 3 + 1] = phi_in_iw[col_id + phi_vgl_stride * 2];
+        dphi_out_iw[col_id * 3 + 2] = phi_in_iw[col_id + phi_vgl_stride * 3];
+        d2phi_out_iw[col_id]        = phi_in_iw[col_id + phi_vgl_stride * 4];
       }
     }
   }
@@ -379,9 +386,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   float* const binv[],
                                                   const int binv_lda,
                                                   const float* const ratio_inv,
-                                                  const float* const phi_in[],
-                                                  const float* const dphi_in[],
-                                                  const float* const d2phi_in[],
+                                                  const float* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   float* const phi_out[],
                                                   float* const dphi_out[],
                                                   float* const d2phi_out[],
@@ -396,8 +402,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   add_delay_list_save_sigma_VGL_kernel<float, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
-                                          dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_vgl_in,
+                                          phi_vgl_stride, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
@@ -408,9 +414,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   double* const binv[],
                                                   const int binv_lda,
                                                   const double* const ratio_inv,
-                                                  const double* const phi_in[],
-                                                  const double* const dphi_in[],
-                                                  const double* const d2phi_in[],
+                                                  const double* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   double* const phi_out[],
                                                   double* const dphi_out[],
                                                   double* const d2phi_out[],
@@ -425,8 +430,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
   add_delay_list_save_sigma_VGL_kernel<double, COLBS>
-      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_in,
-                                          dphi_in, d2phi_in, phi_out, dphi_out, d2phi_out, norb, n_accepted);
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, binv, binv_lda, ratio_inv, phi_vgl_in,
+                                          phi_vgl_stride, phi_out, dphi_out, d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
@@ -437,9 +442,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   std::complex<float>* const binv[],
                                                   const int binv_lda,
                                                   const std::complex<float>* const ratio_inv,
-                                                  const std::complex<float>* const phi_in[],
-                                                  const std::complex<float>* const dphi_in[],
-                                                  const std::complex<float>* const d2phi_in[],
+                                                  const std::complex<float>* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   std::complex<float>* const phi_out[],
                                                   std::complex<float>* const dphi_out[],
                                                   std::complex<float>* const d2phi_out[],
@@ -456,11 +460,9 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   add_delay_list_save_sigma_VGL_kernel<thrust::complex<float>, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<float>**)binv, binv_lda,
                                           (const thrust::complex<float>*)ratio_inv,
-                                          (const thrust::complex<float>**)phi_in,
-                                          (const thrust::complex<float>**)dphi_in,
-                                          (const thrust::complex<float>**)d2phi_in, (thrust::complex<float>**)phi_out,
-                                          (thrust::complex<float>**)dphi_out, (thrust::complex<float>**)d2phi_out, norb,
-                                          n_accepted);
+                                          (const thrust::complex<float>**)phi_vgl_in, phi_vgl_stride,
+                                          (thrust::complex<float>**)phi_out, (thrust::complex<float>**)dphi_out,
+                                          (thrust::complex<float>**)d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
@@ -471,9 +473,8 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
                                                   std::complex<double>* const binv[],
                                                   const int binv_lda,
                                                   const std::complex<double>* const ratio_inv,
-                                                  const std::complex<double>* const phi_in[],
-                                                  const std::complex<double>* const dphi_in[],
-                                                  const std::complex<double>* const d2phi_in[],
+                                                  const std::complex<double>* const phi_vgl_in[],
+                                                  const size_t phi_vgl_stride,
                                                   std::complex<double>* const phi_out[],
                                                   std::complex<double>* const dphi_out[],
                                                   std::complex<double>* const d2phi_out[],
@@ -490,11 +491,9 @@ cudaError_t add_delay_list_save_sigma_VGL_batched(cudaStream_t& hstream,
   add_delay_list_save_sigma_VGL_kernel<thrust::complex<double>, COLBS>
       <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, rowchanged, delay_count, (thrust::complex<double>**)binv,
                                           binv_lda, (const thrust::complex<double>*)ratio_inv,
-                                          (const thrust::complex<double>**)phi_in,
-                                          (const thrust::complex<double>**)dphi_in,
-                                          (const thrust::complex<double>**)d2phi_in, (thrust::complex<double>**)phi_out,
-                                          (thrust::complex<double>**)dphi_out, (thrust::complex<double>**)d2phi_out,
-                                          norb, n_accepted);
+                                          (const thrust::complex<double>**)phi_vgl_in, phi_vgl_stride,
+                                          (thrust::complex<double>**)phi_out, (thrust::complex<double>**)dphi_out,
+                                          (thrust::complex<double>**)d2phi_out, norb, n_accepted);
   return cudaPeekAtLastError();
 }
 
@@ -566,7 +565,8 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  applyW_kernel<cuComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuComplex**)tempMat, lda);
+  applyW_kernel<cuComplex, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuComplex**)tempMat, lda);
   return cudaPeekAtLastError();
 }
 
@@ -583,7 +583,8 @@ cudaError_t applyW_batched(cudaStream_t& hstream,
   const int COLBS = 32;
   dim3 dimBlock(COLBS);
   dim3 dimGrid(batch_count);
-  applyW_kernel<cuDoubleComplex, COLBS><<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuDoubleComplex**)tempMat, lda);
+  applyW_kernel<cuDoubleComplex, COLBS>
+      <<<dimGrid, dimBlock, 0, hstream>>>(delay_list, delay_count, (cuDoubleComplex**)tempMat, lda);
   return cudaPeekAtLastError();
 }
 

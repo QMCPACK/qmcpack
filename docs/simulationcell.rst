@@ -29,6 +29,8 @@ Attribute:
   +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
   | ``vacuum``          | float        | :math:`\geq 1.0`          | 1.0               | Vacuum scale.                                      |
   +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
+  | ``LR_handler``      | string       | string                    | "opt_breakup"     | Ewald breakup method.                              |
+  +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
   | ``LR_dim_cutoff``   | float        | float                     | 15                | Ewald breakup distance.                            |
   +---------------------+--------------+---------------------------+-------------------+----------------------------------------------------+
   | ``LR_tol``          | float        | float                     | 3e-4              | Tolerance in Ha for Ewald ion-ion energy per atom. |
@@ -68,8 +70,8 @@ boundary conditions. The parameter expects a single string of three
 characters separated by spaces, *e.g.* “p p p” for purely periodic
 boundary conditions. These characters control the behavior of the
 :math:`x`, :math:`y`, and :math:`z`, axes, respectively. Non periodic
-directions must be placed after the periodic ones. Examples of valid
-include:
+directions must be placed after the periodic ones. The only supported
+combinations are:
 
 **“p p p”** Periodic boundary conditions. Corresponds to a 3D crystal.
 
@@ -116,28 +118,50 @@ the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
        </parameter>
        <parameter name="vacuum"> 1.5 </parameter>
        <parameter name="LR_dim_cutoff"> 20 </parameter>
+       <parameter name="LR_handler"> ewald </parameter>
      </simulationcell>
+
+LR_handler
+~~~~~~~~~~
+
+When using periodic boundary conditions direct calculation of the
+Coulomb energy is conditionally convergent. As a result, QMCPACK uses an
+optimized short-range/long-range breakup technique to compute the Coulomb
+interaction in a rapidly convergent lattice sum. :cite:`Natoli1995`
+
+In this summation, the energy is broken into short- and long-ranged
+terms. The short-ranged term is computed directly in real space, while
+the long-ranged term is computed in reciprocal space.
+
+.. math:: v(r) = 1/r = v^{sr}(r) + v^{lr}(r)
+
+`LR_handler` determines the functional form of :math:`v^{sr}` and :math:`v^{lr}`.
+For example, the Ewald forms are
+
+.. math:: v^{sr}(r) = \text{erfc}(\alpha r)/r
+
+.. math:: v^{lr}(r) = \text{erf}(\alpha r)/r
+
+Implemented choices for 3D systems are: ``ewald``, ``opt_breakup``, and ``opt_breakup_original``.
+The choice for a 2D system is ``ewald_strict2d``.
+The choice for a quasi-2D (e.g. slab) system is ``ewald_quasi2d``.
 
 LR_dim_cutoff
 ~~~~~~~~~~~~~
 
-When using periodic boundary conditions direct calculation of the
-Coulomb energy is not well behaved. As a result, QMCPACK uses an
-optimized Ewald summation technique to compute the Coulomb
-interaction. :cite:`Natoli1995`
-
-In the Ewald summation, the energy is broken into short- and long-ranged
-terms. The short-ranged term is computed directly in real space, while
-the long-ranged term is computed in reciprocal space. controls where the
-short-ranged term ends and the long-ranged term begins. The real-space
-cutoff, reciprocal-space cutoff, and are related via:
+QMCPACK chooses the short-range part to terminate at the image radius of
+the simulation cell. This way only one real-space cell needs to be considered
+using the minimum image convention.
+`LR_dim_cutoff` controls the number of terms to include in the long-range sum.
+The real-space cutoff :math:`r_{c}` and reciprocal-space cutoff :math:`k_{c}` are related by
 
 .. math:: \mathrm{LR\_dim\_cutoff} = r_{c} \times k_{c}
 
-where :math:`r_{c}` is the Wigner-Seitz radius, and :math:`k_{c}` is the
+where :math:`r_{c}` is the Wigner-Seitz (simulation cell image) radius,
+and :math:`k_{c}` is the
 length of the maximum :math:`k`-vector used in the long-ranged term.
-Larger values of increase the accuracy of the evaluation. A value of 15
-tends to be conservative.
+Larger values of increase the accuracy of the evaluation.
+A value of 15 tends to be conservative for the ``opt_breakup`` handler in 3D.
 
 .. _particleset:
 

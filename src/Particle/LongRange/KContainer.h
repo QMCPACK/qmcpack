@@ -70,18 +70,24 @@ public:
   /** update k-vectors 
    * @param sc supercell
    * @param kc cutoff radius in the K
+   * @param twist shifts the center of the grid of k-vectors
    * @param useSphere if true, use the |K|
    */
-  void updateKLists(const ParticleLayout& lattice, RealType kc, bool useSphere = true);
+  void updateKLists(const ParticleLayout& lattice,
+                    RealType kc,
+                    unsigned ndim,
+                    const PosType& twist = PosType(),
+                    bool useSphere       = true);
 
   const auto& get_kpts_cart_soa() const { return kpts_cart_soa_; }
+
 private:
   /** compute approximate parallelpiped that surrounds kc
    * @param lattice supercell
    */
-  void FindApproxMMax(const ParticleLayout& lattice);
+  void findApproxMMax(const ParticleLayout& lattice, unsigned ndim);
   /** construct the container for k-vectors */
-  void BuildKLists(const ParticleLayout& lattice, bool useSphere);
+  void BuildKLists(const ParticleLayout& lattice, const PosType& twist, bool useSphere);
 
   /** K-vector in Cartesian coordinates in SoA layout
    */

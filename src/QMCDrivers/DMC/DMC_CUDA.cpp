@@ -83,8 +83,6 @@ bool DMCcuda::run()
   resetRun();
   Mover->MaxAge        = 1;
   IndexType block      = 0;
-  IndexType nAcceptTot = 0;
-  IndexType nRejectTot = 0;
   bool update_now      = false;
   int nat              = W.getTotalNum();
   int nw               = W.getActiveWalkers();
@@ -316,8 +314,6 @@ bool DMCcuda::run()
       Psi.recompute(W, true);
     double accept_ratio = (double)nAccept / (double)(nAccept + nReject);
     Estimators->stopBlock(accept_ratio);
-    nAcceptTot += nAccept;
-    nRejectTot += nReject;
     ++block;
     recordBlock(block);
     dmc_loop.stop();

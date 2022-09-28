@@ -30,6 +30,7 @@
 #include "QMCDrivers/RMC/RMCFactory.h"
 #include "QMCDrivers/WFOpt/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
+#include "Estimators/EstimatorInputDelegates.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -49,22 +50,5 @@ QMCMainState::QMCMainState(Communicate* c) : MPIObjectBase(c), curRunType(QMCRun
 }
 
 QMCMainState::~QMCMainState() = default;
-
-void QMCMainState::putCommunicator(xmlNodePtr cur)
-{
-  //BROKEN: myComm is ALWAYS initialized by the constructor
-  if (myComm)
-    return;
-  ParameterSet params;
-  int nparts = 1;
-  params.add(nparts, "groups");
-  params.add(nparts, "twistAngles");
-  params.put(cur);
-  if (nparts > 1)
-  {
-    app_log() << "  Communiator groups = " << nparts << std::endl;
-    myComm = new Communicate(*OHMMS::Controller, nparts);
-  }
-}
 
 } // namespace qmcplusplus

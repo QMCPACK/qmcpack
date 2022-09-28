@@ -37,8 +37,6 @@ public:
   //bool put(std::vector<xmlNodePtr>& mset, int pid);
   //bool put(std::vector<xmlNodePtr>& mset, Communicate* comm);
   std::string getFileRoot() { return CurrentFileRoot; }
-
-  void rewind(const std::string& h5root, int blocks);
 };
 } // namespace qmcplusplus
 

@@ -29,25 +29,25 @@ namespace qmcplusplus
 // This saves us writing specific overloads with reinterpret casts for different std::complex to cuComplex types.
 template<typename T>
 using CUDATypeMap =
-    typename c14disjunction::disjunction<OnTypesEqual<T, float, float>,
-                                         OnTypesEqual<T, double, double>,
-                                         OnTypesEqual<T, float*, float*>,
-                                         OnTypesEqual<T, double*, double*>,
-                                         OnTypesEqual<T, float**, float**>,
-                                         OnTypesEqual<T, double**, double**>,
-                                         OnTypesEqual<T, std::complex<double>, cuDoubleComplex>,
-                                         OnTypesEqual<T, std::complex<float>, cuComplex>,
-                                         OnTypesEqual<T, std::complex<double>*, cuDoubleComplex*>,
-                                         OnTypesEqual<T, std::complex<float>**, cuComplex**>,
-                                         OnTypesEqual<T, std::complex<double>**, cuDoubleComplex**>,
-                                         OnTypesEqual<T, std::complex<float>*, cuComplex*>,
-                                         OnTypesEqual<T, const std::complex<double>*, const cuDoubleComplex*>,
-                                         OnTypesEqual<T, const std::complex<float>*, const cuComplex*>,
-                                         OnTypesEqual<T, const std::complex<float>**, const cuComplex**>,
-                                         OnTypesEqual<T, const std::complex<double>**, const cuDoubleComplex**>,
-                                         OnTypesEqual<T, const std::complex<float>* const *, const cuComplex* const *>,
-                                         OnTypesEqual<T, const std::complex<double>* const *, const cuDoubleComplex* const *>,
-                                         default_type<void>>::type;
+    typename std::disjunction<OnTypesEqual<T, float, float>,
+                              OnTypesEqual<T, double, double>,
+                              OnTypesEqual<T, float*, float*>,
+                              OnTypesEqual<T, double*, double*>,
+                              OnTypesEqual<T, float**, float**>,
+                              OnTypesEqual<T, double**, double**>,
+                              OnTypesEqual<T, std::complex<double>, cuDoubleComplex>,
+                              OnTypesEqual<T, std::complex<float>, cuComplex>,
+                              OnTypesEqual<T, std::complex<double>*, cuDoubleComplex*>,
+                              OnTypesEqual<T, std::complex<float>**, cuComplex**>,
+                              OnTypesEqual<T, std::complex<double>**, cuDoubleComplex**>,
+                              OnTypesEqual<T, std::complex<float>*, cuComplex*>,
+                              OnTypesEqual<T, const std::complex<double>*, const cuDoubleComplex*>,
+                              OnTypesEqual<T, const std::complex<float>*, const cuComplex*>,
+                              OnTypesEqual<T, const std::complex<float>**, const cuComplex**>,
+                              OnTypesEqual<T, const std::complex<double>**, const cuDoubleComplex**>,
+                              OnTypesEqual<T, const std::complex<float>* const*, const cuComplex* const*>,
+                              OnTypesEqual<T, const std::complex<double>* const*, const cuDoubleComplex* const*>,
+                              default_type<void>>::type;
 
 template<typename T>
 CUDATypeMap<T> castCUDAType(T var)

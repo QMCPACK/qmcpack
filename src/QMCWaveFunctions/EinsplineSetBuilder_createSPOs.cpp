@@ -125,6 +125,8 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       "no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
   std::string useGPU;
   std::string GPUsharing = "no";
+  std::string spo_object_name;
+
   ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSPOSetFromXML", timer_level_medium));
 
   {
@@ -176,13 +178,15 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  std::vector<int> Occ_Old(0, 0);
-  Occ.resize(0, 0);
+  const std::vector<int> last_occ(Occ);
+  Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
 
   {
     OhmmsAttributeSet oAttrib;
     oAttrib.add(spinSet, "spindataset");
+    oAttrib.add(spo_object_name, "name");
+    oAttrib.add(spo_object_name, "id");
     oAttrib.put(cur);
   }
 
@@ -210,10 +214,9 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     }
     cur = cur->next;
   }
-  if (Occ != Occ_Old)
+  if (Occ != last_occ)
   {
     NewOcc  = true;
-    Occ_Old = Occ;
   }
   else
     NewOcc = false;
@@ -229,18 +232,15 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spo_prec = "single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet, SPOSet*, H5OrbSet>::iterator iter;
-  iter = SPOSetMap.find(aset);
+  const auto iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
-  {
-    app_log() << "SPOSet parameters match in EinsplineSetBuilder. cloning EinsplineSet object." << std::endl;
-    app_warning() << "!!!!!!! Deprecated input style: implicit sharing one SPOSet for spin-up and spin-down electrions "
-                     "has been deprecated. Create a single SPO set outside determinantset instead."
-                  << "Use sposet_collection to construct an explicit sposet for explicit sharing." << std::endl;
-    auto OrbitalSet = std::unique_ptr<SPOSet>(iter->second->makeClone());
-    OrbitalSet->setName("");
-    return OrbitalSet;
-  }
+    app_warning() << "!!!!!!! Identical SPOSets are detected by EinsplineSetBuilder! "
+                     "Implicit sharing one SPOSet for spin-up and spin-down electrons has been removed. "
+                     "Each determinant creates its own SPOSet with dedicated memory for spline coefficients. "
+                     "To avoid increasing the memory footprint of spline coefficients, "
+                     "create a single SPOset outside the determinantset using 'sposet_collection' "
+                     "and reference it by name on the determinant line."
+                  << std::endl;
 
   if (FullBands[spinSet] == 0)
     FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
@@ -343,10 +343,10 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       std::unique_ptr<EinsplineSetExtended<double>> temp_OrbitalSet;
 #if defined(QMC_CUDA)
       if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<double>>();
+        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<double>>(spo_object_name);
       else
 #endif
-        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<double>>();
+        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<double>>(spo_object_name);
       temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
@@ -359,10 +359,10 @@ std::unique_ptr<SPOSet> EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       std::unique_ptr<EinsplineSetExtended<std::complex<double>>> temp_OrbitalSet;
 #if defined(QMC_CUDA)
       if (AtomicOrbitals.size() > 0)
-        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<std::complex<double>>>();
+        temp_OrbitalSet = std::make_unique<EinsplineSetHybrid<std::complex<double>>>(spo_object_name);
       else
 #endif
-        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<std::complex<double>>>();
+        temp_OrbitalSet = std::make_unique<EinsplineSetExtended<std::complex<double>>>(spo_object_name);
       temp_OrbitalSet->MultiSpline = MixedSplineReader->export_MultiSplineComplexDouble().release();
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);

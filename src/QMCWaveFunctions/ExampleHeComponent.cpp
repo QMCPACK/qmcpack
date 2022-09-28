@@ -209,7 +209,7 @@ std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet
   return std::make_unique<ExampleHeComponent>(*this);
 }
 
-void ExampleHeComponent::resetParameters(const OptVariablesType& active)
+void ExampleHeComponent::resetParametersExclusive(const OptVariablesType& active)
 {
   if (my_vars_.size())
   {
@@ -227,8 +227,8 @@ void ExampleHeComponent::resetParameters(const OptVariablesType& active)
 
 void ExampleHeComponent::evaluateDerivatives(ParticleSet& P,
                                              const OptVariablesType& optvars,
-                                             std::vector<ValueType>& dlogpsi,
-                                             std::vector<ValueType>& dhpsioverpsi)
+                                             Vector<ValueType>& dlogpsi,
+                                             Vector<ValueType>& dhpsioverpsi)
 {
   using RealGradType = TinyVector<RealType, 3>;
 

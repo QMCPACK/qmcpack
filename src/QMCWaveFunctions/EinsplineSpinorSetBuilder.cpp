@@ -49,6 +49,8 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
+  std::string spo_object_name;
+
   ScopedTimer spo_timer_scope(*timer_manager.createTimer("einspline::CreateSpinorSetFromXML", timer_level_medium));
 
   {
@@ -83,13 +85,15 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   ///////////////////////////////////////////////
   // Read occupation information from XML file //
   ///////////////////////////////////////////////
-  std::vector<int> Occ_Old(0, 0);
-  Occ.resize(0, 0);
+  const std::vector<int> last_occ(Occ);
+  Occ.resize(0, 0); // correspond to ground
   bool NewOcc(false);
 
   {
     OhmmsAttributeSet oAttrib;
     oAttrib.add(spinSet, "spindataset");
+    oAttrib.add(spo_object_name, "name");
+    oAttrib.add(spo_object_name, "id");
     oAttrib.put(cur);
   }
 
@@ -117,23 +121,24 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
     }
     cur = cur->next;
   }
-  if (Occ != Occ_Old)
+
+  if (Occ != last_occ)
   {
     NewOcc  = true;
-    Occ_Old = Occ;
   }
   else
     NewOcc = false;
 
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet, SPOSet*, H5OrbSet>::iterator iter;
-  iter = SPOSetMap.find(aset);
+  const auto iter = SPOSetMap.find(aset);
   if ((iter != SPOSetMap.end()) && (!NewOcc))
-  {
-    app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
-              << "cloning EinsplineSet object.\n";
-    return std::unique_ptr<SPOSet>{iter->second->makeClone()};
-  }
+    app_warning() << "!!!!!!! Identical SPOSets are detected by EinsplineSpinorSetBuilder! "
+                     "Implicit sharing one SPOSet for spin-up and spin-down electrons has been removed. "
+                     "Each determinant creates its own SPOSet with dedicated memory for spline coefficients. "
+                     "To avoid increasing the memory footprint of spline coefficients, "
+                     "create a single SPOset outside the determinantset using 'sposet_collection' "
+                     "and reference it by name on the determinant line."
+                  << std::endl;
 
   if (FullBands[spinSet] == 0)
     FullBands[spinSet] = std::make_unique<std::vector<BandInfo>>();
@@ -203,7 +208,7 @@ std::unique_ptr<SPOSet> EinsplineSpinorSetBuilder::createSPOSetFromXML(xmlNodePt
   auto bspline_zd_d = MixedSplineReader->create_spline_set(spinSet2, spo_cur);
 
   //register with spin set and we're off to the races.
-  auto spinor_set = std::make_unique<SpinorSet>();
+  auto spinor_set = std::make_unique<SpinorSet>(spo_object_name);
   spinor_set->set_spos(std::move(bspline_zd_u), std::move(bspline_zd_d));
   return spinor_set;
 };

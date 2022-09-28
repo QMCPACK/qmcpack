@@ -92,6 +92,13 @@ struct Array : base_type
   using sizes_type = decltype(std::declval<base_type const&>().sizes());
   sizes_type shape() const { return base_type::sizes(); }
   void resize(sizes_type sizes) { resizeAndPreserve(sizes); }
+
+  template<class... Ints>
+  void resizeAndPreserve(Ints... sizes)
+  {
+    base_type::reextent(sizes...);
+  }
+
   void resizeAndPreserve(sizes_type sizes)
   {
     // explicit conversion due to failure with libc++ type automatic conversion
@@ -104,7 +111,7 @@ struct Array : base_type
   template<class... Ints>
   void resize(Ints... ns)
   {
-    base_type::reextent(std::make_tuple(ns...));
+    base_type::reextent({ns...});
   }
   typename base_type::element_ptr data() { return base_type::data_elements(); }
   typename base_type::element_const_ptr data() const { return base_type::data_elements(); }
@@ -151,7 +158,7 @@ struct Array<T, 1, base_type> : base_type
   template<class... Ints>
   void resize(Ints... ns)
   {
-    base_type::reextent(std::make_tuple(ns...));
+    base_type::reextent(typename base_type::extensions_type({static_cast<typename base_type::size_type>(ns)...}));  // std::make_tuple(ns...));
   }
   friend Array operator*(T const& t, Array const& a)
   {
@@ -640,7 +647,7 @@ inline void copy(const Array<T1, 3>& src, Array<T2, 3>& dest)
 
 inline std::complex<float> operator+(std::complex<float> z, double r)
 {
-  return std::complex<float>(z.real() + r, z.imag());
+  return std::complex<float>(z.real() + static_cast<float>(r), z.imag());
 }
 
 

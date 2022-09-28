@@ -23,6 +23,10 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input, const SpeciesSet& speci
 {
   my_name_ = "SpinDensity";
 
+  data_locality_ = DataLocality::crowd;
+  if (input_.get_save_memory())
+    dl = DataLocality::rank;
+
   if (input_.get_cell().explicitly_defined == true)
     lattice_ = input_.get_cell();
   else
@@ -47,15 +51,10 @@ SpinDensityNew::SpinDensityNew(SpinDensityInput&& input,
       species_size_(getSpeciesSize(species)),
       lattice_(lattice)
 {
-  my_name_ = "SpinDensity";
-  std::cout << "SpinDensity constructor called\n";
+  my_name_       = "SpinDensity";
   data_locality_ = dl;
   if (input_.get_cell().explicitly_defined == true)
-    throw std::runtime_error(
-        "SpinDensityNew should not be constructed with both a cell in its input and an lattice input argument.");
-  else if (lattice_.explicitly_defined == false)
-    throw std::runtime_error("SpinDensityNew cannot be constructed from a lattice that is not explicitly defined");
-
+    lattice_ = input_.get_cell();
   derived_parameters_ = input_.calculateDerivedParameters(lattice_);
   data_.resize(getFullDataSize());
   if (input_.get_write_report())
@@ -80,8 +79,9 @@ std::vector<int> SpinDensityNew::getSpeciesSize(const SpeciesSet& species)
 
 size_t SpinDensityNew::getFullDataSize() { return species_.size() * derived_parameters_.npoints; }
 
-std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const {
-  std::size_t data_size = data_.size();
+std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const
+{
+  std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
   if (data_locality_ == DataLocality::rank)
   {
@@ -89,7 +89,7 @@ std::unique_ptr<OperatorEstBase> SpinDensityNew::spawnCrowdClone() const {
     // at construction we don't know what the data requirement is going to be
     // since its steps per block  dependent. so start with 10 steps worth.
     int num_particles = std::accumulate(species_size_.begin(), species_size_.end(), 0);
-    data_size  = num_particles * 20;
+    data_size         = num_particles * 20;
   }
   UPtr<SpinDensityNew> spawn(std::make_unique<SpinDensityNew>(*this, spawn_data_locality));
   spawn->get_data().resize(data_size);
@@ -126,8 +126,8 @@ void SpinDensityNew::accumulate(const RefVector<MCPWalker>& walkers,
     assert(weight >= 0);
     // for testing
     walkers_weight_ += weight;
-    int p                             = 0;
-    size_t offset                     = 0;
+    int p         = 0;
+    size_t offset = 0;
     for (int s = 0; s < species_.size(); ++s, offset += dp_.npoints)
       for (int ps = 0; ps < species_size_[s]; ++ps, ++p)
       {

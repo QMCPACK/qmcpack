@@ -35,23 +35,12 @@
 #include "Particle/ParticleSet.h"
 #include "LongRange/EwaldHandler3D.h"
 
-#ifdef QMC_COMPLEX //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#endif
+//This is for the spinor test.
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 
 namespace qmcplusplus
 {
 QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
-
-TEST_CASE("CheckSphericalIntegration", "[hamiltonian]")
-{
-  // Use the built-in quadrature rule check
-  for (int quadrature_index = 1; quadrature_index < 8; quadrature_index++)
-  {
-    Quadrature3D<QMCTraits::RealType> myRule(quadrature_index, false);
-    REQUIRE(myRule.quad_ok);
-  }
-}
 
 TEST_CASE("ReadFileBuffer_no_file", "[hamiltonian]")
 {
@@ -93,7 +82,7 @@ TEST_CASE("ReadFileBuffer_ecp", "[hamiltonian]")
 {
   Communicate* c = OHMMS::Controller;
 
-  ECPComponentBuilder ecp("test_read_ecp", c);
+  ECPComponentBuilder ecp("test_read_ecp", c, 4, 1);
 
   bool okay = ecp.read_pp_file("C.BFD.xml");
   REQUIRE(okay);
@@ -298,8 +287,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   double logpsi = psi.evaluateLog(elec);
   REQUIRE(logpsi == Approx(5.1497823982));
 
-  auto test_evaluateOne = [&]()
-  {
+  auto test_evaluateOne = [&]() {
     double Value1(0.0);
     //Using SoA distance tables, hence the guard.
     for (int jel = 0; jel < elec.getTotalNum(); jel++)
@@ -322,15 +310,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   }
 
   opt_variables_type optvars;
-  std::vector<ValueType> dlogpsi;
-  std::vector<ValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
-  auto test_evaluateValueAndDerivatives = [&]()
-  {
+  auto test_evaluateValueAndDerivatives = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
@@ -513,22 +500,13 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   kup.resize(nelec);
   kup[0] = PosType(1, 1, 1);
 
-  k2up.resize(nelec);
-  //For some goofy reason, EGOSet needs to be initialized with:
-  //1.) A k-vector list (fine).
-  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.
-  k2up[0] = -dot(kup[0], kup[0]);
-
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
 
-  k2dn.resize(nelec);
-  k2dn[0] = -dot(kdn[0], kdn[0]);
+  auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
+  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
 
-  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
-  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
-
-  auto spinor_set = std::make_unique<SpinorSet>();
+  auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);

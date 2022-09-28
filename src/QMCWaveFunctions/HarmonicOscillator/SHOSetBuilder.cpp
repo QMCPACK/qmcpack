@@ -104,7 +104,7 @@ std::unique_ptr<SPOSet> SHOSetBuilder::createSPOSet(xmlNodePtr cur, SPOSetInputI
     sho_states.push_back(basis_states[indices[i]]);
 
   // make the sposet
-  auto sho = std::make_unique<SHOSet>(length, center, sho_states);
+  auto sho = std::make_unique<SHOSet>(spo_name, length, center, sho_states);
 
   sho->report("  ");
   //sho->test_derivatives();

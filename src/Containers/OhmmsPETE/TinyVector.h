@@ -160,13 +160,15 @@ struct TinyVector
   template<class T1>
   inline TinyVector<T, D>& operator=(const TinyVector<T1, D>& rhs)
   {
-    OTAssign<TinyVector<T, D>, TinyVector<T1, D>, OpAssign>::apply(*this, rhs, OpAssign());
+    for (size_t d = 0; d < D; ++d)
+      X[d] = rhs[d];
     return *this;
   }
 
   inline TinyVector<T, D>& operator=(const T& rhs)
   {
-    OTAssign<TinyVector<T, D>, T, OpAssign>::apply(*this, rhs, OpAssign());
+    for (size_t d = 0; d < D; ++d)
+      X[d] = rhs;
     return *this;
   }
 

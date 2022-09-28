@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -15,7 +15,9 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "QMCDriverInput.h"
+#include "EstimatorInputDelegates.h"
 #include "Concurrency/Info.hpp"
+#include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
 {
@@ -36,6 +38,8 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
 
   std::string serialize_walkers;
   std::string debug_checks_str;
+  std::string measure_imbalance_str;
+  int Period4CheckPoint{-1};
 
   ParameterSet parameter_set;
   parameter_set.add(store_config_period_, "storeconfigs");
@@ -70,16 +74,22 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
   parameter_set.add(max_disp_sq_, "maxDisplSq");
   parameter_set.add(debug_checks_str, "debug_checks",
                     {"no", "all", "checkGL_after_load", "checkGL_after_moves", "checkGL_after_tmove"});
+  parameter_set.add(measure_imbalance_str, "measure_imbalance", {"no", "yes"});
 
   OhmmsAttributeSet aAttrib;
   // first stage in from QMCDriverFactory
   aAttrib.add(qmc_method_, "method");
   aAttrib.add(update_mode_, "move");
   aAttrib.add(scoped_profiling_, "profiling");
-
+  aAttrib.add(Period4CheckPoint, "checkpoint");
   aAttrib.add(k_delay_, "kdelay");
   // This does all the parameter parsing setup in the constructor
   aAttrib.put(cur);
+
+  //set default to match legacy QMCDriver
+  check_point_period_.stride = Period4CheckPoint;
+  check_point_period_.period = Period4CheckPoint;
+
   if (cur != NULL)
   {
     //initialize the parameter set
@@ -89,7 +99,7 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
     //determine how often to print walkers to hdf5 file
     while (tcur != NULL)
     {
-      std::string cname((const char*)(tcur->name));
+      std::string cname{lowerCase(castXMLCharToChar(tcur->name))};
       if (cname == "record")
       {
         //dump walkers for optimization
@@ -104,7 +114,6 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
         rAttrib.add(check_point_period_.stride, "stride");
         rAttrib.add(check_point_period_.period, "period");
         rAttrib.put(tcur);
-        dump_config_ = (check_point_period_.period > 0);
       }
       else if (cname == "dumpconfig")
       {
@@ -116,6 +125,14 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       else if (cname == "random")
       {
         reset_random_ = true;
+      }
+      // These complications are due to the need to support bare <esimator> nodes
+      else if (cname == "estimators" || cname == "estimator")
+      {
+        if (estimator_manager_input_)
+          estimator_manager_input_->readXML(tcur);
+        else
+          estimator_manager_input_ = std::optional<EstimatorManagerInput>(std::in_place, tcur);
       }
       tcur = tcur->next;
     }
@@ -139,8 +156,13 @@ void QMCDriverInput::readXML(xmlNodePtr cur)
       debug_checks_ |= DriverDebugChecks::CHECKGL_AFTER_TMOVE;
   }
 
+  if (measure_imbalance_str == "yes")
+    measure_imbalance_ = true;
+
   if (check_point_period_.period < 1)
     check_point_period_.period = max_blocks_;
+
+  dump_config_ = (Period4CheckPoint >= 0);
 }
 
 } // namespace qmcplusplus

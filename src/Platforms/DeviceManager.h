@@ -22,13 +22,16 @@
 #if defined(ENABLE_OFFLOAD)
 #include "OMPTarget/OMPDeviceManager.h"
 #endif
+#if defined(ENABLE_SYCL)
+#include "SYCL/SYCLDeviceManager.h"
+#endif
 
 namespace qmcplusplus
 {
 
 /** orchestrate platforms (programming models) and set up the default device on each platform
  *
- * Currently support CUDA, OpenMP
+ * Currently support CUDA, OpenMP, SYCL
  *
  * Each platform provides its own device manager class. Each individual device manager
  * initializes all the devices visible to the process and also set the default device.
@@ -65,6 +68,9 @@ public:
 #if defined(ENABLE_OFFLOAD)
   const auto& getOMPDM() const { return omptarget_dm_; }
 #endif
+#if defined(ENABLE_SYCL)
+  const auto& getSYCLDM() const { return sycl_dm_; }
+#endif
 
   /** initialize the global instance of DeviceManager
    * arguments are the same as the constructor
@@ -76,17 +82,21 @@ public:
 private:
   /// the global singleton which can be used to query default devices and all the captured devices.
   static std::unique_ptr<DeviceManager> global;
-  // the id of default device. Must be defined before platform device manager objects
+  /// the id of default device. Must be defined before platform device manager objects
   int default_device_num;
-  // the number of devices. Must be defined before platform device manager objects
+  /// the number of devices. Must be defined before platform device manager objects
   int num_devices;
 #if defined(ENABLE_CUDA)
-  // CUDA device manager object
+  /// CUDA device manager object
   CUDADeviceManager cuda_dm_;
 #endif
 #if defined(ENABLE_OFFLOAD)
-  // OpenMP device manager object
+  /// OpenMP device manager object
   OMPDeviceManager omptarget_dm_;
+#endif
+#if defined(ENABLE_SYCL)
+  /// SYCL device manager object
+  SYCLDeviceManager sycl_dm_;
 #endif
 };
 
