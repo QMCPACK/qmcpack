@@ -365,9 +365,6 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    int iat,
                                    OffloadMWVGLArray& psi_vgl_v) const
 {
-  vgl_type Temp_mw(spo_list.size() * BasisSetSize);
-  vgl_type Tempv_mw(spo_list.size() * psi_v_list[0].size());
-
   if (Identity)
   {
     for (int iw = 0; iw < spo_list.size(); iw++)
@@ -423,15 +420,11 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   // object to hold gradient
 
   GradVector dphi_v(norb_requested);
-  // to do:
-  // first step; evaluateVGL call first happens outside of loop
-  // naively pull out value vectors to work with existing ratio/grad construction
-  // do we need gradient to SoA in VGL?
   mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
   for (int iw = 0; iw < nw; iw++)
   {
-    //create data objects to hold values of wave function and second derivative
-    //phi_vgl_v.data_at(0, iw, 0)  constructs another vector which shares the memory location of another containers data.
+    // create data objects to hold values of wave function and second derivative
+    // phi_vgl_v.data_at(0, iw, 0)  constructs another vector which shares the memory location of another containers data.
     // specifically phi_vgl_v wf value information for a specific walker
     ValueVector phi_v(phi_vgl_v.data_at(0, iw, 0), norb_requested);
     GradVector dphi_v(norb_requested);
@@ -441,13 +434,9 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
       for (size_t iorb = 0; iorb < norb_requested; iorb++)
         dphi_v[iorb][idim] = phi_g[iorb];
     }
-    ValueVector d2phi_v(phi_vgl_v.data_at(4, iw, 0), norb_requested);
-    // assigns the value of these matrices according to new particle position in Plist to  spo_list, currently one walker at a time.
-    // spo_list[iw].evaluateVGL(P_list[iw], iat, phi_v, dphi_v, d2phi_v);
     ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_v.data(), norb_requested);
     grads[iw]  = simd::dot(invRow_ptr_list[iw], dphi_v.data(), norb_requested) / ratios[iw];
   }
-  // phi_vgl_v.updateTo();
 }
 
 void LCAOrbitalSet::evaluateVGH(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, HessVector& dhpsi)
