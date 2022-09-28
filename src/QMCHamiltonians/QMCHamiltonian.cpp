@@ -1133,6 +1133,18 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   //resize everything;
   const int ngroups = psi_wrapper_in.numGroups();
 
+  std::vector<ValueMatrix> X_;    //Working arrays for derivatives
+  std::vector<ValueMatrix> Minv_; //Working array for derivatives.
+  std::vector<ValueMatrix> B_;
+  std::vector<ValueMatrix> B_gs_;
+  std::vector<ValueMatrix> M_;
+  std::vector<ValueMatrix> M_gs_;
+
+  std::vector<std::vector<ValueMatrix>> dM_;
+  std::vector<std::vector<ValueMatrix>> dM_gs_;
+  std::vector<std::vector<ValueMatrix>> dB_;
+  std::vector<std::vector<ValueMatrix>> dB_gs_;
+  
   {
     //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
     M_.resize(ngroups);

@@ -483,19 +483,6 @@ private:
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
   static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
-  //This is for fast derivative evaluation.  
-  TWFFastDerivWrapper psi_wrapper_;
-  std::vector<ValueMatrix> X_;    //Working arrays for derivatives
-  std::vector<ValueMatrix> Minv_; //Working array for derivatives.
-  std::vector<ValueMatrix> B_;
-  std::vector<ValueMatrix> B_gs_;
-  std::vector<ValueMatrix> M_;
-  std::vector<ValueMatrix> M_gs_;
-
-  std::vector<std::vector<ValueMatrix>> dM_;
-  std::vector<std::vector<ValueMatrix>> dM_gs_;
-  std::vector<std::vector<ValueMatrix>> dB_;
-  std::vector<std::vector<ValueMatrix>> dB_gs_;
 #if !defined(REMOVE_TRACEMANAGER)
   ///traces variables
   TraceRequest request;
