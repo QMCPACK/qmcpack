@@ -104,13 +104,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   if (transpose)
   {
     //if(not check_shape(Q,{nvec,Qdim}))
-    if (not(std::get<0>(Q.sizes()) == nvec && std::get<1>(Q.sizes()) == Qdim))
+    if (not(Q.size(0) == nvec && Q.size(1) == Qdim))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   }
   else
   {
     //if(not check_shape(Q,{Qdim,nvec}))
-    if (not(std::get<0>(Q.sizes()) == Qdim && std::get<1>(Q.sizes()) == nvec))
+    if (not(Q.size(0) == Qdim && Q.size(1) == nvec))
       APP_ABORT(" Error: Container Q has incorrect dimensions in halfRotateCholeskyMatrix. \n");
   }
   std::tie(ak0, ak1) = FairDivideBoundary(coreid, Qdim, ncores);
