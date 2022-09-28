@@ -751,8 +751,8 @@ public:
 #if defined(QMC_COMPLEX)
     // reinterpret as RealType matrices with 2x the columns
     Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                   {Luv.size(0), 2 * Luv.size(1)});
-    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {Xsp.size(0), 2 * Xsp.size(1)});
+                                   {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
+    Array_cref<SPRealType, 2> X_R(pointer_cast<SPRealType const>(Xsp.origin()), {std::get<0>(Xsp.sizes()), 2 * std::get<1>(Xsp.sizes())});
     Array_ref<SPRealType, 2> Tuw_R(pointer_cast<SPRealType>(Tuw.origin()), {nu, 2 * nwalk});
     ma::product(Luv_R.sliced(u0, uN), X_R, Tuw_R.sliced(u0, uN));
 #else
@@ -917,7 +917,7 @@ public:
 #if defined(QMC_COMPLEX)
       // reinterpret as RealType matrices with 2x the columns
       Array_ref<SPRealType, 2> Luv_R(pointer_cast<SPRealType>(make_device_ptr(Luv.origin())),
-                                     {Luv.size(0), 2 * Luv.size(1)});
+                                     {std::get<0>(Luv.sizes()), 2 * std::get<1>(Luv.sizes())});
       Array_ref<SPRealType, 2> Guu_R(pointer_cast<SPRealType>(Guu.origin()), {nu, 2 * nwalk});
       Array_ref<SPRealType, 2> vsp_R(pointer_cast<SPRealType>(vsp.origin()), {std::get<0>(vsp.sizes()), 2 * std::get<1>(vsp.sizes())});
       ma::product(SPRealType(a), T(Luv_R(Luv_R.extension(0), {c0, cN})), Guu_R, SPRealType(c), vsp_R.sliced(c0, cN));
