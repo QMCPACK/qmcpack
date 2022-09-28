@@ -40,7 +40,7 @@ public:
   using ValueVector = SPOSet::ValueVector;
   using GradVector  = SPOSet::GradVector;
 
-  inline TWFFastDerivWrapper(){};
+  TWFFastDerivWrapper() = default;
   /** @brief Add a particle group.
    *
    *  Here, a "group" corresponds to a subset of particles which are antisymmetric with 
