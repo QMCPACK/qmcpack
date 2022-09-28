@@ -6,34 +6,36 @@ Notable changes to QMCPACK are documented in this file.
 
 This is a recommended release for all users. There are many quality of life
 improvements, bugfixes throughout the application, and updates to the associated
-testing. Thanks to everyone who reported an issue or suggested an improvements.
+testing. Thanks to everyone who reported an issue or suggested an improvement.
 
-The QMCPACK developers are working to make the performance portable "batched
-drivers" the default in an upcoming version. These support execution on CPUs and
-multiple GPU architectures with high performance. Most standard QMC calculations
-and many obsevables are already supported. Because some changes to the input
-files will be required, we recommend trying these drivers now and reporting any
-issues.
+We are working to make the performance portable "batched drivers" the default in
+an upcoming version. These support execution on CPUs and multiple GPU
+architectures with high performance. Most standard QMC calculations and many
+observables are already supported. Because some changes to the input files will
+be required, we recommend trying these drivers now and reporting any issues.
 
 * Important bug fix to excited states in splines when spin-up/down sets are
   built from the same spin species and occupation is specified on the first sposet
   [\#4158](https://github.com/QMCPACK/qmcpack/pull/4158)
 * The Quantum ESPRESSO converter, pw2qmcpack is now supported via a plugin
   activated via -DQE_ENABLE_PLUGINS=pw2qmcpack on the QE CMake configure line,
-  see https://qmcpack.readthedocs.io/en/develop/installation.html#quantum-espresso-7-0
-  . It is expected to be automatically compatible with new versions of QE.
+  see
+  https://qmcpack.readthedocs.io/en/develop/installation.html#quantum-espresso-7-0
+  . The latest QE 7.1 and earlier 7.0 are supported, and new versions should be
+  automatically compatible.
 * Substantial improvements to the performance portable / batched implementation.
   Using LLVM 15.0, high performance production calculations can be performed on
-  NVIDIA GPUs for several wavefunction types. As introduced in v3.14.0, the
-  optional project data input parameter `driver_version` specifies whether legacy
-  or batched drivers are used. In future versions of QMCPACK this tag will be
-  required to avoid ambiguity and allow e.g. the batched VMC driver to be obtained
-  via `vmc` in addition to `vmc_batch`. See
+  NVIDIA GPUs for several wavefunction types, in addition to running on all CPU
+  systems. As introduced in v3.14.0, the optional project data input parameter
+  `driver_version` specifies whether legacy or batched drivers are used. In
+  future versions of QMCPACK this tag will be required to avoid ambiguity and
+  allow e.g. the batched VMC driver to be obtained via `vmc` in addition to
+  `vmc_batch`. See
   https://qmcpack.readthedocs.io/en/develop/methods.html#transition-from-classic-drivers
 * Non-local pseudopotential energy contributions are consistently included in the
   objective function used for optimization, improving convergence and achievable wavefunction quality
   e.g. [\#4177](https://github.com/QMCPACK/qmcpack/pull/4177)
-* Support for multi-step wavefunction optimization, specifying different
+* Support for multistep wavefunction optimization, specifying different
   parameter sets to be frozen at each step.
   [\#4169](https://github.com/QMCPACK/qmcpack/pull/4169)
 * Parameter filtration during optimization based on statistical uncertainties
@@ -44,7 +46,7 @@ issues.
 * Optimization has been removed from the legacy CUDA code. New calculations
   needing GPU support should use the batched drivers and their GPU capabilities
   for optimization. [\#4138](https://github.com/QMCPACK/qmcpack/pull/4138) 
-* Initial version of determinant update in SYCL for Intel archictectures (e.g.
+* Initial version of determinant update in SYCL for Intel architectures (e.g.
   [\#4118](https://github.com/QMCPACK/qmcpack/pull/4118) )
 * Updated walker counts in several of the performance tests. Due to the changed
   but more representative workloads, new performance timings should not be
@@ -64,7 +66,9 @@ issues.
 
 ### Nexus
 
-* Nexus: update to current batched driver style
+* Nexus: support to current batched driver style. Example inputs for batched
+  runs using trial wavefunctions from QE are included in
+  examples/qmcpack/rsqmc_quantum_espresso
   [\#4246](https://github.com/QMCPACK/qmcpack/pull/4246)
 * Nexus: add override_vp_parameters element
   [\#4245](https://github.com/QMCPACK/qmcpack/pull/4245)
