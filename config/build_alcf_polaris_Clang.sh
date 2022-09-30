@@ -8,7 +8,7 @@
 # build_alcf_polaris_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 # build_alcf_polaris_Clang.sh <source_dir> <install_dir> # build all the variants with a given source directory <source_dir> and install to <install_dir>
 
-module load mpiwrappers/cray-mpich-llvm llvm/main-20220317
+module load mpiwrappers/cray-mpich-llvm llvm/release-15.0.0
 module load cudatoolkit-standalone/11.2.2
 module load cray-fftw/3.3.8.13
 module load cray-hdf5-parallel/1.12.1.3
