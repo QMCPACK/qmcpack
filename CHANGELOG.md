@@ -2,10 +2,87 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+##  [3.15.0] - 2022-09-29
 
-- Minimum CUDA version increased to 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957) 
-- Legacy CUDA implementation of wavefunction optimization feature removed [\#3984](https://github.com/QMCPACK/qmcpack/pull/3984)
+This is a recommended release for all users. There are many quality of life
+improvements, bugfixes throughout the application, and updates to the associated
+testing. Thanks to everyone who reported an issue or suggested an improvement.
+
+We are working to make the performance portable "batched drivers" the default in
+an upcoming version. These support execution on CPUs and multiple GPU
+architectures with high performance. Most standard QMC calculations and many
+observables are already supported. Because some changes to the input files will
+be required, we recommend trying these drivers now and reporting any issues.
+
+* Important bug fix to excited states in splines when spin-up/down sets are
+  built from the same spin species and occupation is specified on the first sposet
+  [\#4158](https://github.com/QMCPACK/qmcpack/pull/4158)
+* The Quantum ESPRESSO converter, pw2qmcpack is now supported via a plugin
+  activated via -DQE_ENABLE_PLUGINS=pw2qmcpack on the QE CMake configure line,
+  see
+  https://qmcpack.readthedocs.io/en/develop/installation.html#quantum-espresso-7-0
+  . The latest QE 7.1 and earlier 7.0 are supported, and new versions should be
+  automatically compatible.
+* Substantial improvements to the performance portable / batched implementation.
+  Using LLVM 15.0, high performance production calculations can be performed on
+  NVIDIA GPUs for several wavefunction types, in addition to running on all CPU
+  systems.
+* As introduced in v3.14.0, the optional project data input parameter
+  `driver_version` specifies whether legacy or batched drivers are used. In
+  future versions of QMCPACK this tag will be required to avoid ambiguity and
+  allow e.g. the batched VMC driver to be obtained via `vmc` in addition to
+  `vmc_batch`. See
+  https://qmcpack.readthedocs.io/en/develop/methods.html#transition-from-classic-drivers
+* Non-local pseudopotential energy contributions are consistently included in the
+  objective function used for optimization, improving convergence and achievable wavefunction quality
+  e.g. [\#4177](https://github.com/QMCPACK/qmcpack/pull/4177)
+* Support for multistep wavefunction optimization, specifying different
+  parameter sets to be frozen at each step.
+  [\#4169](https://github.com/QMCPACK/qmcpack/pull/4169)
+* Parameter filtration during optimization based on statistical uncertainties
+  [\#4126](https://github.com/QMCPACK/qmcpack/pull/4126)
+* Support for 2D HEG calculations (e.g. [\#4084](https://github.com/QMCPACK/qmcpack/pull/4084) )
+* Pseudopotential non-local channel can be specified in input [\#4032](https://github.com/QMCPACK/qmcpack/pull/4032)
+* Use of deprecated CUDA texture API removed for greater compatibility [\#4022](https://github.com/QMCPACK/qmcpack/pull/4022)
+* Optimization has been removed from the legacy CUDA code. New calculations
+  needing GPU support should use the batched drivers and their GPU capabilities
+  for optimization. [\#4138](https://github.com/QMCPACK/qmcpack/pull/4138) 
+* Initial version of determinant update in SYCL for Intel architectures (e.g.
+  [\#4118](https://github.com/QMCPACK/qmcpack/pull/4118) )
+* Updated walker counts in several of the performance tests. Due to the changed
+  but more representative workloads, new performance timings should not be
+  compared with older runs (e.g. [\#4112](https://github.com/QMCPACK/qmcpack/pull/4112) )
+* Maximum system sizes run in the performance tests can be specified in CMake
+  via QMC_PERFORMANCE_NIO_MAX_ATOMS, QMC_PERFORMANCE_C_GRAPHITE_MAX_ATOMS, and
+  QMC_PERFORMANCE_C_MOLECULE_MAX_ATOMS (e.g. [\#4134](https://github.com/QMCPACK/qmcpack/pull/4134) )
+* Readability refinements in the output, e.g. [\#4149](https://github.com/QMCPACK/qmcpack/pull/4149)
+* UHF/UKS support in PySCF converter [\#4089](https://github.com/QMCPACK/qmcpack/pull/4089)
+* Example installation scripts for more machines placed in config directory, including Archer2, and Polaris.
+* Many improvements in testing including additional tests, better reliability, and bug fixes.
+* Minimum version of CMake is now v3.17.0 for CPU builds. For GPU builds, more
+  recent versions may be required. Use of the latest CMake version is generally
+  recommended.
+* Minimum CUDA version is 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957)
+* Minimum version of GCC is now v9.
+
+### Nexus
+
+* Nexus: support to current batched driver style. Example inputs for batched
+  runs using trial wavefunctions from QE are included in
+  examples/qmcpack/rsqmc_quantum_espresso
+  [\#4246](https://github.com/QMCPACK/qmcpack/pull/4246)
+* Nexus: add override_vp_parameters element
+  [\#4245](https://github.com/QMCPACK/qmcpack/pull/4245)
+* Nexus: fix convert4qmc hdf5 issue
+  [\#4243](https://github.com/QMCPACK/qmcpack/pull/4243)
+* Nexus: extend angular channels for pseudopotentials up to l_max=21
+  [\#4148](https://github.com/QMCPACK/qmcpack/pull/4148)
+* Nexus: Pass PYTHONPATH recorded at cmake step to nxs-test to ensure tests run
+  [\#3935](https://github.com/QMCPACK/qmcpack/pull/3935)
+* Nexus: Support for VASP keywords to version 6.3
+  [\#4056](https://github.com/QMCPACK/qmcpack/pull/4056)
+* Nexus: Adding docs for limiting the number of simultaneously submitted jobs to
+  a queue  [\#4133](https://github.com/QMCPACK/qmcpack/pull/4133)
 
 ## [3.14.0] - 2022-04-06
 
@@ -15,20 +92,20 @@ while offering more functionality, such as three body Jastrow functions. Develop
 users about the new version and will prioritize developments based on comments received. A new driver\_version switch is
 introduced, currently optional, to disambiguate between the versions and their inputs.
 
-- New global driver\_version switch to select between batched and legacy codes. This will become a required input tag in the next major release series of QMCPACK, but remains optional in 3.x versions [\#3897](https://github.com/QMCPACK/qmcpack/pull/3897)
-- Optimization of block sizes in GPU offload kernels [\#3910](https://github.com/QMCPACK/qmcpack/pull/3910)
-- GPU Offload of one-body Jastrow ratio calculation in pseudopotential evaluation [\#3905](https://github.com/QMCPACK/qmcpack/pull/3905) 
-- GPU Offload of some Coulomb potential evaluations [\#3842](https://github.com/QMCPACK/qmcpack/pull/3842)
-- Partial GPU offload of multideterminant evaluation e.g. [\#3892](https://github.com/QMCPACK/qmcpack/pull/3892)
-- Increased performance via more selective distance table computation [\#3846](https://github.com/QMCPACK/qmcpack/pull/3846)
-- Improved performance on AMD GPUs via rocSOLVER integration [\#3756](https://github.com/QMCPACK/qmcpack/issues/3756)
-- HIP build options shown in output [\#3919](https://github.com/QMCPACK/qmcpack/pull/3919)
-- Documentation improvements, particularly relating to installation.
-- Various bug fixes and ongoing cleanup.
+* New global driver\_version switch to select between batched and legacy codes. This will become a required input tag in the next major release series of QMCPACK, but remains optional in 3.x versions [\#3897](https://github.com/QMCPACK/qmcpack/pull/3897)
+* Optimization of block sizes in GPU offload kernels [\#3910](https://github.com/QMCPACK/qmcpack/pull/3910)
+* GPU Offload of one-body Jastrow ratio calculation in pseudopotential evaluation [\#3905](https://github.com/QMCPACK/qmcpack/pull/3905) 
+* GPU Offload of some Coulomb potential evaluations [\#3842](https://github.com/QMCPACK/qmcpack/pull/3842)
+* Partial GPU offload of multideterminant evaluation e.g. [\#3892](https://github.com/QMCPACK/qmcpack/pull/3892)
+* Increased performance via more selective distance table computation [\#3846](https://github.com/QMCPACK/qmcpack/pull/3846)
+* Improved performance on AMD GPUs via rocSOLVER integration [\#3756](https://github.com/QMCPACK/qmcpack/issues/3756)
+* HIP build options shown in output [\#3919](https://github.com/QMCPACK/qmcpack/pull/3919)
+* Documentation improvements, particularly relating to installation.
+* Various bug fixes and ongoing cleanup.
 
 ### NEXUS
 
-- Nexus: proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
+* Nexus: proper use of max\_seconds in legacy drivers [\#3877](https://github.com/QMCPACK/qmcpack/pull/3877)
 
 ## [3.13.0] - 2022-02-16
 
