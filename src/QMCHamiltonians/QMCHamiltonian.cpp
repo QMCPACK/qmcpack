@@ -30,7 +30,6 @@
 
 namespace qmcplusplus
 {
-
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian(const std::string& aname)
@@ -40,7 +39,8 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       nlpp_ptr(nullptr),
       l2_ptr(nullptr),
       ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
-      eval_vals_derivs_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
+      eval_vals_derivs_timer_(
+          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -1121,4 +1121,190 @@ RefVectorWithLeader<OperatorBase> QMCHamiltonian::extract_HC_list(const RefVecto
   return HC_list;
 }
 
+QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicFast(ParticleSet& P,
+                                                                                    ParticleSet& ions,
+                                                                                    TrialWaveFunction& psi_in,
+                                                                                    TWFFastDerivWrapper& psi_wrapper_in,
+                                                                                    ParticleSet::ParticlePos& dEdR,
+                                                                                    ParticleSet::ParticlePos& wf_grad)
+{
+  ScopedTimer evaluatederivtimer(*timer_manager.createTimer("FastDeriv::evaluateIonDerivsFast"));
+  P.update();
+  //resize everything;
+  const int ngroups = psi_wrapper_in.numGroups();
+
+  std::vector<ValueMatrix> X_;    //Working arrays for derivatives
+  std::vector<ValueMatrix> Minv_; //Working array for derivatives.
+  std::vector<ValueMatrix> B_;
+  std::vector<ValueMatrix> B_gs_;
+  std::vector<ValueMatrix> M_;
+  std::vector<ValueMatrix> M_gs_;
+
+  std::vector<std::vector<ValueMatrix>> dM_;
+  std::vector<std::vector<ValueMatrix>> dM_gs_;
+  std::vector<std::vector<ValueMatrix>> dB_;
+  std::vector<std::vector<ValueMatrix>> dB_gs_;
+  
+  {
+    //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
+    M_.resize(ngroups);
+    M_gs_.resize(ngroups);
+    X_.resize(ngroups);
+    B_.resize(ngroups);
+    B_gs_.resize(ngroups);
+    Minv_.resize(ngroups);
+
+    for (int gid = 0; gid < ngroups; gid++)
+    {
+      const int sid    = psi_wrapper_in.getTWFGroupIndex(gid);
+      const int norbs  = psi_wrapper_in.numOrbitals(sid);
+      const int first  = P.first(gid);
+      const int last   = P.last(gid);
+      const int nptcls = last - first;
+
+      M_[sid].resize(nptcls, norbs);
+      B_[sid].resize(nptcls, norbs);
+
+      M_gs_[sid].resize(nptcls, nptcls);
+      Minv_[sid].resize(nptcls, nptcls);
+      B_gs_[sid].resize(nptcls, nptcls);
+      X_[sid].resize(nptcls, nptcls);
+    }
+
+    dM_.resize(OHMMS_DIM);
+    dM_gs_.resize(OHMMS_DIM);
+    dB_.resize(OHMMS_DIM);
+    dB_gs_.resize(OHMMS_DIM);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      dM_[idim].resize(ngroups);
+      dB_[idim].resize(ngroups);
+      dM_gs_[idim].resize(ngroups);
+      dB_gs_[idim].resize(ngroups);
+
+      for (int gid = 0; gid < ngroups; gid++)
+      {
+        const int sid    = psi_wrapper_in.getTWFGroupIndex(gid);
+        const int norbs  = psi_wrapper_in.numOrbitals(sid);
+        const int first  = P.first(gid);
+        const int last   = P.last(gid);
+        const int nptcls = last - first;
+
+        dM_[idim][sid].resize(nptcls, norbs);
+        dB_[idim][sid].resize(nptcls, norbs);
+        dM_gs_[idim][sid].resize(nptcls, nptcls);
+        dB_gs_[idim][sid].resize(nptcls, nptcls);
+      }
+    }
+    psi_wrapper_in.wipeMatrices(M_);
+    psi_wrapper_in.wipeMatrices(M_gs_);
+    psi_wrapper_in.wipeMatrices(X_);
+    psi_wrapper_in.wipeMatrices(B_);
+    psi_wrapper_in.wipeMatrices(Minv_);
+    psi_wrapper_in.wipeMatrices(B_gs_);
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      psi_wrapper_in.wipeMatrices(dM_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
+    }
+  }
+  ParticleSet::ParticleGradient wfgradraw_(ions.getTotalNum());
+  ParticleSet::ParticleGradient pulay_(ions.getTotalNum());
+  ParticleSet::ParticleGradient hf_(ions.getTotalNum());
+  ParticleSet::ParticleGradient dedr_complex(ions.getTotalNum());
+  ParticleSet::ParticlePos pulayterms_(ions.getTotalNum());
+  ParticleSet::ParticlePos hfdiag_(ions.getTotalNum());
+  wfgradraw_           = 0.0;
+  RealType localEnergy = 0.0;
+
+  {
+    ScopedTimer getmtimer(*timer_manager.createTimer("FastDeriv::getM"));
+    psi_wrapper_in.getM(P, M_);
+  }
+  {
+    //  ScopedTimer invertmtimer(*timer_manager.createTimer("NEW::InvertMTimer"));
+    psi_wrapper_in.getGSMatrices(M_, M_gs_);
+    psi_wrapper_in.invertMatrices(M_gs_, Minv_);
+  }
+  //Build B-matrices.  Only for non-diagonal observables right now.
+  for (int i = 0; i < H.size(); ++i)
+  {
+    if (H[i]->dependsOnWaveFunction())
+    {
+      ScopedTimer bmattimer(*timer_manager.createTimer("FastDeriv::B"));
+      H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_in, B_);
+    }
+    else
+    {
+      //   ScopedTimer othertimer(*timer_manager.createTimer("NEW::Other_Timer"));
+      localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi_in, hfdiag_, pulayterms_);
+    }
+  }
+
+  ValueType nondiag_cont   = 0.0;
+  RealType nondiag_cont_re = 0.0;
+
+  psi_wrapper_in.getGSMatrices(B_, B_gs_);
+  nondiag_cont = psi_wrapper_in.trAB(Minv_, B_gs_);
+  convertToReal(nondiag_cont, nondiag_cont_re);
+  localEnergy += nondiag_cont_re;
+
+  {
+    ScopedTimer buildXtimer(*timer_manager.createTimer("FastDeriv::buildX"));
+    psi_wrapper_in.buildX(Minv_, B_gs_, X_);
+  }
+  //And now we compute the 3N force derivatives.  3 at a time for each atom.
+  for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  {
+    //The total wavefunction derivative has two contributions.  One from determinantal piece,
+    //One from the Jastrow.  Jastrow is easy, so we evaluate it here, then add on the
+    //determinantal piece at the end of this block.
+
+    wfgradraw_[iat] = psi_wrapper_in.evaluateJastrowGradSource(P, ions, iat);
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      psi_wrapper_in.wipeMatrices(dM_[idim]);
+      psi_wrapper_in.wipeMatrices(dM_gs_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_[idim]);
+      psi_wrapper_in.wipeMatrices(dB_gs_[idim]);
+    }
+
+    {
+      ScopedTimer dmtimer(*timer_manager.createTimer("FastDeriv::dM"));
+      //ion derivative of slater matrix.
+      psi_wrapper_in.getIonGradM(P, ions, iat, dM_);
+    }
+    for (int i = 0; i < H.size(); ++i)
+    {
+      if (H[i]->dependsOnWaveFunction())
+      {
+        ScopedTimer dBtimer(*timer_manager.createTimer("FastDeriv::dB"));
+        H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_in, iat, dB_);
+      }
+    }
+
+    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    {
+      ScopedTimer computederivtimer(*timer_manager.createTimer("FastDeriv::compute_deriv"));
+      psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
+      psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
+
+      ValueType fval          = 0.0;
+      fval                    = psi_wrapper_in.computeGSDerivative(Minv_, X_, dM_gs_[idim], dB_gs_[idim]);
+      dedr_complex[iat][idim] = fval;
+
+      ValueType wfcomp = 0.0;
+      wfcomp           = psi_wrapper_in.trAB(Minv_, dM_gs_[idim]);
+      wfgradraw_[iat][idim] += wfcomp; //The determinantal piece of the WF grad.
+    }
+    convertToReal(dedr_complex[iat], dEdR[iat]);
+    convertToReal(wfgradraw_[iat], wf_grad[iat]);
+  }
+  dEdR += hfdiag_;
+  return localEnergy;
+}
 } // namespace qmcplusplus
