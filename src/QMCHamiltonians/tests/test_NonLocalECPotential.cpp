@@ -71,12 +71,8 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
-  ions.R[1][0] = 6.0;
-  ions.R[1][1] = 0.0;
-  ions.R[1][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
+  ions.R[1] = {6.0, 0.0, 0.0};
 
   SpeciesSet& ion_species                         = ions.getSpeciesSet();
   int index_species                               = ion_species.addSpecies("Na");
