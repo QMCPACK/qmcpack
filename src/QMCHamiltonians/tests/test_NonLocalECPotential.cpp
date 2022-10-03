@@ -48,6 +48,7 @@ public:
   {
     nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, Tmove, listener_opt, keep_grid);
   }
+
 };
 } // namespace testing
 
@@ -178,8 +179,6 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
   
-  //nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
-
   ListenerOption<Real> listener_opt{listeners, ion_listeners};
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
@@ -196,20 +195,18 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   elec.R[0] = {0.5, 0.0, 2.0};
   elec.update();
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, listener_opt, true);
 
-  nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
-  CHECK(testing::TestNonLocalECPotential::didGridChange(nl_ecp));
+  CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
   auto value2 = o_list[0].evaluateDeterministic(p_list[0]);
-  auto value3 = o_list[0].evaluate(p_list[0]);
   
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value3));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
 
   // Randomizing grid does nothing for Na pp
-  nl_ecp.mw_evaluatePerParticleWithToperator(o_list, twf_list, p_list, listeners, ion_listeners);
-  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
-
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, listener_opt, false);
+  auto value3 = o_list[0].evaluateDeterministic(p_list[0]);
+  CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value3));
 }
 
 } // namespace qmcplusplus
