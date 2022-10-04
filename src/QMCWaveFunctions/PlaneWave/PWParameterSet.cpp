@@ -228,18 +228,4 @@ void PWParameterSet::checkVersion(hdf_archive& h)
     }
   }
 }
-
-void PWParameterSet::writeParameters(hdf_archive& h)
-{
-#if defined(QMC_COMPLEX)
-  int iscomplex = 1;
-#else
-  int iscomplex = 0;
-#endif
-  h.push("parameters", true);
-  h.write(iscomplex, "complex_coefficients");
-  TinyVector<int, 2> v1(0, 10);
-  h.write(v1, "version");
-  h.pop();
-}
 } // namespace qmcplusplus

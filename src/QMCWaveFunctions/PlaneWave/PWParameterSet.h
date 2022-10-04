@@ -98,8 +98,6 @@ struct PWParameterSet : public MPIObjectBase
   std::string getEigVectorName(int ib, int ispin);
   std::string getCenterName(const std::string& hg, int ib);
   std::string getOriginName(const std::string& hg, int ib);
-
-  void writeParameters(hdf_archive& gid);
 };
 } // namespace qmcplusplus
 #endif
