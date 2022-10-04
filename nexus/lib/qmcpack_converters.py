@@ -202,9 +202,13 @@ def read_eshdf_eig_data(filename, Ef_list):
     kaxes    = 2*pi*inv(axes).T
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
-    if len(Ef_list) != ns:
-      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-      error(msg)
+    if (len(Ef_list) == 1 and ns == 2):
+        # Using the same E_fermi for up and down electrons
+        E_fermi = Ef_list[0]
+        Ef_list = np.array([E_fermi, E_fermi])
+    elif len(Ef_list) != ns:
+        msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
+        error(msg)
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
