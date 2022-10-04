@@ -18,7 +18,6 @@
  */
 #include "PWBasis.h"
 #include "Numerics/HDFSTLAttrib.h"
-#include "Numerics/HDFNumericAttrib.h"
 
 namespace qmcplusplus
 {

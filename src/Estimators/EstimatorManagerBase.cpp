@@ -31,7 +31,6 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"

@@ -181,32 +181,30 @@ std::string PWParameterSet::getSpinName(int ispin)
   return oss.str();
 }
 
-void PWParameterSet::checkVersion(hid_t h)
+void PWParameterSet::checkVersion(hdf_archive& h)
 {
   if (is_manager())
   {
-    hid_t dataset         = H5Dopen(h, "version");
+    hid_t dataset         = H5Dopen(h.getFileID(), "version");
     hid_t datatype        = H5Dget_type(dataset);
     H5T_class_t classtype = H5Tget_class(datatype);
     H5Tclose(datatype);
     H5Dclose(dataset);
     if (classtype == H5T_INTEGER)
     {
-      HDFAttribIO<TinyVector<int, 2>> hdfver(version);
-      hdfver.read(h, "version");
+      h.read(version, "version");
     }
     else if (classtype == H5T_FLOAT)
     {
       TinyVector<double, 2> vt;
-      HDFAttribIO<TinyVector<double, 2>> hdfver(vt);
-      hdfver.read(h, "version");
-      version[0] = int(vt[0]);
-      version[1] = int(vt[1]);
+      h.read(vt, "version");
+      version[0] = static_cast<int>(vt[0]);
+      version[1] = static_cast<int>(vt[1]);
     }
-    //else
-    //{
-    //  APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
-    //}
+    else
+    {
+      APP_ABORT("PWParameterSet::checkVersion  The type of version is not integer or double.");
+    }
   }
   myComm->bcast(version);
   app_log() << "\tWavefunction HDF version: " << version[0] << "." << version[1] << std::endl;
@@ -229,21 +227,5 @@ void PWParameterSet::checkVersion(hid_t h)
       pwTag     = "0";
     }
   }
-}
-
-void PWParameterSet::writeParameters(hid_t gid)
-{
-#if defined(QMC_COMPLEX)
-  int iscomplex = 1;
-#else
-  int iscomplex = 0;
-#endif
-  hid_t h1 = H5Gcreate2(gid, "parameters", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  HDFAttribIO<int> i1(iscomplex);
-  i1.write(h1, "complex_coefficients");
-  TinyVector<int, 2> v1(0, 10);
-  HDFAttribIO<TinyVector<int, 2>> i2(v1);
-  i2.write(gid, "version");
-  H5Gclose(h1);
 }
 } // namespace qmcplusplus

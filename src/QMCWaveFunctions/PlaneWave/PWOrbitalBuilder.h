@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "hdf/hdf_archive.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
 #else
@@ -41,22 +42,16 @@ private:
 
   std::map<std::string, SPOSetPtr> spomap;
   const PSetMap& ptclPool;
-
-  ///Read routine for HDF wavefunction file version 0.10
-  void ReadHDFWavefunction(hid_t hfile);
-
-  ///hdf5 handler to clean up
-  hid_t hfileID;
   ///xml node for determinantset
-  xmlNodePtr rootNode;
+  xmlNodePtr rootNode{nullptr};
   ///input twist angle
   PosType TwistAngle;
   ///parameter set
-  PWParameterSet* myParam;
+  std::unique_ptr<PWParameterSet> myParam;
   //will do something for twist
   std::unique_ptr<PWBasis> myBasisSet;
-  ////Storage for the orbitals and basis is created in PWOSet.
-  //std::map<std::string,SPOSetPtr> PWOSet;
+  ///hdf5 handler to clean up
+  hdf_archive hfile;
 public:
   ///constructor
   PWOrbitalBuilder(Communicate* comm, ParticleSet& els, const PSetMap& psets);
@@ -66,7 +61,7 @@ public:
   std::unique_ptr<WaveFunctionComponent> buildComponent(xmlNodePtr cur) override;
 
 private:
-  hid_t getH5(xmlNodePtr cur, const char* aname);
+  bool getH5(xmlNodePtr cur, const char* aname);
   std::unique_ptr<WaveFunctionComponent> putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
   SPOSet* createPW(xmlNodePtr cur, int spinIndex);
