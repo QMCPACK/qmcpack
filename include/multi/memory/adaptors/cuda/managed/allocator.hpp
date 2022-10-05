@@ -38,7 +38,7 @@ namespace managed{
 			if(!ret) throw bad_alloc{};
 			if(PrefetchDevice::value != -99)
 				if(cudaMemPrefetchAsync(raw_pointer_cast(ret), n*sizeof(T), PrefetchDevice::value) != cudaSuccess) throw std::runtime_error{"cannot prefetch for some reason"};
-			++allocator::n_allocations; allocator::bytes_allocated+=sizeof(T)*n;
+	//		++allocator::n_allocations; allocator::bytes_allocated+=sizeof(T)*n;
 			return ret;
 		}
 		pointer allocate(typename allocator::size_type n, const_void_pointer hint){
