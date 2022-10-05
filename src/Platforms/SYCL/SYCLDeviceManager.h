@@ -17,7 +17,7 @@
 
 #include <vector>
 #include <memory>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "config.h"
 #if defined(ENABLE_OFFLOAD)
 #include <omp.h>
