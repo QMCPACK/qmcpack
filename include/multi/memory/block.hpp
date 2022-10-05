@@ -1,21 +1,19 @@
-// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
-
+#ifdef COMPILATION_INSTRUCTIONS
+(echo "#include\""$0"\"" > $0.cpp) && c++ -std=c++14 -Wall -Wextra `#-Wfatal-errors` -D_TEST_BOOST_MULTI_MEMORY_BLOCK -DUSE_BOOST_MULTI_MEMORY_MALLOC $0.cpp -o $0x && $0x && rm $0?*; exit
+#endif
 #ifndef BOOST_MULTI_MEMORY_BLOCK_HPP
 #define BOOST_MULTI_MEMORY_BLOCK_HPP
 
-#include <cassert>   // for assert
-#include <cstddef>   // for nullptr_t, size_t
-#include <iterator>  // for distance
-#include <memory>    // for pointer_traits
+#include<cassert>
+#include<memory> // pointer_traits
 
 #ifdef USE_BOOST_MULTI_MEMORY_MALLOC
 #include <malloc.h>
 #endif
 
-namespace boost {
-namespace multi {
-namespace memory {
+namespace boost{
+namespace multi{
+namespace memory{
 
 #if(__cpp_lib_byte<201603)
 enum class byte : unsigned char {};
@@ -24,20 +22,20 @@ using byte = std::byte;
 #endif
 
 template<
-	typename Ptr = byte*,
+	typename Ptr = byte*, 
 	typename Diff = typename std::pointer_traits<Ptr>::difference_type
 > 
 struct block;
 
-namespace detail {
+namespace detail{
 template<typename Ptr, typename Difference>
-struct basic_block {
+struct basic_block{//: std::pointer_traits<Ptr>{
 	using pointer = typename std::pointer_traits<Ptr>::pointer; // basic_block? block<Ptr>?
 	using element_type = typename std::pointer_traits<Ptr>::element_type;
 	using difference_type = Difference;//typename std::pointer_traits<Ptr>::difference_type;
 	using size_type = difference_type;
-
- public:
+protected:
+public:
 	typename basic_block::pointer start_;
 	size_type size_;
 	constexpr basic_block() = default;
@@ -60,12 +58,12 @@ struct basic_block {
 }
 
 template<typename Ptr, typename Diff>
-struct block : detail::basic_block<Ptr, Diff> {
+struct block : detail::basic_block<Ptr, Diff>{
 	using detail::basic_block<Ptr, Diff>::basic_block;
 };
 
 template<typename T, typename Diff>
-struct block<T*, Diff> : detail::basic_block<T*, Diff> {
+struct block<T*, Diff> : detail::basic_block<T*, Diff>{
 	using detail::basic_block<T*, Diff>::basic_block;
 	template<std::size_t N>
 	constexpr explicit block(T(&t)[N]) : detail::basic_block<T*, Diff>{t, N}{}
@@ -149,3 +147,4 @@ int main() {
 }
 #endif
 #endif
+

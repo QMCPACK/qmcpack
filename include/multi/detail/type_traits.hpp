@@ -10,8 +10,6 @@ namespace boost {  // NOLINT(modernize-concat-nested-namespaces)
 namespace multi {
 
 template<class T> struct is_trivially_default_constructible : std::is_trivially_default_constructible<T> {};
-template<class T> struct is_trivial : std::is_trivial<T> {};
-
 
 }  // end namespace multi
 }  // end namespace boost
