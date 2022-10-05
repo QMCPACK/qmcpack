@@ -332,21 +332,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     O.value_ = 0.0;
   }
 
-  // make this class unit tests friendly without the need of setup resources.
-  if (!O_leader.mw_res_)
-  {
-    app_warning() << "NonLocalECPotential: This message should not be seen in production (performance bug) runs "
-                     "but only unit tests (expected)."
-                  << std::endl;
-    O_leader.mw_res_ = std::make_unique<NonLocalECPotentialMultiWalkerResource>();
-    for (int ig = 0; ig < O_leader.PPset.size(); ++ig)
-      if (O_leader.PPset[ig]->getVP())
-      {
-        O_leader.PPset[ig]->getVP()->createResource(O_leader.mw_res_->collection);
-        break;
-      }
-  }
-
   if (listeners)
   {
     auto& ve_samples = O_leader.mw_res_->ve_samples;

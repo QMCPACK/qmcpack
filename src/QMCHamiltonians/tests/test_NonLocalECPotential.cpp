@@ -17,6 +17,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "TestListenerFunction.h"
+#include "Utilities/StlPrettyPrint.hpp"
 
 namespace qmcplusplus
 {
@@ -48,7 +49,6 @@ public:
   {
     nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, Tmove, listener_opt, keep_grid);
   }
-
 };
 } // namespace testing
 
@@ -71,8 +71,8 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   ions.setName("ion");
   ions.create({2});
-  ions.R[0] = {0.0, 0.0, 0.0};
-  ions.R[1] = {6.0, 0.0, 0.0};
+  ions.R[0] = {0.0, 1.0, 0.0};
+  ions.R[1] = {0.0, -1.0, 0.0};
 
   SpeciesSet& ion_species                         = ions.getSpeciesSet();
   int index_species                               = ion_species.addSpecies("Na");
@@ -174,19 +174,24 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   testing::TestNonLocalECPotential::copyGridUnrotatedForTest(nl_ecp2);
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
-  
+
   ListenerOption<Real> listener_opt{listeners, ion_listeners};
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
+  std::cout << "ion_pots:" << ion_pots << '\n';
+  std::cout << "ion_pots.cols()" << ion_pots.cols() << '\n';
+  
   // I'd like to see this gone when legacy drivers are dropped but for now we'll check against
   // the single particle API
   auto value = o_list[0].evaluateDeterministic(p_list[0]);
-  
+
+  std::cout << "local_pots:" << local_pots << '\n';
+  std::cout << "local_pots.cols()" << local_pots.cols() << '\n';
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
-  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(10.5313520432));
-  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(10.5313520432));
-
+  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(10.5313520));
+  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(10.5313520));
+  
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
 
   elec.R[0] = {0.5, 0.0, 2.0};
@@ -195,7 +200,7 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
   auto value2 = o_list[0].evaluateDeterministic(p_list[0]);
-  
+
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
 
