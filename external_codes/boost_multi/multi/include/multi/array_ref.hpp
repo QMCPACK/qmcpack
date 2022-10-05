@@ -824,7 +824,7 @@ struct basic_array
 	using typename types::const_reference;
 
  private:
-	HD constexpr auto at_aux(index idx) const {  // MULTI_ACCESS_ASSERT(this->extension().contains(i)&&"out of bounds");
+	HD constexpr auto at_aux(index idx) const -> reference {  // MULTI_ACCESS_ASSERT(this->extension().contains(i)&&"out of bounds");
 		return reference{
 			this->layout().sub(),
 			this->base() + (idx*this->layout().stride() - this->layout().offset())
