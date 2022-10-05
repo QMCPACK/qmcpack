@@ -177,6 +177,18 @@ clang++-9-asan:
     - ctest --output-on-failure
   needs: ["clang++"]
 
+clang++-11:
+  stage: build
+  script:
+    - apt-get update && apt-get install --no-install-recommends -y --quiet clang-11 pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev
+    - ln --symbolic --force . ../multi
+    - clang++-11 --version
+    - mkdir build && cd build
+    - CXX=clang++-11 cmake ..
+    - cmake --build . --verbose -- --quiet --no-print-directory
+    - ctest --output-on-failure
+  needs: ["clang++"]
+
 clang++-std20:
   stage: build
   script:
@@ -396,22 +408,6 @@ cuda-11.7:
     - ctest --output-on-failure
   needs: ["g++"]
 
-cuda-runner:
-  stage: test
-  tags:
-    - intel_compiler
-  script:
-    - mkdir build && cd build
-    - /usr/local/cuda/bin/nvcc --version
-    - cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=70 -DCMAKE_CUDA_FLAGS="-ccbin=g++-9" -DCMAKE_CXX_STANDARD=17
-    - make -j8 -output-sync=recurse
-    - ctest --output-on-failure --timeout 600
-    - ../build/include/multi/adaptors/thrust/test/speed.cu.x
-    - ../build/include/multi/adaptors/thrust/test/speed_algo.cu.x
-    - ../build/include/multi/adaptors/fftw/test/combinations.cpp.x
-
-  needs: ["cuda-11.7"]
-
 g++-cppcheck:
   stage: build
   allow_failure: false
@@ -526,12 +522,38 @@ nvhpc-22.7:
     - ctest --output-on-failure
   needs: ["g++"]
 
-circle-latest:
-  allow_failure: false
+circle-168:
+  allow_failure: true
   image: debian:stable  # circle is incompatible with gcc 12 lib
   stage: build
   script:
     - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet ca-certificates clang g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev tar gzip wget libelf1 grep
+#    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+#    - cp /usr/include/c++/11/cxxabi.h /usr/include/c++/11/cxxabi.h.bak
+#    - sed -z 's/void\n  __cxa_finalize/int\n  __cxa_finalize/g' /usr/include/c++/11/cxxabi.h.bak > /usr/include/c++/11/cxxabi.h
+#    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+    - mkdir -p build_168 && cd build_168
+    - wget https://www.circle-lang.org/linux/build_168.tgz --no-verbose
+    - tar -zxvf build_168.tgz
+    - cd ..
+    - ls
+    - ./build_168/circle --version
+    - mkdir build && cd build
+    - CXX=`pwd`/../build_168/circle cmake .. -DCMAKE_BUILD_TYPE=Debug -DBOOST_LIBRARYDIR=/usr/lib/x86_64-linux-gnu/ -DENABLE_CIRCLE=1
+    - make VERBOSE=1
+    - ctest --output-on-failure
+  needs: ["g++"]
+
+circle-latest:
+  allow_failure: true
+  image: debian:stable  # circle is incompatible with gcc 12 lib
+  stage: build
+  script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y --quiet ca-certificates clang g++ pkg-config cmake make libboost-test-dev libboost-timer-dev libboost-serialization-dev libblas-dev libfftw3-dev tar gzip wget libelf1 grep
+#    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
+#    - cp /usr/include/c++/11/cxxabi.h /usr/include/c++/11/cxxabi.h.bak
+#    - sed -z 's/void\n  __cxa_finalize/int\n  __cxa_finalize/g' /usr/include/c++/11/cxxabi.h.bak > /usr/include/c++/11/cxxabi.h
+#    - grep __cxa_finalize /usr/include/c++/11/cxxabi.h -A10 -B10
     - mkdir -p build_latest && cd build_latest
     - wget https://www.circle-lang.org/linux/build_latest.tgz --no-verbose
     - tar -zxvf build_latest.tgz
@@ -545,7 +567,7 @@ circle-latest:
   needs: ["g++"]
 
 icpc:  # https://github.com/oneapi-src/oneapi-ci/blob/master/.gitlab-ci.yml
-  allow_failure: false
+  allow_failure: true
   image: debian:stable  # icpc 2022.1.2 is incompatible with gcc 12 lib
   stage: build
   script:
@@ -561,31 +583,6 @@ icpc:  # https://github.com/oneapi-src/oneapi-ci/blob/master/.gitlab-ci.yml
     - . /opt/intel/oneapi/setvars.sh
     - ln --symbolic --force . ../multi
     - export CC=icc; export CXX=icpc;
-    - $CXX -v
-    - mkdir build.icpc && cd build.icpc
-    - cmake ..
-    - make VERBOSE=1
-    - ctest --output-on-failure
-  needs: ["g++"]
-
-icpc-backports:  # https://github.com/oneapi-src/oneapi-ci/blob/master/.gitlab-ci.yml
-  allow_failure: false
-  image: debian:stable-backports  # icpc 2022.1.2 is incompatible with gcc 12 lib
-  stage: build
-  script:
-    - apt-get update && apt-get install --no-install-recommends -y --quiet g++ ca-certificates cmake curl libboost-test-dev libboost-serialization-dev libboost-timer-dev libblas-dev liblapack-dev libfftw3-dev make pkg-config
-    - curl --output webimage.sh --url https://registrationcenter-download.intel.com/akdlm/irc_nas/18479/l_HPCKit_p_2022.1.2.117_offline.sh --retry 5 --retry-delay 5
-    - chmod +x webimage.sh
-    - ./webimage.sh -x -f webimage_extracted --log extract.log
-    - rm -rf webimage.sh
-    - ls -1 webimage_extracted/
-    - WEBIMAGE_NAME=$(ls -1 webimage_extracted/)
-    - webimage_extracted/"$WEBIMAGE_NAME"/bootstrapper -s --action install --components=intel.oneapi.lin.dpcpp-cpp-compiler-pro:intel.oneapi.lin.mpi.devel --eula=accept --log-dir=.
-    - rm -rf webimage_extracted
-    - . /opt/intel/oneapi/setvars.sh
-    - ln --symbolic --force . ../multi
-    - export CC=icc; export CXX=icpc;
-    - g++ --version
     - $CXX -v
     - mkdir build.icpc && cd build.icpc
     - cmake ..
@@ -861,7 +858,7 @@ qmcpack-clang++:
 #    - ctest -R ppconvert --output-on-failure
 
 qmcpack-icpc:
-  allow_failure: false
+  allow_failure: yes
   image: debian:stable  # icpc 2022.1.2 is incompatible with gcc 12 lib
   stage: test
   script:
@@ -876,8 +873,7 @@ qmcpack-icpc:
     - rm -rf webimage_extracted
     - . /opt/intel/oneapi/setvars.sh
     - export CXX="icpc"
-    - g++ --version
-    - icpc -v
+    - $CXX --version
     - cmake --version
     - git clone https://github.com/QMCPACK/qmcpack.git
     - cd qmcpack
@@ -890,43 +886,10 @@ qmcpack-icpc:
     - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
     - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
     - ctest -R ppconvert --output-on-failure
-  needs: ["icpc"]
-
-qmcpack-icpc-backports:
-  allow_failure: false
-  image: debian:stable-backports  # icpc 2022.1.2 is incompatible with gcc 12 lib
-  stage: test
-  script:
-    - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates cmake curl g++ git gfortran libblas-dev libboost-serialization-dev libfftw3-dev libhdf5-dev liblapack-dev libopenmpi-dev make numdiff pkg-config python3 python3-h5py python3-numpy python3-mpi4py python3-scipy libxml2-dev
-    - curl --output webimage.sh --url https://registrationcenter-download.intel.com/akdlm/irc_nas/18479/l_HPCKit_p_2022.1.2.117_offline.sh --retry 5 --retry-delay 5
-    - chmod +x webimage.sh
-    - ./webimage.sh -x -f webimage_extracted --log extract.log
-    - rm -rf webimage.sh
-    - ls -1 webimage_extracted/
-    - WEBIMAGE_NAME=$(ls -1 webimage_extracted/)
-    - webimage_extracted/"$WEBIMAGE_NAME"/bootstrapper -s --action install --components=intel.oneapi.lin.dpcpp-cpp-compiler-pro:intel.oneapi.lin.mpi.devel --eula=accept --log-dir=.
-    - rm -rf webimage_extracted
-    - . /opt/intel/oneapi/setvars.sh
-    - export CXX="icpc"
-    - g++ --version
-    - icpc -v
-    - cmake --version
-    - git clone https://github.com/QMCPACK/qmcpack.git
-    - cd qmcpack
-    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-    - echo $CI_REPOSITORY_URL
-    - echo $CI_COMMIT_BRANCH
-    - git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL $CI_COMMIT_BRANCH || git subtree add --squash -P external_codes/boost_multi/multi $CI_REPOSITORY_URL # e.g. https://gitlab.com/correaa/boost-multi.git master
-    - cd build
-    - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
-    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
-    - make
   needs: ["icpc"]
 
 qmcpack-cuda-runner:
-  allow_failure: false
+  allow_failure: true
   stage: test
   tags:
     - intel_compiler
@@ -953,7 +916,7 @@ qmcpack-cuda-runner:
   needs: ["qmcpack-g++"]
 
 qmcpack-cuda-11.7-compileonly:
-  allow_failure: false
+  allow_failure: true
   image: debian:stable
   stage: test
   script:
@@ -1017,7 +980,7 @@ inq-clang++-latest:
 
 
 inq-cuda-11.7-compileonly:
-  allow_failure: false
+  allow_failure: true
   image: debian:stable
   stage: test
   script:

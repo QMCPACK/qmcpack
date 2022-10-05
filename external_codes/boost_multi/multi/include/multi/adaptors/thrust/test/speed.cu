@@ -6,28 +6,23 @@
 
 #include <thrust/complex.h>
 
-#include <boost/mpl/list.hpp>
-
-
 namespace multi = boost::multi;
 using complex = thrust::complex<double>;
 
-typedef boost::mpl::list<double, complex> test_types;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_universal_speed, T, test_types) {
+BOOST_AUTO_TEST_CASE(thrust_universal_speed) {
 
 	auto const n = 8000;
 
-	multi::array<T, 2, thrust::cuda::universal_allocator<T>> src({n, n});
-	multi::array<T, 2, thrust::cuda::universal_allocator<T>> dst(extensions(src));
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> src({n, n});
+	multi::array<complex, 2, thrust::cuda::universal_allocator<complex>> dst(extensions(src));
 
 	auto const threshold = 0.2;
 
-	auto const size = src.num_elements()*sizeof(T)/1e9;
+	auto const size = src.num_elements()*sizeof(complex)/1e9;
 
 	auto const dummy = std::invoke([&]{
 		auto start_time = std::chrono::high_resolution_clock::now();
-		cudaMemcpy(raw_pointer_cast(dst.data_elements()), raw_pointer_cast(src.data_elements()), src.num_elements()*sizeof(T), cudaMemcpyDeviceToDevice);
+		cudaMemcpy(raw_pointer_cast(dst.data_elements()), raw_pointer_cast(src.data_elements()), src.num_elements()*sizeof(complex), cudaMemcpyDeviceToDevice);
 		std::chrono::duration<double> time = std::chrono::high_resolution_clock::now() - start_time;
 		auto rate = size/time.count();
 		std::cout<<"memcpy    rate = "<< rate <<" GB/s (ratio = 1)\n";
@@ -36,7 +31,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(thrust_universal_speed, T, test_types) {
 
 	auto const memcpy_rate = std::invoke([&]{
 		auto start_time = std::chrono::high_resolution_clock::now();
-		cudaMemcpy(raw_pointer_cast(dst.data_elements()), raw_pointer_cast(src.data_elements()), src.num_elements()*sizeof(T), cudaMemcpyDeviceToDevice);
+		cudaMemcpy(raw_pointer_cast(dst.data_elements()), raw_pointer_cast(src.data_elements()), src.num_elements()*sizeof(complex), cudaMemcpyDeviceToDevice);
 		std::chrono::duration<double> time = std::chrono::high_resolution_clock::now() - start_time;
 		auto rate = size/time.count();
 		std::cout<<"memcpy    rate = "<< rate <<" GB/s (ratio = 1)\n";

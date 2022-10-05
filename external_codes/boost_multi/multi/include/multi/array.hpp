@@ -162,12 +162,12 @@ struct static_array  // NOLINT(fuchsia-multiple-inheritance) : multiple inherita
 
 	template<
 		class Range, class = std::enable_if_t<not std::is_base_of<static_array, std::decay_t<Range>>{}>,
-		class = decltype(/*static_array*/(std::declval<Range const&>().begin() - std::declval<Range const&>().end())),  // instantiation of static_array here gives a compiler error in 11.0, partially defined type?
-		class = std::enable_if_t<not is_basic_array<Range const&>{}>
+		class = decltype(/*static_array*/(std::declval<Range&&>().begin() - std::declval<Range&&>().end())),  // instantiation of static_array here gives a compiler error in 11.0, partially defined type?
+		class = std::enable_if_t<not is_basic_array<Range&&>{}>
 	>
 	// cppcheck-suppress noExplicitConstructor ; because I want to use equal for lazy assigments form range-expressions // NOLINTNEXTLINE(runtime/explicit)
-	static_array(Range const& rng)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : to allow terse syntax
-	: static_array{rng.begin(), rng.end()} {}
+	static_array(Range&& rng)  // NOLINT(google-explicit-constructor,hicpp-explicit-conversions) : to allow terse syntax
+	: static_array{std::forward<Range>(rng).begin(), std::forward<Range>(rng).end()} {}
 
 	template<class TT>
 	auto uninitialized_fill_elements(TT const& value) {
@@ -797,11 +797,16 @@ struct array : static_array<T, D, Alloc> {
 	#endif
 	auto get_allocator(array const& self) -> typename array::allocator_type {return self.get_allocator();}
 
+ private:
+	template<class TrueType>
+	void swap_allocator_if(TrueType&&     /*T*/, typename array::allocator_type&  source  ) {using std::swap; swap(this->alloc(), source);}
+	void swap_allocator_if(std::true_type /*T*/, typename array::allocator_type&  source  ) {using std::swap; swap(this->alloc(), source);}
+	void swap_allocator_if(std::false_type/*F*/, typename array::allocator_type&/*source*/) {}
+
+ public:
 	void swap(array& other) noexcept {
 		using std::swap;
-		if constexpr(allocator_traits<typename array::allocator_type>::propagate_on_container_swap::value) {
-			swap(this->alloc(), other.alloc());
-		}
+		swap_allocator_if(typename allocator_traits<typename array::allocator_type>::propagate_on_container_swap{}, other.alloc());
 		swap(this->base_, other.base_);
 		swap(
 			this->layout_mutable(),
@@ -810,31 +815,43 @@ struct array : static_array<T, D, Alloc> {
 	}
 
 #ifndef NOEXCEPT_ASSIGNMENT
+
+ private:
+	template<class TrueType>
+	void move_allocator_if(TrueType&&     /*T*/, typename array::allocator_type&&  source  ) {this->alloc() = std::move(source);}
+	void move_allocator_if(std::true_type /*T*/, typename array::allocator_type&&  source  ) {this->alloc() = std::move(source);}
+	void move_allocator_if(std::false_type/*F*/, typename array::allocator_type&&/*source*/) {}
+
+ public:
 	auto operator=(array&& other) noexcept -> array& {
 		clear();
+	//  this->base_ = std::exchange(other.base_, nullptr);  // final null assigment shouldn't be necessary?
 		this->base_ = other.base_;
-		if constexpr(allocator_traits<typename array::allocator_type>::propagate_on_container_move_assignment::value) {
-			this->alloc() = std::move(other.alloc());
-		}
+		move_allocator_if(typename allocator_traits<typename array::allocator_type>::propagate_on_container_move_assignment{}, std::move(other.alloc()));
+		// this->alloc_ = std::move(other.alloc_);
 		this->layout_mutable() = std::exchange(other.layout_mutable(), {});
 		return *this;
 	}
 
+ private:
+	template<class TrueType>
+	void copy_allocator_if(TrueType&&     /*T*/, typename array::allocator_type const&  source  ) {this->alloc() = source;}
+	void copy_allocator_if(std::true_type /*T*/, typename array::allocator_type const&  source  ) {this->alloc() = source;}
+	void copy_allocator_if(std::false_type/*F*/, typename array::allocator_type const&/*source*/) {}
+
+ public:
 	auto operator=(array const& other) -> array& {
 		if(array::extensions() == other.extensions()) {
 			if(this == &other) {return *this;}  // required by cert-oop54-cpp
-			if constexpr(allocator_traits<typename array::allocator_type>::propagate_on_container_copy_assignment::value) {
-				this->alloc() = other.alloc();
-			}
+			copy_allocator_if(typename allocator_traits<typename array::allocator_type>::propagate_on_container_copy_assignment{}, other.alloc());
 			static_::operator=(other);
 		} else {
 			clear();
-			if constexpr(allocator_traits<typename array::allocator_type>::propagate_on_container_copy_assignment::value) {
-				this->alloc() = other.alloc();
-			}
+			copy_allocator_if(typename allocator_traits<typename array::allocator_type>::propagate_on_container_copy_assignment{}, other.alloc());
 			this->layout_mutable() = other.layout();
 			array::allocate();
 			array::uninitialized_copy_elements(other.data_elements());
+			// operator=(array{other}); // calls operator=(array&&)
 		}
 		return *this;
 	}
@@ -854,7 +871,7 @@ struct array : static_array<T, D, Alloc> {
 			reshape(other.extensions());
 			static_::operator=(other);
 		} else {
-			operator=(static_cast<array>(std::forward<Range>(other)));
+			operator=(static_cast<array>(other));
 		}
 		return *this;
 	}
