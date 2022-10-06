@@ -50,6 +50,7 @@ public:
     nl_ecp.mw_evaluateImpl(o_list, twf_list, p_list, Tmove, listener_opt, keep_grid);
   }
 };
+
 } // namespace testing
 
 TEST_CASE("NonLocalECPotential", "[hamiltonian]")
@@ -125,8 +126,10 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
 
   NonLocalECPotential nl_ecp(ions, elec, psi, doForces, use_DLA);
 
-  Matrix<Real> local_pots(2);
-  Matrix<Real> local_pots2(2);
+  int num_walkers = 2;
+  int max_values  = 10;
+  Matrix<Real> local_pots(num_walkers, max_values);
+  Matrix<Real> local_pots2(num_walkers, max_values);
 
   ResourceCollection pset_res("test_pset_res");
   elec.createResource(pset_res);
@@ -136,8 +139,8 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   listeners.emplace_back("nonlocalpotential", getParticularListener(local_pots));
   listeners.emplace_back("nonlocalpotential", getParticularListener(local_pots2));
 
-  Matrix<Real> ion_pots(2);
-  Matrix<Real> ion_pots2(2);
+  Matrix<Real> ion_pots(num_walkers, max_values);
+  Matrix<Real> ion_pots2(num_walkers, max_values);
 
   std::vector<ListenerVector<Real>> ion_listeners;
   ion_listeners.emplace_back("nonlocalpotential", getParticularListener(ion_pots));
@@ -152,7 +155,6 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   bool okay = ecp_comp_builder.read_pp_file("Na.BFD.xml");
   REQUIRE(okay);
   UPtr<NonLocalECPComponent> nl_ecp_comp = std::move(ecp_comp_builder.pp_nonloc);
-  nl_ecp_comp->initVirtualParticle(elec);
   nl_ecp.addComponent(0, std::move(nl_ecp_comp));
   UPtr<OperatorBase> nl_ecp2_ptr = nl_ecp.makeClone(elec2, psi2);
   auto& nl_ecp2                  = dynamic_cast<NonLocalECPotential&>(*nl_ecp2_ptr);
@@ -178,34 +180,31 @@ TEST_CASE("NonLocalECPotential", "[hamiltonian]")
   ListenerOption<Real> listener_opt{listeners, ion_listeners};
   testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
-  std::cout << "ion_pots:" << ion_pots << '\n';
-  std::cout << "ion_pots.cols()" << ion_pots.cols() << '\n';
-  
   // I'd like to see this gone when legacy drivers are dropped but for now we'll check against
   // the single particle API
   auto value = o_list[0].evaluateDeterministic(p_list[0]);
 
-  std::cout << "local_pots:" << local_pots << '\n';
-  std::cout << "local_pots.cols()" << local_pots.cols() << '\n';
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value));
   CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
-  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(10.5313520));
-  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(10.5313520));
-  
+  CHECK(std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) == Approx(-2.1047365665));
+  CHECK(std::accumulate(ion_pots2.begin(), ion_pots2.begin() + ion_pots2.cols(), 0.0) == Approx(-2.1047365665));
+
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
 
   elec.R[0] = {0.5, 0.0, 2.0};
   elec.update();
-  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, listener_opt, true);
+
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, true);
 
   CHECK(!testing::TestNonLocalECPotential::didGridChange(nl_ecp));
-  auto value2 = o_list[0].evaluateDeterministic(p_list[0]);
+  auto value2 = o_list[0].evaluateDeterministic(elec);
 
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value2));
-  CHECK(std::accumulate(local_pots2.begin(), local_pots2.begin() + local_pots2.cols(), 0.0) == Approx(value));
+  // check the second walker which will be unchanged.
+  CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
 
   // Randomizing grid does nothing for Na pp
-  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, true, listener_opt, false);
+  testing::TestNonLocalECPotential::mw_evaluateImpl(nl_ecp, o_list, twf_list, p_list, false, listener_opt, false);
   auto value3 = o_list[0].evaluateDeterministic(p_list[0]);
   CHECK(std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0) == Approx(value3));
 }

@@ -21,6 +21,8 @@ template<typename T>
 auto getParticularListener(Matrix<T>& local_pots)
 {
   return [&local_pots](const int walker_index, const std::string& name, const Vector<T>& inputV) {
+    assert(local_pots.cols() >= inputV.size());
+    assert(walker_index < local_pots.rows());
     std::copy_n(inputV.begin(), inputV.size(), local_pots[walker_index]);
   };
 }

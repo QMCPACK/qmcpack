@@ -235,6 +235,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
             Real pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat], use_DLA);
             if (Tmove)
               PP[iat]->contributeTxy(jel, tmove_xy_);
+
             value_ += pairpot;
             NeighborIons.push_back(iat);
             IonNeighborElecs.getNeighborList(iat).push_back(jel);
@@ -452,6 +453,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         listener.report(iw, O_leader.getName(), vi_sample);
       }
     }
+    ve_samples = 0.0;
+    vi_samples = 0.0;
   }
 }
 
