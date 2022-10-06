@@ -198,6 +198,15 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<Grad>& grad_now,
+    std::vector<ComplexType>& spingrad_now) const
+{}
+
+template<typename DET_ENGINE>
 typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGrad(ParticleSet& P,
                                                                                                       int iat,
                                                                                                       Grad& grad_iat)

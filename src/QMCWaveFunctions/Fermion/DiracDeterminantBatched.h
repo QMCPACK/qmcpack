@@ -150,6 +150,12 @@ public:
 
   Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
 
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<Grad>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
+
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
    *  31 * n^2 * sizeof(Value) bytes per DDB
