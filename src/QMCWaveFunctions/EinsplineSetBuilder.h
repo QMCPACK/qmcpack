@@ -105,7 +105,9 @@ struct H5OrbSet
       return a.FileName < b.FileName;
   }
 
-  H5OrbSet(std::string name, int spinSet, int numOrbs) : SpinSet(spinSet), NumOrbs(numOrbs), FileName(name) {}
+  H5OrbSet(std::filesystem::path name, int spinSet, int numOrbs)
+      : SpinSet(spinSet), NumOrbs(numOrbs), FileName(std::move(name))
+  {}
   H5OrbSet() = default;
 };
 
@@ -155,7 +157,7 @@ public:
   //////////////////////////////////////
   // HDF5-related data  and functions //
   //////////////////////////////////////
-  hid_t H5FileID;
+  hdf_archive H5File;
   std::filesystem::path H5FileName;
   // HDF5 orbital file version
   typedef enum
