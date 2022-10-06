@@ -25,6 +25,10 @@ BOOST_AUTO_TEST_CASE(element_transformed_1D_conj_using_function_reference) {
 
 //  Ac[0] = 5. + 4.*I;  // this doesn't compile, good!
 	BOOST_REQUIRE( conjd_arr[0] == 1. - 2.*I );
+
+	BOOST_REQUIRE( real(std::inner_product(arr.begin(), arr.end(), conjd_arr.begin(), complex{0.})) == std::norm(arr[0]) + std::norm(arr[1]) );
+	BOOST_REQUIRE( imag(std::inner_product(arr.begin(), arr.end(), conjd_arr.begin(), complex{0.})) == 0.                                    );
+
 	BOOST_REQUIRE( std::inner_product(arr.begin(), arr.end(), conjd_arr.begin(), complex{0.}) == std::norm(arr[0]) + std::norm(arr[1]) );
 }
 
