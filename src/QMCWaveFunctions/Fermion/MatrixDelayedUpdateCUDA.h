@@ -491,6 +491,17 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
+  template<typename GT>
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  const std::vector<const Value*>& dpsiM_row_list,
+                                  const std::vector<const Value*>& dspin_row_list,
+                                  const int rowchanged,
+                                  std::vector<GT>& grad_now,
+                                  std::vector<Value>& spingrad_now)
+  {
+    std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+  }
+
   /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
    *  * phiV is left on host side in the single methods so it must be transferred to device
