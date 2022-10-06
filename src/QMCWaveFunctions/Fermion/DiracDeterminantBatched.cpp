@@ -204,7 +204,72 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
     int iat,
     std::vector<Grad>& grad_now,
     std::vector<ComplexType>& spingrad_now) const
-{}
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  ScopedTimer local_timer(RatioTimer);
+
+  const int nw = wfc_list.size();
+  RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  std::vector<SPOSet::ValueVector> psi_values, lap_values, dspin_values;
+  std::vector<SPOSet::GradVector> grad_values;
+  RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list, dspin_v_list;
+  RefVector<SPOSet::GradVector> grad_v_list;
+
+  phi_list.reserve(nw);
+  psi_values.reserve(nw);
+  grad_values.reserve(nw);
+  lap_values.reserve(nw);
+  dspin_values.reserve(nw);
+
+  psi_v_list.reserve(nw);
+  grad_v_list.reserve(nw);
+  lap_v_list.reserve(nw);
+  dspin_v_list.reserve(nw);
+
+  SPOSet::ValueVector val(wfc_leader.Phi->size());
+  SPOSet::GradVector grad(wfc_leader.Phi->size());
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    phi_list.push_back(*det.Phi);
+
+    psi_values.emplace_back(val);
+    grad_values.emplace_back(grad);
+    lap_values.emplace_back(val);
+    dspin_values.emplace_back(val);
+
+    psi_v_list.emplace_back(psi_values.back());
+    grad_v_list.emplace_back(grad_values.back());
+    lap_v_list.emplace_back(lap_values.back());
+    dspin_v_list.emplace_back(dspin_values.back());
+  }
+  auto& phi_leader = phi_list.getLeader();
+  phi_leader.mw_evaluateVGLWithSpin(phi_list, p_list, iat, psi_v_list, grad_v_list, lap_v_list, dspin_v_list);
+
+  std::vector<const Value*> dpsiM_row_list(nw, nullptr);
+  std::vector<const Value*> dspin_row_list(nw, nullptr);
+  RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
+  engine_list.reserve(nw);
+
+  const int WorkingIndex = iat - FirstIndex;
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    // capacity is the size of each vector in the VGL so this advances us to the g then makes
+    // an offset into the gradients
+    dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+    dspin_row_list[iw] = dspin_values[iw].data();
+    engine_list.push_back(det.det_engine_);
+  }
+
+  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, dspin_row_list, WorkingIndex, grad_now, spingrad_now);
+
+#ifndef NDEBUG
+  for (int iw = 0; iw < nw; iw++)
+    checkG(grad_now[iw]);
+#endif
+}
 
 template<typename DET_ENGINE>
 typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratioGrad(ParticleSet& P,
