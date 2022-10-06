@@ -27,6 +27,7 @@
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "Numerics/HDFNumericAttrib.h"
+#include <filesystem>
 #include <map>
 
 #define PW_COEFF_NORM_TOLERANCE 1e-6
@@ -78,14 +79,12 @@ struct Int4less
  */
 struct H5OrbSet
 {
-  ///type of orbitals defined
-  int OrbitalType;
   ///index for the spin set
   int SpinSet;
   ///number of orbitals that belong to this set
   int NumOrbs;
   ///name of the HDF5 file
-  std::string FileName;
+  std::filesystem::path FileName;
   /** true if a < b
    *
    * The ordering
@@ -106,9 +105,8 @@ struct H5OrbSet
       return a.FileName < b.FileName;
   }
 
-  H5OrbSet(const H5OrbSet& a) : SpinSet(a.SpinSet), NumOrbs(a.NumOrbs), FileName(a.FileName) {}
   H5OrbSet(std::string name, int spinSet, int numOrbs) : SpinSet(spinSet), NumOrbs(numOrbs), FileName(name) {}
-  H5OrbSet() {}
+  H5OrbSet() = default;
 };
 
 /** EinsplineSet builder
@@ -158,7 +156,7 @@ public:
   // HDF5-related data  and functions //
   //////////////////////////////////////
   hid_t H5FileID;
-  std::string H5FileName;
+  std::filesystem::path H5FileName;
   // HDF5 orbital file version
   typedef enum
   {
