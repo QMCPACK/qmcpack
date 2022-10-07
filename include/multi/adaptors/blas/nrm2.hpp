@@ -19,8 +19,8 @@ using std::norm;  // nvcc11 needs using std::FUNCTION and the FUNCTION (and it w
 
 template<class A1D, class A0D>
 auto nrm2(A1D const& x, A0D&& res)  // NOLINT(readability-identifier-length) conventional BLAS naming
-->decltype(nrm2(x.size(), x.base(), x.stride(), base(res)), std::forward<A0D>(res)) {
-	return nrm2(x.size(), x.base(), x.stride(), base(res)), std::forward<A0D>(res); }
+->decltype(nrm2(size(x), x.base(), x.stride(), base(res)), std::forward<A0D>(res)) {
+	return nrm2(size(x), x.base(), x.stride(), base(res)), std::forward<A0D>(res); }
 
 #if 0
 template<class A1D>

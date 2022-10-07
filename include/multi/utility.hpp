@@ -16,10 +16,10 @@
 
 namespace boost::multi {
 
-template<class To, class From, std::enable_if_t<std::is_convertible_v<From, To>, int> =0>
+template<class To, class From, std::enable_if_t<std::is_convertible<From, To>::value, int> =0>  // ::value (not _v) needed by intel's icpc 19
 constexpr auto implicit_cast(From&& r) -> To {return static_cast<To>(r);}  // NOLINT(readability-identifier-length) std naming
 
-template<class To, class From, std::enable_if_t<std::is_constructible_v<To, From> and not std::is_convertible_v<From, To>, int> =0>
+template<class To, class From, std::enable_if_t<std::is_constructible<To, From>::value and not std::is_convertible<From, To>::value, int> =0>  // ::value (not _v) needed by intel's icpc 19
 constexpr auto explicit_cast(From&& r) -> To {return static_cast<To>(r);}  // NOLINT(readability-identifier-length) std naming
 
 template<class T, class Ptr = T*>

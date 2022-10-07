@@ -2,9 +2,11 @@
 #include<boost/test/unit_test.hpp>
 
 #include <multi/array.hpp>
+//#include<thrust/system/cuda/memory.h>
+
 #include <multi/adaptors/thrust.hpp>
 
-#include <multi/adaptors/thrust/fix_complex_traits.hpp>
+//#include <multi/adaptors/thrust/fix_complex_traits.hpp>
 
 
 #include <thrust/complex.h>
@@ -31,7 +33,6 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 		std::chrono::duration<double> time = std::chrono::high_resolution_clock::now() - tick;
 		double rate = size/time.count();
 
-	//	std::cout<<"no pre+cpu rate = "<< rate <<" GB/s\n";
 	}
 	{ //cctor
 		auto tick = std::chrono::high_resolution_clock::now();
@@ -44,7 +45,7 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 		auto size = A.num_elements()*sizeof(complex)/1e9;
 		double rate = size/time.count();
 
-		std::cout<<"no  pre+cpu_algo rate = "<< rate <<" GB/s\n";
+		std::cout<<"no  prefetch+cpu_algo rate = "<< rate <<" GB/s\n";
 	}
 	{ //cctor
 		auto tick = std::chrono::high_resolution_clock::now();
@@ -58,7 +59,7 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 		auto size = A.num_elements()*sizeof(complex)/1e9;
 		double rate = size/time.count();
 
-		std::cout<<"dev pre+cpu_algo rate = "<< rate <<" GB/s\n";
+		std::cout<<"dev prefetch+cpu_algo rate = "<< rate <<" GB/s\n";
 	}
 	{
 		auto tick = std::chrono::high_resolution_clock::now();
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 		auto size = A.num_elements()*sizeof(complex)/1e9;
 		double rate = size/time.count();
 
-		std::cout<<"no  pre+gpu_algo rate = "<< rate <<" GB/s\n";
+		std::cout<<"no  prefetch+gpu_algo rate = "<< rate <<" GB/s\n";
 	}
 	{
 		auto tick = std::chrono::high_resolution_clock::now();
@@ -85,7 +86,7 @@ BOOST_AUTO_TEST_CASE(thrust_universal_speed_algo) {
 		auto size = A.num_elements()*sizeof(complex)/1e9;
 		double rate = size/time.count();
 
-		std::cout<<"dev pre+gpu_algo rate = "<< rate <<" GB/s\n";
+		std::cout<<"dev prefetch+gpu_algo rate = "<< rate <<" GB/s\n";
 	}
 	{
 		auto tick = std::chrono::high_resolution_clock::now();
