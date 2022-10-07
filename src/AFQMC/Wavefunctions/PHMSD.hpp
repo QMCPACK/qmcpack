@@ -128,7 +128,7 @@ public:
         local_group_comm(),
         shmbuff_for_G(nullptr),
         maxn_unique_confg(std::max(abij.number_of_unique_excitations()[0], abij.number_of_unique_excitations()[1])),
-        maxnactive(std::max(OrbMats[0].size(0), OrbMats.back().size(0))),
+        maxnactive(std::max(OrbMats[0].size(), OrbMats.back().size())),
         max_exct_n(std::max(abij.maximum_excitation_number()[0], abij.maximum_excitation_number()[1])),
         unique_overlaps({2, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
         unique_Etot({2, 1}, shared_allocator<ComplexType>{TG.TG_local()}),
@@ -259,10 +259,10 @@ public:
     {
       assert(std::get<0>(G.sizes()) == std::get<1>(v.sizes()));
       assert(std::get<1>(G.sizes()) == size_of_G_for_vbias());
-      HamOp.vbias(G(G.extension(0), {0, long(OrbMats[0].size(0) * NMO)}), std::forward<MatA>(v), scl * a, 0.0);
+      HamOp.vbias(G(G.extension(), {0, long(OrbMats[0].size() * NMO)}), std::forward<MatA>(v), scl * a, 0.0);
       if (walker_type == COLLINEAR) {
         APP_ABORT(" Error in PHMSD::vbias: transposed_G_for_vbias_ should be false. \n");
-        HamOp.vbias(G(G.extension(0), {long(OrbMats[0].size() * NMO), std::get<1>(G.sizes())}),                                       std::forward<MatA>(v), scl * a, 1.0);
+        HamOp.vbias(G(G.extension(), {long(OrbMats[0].size() * NMO), std::get<1>(G.sizes())}),                                       std::forward<MatA>(v), scl * a, 1.0);
       }
     }
     else
@@ -698,13 +698,13 @@ protected:
     switch (walker_type)
     {
     case CLOSED: // closed-shell RHF
-      return (full) ? (NMO * NMO) : (OrbMats[0].size(0) * NMO);
+      return (full) ? (NMO * NMO) : (OrbMats[0].size() * NMO);
       break;
     case COLLINEAR:
-      return (full) ? (2 * NMO * NMO) : ((OrbMats[0].size(0) + OrbMats.back().size(0)) * NMO);
+      return (full) ? (2 * NMO * NMO) : ((OrbMats[0].size() + OrbMats.back().size()) * NMO);
       break;
     case NONCOLLINEAR:
-      return (full) ? (4 * NMO * NMO) : ((OrbMats[0].size(0)) * 2 * NMO);
+      return (full) ? (4 * NMO * NMO) : ((OrbMats[0].size()) * 2 * NMO);
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -718,14 +718,14 @@ protected:
     switch (walker_type)
     {
     case CLOSED: // closed-shell RHF
-      return (full) ? (arr{NMO, NMO}) : (arr{OrbMats[0].size(0), NMO});
+      return (full) ? (arr{NMO, NMO}) : (arr{OrbMats[0].size(), NMO});
       break;
     case COLLINEAR:
       return (full) ? (arr{NMO, NMO})
-                    : ((sp == Alpha) ? (arr{OrbMats[0].size(0), NMO}) : (arr{OrbMats.back().size(0), NMO}));
+                    : ((sp == Alpha) ? (arr{OrbMats[0].size(), NMO}) : (arr{OrbMats.back().size(), NMO}));
       break;
     case NONCOLLINEAR:
-      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{OrbMats[0].size(0), 2 * NMO});
+      return (full) ? (arr{2 * NMO, 2 * NMO}) : (arr{OrbMats[0].size(), 2 * NMO});
       break;
     default:
       APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
