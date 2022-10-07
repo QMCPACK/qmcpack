@@ -147,3 +147,61 @@ BOOST_AUTO_TEST_CASE(fftw_4D_power_benchmark, *boost::unit_test::enabled() ) {
 	}();
 	BOOST_REQUIRE(in0000 == in[0][0][0][0]);
 }
+
+
+BOOST_AUTO_TEST_CASE(fftw_4D_power_benchmark_syntax) {
+	std::vector<std::array<bool, 4>> which_cases = {
+		{false, true , true , true },
+		{false, true , true , false},
+		{true , false, false, false},
+		{true , true , false, false},
+		{false, false, true , false},
+		{false, false, false, false},
+	};
+	using complex = std::complex<double>;
+
+	auto const in = [] {
+		multi::array<complex, 4> ret({6, 12, 12, 12});
+		std::generate(ret.data_elements(), ret.data_elements() + ret.num_elements(),
+			[eng = std::default_random_engine {std::random_device {}()},
+				uniform_01 = std::uniform_real_distribution<>{}]() mutable{
+				return complex{uniform_01(eng), uniform_01(eng)};
+			});
+		return ret;
+	}();
+
+	auto io = in; (void)io;
+	BOOST_REQUIRE( io.extensions() == in.extensions() );
+
+	namespace fftw = multi::fftw;
+	using clock = std::chrono::high_resolution_clock;
+	{
+		auto const tick = clock::now();
+		multi::array<complex, 4> out({6, 12, 12, 12});
+		out = multi::fftw::ref(in)(fftw::none, fftw::forward, fftw::forward, fftw::forward);
+		BOOST_REQUIRE( out.extensions() == in.extensions() );
+		auto time = std::chrono::duration<double>(clock::now() - tick);
+		std::cout<<"allocate and copy assign (out-of-place fft) : "<< time.count() <<std::endl;
+	}
+	{
+		auto const tick = clock::now();
+		auto const out = +multi::fftw::ref(in)(fftw::none, fftw::forward, fftw::forward, fftw::forward);
+		BOOST_REQUIRE( out.extensions() == in.extensions() );
+		auto time = std::chrono::duration<double>(clock::now() - tick);
+		std::cout<<"copy construct (out-of-place fft) : "<< time.count() <<std::endl;
+	}
+	{
+		auto const tick = clock::now();
+		io = multi::fftw::ref(io)(fftw::none, fftw::forward, fftw::forward, fftw::forward);
+		BOOST_REQUIRE( io.extensions() == in.extensions() );
+		auto time = std::chrono::duration<double>(clock::now() - tick);
+		std::cout<<"self copy assign (in-place fft) : "<< time.count() <<std::endl;
+	}
+	{
+		auto const tick = clock::now();
+		multi::array<complex, 4> out = multi::fftw::move(io)(fftw::none, fftw::forward, fftw::forward, fftw::forward);
+		BOOST_REQUIRE( io.is_empty() );
+		auto time = std::chrono::duration<double>(clock::now() - tick);
+		std::cout<<"move construct (in-place fft) : "<< time.count() <<std::endl;
+	}
+}

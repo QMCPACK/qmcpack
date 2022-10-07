@@ -77,7 +77,7 @@ class gemv_iterator {
 	friend auto copy(gemv_iterator first, gemv_iterator last, It1DOut result){return copy_n(first, last - first, result);}
 	template<class It1DOut>
 	friend auto uninitialized_copy(gemv_iterator first, gemv_iterator last, It1DOut result) {
-		static_assert(std::is_trivially_default_constructible_v<typename It1DOut::value_type>);
+		static_assert(boost::multi::is_trivially_default_constructible_v<typename It1DOut::value_type>);
 		return copy(first, last, result);
 	}
 	gemv_iterator(Scalar alpha, It2D m_it, It1D v_first, Context ctxt) 

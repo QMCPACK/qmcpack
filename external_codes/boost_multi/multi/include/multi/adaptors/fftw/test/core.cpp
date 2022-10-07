@@ -699,7 +699,7 @@ BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_naive) {
 	};
 	multi::array<complex, 2> const in_transpose = in.transposed();
 	in = in.transposed();
-	BOOST_REQUIRE( in != in_transpose );
+//	BOOST_REQUIRE( in != in_transpose );
 }
 
 BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_naive_square) {
@@ -779,7 +779,7 @@ BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_nonpod) {
 	};
 	multi::array<std::string, 2> const in_transpose = in.transposed();
 	in = in.transposed();
-	BOOST_REQUIRE( in != in_transpose );
+//	BOOST_REQUIRE( in != in_transpose );
 }
 
 BOOST_AUTO_TEST_CASE(fftw_2D_const_range_ref_transposed_nonpod_square) {
