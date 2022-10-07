@@ -42,11 +42,9 @@ bool sortByIndex(BandInfo leftB, BandInfo rightB)
 bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
 {
   app_log() << "  Reading orbital file in ESHDF format.\n";
-  HDFAttribIO<TinyVector<int, 3>> h_version(Version);
-  h_version.read(H5FileID, "/version");
+  H5File.read(Version, "/version");
   app_log() << "  ESHDF orbital file version " << Version[0] << "." << Version[1] << "." << Version[2] << std::endl;
-  HDFAttribIO<Tensor<double, 3>> h_Lattice(Lattice);
-  h_Lattice.read(H5FileID, "/supercell/primitive_vectors");
+  H5File.read(Lattice, "/supercell/primitive_vectors");
   RecipLattice = 2.0 * M_PI * inverse(Lattice);
   SuperLattice = dot(TileMatrix, Lattice);
   char buff[1000];
@@ -73,20 +71,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   int have_dpsi         = false;
   int NumAtomicOrbitals = 0;
   NumCoreStates = NumMuffinTins = NumTwists = NumSpins = NumBands = NumAtomicOrbitals = 0;
-  //vector<int> nels_spin(2);
-  //nels_spin[0]=TargetPtcl.last(0)-TargetPtcl.first(0);
-  //nels_spin[1]=TargetPtcl.getTotalNum()-nels_spin[0];
   NumElectrons = TargetPtcl.getTotalNum();
-  HDFAttribIO<int> h_NumBands(NumBands), h_NumSpins(NumSpins), h_NumTwists(NumTwists), h_NumCore(NumCoreStates),
-      h_NumMuffinTins(NumMuffinTins), h_have_dpsi(have_dpsi), h_NumAtomicOrbitals(NumAtomicOrbitals);
-  h_NumBands.read(H5FileID, "/electrons/kpoint_0/spin_0/number_of_states");
-  h_NumCore.read(H5FileID, "/electrons/kpoint_0/spin_0/number_of_core_states");
-  //h_NumElectrons.read  (H5FileID, "/electrons/number_of_electrons");
-  h_NumSpins.read(H5FileID, "/electrons/number_of_spins");
-  h_NumTwists.read(H5FileID, "/electrons/number_of_kpoints");
-  h_NumMuffinTins.read(H5FileID, "/muffin_tins/number_of_tins");
-  h_have_dpsi.read(H5FileID, "/electrons/have_dpsi");
-  h_NumAtomicOrbitals.read(H5FileID, "/electrons/number_of_atomic_orbitals");
+  H5File.read(NumBands, "/electrons/kpoint_0/spin_0/number_of_states");
+  H5File.readEntry(NumCoreStates, "/electrons/kpoint_0/spin_0/number_of_core_states");
+  H5File.readEntry(NumSpins, "/electrons/number_of_spins");
+  H5File.read(NumTwists, "/electrons/number_of_kpoints");
+  H5File.readEntry(NumMuffinTins, "/muffin_tins/number_of_tins");
+  H5File.readEntry(have_dpsi, "/electrons/have_dpsi");
+  H5File.readEntry(NumAtomicOrbitals, "/electrons/number_of_atomic_orbitals");
   HaveOrbDerivs = have_dpsi;
   app_log() << "bands=" << NumBands << ", elecs=" << NumElectrons << ", spins=" << NumSpins << ", twists=" << NumTwists
             << ", muffin tins=" << NumMuffinTins << ", core states=" << NumCoreStates << std::endl;
@@ -97,24 +89,20 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
   // Read ion types and locations //
   //////////////////////////////////
   Vector<int> species_ids;
-  HDFAttribIO<Vector<int>> h_species_ids(species_ids);
-  h_species_ids.read(H5FileID, "/atoms/species_ids");
+  H5File.read(species_ids, "/atoms/species_ids");
   int num_species;
-  HDFAttribIO<int> h_num_species(num_species);
-  h_num_species.read(H5FileID, "/atoms/number_of_species");
+  H5File.read(num_species, "/atoms/number_of_species");
   std::vector<int> atomic_numbers(num_species);
   for (int isp = 0; isp < num_species; isp++)
   {
     std::ostringstream name;
     name << "/atoms/species_" << isp << "/atomic_number";
-    HDFAttribIO<int> h_atomic_number(atomic_numbers[isp]);
-    h_atomic_number.read(H5FileID, name.str().c_str());
+    H5File.readEntry(atomic_numbers[isp], name.str());
   }
   IonTypes.resize(species_ids.size());
   for (int i = 0; i < species_ids.size(); i++)
     IonTypes[i] = atomic_numbers[species_ids[i]];
-  HDFAttribIO<Vector<TinyVector<double, 3>>> h_IonPos(IonPos);
-  h_IonPos.read(H5FileID, "/atoms/positions");
+  H5File.read(IonPos, "/atoms/positions");
   for (int i = 0; i < IonTypes.size(); i++)
     app_log() << "Atom type(" << i << ") = " << IonTypes[i] << std::endl;
   /////////////////////////////////////
@@ -246,20 +234,16 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     PosType position;
     double cutoff_radius_DP, polynomial_radius_DP, spline_radius_DP;
     TinyVector<double, OHMMS_DIM> position_DP;
-    HDFAttribIO<int> h_lmax(lmax), h_polynomial_order(polynomial_order), h_spline_points(spline_points);
-    HDFAttribIO<double> h_cutoff_radius(cutoff_radius_DP), h_polynomial_radius(polynomial_radius_DP),
-        h_spline_radius(spline_radius_DP);
-    HDFAttribIO<TinyVector<double, OHMMS_DIM>> h_position(position_DP);
     std::ostringstream groupstream;
     groupstream << "/electrons/atomic_orbital_" << iat << "/";
     std::string groupname = groupstream.str();
-    h_lmax.read(H5FileID, (groupname + "lmax").c_str());
-    h_polynomial_order.read(H5FileID, (groupname + "polynomial_order").c_str());
-    h_spline_points.read(H5FileID, (groupname + "spline_points").c_str());
-    h_cutoff_radius.read(H5FileID, (groupname + "cutoff_radius").c_str());
-    h_polynomial_radius.read(H5FileID, (groupname + "polynomial_radius").c_str());
-    h_spline_radius.read(H5FileID, (groupname + "spline_radius").c_str());
-    h_position.read(H5FileID, (groupname + "position").c_str());
+    H5File.read(lmax, groupname + "lmax");
+    H5File.read(polynomial_order, groupname + "polynomial_order");
+    H5File.read(spline_points, groupname + "spline_points");
+    H5File.read(cutoff_radius_DP, groupname + "cutoff_radius");
+    H5File.read(polynomial_radius_DP, groupname + "polynomial_radius");
+    H5File.read(spline_radius_DP, groupname + "spline_radius");
+    H5File.read(position_DP, groupname + "position");
     cutoff_radius     = cutoff_radius_DP;
     polynomial_radius = polynomial_radius_DP;
     spline_radius     = spline_radius_DP;
@@ -281,19 +265,16 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     std::ostringstream path;
     path << "/electrons/kpoint_" << ti << "/reduced_k";
     TinyVector<double, OHMMS_DIM> TwistAngles_DP;
-    HDFAttribIO<TinyVector<double, OHMMS_DIM>> h_Twist(TwistAngles_DP);
-    h_Twist.read(H5FileID, path.str().c_str());
+    H5File.read(TwistAngles_DP, path.str());
     TwistAngles[ti] = TwistAngles_DP;
     if ((Version[0] >= 2) and (Version[1] >= 1))
     {
       std::ostringstream sym_path;
       sym_path << "/electrons/kpoint_" << ti << "/symgroup";
-      HDFAttribIO<int> h_Sym(TwistSymmetry[ti]);
-      h_Sym.read(H5FileID, sym_path.str().c_str());
+      H5File.readEntry(TwistSymmetry[ti], sym_path.str());
       std::ostringstream nsym_path;
       nsym_path << "/electrons/kpoint_" << ti << "/numsym";
-      HDFAttribIO<int> h_Nsym(TwistWeight[ti]);
-      h_Nsym.read(H5FileID, nsym_path.str().c_str());
+      H5File.readEntry(TwistWeight[ti], nsym_path.str());
     }
   }
   if (qmc_common.use_density)
@@ -306,13 +287,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
     if (TargetPtcl.getLattice().SuperCellEnum == SUPERCELL_BULK)
     {
       // FIXME:  add support for more than one spin density
-      if (!TargetPtcl.Density_G.size())
+      if (TargetPtcl.Density_G.empty())
       {
-        HDFAttribIO<std::vector<TinyVector<int, OHMMS_DIM>>> h_reduced_gvecs(TargetPtcl.DensityReducedGvecs);
         Array<double, OHMMS_DIM> Density_r_DP;
-        HDFAttribIO<Array<double, OHMMS_DIM>> h_density_r(Density_r_DP);
         TinyVector<int, 3> mesh;
-        h_reduced_gvecs.read(H5FileID, "/electrons/density/gvectors");
+        H5File.read(TargetPtcl.DensityReducedGvecs, "/electrons/density/gvectors");
         int numG = TargetPtcl.DensityReducedGvecs.size();
 // Convert primitive G-vectors to supercell G-vectors
 // Also, flip sign since ESHDF format uses opposite sign convention
@@ -325,15 +304,14 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
           std::ostringstream density_r_path, density_g_path;
           density_r_path << "/electrons/density/spin_" << ispin << "/density_r";
           density_g_path << "/electrons/density/spin_" << ispin << "/density_g";
-          h_density_r.read(H5FileID, density_r_path.str().c_str());
+          H5File.readEntry(Density_r_DP, density_r_path.str());
           TargetPtcl.Density_r = Density_r_DP;
           if (TargetPtcl.DensityReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found density in the HDF5 file.\n";
             std::vector<ComplexType> density_G;
             std::vector<std::complex<double>> Density_G_DP;
-            HDFAttribIO<std::vector<std::complex<double>>> h_density_G(Density_G_DP);
-            h_density_G.read(H5FileID, density_g_path.str().c_str());
+            H5File.read(Density_G_DP, density_g_path.str());
             density_G.assign(Density_G_DP.begin(), Density_G_DP.end());
             if (!density_G.size())
             {
@@ -360,9 +338,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
       // FIXME:  add support for more than one spin potential
       if (!TargetPtcl.VHXC_r[0].size())
       {
-        HDFAttribIO<std::vector<TinyVector<int, OHMMS_DIM>>> h_reduced_gvecs(TargetPtcl.VHXCReducedGvecs);
         TinyVector<int, 3> mesh;
-        h_reduced_gvecs.read(H5FileID, "/electrons/VHXC/gvectors");
+        H5File.readEntry(TargetPtcl.VHXCReducedGvecs, "/electrons/VHXC/gvectors");
         int numG = TargetPtcl.VHXCReducedGvecs.size();
 // Convert primitive G-vectors to supercell G-vectors
 // Also, flip sign since ESHDF format uses opposite sign convention
@@ -373,19 +350,17 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
         for (int ispin = 0; ispin < NumSpins; ispin++)
         {
           Array<double, OHMMS_DIM> VHXC_r_DP;
-          HDFAttribIO<Array<double, OHMMS_DIM>> h_VHXC_r(VHXC_r_DP);
           std::ostringstream VHXC_r_path, VHXC_g_path;
           VHXC_r_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_r";
           VHXC_g_path << "/electrons/VHXC/spin_" << ispin << "/VHXC_g";
-          h_VHXC_r.read(H5FileID, VHXC_r_path.str().c_str());
+          H5File.readEntry(VHXC_r_DP, VHXC_r_path.str());
           TargetPtcl.VHXC_r[ispin] = VHXC_r_DP;
           if (TargetPtcl.VHXCReducedGvecs.size())
           {
             app_log() << "  EinsplineSetBuilder found VHXC in the HDF5 file.\n";
             std::vector<std::complex<double>> VHXC_G_DP;
             std::vector<ComplexType> VHXC_G;
-            HDFAttribIO<std::vector<std::complex<double>>> h_VHXC_G(VHXC_G_DP);
-            h_VHXC_G.read(H5FileID, VHXC_g_path.str().c_str());
+            H5File.read(VHXC_G_DP, VHXC_g_path.str());
             VHXC_G.assign(VHXC_G_DP.begin(), VHXC_G_DP.end());
             if (!VHXC_G.size())
             {
@@ -423,8 +398,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
     std::ostringstream ePath;
     ePath << "/electrons/kpoint_" << tindex << "/spin_" << spin << "/eigenvalues";
     std::vector<double> eigvals;
-    HDFAttribIO<std::vector<double>> h_eigvals(eigvals);
-    h_eigvals.read(H5FileID, ePath.str().c_str());
+    H5File.read(eigvals, ePath.str());
     for (int bi = 0; bi < NumBands; bi++)
     {
       BandInfo band;
@@ -448,8 +422,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       band.TwistIndex    = tindex;
       band.BandIndex     = cs;
       band.MakeTwoCopies = MakeTwoCopies[ti];
-      HDFAttribIO<double> h_energy(band.Energy);
-      h_energy.read(H5FileID, (CoreStatePath(ti, cs) + "eigenvalue").c_str());
+      H5File.read(band.Energy, CoreStatePath(ti, cs) + "eigenvalue");
       if (band.Energy > -1.0e100)
         SortBands.push_back(band);
       if (MakeTwoCopies[ti])

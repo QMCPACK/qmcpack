@@ -36,8 +36,7 @@ void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<
   if (myComm->rank() == 0)
   {
     std::string path = psi_g_path(ti, spin, ib);
-    HDFAttribIO<Vector<std::complex<double>>> h_cG(cG);
-    h_cG.read(mybuilder->H5FileID, path.c_str());
+    mybuilder->H5File.read(cG, path);
     ncg = cG.size();
   }
   myComm->bcast(ncg);
