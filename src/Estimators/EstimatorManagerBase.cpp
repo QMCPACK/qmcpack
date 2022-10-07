@@ -59,8 +59,8 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
       myComm(0),
       MainEstimator(0),
       main_estimator_name_("LocalEnergy"),
-      max4ascii_(8),
-      field_width_(20)
+      max_output_scalar_dat_(8),
+      max_block_avg_name_(20)
 {
   setCommunicator(c);
 }
@@ -75,8 +75,8 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
       MainEstimator(0),
       EstimatorMap(em.EstimatorMap),
       main_estimator_name_(em.main_estimator_name_),
-      max4ascii_(em.max4ascii_),
-      field_width_(20)
+      max_output_scalar_dat_(em.max_output_scalar_dat_),
+      max_block_avg_name_(20)
 {
   //inherit communicator
   setCommunicator(em.myComm);
@@ -135,7 +135,7 @@ void EstimatorManagerBase::reset()
   BlockAverages.clear(); //cleaup the records
   for (int i = 0; i < Estimators.size(); i++)
     Estimators[i]->add2Record(BlockAverages);
-  max4ascii_ += BlockAverages.size();
+  max_output_scalar_dat_ += BlockAverages.size();
   if (Collectables)
     Collectables->add2Record(BlockAverages);
 }
@@ -148,15 +148,15 @@ void EstimatorManagerBase::addHeader(std::ostream& o)
   o.setf(std::ios::left, std::ios::adjustfield);
   o.precision(10);
   for (int i = 0; i < BlockAverages.size(); i++)
-    field_width_ = std::max(field_width_, BlockAverages.Names[i].size() + 2);
+    max_block_avg_name_ = std::max(max_block_avg_name_, BlockAverages.Names[i].size() + 2);
   for (int i = 0; i < BlockProperties.size(); i++)
-    field_width_ = std::max(field_width_, BlockProperties.Names[i].size() + 2);
-  int maxobjs = std::min(BlockAverages.size(), max4ascii_);
+    max_block_avg_name_ = std::max(max_block_avg_name_, BlockProperties.Names[i].size() + 2);
+  int maxobjs = std::min(BlockAverages.size(), max_output_scalar_dat_);
   o << "#   index    ";
   for (int i = 0; i < maxobjs; i++)
-    o << std::setw(field_width_) << BlockAverages.Names[i];
+    o << std::setw(max_block_avg_name_) << BlockAverages.Names[i];
   for (int i = 0; i < BlockProperties.size(); i++)
-    o << std::setw(field_width_) << BlockProperties.Names[i];
+    o << std::setw(max_block_avg_name_) << BlockProperties.Names[i];
   o << std::endl;
   o.setf(std::ios::right, std::ios::adjustfield);
 }
@@ -343,11 +343,11 @@ void EstimatorManagerBase::collectBlockAverages()
   if (Archive)
   {
     *Archive << std::setw(10) << RecordCount;
-    int maxobjs = std::min(BlockAverages.size(), max4ascii_);
+    int maxobjs = std::min(BlockAverages.size(), max_output_scalar_dat_);
     for (int j = 0; j < maxobjs; j++)
-      *Archive << std::setw(field_width_) << AverageCache[j];
+      *Archive << std::setw(max_block_avg_name_) << AverageCache[j];
     for (int j = 0; j < PropertyCache.size(); j++)
-      *Archive << std::setw(field_width_) << PropertyCache[j];
+      *Archive << std::setw(max_block_avg_name_) << PropertyCache[j];
     *Archive << std::endl;
     for (int o = 0; o < h5desc.size(); ++o)
       h5desc[o].write(AverageCache.data(), SquaredAverageCache.data());
@@ -434,7 +434,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
       hAttrib.put(cur);
       if ((est_name == main_estimator_name_) || (est_name == "elocal"))
       {
-        max4ascii_ = H.sizeOfObservables() + 3;
+        max_output_scalar_dat_ = H.sizeOfObservables() + 3;
         add(std::make_unique<LocalEnergyEstimator>(H, use_hdf5 == "yes"), main_estimator_name_);
       }
       else if (est_name == "RMC")
@@ -443,7 +443,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
         OhmmsAttributeSet hAttrib;
         hAttrib.add(nobs, "nobs");
         hAttrib.put(cur);
-        max4ascii_ = nobs * H.sizeOfObservables() + 3;
+        max_output_scalar_dat_ = nobs * H.sizeOfObservables() + 3;
         add(std::make_unique<RMCLocalEnergyEstimator>(H, nobs), main_estimator_name_);
       }
       else if (est_name == "CSLocalEnergy")
@@ -463,7 +463,7 @@ bool EstimatorManagerBase::put(QMCHamiltonian& H, xmlNodePtr cur)
   if (Estimators.empty())
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
-    max4ascii_ = H.sizeOfObservables() + 3;
+    max_output_scalar_dat_ = H.sizeOfObservables() + 3;
     add(std::make_unique<LocalEnergyEstimator>(H, true), main_estimator_name_);
   }
   //Collectables is special and should not be added to Estimators

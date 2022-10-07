@@ -259,7 +259,7 @@ private:
   std::string main_estimator_name_;
 
   ///number of maximum data for a scalar.dat
-  int max4ascii_;
+  int max_output_scalar_dat_;
 
   //Data for communication
   std::vector<std::unique_ptr<BufferType>> RemoteData;
@@ -270,7 +270,8 @@ private:
   ///add header to an std::ostream
   void addHeader(std::ostream& o);
 
-  size_t field_width_;
+  ///largest name in BlockAverages adding 2 characters
+  size_t max_block_avg_name_;
 
   friend class qmcplusplus::testing::EstimatorManagerBaseTest;
 };
