@@ -118,8 +118,7 @@ void SimpleFixedNodeBranch::registerParameters()
 
 void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
 {
-  RootName              = froot;
-  MyEstimator->RootName = froot;
+  RootName = froot;
   MyEstimator->reset();
 }
 
