@@ -21,8 +21,11 @@
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
-#include <stack>
+
 #include <bitset>
+#include <filesystem>
+#include <stack>
+
 #ifdef HAVE_MPI
 namespace boost
 {
@@ -114,14 +117,14 @@ public:
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::string& fname, unsigned flags = H5F_ACC_TRUNC);
+  bool create(const std::filesystem::path& fname, unsigned flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::string& fname, unsigned flags = H5F_ACC_RDWR);
+  bool open(const std::filesystem::path& fname, unsigned flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
