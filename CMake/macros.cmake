@@ -183,15 +183,7 @@ function(
     endif()
   endif()
 
-  if(TEST_ADDED_TEMP
-     AND (QMC_CUDA
-          OR ENABLE_CUDA
-          OR ENABLE_ROCM
-          OR ENABLE_OFFLOAD
-         ))
-    set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
-  endif()
-
+  # set additional test properties when the test gets added
   set(TEST_LABELS_TEMP "")
   if(TEST_ADDED_TEMP)
     add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
@@ -199,6 +191,21 @@ function(
       TEST ${TESTNAME}
       APPEND
       PROPERTY LABELS "QMCPACK")
+
+    if(QMC_CUDA
+          OR ENABLE_CUDA
+          OR ENABLE_ROCM
+          OR ENABLE_OFFLOAD
+       )
+      set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
+    endif()
+
+    if(ENABLE_OFFLOAD)
+      set_property(
+      TEST ${TESTNAME}
+      APPEND
+      PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
+    endif()
   endif()
   set(${TEST_ADDED}
       ${TEST_ADDED_TEMP}
