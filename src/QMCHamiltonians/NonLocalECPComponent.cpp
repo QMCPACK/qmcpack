@@ -30,9 +30,9 @@ NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, 
     : NonLocalECPComponent(nl_ecpc)
 {
   for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
-    this->nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
+    nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
   if (nl_ecpc.VP)
-    this->VP = new VirtualParticleSet(pset, nknot);
+    VP = new VirtualParticleSet(pset, nknot);
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()

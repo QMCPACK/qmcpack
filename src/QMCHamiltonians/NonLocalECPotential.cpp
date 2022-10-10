@@ -417,9 +417,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           vi_samples(iw, batch_list[j].get().ion_id) += pairpots[j];
         }
 
-#ifndef DEBUG_NLPP_BATCHED
-        if (false)
-        { // code usefully for debugging, but bad for reading.
+#ifdef DEBUG_NLPP_BATCHED
           Real check_value =
               ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
                                                 batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
@@ -427,7 +425,6 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           if (std::abs(check_value - pairpots[j]) > 1e-5)
             std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
                       << std::abs(check_value - pairpots[j]) << std::endl;
-        }
 #endif
       }
     }
@@ -449,9 +446,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         listener.report(iw, O_leader.getName(), ve_sample);
       }
       for (const ListenerVector<Real>& listener : listeners->ions)
-      {
         listener.report(iw, O_leader.getName(), vi_sample);
-      }
     }
     ve_samples = 0.0;
     vi_samples = 0.0;
