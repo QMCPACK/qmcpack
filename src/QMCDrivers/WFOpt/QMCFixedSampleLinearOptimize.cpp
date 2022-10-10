@@ -44,11 +44,12 @@ namespace qmcplusplus
 using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& project_data,
+                                                           MCWalkerConfiguration& w,
                                                            TrialWaveFunction& psi,
                                                            QMCHamiltonian& h,
                                                            Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
+    : QMCDriver(project_data, w, psi, h, comm, "QMCFixedSampleLinearOptimize"),
 #ifdef HAVE_LMY_ENGINE
       vdeps(1, std::vector<double>()),
 #endif
@@ -652,7 +653,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);
-  vmcEngine = std::make_unique<VMC>(W, Psi, H, myComm, false);
+  vmcEngine = std::make_unique<VMC>(project_data_, W, Psi, H, myComm, false);
   vmcEngine->setUpdateMode(vmcMove[0] == 'p');
 
 

@@ -37,8 +37,13 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-VMC::VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling)
-    : QMCDriver(w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
+VMC::VMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         Communicate* comm,
+         bool enable_profiling)
+    : QMCDriver(project_data, w, psi, h, comm, "VMC", enable_profiling), UseDrift("yes")
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);

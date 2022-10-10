@@ -35,7 +35,8 @@ class CSVMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  CSVMC(MCWalkerConfiguration& w,
+  CSVMC(const ProjectData& project_data,
+        MCWalkerConfiguration& w,
         TrialWaveFunction& psi,
         QMCHamiltonian& h,
         Communicate* comm);

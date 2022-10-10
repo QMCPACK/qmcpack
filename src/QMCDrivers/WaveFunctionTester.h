@@ -46,7 +46,8 @@ public:
   using LogValueType = WaveFunctionComponent::LogValueType;
 
   /// Constructor.
-  WaveFunctionTester(MCWalkerConfiguration& w,
+  WaveFunctionTester(const ProjectData& project_data,
+                     MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
