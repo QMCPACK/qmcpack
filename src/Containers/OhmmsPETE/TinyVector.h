@@ -148,10 +148,7 @@ struct TinyVector
     return inverse;
   }
 
-  /** Elementwise comparison
-   *
-   *  not optimized but useful for testing
-   */
+  // Elementwise comparison
   bool operator==(const TinyVector<T, D>& that) const
   {
     for (int i = 0; i < D; ++i)
@@ -232,18 +229,6 @@ struct printTinyVector<TinyVector<T, D>>
   }
 };
 
-// specialized for Vector<TinyVector<T,3> >
-template<class T>
-struct printTinyVector<TinyVector<T, 3>>
-{
-  inline static void print(std::ostream& os, const TinyVector<T, 3>& r)
-  {
-    os << std::setw(18) << std::setprecision(10) << r[0] << std::setw(18) << std::setprecision(10) << r[1]
-       << std::setw(18) << std::setprecision(10) << r[2];
-  }
-};
-
-
 template<class T, unsigned D>
 std::ostream& operator<<(std::ostream& out, const TinyVector<T, D>& rhs)
 {
@@ -261,4 +246,4 @@ std::istream& operator>>(std::istream& is, TinyVector<T, D>& rhs)
 }
 } // namespace qmcplusplus
 
-#endif // VEKTOR_H
+#endif // OHMMS_TINYVECTOR_H
