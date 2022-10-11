@@ -35,8 +35,17 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-RMC::RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "RMC"), prestepsVMC(-1), rescaleDrift("no"), beta(-1), beads(-1), fromScratch(true)
+RMC::RMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         Communicate* comm)
+    : QMCDriver(project_data, w, psi, h, comm, "RMC"),
+      prestepsVMC(-1),
+      rescaleDrift("no"),
+      beta(-1),
+      beads(-1),
+      fromScratch(true)
 {
   RootName = "rmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);

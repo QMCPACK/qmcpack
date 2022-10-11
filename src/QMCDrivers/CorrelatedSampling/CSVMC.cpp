@@ -34,8 +34,12 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
+CSVMC::CSVMC(const ProjectData& project_data,
+             MCWalkerConfiguration& w,
+             TrialWaveFunction& psi,
+             QMCHamiltonian& h,
+             Communicate* comm)
+    : QMCDriver(project_data, w, psi, h, comm, "CSVMC"), UseDrift("yes"), multiEstimator(0), Mover(0)
 {
   RootName = "csvmc";
   m_param.add(UseDrift, "useDrift");

@@ -35,12 +35,13 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
+WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
+                                       MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "WaveFunctionTester"),
+    : QMCDriver(project_data, w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
