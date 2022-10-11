@@ -418,13 +418,13 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         }
 
 #ifdef DEBUG_NLPP_BATCHED
-          Real check_value =
-              ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
-                                                batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
-                                                batch_list[j].get().ion_elec_displ, O_leader.use_DLA);
-          if (std::abs(check_value - pairpots[j]) > 1e-5)
-            std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
-                      << std::abs(check_value - pairpots[j]) << std::endl;
+        Real check_value =
+            ecp_component_list[j].evaluateOne(pset_list[j], batch_list[j].get().ion_id, psi_list[j],
+                                              batch_list[j].get().electron_id, batch_list[j].get().ion_elec_dist,
+                                              batch_list[j].get().ion_elec_displ, O_leader.use_DLA);
+        if (std::abs(check_value - pairpots[j]) > 1e-5)
+          std::cout << "check " << check_value << " wrong " << pairpots[j] << " diff "
+                    << std::abs(check_value - pairpots[j]) << std::endl;
 #endif
       }
     }
@@ -442,9 +442,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
       Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.NumIons);
       for (const ListenerVector<Real>& listener : listeners->electrons)
-      {
         listener.report(iw, O_leader.getName(), ve_sample);
-      }
       for (const ListenerVector<Real>& listener : listeners->ions)
         listener.report(iw, O_leader.getName(), vi_sample);
     }
