@@ -24,22 +24,23 @@ namespace qmcplusplus
 {
 NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr) {}
 
+// unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
+// This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
+NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset)
+    : NonLocalECPComponent(nl_ecpc)
+{
+  for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
+    nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
+  if (nl_ecpc.VP)
+    VP = new VirtualParticleSet(pset, nknot);
+}
+
 NonLocalECPComponent::~NonLocalECPComponent()
 {
   for (int ip = 0; ip < nlpp_m.size(); ip++)
     delete nlpp_m[ip];
   if (VP)
     delete VP;
-}
-
-NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet& qp)
-{
-  NonLocalECPComponent* myclone = new NonLocalECPComponent(*this);
-  for (int i = 0; i < nlpp_m.size(); ++i)
-    myclone->nlpp_m[i] = nlpp_m[i]->makeClone();
-  if (VP)
-    myclone->VP = new VirtualParticleSet(qp, nknot);
-  return myclone;
 }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
@@ -242,7 +243,6 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
   else
   {
     // Compute ratios without VP. This is working but very slow code path.
-#pragma omp parallel for
     for (size_t i = 0; i < p_list.size(); i++)
     {
       NonLocalECPComponent& component(ecp_component_list[i]);
@@ -509,7 +509,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   for (size_t jat = 0; jat < ions.getTotalNum(); jat++)
   {
     convertToReal(psi.evalGradSource(W, ions, jat), pulay_ref[jat]);
-    gradpotterm_   = 0;
+    gradpotterm_ = 0;
     for (size_t j = 0; j < nknot; j++)
     {
       deltaV[j] = r * rrotsgrid_m[j] - dr;

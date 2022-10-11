@@ -48,7 +48,6 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
   setupCUDA(els);
 }
 
-
 std::unique_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   std::unique_ptr<NonLocalECPotential_CUDA> myclone =
@@ -57,7 +56,7 @@ std::unique_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& q
   {
     if (PPset[ig])
     {
-      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
+      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
     }
   }
   return myclone;

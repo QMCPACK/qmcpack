@@ -59,6 +59,24 @@ private:
   const std::string name_;
 };
 
+/** Convenience container for common optional element to mw_eval.._impl.
+ *  This can allow the per_particle and reduced mw_eval to share the same
+ *  implementation method.
+ *
+ *  see NonLocalECPotential for example of usage.
+ *  I anticipate it could be used elsewhere.
+ */
+template<typename T>
+struct ListenerOption
+{
+    ListenerOption(const std::vector<ListenerVector<T>>& le, const std::vector<ListenerVector<T>>& li)
+        : electrons(le), ions(li)
+    {}
+    const std::vector<ListenerVector<T>>& electrons;
+    const std::vector<ListenerVector<T>>& ions;
+};
+
+
 
 } // namespace qmcplusplus
 
