@@ -24,7 +24,6 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "Utilities/Timer.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Particle/DistanceTable.h"
 #include <fftw3.h>

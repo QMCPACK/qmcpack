@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -184,8 +183,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   //return the ecut to be used by the basis set
   RealType real_ecut = myParam->getEcut(ecut);
   //create at least one basis set but do resize the containers
-  int nh5gvecs =
-      myBasisSet->readbasis(hfile.getFileID(), real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag);
+  int nh5gvecs = myBasisSet->readbasis(hfile, real_ecut, targetPtcl.getLattice(), myParam->pwTag, myParam->pwMultTag);
   app_log() << "  num_twist = " << nkpts << std::endl;
   app_log() << "  twist angle = " << TwistAngle << std::endl;
   app_log() << "  num_bands = " << nbands << std::endl;

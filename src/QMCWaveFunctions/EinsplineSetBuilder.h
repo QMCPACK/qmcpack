@@ -26,7 +26,6 @@
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include <filesystem>
 #include <map>
 

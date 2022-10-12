@@ -20,9 +20,9 @@
 
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include "Message/Communicate.h"
 #include "CPU/e2iphi.h"
+#include "hdf/hdf_archive.h"
 
 /** If defined, use recursive method to build the basis set for each position
  *
@@ -134,7 +134,7 @@ public:
    * @param resizeContainer if true, resize internal storage.
    * @return the number of plane waves
    */
-  int readbasis(hid_t h5basisgroup,
+  int readbasis(hdf_archive& h5basisgroup,
                 RealType ecutoff,
                 const ParticleLayout& lat,
                 const std::string& pwname     = "planewaves",
