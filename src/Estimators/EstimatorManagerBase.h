@@ -28,6 +28,7 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
+#include "io/hdf/hdf_archive.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -202,13 +203,15 @@ protected:
   ///index for the acceptance rate PropertyCache(acceptInd)
   int acceptInd;
   ///hdf5 handler
-  hid_t h_file;
+  hdf_archive h_file;
   ///total weight accumulated in a block
   RealType BlockWeight;
   ///file handler to write data
-  std::ofstream* Archive;
+  std::unique_ptr<std::ofstream> Archive;
+#if defined(DEBUG_ESTIMATOR_ARCHIVE)
   ///file handler to write data for debugging
-  std::ofstream* DebugArchive;
+  std::unique_ptr<std::ofstream> DebugArchive;
+#endif
   ///communicator to handle communication
   Communicate* myComm;
   /** pointer to the primary ScalarEstimatorBase

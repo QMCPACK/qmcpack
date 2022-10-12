@@ -209,16 +209,20 @@ void RMC::resetRun()
 
   if (Movers.empty())
   {
-    Movers.resize(NumThreads, 0);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
     branchEngine->initReptile(W);
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators); //,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
       Rng[ip] = std::make_unique<RandomGenerator>(*RandomNumberControl::Children[ip]);

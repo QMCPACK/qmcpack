@@ -88,10 +88,10 @@ void DMC::resetUpdateEngines()
       setWalkerOffsets();
     }
     //if(qmc_driver_mode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
-    Movers.resize(NumThreads, 0);
+    Movers.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
-    estimatorClones.resize(NumThreads, 0);
-    traceClones.resize(NumThreads, 0);
+    estimatorClones.resize(NumThreads, nullptr);
+    traceClones.resize(NumThreads, nullptr);
     FairDivideLow(W.getActiveWalkers(), NumThreads, wPerRank);
 
     {
@@ -117,10 +117,14 @@ void DMC::resetUpdateEngines()
         o << "\n  DMC moves are rejected when a node crossing is detected";
       app_log() << o.str() << std::endl;
     }
+
+    // hdf_archive::hdf_archive() is not thread-safe
+    for (int ip = 0; ip < NumThreads; ++ip)
+      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
+
 #pragma omp parallel for
     for (int ip = 0; ip < NumThreads; ++ip)
     {
-      estimatorClones[ip] = new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();

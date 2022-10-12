@@ -53,9 +53,6 @@ enum
 //initialize the name of the primary estimator
 EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
     : RecordCount(0),
-      h_file(-1),
-      Archive(0),
-      DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       main_estimator_name_("LocalEnergy"),
@@ -68,9 +65,6 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
 EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
     : Options(em.Options),
       RecordCount(0),
-      h_file(-1),
-      Archive(0),
-      DebugArchive(0),
       myComm(0),
       MainEstimator(0),
       EstimatorMap(em.EstimatorMap),
@@ -184,11 +178,11 @@ void EstimatorManagerBase::start(int blocks, bool record)
     for (int i = 0; i < RemoteData.size(); ++i)
       RemoteData[i]->resize(BufferSize);
 #if defined(DEBUG_ESTIMATOR_ARCHIVE)
-  if (record && DebugArchive == 0)
+  if (record && !DebugArchive)
   {
     char fname[128];
     sprintf(fname, "%s.p%03d.scalar.dat", myComm->getName().c_str(), myComm->rank());
-    DebugArchive = new std::ofstream(fname);
+    DebugArchive = std::make_unique<std::ofstream>(fname);
     addHeader(*DebugArchive);
   }
 #endif
@@ -196,22 +190,20 @@ void EstimatorManagerBase::start(int blocks, bool record)
   Options.set(RECORD, record && Options[MANAGE]);
   if (Options[RECORD])
   {
-    if (Archive)
-      delete Archive;
-    std::string fname(myComm->getName());
-    fname.append(".scalar.dat");
-    Archive = new std::ofstream(fname.c_str());
+    std::filesystem::path fname(myComm->getName());
+    fname.concat(".scalar.dat");
+    Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
-    if (h5desc.size())
+    if (!h5desc.empty())
     {
       h5desc.clear();
     }
     fname  = myComm->getName() + ".stat.h5";
-    h_file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    h_file.create(fname);
     for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->registerObservables(h5desc, h_file);
+      Estimators[i]->registerObservables(h5desc, h_file.getFileID());
     if (Collectables)
-      Collectables->registerObservables(h5desc, h_file);
+      Collectables->registerObservables(h5desc, h_file.getFileID());
   }
 }
 
@@ -248,16 +240,8 @@ void EstimatorManagerBase::stop(const std::vector<EstimatorManagerBase*> est)
 void EstimatorManagerBase::stop()
 {
   //close any open files
-  if (Archive)
-  {
-    delete Archive;
-    Archive = 0;
-  }
-  if (h_file != -1)
-  {
-    H5Fclose(h_file);
-    h_file = -1;
-  }
+  Archive.reset();
+  h_file.close();
 }
 
 
@@ -351,7 +335,7 @@ void EstimatorManagerBase::collectBlockAverages()
     *Archive << std::endl;
     for (int o = 0; o < h5desc.size(); ++o)
       h5desc[o].write(AverageCache.data(), SquaredAverageCache.data());
-    H5Fflush(h_file, H5F_SCOPE_LOCAL);
+    h_file.flush();
   }
   RecordCount++;
 }
