@@ -26,7 +26,6 @@
 #include <bitset>
 #include <iomanip>
 #include "ParticleIO/XMLParticleIO.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include "ModernStringUtils.hpp"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;

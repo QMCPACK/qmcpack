@@ -28,7 +28,6 @@
 #include "Estimators/ScalarEstimatorBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include <bitset>
 
 namespace qmcplusplus

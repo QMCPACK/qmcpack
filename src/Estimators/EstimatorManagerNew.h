@@ -22,7 +22,6 @@
 #include "OperatorEstBase.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include "type_traits/template_types.hpp"
 #include "EstimatorManagerInput.h"
 #include <bitset>

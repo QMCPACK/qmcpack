@@ -18,7 +18,6 @@
 #define QMCPLUSPLUS_SCALAR_ESTIMATORBASE_H
 #include "Particle/MCWalkerConfiguration.h"
 #include "OhmmsData/RecordProperty.h"
-#include "OhmmsData/HDFAttribIO.h"
 #include "Estimators/accumulators.h"
 #include "Particle/Walker.h"
 #if !defined(REMOVE_TRACEMANAGER)
