@@ -31,7 +31,8 @@ class DMCcuda : public QMCDriver
 {
 public:
   /// Constructor.
-  DMCcuda(MCWalkerConfiguration& w,
+  DMCcuda(const ProjectData& project_data,
+          MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
           Communicate* comm,

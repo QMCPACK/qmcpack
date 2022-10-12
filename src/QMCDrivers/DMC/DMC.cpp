@@ -41,8 +41,13 @@ using TraceManager = int;
 namespace qmcplusplus
 {
 /// Constructor.
-DMC::DMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling)
-    : QMCDriver(w, psi, h, comm, "DMC", enable_profiling),
+DMC::DMC(const ProjectData& project_data,
+         MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         Communicate* comm,
+         bool enable_profiling)
+    : QMCDriver(project_data, w, psi, h, comm, "DMC", enable_profiling),
       KillNodeCrossing(0),
       BranchInterval(-1),
       L2("no"),

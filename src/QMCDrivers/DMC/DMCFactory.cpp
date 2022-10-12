@@ -24,7 +24,8 @@
 //#define PETA_DMC_TEST
 namespace qmcplusplus
 {
-std::unique_ptr<QMCDriver> DMCFactory::create(MCWalkerConfiguration& w,
+std::unique_ptr<QMCDriver> DMCFactory::create(const ProjectData& project_data,
+                                              MCWalkerConfiguration& w,
                                               TrialWaveFunction& psi,
                                               QMCHamiltonian& h,
                                               Communicate* comm,
@@ -32,9 +33,9 @@ std::unique_ptr<QMCDriver> DMCFactory::create(MCWalkerConfiguration& w,
 {
 #ifdef QMC_CUDA
   if (GPU)
-    return std::make_unique<DMCcuda>(w, psi, h, comm, enable_profiling);
+    return std::make_unique<DMCcuda>(project_data, w, psi, h, comm, enable_profiling);
 #endif
-  auto qmc = std::make_unique<DMC>(w, psi, h, comm, enable_profiling);
+  auto qmc = std::make_unique<DMC>(project_data, w, psi, h, comm, enable_profiling);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }

@@ -29,14 +29,13 @@
 namespace qmcplusplus
 {
 /// Constructor.
-VMCcuda::VMCcuda(MCWalkerConfiguration& w,
+VMCcuda::VMCcuda(const ProjectData& project_data,
+                 MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
                  Communicate* comm,
                  bool enable_profiling)
-    : QMCDriver(w, psi, h, comm, "VMCcuda", enable_profiling),
-      UseDrift("yes"),
-      myPeriod4WalkerDump(0)
+    : QMCDriver(project_data, w, psi, h, comm, "VMCcuda", enable_profiling), UseDrift("yes"), myPeriod4WalkerDump(0)
 {
   RootName = "vmc";
   qmc_driver_mode.set(QMC_UPDATE_MODE, 1);

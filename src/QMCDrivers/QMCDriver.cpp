@@ -42,13 +42,15 @@ using TraceManager = int;
 
 namespace qmcplusplus
 {
-QMCDriver::QMCDriver(MCWalkerConfiguration& w,
+QMCDriver::QMCDriver(const ProjectData& project_data,
+                     MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      Communicate* comm,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
+      project_data_(project_data),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),

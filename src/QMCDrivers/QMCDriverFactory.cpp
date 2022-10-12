@@ -232,7 +232,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
     VMCFactory fac(das.what_to_do.to_ulong(), cur);
-    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
+    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(qmc_system);
     //qmcDriver = fac.create(qmc_system,*psiclone,*primaryH,particle_pool,hamiltonian_pool);
@@ -247,7 +247,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::DMC)
   {
     DMCFactory fac(das.what_to_do[UPDATE_MODE], das.what_to_do[GPU_MODE], cur);
-    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
+    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm, das.enable_profiling);
   }
   else if (das.new_run_type == QMCRunType::DMC_BATCH)
   {
@@ -258,7 +258,7 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::RMC)
   {
     RMCFactory fac(das.what_to_do[UPDATE_MODE], cur);
-    new_driver = fac.create(qmc_system, *primaryPsi, *primaryH, comm);
+    new_driver = fac.create(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
   }
   else if (das.new_run_type == QMCRunType::LINEAR_OPTIMIZE)
   {
@@ -266,7 +266,8 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
     APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use "
               "full precision build instead.");
 #endif
-    QMCFixedSampleLinearOptimize* opt = new QMCFixedSampleLinearOptimize(qmc_system, *primaryPsi, *primaryH, comm);
+    QMCFixedSampleLinearOptimize* opt =
+        new QMCFixedSampleLinearOptimize(project_data_, qmc_system, *primaryPsi, *primaryH, comm);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(qmc_system,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(wavefunction_pool.getWaveFunctionNode("psi0"));
     new_driver.reset(opt);
@@ -286,7 +287,8 @@ std::unique_ptr<QMCDriverInterface> QMCDriverFactory::createQMCDriver(xmlNodePtr
   else if (das.new_run_type == QMCRunType::WF_TEST)
   {
     app_log() << "Testing wavefunctions." << std::endl;
-    QMCDriverInterface* temp_ptr = new WaveFunctionTester(qmc_system, *primaryPsi, *primaryH, particle_pool, comm);
+    QMCDriverInterface* temp_ptr =
+        new WaveFunctionTester(project_data_, qmc_system, *primaryPsi, *primaryH, particle_pool, comm);
     new_driver.reset(temp_ptr);
   }
   else

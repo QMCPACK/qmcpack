@@ -364,14 +364,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
       }
 #else
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
         Krptr = to_address(KEright->origin());
       }
       else
@@ -383,14 +383,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
       }
 #else
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
         Klptr = to_address(KEleft->origin());
       }
       else
@@ -732,14 +732,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
       }
 #else
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
         Krptr = to_address(KEright->origin());
       }
       else
@@ -751,14 +751,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
       }
 #else
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
         Klptr = to_address(KEleft->origin());
       }
       else

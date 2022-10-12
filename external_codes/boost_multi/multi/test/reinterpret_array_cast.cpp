@@ -34,9 +34,13 @@ BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_struct_to_dimension) {
 
 BOOST_AUTO_TEST_CASE(multi_reinterpret_array_cast_complex_to_real_extra_dimension) {
 	using complex = std::complex<double>;
-	multi::array<complex, 1> arr(multi::extensions_t<1>{multi::iextension{100}}, complex{1, 2});
+	multi::array<complex, 1> arr(multi::extensions_t<1>{multi::iextension{100}}, complex{1., 2.});
 	BOOST_REQUIRE(  size(arr) == 100 );
-	BOOST_REQUIRE(( arr[0] == complex{1, 2} ));
+
+	BOOST_REQUIRE( real(arr[0]) == 1. );
+	BOOST_REQUIRE( imag(arr[0]) == 2. );
+
+	BOOST_REQUIRE(( arr[0] == complex{1., 2.} ));
 
 	multi::array<double, 1> arr2 = arr.reinterpret_array_cast<double>();
 	BOOST_REQUIRE( dimensionality(arr2) == dimensionality(arr) );
