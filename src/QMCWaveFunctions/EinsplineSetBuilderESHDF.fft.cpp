@@ -19,7 +19,6 @@
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/qmc_common.h"
 

@@ -22,7 +22,6 @@
 #include "Estimators/EstimatorManagerNew.h"
 #include "Particle/Walker.h"
 #include "OhmmsPETE/OhmmsVector.h"
-#include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus
 {
