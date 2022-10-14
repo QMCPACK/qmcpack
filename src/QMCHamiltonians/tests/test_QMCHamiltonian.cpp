@@ -56,9 +56,10 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   outputManager.resume();
 }
 
-TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
+/** QMCHamiltonian + Hamiltonians with listeners integration test
+ */
+TEST_CASE("integrateListeners", "[hamiltonian]")
 {
-  using testing::getParticularListener;
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -81,7 +82,9 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
 
 
   int num_walkers   = 4;
-  int num_electrons = 8;
+  int num_electrons = particle_pool.getParticleSet("e")->getTotalNum();
+  int num_ions      = particle_pool.getParticleSet("ion")->getTotalNum();
+
   for (int iw = 0; iw < num_walkers; ++iw)
   {
     psets.emplace_back(pset_target);
@@ -99,11 +102,20 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
 
   Matrix<Real> kinetic(num_walkers, num_electrons);
   Matrix<Real> local_pots(num_walkers, num_electrons);
+  Matrix<Real> local_nrg(num_walkers, num_electrons);
+  Matrix<Real> ion_pots(num_walkers, num_ions);
 
-  ListenerVector<Real> listener_kinetic("kinetic", getParticularListener(kinetic));
+  using testing::getParticularListener;
+  using testing::getSummingListener;
+
+  ListenerVector<Real> listener_kinetic("kinetic", getSummingListener(kinetic));
   QMCHamiltonian::mw_registerKineticListener(ham_list.getLeader(), listener_kinetic);
-  ListenerVector<Real> listener_potential("kinetic", getParticularListener(local_pots));
+  ListenerVector<Real> listener_potential("potential", getSummingListener(local_pots));
   QMCHamiltonian::mw_registerLocalPotentialListener(ham_list.getLeader(), listener_potential);
+  ListenerVector<Real> listener_energy("local_energy", getSummingListener(local_nrg));
+  QMCHamiltonian::mw_registerLocalEnergyListener(ham_list.getLeader(), listener_energy);
+  ListenerVector<Real> listener_ion_potential("ion_potential", getSummingListener(ion_pots));
+  QMCHamiltonian::mw_registerLocalIonPotentialListener(ham_list.getLeader(), listener_ion_potential);
 
   auto p_refs = makeRefVector<ParticleSet>(psets);
   RefVectorWithLeader<ParticleSet> p_list{p_refs[0], p_refs};
@@ -114,7 +126,6 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
 
   auto twf_refs = convertUPtrToRefVector(twfs);
   RefVectorWithLeader<TrialWaveFunction> twf_list{twf_refs[0], twf_refs};
-
 
   ResourceCollection wfc_res("test_wfc_res");
   twf_list.getLeader().createResource(wfc_res);
@@ -206,6 +217,11 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
     std::copy(local_pots.begin(), local_pots.end(), std::back_inserter(vector_pots));
     std::cout << " size potentials: " << vector_pots.size() << '\n';
     std::cout << " std::vector<Real> potential_ref_vector = " << NativePrint(vector_pots) << ";\n";
+
+    std::vector<Real> vector_ions;
+    std::copy(ion_pots.begin(), ion_pots.end(), std::back_inserter(vector_ions));
+    std::cout << " size ion potentials: " << vector_ions.size() << '\n';
+    std::cout << " std::vector<Real> ion_potential_ref_vector = " << NativePrint(vector_ions) << ";\n";
   }
   else
   {
@@ -214,12 +230,16 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
         -0,   -0, -0.5, -0, -0, -0, -0, -0, -0, -0,   -0, -0.5, -0, -0, -0, -0,
     };
     std::vector<Real> potential_ref_vector = {
-        0.1902921988,  0.3051115892,  -0.4795567016, 0.4963486852,  -0.3115299199, -0.3619893752, 0.09889832988,
-        0.2794993746,  -0.5591061164, -0.1018774556, -1.758163533,  -0.6303051358, 0.4878929502,  0.3358202323,
-        0.3278906128,  -0.3592569681, 0.2308181408,  0.3380463886,  0.4502142541,  0.09129681648, 0.5120332571,
-        0.4968745532,  0.52070839,    -0.3453223967, 0.1190383566,  -0.1566598479, -1.061808709,  0.4489104638,
-        -0.4774404557, 0.3925164499,  0.1283951706,  -0.4368348731,
+        -0.4304472804, -0.2378402054, -0.9860844016, -0.08201235533, -0.8099648952, -0.9536881447, -0.4498806596,
+        -0.4415832162, -0.9407452345, -0.6449454427, -2.240605593,   -1.194514155,  0.04097786546, -0.1860728562,
+        -0.1374063194, -0.8808210492, 0.3020428121,  0.3772183955,   -0.112801373,  -0.5531326532, 0.4633262753,
+        0.3185032904,  0.3001851439,  -0.4555109739, -0.2190704495,  -0.7140043378, -1.641614318,  0.1718038917,
+        -0.7621642947, 0.2606962323,  -0.1486036181, -1.001747012,
     };
+    std::vector<Real> ion_potential_ref_vector = {
+        0.04332125187, 0.173753351, -0.9332901239, -1.323815107, 1.695662975, 0.5990064144, 0.1634206772, -1.207304001,
+    };
+
     std::size_t num_data = num_electrons * num_walkers;
     for (std::size_t id = 0; id < num_data; ++id)
     {
@@ -232,6 +252,20 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
       INFO("id : " << id);
       CHECK(potential_ref_vector[id] == Approx(local_pots(id)));
     }
+
+    std::size_t num_data_ions = num_ions * num_walkers;
+    for (std::size_t id = 0; id < num_data_ions; ++id)
+    {
+      INFO("id : " << id);
+      CHECK(ion_potential_ref_vector[id] == Approx(ion_pots(id)));
+    }
+
+    // When only EE and EI coulomb potentials the local energy is just the sum of
+    // the local_pots and kinetic
+    auto sum_local_pots = std::accumulate(local_pots.begin(), local_pots.end(), 0.0);
+    auto sum_kinetic   = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
+    auto sum_local_nrg = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
+    CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
   }
   outputManager.resume();
 }
