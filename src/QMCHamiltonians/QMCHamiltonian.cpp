@@ -291,13 +291,6 @@ void QMCHamiltonian::informOperatorsOfListener() {
     H[i]->informOfPerParticleListener();
 }
 
-void QMCHamiltonian::checkQuantityAvailable(std::string_view var_tag)
-{
-  if (std::none_of(available_quantities_.begin(), available_quantities_.end(),
-                   [var_tag](std::string_view avail) { return lowerCase(var_tag) == lowerCase(avail); }))
-    throw std::runtime_error("Listener requires value that isn't available from the QMCHamiltonian");
-}
-
 #if !defined(REMOVE_TRACEMANAGER)
 void QMCHamiltonian::initialize_traces(TraceManager& tm, ParticleSet& P)
 {

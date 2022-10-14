@@ -153,8 +153,6 @@ public:
   
   void informOperatorsOfListener();
   
-  void checkQuantityAvailable(std::string_view var_tag);
-  
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
