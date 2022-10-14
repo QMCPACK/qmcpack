@@ -28,7 +28,7 @@ class MinimalHamiltonianPool
 </hamiltonian>
   )";
 
-    static constexpr const char* const hamiltonian_eeei_xml = R"(
+  static constexpr const char* const hamiltonian_eeei_xml = R"(
 <hamiltonian name="h0" type="generic" target="e"> 
   <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
   <pairpot type="coulomb" name="ElecIon" source="ion" target="e"/> 
@@ -51,8 +51,8 @@ public:
   }
 
   static HamiltonianPool makeHamWithEEEI(Communicate* comm,
-                                        ParticleSetPool& particle_pool,
-                                        WaveFunctionPool& wavefunction_pool)
+                                         ParticleSetPool& particle_pool,
+                                         WaveFunctionPool& wavefunction_pool)
   {
     HamiltonianPool hpool(particle_pool, wavefunction_pool, comm);
     Libxml2Document doc;
@@ -63,7 +63,6 @@ public:
 
     return hpool;
   }
-
 };
 
 } // namespace qmcplusplus

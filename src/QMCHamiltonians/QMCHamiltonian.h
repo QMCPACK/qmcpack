@@ -150,9 +150,9 @@ public:
   static void mw_registerLocalEnergyListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
   static void mw_registerLocalPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
   static void mw_registerLocalIonPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
-  
+
   void informOperatorsOfListener();
-  
+
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -452,15 +452,17 @@ public:
                 std::vector<RealType>& energyVector,
                 std::vector<std::vector<NonLocalData>>& Txy);
 
-private:  
+private:
   /////////////////////
   // Vectorized data //
   /////////////////////
   std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
 #endif
 private:
-  static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy","LocalPotential","Vq","Vc","Vqq","Vqc","Vcc"};
-  
+  static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy", "LocalPotential",
+                                                                         "Vq",     "Vc",          "Vqq",
+                                                                         "Vqc",    "Vcc"};
+
   ///starting index
   int myIndex;
   ///starting index
@@ -529,7 +531,6 @@ private:
 
   /// multiwalker shared resource
   ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_;
-
 };
 } // namespace qmcplusplus
 #endif

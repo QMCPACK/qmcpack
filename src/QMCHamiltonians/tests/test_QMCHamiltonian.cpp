@@ -64,10 +64,10 @@ TEST_CASE("QMCHamiltonian-registerListeners", "[hamiltonian]")
 
   outputManager.pause();
 
-  auto particle_pool       = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool   = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto hamiltonian_pool    = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
-  auto& pset_target        = *(particle_pool.getParticleSet("e"));
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
+  auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();
   //auto& spo_map            = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
