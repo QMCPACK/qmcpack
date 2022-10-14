@@ -209,9 +209,9 @@ void EstimatorManagerNew::startDriverRun()
 #endif
   if (my_comm_->rank() == 0)
   {
-    std::string fname(my_comm_->getName());
-    fname.append(".scalar.dat");
-    Archive = std::make_unique<std::ofstream>(fname.c_str());
+    std::filesystem::path fname(my_comm_->getName());
+    fname.concat(".scalar.dat");
+    Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
     if (h5desc.size())
     {
@@ -346,7 +346,7 @@ void EstimatorManagerNew::writeScalarH5()
     for (int o = 0; o < h5desc.size(); ++o)
       // cheating here, remove SquaredAverageCache from API
       h5desc[o].write(AverageCache.data(), AverageCache.data());
-    H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+    h_file->flush();
   }
 
   if (Archive)
@@ -412,7 +412,7 @@ void EstimatorManagerNew::writeOperatorEstimators()
     {
       for (auto& op_est : operator_ests_)
         op_est->write();
-      H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+      h_file->flush();
     }
   }
 }

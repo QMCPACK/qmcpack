@@ -80,7 +80,7 @@ struct PWParameterSet : public MPIObjectBase
    */
   bool getEigVectorType(hid_t h);
 
-  bool hasComplexData(hid_t h);
+  bool hasComplexData(hdf_archive& h);
 
   std::string getTwistAngleName();
 
