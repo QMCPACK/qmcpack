@@ -15,6 +15,7 @@
  */
 #include "ACForce.h"
 #include "OhmmsData/AttributeSet.h"
+#include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
@@ -98,6 +99,8 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   wf_grad_     = 0;
   sw_pulay_    = 0;
   sw_grad_     = 0;
+
+  
   //This function returns d/dR of the sum of all observables in the physical hamiltonian.
   //Note that the sign will be flipped based on definition of force = -d/dR.
   if (fastDerivatives_)
@@ -114,6 +117,17 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
     ham_.evaluateElecGrad(P, psi_, el_grad, delta_);
     swt_.computeSWT(P, ions_, el_grad, P.G, sw_pulay_, sw_grad_);
   }
+
+  //Now we compute the regularizer.
+  //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND both logPsi, phase, and 
+  //grad logPsi are up to date and consistent with current configuration!!!!!
+  
+
+  RealType logpsi_ = psi_.getLogPsi();
+  RealType phase_  = psi_.getPhase();
+  //grad logPsi already in P.G.
+  //
+  
   return 0.0;
 };
 
@@ -176,4 +190,25 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
   }
 };
 
+ACForce::RealType ACForce::compute_regularizer_f(const ParticleSet::ParticleGradient& G, const RealType epsilon)
+{
+  RealType gdotg=Dot_CC(G,G);
+  RealType gmag=std::sqrt(gdotg);
+  RealType x;
+
+  RealType regvalue=0.0;
+  //x = grad(logpsi)/|grad(logpsi)|^2 = 1/|grad(logpsi)|.
+  //
+  //Argument of polynomial is x/epsilon=1/(epsilon*|grad(logpsi)|)
+  double xovereps=1.0/(epsilon*gmag);
+  if (xovereps >= 1.0)
+  {
+    regvalue = 1.0; 
+  }
+  else
+  {
+    regvalue = 7.0*std::pow(xovereps,6.0) -20.0*std::pow(xovereps,4.0) + 9.0*std::pow(xovereps,2.0);
+  }
+  return regvalue;
+};
 } // namespace qmcplusplus

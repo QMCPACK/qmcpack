@@ -27,7 +27,7 @@ class ACForce : public OperatorBase
 {
 public:
   using Forces = ParticleSet::ParticlePos;
-
+  using ParticleGradient = ParticleSet::ParticleGradient;
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
 
@@ -89,7 +89,8 @@ private:
 
   bool useSpaceWarp_;
   bool fastDerivatives_;
-  
+ 
+  RealType compute_regularizer_f(const ParticleGradient & G, const RealType epsilon);
   TWFFastDerivWrapper psi_wrapper_;
   ///The space warp transformation class.
   SpaceWarpTransformation swt_;
