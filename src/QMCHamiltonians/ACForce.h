@@ -88,6 +88,8 @@ private:
   Forces sw_pulay_;
   Forces sw_grad_;
 
+  //regularizer value for given configuration.
+  RealType f_epsilon_;
   bool useSpaceWarp_;
   bool fastDerivatives_;
  

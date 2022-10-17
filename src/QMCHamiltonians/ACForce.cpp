@@ -29,7 +29,8 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       useSpaceWarp_(false),
       fastDerivatives_(false),
       swt_(target, source),
-      reg_epsilon_(0.0)
+      reg_epsilon_(0.0),
+      f_epsilon_(1.0)
 {
   setName("ACForce");
 
@@ -121,15 +122,12 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   }
 
   //Now we compute the regularizer.
-  //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND both logPsi, phase, and 
-  //grad logPsi are up to date and consistent with current configuration!!!!!
-  
+  //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
+  //IS ALREADY UP TO DATE FOR THIS CONFIGURATION. 
 
-  RealType logpsi_ = psi_.getLogPsi();
-  RealType phase_  = psi_.getPhase();
-  //grad logPsi already in P.G.
-  //
-  
+  f_epsilon_ = compute_regularizer_f(P.G,reg_epsilon_);
+    
+   
   return 0.0;
 };
 
@@ -172,8 +170,8 @@ void ACForce::setObservables(PropertySetType& plist)
       // add the minus one to be a force.
       plist[myindex++] = -hf_force_[iat][iondim];
       plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]);
-      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]);
-      plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim]);
+      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
+      plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
     }
   }
 };
@@ -186,8 +184,8 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
     {
       plist[myindex++] = -hf_force_[iat][iondim];
       plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]);
-      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim]);
-      plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim]);
+      plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
+      plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
     }
   }
 };
