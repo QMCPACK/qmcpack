@@ -28,7 +28,8 @@ ACForce::ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& ps
       first_force_index_(-1),
       useSpaceWarp_(false),
       fastDerivatives_(false),
-      swt_(target, source)
+      swt_(target, source),
+      reg_epsilon_(0.0)
 {
   setName("ACForce");
 
@@ -64,6 +65,7 @@ bool ACForce::put(xmlNodePtr cur)
   attr.add(useSpaceWarp_, "spacewarp", {false}); //"yes" or "no"
   attr.add(swpow, "swpow");                      //Real number"
   attr.add(delta_, "delta");                     //Real number"
+  attr.add(reg_epsilon_,"regularizer_epsilon");
   attr.add(fastDerivatives_, "fast_derivatives", {false});
   attr.put(cur);
 
