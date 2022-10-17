@@ -262,7 +262,7 @@ SPOSet* PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
   }
   //going to take care of occ
   psi->resize(new PWBasis(*myBasisSet), nb, true);
-  if (myParam->hasComplexData(hfile.getFileID())) //input is complex
+  if (myParam->hasComplexData(hfile)) //input is complex
   {
     //app_log() << "  PW coefficients are complex." << std::endl;
     using TempVecType    = std::vector<std::complex<RealType>>;

@@ -85,7 +85,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
   return rank == 4;
 }
 
-bool PWParameterSet::hasComplexData(hid_t h_file)
+bool PWParameterSet::hasComplexData(hdf_archive& h_file)
 {
   int iscomplex = 0;
   // Should be the tag "/electrons/psi_r_is_complex", but the test HDF files
@@ -95,8 +95,7 @@ bool PWParameterSet::hasComplexData(hid_t h_file)
   {
     std::ostringstream oss;
     oss << paramTag << "/complex_coefficients";
-    HDFAttribIO<int> creader(iscomplex);
-    creader.read(h_file,oss.str().c_str());
+    h_file.read(iscomplex, oss.str());
   }
 #endif
   myComm->bcast(iscomplex);
