@@ -127,7 +127,7 @@ ACForce::Return_t ACForce::evaluate(ParticleSet& P)
   //WE ASSUME THAT psi_.evaluateLog(P) HAS ALREADY BEEN CALLED AND Grad(logPsi)
   //IS ALREADY UP TO DATE FOR THIS CONFIGURATION. 
 
-  f_epsilon_ = compute_regularizer_f(P.G,reg_epsilon_);
+  f_epsilon_ = compute_regularizer_f(psi_.G,reg_epsilon_);
     
    
   return 0.0;
