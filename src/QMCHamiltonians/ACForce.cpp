@@ -55,6 +55,8 @@ std::unique_ptr<OperatorBase> ACForce::makeClone(ParticleSet& qp, TrialWaveFunct
   myclone->fastDerivatives_        = fastDerivatives_;
   myclone->useSpaceWarp_           = useSpaceWarp_;
   myclone->first_force_index_      = first_force_index_;
+  myclone->reg_epsilon_            = reg_epsilon_;
+  myclone->delta_                  = delta_;
   return myclone;
 }
 
@@ -168,8 +170,8 @@ void ACForce::setObservables(PropertySetType& plist)
     {
       //Flipping the sign, since these terms currently store d/dR values.
       // add the minus one to be a force.
-      plist[myindex++] = -hf_force_[iat][iondim];
-      plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]);
+      plist[myindex++] = -hf_force_[iat][iondim]*f_epsilon_;
+      plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim])*f_epsilon_;
       plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
       plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
     }
@@ -182,8 +184,8 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
   {
     for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
     {
-      plist[myindex++] = -hf_force_[iat][iondim];
-      plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim]);
+      plist[myindex++] = -hf_force_[iat][iondim]*f_epsilon_;
+      plist[myindex++] = -(pulay_force_[iat][iondim] + sw_pulay_[iat][iondim])*f_epsilon_;
       plist[myindex++] = -value_ * (wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
       plist[myindex++] = -(wf_grad_[iat][iondim] + sw_grad_[iat][iondim])*f_epsilon_;
     }
@@ -207,7 +209,9 @@ ACForce::RealType ACForce::compute_regularizer_f(const ParticleSet::ParticleGrad
   }
   else
   {
-    regvalue = 7.0*std::pow(xovereps,6.0) -20.0*std::pow(xovereps,4.0) + 9.0*std::pow(xovereps,2.0);
+    //There's a discrepancy between AIP Advances 10, 085213 (2020) and arXiv:2002.01434 for polynomial.  
+    //We choose the arXiv, because f(x=1)=1, as opposed to f(x=1)=-4.  
+    regvalue = 7.0*std::pow(xovereps,6.0) -15.0*std::pow(xovereps,4.0) + 9.0*std::pow(xovereps,2.0);
   }
   return regvalue;
 };
