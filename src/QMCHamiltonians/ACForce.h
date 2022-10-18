@@ -67,9 +67,8 @@ public:
 
 private:
   ///Finite difference timestep
-  RealType delta_;
-
-  RealType reg_epsilon_;
+  RealType delta_; 
+ 
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
@@ -81,6 +80,17 @@ private:
   ///For indexing observables
   IndexType first_force_index_;
 
+  ///Algorithm/feature switches
+  bool useSpaceWarp_;
+  bool fastDerivatives_;
+
+  ///The space warp transformation class.
+  SpaceWarpTransformation swt_;
+
+  //Pathak-Wagner regularizer parameters.
+  RealType reg_epsilon_;
+  RealType f_epsilon_;
+
   ///Temporary Nion x 3 dimensional arrays for force storage.
   Forces hf_force_;
   Forces pulay_force_;
@@ -88,15 +98,9 @@ private:
   Forces sw_pulay_;
   Forces sw_grad_;
 
-  //regularizer value for given configuration.
-  RealType f_epsilon_;
-  bool useSpaceWarp_;
-  bool fastDerivatives_;
  
   RealType compute_regularizer_f(const ParticleGradient & G, const RealType epsilon);
   TWFFastDerivWrapper psi_wrapper_;
-  ///The space warp transformation class.
-  SpaceWarpTransformation swt_;
 };
 
 } // namespace qmcplusplus
