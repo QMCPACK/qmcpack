@@ -23,6 +23,7 @@
 #include "QMCApp/QMCMainState.h"
 #include "QMCApp/QMCAppBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "hdf/hdf_error_suppression.h"
 
 namespace qmcplusplus
 {
@@ -47,12 +48,13 @@ public:
 private:
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;
-
   /// the last driver object. Should be in a loop only.
   std::unique_ptr<QMCDriverInterface> last_driver;
   /// last branch engine used by legacy drivers
   std::unique_ptr<SimpleFixedNodeBranch> last_branch_engine_legacy_driver;
 
+  /// Suppress HDF5 warning and error messages.
+  hdf_error_suppression hide_hdf_errors;
   ///xml mcwalkerset elements for output
   std::vector<xmlNodePtr> m_walkerset;
   ///xml mcwalkerset read-in elements
