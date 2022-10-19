@@ -104,6 +104,8 @@ public:
    */
   void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
 
+  void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) override;
+
   /** compute VGH 
    * @param P quantum particleset
    * @param iat active particle

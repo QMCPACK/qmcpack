@@ -139,6 +139,40 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list,
+                                                     int iat,
+                                                     OffloadMWVGLArray& vgl)
+{
+  for (int iw = 0; iw < P_list.size(); iw++)
+  {
+    const auto& IonID(ions_.GroupID);
+    const auto& coordR  = P_list[iw].activeR(iat);
+    const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
+    const auto& dist    = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+
+    PosType Tv;
+    vgl_type temp_vgl;
+    // TODO LOBasisSet->mw_evaluateVGL
+    for (int c = 0; c < NumCenters; c++)
+    {
+      Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
+      Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
+      Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
+      LOBasisSet[IonID[c]]->evaluateVGL(P_list[iq].getLattice(), dist[c], displ[c], BasisOffset[c], temp_vgl, Tv);
+    }
+    //TODO fill temp_vgl into vgl
+    const size_t output_size = vgl.size(2);
+    std::copy_n(temp_vgl.data(0), output_size, psi_vgl_v.data_at(0, iw, 0));
+    std::copy_n(temp_vgl.data(1), output_size, psi_vgl_v.data_at(1, iw, 0));
+    std::copy_n(temp_vgl.data(2), output_size, psi_vgl_v.data_at(2, iw, 0));
+    std::copy_n(temp_vgl.data(3), output_size, psi_vgl_v.data_at(3, iw, 0));
+    std::copy_n(temp_vgl.data(4), output_size, psi_vgl_v.data_at(4, iw, 0));
+  }
+}
+
+
+template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
   const auto& IonID(ions_.GroupID);
