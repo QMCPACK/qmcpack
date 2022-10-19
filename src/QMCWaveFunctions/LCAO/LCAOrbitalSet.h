@@ -34,6 +34,7 @@ public:
   using vgl_type   = basis_type::vgl_type;
   using vgh_type   = basis_type::vgh_type;
   using vghgh_type = basis_type::vghgh_type;
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
 
   ///pointer to the basis set
   std::unique_ptr<basis_type> myBasisSet;
@@ -77,6 +78,11 @@ public:
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
+
+  void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   OffloadMWVGLArray& phi_vgl_v) const;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
@@ -227,7 +233,11 @@ private:
                          ValueMatrix& logdet,
                          GradMatrix& dlogdet,
                          ValueMatrix& d2logdet) const;
-  ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+  // function to unpack vgl_type when working with batched code.
+  inline void evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const;
+    ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+
+
   ///This unpacks temp into vectors psi, dpsi, and d2psi.
   void evaluate_vgh_impl(const vgh_type& temp, ValueVector& psi, GradVector& dpsi, HessVector& d2psi) const;
 

@@ -133,21 +133,22 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
   std::copy_n(temp.data(4), output_size, d2psi.data());
 }
 
-inline void LCAOrbitalSet::evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& psi_vgl_v) const
+inline void LCAOrbitalSet::evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const
 {
-  const size_t output_size = psi_vgl_v.size(2);
-  const size_t nw          = psi_vgl_v.size(1);
+  const size_t output_size = phi_vgl_v.size(2);
+  const size_t nw          = phi_vgl_v.size(1);
 
   for (int iw = 0; iw < nw; iw++)
   {
-    std::copy_n(temp.data_at(0, iw, 0), output_size, psi_vgl_v.data_at(0, iw, 0));
+    std::copy_n(temp.data_at(0, iw, 0), output_size, phi_vgl_v.data_at(0, iw, 0));
     for (size_t idim = 0; idim < DIM; idim++)
     {
       ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
-      for (size_t iorb = 0; iorb < output_size; iorb++)
-        phi_g[iorb] = temp.data(idim + 1, iw)[iorb];
+      std::copy_n(temp.data_at(idim+1, iw, 0), output_size, phi_vgl_v.data_at(idim+1, iw, 0));
+      // for (size_t iorb = 0; iorb < output_size; iorb++)
+      //   phi_g[iorb] = temp.data_at(idim + 1, iw, iorb;
     }
-    std::copy_n(temp.data_at(4, iw, 0), output_size, psi.data_at(4, iw, 0));
+    std::copy_n(temp.data_at(4, iw, 0), output_size, phi_vgl_v.data_at(4, iw, 0));
   }
 }
 
@@ -368,28 +369,28 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
 void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVectorWithLeader<ParticleSet>& P_list,
                                    int iat,
-                                   OffloadMWVGLArray& psi_vgl_v) const
+                                   OffloadMWVGLArray& phi_vgl_v) const
 {
   // [5][NW * NumAO]
   // [5][NW][NumAO]
   OffloadMWVGLArray Temp_mw(spo_list.size(), BasisSetSize);
-  OffloadMWVGLArray Tempv_mw(spo_list.size(), psi_v_list[0].size());
+  OffloadMWVGLArray Tempv_mw(spo_list.size(), OrbitalSetSize);
 
   if (Identity)
   {
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
-    evaluate_vgl_impl2(Temp_mw, psi_vgl_v);
+    evaluate_vgl_impl2(Temp_mw, phi_vgl_v);
   }
   else
   {
-    ValueMatrix C_partial_view(C->data(), psi_v_list[0].size(), BasisSetSize);
+    ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
     // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
     for (int iw = 0; iw < spo_list.size(); iw++)
     {
       Product_ABt(Temp_mw, C_partial_view, Tempv_mw);
     }
-    evaluate_vgl_impl2(Tempv_mw, psi_vgl_v);
+    evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
   }
 }
 

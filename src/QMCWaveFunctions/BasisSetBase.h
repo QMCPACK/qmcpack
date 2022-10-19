@@ -23,6 +23,8 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
+
 
 namespace qmcplusplus
 {
@@ -52,6 +54,7 @@ struct BasisSetBase : public OrbitalSetTraits<T>
   using GGGType     = TinyVector<HessType, OHMMS_DIM>;
   using GGGVector   = Vector<GGGType>;
   using GGGMatrix   = Matrix<GGGType>;
+
 
 
   ///size of the basis set
@@ -132,6 +135,9 @@ struct SoaBasisSetBase
   using vgl_type   = VectorSoaContainer<T, OHMMS_DIM + 2>;
   using vgh_type   = VectorSoaContainer<T, 10>;
   using vghgh_type = VectorSoaContainer<T, 20>;
+  using ValueType  = QMCTraits::ValueType;
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+
   ///size of the basis set
   int BasisSetSize;
 
@@ -143,6 +149,8 @@ struct SoaBasisSetBase
 
   //Evaluates value, gradient, and laplacian for electron "iat".  Parks them into a temporary data structure "vgl".
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) = 0;
+  //Evaluates value, gradient, and laplacian for electron "iat".  places them in a offload array for batched code.
+  void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl);
   //Evaluates value, gradient, and Hessian for electron "iat".  Parks them into a temporary data structure "vgh".
   virtual void evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh) = 0;
   //Evaluates value, gradient, and Hessian, and Gradient Hessian for electron "iat".  Parks them into a temporary data structure "vghgh".
