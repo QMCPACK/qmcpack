@@ -557,6 +557,7 @@ If variational parameters are set as not optimizable in the predominant way, the
 The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
 
 ::
+
     <qmc method="linear">
       ...
       <parameter name="variational_subset"> uu ud </parameter>
