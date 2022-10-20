@@ -386,9 +386,27 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
     // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
-    for (int iw = 0; iw < spo_list.size(); iw++)
+    for (int idim = 0; idim < DIM_VGL; idim++)
     {
-      Product_ABt(Temp_mw, C_partial_view, Tempv_mw);
+      constexpr char transa = 't';
+      constexpr char transb = 'n';
+      constexpr int zone(1);
+      constexpr int zero(0);
+      // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
+      //           C.capacity())
+      BLAS::gemm(transa, 
+                transb, 
+                C_partial_view.rows(), //NMOs
+                spo_list.size(), // will need to be dimension of nwalkers
+                C_partial_view.cols(), //NAOs
+                zone, 
+                C_partial_view.data(), 
+                C_partial_view.cols(), 
+                Tempv_mw.data_at(idim,0,0), //not mwvgl function data_at
+                spo_list.size(), //not mwvgl function maybe
+                zero, 
+                Tempv_mw.data_at(idim,0,0),//not mwvgl function data_at
+                spo_list.size()); //not mwvgl function maybe
     }
     evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
   }
