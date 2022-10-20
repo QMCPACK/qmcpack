@@ -24,3 +24,4 @@ TEST_CASE("hdf_error_suppression", "[hdf]")
   H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
   REQUIRE(client_data == nullptr);
 }
+

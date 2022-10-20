@@ -22,7 +22,6 @@
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
-#include "OutputManager.h"
 
 #include <bitset>
 #include <filesystem>
@@ -88,14 +87,14 @@ public:
   hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
     if (!hdf_error_suppression::enabled)
-      app_warning() << "HDF5 library warnings and errors may appear in output.\n";
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
     if (!hdf_error_suppression::enabled)
-      app_warning() << "HDF5 library warnings and errors may appear in output.\n";
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist();
   }
   ///destructor

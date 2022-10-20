@@ -51,3 +51,4 @@ private:
 
 } // namespace qmcplusplus
 #endif //QMCPLUSPLUS_HDF5_ERROR_SUPPRESSION_H
+
