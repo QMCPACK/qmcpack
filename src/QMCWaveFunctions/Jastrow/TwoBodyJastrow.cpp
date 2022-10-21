@@ -277,7 +277,7 @@ template<typename FT>
 typename TwoBodyJastrow<FT>::posT TwoBodyJastrow<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
 {
   posT grad;
-  for (int idim = 0; idim < DIM; ++idim)
+  for (int idim = 0; idim < ndim; ++idim)
   {
     const valT* restrict dX = displ.data(idim);
     valT s                  = valT();
@@ -295,6 +295,8 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
     : WaveFunctionComponent(obj_name),
       N(p.getTotalNum()),
       NumGroups(p.groups()),
+      ndim(p.getLattice().ndim),
+      lapfac(ndim - RealType(1)),
       use_offload_(use_offload),
       N_padded(getAlignedSize<valT>(N)),
       my_table_ID_(p.addTable(p)),
@@ -563,7 +565,7 @@ void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComp
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
     ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
-    for (int idim = 0; idim < DIM; idim++)
+    for (int idim = 0; idim < ndim; idim++)
       grad_new[iw][idim] += mw_vgl[iw][idim + 1];
   }
 }
@@ -583,7 +585,6 @@ void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   valT cur_d2Uat(0);
   const auto& new_dr    = d_table.getTempDispls();
   const auto& old_dr    = d_table.getOldDispls();
-  constexpr valT lapfac = DIM - RealType(1);
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
   {
@@ -595,7 +596,7 @@ void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     cur_d2Uat -= newl;
   }
   posT cur_dUat;
-  for (int idim = 0; idim < DIM; ++idim)
+  for (int idim = 0; idim < ndim; ++idim)
   {
     const valT* restrict new_dX    = new_dr.data(idim);
     const valT* restrict old_dX    = old_dr.data(idim);
@@ -671,11 +672,10 @@ void TwoBodyJastrow<FT>::recompute(const ParticleSet& P)
       const valT* restrict du  = cur_du.data();
       const valT* restrict d2u = cur_d2u.data();
       const auto& displ        = d_table.getDisplRow(iat);
-      constexpr valT lapfac    = DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u : QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < iat; ++jat)
         lap += d2u[jat] + lapfac * du[jat];
-      for (int idim = 0; idim < DIM; ++idim)
+      for (int idim = 0; idim < ndim; ++idim)
       {
         const valT* restrict dX = displ.data(idim);
         valT s                  = valT();
@@ -693,7 +693,7 @@ void TwoBodyJastrow<FT>::recompute(const ParticleSet& P)
         Uat[jat] += u[jat];
         d2Uat[jat] -= d2u[jat] + lapfac * du[jat];
       }
-      for (int idim = 0; idim < DIM; ++idim)
+      for (int idim = 0; idim < ndim; ++idim)
       {
         valT* restrict save_g   = dUat.data(idim);
         const valT* restrict dX = displ.data(idim);
@@ -919,7 +919,6 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
     std::vector<TinyVector<RealType, 3>> derivs(NumVars);
     const auto& d_table = P.getDistTableAA(my_table_ID_);
     constexpr RealType cone(1);
-    constexpr RealType lapfac(OHMMS_DIM - cone);
     const size_t n  = d_table.sources();
     const size_t ng = P.groups();
     for (size_t i = 1; i < n; ++i)
@@ -937,11 +936,11 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
             continue;
           RealType rinv(cone / dist[j]);
           PosType dr(displ[j]);
+          if (ndim < 3) dr[2] = 0;
           for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
           {
             RealType dudr(rinv * derivs[ip][1]);
             RealType lap(derivs[ip][2] + lapfac * dudr);
-            //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
             PosType gr(dudr * dr);
             dLogPsi[p] -= derivs[ip][0];
             gradLogPsi[p][i] += gr;
