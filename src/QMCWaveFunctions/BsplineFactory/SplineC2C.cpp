@@ -86,6 +86,7 @@ void SplineC2C<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
     FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
@@ -112,6 +113,7 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
     FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int first_cplx = first / 2;
     const int last_cplx  = kPoints.size() < last / 2 ? kPoints.size() : last / 2;
@@ -292,6 +294,7 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
     FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
@@ -431,6 +434,7 @@ void SplineC2C<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
     FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
@@ -686,6 +690,7 @@ void SplineC2C<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
     FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
