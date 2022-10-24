@@ -24,6 +24,7 @@ namespace qmcplusplus
 {
 using RealType     = WaveFunctionComponent::RealType;
 using PsiValueType = WaveFunctionComponent::PsiValueType;
+using ValueType    = QMCTraits::ValueType; // for real and mixed precision
 using PosType      = QMCTraits::PosType;
 
 TEST_CASE("Jastrow 2D", "[wavefunction]")
@@ -144,7 +145,7 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   PosType newpos(0.3, 0.2, 0.5);
 
   elec.makeVirtualMoves(newpos);
-  std::vector<PsiValueType> ratios(nelec);
+  std::vector<ValueType> ratios(nelec);
   j2->evaluateRatiosAlltoOne(elec, ratios);
   std::vector<double> ratio_values = {1.46023, 1.46559, 0.444258, 1.90226};
   for (int i=0;i<ratios.size();i++)
@@ -164,8 +165,8 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   REQUIRE(opt_obj_refs.size() == 2);
 
   opt_variables_type optvars;
-  Vector<PsiValueType> dlogpsi;
-  Vector<PsiValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
 
   for (OptimizableObject& obj : opt_obj_refs)
     obj.checkInVariablesExclusive(optvars);
