@@ -803,6 +803,8 @@ void TwoBodyJastrow<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCom
 template<typename FT>
 void TwoBodyJastrow<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
+  if (ndim < 3)
+    throw std::runtime_error("double check! See 2d jastrow test.");
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));
   valT dudr, d2udr2;
