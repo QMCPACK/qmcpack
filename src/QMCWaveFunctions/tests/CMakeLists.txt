@@ -109,6 +109,8 @@ set(DETERMINANT_SRC
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
+set(NEW_SRC
+    test_2d_jastrow.cpp)
 
 # @TODO: Remove when rotations work for complex stuff
 if(NOT QMC_COMPLEX)
@@ -135,7 +137,7 @@ if(ENABLE_OFFLOAD)
   set(DETERMINANT_SRC ${DETERMINANT_SRC} test_DiracMatrixComputeOMPTarget.cpp)
 endif(ENABLE_OFFLOAD)
 
-foreach(CATEGORY common trialwf sposet jastrow determinant)
+foreach(CATEGORY common trialwf sposet jastrow determinant new)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
   set(UTEST_NAME deterministic-unit_${UTEST_EXE})
   string(TOUPPER "${CATEGORY}_SRC" SOURCE_FILE_VAR_NAME)
