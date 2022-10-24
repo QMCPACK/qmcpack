@@ -29,7 +29,7 @@
     </particleset>
     <wavefunction name="psi0" target="e">
       <sposet_builder type="free">
-        <sposet name="spo-ud" size="2" twist="0.2 0.3 0"/>
+        <sposet name="spo-ud" size="2" twist="0 0 0"/>
       </sposet_builder>
       <determinantset>
         <slaterdeterminant>
