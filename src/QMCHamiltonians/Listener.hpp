@@ -69,14 +69,12 @@ private:
 template<typename T>
 struct ListenerOption
 {
-    ListenerOption(const std::vector<ListenerVector<T>>& le, const std::vector<ListenerVector<T>>& li)
-        : electrons(le), ions(li)
-    {}
-    const std::vector<ListenerVector<T>>& electrons;
-    const std::vector<ListenerVector<T>>& ions;
+  ListenerOption(const std::vector<ListenerVector<T>>& le, const std::vector<ListenerVector<T>>& li)
+      : electrons(le), ions(li)
+  {}
+  const std::vector<ListenerVector<T>>& electrons;
+  const std::vector<ListenerVector<T>>& ions;
 };
-
-
 
 } // namespace qmcplusplus
 

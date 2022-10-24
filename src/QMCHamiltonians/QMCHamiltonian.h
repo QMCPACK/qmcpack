@@ -151,6 +151,15 @@ public:
   static void mw_registerLocalPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
   static void mw_registerLocalIonPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
 
+  /** Some Hamiltonian components need to be informed that they are in a per particle reporting
+   *  situation so additional state can be added either to them or the objects they are strongly coupled with.
+   *
+   *  This includes evalation of hamiltonian components constants on a per particle basis and informing a components
+   *  attached particle set that it needs to store per particle values for StructFact. This is a reason that the
+   *  coupling between Hamiltonian components and particle sets can strong and must be correct.
+   *
+   *  This is not desirable and hopefully this state transformation message can be removed.
+   */
   void informOperatorsOfListener();
 
   ///retrun the starting index
@@ -209,12 +218,6 @@ public:
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
   void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
-  ///** set Tau for each Hamiltonian
-  // */
-  //inline void setTau(RealType tau)
-  //{
-  //  for(int i=0; i< H.size();i++)H[i]->setTau(tau);
-  //}
 
   /** set PRIMARY bit of all the components
    */
@@ -223,25 +226,6 @@ public:
     for (int i = 0; i < H.size(); i++)
       H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
-
-  /////Set Tau inside each of the Hamiltonian elements
-  //void setTau(Return_t tau)
-  //{
-  //  for(int i=0; i<H.size(); i++) H[i]->setTau(tau);
-  //  for(int i=0; i<auxH.size(); i++) auxH[i]->setTau(tau);
-  //}
-
-  ///** return if WaveFunction Ratio needs to be evaluated
-  // *
-  // * This is added to handle orbital-dependent OperatorBase during
-  // * orbital optimizations.
-  // */
-  //inline bool needRatio() {
-  //  bool dependOnOrbital=false;
-  //  for(int i=0; i< H.size();i++)
-  //    if(H[i]->UpdateMode[OperatorBase::RATIOUPDATE]) dependOnOrbital=true;
-  //  return dependOnOrbital;
-  //}
 
   /** evaluate Local Energy
    * @param P ParticleSet
