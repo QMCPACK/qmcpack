@@ -94,8 +94,6 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
       param_tol(1e-4),
       generate_samples_timer_(*timer_manager.createTimer("QMCLinearOptimize::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimize::Initialize", timer_level_medium)),
-      buildmat_timer_(
-          *timer_manager.createTimer("QMCLinearOptimize::fillOverlapHamiltonianMatrices()", timer_level_medium)),
       eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimize::EigenvalueSolve", timer_level_medium)),
       involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimize::invertOverlapMat", timer_level_medium)),
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimize::Line_Minimization", timer_level_medium)),
@@ -1302,10 +1300,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run()
   prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  {
-    ScopedTimer local(buildmat_timer_);
-    optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
-  }
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
   if (do_output_matrices_)

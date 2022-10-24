@@ -238,7 +238,6 @@ private:
 
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
-  NewTimer& buildmat_timer_;
   NewTimer& eigenvalue_timer_;
   NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
