@@ -273,7 +273,7 @@ namespace IO {
 	}
       }
     }
-    buffer.resizeAndPreserve(Array<char,1>::sizes_type({bufferLoc}));
+    buffer.resizeAndPreserve(Array<char,1>::sizes_type(bufferLoc));
     infile2.close();
     return (true);
   }

@@ -33,12 +33,13 @@ namespace qmcplusplus
 using WP = WalkerProperties::Indexes;
 
 /// Constructor.
-DMCcuda::DMCcuda(MCWalkerConfiguration& w,
+DMCcuda::DMCcuda(const ProjectData& project_data,
+                 MCWalkerConfiguration& w,
                  TrialWaveFunction& psi,
                  QMCHamiltonian& h,
                  Communicate* comm,
                  bool enable_profiling)
-    : QMCDriver(w, psi, h, comm, "DMCcuda", enable_profiling),
+    : QMCDriver(project_data, w, psi, h, comm, "DMCcuda", enable_profiling),
       myWarmupSteps(0),
       Mover(0),
       ResizeTimer(*timer_manager.createTimer("DMCcuda::resize")),
@@ -81,11 +82,11 @@ bool DMCcuda::run()
   if (scaleweight)
     app_log() << "  Scaling weight per Umrigar/Nightingale.\n";
   resetRun();
-  Mover->MaxAge        = 1;
-  IndexType block      = 0;
-  bool update_now      = false;
-  int nat              = W.getTotalNum();
-  int nw               = W.getActiveWalkers();
+  Mover->MaxAge   = 1;
+  IndexType block = 0;
+  bool update_now = false;
+  int nat         = W.getTotalNum();
+  int nw          = W.getActiveWalkers();
   std::vector<RealType> LocalEnergy(nw), LocalEnergyOld(nw);
   std::vector<PosType> delpos(nw);
   std::vector<PosType> newpos(nw);

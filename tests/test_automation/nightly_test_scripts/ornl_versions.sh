@@ -4,49 +4,53 @@
 
 # GCC
 # Dates at https://gcc.gnu.org/releases.html
-gcc_vnew=11.2.0 # Released 2021-07-28
-#gcc_vnew=10.3.0 # Released 2021-04-08
-gcc_vold=9.1.0  # Released 2019-05-03
+gcc_vnew=12.2.0 # Released 2022-08-19
+gcc_vold=10.4.0 # Released 2022-06-28
 
-gcc_vcuda=9.1.0  # Released 2019-05-03 https://docs.nvidia.com/hpc-sdk/hpc-sdk-release-notes/index.html
-gcc_vintel=9.1.0 # Released 2019-05-03 Compiler for C++ library used by Intel compiler
-gcc_vpgi=9.1.0   # Released 2019-05-03 Use makelocalrc to configure PGI with this compiler 
+#gcc_vcuda=10.2.0  # Released 2020-07-23 https://docs.nvidia.com/hpc-sdk/hpc-sdk-release-notes/index.html
+#gcc_vcuda=12.1.0
+#gcc_vintel=10.2.0 # Released 2020-07-23 Compiler for C++ library used by Intel compiler
+gcc_vintel=10.4.0
+#gcc_vnvhpc=10.2.0 # Released 2020-07-23 Use makelocalrc to configure NVHPC with this compiler 
+gcc_vnvhpc=12.2.0
 
 # LLVM 
-# Dates at http://releases.llvm.org/
-llvm_vnew=12.0.1 # Released 2021-07-08
+# Dates at https://releases.llvm.org/
+llvm_vnew=15.0.2 # Released 2022-10-04
 
 # HDF5
 # Dates at https://portal.hdfgroup.org/display/support/Downloads
-hdf5_vnew=1.12.1 # Released 2020-07-01
-hdf5_vold=1.8.19  # Released 2017-06-16
+#hdf5_vnew=1.13.0 # Released 2021-12-01 # odd versions are development versions
+hdf5_vnew=1.12.2 # Released 2022-04-27
+hdf5_vold=${hdf5_vnew}
 
 # CMake 
 # Dates at https://cmake.org/files/
-cmake_vnew=3.21.1 # Released 2021-07-27
-cmake_vold=3.15.3 # Released 2019-09-04
+cmake_vnew=3.24.2 # Released 2022-09-13
+cmake_vold=3.18.4 # Released 2020-19-06
 
 # OpenMPI
 # Dates at https://www.open-mpi.org/software/ompi/v4.1/
-ompi_vnew=4.1.1 # Released 2021-04-24
+ompi_vnew=4.1.4 # Released 2022-05-26
 ompi_vold=3.1.6 # Released 2020-03-18
 
 # Libxml2
-#libxml2_v=2.9.12 # Released 2021-05-13 See http://xmlsoft.org/sources/
-libxml2_v=2.9.10 # Released 2019-10-30 See http://xmlsoft.org/sources/
+libxml2_v=2.9.13 # Released 2022-02-20 See http://xmlsoft.org/sources/
 
 # FFTW
 # Dates at http://www.fftw.org/release-notes.html
-fftw_vnew=3.3.9 # Released 2020-12-13
+fftw_vnew=3.3.10 # Released 2021-09-15
 fftw_vold=3.3.8 # Released 2018-05-28
 
 # BOOST
 # Dates at https://www.boost.org/users/history/
-#boost_vnew=1.77.0 # Released 2021-08-11
-boost_vnew=1.76.0 # Released 2021-04-16
-boost_vold=1.68.0 # Released 2018-08-09
+boost_vnew=1.79.0 # Released 2022-04-13
+boost_vold=1.74.0 # Released 2020-08-14
 
 # Python
 # Use a single version to reduce dependencies. Ideally the spack prefered version.
-python_version=3.8.11
+python_version=3.9.13
+
+
+
 

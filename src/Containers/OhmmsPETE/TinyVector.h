@@ -62,11 +62,6 @@ struct TinyVector
       X[d] = T(0);
   }
 
-  // A noninitializing ctor.
-  class DontInitialize
-  {};
-  inline TinyVector(DontInitialize) {}
-
   // Copy Constructor
   inline TinyVector(const TinyVector& rhs) = default;
 
@@ -108,41 +103,6 @@ struct TinyVector
     X[3] = x03;
   }
 
-  inline TinyVector(const T& x00,
-                    const T& x01,
-                    const T& x02,
-                    const T& x03,
-                    const T& x10,
-                    const T& x11,
-                    const T& x12,
-                    const T& x13,
-                    const T& x20,
-                    const T& x21,
-                    const T& x22,
-                    const T& x23,
-                    const T& x30,
-                    const T& x31,
-                    const T& x32,
-                    const T& x33)
-  {
-    X[0]  = x00;
-    X[1]  = x01;
-    X[2]  = x02;
-    X[3]  = x03;
-    X[4]  = x10;
-    X[5]  = x11;
-    X[6]  = x12;
-    X[7]  = x13;
-    X[8]  = x20;
-    X[9]  = x21;
-    X[10] = x22;
-    X[11] = x23;
-    X[12] = x30;
-    X[13] = x31;
-    X[14] = x32;
-    X[15] = x33;
-  }
-
   inline TinyVector(const T* restrict base, int offset)
   {
 #pragma unroll
@@ -151,8 +111,6 @@ struct TinyVector
   }
 
   inline int size() const { return D; }
-
-  inline int byteSize() const { return D * sizeof(T); }
 
   inline TinyVector& operator=(const TinyVector& rhs) = default;
   inline TinyVector& operator=(TinyVector&& rhs)      = default;
@@ -175,15 +133,6 @@ struct TinyVector
   // Get and Set Operations
   inline Type_t& operator[](unsigned int i) { return X[i]; }
   inline const Type_t& operator[](unsigned int i) const { return X[i]; }
-  //inline Type_t& operator()(unsigned int i)
-  //{
-  //  return X[i];
-  //}
-  //inline Type_t operator()( unsigned int i) const
-  //{
-  //  return X[i];
-  //}
-
   inline Type_t* data() { return X; }
   inline const Type_t* data() const { return X; }
   inline Type_t* begin() { return X; }
@@ -199,10 +148,7 @@ struct TinyVector
     return inverse;
   }
 
-  /** Elementwise comparison
-   *
-   *  not optimized but useful for testing
-   */
+  // Elementwise comparison
   bool operator==(const TinyVector<T, D>& that) const
   {
     for (int i = 0; i < D; ++i)
@@ -222,40 +168,8 @@ struct TinyVector
     }
     return true;
   }
-
-  //----------------------------------------------------------------------
-  // parallel communication
-
-  //Message& putMessage(Message& m) const {
-  //  m.setCopy(true);
-  //  ::putMessage(m, X, X + D);
-  //    return m;
-  //}
-
-  //Message& getMessage(Message& m) {
-  //  ::getMessage(m, X, X + D);
-  //  return m;
-  //}
-
-  template<class Msg>
-  inline Msg& putMessage(Msg& m)
-  {
-    m.Pack(X, Size);
-    return m;
-  }
-
-  template<class Msg>
-  inline Msg& getMessage(Msg& m)
-  {
-    m.Unpack(X, Size);
-    return m;
-  }
 };
 
-//OHMMS_TINYVECTOR_ACCUM_OPERATORS(operator+=,OpAddAssign)
-//OHMMS_TINYVECTOR_ACCUM_OPERATORS(operator-=,OpSubtractAssign)
-//OHMMS_TINYVECTOR_ACCUM_OPERATORS(operator*=,OpMultiplyAssign)
-//OHMMS_TINYVECTOR_ACCUM_OPERATORS(operator/=,OpDivideAssign)
 // Adding binary operators using macro defined in OhmmsTinyMeta.h
 OHMMS_META_ACCUM_OPERATORS(TinyVector, operator+=, OpAddAssign)
 OHMMS_META_ACCUM_OPERATORS(TinyVector, operator-=, OpSubtractAssign)
@@ -315,28 +229,6 @@ struct printTinyVector<TinyVector<T, D>>
   }
 };
 
-// specialized for Vector<TinyVector<T,2> >
-template<class T>
-struct printTinyVector<TinyVector<T, 2>>
-{
-  inline static void print(std::ostream& os, const TinyVector<T, 2>& r)
-  {
-    os << std::setw(18) << std::setprecision(10) << r[0] << std::setw(18) << std::setprecision(10) << r[1];
-  }
-};
-
-// specialized for Vector<TinyVector<T,3> >
-template<class T>
-struct printTinyVector<TinyVector<T, 3>>
-{
-  inline static void print(std::ostream& os, const TinyVector<T, 3>& r)
-  {
-    os << std::setw(18) << std::setprecision(10) << r[0] << std::setw(18) << std::setprecision(10) << r[1]
-       << std::setw(18) << std::setprecision(10) << r[2];
-  }
-};
-
-
 template<class T, unsigned D>
 std::ostream& operator<<(std::ostream& out, const TinyVector<T, D>& rhs)
 {
@@ -354,4 +246,4 @@ std::istream& operator>>(std::istream& is, TinyVector<T, D>& rhs)
 }
 } // namespace qmcplusplus
 
-#endif // VEKTOR_H
+#endif // OHMMS_TINYVECTOR_H

@@ -29,7 +29,11 @@ public:
   using ParticlePos     = ParticleSet::ParticlePos;
   using ReptileConfig_t = Reptile::ReptileConfig_t;
 
-  RMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  RMC(const ProjectData& project_data,
+      MCWalkerConfiguration& w,
+      TrialWaveFunction& psi,
+      QMCHamiltonian& h,
+      Communicate* comm);
   bool run() override;
   bool put(xmlNodePtr cur) override;
   //inline std::vector<RandomGenerator*>& getRng() { return Rng;}

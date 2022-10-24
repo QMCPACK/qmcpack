@@ -44,7 +44,11 @@ class QMCFixedSampleLinearOptimize : public QMCDriver, public LinearMethod, priv
 {
 public:
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
+  QMCFixedSampleLinearOptimize(const ProjectData& project_data,
+                               MCWalkerConfiguration& w,
+                               TrialWaveFunction& psi,
+                               QMCHamiltonian& h,
+                               Communicate*);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize() override;

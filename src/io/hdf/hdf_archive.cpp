@@ -28,7 +28,6 @@ hdf_archive::~hdf_archive()
     H5Pclose(access_id);
 #endif
   close();
-  H5Eset_auto2(H5E_DEFAULT, err_func, client_data);
 }
 
 void hdf_archive::close()
@@ -133,7 +132,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 #endif
 
 
-bool hdf_archive::create(const std::string& fname, unsigned flags)
+bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
   if (Mode[NOIO])
     return true;
@@ -144,7 +143,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
   return file_id != is_closed;
 }
 
-bool hdf_archive::open(const std::string& fname, unsigned flags)
+bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
   if (Mode[NOIO])
     return true;

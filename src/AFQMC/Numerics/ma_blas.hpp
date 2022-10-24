@@ -181,7 +181,7 @@ template<class T,
 MultiArray2DB&& axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b)
 {
   assert(a.num_elements() == b.num_elements());
-  assert(a.stride() == a.size(1)); // only on contiguous arrays
+  assert(a.stride() == std::get<1>(a.sizes())); // only on contiguous arrays
   assert(a.stride(1) == 1);         // only on contiguous arrays
   assert(b.stride() == std::get<1>(b.sizes())); // only on contiguous arrays
   assert(b.stride(1) == 1);         // only on contiguous arrays

@@ -307,7 +307,7 @@ class Qmcpack(Simulation):
                     #end for
                     return jd
                 #end def process_jastrow
-                if wavefunction==None:
+                if wavefunction is None:
                     qs = input.get('qmcsystem')
                     qs.wavefunction = optwf.copy()
                 else:

@@ -33,7 +33,8 @@
 
 namespace qmcplusplus
 {
-std::unique_ptr<QMCDriverInterface> VMCFactory::create(MCWalkerConfiguration& w,
+std::unique_ptr<QMCDriverInterface> VMCFactory::create(const ProjectData& project_data,
+                                                       MCWalkerConfiguration& w,
                                                        TrialWaveFunction& psi,
                                                        QMCHamiltonian& h,
                                                        Communicate* comm,
@@ -43,16 +44,16 @@ std::unique_ptr<QMCDriverInterface> VMCFactory::create(MCWalkerConfiguration& w,
   std::unique_ptr<QMCDriverInterface> qmc;
 #ifdef QMC_CUDA
   if (VMCMode & 16)
-    qmc = std::make_unique<VMCcuda>(w, psi, h, comm, enable_profiling);
+    qmc = std::make_unique<VMCcuda>(project_data, w, psi, h, comm, enable_profiling);
   else
 #endif
       if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
-    qmc = std::make_unique<VMC>(w, psi, h, comm, enable_profiling);
+    qmc = std::make_unique<VMC>(project_data, w, psi, h, comm, enable_profiling);
   }
   else if (VMCMode == 2 || VMCMode == 3)
   {
-    qmc = std::make_unique<CSVMC>(w, psi, h, comm);
+    qmc = std::make_unique<CSVMC>(project_data, w, psi, h, comm);
   }
   qmc->setUpdateMode(VMCMode & 1);
   return qmc;

@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 
+#include "Utilities/ProjectData.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -82,7 +84,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \
@@ -120,6 +122,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -163,7 +166,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
    <parameter name=\"substeps\">1</parameter> \
@@ -206,6 +209,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -249,7 +253,7 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
   const char* vmc_input = "<qmc method=\"vmc\" move=\"alle\"> \
    <parameter name=\"substeps\">1</parameter> \
