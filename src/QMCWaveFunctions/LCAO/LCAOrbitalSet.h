@@ -30,10 +30,10 @@ namespace qmcplusplus
 struct LCAOrbitalSet : public SPOSet
 {
 public:
-  using basis_type = SoaBasisSetBase<ValueType>;
-  using vgl_type   = basis_type::vgl_type;
-  using vgh_type   = basis_type::vgh_type;
-  using vghgh_type = basis_type::vghgh_type;
+  using basis_type        = SoaBasisSetBase<ValueType>;
+  using vgl_type          = basis_type::vgl_type;
+  using vgh_type          = basis_type::vgh_type;
+  using vghgh_type        = basis_type::vghgh_type;
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
 
   ///pointer to the basis set
@@ -80,14 +80,22 @@ public:
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
   void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
-                                   const RefVectorWithLeader<ParticleSet>& P_list,
-                                   int iat,
-                                   OffloadMWVGLArray& phi_vgl_v) const;
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      OffloadMWVGLArray& phi_vgl_v) const;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override;
+
+  void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                      int iat,
+                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                      OffloadMWVGLArray& phi_vgl_v,
+                                      std::vector<ValueType>& ratios,
+                                      std::vector<GradType>& grads) const override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,
@@ -235,7 +243,7 @@ private:
                          ValueMatrix& d2logdet) const;
   // function to unpack vgl_type when working with batched code.
   inline void evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const;
-    ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+  ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
 
 
   ///This unpacks temp into vectors psi, dpsi, and d2psi.

@@ -144,7 +144,7 @@ inline void LCAOrbitalSet::evaluate_vgl_impl2(const OffloadMWVGLArray& temp, Off
     for (size_t idim = 0; idim < DIM; idim++)
     {
       ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
-      std::copy_n(temp.data_at(idim+1, iw, 0), output_size, phi_vgl_v.data_at(idim+1, iw, 0));
+      std::copy_n(temp.data_at(idim + 1, iw, 0), output_size, phi_vgl_v.data_at(idim + 1, iw, 0));
       // for (size_t iorb = 0; iorb < output_size; iorb++)
       //   phi_g[iorb] = temp.data_at(idim + 1, iw, iorb;
     }
@@ -373,8 +373,10 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
 {
   // [5][NW * NumAO]
   // [5][NW][NumAO]
-  OffloadMWVGLArray Temp_mw(spo_list.size(), BasisSetSize);
-  OffloadMWVGLArray Tempv_mw(spo_list.size(), OrbitalSetSize);
+  OffloadMWVGLArray Temp_mw;
+  Temp_mw.resize(5, spo_list.size(), BasisSetSize);
+  OffloadMWVGLArray Tempv_mw;
+  Tempv_mw.resize(5, spo_list.size(), OrbitalSetSize);
 
   if (Identity)
   {
@@ -394,19 +396,15 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
       constexpr int zero(0);
       // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
       //           C.capacity())
-      BLAS::gemm(transa, 
-                transb, 
-                C_partial_view.rows(), //NMOs
-                spo_list.size(), // will need to be dimension of nwalkers
-                C_partial_view.cols(), //NAOs
-                zone, 
-                C_partial_view.data(), 
-                C_partial_view.cols(), 
-                Tempv_mw.data_at(idim,0,0), //not mwvgl function data_at
-                spo_list.size(), //not mwvgl function maybe
-                zero, 
-                Tempv_mw.data_at(idim,0,0),//not mwvgl function data_at
-                spo_list.size()); //not mwvgl function maybe
+      BLAS::gemm(transa, transb,
+                 C_partial_view.rows(), //NMOs
+                 spo_list.size(),       // will need to be dimension of nwalkers
+                 C_partial_view.cols(), //NAOs
+                 zone, C_partial_view.data(), C_partial_view.cols(),
+                 Tempv_mw.data_at(idim, 0, 0),       //not mwvgl function data_at
+                 spo_list.size(),                    //not mwvgl function maybe
+                 zero, Tempv_mw.data_at(idim, 0, 0), //not mwvgl function data_at
+                 spo_list.size());                   //not mwvgl function maybe
     }
     evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
   }

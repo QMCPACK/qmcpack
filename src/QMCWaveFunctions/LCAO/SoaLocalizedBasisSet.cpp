@@ -141,7 +141,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list,
                                                      int iat,
-                                                     OffloadMWVGLArray& vgl) const
+                                                     OffloadMWVGLArray& vgl_v)
 {
   for (int iw = 0; iw < P_list.size(); iw++)
   {
@@ -162,12 +162,12 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<P
       LOBasisSet[IonID[c]]->evaluateVGL(P_list[iw].getLattice(), dist[c], displ[c], BasisOffset[c], temp_vgl, Tv);
     }
     //TODO fill temp_vgl into vgl
-    const size_t output_size = vgl.size(2);
-    std::copy_n(temp_vgl.data(0), output_size, phi_vgl_v.data_at(0, iw, 0));
-    std::copy_n(temp_vgl.data(1), output_size, phi_vgl_v.data_at(1, iw, 0));
-    std::copy_n(temp_vgl.data(2), output_size, phi_vgl_v.data_at(2, iw, 0));
-    std::copy_n(temp_vgl.data(3), output_size, phi_vgl_v.data_at(3, iw, 0));
-    std::copy_n(temp_vgl.data(4), output_size, phi_vgl_v.data_at(4, iw, 0));
+    const size_t output_size = vgl_v.size(2);
+    std::copy_n(temp_vgl.data(0), output_size, vgl_v.data_at(0, iw, 0));
+    std::copy_n(temp_vgl.data(1), output_size, vgl_v.data_at(1, iw, 0));
+    std::copy_n(temp_vgl.data(2), output_size, vgl_v.data_at(2, iw, 0));
+    std::copy_n(temp_vgl.data(3), output_size, vgl_v.data_at(3, iw, 0));
+    std::copy_n(temp_vgl.data(4), output_size, vgl_v.data_at(4, iw, 0));
   }
 }
 
