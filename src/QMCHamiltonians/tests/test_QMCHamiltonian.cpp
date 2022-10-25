@@ -56,6 +56,8 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   outputManager.resume();
 }
 
+#ifndef QMC_CUDA
+
 /** QMCHamiltonian + Hamiltonians with listeners integration test
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
@@ -263,10 +265,12 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
     // When only EE and EI coulomb potentials the local energy is just the sum of
     // the local_pots and kinetic
     auto sum_local_pots = std::accumulate(local_pots.begin(), local_pots.end(), 0.0);
-    auto sum_kinetic   = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
-    auto sum_local_nrg = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
+    auto sum_kinetic    = std::accumulate(kinetic.begin(), kinetic.end(), 0.0);
+    auto sum_local_nrg  = std::accumulate(local_nrg.begin(), local_nrg.end(), 0.0);
     CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
   }
   outputManager.resume();
 }
+#endif
+
 } // namespace qmcplusplus
