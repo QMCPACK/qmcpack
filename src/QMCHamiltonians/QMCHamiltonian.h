@@ -2,13 +2,14 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,11 @@
  */
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
+
+#include <string_view>
+
+#include <ResourceHandle.h>
+
 #include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
@@ -136,6 +142,26 @@ public:
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
   void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+
+  /** Listener Registration
+   *  This must be called on a QMCHamiltonian that has acquired multiwalker resources
+   */
+  static void mw_registerKineticListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalEnergyListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+  static void mw_registerLocalIonPotentialListener(const QMCHamiltonian& ham_leader, ListenerVector<RealType> listener);
+
+  /** Some Hamiltonian components need to be informed that they are in a per particle reporting
+   *  situation so additional state can be added either to them or the objects they are strongly coupled with.
+   *
+   *  This includes evalation of hamiltonian components constants on a per particle basis and informing a components
+   *  attached particle set that it needs to store per particle values for StructFact. This is a reason that the
+   *  coupling between Hamiltonian components and particle sets can strong and must be correct.
+   *
+   *  This is not desirable and hopefully this state transformation message can be removed.
+   */
+  void informOperatorsOfListener();
+
   ///retrun the starting index
   inline int startIndex() const { return myIndex; }
   ///return the size of observables
@@ -192,12 +218,6 @@ public:
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
   void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
-  ///** set Tau for each Hamiltonian
-  // */
-  //inline void setTau(RealType tau)
-  //{
-  //  for(int i=0; i< H.size();i++)H[i]->setTau(tau);
-  //}
 
   /** set PRIMARY bit of all the components
    */
@@ -206,25 +226,6 @@ public:
     for (int i = 0; i < H.size(); i++)
       H[i]->getUpdateMode().set(OperatorBase::PRIMARY, primary);
   }
-
-  /////Set Tau inside each of the Hamiltonian elements
-  //void setTau(Return_t tau)
-  //{
-  //  for(int i=0; i<H.size(); i++) H[i]->setTau(tau);
-  //  for(int i=0; i<auxH.size(); i++) auxH[i]->setTau(tau);
-  //}
-
-  ///** return if WaveFunction Ratio needs to be evaluated
-  // *
-  // * This is added to handle orbital-dependent OperatorBase during
-  // * orbital optimizations.
-  // */
-  //inline bool needRatio() {
-  //  bool dependOnOrbital=false;
-  //  for(int i=0; i< H.size();i++)
-  //    if(H[i]->UpdateMode[OperatorBase::RATIOUPDATE]) dependOnOrbital=true;
-  //  return dependOnOrbital;
-  //}
 
   /** evaluate Local Energy
    * @param P ParticleSet
@@ -412,7 +413,6 @@ public:
   static void updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
   static void updateKinetic(OperatorBase& op, QMCHamiltonian& ham, ParticleSet& pset);
 
-
   /// initialize a shared resource and hand it to a collection
   void createResource(ResourceCollection& collection) const;
   /** acquire external resource
@@ -425,7 +425,7 @@ public:
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
   /** return a clone */
-  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const;
 
 #ifdef QMC_CUDA
   ////////////////////////////////////////////
@@ -442,8 +442,11 @@ private:
   /////////////////////
   std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
 #endif
-
 private:
+  static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy", "LocalPotential",
+                                                                         "Vq",     "Vc",          "Vqq",
+                                                                         "Vqc",    "Vcc"};
+
   ///starting index
   int myIndex;
   ///starting index
@@ -480,6 +483,7 @@ private:
    */
   void resetObservables(int start, int ncollects);
 
+  void reportToListeners();
   // helper function for extracting a list of Hamiltonian components from a list of QMCHamiltonian::H.
   static RefVectorWithLeader<OperatorBase> extract_HC_list(const RefVectorWithLeader<QMCHamiltonian>& ham_list, int id);
 
@@ -496,6 +500,21 @@ private:
   Array<TraceReal, 1>* weight_sample;
   Array<TraceReal, 2>* position_sample;
 #endif
+
+  struct QMCHamiltonianMultiWalkerResource : public Resource
+  {
+    QMCHamiltonianMultiWalkerResource() : Resource("QMCHamiltonian") {}
+    // the listeners represet the connection of a particular crowds estimators to the crowds lead QMCHamiltonian.
+    // So you can not clone them.
+    Resource* makeClone() const override { return new QMCHamiltonianMultiWalkerResource(*this); }
+    std::vector<ListenerVector<RealType>> kinetic_listeners_;
+    std::vector<ListenerVector<RealType>> potential_listeners_;
+    std::vector<ListenerVector<RealType>> ion_kinetic_listeners_;
+    std::vector<ListenerVector<RealType>> ion_potential_listeners_;
+  };
+
+  /// multiwalker shared resource
+  ResourceHandle<QMCHamiltonianMultiWalkerResource> mw_res_;
 };
 } // namespace qmcplusplus
 #endif

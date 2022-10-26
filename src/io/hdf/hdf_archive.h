@@ -18,6 +18,7 @@
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"
+#include "hdf_error_suppression.h"
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
@@ -64,10 +65,6 @@ private:
   hid_t access_id;
   ///transfer property
   hid_t xfer_plist;
-  ///error type
-  H5E_auto2_t err_func;
-  ///error handling
-  void* client_data;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
 
@@ -89,15 +86,15 @@ public:
   template<class Comm = Communicate*>
   hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist();
   }
   ///destructor
