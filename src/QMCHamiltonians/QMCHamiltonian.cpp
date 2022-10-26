@@ -653,9 +653,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluate(
   // };
   const auto HC_list(extract_HC_list(ham_list, 0));
   for (int iw = 0; iw < ham_list.size(); iw++)
-  {
     updateKinetic(HC_list[iw], ham_list[iw], p_list[iw]);
-  }
 
   std::vector<FullPrecRealType> local_energies(ham_list.size(), 0.0);
   for (int iw = 0; iw < ham_list.size(); ++iw)
@@ -845,7 +843,7 @@ std::vector<QMCHamiltonian::FullPrecRealType> QMCHamiltonian::mw_evaluateWithTop
   auto& ham_leader            = ham_list.getLeader();
   const int num_ham_operators = ham_leader.H.size();
 
-  int kinetic_index = 0;
+  const int kinetic_index = 0;
   {
     ScopedTimer h_timer(ham_leader.my_timers_[kinetic_index]);
     const auto HC_list(extract_HC_list(ham_list, kinetic_index));
@@ -1059,8 +1057,7 @@ std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<
 
 void QMCHamiltonian::createResource(ResourceCollection& collection) const
 {
-  auto new_res        = std::make_unique<QMCHamiltonianMultiWalkerResource>();
-  auto resource_index = collection.addResource(std::move(new_res));
+  auto resource_index = collection.addResource(std::move(std::make_unique<QMCHamiltonianMultiWalkerResource>()));
   for (int i = 0; i < H.size(); ++i)
     H[i]->createResource(collection);
 }
