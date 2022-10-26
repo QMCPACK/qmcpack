@@ -135,6 +135,88 @@ TEST_CASE("ReadMolecularOrbital GTO He", "[wavefunction]") { test_He(false); }
 
 TEST_CASE("ReadMolecularOrbital Numerical He", "[wavefunction]") { test_He(true); }
 
+void test_He_mw(bool transform)
+{
+  // set up ion particle set as normal
+  Communicate* c = OHMMS::Controller;
+
+    const SimulationCell simulation_cell;
+    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& elec(*elec_ptr);
+    std::vector<int> agroup(2);
+    agroup[0] = 1;
+    agroup[1] = 1;
+    elec.setName("e");
+    elec.create(agroup);
+    elec.R[0] = 0.0;
+
+    SpeciesSet& tspecies       = elec.getSpeciesSet();
+    int upIdx                  = tspecies.addSpecies("u");
+    int downIdx                = tspecies.addSpecies("d");
+    int massIdx                = tspecies.addAttribute("mass");
+    tspecies(massIdx, upIdx)   = 1.0;
+    tspecies(massIdx, downIdx) = 1.0;
+
+    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+    auto& ions(*ions_ptr);
+    ions.setName("ion0");
+    ions.create({1});
+    ions.R[0]            = 0.0;
+    SpeciesSet& ispecies = ions.getSpeciesSet();
+    int heIdx            = ispecies.addSpecies("He");
+    ions.update();
+
+    elec.addTable(ions);
+    elec.update();
+
+    Libxml2Document doc;
+    bool okay = doc.parse("he_sto3g.wfj.xml");
+    REQUIRE(okay);
+    xmlNodePtr root = doc.getRoot();
+
+    WaveFunctionComponentBuilder::PSetMap particle_set_map;
+    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+
+    SPOSetBuilderFactory bf(c, elec, particle_set_map);
+
+    OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
+    REQUIRE(MO_base.size() == 1);
+    if (transform)
+    {
+      // input file is set to transform GTO's to numerical orbitals by default
+    }
+    else
+    {
+      // use direct evaluation of GTO's
+      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
+      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+    }
+
+    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+    auto& bb(*bb_ptr);
+
+    OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
+    auto sposet = bb.createSPOSet(slater_base[0]);
+
+    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+
+    SPOSet::ValueVector values;
+    SPOSet::GradVector dpsi;
+    SPOSet::ValueVector d2psi;
+    values.resize(1);
+    dpsi.resize(1);
+    d2psi.resize(1);
+
+    // Call makeMove to compute the distances
+    ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
+    elec.makeMove(0, newpos);
+    // set up second walkers
+    auto elec2 = elec.makeClone();
+    // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
+    // results should be the same as above, ideally 
+    // but with a new data object to access (everything in offloadmwvglArray).
+}
 
 void test_Ne(bool transform)
 {
