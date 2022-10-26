@@ -203,7 +203,7 @@ public:
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
-  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
   /*** 
    * @brief add to collectables descriptor for hdf5
@@ -213,7 +213,7 @@ public:
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
-  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
   /** 
    * @brief Set the values evaluated by this object to plist

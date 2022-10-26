@@ -25,10 +25,10 @@ ObservableHelper::ObservableHelper(const std::string& title)
 {}
 
 ObservableHelper::ObservableHelper(ObservableHelper&& in) noexcept
-    : lower_bound(in.lower_bound),
-      data_id(in.data_id),
+    : data_id(in.data_id),
       space1_id(in.space1_id),
       value1_id(in.value1_id),
+      lower_bound(in.lower_bound),
       mydims(in.mydims),
       maxdims(in.maxdims),
       curdims(in.curdims),
@@ -84,11 +84,11 @@ void ObservableHelper::open(hid_t grp_id)
     }
     std::vector<value_type> zeros(nd, 0.0);
     hid_t p = H5Pcreate(H5P_DATASET_CREATE);
-    H5Pset_chunk(p, rank, &mydims[0]);
-    space1_id      = H5Screate_simple(rank, &mydims[0], &maxdims[0]);
+    H5Pset_chunk(p, rank, mydims.data());
+    space1_id      = H5Screate_simple(rank, mydims.data(), maxdims.data());
     value1_id      = H5Dcreate(data_id, "value", H5T_NATIVE_DOUBLE, space1_id, p);
-    hid_t memspace = H5Screate_simple(rank, &mydims[0], NULL);
-    herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, &zeros[0]);
+    hid_t memspace = H5Screate_simple(rank, mydims.data(), NULL);
+    herr_t ret     = H5Dwrite(value1_id, H5T_NATIVE_DOUBLE, memspace, space1_id, H5P_DEFAULT, zeros.data());
     H5Sclose(memspace);
     H5Pclose(p);
   }

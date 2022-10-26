@@ -104,9 +104,9 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 }
 
 
-void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t sgid = H5Gcreate2(file.getFileID(), name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   h5desc.emplace_back("kpoints");
   auto& oh = h5desc.back();
   oh.open(sgid); // add to SkAll hdf group

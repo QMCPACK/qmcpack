@@ -176,7 +176,7 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  void registerOperatorEstimator(hid_t gid) override;
+  void registerOperatorEstimator(hdf_archive& file) override;
 
 private:
   /** Default copy constructor.

@@ -21,6 +21,7 @@
 #include "QMCHamiltonians/ObservableHelper.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
+#include "hdf/hdf_archive.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -109,7 +110,7 @@ public:
    * The default implementation does nothing. The derived classes which compute
    * big data, e.g. density, should overwrite this function.
    */
-  virtual void registerOperatorEstimator(hid_t gid) {}
+  virtual void registerOperatorEstimator(hdf_archive& file) {}
 
   virtual std::unique_ptr<OperatorEstBase> spawnCrowdClone() const = 0;
 

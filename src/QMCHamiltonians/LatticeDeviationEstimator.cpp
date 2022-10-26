@@ -225,24 +225,24 @@ std::unique_ptr<OperatorBase> LatticeDeviationEstimator::makeClone(ParticleSet& 
   return myclone;
 }
 
-void LatticeDeviationEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void LatticeDeviationEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  if (hdf5_out)
-  {
-    // one scalar per lattice site (i.e. source particle)
-    std::vector<int> ndim(1, num_sites);
-    if (per_xyz)
-    {
-      // one scalar per lattice site per dimension
-      ndim[0] = num_sites * OHMMS_DIM;
-    }
+  if (!hdf5_out)
+    return;
 
-    // open hdf5 entry and resize
-    h5desc.emplace_back(name_);
-    auto& h5o = h5desc.back();
-    h5o.set_dimensions(ndim, h5_index);
-    h5o.open(gid);
+  // one scalar per lattice site (i.e. source particle)
+  std::vector<int> ndim(1, num_sites);
+  if (per_xyz)
+  {
+    // one scalar per lattice site per dimension
+    ndim[0] = num_sites * OHMMS_DIM;
   }
+
+  // open hdf5 entry and resize
+  h5desc.emplace_back(name_);
+  auto& h5o = h5desc.back();
+  h5o.set_dimensions(ndim, h5_index);
+  h5o.open(file);
 }
 
 
