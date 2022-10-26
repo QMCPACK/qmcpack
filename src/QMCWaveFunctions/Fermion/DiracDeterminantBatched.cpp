@@ -212,19 +212,19 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
   const int nw = wfc_list.size();
   const int num_orbitals = wfc_leader.Phi->size();
   SPOSet::ValueVector sized_val(num_orbitals);
-  SPOSet::GradVector sized_grad(num_orbitals);
-  std::vector<SPOSet::ValueVector> psi_values(nw, sized_val), lap_values(nw, sized_val), dspin_values(nw, sized_val);
-  std::vector<SPOSet::GradVector> grad_values(nw, sized_grad);
-  auto psi_v_list = makeRefVector<SPOSet::ValueVector>(psi_values);
-  auto grad_v_list = makeRefVector<SPOSet::GradVector>(grad_values);
-  auto lap_v_list = makeRefVector<SPOSet::ValueVector>(lap_values);
+  std::vector<SPOSet::ValueVector> dspin_values(nw, sized_val);
   auto dspin_v_list = makeRefVector<SPOSet::ValueVector>(dspin_values);
 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
+  RefVector<SPOSet::GradVector> grad_v_list;
   for (int iw = 0; iw < wfc_list.size(); iw++)
   {
     auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
     phi_list.push_back(*det.Phi);
+    psi_v_list.push_back(det.psiV_host_view);
+    grad_v_list.push_back(det.dpsiV_host_view);
+    lap_v_list.push_back(det.d2psiV_host_view);
   }
 
   auto& phi_leader = phi_list.getLeader();
