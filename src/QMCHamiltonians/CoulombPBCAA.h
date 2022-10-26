@@ -131,8 +131,8 @@ struct CoulombPBCAA : public OperatorBase, public ForceBase
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) override;
 
-  /** Call to inform objects associated with this operator of per particle listeners.
-   *  should be called before createResources
+  /** Inform objects associated with this operator of per particle listeners.
+   *  i.e. turnOnPerParticleSK of particleset qp.
    */
   void informOfPerParticleListener() override;
 
