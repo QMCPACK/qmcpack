@@ -35,14 +35,14 @@ case "$1" in
     then
       if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
       then
-        echo "Set PATH to cuda-11.2 to be associated with the C and C++ compilers"
-        export PATH=/usr/local/cuda-11.2/bin:$PATH
-        echo "Set CUDACXX CMake environment variable to nvcc cuda 11.2 location due to a regression bug in 11.6"
-        export CUDACXX=/usr/local/cuda-11.2/bin/nvcc
+        echo "Set PATH to cuda to be associated with the C and C++ compilers"
+        export PATH=/usr/local/cuda/bin:$PATH
+        echo "Set CUDACXX CMake environment variable to nvcc cuda location"
+        export CUDACXX=/usr/local/cuda/bin/nvcc
 
         # Make current environment variables available to subsequent steps
         echo "PATH=$PATH" >> $GITHUB_ENV
-        echo "CUDACXX=/usr/local/cuda-11.2/bin/nvcc" >> $GITHUB_ENV
+        echo "CUDACXX=/usr/local/cuda/bin/nvcc" >> $GITHUB_ENV
 
       else
         echo "Set CUDACXX CMake environment variable to nvcc standard location"
@@ -182,7 +182,7 @@ case "$1" in
         echo "OMPI_CC=/opt/llvm/15.0.0/bin/clang" >> $GITHUB_ENV
         echo "OMPI_CXX=/opt/llvm/15.0.0/bin/clang++" >> $GITHUB_ENV
 
-        # Confirm that cuda 11.2 gets picked up by the compiler
+        # Confirm cuda installation picked up by the compiler
         /opt/llvm/15.0.0/bin/clang++ -v
 
         cmake -GNinja \
@@ -370,7 +370,7 @@ case "$1" in
     then
       if [[ "${GH_JOBNAME}" =~ (-Offload) ]]
       then
-        export LD_LIBRARY_PATH=/usr/local/cuda-11.2/lib64:${LD_LIBRARY_PATH}
+        export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
       else
         export LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH}
       fi
