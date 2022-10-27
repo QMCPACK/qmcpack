@@ -25,7 +25,7 @@ public:
 
   void add2Record(RecordNamedProperty<RealType>& record) override {}
 
-  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
 
   FakeEstimator* clone() override { return new FakeEstimator; }
   

@@ -159,7 +159,7 @@ public:
 
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override;
+  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override;
 
   /** Set the flag whether to compute forces or not.
    * @param val The boolean value for computing forces

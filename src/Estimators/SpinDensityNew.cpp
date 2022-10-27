@@ -12,6 +12,8 @@
 
 #include "SpinDensityNew.h"
 
+#include "hdf5.h"
+
 #include <iostream>
 #include <numeric>
 #include <SpeciesSet.h>
@@ -214,10 +216,10 @@ void SpinDensityNew::report(const std::string& pad)
   app_log() << pad << "end SpinDensity report" << std::endl;
 }
 
-void SpinDensityNew::registerOperatorEstimator(hid_t gid)
+void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t sgid = H5Gcreate2(file.getFileID(), my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   //vector<int> ng(DIM);
   //for(int d=0;d<DIM;++d)
@@ -228,7 +230,7 @@ void SpinDensityNew::registerOperatorEstimator(hid_t gid)
 
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    h5desc_.push_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
     auto& oh = h5desc_.back();
     oh->set_dimensions(ng, 0);
     oh->open(sgid);

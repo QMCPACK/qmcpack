@@ -220,11 +220,11 @@ void EstimatorManagerNew::startDriverRun()
     fname  = my_comm_->getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
-    main_estimator_->registerObservables(h5desc, h_file->getFileID());
+    main_estimator_->registerObservables(h5desc, *h_file);
     for (int i = 0; i < scalar_ests_.size(); i++)
-      scalar_ests_[i]->registerObservables(h5desc, h_file->getFileID());
+      scalar_ests_[i]->registerObservables(h5desc, *h_file);
     for (auto& uope : operator_ests_)
-      uope->registerOperatorEstimator(h_file->getFileID());
+      uope->registerOperatorEstimator(*h_file);
   }
 }
 

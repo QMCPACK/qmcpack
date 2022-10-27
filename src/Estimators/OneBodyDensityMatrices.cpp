@@ -599,8 +599,9 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
     basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
 }
 
-void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
+void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
 {
+  auto gid   = file.getFileID();
   hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   std::vector<int> my_indexes(2, basis_size_);
   if constexpr (IsComplex_t<Value>::value)
