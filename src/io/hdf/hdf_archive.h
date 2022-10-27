@@ -144,7 +144,7 @@ public:
 
   /** return the top of the group stack
    */
-  inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
+  inline hid_t top() const { return group_id.empty() ? file_id : group_id.top(); }
 
   /** check if any groups are open
    *  group stack will have entries if so

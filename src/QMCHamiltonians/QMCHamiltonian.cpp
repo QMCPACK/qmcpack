@@ -245,19 +245,19 @@ void QMCHamiltonian::resetObservables(int start, int ncollects)
   numCollectables = ncollects;
 }
 
-void QMCHamiltonian::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
   for (int i = 0; i < H.size(); ++i)
-    H[i]->registerObservables(h5desc, gid);
+    H[i]->registerObservables(h5desc, file);
   for (int i = 0; i < auxH.size(); ++i)
-    auxH[i]->registerObservables(h5desc, gid);
+    auxH[i]->registerObservables(h5desc, file);
 }
 
-void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void QMCHamiltonian::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
   //The physical operators cannot add to collectables
   for (int i = 0; i < auxH.size(); ++i)
-    auxH[i]->registerCollectables(h5desc, gid);
+    auxH[i]->registerCollectables(h5desc, file);
 }
 
 void QMCHamiltonian::mw_registerKineticListener(const QMCHamiltonian& leader, ListenerVector<RealType> listener)

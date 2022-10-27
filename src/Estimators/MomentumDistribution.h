@@ -121,7 +121,7 @@ public:
    *, needs to be unraveled and simplified the hdf5 output is another 
    *  big state big coupling design.
    */
-  void registerOperatorEstimator(hid_t gid) override;
+  void registerOperatorEstimator(hdf_archive& file) override;
 
 private:
   MomentumDistribution(const MomentumDistribution& md) = default;

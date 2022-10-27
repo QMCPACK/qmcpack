@@ -20,6 +20,7 @@
 #define QMCPLUSPLUS_OBSERVABLEHELPER_H
 
 #include "Configuration.h"
+#include "hdf/hdf_archive.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include "Numerics/HDFSTLAttrib.h"
 
@@ -35,15 +36,17 @@ using value_type = QMCTraits::FullPrecRealType;
  */
 class ObservableHelper
 {
-public:
-  ///starting index
-  hsize_t lower_bound = 0;
+private:
   ///id of this observable
   hid_t data_id = -1;
   ///dataspace for value
   hid_t space1_id = -1;
   ///id of the value dataset
   hid_t value1_id = -1;
+
+public:
+  ///starting index
+  hsize_t lower_bound = 0;
   ///my dimensions
   std::vector<hsize_t> mydims;
   ///maximum dimensions
@@ -89,8 +92,8 @@ public:
    * open a h5 group of this observable
    * Create a group for an observable and dataspace
    */
+  void open(hdf_archive& file) { open(file.top()); }
   void open(hid_t grp_id);
-
 
   /** add named property to describe the collectable this helper class handles
    * @param p any intrinsic datatype including vector, basic containers

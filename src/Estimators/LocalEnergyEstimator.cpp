@@ -35,7 +35,7 @@ LocalEnergyEstimator::LocalEnergyEstimator(LocalEnergyInput&& input, const QMCHa
  
 LocalEnergyEstimator* LocalEnergyEstimator::clone() { return new LocalEnergyEstimator(*this); }
 
-void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid)
+void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file)
 {
   if (!UseHDF5)
     return;
@@ -46,13 +46,13 @@ void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5
   h5desc.emplace_back("LocalPotential");
   std::vector<int> onedim(1, 1);
   h5desc[loc].set_dimensions(onedim, FirstIndex);
-  h5desc[loc++].open(gid);
+  h5desc[loc++].open(file);
   h5desc[loc].set_dimensions(onedim, FirstIndex + 1);
-  h5desc[loc++].open(gid);
+  h5desc[loc++].open(file);
   h5desc[loc].set_dimensions(onedim, FirstIndex + 2);
-  h5desc[loc++].open(gid);
+  h5desc[loc++].open(file);
   //hamiltonian adds more
-  refH.registerObservables(h5desc, gid);
+  refH.registerObservables(h5desc, file);
   int correction = FirstIndex + 3;
   for (int i = loc; i < h5desc.size(); ++i)
     h5desc[i].lower_bound += correction;
