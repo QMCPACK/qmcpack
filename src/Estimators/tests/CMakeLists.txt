@@ -33,6 +33,7 @@ set(SRCS
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
+    test_PerParticleHamiltonianLogger.cpp
     )
 
 # OneBodyDensityMatrices are not tested with legacy CUDA

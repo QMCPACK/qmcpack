@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
+//                    Peter W.  Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +15,9 @@
 
 #include "InputSection.h"
 #include "OhmmsData/Libxml2Doc.h"
+#include "Utilities/string_utils.h"
+#include "Utilities/ModernStringUtils.hpp"
+#include "EstimatorInput.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -46,14 +50,14 @@ class TestInput : public InputSection
 public:
   TestInput()
   {
-    section_name  = "Test";
-    attributes    = {"name", "samples", "kmax", "full"};
-    parameters    = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center"};
-    required      = {"count", "full"};
-    strings       = {"name", "label"};
-    multi_strings = {"sposets"};
-    integers      = {"samples", "count"};
-    reals         = {"kmax", "width"};
+    section_name   = "Test";
+    attributes     = {"name", "samples", "kmax", "full"};
+    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center"};
+    required       = {"count", "full"};
+    strings        = {"name", "label"};
+    multi_strings  = {"sposets"};
+    integers       = {"samples", "count"};
+    reals          = {"kmax", "width"};
     positions      = {"center"};
     bools          = {"full", "rational"};
     enums          = {"testenum1", "testenum2"};
@@ -349,5 +353,131 @@ TEST_CASE("InputSection::get", "[estimators]")
   CHECK_THROWS_AS(ti.get<RealType>("center"), std::bad_cast);
 }
 
+// TEST_CASE("InputSection::custom", "[estimators]")
+// {
+//   string_view xml = R"XML(
+// <test name="alice" samples="10" kmax="3.0" full="no">
+//   <parameter name="label"   >  relative  </parameter>
+//   <parameter name="count"   >  15        </parameter>
+//   <parameter name="weird stuff"> XQ 10 20 10 </parameter>
+//   <BarStuff name="thisone"> TW 0 2 3 5 6 </BarStuff>
+//   <Repeater label="first"> something </Repeater>
+//   <Repeater label="second"> else </Repeater>
+// </test>
+// )XML";
+
+//   class CustomTestInput : public InputSection
+//   {
+//   public:
+//     CustomTestInput()
+//     {
+//       section_name = "Test";
+//       attributes   = {"name", "samples", "kmax", "full"};
+//       parameters   = {"label", "count", "width", "weird stuff", "barStuff"};
+//       strings      = {"name", "label"};
+//       reals        = {"kmax"};
+//       bools        = {"full"};
+//       custom       = {"weird stuff","repeater"};
+//     }
+//     std::any setFromStreamCustom(const std::string& name, std::istringstream& svalue) override
+//     {
+//       if (name == "weird stuff") {
+// 	std::cout << "handling weird stuff\n";
+// 	values_["weird stuff"] = std::string("weird value");
+//       }
+//       else if (name == "repeater")
+// 	{
+// 	  std::cout << "handling repeater\n";
+// 	  std::string label << 
+// 	  std::string value_label = "repeater"
+// 	  return std::any();
+//       }
+//       else
+//         throw std::runtime_error("bad name passed or custom setFromStream not implemented in derived class.");
+//     }
+//   };
+
+// }
+
+class AnotherInput
+{
+public:
+  class AnotherInputSection : public InputSection
+  {
+  public:
+    AnotherInputSection() {
+      section_name = "AnotherInputSection";
+      attributes = {"name",
+		    "optional"};
+      strings = {"name","optional"};
+    }
+    
+  };
+  
+  AnotherInput(xmlNodePtr cur)
+  {
+    std::cout << "AnotherInput constructor called\n";
+    input_section_.readXML(cur);
+    auto setIfInInput = LAMBDA_setIfInInput;
+    setIfInInput(name_, "name");
+    setIfInInput(optional_, "optional");
+    input_str_ = XMLNodeString{cur};
+  }
+  
+  std::vector<std::string_view> getTokens() const { return modernstrutil::split(input_str_, " "); }
+  const std::string& get_name() const { return name_; };
+private:
+  std::string name_ = "AnotherInputSection";
+  AnotherInputSection input_section_;
+  std::string input_str_;
+  std::string optional_;
+  std::vector<std::string_view> tokens_;
+};
+
+std::any makeAnotherInput(xmlNodePtr cur, std::string& value_label) {
+  AnotherInput another_input{cur};
+  value_label = another_input.get_name();
+  return another_input;
+}
+
+TEST_CASE("InputSection::Delegate", "[estimators]")
+{
+  class DelegateTestInput : public InputSection
+  {
+  public:
+    DelegateTestInput()
+    {
+      section_name = "DelegateTest";
+      attributes   = {"name", "full"};
+      parameters   = {"label", "count", "width"};
+      strings      = {"name", "label"};
+      integers     = {"count"};
+      bools        = {"full"};
+      delegates    = {"anotherinput"};
+      InputSection::registerDelegate("anotherinput", makeAnotherInput);
+    }
+  };
+
+  std::string_view xml = R"XML(
+<test name="alice" full="no">
+  <parameter name="label"   >  relative  </parameter>
+  <parameter name="count"   >  15        </parameter>
+  <AnotherInput name="ainput"> XQ 10 20 10 </AnotherInput>
+</test>
+)XML";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(xml);
+  REQUIRE(okay);
+  xmlNodePtr cur = doc.getRoot();
+
+  // read xml
+  DelegateTestInput dti;
+  dti.readXML(cur);
+  CHECK(dti.has("ainput"));
+  AnotherInput ai(dti.get<AnotherInput>("ainput"));
+  std::vector<std::string_view> ref_tokens {"XQ","10","20","10"};
+  CHECK(ai.getTokens() == ref_tokens );
+}
 
 } // namespace qmcplusplus

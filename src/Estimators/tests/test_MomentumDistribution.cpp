@@ -175,7 +175,7 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   RandomGenerator rng;
 
   //   Perform accumulate
-  md.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+  md.accumulate(ref_walkers, ref_psets, ref_wfns, rng, 0);
 
   //   Check data
   std::vector<RealType>& data = md.get_data();

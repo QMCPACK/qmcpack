@@ -80,7 +80,7 @@ void accumulateFromPsets(int ncrowds, SpinDensityNew& sdn, UPtrVector<OperatorEs
 
     RandomGenerator rng;
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng, iops);
   }
 }
 
@@ -118,7 +118,7 @@ void randomUpdateAccumulate(testing::RandomForTest<QMCT::RealType>& rft, UPtrVec
 
     RandomGenerator rng;
 
-    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+    crowd_sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng, 0);
   }
 }
 
@@ -222,7 +222,7 @@ TEST_CASE("SpinDensityNew::accumulate", "[estimators]")
 
   RandomGenerator rng;
 
-  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng);
+  sdn.accumulate(ref_walkers, ref_psets, ref_wfns, rng, 0);
 
   std::vector<QMCT::RealType>& data_ref = sdn.get_data();
   // There should be a check that the discretization of particle locations expressed in lattice coords

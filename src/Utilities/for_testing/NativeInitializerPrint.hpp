@@ -39,4 +39,16 @@ std::ostream& operator<<(std::ostream& out, const NativePrint<std::vector<T>>& n
   return out;
 }
 
+template<class T>
+std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec)
+{
+  out << "{ ";
+  auto vec = np_vec.get_obj();
+  for(T& t : vec)
+    out << std::setprecision(10) << t << ", ";
+  out << " }";
+  return out;
+}
+
+  
 } // namespace qmcplusplus

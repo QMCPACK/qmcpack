@@ -31,4 +31,57 @@ TEST_CASE("ModernStringUtils_strToLower", "[utilities]")
         "\xab"
         "not_just_ascii");
 }
+
+TEST_CASE("ModernStringUtils_split", "[utilities]")
+{
+  using modernstrutil::split;
+  std::string test_line{"hi there 101, random line"};
+  auto tokens = split(test_line, " ");
+  CHECK(tokens[0].size() == 2);
+  CHECK(tokens[4].size() == 4);
+  CHECK(tokens[3] == "random");
+
+  std::string test_lines{R"(
+this is a multi
+line
+token test
+)"};
+  auto tokens_lines = split(test_lines, "\n");
+  CHECK(tokens_lines[0] == "this is a multi");
+  CHECK(tokens_lines[1] == "line");
+  CHECK(tokens_lines[2] == "token test");
+
+  std::string test_multidel{"this \t is a multidelimiter  \n   \n token test"};
+  auto tokens_multidel = split(test_multidel, "\t \n");
+  CHECK(tokens_multidel[0] == "this");
+  CHECK(tokens_multidel[1] == "is");
+  CHECK(tokens_multidel[4] == "token");
+}
+
+TEST_CASE("ModernStringUtils_string2Real", "[utilities]")
+{
+  std::string_view svalue{"101.52326626"};
+  double value = string2Real<double>(svalue);
+  CHECK(value == Approx(101.52326626));
 } // namespace qmcplusplus
+
+TEST_CASE("ModernStringUtils_strip", "[utilities]")
+{
+  std::string test_lines{R"(
+    r1 1 0 0
+    r2 0 1 0
+    r3 0 0 1
+)"};
+
+  using modernstrutil::strip;
+  std::string_view stripped_lines = strip(test_lines);
+
+  std::string_view ref_stripped{"r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1"};
+  CHECK(ref_stripped == stripped_lines);
+
+  std::string_view another{"r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1\n  \0"};
+  std::string_view another_stripped = strip(another);
+  CHECK(another_stripped == "r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1");
+}
+  
+}

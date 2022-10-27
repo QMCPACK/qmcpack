@@ -34,6 +34,7 @@ struct DriverWalkerResourceCollection
   ResourceCollection ham_res;
 
   DriverWalkerResourceCollection() : pset_res("ParticleSet"), twf_res("TrialWaveFunction"), ham_res("Hamiltonian") {}
+  DriverWalkerResourceCollection(const DriverWalkerResourceCollection&) = default;
 };
 } // namespace qmcplusplus
 #endif

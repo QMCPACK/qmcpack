@@ -18,7 +18,7 @@
 
 /** If tag is present in input_secution set its variable.
  *  Many variables have default values we don't want overwritten and that we want expressed in native c++
- *  Define macro to avoid repeating code for this lambda
+ *  to make this useful it needs to capture & and a macro seems necessary to not repeat this.
  */
 #define LAMBDA_setIfInInput \
   [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); }
