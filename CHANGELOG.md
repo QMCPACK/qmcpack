@@ -2,6 +2,17 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+# Known problems
+
+* When offload builds are compiled with CUDA toolkit versions above 11.2 (tested
+  11.3-11.8) using LLVM15, multideterminant tests and functionality will fail,
+  seemingly due to an issue with the toolkit. This is discussed in
+  https://github.com/llvm/llvm-project/issues/54633 . All other functionality
+  appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be
+  used. The actual CUDA drivers can be more recent.
+
 ##  [3.15.0] - 2022-09-29
 
 This is a recommended release for all users. There are many quality of life
