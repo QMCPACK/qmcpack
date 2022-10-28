@@ -81,22 +81,22 @@ TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
   oh.open(hFile);
   std::vector<int> dims = {10, 10};
   float propertyFloat   = 10.f;
-  oh.addProperty(propertyFloat, "propertyFloat");
+  oh.addProperty(propertyFloat, "propertyFloat", hFile);
 
   Tensor<float, OHMMS_DIM> propertyTensor;
-  oh.addProperty(propertyTensor, "propertyTensor");
+  oh.addProperty(propertyTensor, "propertyTensor", hFile);
 
   Matrix<float> propertyMatrix;
-  oh.addProperty(propertyMatrix, "propertyMatrix");
+  oh.addProperty(propertyMatrix, "propertyMatrix", hFile);
 
   TinyVector<float, OHMMS_DIM> propertyTinyVector;
-  oh.addProperty(propertyTensor, "propertyTinyVector");
+  oh.addProperty(propertyTensor, "propertyTinyVector", hFile);
 
   std::vector<float> propertyVector;
-  oh.addProperty(propertyVector, "propertyVector");
+  oh.addProperty(propertyVector, "propertyVector", hFile);
 
   std::vector<TinyVector<float, OHMMS_DIM>> propertyVectorTinyVector;
-  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector");
+  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector", hFile);
 
   hFile.close();
   REQUIRE(std::filesystem::exists(filename));

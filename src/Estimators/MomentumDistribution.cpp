@@ -324,8 +324,8 @@ void MomentumDistribution::registerOperatorEstimator(hdf_archive& file)
   //h5o.set_dimensions(ng, my_index_);
   h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
   h5o->open(file);
-  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
+  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
+  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
 }
 
 

@@ -136,7 +136,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
     H5Dclose(k_set);
     H5Sclose(mem_space);
     H5Sclose(k_space);
-    H5Fflush(file.getFileID(), H5F_SCOPE_GLOBAL);
+    file.flush();
   }
 }
 

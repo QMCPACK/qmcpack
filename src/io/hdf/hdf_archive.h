@@ -164,7 +164,9 @@ public:
       return;
     hid_t g = group_id.top();
     group_id.pop();
-    H5Gclose(g);
+    herr_t err = H5Gclose(g);
+    if (err < 0)
+      throw std::runtime_error("H5Gclose failed with error.");
   }
 
   /** read the shape of multidimensional filespace from the group aname
