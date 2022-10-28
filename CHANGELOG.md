@@ -11,7 +11,7 @@ Notable changes to QMCPACK are documented in this file.
   seemingly due to an issue with the toolkit. This is discussed in
   https://github.com/llvm/llvm-project/issues/54633 . All other functionality
   appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be
-  used. The actual CUDA drivers can be more recent.
+  used. The actual NVIDIA drivers can be more recent.
 
 ##  [3.15.0] - 2022-09-29
 
