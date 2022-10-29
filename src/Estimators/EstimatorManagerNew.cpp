@@ -55,6 +55,7 @@ bool EstimatorManagerNew::areThereListeners() const
   return std::any_of(operator_ests_.begin(), operator_ests_.end(),
                      [](auto& oper_est) { return oper_est->isListenerRequired(); });
 }
+  
 template<class EstInputType, typename... Args>
 bool EstimatorManagerNew::createEstimator(EstimatorInput& input, Args&&... args)
 {
@@ -104,39 +105,19 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
                                     "cannot construct an estimator from estimator input object.");
 
   for (auto& scalar_input : emi.get_scalar_estimator_inputs())
-  {
-    // since we can count on these being scalar estimator inputs  we don't needs to chekc if they are invalid.
-    bool estimator_made = std::visit(
-        [this, &H](auto scalar_input) {
-          using T = std::decay_t<decltype(scalar_input)>;
-          if constexpr (std::is_same_v<T, std::monostate>)
-            return false;
-          else
-          {
-            auto estimator = std::make_unique<typename decltype(scalar_input)::Consumer>(std::move(scalar_input), H);
-            if (estimator->isMainEstimator())
-              addMainEstimator(std::move(estimator));
-            else
-              scalar_ests_.push_back(std::move(estimator));
-          }
-          return true;
-        },
-        scalar_input);
-
-    //                                                                    std::forward<Args>(args)...);
-    // estimator_made      = estimator_made || createScalarEstimator<LocalEnergyInput>(scalar_input, H);
-    // estimator_made      = estimator_made || createScalarEstimator<CSLocalEnergyInput>(scalar_input, H);
-    // estimator_made      = estimator_made || createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H);
-    if (!estimator_made)
+    if (!(createScalarEstimator<LocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<CSLocalEnergyInput>(scalar_input, H) ||
+          createScalarEstimator<RMCLocalEnergyInput>(scalar_input, H)))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct a scalar estimator from scalar estimator input object.");
-  }
+
   if (main_estimator_ == nullptr)
   {
     app_log() << "  Adding a default LocalEnergyEstimator for the MainEstimator " << std::endl;
     max4ascii = H.sizeOfObservables() + 3;
     addMainEstimator(std::make_unique<LocalEnergyEstimator>(H, true));
   }
+
   makeConfigReport(app_log());
 }
 

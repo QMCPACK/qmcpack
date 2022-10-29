@@ -151,22 +151,6 @@ public:
   bool areThereListeners() const;
 
 private:
-  struct ScalarInputVisitor
-  {
-    bool operator()(EstimatorManagerNew* this_man, std::monostate&& monostate, QMCHamiltonian& H) { return false; }
-    template<typename SINPUT>
-    bool operator()(EstimatorManagerNew* this_man, SINPUT&& scalar_input, QMCHamiltonian& H)
-    {
-      auto estimator = std::make_unique<typename decltype(scalar_input)::Consumer>(std::move(scalar_input), H);
-      if (estimator->isMainEstimator())
-        this_man->addMainEstimator(std::move(estimator));
-      else
-        this_man->scalar_ests_.push_back(std::move(estimator));
-      return true;
-    }
-  };
-
-
   /** Construct estimator of type matching the underlying EstimatorInput type Consumer
    *  and push its its unique_ptr onto operator_ests_
    */

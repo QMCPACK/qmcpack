@@ -49,7 +49,7 @@ public:
 TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 {
   std::string_view xml{R"XML(
-<PerParticleHamiltonianLogger to_stdout="true" validate_per_particle_sum="yes"/>
+<PerParticleHamiltonianLogger to_stdout="false" validate_per_particle_sum="yes"/>
 )XML"};
 
   Libxml2Document doc;
@@ -58,7 +58,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   PerParticleHamiltonianLoggerInput pphli(node);
 
-  CHECK(pphli.get_to_stdout());
+  CHECK(!pphli.get_to_stdout());
   CHECK(pphli.get_validate_per_particle_sum());
   
   int rank = 0;

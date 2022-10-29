@@ -11,7 +11,6 @@
 
 #include "EstimatorManagerInput.h"
 #include <algorithm>
-#include "EstimatorInputDelegates.h"
 #include "ScalarEstimatorInputs.h"
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
