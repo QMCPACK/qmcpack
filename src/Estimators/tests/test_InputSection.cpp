@@ -45,10 +45,10 @@ std::unordered_map<std::string, std::any> lookup_input_enum_value{{"testenum1-va
                                                                   {"testenum2-value2", TestEnum2::VALUE2}};
 
 // clang-format: off
-class TestInput : public InputSection
+class TestInputSection : public InputSection
 {
 public:
-  TestInput()
+  TestInputSection()
   {
     section_name   = "Test";
     attributes     = {"name", "samples", "kmax", "full"};
@@ -84,7 +84,7 @@ public:
 TEST_CASE("InputSection::InputSection", "[estimators]")
 {
   // empty input section
-  TestInput ti;
+  TestInputSection ti;
   // no values assigned yet
   CHECK(!ti.has("name"));
   CHECK(!ti.has("samples"));
@@ -129,7 +129,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     xmlNodePtr cur = doc.getRoot();
 
     // read xml
-    TestInput ti;
+    TestInputSection ti;
     ti.readXML(cur);
 
     // assigned from xml
@@ -179,7 +179,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     xmlNodePtr cur = doc.getRoot();
 
     // read xml
-    TestInput ti;
+    TestInputSection ti;
     ti.readXML(cur);
 
     // assigned from xml
@@ -244,7 +244,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
       xmlNodePtr cur = doc.getRoot();
 
       // read xml
-      TestInput ti;
+      TestInputSection ti;
       CHECK_THROWS_AS(ti.readXML(cur), std::runtime_error);
     }
   }
@@ -256,7 +256,7 @@ TEST_CASE("InputSection::init", "[estimators]")
   SECTION("minimum required attributes and parameters")
   {
     // initialize
-    TestInput ti;
+    TestInputSection ti;
     ti.init({{"full", bool(false)}, {"count", int(15)}});
 
     // assigned from initializer-list
@@ -283,7 +283,7 @@ TEST_CASE("InputSection::init", "[estimators]")
   SECTION("complete attributes and parameters")
   {
     // initialize
-    TestInput ti;
+    TestInputSection ti;
     ti.init({{"name", std::string("alice")},
              {"samples", int(10)},
              {"kmax", RealType(3.0)},
@@ -320,7 +320,7 @@ TEST_CASE("InputSection::init", "[estimators]")
 
   SECTION("invalid type assignment")
   {
-    TestInput ti;
+    TestInputSection ti;
     CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", RealType(15.)}}), std::bad_cast);
   }
 }
@@ -328,7 +328,7 @@ TEST_CASE("InputSection::init", "[estimators]")
 
 TEST_CASE("InputSection::get", "[estimators]")
 {
-  TestInput ti;
+  TestInputSection ti;
   ti.init({{"name", std::string("alice")},
            {"samples", int(10)},
            {"kmax", RealType(3.0)},
@@ -353,51 +353,89 @@ TEST_CASE("InputSection::get", "[estimators]")
   CHECK_THROWS_AS(ti.get<RealType>("center"), std::bad_cast);
 }
 
-// TEST_CASE("InputSection::custom", "[estimators]")
-// {
-//   string_view xml = R"XML(
-// <test name="alice" samples="10" kmax="3.0" full="no">
-//   <parameter name="label"   >  relative  </parameter>
-//   <parameter name="count"   >  15        </parameter>
-//   <parameter name="weird stuff"> XQ 10 20 10 </parameter>
-//   <BarStuff name="thisone"> TW 0 2 3 5 6 </BarStuff>
-//   <Repeater label="first"> something </Repeater>
-//   <Repeater label="second"> else </Repeater>
-// </test>
-// )XML";
+class CustomTestInput : public InputSection
+{
+public:
+  struct WeirdStuff {
+    std::string letters;
+    std::array<int,3> numbers;
+  };
+  using Repeater = std::vector<std::pair<std::string, std::string>>;
+  CustomTestInput()
+  {
+    section_name = "Test";
+    attributes   = {"name", "samples", "kmax", "full"};
+    parameters   = {"label", "count", "width"};
+    strings      = {"name", "label"};
+    reals        = {"kmax"};
+    integers     = {"samples", "count"};
+    bools        = {"full"};
+    custom       = {"weird_stuff", "repeater"};
+  }
+  void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue) override
+  {
+    if (ename == "weird_stuff")
+    {
+      std::cout << "handling weird stuff\n";
+      WeirdStuff ws;
+      svalue >> ws.letters;
+      svalue >> ws.numbers[0];
+      svalue >> ws.numbers[1];
+      svalue >> ws.numbers[2];
+      values_[name] = ws;
+    }
+    else if (ename == "repeater")
+    {
+      std::cout << "handling repeater\n";
+      std::string compound;
+      svalue >> compound;
+      auto split_vstrv = split(compound, ":"); 
+      if (has(name))
+	std::any_cast<Repeater>(&(values_[name]))->emplace_back(split_vstrv[0],split_vstrv[1]);
+      else
+	values_[name] = Repeater{{split_vstrv[0],split_vstrv[1]}};
+    }
+    else
+      throw std::runtime_error("bad name passed or custom setFromStream not implemented in derived class.");
+  }
+};
 
-//   class CustomTestInput : public InputSection
-//   {
-//   public:
-//     CustomTestInput()
-//     {
-//       section_name = "Test";
-//       attributes   = {"name", "samples", "kmax", "full"};
-//       parameters   = {"label", "count", "width", "weird stuff", "barStuff"};
-//       strings      = {"name", "label"};
-//       reals        = {"kmax"};
-//       bools        = {"full"};
-//       custom       = {"weird stuff","repeater"};
-//     }
-//     std::any setFromStreamCustom(const std::string& name, std::istringstream& svalue) override
-//     {
-//       if (name == "weird stuff") {
-// 	std::cout << "handling weird stuff\n";
-// 	values_["weird stuff"] = std::string("weird value");
-//       }
-//       else if (name == "repeater")
-// 	{
-// 	  std::cout << "handling repeater\n";
-// 	  std::string label << 
-// 	  std::string value_label = "repeater"
-// 	  return std::any();
-//       }
-//       else
-//         throw std::runtime_error("bad name passed or custom setFromStream not implemented in derived class.");
-//     }
-//   };
 
-// }
+TEST_CASE("InputSection::custom", "[estimators]")
+{
+  std::string_view xml = R"XML(
+<test name="alice" samples="10" kmax="3.0" full="no">
+  <parameter name="label"   >  relative  </parameter>
+  <parameter name="count"   >  15        </parameter>
+  <weird_stuff name="weird"> XQ 10 20 10 </weird_stuff>
+  <Repeater> first:something </Repeater>
+  <Repeater> second:else </Repeater>
+</test>
+)XML";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(xml);
+  xmlNodePtr cur = doc.getRoot();
+  CustomTestInput cti;
+  cti.readXML(cur);
+
+  auto ws = cti.get<decltype(cti)::WeirdStuff>("weird");
+  CHECK(ws.letters == "XQ");
+  std::array<int,3> exp_numbers{10, 20, 10};
+  CHECK(ws.numbers == exp_numbers);
+
+  auto repeater = cti.get<decltype(cti)::Repeater>("repeater");
+  decltype(cti)::Repeater exp_repeater{{"first","something"},{"second","else"}};
+  CHECK(repeater == exp_repeater);
+}
+
+/** Generic delgate input class.
+ *  This feature is targeted at supporting things like ReferencePointsInput, SpaceGridInput etc.
+ *
+ *  The delegate input requires:
+ *  A constructor that takes an xmlNodePtr
+ *  A factoryFunction that matches the signature discussed in InputSection::DelegateHandler
+ */
 
 class AnotherInput
 {
@@ -405,27 +443,26 @@ public:
   class AnotherInputSection : public InputSection
   {
   public:
-    AnotherInputSection() {
+    AnotherInputSection()
+    {
       section_name = "AnotherInputSection";
-      attributes = {"name",
-		    "optional"};
-      strings = {"name","optional"};
+      attributes   = {"name", "optional"};
+      strings      = {"name", "optional"};
     }
-    
   };
-  
+
   AnotherInput(xmlNodePtr cur)
   {
-    std::cout << "AnotherInput constructor called\n";
     input_section_.readXML(cur);
     auto setIfInInput = LAMBDA_setIfInInput;
     setIfInInput(name_, "name");
     setIfInInput(optional_, "optional");
     input_str_ = XMLNodeString{cur};
   }
-  
+
   std::vector<std::string_view> getTokens() const { return modernstrutil::split(input_str_, " "); }
   const std::string& get_name() const { return name_; };
+
 private:
   std::string name_ = "AnotherInputSection";
   AnotherInputSection input_section_;
@@ -434,18 +471,22 @@ private:
   std::vector<std::string_view> tokens_;
 };
 
-std::any makeAnotherInput(xmlNodePtr cur, std::string& value_label) {
+std::any makeAnotherInput(xmlNodePtr cur, std::string& value_label)
+{
   AnotherInput another_input{cur};
   value_label = another_input.get_name();
   return another_input;
 }
 
-TEST_CASE("InputSection::Delegate", "[estimators]")
+/** Generic input section delegating some inputs to other input classes.
+ *  an example would be EnergyDensityInput
+ */
+class DelegatingInput
 {
-  class DelegateTestInput : public InputSection
+  class DelegatingInputSection : public InputSection
   {
   public:
-    DelegateTestInput()
+    DelegatingInputSection()
     {
       section_name = "DelegateTest";
       attributes   = {"name", "full"};
@@ -458,6 +499,24 @@ TEST_CASE("InputSection::Delegate", "[estimators]")
     }
   };
 
+public:
+  DelegatingInput(xmlNodePtr cur) { dins_.readXML(cur); }
+
+  // rather than write a real input class we just pass through InputSection for this test.
+  bool has(const std::string& name) const { return dins_.has(name); }
+  template<typename T>
+  T get(const std::string& name) const
+  {
+    return dins_.get<T>(name);
+  }
+
+private:
+  std::string name_ = "DelegatingInput";
+  DelegatingInputSection dins_;
+};
+
+TEST_CASE("InputSection::Delegate", "[estimators]")
+{
   std::string_view xml = R"XML(
 <test name="alice" full="no">
   <parameter name="label"   >  relative  </parameter>
@@ -471,13 +530,28 @@ TEST_CASE("InputSection::Delegate", "[estimators]")
   REQUIRE(okay);
   xmlNodePtr cur = doc.getRoot();
 
-  // read xml
-  DelegateTestInput dti;
-  dti.readXML(cur);
+  DelegatingInput dti(cur);
+
   CHECK(dti.has("ainput"));
   AnotherInput ai(dti.get<AnotherInput>("ainput"));
-  std::vector<std::string_view> ref_tokens {"XQ","10","20","10"};
-  CHECK(ai.getTokens() == ref_tokens );
+  std::vector<std::string_view> ref_tokens{"XQ", "10", "20", "10"};
+  CHECK(ai.getTokens() == ref_tokens);
+
+
+  std::string_view xml_duplicate_delegate_name = R"XML(
+<test name="alice" full="no">
+  <parameter name="label"   >  relative  </parameter>
+  <parameter name="count"   >  15        </parameter>
+  <AnotherInput name="ainput"> XQ 10 20 10 </AnotherInput>
+  <AnotherInput name="ainput"> XQ 10 20 10 </AnotherInput>
+</test>
+)XML";
+
+  okay = doc.parseFromString(xml_duplicate_delegate_name);
+  REQUIRE(okay);
+  cur = doc.getRoot();
+
+  CHECK_THROWS_AS(dti = DelegatingInput(cur), UniformCommunicateError);
 }
 
 } // namespace qmcplusplus

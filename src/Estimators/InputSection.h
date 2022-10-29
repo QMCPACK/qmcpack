@@ -57,7 +57,7 @@ protected:
   std::unordered_set<std::string> integers;      // list of integer variables
   std::unordered_set<std::string> reals;         // list of real variables
   std::unordered_set<std::string> positions;     // list of position variables
-  //std::unordered_set<std::string> custom;        // list of parameter variables that have custom types
+  std::unordered_set<std::string> custom;        // list of parameter variables that have custom types
   /** list of enum inputs which allow a finite set of strings to map to enum values
    *  The enum class types and values need only be known to IS subtypes
    */
@@ -65,7 +65,6 @@ protected:
   std::unordered_map<std::string, std::any> default_values; // default values for optional variables
   std::unordered_map<std::string, std::function<std::any(xmlNodePtr cur, std::string& value_key)>> delegate_factories_;
   // NOLINTEND(readability-indentifier-naming)
-private:
   // Storage for variable values read from XML, etc.
   std::unordered_map<std::string, std::any> values_;
 
@@ -138,13 +137,17 @@ public:
   }
 
 protected:
+  /** Function that returns Input class as std::any
+   *   \param[in]   cur                xml_node being delegated by the Input Class
+   *   \param[out]  value_name         string key value to store the delegate with
+   */
+  using DelegateHandler = std::function<std::any(xmlNodePtr cur, std::string& value_name)>;
   /** register factory function for delegate input
    *   \param[in]   tag                parmater name or node ename delgation is controlled by
    *   \param[in]   delegate_handler   factory function for delegated input function.
-   *        \param[in] cur           xml_node being delegated by the InputSection
-   *        \param[out]  value_name  string key value should be put into the input_sections values with
    */
-  void registerDelegate(const std::string& tag, std::function<std::any(xmlNodePtr cur, std::string& value_name)> delegate_handler);
+  void registerDelegate(const std::string& tag,
+                        DelegateHandler delegate_handler);
 
   /** Do validation for a particular subtype of InputSection
    *  Called by check_valid.
@@ -170,11 +173,13 @@ protected:
     throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
   }
 
-  // [[noreturn]]
-  // virtual std::any setFromStreamCustom(const std::string& tag, ) const
-  // {
-  //   throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
-  // }
+  /** Derived class can overrides this to do custom parsing of the element values for Custom elements
+   *  These can have a name attribute only.
+   */
+  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue)
+  {
+    throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
+  }
 
   /** Assign any enum helper for InputSection derived class
    *  assumes enum lookup table of this form:
@@ -203,7 +208,7 @@ private:
   bool isInteger(const std::string& name) const { return integers.find(name) != integers.end(); }
   bool isReal(const std::string& name) const { return reals.find(name) != reals.end(); }
   bool isPosition(const std::string& name) const { return positions.find(name) != positions.end(); }
-  //bool isCustom(const std::string& name) const { return custom.find(name) != custom.end(); }
+  bool isCustom(const std::string& name) const { return custom.find(name) != custom.end(); }
   bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); }
 
   // Set default values for optional inputs.

@@ -41,23 +41,25 @@ void InputSection::readXML(xmlNodePtr cur)
   while (element != NULL)
   {
     std::string ename{lowerCase(castXMLCharToChar(element->name))};
-    // if (isCustom(ename))
-    // {
-    //   std::istringstream stream(XMLNodeString{element});
-    //   setFromStreamCustom(ename, stream);
-    // }
+    std::string name(lowerCase(getXMLAttributeValue(element, "name")));
+    if (name.size() < 1)
+      name = ename;
+
     if (isDelegate(ename))
     {
       assert(delegate_factories_.find(ename) != delegate_factories_.end());
       std::string value_key;
       std::any value     = delegate_factories_[ename](element, value_key);
+      if (has(value_key))
+	throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + ename + " node with duplicate name " + value_key + "!");
       values_[value_key] = std::move(value);
     }
-    else if (ename == "parameter" || isParameter(ename))
+    else if (isCustom(ename)) {
+      std::istringstream stream(XMLNodeString{element});
+      setFromStreamCustom(ename, name, stream);
+    }
+    else if (ename == "parameter" || isParameter(ename) )
     {
-      std::string name(lowerCase(getXMLAttributeValue(element, "name")));
-      if (name.size() < 1)
-        name = ename;
       if (!isParameter(name))
       {
         std::stringstream error;
@@ -65,15 +67,14 @@ void InputSection::readXML(xmlNodePtr cur)
         throw UniformCommunicateError(error.str());
       }
       std::istringstream stream(XMLNodeString{element});
-      setFromStream(name, stream);
+	setFromStream(name, stream);
     }
     else if (ename != "text")
     {
       std::stringstream error;
-      error << "InputSection::readXML node name " << ename << " is handled by " << section_name << "\n";
+      error << "InputSection::readXML node name " << ename << " is not handled by " << section_name << "\n";
       throw UniformCommunicateError(error.str());
     }
-    else if (isDelegate(ename)) {}
     element = element->next;
   }
 
