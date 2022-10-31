@@ -21,12 +21,11 @@
 namespace qmcplusplus
 {
 ObservableHelper::ObservableHelper(const std::string& title)
-    : data_id(-1), space1_id(-1), value1_id(-1), group_name(title), isopened(false)
+    : space1_id(-1), value1_id(-1), group_name(title), isopened(false)
 {}
 
 ObservableHelper::ObservableHelper(ObservableHelper&& in) noexcept
-    : data_id(in.data_id),
-      space1_id(in.space1_id),
+    : space1_id(in.space1_id),
       value1_id(in.value1_id),
       lower_bound(in.lower_bound),
       mydims(in.mydims),
@@ -70,10 +69,10 @@ void ObservableHelper::set_dimensions(std::vector<int>& dims, int first)
   lower_bound = first;
 }
 
-void ObservableHelper::open(hid_t grp_id)
+void ObservableHelper::open(hdf_archive& file)
 {
-  data_id      = H5Gcreate2(grp_id, group_name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  hsize_t rank = mydims.size();
+  auto data_id   = file.push(group_name, true);
+  hsize_t rank   = mydims.size();
   if (rank)
   {
     //create empty data to write something
@@ -93,52 +92,60 @@ void ObservableHelper::open(hid_t grp_id)
     H5Pclose(p);
   }
   isopened = true;
+  file.pop();
 }
 
-void ObservableHelper::addProperty(float& p, const std::string& pname)
+void ObservableHelper::addProperty(float& p, const std::string& pname, hdf_archive& file)
 {
   double p_DP(p);
-  HDFAttribIO<double> a(p_DP);
-  a.write(data_id, pname.c_str());
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
-void ObservableHelper::addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname)
+void ObservableHelper::addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file)
 {
-  Tensor<double, OHMMS_DIM> p_DP;
-  p_DP = p;
-  HDFAttribIO<Tensor<double, OHMMS_DIM>> a(p_DP);
-  a.write(data_id, pname.c_str());
+  Tensor<double, OHMMS_DIM> p_DP(p);
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
-void ObservableHelper::addProperty(Matrix<float>& p, const std::string& pname)
+void ObservableHelper::addProperty(Matrix<float>& p, const std::string& pname, hdf_archive& file)
 {
   Matrix<double> p_DP;
   p_DP = p;
-  HDFAttribIO<Matrix<double>> a(p_DP);
-  a.write(data_id, pname.c_str());
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
-void ObservableHelper::addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname)
+void ObservableHelper::addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file)
 {
   TinyVector<double, OHMMS_DIM> p_DP(p);
-  HDFAttribIO<TinyVector<double, OHMMS_DIM>> a(p_DP);
-  a.write(data_id, pname.c_str());
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
-void ObservableHelper::addProperty(std::vector<float>& p, const std::string& pname)
+void ObservableHelper::addProperty(std::vector<float>& p, const std::string& pname, hdf_archive& file)
 {
   std::vector<double> p_DP;
   p_DP.assign(p.begin(), p.end());
-  HDFAttribIO<std::vector<double>> a(p_DP);
-  a.write(data_id, pname.c_str());
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
-void ObservableHelper::addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p, const std::string& pname)
+void ObservableHelper::addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p,
+                                   const std::string& pname,
+                                   hdf_archive& file)
 {
   std::vector<TinyVector<double, OHMMS_DIM>> p_DP;
   p_DP.assign(p.begin(), p.end());
-  HDFAttribIO<std::vector<TinyVector<double, OHMMS_DIM>>> a(p_DP);
-  a.write(data_id, pname.c_str());
+  file.push(group_name, false);
+  file.write(p_DP, pname);
+  file.pop();
 }
 
 void ObservableHelper::write(const value_type* first_v, const value_type* /*first_vv*/)
@@ -179,11 +186,6 @@ void ObservableHelper::close()
     {
       H5Sclose(space1_id);
       space1_id = -1;
-    }
-    if (data_id > -1)
-    {
-      H5Gclose(data_id);
-      data_id = -1;
     }
     isopened = false;
   }

@@ -219,23 +219,19 @@ void SpinDensityNew::report(const std::string& pad)
 void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
-  hid_t sgid = H5Gcreate2(file.getFileID(), my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t sgid = file.push(my_name_, true);
 
-  //vector<int> ng(DIM);
-  //for(int d=0;d<DIM;++d)
-  //  ng[d] = grid[d];
-
-  std::vector<int> ng(1);
-  ng[0] = derived_parameters_.npoints;
+  std::vector<int> ng(1, derived_parameters_.npoints);
 
   for (int s = 0; s < species_.size(); ++s)
   {
     h5desc_.push_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
     auto& oh = h5desc_.back();
     oh->set_dimensions(ng, 0);
-    oh->open(sgid);
+    oh->open(file);
     // bad smell
   }
+  file.pop();
 }
 
 

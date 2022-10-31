@@ -232,8 +232,9 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   // Add k-point information
   h5desc.emplace_back("kpoints");
   auto& ohKPoints = h5desc.back();
-  ohKPoints.open(sgid); // add to SkAll hdf group
-  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value");
+  ohKPoints.open(file); // add to SkAll hdf group
+  ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value",
+                        file);
 
   // Add electron-electron S(k)
   std::vector<int> ng(1);
@@ -242,17 +243,17 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   h5desc.emplace_back("rhok_e_e");
   auto& ohRhoKEE = h5desc.back();
   ohRhoKEE.set_dimensions(ng, my_index_);
-  ohRhoKEE.open(sgid); // add to SkAll hdf group
+  ohRhoKEE.open(file); // add to SkAll hdf group
   //  real part
   h5desc.emplace_back("rhok_e_r");
   auto& ohRhoKER = h5desc.back();
   ohRhoKER.set_dimensions(ng, my_index_ + NumK);
-  ohRhoKER.open(sgid); // add to SkAll hdf group
+  ohRhoKER.open(file); // add to SkAll hdf group
   //  imaginary part
   h5desc.emplace_back("rhok_e_i");
   auto& ohRhoKEI = h5desc.back();
   ohRhoKEI.set_dimensions(ng, my_index_ + 2 * NumK);
-  ohRhoKEI.open(sgid); // add to SkAll hdf group
+  ohRhoKEI.open(file); // add to SkAll hdf group
 }
 
 bool SkAllEstimator::put(xmlNodePtr cur)

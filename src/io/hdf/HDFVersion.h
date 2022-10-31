@@ -47,7 +47,7 @@ const char append_walkers[] = "config_";
 const char coord[] = "coord";
 } // namespace hdf
 
-struct HDFVersion //: public HDFAttribIOBase
+struct HDFVersion
 {
   //enumeration to get version value
   enum

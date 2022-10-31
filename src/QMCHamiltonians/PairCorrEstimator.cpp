@@ -168,8 +168,8 @@ void PairCorrEstimator::registerCollectables(std::vector<ObservableHelper>& h5li
     auto& h5o = h5list.back();
     h5o.set_dimensions(onedim, offset);
     h5o.open(file);
-    h5o.addProperty(const_cast<RealType&>(Delta), "delta");
-    h5o.addProperty(const_cast<RealType&>(Dmax), "cutoff");
+    h5o.addProperty(const_cast<RealType&>(Delta), "delta", file);
+    h5o.addProperty(const_cast<RealType&>(Dmax), "cutoff", file);
     offset += NumBins;
   }
 }
