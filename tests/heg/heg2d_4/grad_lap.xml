@@ -1,5 +1,6 @@
 <simulation>
   <project id="eg2d_gl" series="0"/>
+  <random seed="137"/>
   <qmcsystem>
     <simulationcell>
       <parameter name="lattice" units="bohr">
