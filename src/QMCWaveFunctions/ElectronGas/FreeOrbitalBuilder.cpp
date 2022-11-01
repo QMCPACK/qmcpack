@@ -12,7 +12,7 @@ FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlN
 
 std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  int norb=-1;
+  int norb = -1;
   std::string spo_object_name;
   PosType twist(0.0);
   OhmmsAttributeSet attrib;
@@ -34,7 +34,7 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   app_log() << "twist cartesian = " << tvec << std::endl;
 #else
   const int npw = std::ceil((norb + 1.0) / 2);
-  if (2*npw-1 != norb)
+  if (2 * npw - 1 != norb)
   {
     std::ostringstream msg;
     msg << "norb = " << norb << " npw = " << npw;
