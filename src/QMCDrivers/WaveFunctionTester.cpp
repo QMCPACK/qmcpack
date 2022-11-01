@@ -594,7 +594,6 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleLaplacian& L_fd)
 {
   FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_LowOrder);
-  //FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_Richardson);
   FiniteDifference::PosChangeVector positions;
 
   fd.finiteDifferencePoints(delta, W, positions);
@@ -741,8 +740,6 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     delta = deltaParam;
   }
   FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_LowOrder);
-  //RealType delta = 1.0;
-  //FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_Richardson);
 
   FiniteDifference::PosChangeVector positions;
 
