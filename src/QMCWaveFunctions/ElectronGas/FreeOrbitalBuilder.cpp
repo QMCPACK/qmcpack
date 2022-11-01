@@ -40,6 +40,7 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     msg << "norb = " << norb << " npw = " << npw;
     msg << " cannot be ran in real PWs (sin, cos)" << std::endl;
     msg << "either use complex build or change the size of SPO set" << std::endl;
+    msg << "ideally, set size to a closed shell of PWs." << std::endl;
     throw std::runtime_error(msg.str());
   }
   for (int ldim = 0; ldim < twist.size(); ldim++)
