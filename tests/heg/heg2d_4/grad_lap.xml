@@ -12,24 +12,30 @@
       <parameter name="LR_handler"> ewald_strict2d </parameter>
     </simulationcell>
     <particleset name="e" random="no">
-      <group name="u" size="2">
+      <group name="u" size="5">
         <parameter name="charge"> -1 </parameter>
         <attrib name="position" datatype="posArray" condition="0">
 54.66209032978565 2.018663420381362 0.0
 23.566489035927912 3.443259712257945 0.0
+25.566489035927912 4.443259712257945 0.0
+30.566489035927912 15.443259712257945 0.0
+40.566489035927912 25.443259712257945 0.0
 </attrib>
       </group>
-      <group name="d" size="2">
+      <group name="d" size="5">
         <parameter name="charge"> -1 </parameter>
         <attrib name="position" datatype="posArray" condition="0">
 67.26206197993817 30.29582561496142 0.0
 37.00657847142635 1.4508035033146867 0.0
+23.00657847142635 13.4508035033146867 0.0
+43.00657847142635 5.4508035033146867 0.0
+15.00657847142635 35.4508035033146867 0.0
 </attrib>
       </group>
     </particleset>
     <wavefunction name="psi0" target="e">
       <sposet_builder type="free">
-        <sposet name="spo-ud" size="2" twist="0 0 0"/>
+        <sposet name="spo-ud" size="5" twist="0 0 0"/>
       </sposet_builder>
       <determinantset>
         <slaterdeterminant>

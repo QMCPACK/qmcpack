@@ -12,7 +12,7 @@ FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlN
 
 std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  int npw, norb;
+  int npw, norb=-1;
   std::string spo_object_name;
   PosType twist(0.0);
   OhmmsAttributeSet attrib;
@@ -20,6 +20,9 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   attrib.add(twist, "twist");
   attrib.add(spo_object_name, "name");
   attrib.put(cur);
+
+  if (norb < 0)
+    throw std::runtime_error("free orbital SPO set require the \"size\" input");
 
   auto lattice = targetPtcl.getLattice();
 
@@ -31,6 +34,14 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   app_log() << "twist cartesian = " << tvec << std::endl;
 #else
   npw = std::ceil((norb + 1.0) / 2);
+  if (2*npw-1 != norb)
+  {
+    std::ostringstream msg;
+    msg << "norb = " << norb << " npw = " << npw;
+    msg << " cannot be ran in real PWs (sin, cos)" << std::endl;
+    msg << "either use complex build or change the size of SPO set" << std::endl;
+    throw std::runtime_error(msg.str());
+  }
   for (int ldim = 0; ldim < twist.size(); ldim++)
   {
     if (std::abs(twist[ldim]) > 1e-16)
