@@ -23,10 +23,10 @@ CollectablesEstimator::CollectablesEstimator(QMCHamiltonian& h) : refH(h)
   scalars_saved.resize(h.sizeOfCollectables());
 }
 
-void CollectablesEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid)
+void CollectablesEstimator::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file)
 {
   int loc = h5desc.size();
-  refH.registerCollectables(h5desc, gid);
+  refH.registerCollectables(h5desc, file);
   for (int i = loc; i < h5desc.size(); ++i)
     h5desc[i].lower_bound += FirstIndex;
 }

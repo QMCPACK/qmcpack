@@ -36,7 +36,7 @@ public:
   Return_t evaluate(ParticleSet& P) override;
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
   void setObservables(PropertySetType& plist) override;
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool put(xmlNodePtr cur) override;

@@ -151,7 +151,7 @@ void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(bc_sign, myV, psi, first, last);
@@ -177,7 +177,7 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int last_real = kPoints.size() < last ? kPoints.size() : last;
 
     for (int iat = 0; iat < VP.getTotalNum(); ++iat)
@@ -276,7 +276,7 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
@@ -359,7 +359,7 @@ void SplineR2R<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, first, last);
@@ -537,7 +537,7 @@ void SplineR2R<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
     assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first, last);

@@ -441,9 +441,9 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     {
       Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
       Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.NumIons);
-      for (const ListenerVector<Real>& listener : listeners->electrons)
+      for (const ListenerVector<Real>& listener : listeners->electron_values)
         listener.report(iw, O_leader.getName(), ve_sample);
-      for (const ListenerVector<Real>& listener : listeners->ions)
+      for (const ListenerVector<Real>& listener : listeners->ion_values)
         listener.report(iw, O_leader.getName(), vi_sample);
     }
     ve_samples = 0.0;
@@ -821,9 +821,9 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const
 {
-  OperatorBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, file);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
@@ -832,7 +832,7 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
     h5list.emplace_back("FNL");
     auto& h5o1 = h5list.back();
     h5o1.set_dimensions(ndim, FirstForceIndex);
-    h5o1.open(gid);
+    h5o1.open(file);
   }
 }
 

@@ -110,7 +110,7 @@ void CSEnergyEstimator::add2Record(RecordNamedProperty<RealType>& record)
   //msg.add(d_data.begin(),d_data.end());
 }
 
-void CSEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid)
+void CSEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file)
 {
   //NEED TO IMPLEMENT for hdf5
 }

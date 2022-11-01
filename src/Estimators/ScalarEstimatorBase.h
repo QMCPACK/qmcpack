@@ -158,9 +158,9 @@ struct ScalarEstimatorBase
 
   /** add descriptors of observables to utilize hdf5
    * @param h5desc descriptor of a data stored in a h5 group
-   * @param gid h5 group to which each statistical data will be stored
+   * @param file file to which each statistical data will be stored
    */
-  virtual void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) = 0;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) = 0;
 
   ///clone the object
   virtual ScalarEstimatorBase* clone() = 0;

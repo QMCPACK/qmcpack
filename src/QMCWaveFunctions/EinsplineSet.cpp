@@ -1079,7 +1079,7 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     EinsplineTimer.stop();
     //computePhaseFactors(r);
     std::complex<double> eye(0.0, 1.0);
-    for (int j = 0; j < OrbitalSetSize; j++)
+    for (int j = 0; j < psi.cols(); j++)
     {
       std::complex<double> u, laplu;
       TinyVector<std::complex<double>, OHMMS_DIM> gradu;
@@ -1212,7 +1212,14 @@ void EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& 
     }
     const std::complex<double> eye(0.0, 1.0);
     const std::complex<double> meye(0.0, -1.0);
-    for (int j = 0; j < NumValenceOrbs; j++)
+
+    // NumValenceOrbs appears to be the same as OrbitalSetSize in some code paths.
+    // In order to handle orbital rotation where OrbitalSetSize is not
+    // the same as the number of columns of psi, OrbitalSetSize was
+    // replaced with the columns of psi in other places.
+    // The minimum is used here just in case NumValenceOrbs might be smaller.
+    size_t loop_bound = NumValenceOrbs < psi.cols() ? NumValenceOrbs : psi.cols();
+    for (int j = 0; j < loop_bound; j++)
     {
       std::complex<double> u(storage_value_vector_[j]);
       TinyVector<std::complex<double>, OHMMS_DIM> gradu(storage_grad_vector_[j]);

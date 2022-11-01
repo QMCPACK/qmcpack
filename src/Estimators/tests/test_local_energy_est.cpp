@@ -93,7 +93,7 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
   std::filesystem::path filename("tmp_obs.h5");
   hdf_archive h_file;
   h_file.create(filename);
-  le_est.registerObservables(h5desc, h_file.getFileID());
+  le_est.registerObservables(h5desc, h_file);
   h_file.close();
   REQUIRE(std::filesystem::exists(filename));
   // Check contents?

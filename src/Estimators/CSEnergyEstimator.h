@@ -86,7 +86,7 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
    *@param record storage of scalar records (name,value)
    */
   void add2Record(RecordNamedProperty<RealType>& record) override;
-  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& gid) override;
   CSEnergyEstimator* clone() override;
   const std::string& getSubTypeStr() const override { return input_.get_type(); }
   void evaluateDiff();
