@@ -12,7 +12,7 @@ FreeOrbitalBuilder::FreeOrbitalBuilder(ParticleSet& els, Communicate* comm, xmlN
 
 std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  int npw, norb=-1;
+  int norb=-1;
   std::string spo_object_name;
   PosType twist(0.0);
   OhmmsAttributeSet attrib;
@@ -28,12 +28,12 @@ std::unique_ptr<SPOSet> FreeOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   PosType tvec = lattice.k_cart(twist);
 #ifdef QMC_COMPLEX
-  npw = norb;
+  const int npw = norb;
   targetPtcl.setTwist(twist);
   app_log() << "twist fraction = " << twist << std::endl;
   app_log() << "twist cartesian = " << tvec << std::endl;
 #else
-  npw = std::ceil((norb + 1.0) / 2);
+  const int npw = std::ceil((norb + 1.0) / 2);
   if (2*npw-1 != norb)
   {
     std::ostringstream msg;
