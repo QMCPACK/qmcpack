@@ -46,24 +46,24 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   const SimulationCell cell(lattice);
   ParticleSet elec(cell);
   //   read ParticleSet from xml text
-  const char* particle_text = "<tmp>\
-    <particleset name=\"e\" random=\"no\">\
-      <group name=\"u\" size=\"2\">\
-        <parameter name=\"charge\"> -1 </parameter>\
-        <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-54.66209032978565 2.018663420381362 0.0 \
-23.566489035927912 3.443259712257945 0.0 \
-</attrib>\
-      </group>\
-      <group name=\"d\" size=\"2\">\
-        <parameter name=\"charge\"> -1 </parameter>\
-        <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-67.26206197993817 30.29582561496142 0.0 \
-37.00657847142635 1.4508035033146867 0.0 \
-</attrib>\
-      </group>\
-    </particleset>\
-  </tmp>";
+  const char* particle_text = R"(<tmp>
+    <particleset name="e" random="no">
+      <group name="u" size="2">
+        <parameter name="charge"> -1 </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+54.66209032978565 2.018663420381362 0.0
+23.566489035927912 3.443259712257945 0.0
+</attrib>
+      </group>
+      <group name="d" size="2">
+        <parameter name="charge"> -1 </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+67.26206197993817 30.29582561496142 0.0
+37.00657847142635 1.4508035033146867 0.0
+</attrib>
+      </group>
+    </particleset>
+  </tmp>)";
   okay = doc.parseFromString(particle_text);
   REQUIRE(okay);
   root = doc.getRoot();
@@ -74,16 +74,16 @@ TEST_CASE("Jastrow 2D", "[wavefunction]")
   elec.update(); // update distance tables
   const int nelec = elec.getTotalNum();
   //    read Jastrow component from xml text
-  const char* jastrow_text = "<tmp>\
-   <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\">\
-        <correlation speciesA=\"u\" speciesB=\"u\" size=\"8\">\
-          <coefficients id=\"uu\" type=\"Array\" optimize=\"yes\">4.868951397 3.154235815 1.719776072 0.9676536301 0.6044866223 0.3368526364 0.1566214572 0.06031539785</coefficients>\
-        </correlation>\
-        <correlation speciesA=\"u\" speciesB=\"d\" size=\"8\">\
-          <coefficients id=\"ud\" type=\"Array\" optimize=\"yes\">6.991319036 3.93760887 2.077967513 1.115208829 0.6946729632 0.3826149045 0.1705411558 0.06155742938</coefficients>\
-        </correlation>\
-      </jastrow>\
-</tmp>";
+  const char* jastrow_text = R"(<tmp>
+   <jastrow name="J2" type="Two-Body" function="Bspline">
+        <correlation speciesA="u" speciesB="u" size="8">
+          <coefficients id="uu" type="Array" optimize="yes">4.868951397 3.154235815 1.719776072 0.9676536301 0.6044866223 0.3368526364 0.1566214572 0.06031539785</coefficients>
+        </correlation>
+        <correlation speciesA="u" speciesB="d" size="8">
+          <coefficients id="ud" type="Array" optimize="yes">6.991319036 3.93760887 2.077967513 1.115208829 0.6946729632 0.3826149045 0.1705411558 0.06155742938</coefficients>
+        </correlation>
+      </jastrow>
+</tmp>)";
   okay = doc.parseFromString(jastrow_text);
   REQUIRE(okay);
   root = doc.getRoot();

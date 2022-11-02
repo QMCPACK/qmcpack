@@ -34,29 +34,29 @@ using std::string;
 */
 
 // Lattice block
-const char* lat_xml = "<simulationcell> \
-                        <parameter name=\"lattice\" units=\"bohr\"> \
-                          2.0 0.0 0.0 \
-                          0.0 2.0 0.0 \
-                          0.0 0.0 2.0 \
-                        </parameter> \
-                        <parameter name=\"bconds\"> \
-                           p p p \
-                        </parameter> \
-                        <parameter name=\"LR_dim_cutoff\" >     6  </parameter> \
-                       </simulationcell>";
+const char* lat_xml = R"(<simulationcell>
+                        <parameter name="lattice" units="bohr">
+                          2.0 0.0 0.0
+                          0.0 2.0 0.0
+                          0.0 0.0 2.0
+                        </parameter>
+                        <parameter name="bconds">
+                           p p p
+                        </parameter>
+                        <parameter name="LR_dim_cutoff" >     6  </parameter>
+                       </simulationcell>)";
 
 // Particleset block
-const char* pset_xml = "<particleset name=\"e\" random=\"yes\"> \
-                          <group name=\"u\" size=\"4\" mass=\"1.0\"> \
-                            <parameter name=\"charge\" >   -1  </parameter> \
-                            <parameter name=\"mass\"   >  1.0  </parameter> \
-                          </group> \
-                          <group name=\"d\" size=\"4\" mass=\"1.0\"> \
-                            <parameter name=\"charge\" >   -1  </parameter> \
-                            <parameter name=\"mass\"   >  1.0  </parameter> \
-                          </group> \
-                        </particleset>";
+const char* pset_xml = R"(<particleset name="e" random="yes">
+                          <group name="u" size="4" mass="1.0">
+                            <parameter name="charge" >   -1  </parameter>
+                            <parameter name="mass"   >  1.0  </parameter>
+                          </group>
+                          <group name="d" size="4" mass="1.0">
+                            <parameter name="charge" >   -1  </parameter>
+                            <parameter name="mass"   >  1.0  </parameter>
+                          </group>
+                        </particleset>)";
 
 // PairCorrEstimator block
 const char* gofr_xml = R"(<estimator type="gofr" name="gofr" rmax="2.0" num_bin="99" />)";

@@ -31,19 +31,19 @@ namespace qmcplusplus
 TEST_CASE("RPA Jastrow", "[wavefunction]")
 {
   // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
+  const char* xmltext = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+</tmp>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);
   REQUIRE(okay);
@@ -98,9 +98,9 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  xmltext = "<tmp> \
-  <jastrow name=\"Jee\" type=\"Two-Body\" function=\"rpa\"/>\
-</tmp> ";
+  xmltext = R"(<tmp>
+  <jastrow name="Jee" type="Two-Body" function="rpa"/>
+</tmp>)";
   okay    = doc.parseFromString(xmltext);
   REQUIRE(okay);
 

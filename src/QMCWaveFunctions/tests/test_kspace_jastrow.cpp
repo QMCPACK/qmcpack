@@ -33,19 +33,19 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   // initialize simulationcell for kvectors
-  const char* xmltext = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> ";
+  const char* xmltext = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"> 15 </parameter>
+  </simulationcell>
+</tmp>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);
   REQUIRE(okay);
@@ -87,16 +87,16 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   // initialize SK
   elec_.createSK();
 
-  const char* particles = "<tmp> \
-<jastrow name=\"Jk\" type=\"kSpace\" source=\"ion\"> \
-  <correlation kc=\"1.5\" type=\"Two-Body\" symmetry=\"isotropic\"> \
-    <coefficients id=\"cG2\" type=\"Array\"> \
-      -100. -50. \
-    </coefficients> \
-  </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<jastrow name="Jk" type="kSpace" source="ion">
+  <correlation kc="1.5" type="Two-Body" symmetry="isotropic">
+    <coefficients id="cG2" type="Array">
+      -100. -50.
+    </coefficients>
+  </correlation>
+</jastrow>
+</tmp>
+)";
   okay                  = doc.parseFromString(particles);
   REQUIRE(okay);
 

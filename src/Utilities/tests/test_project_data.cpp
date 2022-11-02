@@ -52,7 +52,7 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
 {
   ProjectData proj;
 
-  const char* xml_input = "<project id='test1'></project>";
+  const char* xml_input = R"(<project id="test1"></project>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
   REQUIRE(okay);
@@ -68,7 +68,7 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
 {
   ProjectData proj;
 
-  const char* xml_input = "<project id='test1' series='1'></project>";
+  const char* xml_input = R"(<project id="test1" series="1"></project>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(xml_input);
   REQUIRE(okay);
@@ -89,8 +89,13 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   {
     ProjectData proj;
 
-    const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_version'>batch</parameter></project>";
+    const char* xml_input = R"(
+      <project id="test1" series="1">
+        <parameter name='driver_version'>
+          batch
+        </parameter>
+      </project>
+      )";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);
@@ -106,8 +111,13 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
     ProjectData proj;
     REQUIRE(proj.getDriverVersion() == DV::LEGACY);
 
-    const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_version'>legacy</parameter></project>";
+    const char* xml_input = R"(
+      <project id="test1" series="1">
+        <parameter name='driver_version'>
+          legacy
+        </parameter>
+      </project>
+      )";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);
@@ -122,8 +132,12 @@ TEST_CASE("ProjectData::TestDriverVersion", "[ohmmsapp]")
   {
     ProjectData proj;
 
-    const char* xml_input =
-        "<project id='test1' series='1'><parameter name='driver_version'>linear</parameter></project>";
+    const char* xml_input = R"(
+      <project id=" test1 " series=" 1 ">
+        <parameter name = 'driver_version' >
+          linear
+        </parameter>
+      </project>)";
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_input);
     REQUIRE(okay);

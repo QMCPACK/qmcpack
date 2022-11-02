@@ -94,12 +94,12 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);
@@ -180,13 +180,13 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"SpinMass\">0.25</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="SpinMass">0.25</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);
