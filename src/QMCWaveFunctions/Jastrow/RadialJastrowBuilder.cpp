@@ -349,7 +349,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
     if (SourcePtcl->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
     {
       std::ostringstream msg;
-      msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << SourcePtcl->getName()
+      msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << SourcePtcl->getName()
           << "\" particleset" << std::endl;
       myComm->barrier_and_abort(msg.str());
     }
@@ -610,7 +610,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
         if (targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         {
           std::ostringstream msg;
-          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << targetPtcl.getName()
+          msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << targetPtcl.getName()
               << "\" particleset" << std::endl;
           myComm->barrier_and_abort(msg.str());
         }

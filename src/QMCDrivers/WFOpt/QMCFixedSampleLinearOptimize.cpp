@@ -597,7 +597,7 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
   // sanity check
   if (targetExcited && current_optimizer_type_ != OptimizerType::ADAPTIVE &&
       current_optimizer_type_ != OptimizerType::DESCENT)
-    myComm->barrier_and_abort("targetExcited = \"yes\" requires that MinMethod = \"adaptive or descent");
+    myComm->barrier_and_abort(R"(targetExcited = "yes" requires that MinMethod = "adaptive or descent)");
 
 #ifdef _OPENMP
   if (current_optimizer_type_ == OptimizerType::ADAPTIVE && (omp_get_max_threads() > 1))
@@ -1548,7 +1548,7 @@ void QMCFixedSampleLinearOptimize::start()
   }
   app_log() << "  </log>" << std::endl;
   app_log() << "</opt>" << std::endl;
-  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
   t1.restart();
 }
@@ -1587,7 +1587,7 @@ void QMCFixedSampleLinearOptimize::engine_start(cqmc::engine::LMYEngine<ValueTyp
   }
   app_log() << "  </log>" << std::endl;
   app_log() << "</opt>" << std::endl;
-  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
   t1.restart();
 }
@@ -1634,7 +1634,7 @@ void QMCFixedSampleLinearOptimize::generateSamples()
   vmcEngine->qmc_driver_mode.set(QMC_WARMUP, 0);
   //vmcEngine->setValue("recordWalkers",1);//set record
   vmcEngine->setValue("current", 0); //reset CurrentStep
-  app_log() << "<vmc stage=\"main\" blocks=\"" << nBlocks << "\">" << std::endl;
+  app_log() << R"(<vmc stage="main" blocks=")" << nBlocks << "\">" << std::endl;
   t1.restart();
   //     W.reset();
   branchEngine->flush(0);
