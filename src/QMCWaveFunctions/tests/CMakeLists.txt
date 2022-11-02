@@ -100,7 +100,8 @@ set(JASTROW_SRC
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
-    test_J2_derivatives.cpp)
+    test_J2_derivatives.cpp
+    test_2d_jastrow.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
     test_DiracDeterminant.cpp
