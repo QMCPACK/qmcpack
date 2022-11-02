@@ -82,6 +82,10 @@ TEST_CASE("ModernStringUtils_strip", "[utilities]")
   std::string_view another{"r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1\n  \0"};
   std::string_view another_stripped = strip(another);
   CHECK(another_stripped == "r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1");
+
+  std::string_view unneeded{"this needs no stripping"};
+  std::string_view unneeded_stripped = strip(unneeded);
+  CHECK(unneeded_stripped == unneeded);
 }
   
 }

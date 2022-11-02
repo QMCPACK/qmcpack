@@ -44,19 +44,6 @@ public:
 
   using Data = std::vector<QMCT::RealType>;
 
-  /** locality for accumulation of estimator data.
-   *  This designates the memory scheme used for the estimator
-   *  The default is:
-   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
-   *  Memory Savings Schemes:
-   *  One:
-   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
-   *  One per crowd:
-   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
-   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
-   */
-  DataLocality data_locality_;
-
   QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
@@ -142,16 +129,34 @@ public:
   virtual void registerListeners(QMCHamiltonian& ham_leader){};
 
   bool isListenerRequired() { return requires_listener_; }
+
+  DataLocality get_data_locality() { return data_locality_; }
 protected:
   ///name of this object -- only used for debugging and h5 output
   std::string my_name_;
 
-  QMCT::FullPrecRealType walkers_weight_;
-
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
+  /** generic data buffer for estimators
+   *  base class provides default reduction behavior over these buffers.
+   */
   Data data_;
+
+  /** locality for accumulation of estimator data.
+   *  This designates the memory scheme used for the estimator
+   *  The default is:
+   *  DataLocality::Crowd, each crowd and the rank level estimator have a full representation of the data
+   *  Memory Savings Schemes:
+   *  One:
+   *  DataLocality::Rank,  This estimator has the full representation of the data but its crowd spawn will have
+   *  One per crowd:
+   *  DataLocality::Queue  This estimator accumulates queue of values to collect to the Rank estimator data
+   *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
+   */
+  DataLocality data_locality_;
+
+  QMCT::FullPrecRealType walkers_weight_;
 
   bool requires_listener_ = false;
 

@@ -376,7 +376,6 @@ public:
   {
     if (ename == "weird_stuff")
     {
-      std::cout << "handling weird stuff\n";
       WeirdStuff ws;
       svalue >> ws.letters;
       svalue >> ws.numbers[0];
@@ -386,7 +385,6 @@ public:
     }
     else if (ename == "repeater")
     {
-      std::cout << "handling repeater\n";
       std::string compound;
       svalue >> compound;
       auto split_vstrv = split(compound, ":"); 
@@ -400,6 +398,26 @@ public:
   }
 };
 
+class FailCustomTestInput : public InputSection
+{
+public:
+  struct WeirdStuff {
+    std::string letters;
+    std::array<int,3> numbers;
+  };
+  using Repeater = std::vector<std::pair<std::string, std::string>>;
+  FailCustomTestInput()
+  {
+    section_name = "Test";
+    attributes   = {"name", "samples", "kmax", "full"};
+    parameters   = {"label", "count", "width"};
+    strings      = {"name", "label"};
+    reals        = {"kmax"};
+    integers     = {"samples", "count"};
+    bools        = {"full"};
+    custom       = {"weird_stuff", "repeater"};
+  }
+};
 
 TEST_CASE("InputSection::custom", "[estimators]")
 {
@@ -427,6 +445,9 @@ TEST_CASE("InputSection::custom", "[estimators]")
   auto repeater = cti.get<decltype(cti)::Repeater>("repeater");
   decltype(cti)::Repeater exp_repeater{{"first","something"},{"second","else"}};
   CHECK(repeater == exp_repeater);
+
+  FailCustomTestInput fcti;
+  CHECK_THROWS_AS(fcti.readXML(cur), std::runtime_error);
 }
 
 /** Generic delgate input class.
