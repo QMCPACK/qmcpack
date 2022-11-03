@@ -222,14 +222,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   TrialWaveFunction psi;
 
   //Add the two body jastrow
-  const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
-      <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
-          <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
-        </correlation> \
-  </jastrow> \
-  </tmp> \
-  ";
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="d" rcut="10" size="8">
+          <coefficients id="ud" type="Array"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -243,14 +243,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   // Done with two body jastrow.
 
   //Add the one body jastrow.
-  const char* particles2 = "<tmp> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" source=\"ion0\" print=\"yes\"> \
-        <correlation elementType=\"Na\" rcut=\"10\" size=\"10\" cusp=\"0\"> \
-          <coefficients id=\"eNa\" type=\"Array\"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients> \
-        </correlation> \
-      </jastrow> \
-  </tmp> \
-  ";
+  const char* particles2 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="Na" rcut="10" size="10" cusp="0">
+          <coefficients id="eNa" type="Array"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
   bool okay3             = doc.parseFromString(particles2);
   REQUIRE(okay3);
 

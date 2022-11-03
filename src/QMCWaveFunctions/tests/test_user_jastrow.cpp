@@ -31,9 +31,9 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   uf.setCusp(1.0);
 
   // Adjust this based on the example XML block
-  const char* xmltext = "<tmp> \
-       <var name=\"B\" id=\"j_B\">2.0</var> \
-        </tmp>";
+  const char* xmltext = R"(<tmp>
+       <var name="B" id="j_B">2.0</var>
+        </tmp>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(xmltext);

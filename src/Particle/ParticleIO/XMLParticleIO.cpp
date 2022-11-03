@@ -446,7 +446,7 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int in_offset, int copy_si
   if (oname.empty() || otype.empty())
   {
     app_error() << "   Missing attrib/@name or attrib/@datatype " << std::endl;
-    app_error() << "     <attrib name=\"aname\"  datatype=\"atype\"/>" << std::endl;
+    app_error() << R"(     <attrib name="aname"  datatype="atype"/>)" << std::endl;
     return;
   }
   int t_id = ref_AttribList.getAttribType(otype);

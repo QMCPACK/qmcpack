@@ -94,10 +94,10 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1 - 8 bands available
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"8\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

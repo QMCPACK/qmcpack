@@ -236,7 +236,7 @@ bool LatticeParser::put(xmlNodePtr cur)
 bool LatticeXMLWriter::get(std::ostream& os) const
 {
   os << "<unitcell>" << std::endl;
-  os << "<parameter name=\"lattice\" datatype=\"tensor\">" << std::endl;
+  os << R"(<parameter name="lattice" datatype="tensor">)" << std::endl;
   os << ref_.R << "</parameter>" << std::endl;
   os << "<parameter name=\"bconds\">";
   const int DIM = ParticleLayout::SingleParticlePos::Size;
