@@ -149,6 +149,11 @@ jobs:
       - name: Checkout Action
         uses: actions/checkout@v3
 
+      - name: Set Python Version
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
       - name: Setup Dependencies
         run: |
           brew install ninja hdf5 fftw boost
