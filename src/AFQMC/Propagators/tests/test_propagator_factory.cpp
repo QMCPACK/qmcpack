@@ -80,13 +80,13 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -99,18 +99,18 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator rng;
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">closed</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">collinear</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">noncollinear</parameter>  \
-    </WalkerSet> \
-    ";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+    </WalkerSet>
+    )";
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
     Libxml2Document doc3;
@@ -122,16 +122,15 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " propg_fac_shared destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"dense_trial\">yes</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="dense_trial">yes</parameter>
+      <parameter name="restart_file">" + restart_file + "</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -149,9 +148,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
     //                         initial_guess[1](XXX.extension(0),{0,NAEB}));
 
-    const char* propg_xml_block = "<Propagator name=\"prop0\">  \
-</Propagator> \
-";
+    const char* propg_xml_block = R"(<Propagator name="prop0"></Propagator>)";
     Libxml2Document doc4;
     okay = doc4.parseFromString(propg_xml_block);
     REQUIRE(okay);
@@ -252,15 +249,15 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     int NPOL                  = (type == NONCOLLINEAR) ? 2 : 1;
 
     std::map<std::string, AFQMCInfo> InfoMap;
-    InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
+    InfoMap.insert(std::make_pair("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -276,18 +273,18 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     RandomGenerator rng;
     qmcplusplus::Timer Time;
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">closed</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">collinear</parameter>  \
-    </WalkerSet> \
-    ";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">noncollinear</parameter>  \
-    </WalkerSet> \
-    ";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+    </WalkerSet>
+    )";
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
     Libxml2Document doc3;
@@ -297,15 +294,14 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " propg_fac_distributed destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="restart_file">" + restart_file + "</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -322,13 +318,10 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
     REQUIRE(std::get<2>(initial_guess.sizes()) == NAEA);
     wset.resize(nwalk, initial_guess[0], initial_guess[0]);
 
-    const char* propg_xml_block0 = "<Propagator name=\"prop0\">  \
-      <parameter name=\"nnodes\">";
-    const char* propg_xml_block1 = "</parameter> \
-</Propagator> \
-";
-    std::string str_             = std::string("<Propagator name=\"prop0\"> <parameter name=\"nnodes\">") +
-        std::to_string(gTG.getTotalNodes()) + std::string("</parameter> </Propagator>");
+    const char* propg_xml_block0 = R"(<Propagator name="prop0"><parameter name="nnodes">)";
+    const char* propg_xml_block1 = R"(</parameter></Propagator>)";
+    std::string str_             = std::string(R"(<Propagator name="prop0"> <parameter name="nnodes">)") +
+        std::to_string(gTG.getTotalNodes()) + std::string(R"(</parameter> </Propagator>)");
     Libxml2Document doc4;
     okay = doc4.parseFromString(str_.c_str());
     REQUIRE(okay);
