@@ -160,7 +160,9 @@ public:
 
   void resize(size_t m, size_t n)
   {
-    if (n * m > n_max_ * m_max_)
+    size_t max_capacity = capacity();
+
+    if (n * m > max_capacity)
     {
       std::ostringstream error;
       error << "You cannot resize a constant size matrix beyond its initial max dimensions ( " << m << "," << n << " > "
@@ -168,16 +170,15 @@ public:
       throw std::domain_error(error.str());
     }
 
-    size_t capacity = n_max_ * m_max_;
     if (n > n_max_)
     {
       n_max_ = n;
-      m_max_ = capacity / n_max_;
+      m_max_ = max_capacity / n_max_;
     }
     if (m > m_max_)
     {
       m_max_ = m;
-      n_max_ = capacity / m_max_;
+      n_max_ = max_capacity / m_max_;
     }
 
     n_ = n;
