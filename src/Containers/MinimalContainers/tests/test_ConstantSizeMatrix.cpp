@@ -29,7 +29,14 @@ TEST_CASE("ConstantSizeMatrix basics", "[containers]")
 
   CHECK_THROWS(cmat.resize(1, 33));
 
-  CHECK_THROWS(cmat.resize(2, 9));
+  CHECK_NOTHROW(cmat.resize(2, 9));
+  CHECK(cmat.capacity() == 32);
+
+  // If the new dimensions are not commensurable with the old ones,
+  // the capacity could decrease, even though the size of the underlying
+  // storage does not decrease.
+  CHECK_NOTHROW(cmat.resize(3, 9));
+  CHECK(cmat.capacity() == 30);
 
   //note the odd OhmmsMatrix style access operator semantics
   //If these break you probably breaking other weird QMCPACK code.
