@@ -37,7 +37,7 @@ TEST_CASE("ConstantSizeMatrix basics", "[containers]")
   // the capacity could decrease, even though the size of the underlying
   // storage does not decrease.
   CHECK_NOTHROW(cmat.resize(3, 9));
-  CHECK(cmat.capacity() == 30);
+  CHECK(cmat.capacity() == 32);
 
   //note the odd OhmmsMatrix style access operator semantics
   //If these break you probably breaking other weird QMCPACK code.
