@@ -89,10 +89,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\" hybridrep=\"yes\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -219,10 +219,10 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\" hybridrep=\"yes\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4" hybridrep="yes"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

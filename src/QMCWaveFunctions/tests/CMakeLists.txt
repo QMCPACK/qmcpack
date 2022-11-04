@@ -24,6 +24,7 @@ set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h
 set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multidet.h5)
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
+set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -36,6 +37,7 @@ maybe_symlink(${UTEST_HDF_INPUT7} ${UTEST_DIR}/LiH.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
+maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
 
 set(FILES_TO_COPY
     he_sto3g.wfj.xml
@@ -100,7 +102,8 @@ set(JASTROW_SRC
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
-    test_J2_derivatives.cpp)
+    test_J2_derivatives.cpp
+    test_2d_jastrow.cpp)
 set(DETERMINANT_SRC
     FakeSPO.cpp
     test_DiracDeterminant.cpp

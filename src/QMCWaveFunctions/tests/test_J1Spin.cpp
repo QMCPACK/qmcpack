@@ -65,17 +65,17 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-<jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\" spin=\"yes\"> \
-  <correlation speciesA=\"H\" speciesB=\"u\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-    <coefficients id=\"J1uH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-  </correlation> \
-  <correlation speciesA=\"H\" speciesB=\"d\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-    <coefficients id=\"J1dH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-  </correlation> \
-</jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+<jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0" spin="yes">
+  <correlation speciesA="H" speciesB="u" cusp="0.0" size="2" rcut="5.0">
+    <coefficients id="J1uH" type="Array"> 0.5 0.1 </coefficients>
+  </correlation>
+  <correlation speciesA="H" speciesB="d" cusp="0.0" size="2" rcut="5.0">
+    <coefficients id="J1dH" type="Array"> 0.5 0.1 </coefficients>
+  </correlation>
+</jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);

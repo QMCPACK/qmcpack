@@ -97,10 +97,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
-</tmp> \
-";
+  const char* spo_xml = R"(<tmp> \
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="2"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml);
@@ -122,14 +122,14 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
 
-  const char* jas_input = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-   </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* jas_input = R"(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+   <correlation size="10" speciesA="u" speciesB="u">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+   </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc_jas;
   okay = doc.parseFromString(jas_input);
   REQUIRE(okay);

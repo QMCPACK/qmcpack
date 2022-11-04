@@ -73,6 +73,10 @@ protected:
   const size_t N;
   ///number of groups of the target particleset
   const size_t NumGroups;
+  ///number of spatial dimensions
+  const size_t ndim;
+  ///laplacian prefactor
+  const valT lapfac;
 
 private:
   /// if true use offload

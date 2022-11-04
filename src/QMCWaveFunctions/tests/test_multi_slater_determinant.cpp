@@ -331,27 +331,27 @@ TEST_CASE("LiH multi Slater dets table_method", "[wavefunction]")
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd using the table method no precomputation" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-    </sposet_collection> \
-    <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" algorithm=\"table_method\"> \
-        <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
-      </multideterminant> \
-    </determinantset> \
-</wavefunction> \
-";
+  const char* spo_xml_string1 = R"(<wavefunction name="psi0" target="e">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" cuspCorrection="no" href="LiH.orbs.h5">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="85">
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="85">
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn" algorithm="table_method">
+        <detlist size="1487" type="DETS" cutoff="1e-20" href="LiH.orbs.h5"/>
+      </multideterminant>
+    </determinantset>
+</wavefunction>
+)";
   test_LiH_msd(spo_xml_string1, "spo-up", 85, 105, true, true);
 }
 
@@ -360,27 +360,27 @@ TEST_CASE("LiH multi Slater dets precomputed_table_method", "[wavefunction]")
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "LiH_msd using the table method with new optimization" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1_new = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_collection type=\"MolecularOrbital\" name=\"LCAOBSet\" source=\"ion0\" cuspCorrection=\"no\" href=\"LiH.orbs.h5\"> \
-      <basisset name=\"LCAOBSet\" key=\"GTO\" transform=\"yes\"> \
-        <grid type=\"log\" ri=\"1.e-6\" rf=\"1.e2\" npts=\"1001\"/> \
-      </basisset> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-up\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-      <sposet basisset=\"LCAOBSet\" name=\"spo-dn\" size=\"85\"> \
-        <occupation mode=\"ground\"/> \
-        <coefficient size=\"85\" spindataset=\"0\"/> \
-      </sposet> \
-    </sposet_collection> \
-    <determinantset> \
-      <multideterminant optimize=\"yes\" spo_up=\"spo-up\" spo_dn=\"spo-dn\" algorithm=\"precomputed_table_method\"> \
-        <detlist size=\"1487\" type=\"DETS\" cutoff=\"1e-20\" href=\"LiH.orbs.h5\"/> \
-      </multideterminant> \
-    </determinantset> \
-</wavefunction> \
-";
+  const char* spo_xml_string1_new = R"(<wavefunction name="psi0" target="e">
+    <sposet_collection type="MolecularOrbital" name="LCAOBSet" source="ion0" cuspCorrection="no" href="LiH.orbs.h5">
+      <basisset name="LCAOBSet" key="GTO" transform="yes">
+        <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="85"> 
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="85">
+        <occupation mode="ground"/>
+        <coefficient size="85" spindataset="0"/>
+      </sposet>
+    </sposet_collection>
+    <determinantset>
+      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn" algorithm="precomputed_table_method">
+        <detlist size="1487" type="DETS" cutoff="1e-20" href="LiH.orbs.h5"/>
+      </multideterminant>
+    </determinantset>
+</wavefunction>
+)";
   test_LiH_msd(spo_xml_string1_new, "spo-up", 85, 105, true, true);
 }
 
@@ -485,62 +485,62 @@ TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "Bi using the table method no precomputation" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1 = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
-        <sposet name=\"myspo\" size=\"16\"> \
-            <occupation mode=\"ground\"/> \
-        </sposet> \
-    </sposet_builder> \
-    <determinantset> \
-        <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"table_method\"> \
-            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\"> \
-               <ci coeff=\" 0.8586\" occ0=\"1110110000000000\"/> \
-               <ci coeff=\"-0.2040\" occ0=\"1101110000000000\"/> \
-               <ci coeff=\" 0.4081\" occ0=\"1110101000000000\"/> \
-               <ci coeff=\"-0.2340\" occ0=\"1101101000000000\"/> \
-            </detlist> \
-        </multideterminant> \
-    </determinantset> \
-</wavefunction>";
+  const char* spo_xml_string1 = R"(<wavefunction name="psi0" target="e">
+    <sposet_builder name="spinorbuilder" type="molecularorbital" source="ion0" transform="yes" href="Bi.orbs.h5" precision="double">
+        <sposet name="myspo" size="16">
+            <occupation mode="ground"/>
+        </sposet>
+    </sposet_builder>
+    <determinantset>
+        <multideterminant optimize="no" spo_0="myspo" algorithm="table_method">
+            <detlist size="4" type="DETS" nc0="0" ne0="5" nstates="16" cutoff="1e-20">
+               <ci coeff=" 0.8586" occ0="1110110000000000"/>
+               <ci coeff="-0.2040" occ0="1101110000000000"/>
+               <ci coeff=" 0.4081" occ0="1110101000000000"/>
+               <ci coeff="-0.2340" occ0="1101101000000000"/>
+            </detlist>
+        </multideterminant>
+    </determinantset>
+</wavefunction>)";
   test_Bi_msd(spo_xml_string1, "myspo", 16, 123);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "Bi using the table method with new optimization" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string1_new = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
-        <sposet name=\"myspo\" size=\"16\"> \
-            <occupation mode=\"ground\"/> \
-        </sposet> \
-    </sposet_builder> \
-    <determinantset> \
-        <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"precomputed_table_method\"> \
-            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\"> \
-               <ci coeff=\" 0.8586\" occ0=\"1110110000000000\"/> \
-               <ci coeff=\"-0.2040\" occ0=\"1101110000000000\"/> \
-               <ci coeff=\" 0.4081\" occ0=\"1110101000000000\"/> \
-               <ci coeff=\"-0.2340\" occ0=\"1101101000000000\"/> \
-            </detlist> \
-        </multideterminant> \
-    </determinantset> \
-</wavefunction>";
+  const char* spo_xml_string1_new = R"(<wavefunction name="psi0" target="e">
+    <sposet_builder name="spinorbuilder" type="molecularorbital" source="ion0" transform="yes" href="Bi.orbs.h5" precision="double">
+        <sposet name="myspo" size="16">
+            <occupation mode="ground"/>
+        </sposet>
+    </sposet_builder>
+    <determinantset>
+        <multideterminant optimize="no" spo_0="myspo" algorithm="precomputed_table_method">
+            <detlist size="4" type="DETS" nc0="0" ne0="5" nstates="16" cutoff="1e-20">
+               <ci coeff=" 0.8586" occ0="1110110000000000"/>
+               <ci coeff="-0.2040" occ0="1101110000000000"/>
+               <ci coeff=" 0.4081" occ0="1110101000000000"/>
+               <ci coeff="-0.2340" occ0="1101101000000000"/>
+            </detlist>
+        </multideterminant>
+    </determinantset>
+</wavefunction>)";
   test_Bi_msd(spo_xml_string1_new, "myspo", 16, 123);
 
   app_log() << "-----------------------------------------------------------------" << std::endl;
   app_log() << "Bi using the table method with new optimization, read from hdf5" << std::endl;
   app_log() << "-----------------------------------------------------------------" << std::endl;
-  const char* spo_xml_string2_new = "<wavefunction name=\"psi0\" target=\"e\"> \
-    <sposet_builder name=\"spinorbuilder\" type=\"molecularorbital\" source=\"ion0\" transform=\"yes\" href=\"Bi.orbs.h5\" precision=\"double\"> \
-        <sposet name=\"myspo\" size=\"16\"> \
-            <occupation mode=\"ground\"/> \
-        </sposet> \
-    </sposet_builder> \
-    <determinantset> \
-        <multideterminant optimize=\"no\" spo_0=\"myspo\" algorithm=\"precomputed_table_method\"> \
-            <detlist size=\"4\" type=\"DETS\" nc0=\"0\" ne0=\"5\" nstates=\"16\" cutoff=\"1e-20\" href=\"Bi.orbs.h5\"/> \
-        </multideterminant> \
-    </determinantset> \
-</wavefunction>";
+  const char* spo_xml_string2_new = R"(<wavefunction name="psi0" target="e">
+    <sposet_builder name="spinorbuilder" type="molecularorbital" source="ion0" transform="yes" href="Bi.orbs.h5" precision="double">
+        <sposet name="myspo" size="16">
+            <occupation mode="ground"/>
+        </sposet>
+    </sposet_builder>
+    <determinantset>
+        <multideterminant optimize="no" spo_0="myspo" algorithm="precomputed_table_method">
+            <detlist size="4" type="DETS" nc0="0" ne0="5" nstates="16" cutoff="1e-20" href="Bi.orbs.h5"/>
+        </multideterminant>
+    </determinantset>
+</wavefunction>)";
   test_Bi_msd(spo_xml_string2_new, "myspo", 16, 123);
 }
 #endif

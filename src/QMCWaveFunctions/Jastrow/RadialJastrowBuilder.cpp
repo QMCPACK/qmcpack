@@ -156,6 +156,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
+  const size_t ndim = targetPtcl.getLattice().ndim;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2 = std::make_unique<J2Type>(j2name, targetPtcl, Implementation == RadialJastrowBuilder::detail::OMPTARGET);
 
@@ -217,14 +218,11 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
                       " particle. Please remove it from two-body Jastrow.",
                   true);
       if (cusp < -1e6)
-      {
+      { // see eq. (9) in https://arxiv.org/abs/2003.06506
         RealType qq       = species(chargeInd, ia) * species(chargeInd, ib);
         RealType red_mass = species(massInd, ia) * species(massInd, ib) / (species(massInd, ia) + species(massInd, ib));
-#if OHMMS_DIM == 1
-        RealType dim_factor = 1.0 / (OHMMS_DIM + 1);
-#else
-        RealType dim_factor = (ia == ib) ? 1.0 / (OHMMS_DIM + 1) : 1.0 / (OHMMS_DIM - 1);
-#endif
+        RealType dim_factor = (ia == ib) ? 1.0 / (ndim + 1) : 1.0 / (ndim - 1);
+        if (ndim == 1) dim_factor = 1.0 / (ndim + 1);
         cusp = -2 * qq * red_mass * dim_factor;
       }
       app_summary() << "    Radial function for species: " << spA << " - " << spB << std::endl;
@@ -351,7 +349,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
     if (SourcePtcl->getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
     {
       std::ostringstream msg;
-      msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << SourcePtcl->getName()
+      msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << SourcePtcl->getName()
           << "\" particleset" << std::endl;
       myComm->barrier_and_abort(msg.str());
     }
@@ -612,7 +610,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
         if (targetPtcl.getCoordinates().getKind() != DynamicCoordinateKind::DC_POS_OFFLOAD)
         {
           std::ostringstream msg;
-          msg << "Offload enabled Jastrow needs the gpu=\"yes\" attribute in the \"" << targetPtcl.getName()
+          msg << R"(Offload enabled Jastrow needs the gpu="yes" attribute in the ")" << targetPtcl.getName()
               << "\" particleset" << std::endl;
           myComm->barrier_and_abort(msg.str());
         }
