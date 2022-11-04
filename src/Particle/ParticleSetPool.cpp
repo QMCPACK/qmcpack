@@ -72,7 +72,8 @@ void ParticleSetPool::addParticleSet(std::unique_ptr<ParticleSet>&& p)
     auto& pname = p->getName();
     LOGMSG("  Adding " << pname << " ParticleSet to the pool")
     if (&p->getSimulationCell() != simulation_cell_.get())
-      throw std::runtime_error("bug mandate");
+      throw std::runtime_error("Bug detected! ParticleSetPool::addParticleSet requires p created with the simulation "
+                               "cell from ParticleSetPool.");
     myPool.emplace(pname, std::move(p));
   }
   else
