@@ -132,9 +132,6 @@ public:
 
   DataLocality get_data_locality() { return data_locality_; }
 protected:
-  ///name of this object -- only used for debugging and h5 output
-  std::string my_name_;
-
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
   UPtrVector<ObservableHelper> h5desc_;
 
@@ -155,6 +152,9 @@ protected:
    *  DataLocality::?      Another way to reduce memory use on thread/crowd local estimators.
    */
   DataLocality data_locality_;
+
+  ///name of this object -- only used for debugging and h5 output
+  std::string my_name_;
 
   QMCT::FullPrecRealType walkers_weight_;
 
