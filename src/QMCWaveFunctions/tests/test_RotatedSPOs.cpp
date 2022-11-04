@@ -506,25 +506,23 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   ions.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
   elec.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec.create({1});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
+  elec.R[0] = {0.0, 0.0, 0.0};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
   int chargeIdx              = tspecies.addAttribute("charge");
   tspecies(chargeIdx, upIdx) = -1;
 
+  // Add the attribute save_coefs="yes" to the sposet_builder tag to generate the
+  // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" save_coefs="yes" size="2">
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
     <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
 </sposet_builder>
 </tmp>)";
