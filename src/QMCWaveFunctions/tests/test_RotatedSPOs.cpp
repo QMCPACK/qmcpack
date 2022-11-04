@@ -480,5 +480,114 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
   }
 }
 
+TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
+{
+  using RealType = QMCTraits::RealType;
+  Communicate* c = OHMMS::Controller;
+
+  ParticleSet::ParticleLayout lattice;
+  lattice.R(0, 0) = 4.32747284;
+  lattice.R(0, 1) = 0.00000000;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = -2.16373642;
+  lattice.R(1, 1) = 3.74770142;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = 0.00000000;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 6.78114995;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
+
+  ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions.create({1});
+  ions.R[0] = {0.0, 0.0, 0.0};
+
+  elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec.create({1});
+  elec.R[0] = {0.0, 0.0, 0.0};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
+
+  // Add the attribute save_coefs="yes" to the sposet_builder tag to generate the
+  // spline file for use in eval_bspline_spo.py
+
+  const char* particles = R"(<tmp>
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
+    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+</sposet_builder>
+</tmp>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr ein1 = xmlFirstElementChild(root);
+
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
+  REQUIRE(spo);
+
+  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
+
+  // Sanity check for orbs. Expect 1 electron, 2 orbitals
+  const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
+  REQUIRE(orbitalsetsize == 2);
+
+  rot_spo->buildOptVariables(elec.R.size());
+
+  SPOSet::ValueMatrix psiM_bare(elec.R.size(), orbitalsetsize);
+  SPOSet::GradMatrix dpsiM_bare(elec.R.size(), orbitalsetsize);
+  SPOSet::ValueMatrix d2psiM_bare(elec.R.size(), orbitalsetsize);
+  rot_spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
+
+  // Values generated from eval_bspline_spo.py, the generate_point_values_hcpBe function
+  CHECK(std::real(psiM_bare[0][0]) == Approx(0.210221765375514));
+  CHECK(std::real(psiM_bare[0][1]) == Approx(-2.984345024542937e-06));
+
+  CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.303848362116568));
+
+  opt_variables_type opt_vars;
+  rot_spo->checkInVariablesExclusive(opt_vars);
+  opt_vars.resetIndex();
+  rot_spo->checkOutVariables(opt_vars);
+  rot_spo->resetParametersExclusive(opt_vars);
+
+  using ValueType = QMCTraits::ValueType;
+  Vector<ValueType> dlogpsi(1);
+  Vector<ValueType> dhpsioverpsi(1);
+  rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
+
+  CHECK(dlogpsi[0] == ValueApprox(-1.41961753e-05));
+  CHECK(dhpsioverpsi[0] == ValueApprox(-0.00060853));
+
+  std::vector<RealType> params = {0.1};
+  rot_spo->apply_rotation(params, false);
+
+  rot_spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
+  CHECK(std::real(psiM_bare[0][0]) == Approx(0.20917123424337608));
+  CHECK(std::real(psiM_bare[0][1]) == Approx(-0.02099012652669549));
+
+  CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.277362065087747));
+
+  dlogpsi[0]      = 0.0;
+  dhpsioverpsi[0] = 0.0;
+
+  rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
+  CHECK(dlogpsi[0] == ValueApprox(-0.10034901119468914));
+  CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
+}
+
 
 } // namespace qmcplusplus
