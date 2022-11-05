@@ -186,7 +186,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
   LRCoulombSingleton::CoulombHandler = 0; // !!!! crucial if not first test
   LRCoulombSingleton::this_lr_type = LRCoulombSingleton::STRICT2D;
   const double vmad_tri = -1.1061025865191676;
-  const double alat = std::sqrt(2.0*M_PI/std::sqrt(3));
+  const double alat = std::sqrt(2.0*M_PI/std::sqrt(3.0));
 
   CrystalLattice<OHMMS_PRECISION, OHMMS_DIM> lattice;
   lattice.BoxBConds = true; // periodic
