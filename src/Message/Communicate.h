@@ -231,7 +231,7 @@ public:
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
-  mpi3::communicator comm;
+  mutable mpi3::communicator comm;
 #endif
 };
 
