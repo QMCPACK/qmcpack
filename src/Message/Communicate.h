@@ -231,7 +231,11 @@ public:
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
-  mpi3::communicator comm;
+  // AAC: Communicate is escentially a 'mutable' wrapper of mpi3::communicator
+  //      Since this member doesn't have an access protector (mutex),
+  //      this makes the use of the class member non-thread compatible,
+  //      in other words Communicate cannot be used from difference threads
+  mutable mpi3::communicator comm;
 #endif
 };
 
