@@ -54,6 +54,12 @@ Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(
   d_ncontexts = comm.size();
 }
 
+Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
+{
+  myMPI       = comm.get();
+  d_mycontext = comm.rank();
+  d_ncontexts = comm.size();
+}
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
