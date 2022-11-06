@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -11,6 +11,7 @@
 //                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Alfredo A. Correa, correaa@llnl.gov, Lawrence Livermore National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -45,10 +46,10 @@ Communicate::~Communicate() = default;
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-Communicate::Communicate(const mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1)
+Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1)
 {
-  // const_cast is used to enable non-const call to duplicate()
-  comm        = const_cast<mpi3::communicator&>(in_comm).duplicate();
+  // in_comm needs to be mutable to be duplicated
+  comm        = in_comm.duplicate();
   myMPI       = comm.get();
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
@@ -59,8 +60,8 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
   std::vector<int> nplist(nparts + 1);
   int p = FairDivideLow(in_comm.rank(), in_comm.size(), nparts, nplist); //group
-  // const_cast is used to enable non-const call to split()
-  comm  = const_cast<mpi3::communicator&>(in_comm.comm).split(p, in_comm.rank());
+  // comm is mutable member
+  comm  = in_comm.comm.split(p, in_comm.rank());
   myMPI = comm.get();
   // TODO: mpi3 needs to define comm
   d_mycontext = comm.rank();
@@ -93,8 +94,8 @@ void Communicate::initialize(int argc, char** argv) {}
 
 void Communicate::initializeAsNodeComm(const Communicate& parent)
 {
-  // const_cast is used to enable non-const call to split_shared()
-  comm        = const_cast<mpi3::communicator&>(parent.comm).split_shared();
+  // comm is mutable member
+  comm        = parent.comm.split_shared();
   myMPI       = comm.get();
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
