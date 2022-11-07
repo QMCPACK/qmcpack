@@ -21,11 +21,19 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
 {
   requires_listener_ = true;
   my_name_           = "PerParticleHamiltonianLogger";
-
+  
   std::string filename("rank_" + std::to_string(rank_) + "_" + input_.get_name() + ".dat");
   rank_fstream_.open(filename, std::ios::out);
 }
 
+PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& pphl, DataLocality dl)
+    : OperatorEstBase(dl), rank_estimator_(const_cast<PerParticleHamiltonianLogger*>(&pphl)), input_(pphl.input_)
+{
+  requires_listener_ = true;
+  my_name_           = pphl.name_;
+  data_locality_     = dl;
+}
+  
 void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const int crowd_id)
 {
   // fstream is not thread safe but it is buffered.  If the buffer isn't too small this
@@ -61,27 +69,10 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   //       clear log values
 }
 
-PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(const PerParticleHamiltonianLogger& pphl, DataLocality dl)
-    : OperatorEstBase(dl), rank_estimator_(const_cast<PerParticleHamiltonianLogger*>(&pphl)), input_(pphl.input_)
-{
-  requires_listener_ = true;
-  my_name_           = pphl.name_;
-  data_locality_     = dl;
-}
-
-
 std::unique_ptr<OperatorEstBase> PerParticleHamiltonianLogger::spawnCrowdClone() const
 {
   std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
-
-  if (data_locality_ == DataLocality::rank)
-  {
-    // This is just a stub until a memory saving optimization is deemed necessary
-    spawn_data_locality = DataLocality::crowd;
-    data_size           = 0;
-    throw std::runtime_error("There is no memory savings implementation for OneBodyDensityMatrices");
-  }
 
   auto spawn = std::make_unique<PerParticleHamiltonianLogger>(*this, spawn_data_locality);
   spawn->get_data().resize(data_size, 0.0);
@@ -108,8 +99,6 @@ void PerParticleHamiltonianLogger::registerListeners(QMCHamiltonian& ham_leader)
   ListenerVector<Real> listener(name_, getLogger());
   QMCHamiltonian::mw_registerLocalEnergyListener(ham_leader, listener);
 }
-
-void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) {}
 
 void PerParticleHamiltonianLogger::startBlock(int steps)
 {

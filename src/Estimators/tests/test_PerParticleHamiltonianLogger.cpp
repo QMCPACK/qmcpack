@@ -60,7 +60,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
   CHECK(!pphli.get_to_stdout());
   CHECK(pphli.get_validate_per_particle_sum());
-  
+
   int rank = 0;
   PerParticleHamiltonianLogger rank_logger(std::move(pphli), rank);
 
@@ -106,6 +106,9 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
       mwt.registerVector(listener);
     }
 
+  rank_logger.startBlock(100);
+  CHECK(rank_logger.get_block() == 1);
+  
   for (auto& mwt : multi_walker_talkers)
     mwt.reportVector();
 
@@ -116,6 +119,9 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
   {
     crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, rng, crowd_id++);
   }
+  
+  RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector<OperatorEstBase>(crowd_loggers);
+  rank_logger.collect(crowd_loggers_refs);
 }
 
 } // namespace qmcplusplus

@@ -53,6 +53,8 @@ public:
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
   void write(CrowdLogValues& values, const int crowd_id);
+
+  int get_block() { return block_; }
 private:
   bool crowd_clone = false;
   PerParticleHamiltonianLogger  * const rank_estimator_;
@@ -62,7 +64,7 @@ private:
   const std::string name_{"PerParticleHamiltonianLogger"};
   std::fstream rank_fstream_;
   std::mutex write_lock;
-  int block_;
+  int block_ = 0;
 };
   
 }
