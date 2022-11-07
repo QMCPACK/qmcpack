@@ -15,9 +15,9 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <hip/hip_runtime.h>
-#include "hipblas.h"
+#include <hipblas/hipblas.h>
 #include "hipsparse.h"
-#include "rocsolver.h"
+#include <rocsolver/rocsolver.h>
 #include "rocrand/rocrand.h"
 #include "hip_utilities.h"
 

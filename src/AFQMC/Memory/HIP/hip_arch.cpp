@@ -19,9 +19,9 @@
 #include "AFQMC/Memory/device_pointers.hpp"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
-#include "hipblas.h"
+#include <hipblas/hipblas.h>
 #include "hipsparse.h"
-#include "rocsolver.h"
+#include <rocsolver/rocsolver.h>
 #include "rocrand/rocrand.h"
 
 namespace arch

@@ -16,7 +16,7 @@
 // Interface to rocSOLVER linear algebra library.
 // File copied and modified from CUDA/cusolver.hpp
 
-#include <rocsolver.h>
+#include <rocsolver/rocsolver.h>
 #include <complex>
 #include <iostream>
 #include <string>
