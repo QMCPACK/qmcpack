@@ -80,6 +80,26 @@ if(NOT QMC_CUDA)
     BCC_H_DMC_SCALARS # DMC
   )
 
+  # Deterministic correlated sampling test
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A"   "-1.5879406376 0.00001")
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B"   "-1.5845690797 0.00001")
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.0033713724 0.00001")
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_A"      "-0.9628996202 0.0000001")
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_B"      "-0.9581655983 0.0000001")
+  list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB"    "-0.0047340219 0.0000001")
+
+  qmc_run_and_check(
+    deterministic-bccH_1x1x1_ae-csvmc-all_sdj
+    "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+    det_qmc_short_csvmc_all
+    det_qmc_short_csvmc_all.in.xml
+    1
+    1
+    TRUE
+    0
+    DET_BCC_H_CSVMC_SCALARS # VMC
+  )
+
   #Now for the correlated sampling tests
   list(APPEND BCC_H_CSVMC_SCALARS "totenergy_A" "-1.83428 0.00013")
   list(APPEND BCC_H_CSVMC_SCALARS "totenergy_B" "-1.83390 0.00012")
