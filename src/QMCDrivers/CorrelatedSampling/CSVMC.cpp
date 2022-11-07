@@ -229,7 +229,7 @@ void CSVMC::resetRun()
 
   if (Movers.empty())
   {
-    CSMovers.resize(NumThreads, nullptr);
+    CSMovers.resize(NumThreads);
     estimatorClones.resize(NumThreads, nullptr);
     traceClones.resize(NumThreads, nullptr);
     Rng.resize(NumThreads);
@@ -253,12 +253,12 @@ void CSVMC::resetRun()
         if (UseDrift == "yes")
         {
           os << "  Using particle-by-particle update with drift " << std::endl;
-          CSMovers[ip] = new CSVMCUpdatePbyPWithDriftFast(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] = std::make_unique<CSVMCUpdatePbyPWithDriftFast>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
         }
         else
         {
           os << "  Using particle-by-particle update with no drift" << std::endl;
-          CSMovers[ip] = new CSVMCUpdatePbyP(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] = std::make_unique<CSVMCUpdatePbyP>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
         }
       }
       else
@@ -266,12 +266,12 @@ void CSVMC::resetRun()
         if (UseDrift == "yes")
         {
           os << "  Using walker-by-walker update with Drift " << std::endl;
-          CSMovers[ip] = new CSVMCUpdateAllWithDrift(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] = std::make_unique<CSVMCUpdateAllWithDrift>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
         }
         else
         {
           os << "  Using walker-by-walker update " << std::endl;
-          CSMovers[ip] = new CSVMCUpdateAll(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
+          CSMovers[ip] = std::make_unique<CSVMCUpdateAll>(*wClones[ip], PsiPoolClones[ip], HPoolClones[ip], *Rng[ip]);
         }
       }
       if (ip == 0)
