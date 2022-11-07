@@ -19,9 +19,9 @@
 #include <vector>
 #include <hip/hip_runtime.h>
 #include <hipblas/hipblas.h>
-#include "hipsparse.h"
+#include <hipsparse/hipsparse.h>
 #include <rocsolver/rocsolver.h>
-#include "rocrand/rocrand.h"
+#include <rocrand/rocrand.h>
 
 namespace qmc_hip
 {
