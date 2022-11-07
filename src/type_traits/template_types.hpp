@@ -60,7 +60,8 @@ static RefVector<TR> makeRefVector(std::vector<T>& vec_list)
   return ref_list;
 }
 
-// temporary helper function
+/** convert a vector of std::unique_ptrs<T> to a refvector<T>
+ */
 template<class T>
 static RefVector<T> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 {
@@ -72,12 +73,13 @@ static RefVector<T> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 }
 
 /** convert a vector of std::unique_ptrs<T> to a refvector<T2>
- *  the check for same is to prevent ambiguity between this function and the above
+ *  the static assert prevents ambiguity between this function and the above
  *  when T is a derived type of T2.
  */
-template<class T2, class T, typename = std::enable_if_t<!std::is_same<T2, T>::value>>
+template<class T2, class T>
 static RefVector<T2> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 {
+  static_assert(!std::is_same<T2, T>::value);
   RefVector<T2> ref_list;
   ref_list.reserve(ptr_list.size());
   for (const UPtr<T>& ptr : ptr_list)

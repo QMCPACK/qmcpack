@@ -66,7 +66,9 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   ddv.emplace_back(std::make_unique<DerivedDummy>());
   ddv.emplace_back(std::make_unique<DerivedDummy>());
 
-  auto dummy_ref_vec = convertUPtrToRefVector<Dummy>(ddv);
+  auto dummy_ref_vec = convertUPtrToRefVector(ddv);
+  RefVector<Dummy> d_ref_vec = convertUPtrToRefVector<Dummy>(ddv);
+  RefVector<DerivedDummy> dd_ref_vec = convertUPtrToRefVector(ddv);
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
