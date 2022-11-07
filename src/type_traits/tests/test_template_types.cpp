@@ -49,12 +49,24 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
     std::string s;
   };
 
+  struct DerivedDummy : public Dummy
+  {
+    double e;
+  };
+
   UPtrVector<Dummy> uvec;
   for (int i = 0; i < 3; ++i)
     uvec.emplace_back(std::make_unique<Dummy>());
 
   RefVector<Dummy> rdum(convertUPtrToRefVector(uvec));
   auto rdum2 = convertUPtrToRefVector(uvec);
+
+  // Testing to make sure meta programming stops potential ambiguous template resolution.
+  UPtrVector<DerivedDummy> ddv;
+  ddv.emplace_back(std::make_unique<DerivedDummy>());
+  ddv.emplace_back(std::make_unique<DerivedDummy>());
+
+  auto dummy_ref_vec = convertUPtrToRefVector<Dummy>(ddv);
 }
 
 TEST_CASE("convertPtrToRefvectorSubset", "[type_traits]")
