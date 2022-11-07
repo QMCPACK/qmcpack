@@ -100,6 +100,8 @@ public:
 #endif
   /// initialize this as a node/shared-memory communicator
   void initializeAsNodeComm(const Communicate& parent);
+  Communicate NodeComm() const;
+
   void finalize();
   void barrier() const;
   void abort() const;

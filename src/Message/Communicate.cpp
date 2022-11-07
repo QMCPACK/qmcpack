@@ -106,6 +106,10 @@ void Communicate::initializeAsNodeComm(const Communicate& parent)
   d_ncontexts = comm.size();
 }
 
+Communicate Communicate::NodeComm() const {
+	return Communicate{comm.split_shared()};
+}
+
 void Communicate::finalize()
 {
   static bool has_finalized = false;
