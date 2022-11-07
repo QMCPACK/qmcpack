@@ -77,6 +77,7 @@ public:
 
   ///constructor with communicator
   Communicate(mpi3::communicator& in_comm);
+  Communicate(mpi3::communicator&& in_comm);
 #endif
 
   /** constructor that splits in_comm

@@ -46,15 +46,20 @@ Communicate::~Communicate() = default;
 //exclusive:  MPI or Serial
 #ifdef HAVE_MPI
 
-Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1)
-{
   // in_comm needs to be mutable to be duplicated
-  comm        = in_comm.duplicate();
+Communicate::Communicate(mpi3::communicator& in_comm) : d_groupid(0), d_ngroups(1), comm{in_comm.duplicate()}
+{
   myMPI       = comm.get();
   d_mycontext = comm.rank();
   d_ncontexts = comm.size();
 }
 
+Communicate::Communicate(mpi3::communicator&& in_comm) : d_groupid(0), d_ngroups(1), comm{std::move(in_comm)}
+{
+  myMPI       = comm.get();
+  d_mycontext = comm.rank();
+  d_ncontexts = comm.size();
+}
 
 Communicate::Communicate(const Communicate& in_comm, int nparts)
 {
