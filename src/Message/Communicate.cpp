@@ -121,7 +121,7 @@ void Communicate::barrier() const { comm.barrier(); }
 
 void Communicate::initialize(int argc, char** argv) {}
 
-void Communicate::initializeAsNodeComm(const Communicate& parent) {}
+Communicate Communicate::NodeComm() const {return *this;}
 
 void Communicate::finalize() {}
 
