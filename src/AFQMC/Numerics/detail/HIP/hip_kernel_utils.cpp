@@ -14,7 +14,7 @@
 #include <hip/hip_runtime.h>
 
 #include "hip_kernel_utils.h"
-#include "rocrand/rocrand.h"
+#include <rocrand/rocrand.h>
 
 namespace qmc_hip
 {
