@@ -1057,7 +1057,7 @@ std::vector<int> QMCHamiltonian::mw_makeNonLocalMoves(const RefVectorWithLeader<
 
 void QMCHamiltonian::createResource(ResourceCollection& collection) const
 {
-  auto resource_index = collection.addResource(std::move(std::make_unique<QMCHamiltonianMultiWalkerResource>()));
+  auto resource_index = collection.addResource(std::make_unique<QMCHamiltonianMultiWalkerResource>());
   for (int i = 0; i < H.size(); ++i)
     H[i]->createResource(collection);
 }

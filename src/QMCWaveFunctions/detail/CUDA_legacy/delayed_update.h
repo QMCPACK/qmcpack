@@ -18,7 +18,7 @@
 #ifndef QMC_CUDA2HIP
 #include <cublas_v2.h>
 #else
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include "Platforms/ROCm/cuda2hip.h"
 #endif
 

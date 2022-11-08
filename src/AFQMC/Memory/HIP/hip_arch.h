@@ -20,10 +20,10 @@
 #include "hip_init.h"
 #include "mpi3/communicator.hpp"
 #include "mpi3/shared_communicator.hpp"
-#include "hipblas.h"
-#include "hipsparse.h"
-#include "rocsolver.h"
-#include "rocrand/rocrand.h"
+#include <hipblas/hipblas.h>
+#include <hipsparse/hipsparse.h>
+#include <rocsolver/rocsolver.h>
+#include <rocrand/rocrand.h>
 
 
 namespace arch

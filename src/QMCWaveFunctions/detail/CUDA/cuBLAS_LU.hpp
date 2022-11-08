@@ -20,7 +20,7 @@
 #include <cublas_v2.h>
 #include <cuComplex.h>
 #else
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include <hip/hip_complex.h>
 #include <ROCm/hipBLAS.hpp>
 #endif

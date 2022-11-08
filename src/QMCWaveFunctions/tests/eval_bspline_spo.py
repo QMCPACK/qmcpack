@@ -4,6 +4,7 @@
 
 import autograd.numpy as np
 from autograd import hessian,grad
+from run_qmc import run_qmc
 import h5py
 
 
@@ -23,6 +24,14 @@ Ad = np.array(
     -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
      1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0
   ])
+
+def apply_rotation_to_coeffs(theta, spline1, spline2):
+    tmp1 = spline1.coeffs[:,:,:]
+    tmp2 = spline2.coeffs[:,:,:]
+
+    spline1.coeffs =  tmp1 * np.cos(theta) + tmp2 * np.sin(theta)
+    spline2.coeffs =  -tmp1 * np.sin(theta) + tmp2 * np.cos(theta)
+
 
 class Spline3D:
     def __init__(self, grids, coeffs, G):
@@ -82,41 +91,15 @@ class Spline3D:
 
         return val
 
+# Taken from src/QMCWaveFunctions/BsplineFactory/SplineR2R.h convertPos
 def convertPos(r, G):
-    # Compact form, but autograd doesn't like item assignment to arrays
-    # ru = np.dot(r, G)
-    # for i in range(3):
-    #     if ru[i] < 0.0:
-    #         img = np.floor(ru[i])
-    #         ru[i] -= img
-
     ru = np.dot(r, G)
-    # Unroll loop over dimensions and avoid array assignment
-    if ru[0] < 0.0:
-        img = np.floor(ru[0])
-        x = ru[0] - img
-    else:
-        x = ru[0]
+    img = np.floor(ru)
+    return ru - img
 
-    if ru[1] < 0.0:
-        img = np.floor(ru[1])
-        y = ru[1] - img
-    else:
-        y = ru[1]
-
-    if ru[2] < 0.0:
-        img = np.floor(ru[2])
-        z = ru[2] - img
-    else:
-        z = ru[2]
-
-    return np.array([x,y,z])
-
-
-
-def setup_splines():
+def setup_splines(pwscf_file, coeff_file):
     # HDF file with system info
-    f2 = h5py.File("diamondC_1x1x1.pwscf.h5")
+    f2 = h5py.File(pwscf_file)
     prim_vec = f2["supercell/primitive_vectors"]
     G = np.linalg.inv(prim_vec)
     print("primitive vectors = ",np.array(prim_vec))
@@ -124,13 +107,17 @@ def setup_splines():
     # HDF file with spline coefficients.
     # Generate by adding the attribute save_coefs="yes" to determinantset or
     # sposet_builder tag in test_einset.cpp or a QMCPACK run.
-    f = h5py.File("einspline.tile_100010001.spin_0.tw_0.l0u8.g40x40x40.h5", "r")
-
-    a = 1.0
-    grid1 = Grid1D(40, 0.0, a)
-    grids = [grid1, grid1, grid1]
+    f = h5py.File(coeff_file, "r")
 
     g = f["spline_0"]
+
+    # Splines are defined from 0 to 1.
+    # The conversion from cell coordinates to the unit cube happens in convertPos
+    grid1 = Grid1D(g.shape[0] - 3, 0.0, 1.0)
+    grid2 = Grid1D(g.shape[1] - 3, 0.0, 1.0)
+    grid3 = Grid1D(g.shape[2] - 3, 0.0, 1.0)
+    grids = [grid1, grid2, grid3]
+
     coeffs1 = g[:,:,:,0]
     coeffs2 = g[:,:,:,1]
     print("coefficients shape = ", g.shape)
@@ -138,11 +125,67 @@ def setup_splines():
     spline1 = Spline3D(grids, coeffs1, G)
     spline2 = Spline3D(grids, coeffs2, G)
 
-    return spline1, spline2
+    return spline1, spline2, prim_vec, G
+
+class Wavefunction_hcpBe:
+    def __init__(self, spline1, spline2, PrimVec, G):
+        self.spline1 = spline1
+        self.spline2 = spline2
+        self.prim_vec = PrimVec
+        self.G = G
+
+        self.hess0 = hessian(self.psi_internal, 0)
+        self.hess1 = hessian(self.psi_internal, 1)
+
+        self.dpsi = grad(self.psi, 1)
+        self.dlocal_energy = grad(self.local_energy, 1)
+
+        # Derivatives of a single orbital
+        self.dorb = grad(self.orb, 1)
+        self.orb_hess0 = hessian(self.orb, 0)
+        self.grad0 = grad(self.orb, 0)
+        self.dlap0 = grad(self.lap0, 1)
+
+    def orb(self, r, theta):
+        o1 = self.spline1.convert_and_evaluate_v(r)
+        o2 = self.spline2.convert_and_evaluate_v(r)
+        return o1 * np.cos(theta) + o2 * np.sin(theta)
+
+    def psi_internal(self, r1, r2, VP):
+        theta1 = VP[0]
+        theta2 = VP[1]
+        o1 = self.orb(r1, theta1)
+        o2 = self.orb(r2, theta2)
+        return o1*o2
+
+    def psi(self, r, VP):
+        r1 = r[0,:]
+        r2 = r[1,:]
+        return self.psi_internal(r1, r2, VP)
+
+    def local_energy(self, r, VP):
+        r1 = r[0,:]
+        r2 = r[1,:]
+        psi_val = self.psi_internal(r1, r2, VP)
+        h0 = np.sum(np.diag(self.hess0(r1, r2, VP)))
+        h1 = np.sum(np.diag(self.hess1(r1, r2, VP)))
+
+        # only care about the parameter derivative for now, so the potential term doesn't matter
+        h = -0.5*(h0+h1)/psi_val
+        return h
+
+    # Laplacian for a single orbital
+    def lap0(self, r1, VP):
+        psi_val = self.orb(r1, VP)
+        h0 = np.sum(np.diag(self.orb_hess0(r1, VP)))
+        g0 = self.grad0(r1,VP)/psi_val
+        return -0.5*(h0/psi_val - np.dot(g0, g0))
 
 
-def generate_point_values():
-    spline1, spline2 = setup_splines()
+def generate_point_values_diamondC():
+    pwscf_file = "diamondC_1x1x1.pwscf.h5"
+    coeff_file = "einspline.tile_100010001.spin_0.tw_0.l0u8.g40x40x40.h5"
+    spline1, spline2, _, _ = setup_splines(pwscf_file, coeff_file)
 
     r1 = np.array([0.0, 0.0, 0.0])
     r2 = np.array([0.0, 1.0, 0.0])
@@ -177,5 +220,63 @@ def generate_point_values():
     print("hessian for orbital 2, particle 2", ho2)
 
 
+def generate_point_values_hcpBe():
+    pwscf_file = "hcpBe.pwscf.h5"
+    coeff_file = "einspline.tile_100010001.spin_0.tw_0.l0u2.g40x40x68.h5"
+    spline1, spline2, prim_vec, G = setup_splines(pwscf_file, coeff_file)
+
+    r1 = np.array([0.0, 0.0, 0.0])
+    o1 = spline1.convert_and_evaluate_v(r1)
+    print("orbital 1 for particle 1 = ", o1)
+    o2 = spline2.convert_and_evaluate_v(r1)
+    print("orbital 2 for particle 1 = ", o2)
+
+    ho1 = spline1.evaluate_hess(r1)
+    lap = ho1[0,0] + ho1[1,1] + ho1[2,2]
+    print("laplacian for particle 1 = ", lap)
+
+    apply_rotation_to_coeffs(0.1, spline1, spline2)
+    print("After rotation")
+    o1 = spline1.convert_and_evaluate_v(r1)
+    print("orbital 1 for particle 1 = ", o1)
+    o2 = spline2.convert_and_evaluate_v(r1)
+    print("orbital 2 for particle 1 = ", o2)
+
+    ho1 = spline1.evaluate_hess(r1)
+    lap = ho1[0,0] + ho1[1,1] + ho1[2,2]
+    print("laplacian for particle 1 = ", lap)
+
+    VP = np.array([0.0])
+    wf = Wavefunction_hcpBe(spline1, spline2, prim_vec, G)
+    psi = wf.orb(r1, VP[0])
+    dp = wf.dorb(r1, VP[0])
+    print("dpsi for r1 = ", dp)
+    print("d log(psi) for r1 = ", dp/psi)
+
+    lap0 = wf.lap0(r1, VP[0])
+    print("lap 0 = ",lap0)
+    dlap0 = wf.dlap0(r1, VP[0])
+    print("dlap 0 = ",dlap0)
+
+
+def run_qmc_parameter_derivative_hcpBe():
+    pwscf_file = "hcpBe.pwscf.h5"
+    coeff_file = "einspline.tile_100010001.spin_0.tw_0.l0u2.g40x40x68.h5"
+    spline1, spline2, prim_vec, G = setup_splines(pwscf_file, coeff_file)
+    apply_rotation_to_coeffs(0.1, spline1, spline2)
+    VP = np.array([0.0, 0.0])
+    wf = Wavefunction_hcpBe(spline1, spline2, prim_vec, G)
+    #r = np.array([[0.0, 0.0, 0.0],
+    #              [1.0, 2.1, 0.1]])
+    r = np.array([[0.0, 0.0, 0.0],
+                  [0.0, 0.0, 0.0]])
+
+    #de = wf.dlocal_energy(r, VP)
+    #print('de = ',de)
+    run_qmc(r, wf, VP, nstep=40, nblock=10)
+
+
 if __name__ == "__main__":
-    generate_point_values()
+    #generate_point_values_diamondC()
+    #generate_point_values_hcpBe()
+    run_qmc_parameter_derivative_hcpBe()

@@ -4216,6 +4216,8 @@ class BundledQmcpackInput(SimulationInput):
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
             outfiles.append(outfile)
+            twfile = infile.rsplit('.',3)[0]+'.twist_info.dat'
+            outfiles.append(twfile)
             for outf in outfs:
                 prefix,rest = outf.split('.',1)
                 outfiles.append(prefix+'.g'+str(index).zfill(3)+'.'+rest)
