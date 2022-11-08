@@ -33,9 +33,6 @@ TEST_CASE("ConstantSizeMatrix basics", "[containers]")
   CHECK_NOTHROW(cmat.resize(2, 9));
   CHECK(cmat.capacity() == 32);
 
-  // If the new dimensions are not commensurable with the old ones,
-  // the capacity could decrease, even though the size of the underlying
-  // storage does not decrease.
   CHECK_NOTHROW(cmat.resize(3, 9));
   CHECK(cmat.capacity() == 32);
 
