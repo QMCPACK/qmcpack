@@ -128,7 +128,7 @@ void propg_fac_shared(boost::mpi3::communicator& world)
         UTEST_WFN + R"(</parameter>
       <parameter name="cutoff">1e-6</parameter>
       <parameter name="dense_trial">yes</parameter>
-      <parameter name="restart_file">" + restart_file + "</parameter>
+      <parameter name="restart_file">)" + restart_file + R"(</parameter>
     </Wavefunction>
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
@@ -299,7 +299,7 @@ void propg_fac_distributed(boost::mpi3::communicator& world, int ngrp)
       <parameter name="filename">)" +
         UTEST_WFN + R"(</parameter>
       <parameter name="cutoff">1e-6</parameter>
-      <parameter name="restart_file">" + restart_file + "</parameter>
+      <parameter name="restart_file">)" + restart_file + R"(</parameter>
     </Wavefunction>
     )";
     const char* wfn_xml_block = wfn_xml.c_str();
