@@ -40,7 +40,7 @@ public:
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng, const int crowd_id) override;
   
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
+  UPtr<OperatorEstBase> spawnCrowdClone() const override;
   void startBlock(int steps) override;
 
   void registerListeners(QMCHamiltonian& ham_leader) override;

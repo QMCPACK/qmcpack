@@ -52,6 +52,7 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   struct DerivedDummy : public Dummy
   {
     double e;
+    UPtr<Dummy> spawnClone() { return std::make_unique<DerivedDummy>(*this); }
   };
 
   struct OtherDummy
@@ -74,7 +75,11 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   auto dummy_ref_vec = convertUPtrToRefVector(ddv);
   RefVector<Dummy> d_ref_vec = convertUPtrToRefVector<Dummy>(ddv);
   RefVector<DerivedDummy> dd_ref_vec = convertUPtrToRefVector(ddv);
-
+  UPtrVector<Dummy> type_erased_ddummies;
+  type_erased_ddummies.emplace_back(ddv[0]->spawnClone());
+  type_erased_ddummies.emplace_back(ddv[1]->spawnClone());
+  RefVector<Dummy> spawn_dummy_ref_vec = convertUPtrToRefVector(type_erased_ddummies);
+  
   // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
   // RefVector<OtherDummy> od_ref_vec = convertUPtrToRefVector<OtherDummy>(ddv);
 }

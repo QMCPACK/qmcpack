@@ -120,7 +120,7 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
     crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, rng, crowd_id++);
   }
   
-  RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector<OperatorEstBase>(crowd_loggers);
+  RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector(crowd_loggers);
   rank_logger.collect(crowd_loggers_refs);
 }
 
