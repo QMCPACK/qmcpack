@@ -717,7 +717,6 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_
   else
     ng[0] = nvalues_per_domain * npvalues * ndomains;
   oh.set_dimensions(ng, buffer_offset);
-  oh.open(file);
   int coord = (int)coordinate;
   oh.addProperty(const_cast<int&>(coord), "coordinate", file);
   oh.addProperty(const_cast<int&>(ndomains), "ndomains", file);

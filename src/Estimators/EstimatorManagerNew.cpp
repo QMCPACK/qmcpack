@@ -345,7 +345,7 @@ void EstimatorManagerNew::writeScalarH5()
   {
     for (int o = 0; o < h5desc.size(); ++o)
       // cheating here, remove SquaredAverageCache from API
-      h5desc[o].write(AverageCache.data(), AverageCache.data());
+      h5desc[o].write(AverageCache.data(), *h_file);
     h_file->flush();
   }
 
@@ -411,7 +411,7 @@ void EstimatorManagerNew::writeOperatorEstimators()
     if (h_file)
     {
       for (auto& op_est : operator_ests_)
-        op_est->write();
+        op_est->write(*h_file);
       h_file->flush();
     }
   }

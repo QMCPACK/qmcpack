@@ -105,7 +105,6 @@ void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5de
     h5desc.emplace_back("nofk");
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ng, my_index_);
-    h5o.open(file);
     h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
     h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
   }

@@ -88,7 +88,6 @@ void SpeciesKineticEnergy::registerCollectables(std::vector<ObservableHelper>& h
   h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ndim, h5_index);
-  h5o.open(file);
 }
 
 void SpeciesKineticEnergy::setObservables(PropertySetType& plist)
