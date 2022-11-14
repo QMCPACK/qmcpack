@@ -56,13 +56,13 @@ void AFQMCBasePropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, RealT
   if (transposed_G_)
     G_ext = iextensions<2u>{nwalk, Gsize};
 
-  if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
+  if (std::get<0>(MFfactor.sizes()) != nsteps || std::get<1>(MFfactor.sizes()) != nwalk)
     MFfactor = CMatrix({long(nsteps), long(nwalk)});
-  if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
+  if (std::get<0>(hybrid_weight.sizes()) != nsteps || std::get<1>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
-  if (new_overlaps.size(0) != nwalk)
+  if (std::get<0>(new_overlaps.sizes()) != nwalk)
     new_overlaps = CVector(iextensions<1u>{nwalk});
-  if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
+  if (std::get<0>(new_energies.sizes()) != nwalk || std::get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({long(nwalk), 3});
 
 
@@ -280,15 +280,15 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   C3Tensor_ref vHS3D(make_device_ptr(vHS.origin()), vhs3d_ext);
 
   auto&& Fields(*wset.getFields());
-  assert(Fields.size(0) >= nbpsteps);
-  assert(Fields.size(1) == globalnCV);
-  assert(Fields.size(2) == nwalk);
+  assert(std::get<0>(Fields.sizes()) >= nbpsteps);
+  assert(std::get<1>(Fields.sizes()) == globalnCV);
+  assert(std::get<2>(Fields.sizes()) == nwalk);
 
   int nrow(NMO * npol);
   int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
-  assert(Refs.size(0) == nwalk);
-  int nrefs = Refs.size(1);
-  assert(Refs.size(2) == nrow * ncol);
+  assert(Refs.size() == nwalk);
+  int nrefs = std::get<1>(Refs.sizes());
+  assert(std::get<2>(Refs.sizes()) == nrow * ncol);
 
   int cv0, cvN;
   std::tie(cv0, cvN) = FairDivideBoundary(TG.getLocalTGRank(), globalnCV, TG.getNCoresPerTG());
@@ -299,8 +299,8 @@ void AFQMCBasePropagator::BackPropagate(int nbpsteps, int nStabalize, WlkSet& ws
   if (walker_type == COLLINEAR)
     nx = 2;
 
-  assert(detR.size(0) == nwalk);
-  assert(detR.size(1) == nrefs * nx);
+  assert(std::get<0>(detR.sizes()) == nwalk);
+  assert(std::get<1>(detR.sizes()) == nrefs * nx);
   std::fill_n(detR.origin(), detR.num_elements(), ComplexType(1.0, 0.0));
 
   // from now on, individual work on each walker/step
@@ -467,7 +467,7 @@ void AFQMCBasePropagator::apply_propagators(char TA,
   }
   else
   {
-    if (local_vHS.size(0) != NMO || local_vHS.size(1) != NMO)
+    if (std::get<0>(local_vHS.sizes()) != NMO || std::get<1>(local_vHS.sizes()) != NMO)
       local_vHS = CMatrix({NMO, NMO});
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
     if (walker_type == COLLINEAR)
@@ -561,11 +561,11 @@ void AFQMCBasePropagator::apply_propagators_batched(char TA, WSet& wset, int ni,
   }
   else
   {
-    if (local_vHS.size(0) != nbatch || local_vHS.size(1) != NMO * NMO)
+    if (std::get<0>(local_vHS.sizes()) != nbatch || std::get<1>(local_vHS.sizes()) != NMO * NMO)
       local_vHS = CMatrix({nbatch, NMO * NMO});
     // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
-    int N2 = vHS3D.size(0) * vHS3D.size(1);
-    CMatrix_ref vHS2D(vHS3D.origin(), {N2, vHS3D.size(2)});
+    int N2 = std::get<0>(vHS3D.sizes()) * std::get<1>(vHS3D.sizes());
+    CMatrix_ref vHS2D(vHS3D.origin(), {N2, std::get<2>(vHS3D.sizes())});
     C3Tensor_ref local3D(local_vHS.origin(), {nbatch, NMO, NMO});
     int nt = ni * nwalk;
     for (int iw = 0; iw < nwalk; iw += nbatch, nt += nbatch)
@@ -711,7 +711,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
 
   TG.local_barrier();
   ComplexType im(0.0, 1.0);
-  int nCV = int(X.size(0));
+  int nCV = int(X.size());
   // generate random numbers
   if (addRAND)
   {
@@ -732,7 +732,7 @@ void AFQMCBasePropagator::assemble_X(size_t nsteps,
                        to_address(vbias.origin()), to_address(HWs.origin()), to_address(MF.origin()),
                        to_address(X.origin()));
 #else
-  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size(0)), long(nsteps), long(nwalk)});
+  boost::multi::array_ref<XType, 3> X3D(to_address(X.origin()), {long(X.size()), long(nsteps), long(nwalk)});
   int m0, mN;
   std::tie(m0, mN) = FairDivideBoundary(TG.TG_local().rank(), nCV, TG.TG_local().size());
   TG.local_barrier();

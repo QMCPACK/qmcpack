@@ -42,13 +42,15 @@ using TraceManager = int;
 
 namespace qmcplusplus
 {
-QMCDriver::QMCDriver(MCWalkerConfiguration& w,
+QMCDriver::QMCDriver(const ProjectData& project_data,
+                     MCWalkerConfiguration& w,
                      TrialWaveFunction& psi,
                      QMCHamiltonian& h,
                      Communicate* comm,
                      const std::string& QMC_driver_type,
                      bool enable_profiling)
     : MPIObjectBase(comm),
+      project_data_(project_data),
       DriftModifier(0),
       qmcNode(NULL),
       QMCType(QMC_driver_type),
@@ -138,7 +140,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   else if (typeid(CTS::RealType) == typeid(double))
   {
     // gpu double precision
-    nBlocksBetweenRecompute = 0;
+    nBlocksBetweenRecompute = 10;
   }
 #else
 #ifdef MIXED_PRECISION
@@ -146,7 +148,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w,
   nBlocksBetweenRecompute = 1;
 #else
   // cpu double precision
-  nBlocksBetweenRecompute = 0;
+  nBlocksBetweenRecompute = 10;
 #endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
@@ -285,10 +287,7 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
     W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
-    qmc_common.is_restart = true;
   }
-  else
-    qmc_common.is_restart = false;
 }
 
 std::string QMCDriver::getRotationName(std::string RootName)
@@ -514,7 +513,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
     CurrentStep = 0;
 
   //if walkers are initialized via <mcwalkerset/>, use the existing one
-  if (qmc_common.qmc_counter || qmc_common.is_restart)
+  if (qmc_common.qmc_counter)
   {
     app_log() << "Using existing walkers " << std::endl;
   }

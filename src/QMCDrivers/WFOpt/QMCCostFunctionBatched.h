@@ -40,7 +40,7 @@ class QMCCostFunctionBatched : public QMCCostFunctionBase, public QMCTraits
 {
 public:
   ///Constructor.
-  QMCCostFunctionBatched(MCWalkerConfiguration& w,
+  QMCCostFunctionBatched(ParticleSet& w,
                          TrialWaveFunction& psi,
                          QMCHamiltonian& h,
                          SampleStack& samples,

@@ -318,10 +318,10 @@ public:
                     bool addEXX = true)
   {
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -334,7 +334,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(
           " Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions \n");
 
@@ -364,14 +364,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
       }
 #else
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
         Krptr = to_address(KEright->origin());
       }
       else
@@ -383,14 +383,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
       }
 #else
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
         Klptr = to_address(KEleft->origin());
       }
       else
@@ -688,10 +688,10 @@ public:
     // need to finish modifications for distribution of Q
 
     int nkpts = nopk.size();
-    assert(E.size(1) >= 3);
+    assert(std::get<1>(E.sizes()) >= 3);
     assert(nd >= 0 && nd < nelpk.size());
 
-    int nwalk     = Gc.size(1);
+    int nwalk     = std::get<1>(Gc.sizes());
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -703,7 +703,7 @@ public:
       noccb_tot = std::accumulate(nelpk[nd].begin() + nkpts, nelpk[nd].begin() + 2 * nkpts, 0);
     int getKr = KEright != nullptr;
     int getKl = KEleft != nullptr;
-    if (E.size(0) != nwalk || E.size(1) < 3)
+    if (std::get<0>(E.sizes()) != nwalk || std::get<1>(E.sizes()) < 3)
       APP_ABORT(" Error in AFQMC/HamiltonianOperations/KP3IndexFactorization::energy(). Incorrect matrix dimensions\n");
 
     size_t mem_needs(nwalk * nkpts * nkpts * nspin * nocca_max * nmo_max);
@@ -732,14 +732,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
       }
 #else
       if (getKr)
       {
-        assert(KEright->size(0) == nwalk && KEright->size(1) == local_nCV);
-        assert(KEright->stride(0) == KEright->size(1));
+        assert(std::get<0>(KEright->sizes()) == nwalk && std::get<1>(KEright->sizes()) == local_nCV);
+        assert(KEright->stride() == std::get<1>(KEright->sizes()));
         Krptr = to_address(KEright->origin());
       }
       else
@@ -751,14 +751,14 @@ public:
 #if defined(MIXED_PRECISION)
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
       }
 #else
       if (getKl)
       {
-        assert(KEleft->size(0) == nwalk && KEleft->size(1) == local_nCV);
-        assert(KEleft->stride(0) == KEleft->size(1));
+        assert(std::get<0>(KEleft->sizes()) == nwalk && std::get<1>(KEleft->sizes()) == local_nCV);
+        assert(KEleft->stride() == std::get<1>(KEleft->sizes()));
         Klptr = to_address(KEleft->origin());
       }
       else
@@ -844,7 +844,7 @@ public:
     //       Not sure how to do it for COLLINEAR.
     if (addEXX)
     {
-      if (Qwn.size(0) != nwalk || Qwn.size(1) != nsampleQ)
+      if (std::get<0>(Qwn.sizes()) != nwalk || std::get<1>(Qwn.sizes()) != nsampleQ)
         Qwn.reextent({nwalk, nsampleQ});
       comm->barrier();
       if (comm->root())
@@ -1114,8 +1114,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {1, v.size(0)});
-    boost::multi::array_ref<AType, 2> X_(to_address(X.origin()), {X.size(0), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {1, v.size()});
+    boost::multi::array_ref<AType, 2> X_(to_address(X.origin()), {X.size(), 1});
     return vHS(X_, v_, a, c);
   }
 
@@ -1126,8 +1126,8 @@ public:
   void vHS(MatA& Xw, MatB&& v, double a = 1., double c = 0.)
   {
     int nkpts = nopk.size();
-    int nwalk = Xw.size(1);
-    assert(v.size(0) == nwalk);
+    int nwalk = std::get<1>(Xw.sizes());
+    assert(v.size() == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
     int nmo_max   = *std::max_element(nopk.begin(), nopk.end());
@@ -1139,7 +1139,7 @@ public:
     SPComplexType halfa(0.5 * a, 0.0);
     size_t local_memory_needs = nmo_max * nmo_max * nwalk;
     if (TMats.num_elements() < local_memory_needs)
-      TMats.reextent({local_memory_needs, 1});
+      TMats.reextent({static_cast<ptrdiff_t>(local_memory_needs), 1});
 
     using vType = typename std::decay<MatB>::type::element;
     boost::multi::array_ref<vType, 3> v3D(to_address(v.origin()), {nwalk, nmo_tot, nmo_tot});
@@ -1315,8 +1315,8 @@ public:
   {
     using BType = typename std::decay<MatB>::type::element;
     using AType = typename std::decay<MatA>::type::element;
-    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(0), 1});
-    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(0), 1});
+    boost::multi::array_ref<BType, 2> v_(to_address(v.origin()), {v.size(), 1});
+    boost::multi::array_cref<AType, 2> G_(to_address(G.origin()), {G.size(), 1});
     return vbias(G_, v_, a, c, k);
   }
 
@@ -1331,9 +1331,9 @@ public:
     using vType = typename std::decay<MatB>::type::element;
     int nkpts   = nopk.size();
     assert(nd >= 0 && nd < nelpk.size());
-    int nwalk = Gw.size(1);
-    assert(v.size(0) == 2 * local_nCV);
-    assert(v.size(1) == nwalk);
+    int nwalk = std::get<1>(Gw.sizes());
+    assert(std::get<0>(v.sizes()) == 2 * local_nCV);
+    assert(std::get<1>(v.sizes()) == nwalk);
     int nspin     = (walker_type == COLLINEAR ? 2 : 1);
     int npol      = (walker_type == NONCOLLINEAR ? 2 : 1);
     int nmo_tot   = std::accumulate(nopk.begin(), nopk.end(), 0);
@@ -1385,7 +1385,7 @@ public:
 
     {
       size_t i0, iN;
-      std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(v.size(0)), size_t(comm->size()));
+      std::tie(i0, iN) = FairDivideBoundary(size_t(comm->rank()), size_t(v.size()), size_t(comm->size()));
       for (size_t i = i0; i < iN; ++i)
         ma::scal(c, v[i]);
     }
@@ -1664,7 +1664,7 @@ private:
   {
     int nspin = (walker_type == COLLINEAR ? 2 : 1);
     int npol  = (walker_type == NONCOLLINEAR ? 2 : 1);
-    int nwalk = GKaKj.size(1);
+    int nwalk = std::get<1>(GKaKj.sizes());
     int nkpts = nopk.size();
     assert(GKaKj.num_elements() == (nocca_tot + noccb_tot) * npol * nmo_tot * nwalk);
     assert(GKKaj.num_elements() == nspin * nkpts * nkpts * npol * akmax * nwalk);
@@ -1750,8 +1750,8 @@ private:
   template<class MatA, class MatB>
   void GwAK_to_GAKw(MatA const& GwAK, MatB&& GAKw)
   {
-    int nwalk = GwAK.size(0);
-    int nAK   = GwAK.size(1);
+    int nwalk = std::get<0>(GwAK.sizes());
+    int nAK   = std::get<1>(GwAK.sizes());
     for (int w = 0; w < nwalk; w++)
       for (int AK = 0; AK < nAK; AK++)
         GAKw[AK][w] = GwAK[w][AK];

@@ -342,7 +342,7 @@ inline void rotateHijkl(std::string& type,
       {
         // Qk[norb*NAEA,nvec]
         // Rl[nvec,norb*NAEA]
-        int n0_, n1_, sz_ = Qk.size(0);
+        int n0_, n1_, sz_ = Qk.size();
         std::tie(n0_, n1_) = FairDivideBoundary(coreid, sz_, ncores);
         if (n1_ - n0_ > 0)
           ma::transpose(Qk.sliced(n0_, n1_), Rl(Rl.extension(0), {n0_, n1_}));
@@ -798,7 +798,7 @@ inline void rotateHijkl_single_node(std::string& type,
     {
       // Qk[norb*NAEA,nvec]
       // Rl[nvec,norb*NAEA]
-      int n0_, n1_, sz_ = Qk.size(0);
+      int n0_, n1_, sz_ = std::get<0>(Qk.sizes());
       std::tie(n0_, n1_) = FairDivideBoundary(coreid, sz_, ncores);
       if (n1_ - n0_ > 0)
         ma::transpose(Qk.sliced(n0_, n1_), Rl(Rl.extension(0), {n0_, n1_}));

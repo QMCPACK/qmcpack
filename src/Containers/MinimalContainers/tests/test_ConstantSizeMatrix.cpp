@@ -28,8 +28,13 @@ TEST_CASE("ConstantSizeMatrix basics", "[containers]")
   CHECK(cmat.capacity() == 32);
 
   CHECK_THROWS(cmat.resize(1, 33));
+  CHECK_THROWS(cmat.resize(34, 2));
 
-  CHECK_THROWS(cmat.resize(2, 9));
+  CHECK_NOTHROW(cmat.resize(2, 9));
+  CHECK(cmat.capacity() == 32);
+
+  CHECK_NOTHROW(cmat.resize(3, 9));
+  CHECK(cmat.capacity() == 32);
 
   //note the odd OhmmsMatrix style access operator semantics
   //If these break you probably breaking other weird QMCPACK code.
@@ -48,6 +53,15 @@ TEST_CASE("ConstantSizeMatrix basics", "[containers]")
   CHECK(*(cmat2[0]) == Approx(1.0));
   CHECK(*(cmat2[0] + 1) == Approx(1.0));
   CHECK(*(cmat2[1]) == Approx(2.0));
+
+  ConstantSizeMatrix<double> cmat3(4, 32, 4, 32, 0.0);
+  CHECK_NOTHROW(cmat3.resize(2, 64));
+  CHECK(cmat3.size() == 128);
+  CHECK(cmat3.capacity() == 128);
+
+  CHECK_NOTHROW(cmat3.resize(8, 16));
+  CHECK(cmat3.size() == 128);
+  CHECK(cmat3.capacity() == 128);
 }
 
 TEST_CASE("ConstantSizeMatrix Ohmms integration", "[containers]")

@@ -17,7 +17,6 @@
 
 #include "QMCDriverNew.h"
 #include "Concurrency/ParallelExecutor.hpp"
-#include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "Utilities/FairDivide.h"
@@ -46,6 +45,7 @@ namespace qmcplusplus
 QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
                            QMCDriverInput&& input,
                            const std::optional<EstimatorManagerInput>& global_emi,
+                           WalkerConfigurations& wc,
                            MCPopulation&& population,
                            const std::string timer_prefix,
                            Communicate* comm,
@@ -57,11 +57,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       population_(std::move(population)),
       dispatchers_(!qmcdriver_input_.areWalkersSerialized()),
       estimator_manager_(nullptr),
-      wOut(0),
       timers_(timer_prefix),
       driver_scope_timer_(*timer_manager.createTimer(QMC_driver_type, timer_level_coarse)),
       driver_scope_profiler_(qmcdriver_input_.get_scoped_profiling()),
       project_data_(project_data),
+      walker_configs_ref_(wc),
       setNonLocalMoveHandler_(snlm_handler)
 {
   // This is done so that the application level input structures reflect the actual input to the code.
@@ -81,7 +81,7 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
       std::make_unique<EstimatorManagerNew>(comm,
                                             makeEstimatorManagerInput(global_emi,
                                                                       qmcdriver_input_.get_estimator_manager_input()),
-                                            population_.get_golden_hamiltonian(), *population.get_golden_electrons(),
+                                            population_.get_golden_hamiltonian(), population.get_golden_electrons(),
                                             population.get_golden_twf());
 
   drift_modifier_.reset(
@@ -91,9 +91,11 @@ QMCDriverNew::QMCDriverNew(const ProjectData& project_data,
   max_disp_sq_ = input.get_max_disp_sq();
   if (max_disp_sq_ < 0)
   {
-    auto& lattice = population.get_golden_electrons()->getLattice();
+    auto& lattice = population.get_golden_electrons().getLattice();
     max_disp_sq_  = lattice.LR_rc * lattice.LR_rc;
   }
+
+  wOut = std::make_unique<HDFWalkerOutput>(population.get_golden_electrons().getTotalNum(), get_root_name(), myComm);
 }
 
 // The Rng pointers are transferred from global storage (RandomNumberControl::Children)
@@ -127,22 +129,7 @@ void QMCDriverNew::checkNumCrowdsLTNumThreads(const int num_crowds)
   }
 }
 
-/** process a <qmc/> element
- * @param cur xmlNode with qmc tag
- *
- * This function is called before QMCDriverNew::run and following actions are taken:
- * - Initialize basic data to execute run function.
- * -- distance tables
- * -- resize deltaR and drift with the number of particles
- * -- assign cur to qmcNode
- * - process input file
- *   -- putQMCInfo: <parameter/> s for generic QMC
- *   -- put : extra data by derived classes
- * - initialize branchEngine to accumulate energies
- * - initialize Estimators
- * - initialize Walkers
- */
-void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc)
+void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
 {
   ScopedTimer local_timer(timers_.startup_timer);
 
@@ -160,13 +147,14 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 
   if (qmcdriver_input_.areWalkersSerialized())
   {
-    if(estimator_manager_->areThereListeners())
-      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are incompatible with estimators requiring per particle listeners");
+    if (estimator_manager_->areThereListeners())
+      throw UniformCommunicateError("Serialized walkers ignore multiwalker API's and multiwalker resources and are "
+                                    "incompatible with estimators requiring per particle listeners");
   }
   else
   {
     app_debug() << "Creating multi walker shared resources" << std::endl;
-    population_.get_golden_electrons()->createResource(golden_resource_.pset_res);
+    population_.get_golden_electrons().createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
     population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
@@ -196,7 +184,7 @@ void QMCDriverNew::startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCou
 void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   app_log() << "\n========================================================="
-            << "\n  Start " << QMCType << "\n  File Root " << project_data_.CurrentMainRoot();
+            << "\n  Start " << QMCType << "\n  File Root " << get_root_name();
   app_log() << "\n=========================================================" << std::endl;
 
   if (h5name.size())
@@ -216,31 +204,20 @@ void QMCDriverNew::setStatus(const std::string& aname, const std::string& h5name
  */
 void QMCDriverNew::putWalkers(std::vector<xmlNodePtr>& wset)
 {
-  // if (wset.empty())
-  //   return;
-  // int nfile = wset.size();
-  // HDFWalkerInputManager W_in(W, myComm);
-  // for (int i = 0; i < wset.size(); i++)
-  //   if (W_in.put(wset[i]))
-  //     h5FileRoot = W_in.getFileRoot();
-  // //clear the walker set
-  // wset.clear();
-  // int nwtot = W.getActiveWalkers();
-  // myComm->bcast(nwtot);
-  // if (nwtot)
-  // {
-  //   int np = myComm->size();
-  //   std::vector<int> nw(np, 0), nwoff(np + 1, 0);
-  //   nw[myComm->rank()] = W.getActiveWalkers();
-  //   myComm->allreduce(nw);
-  //   for (int ip = 0; ip < np; ++ip)
-  //     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  //   W.setGlobalNumWalkers(nwoff[np]);
-  //   W.setWalkerOffsets(nwoff);
-  //   qmc_common.is_restart = true;
-  // }
-  // else
-  //   qmc_common.is_restart = false;
+  if (wset.empty())
+    return;
+  const int nfile = wset.size();
+
+  HDFWalkerInputManager W_in(walker_configs_ref_, population_.get_golden_electrons().getTotalNum(), myComm);
+  for (int i = 0; i < wset.size(); i++)
+    if (W_in.put(wset[i]))
+      h5_file_root_ = W_in.getFileRoot();
+  //clear the walker set
+  wset.clear();
+  int nwtot = walker_configs_ref_.getActiveWalkers();
+  myComm->bcast(nwtot);
+  if (nwtot)
+    setWalkerOffsets(walker_configs_ref_, myComm);
 }
 
 void QMCDriverNew::recordBlock(int block)
@@ -248,16 +225,29 @@ void QMCDriverNew::recordBlock(int block)
   if (qmcdriver_input_.get_dump_config() && block % qmcdriver_input_.get_check_point_period().period == 0)
   {
     ScopedTimer local_timer(timers_.checkpoint_timer);
-    RandomNumberControl::write(root_name_, myComm);
+    wOut->dump(walker_configs_ref_, block);
+#ifndef USE_FAKE_RNG
+    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
+#endif
   }
 }
 
 bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
-  RefVector<MCPWalker> walkers(convertUPtrToRefVector(population_.get_walkers()));
+  population_.saveWalkerConfigurations(walker_configs_ref_);
+  setWalkerOffsets(walker_configs_ref_, myComm);
 
-  if (qmcdriver_input_.get_dump_config())
-    RandomNumberControl::write(root_name_, myComm);
+  const bool DumpConfig = qmcdriver_input_.get_dump_config();
+  if (DumpConfig && dumpwalkers)
+    wOut->dump(walker_configs_ref_, block);
+
+  infoSummary.flush();
+  infoLog.flush();
+
+#ifndef USE_FAKE_RNG
+  if (DumpConfig)
+    RandomNumberControl::write(getRngRefs(), get_root_name(), myComm);
+#endif
 
   return true;
 }
@@ -267,9 +257,7 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   ScopedTimer local_timer(timers_.create_walkers_timer);
   // ensure nwalkers local walkers in population_
   if (population_.get_walkers().size() == 0)
-  {
-    population_.createWalkers(nwalkers, reserve);
-  }
+    population_.createWalkers(nwalkers, walker_configs_ref_, reserve);
   else if (population_.get_walkers().size() < nwalkers)
   {
     throw std::runtime_error("Unexpected walker count resulting in dangerous spawning");
@@ -291,11 +279,6 @@ void QMCDriverNew::makeLocalWalkers(IndexType nwalkers, RealType reserve)
   // For the dead ones too. Since this should be on construction but...
   for (UPtr<QMCHamiltonian>& ham : population_.get_dead_hamiltonians())
     setNonLocalMoveHandler_(*ham);
-
-  // setWalkerOffsets();
-  // ////update the global number of walkers
-  // ////int nw=W.getActiveWalkers();
-  // ////myComm->allreduce(nw);
 }
 
 /** Creates Random Number generators for crowds and step contexts
@@ -387,25 +370,6 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);
-}
-
-void QMCDriverNew::setWalkerOffsets()
-{
-  std::vector<int> nw(myComm->size(), 0), nwoff(myComm->size() + 1, 0);
-  //  nw[myComm->rank()] = W.getActiveWalkers();
-  myComm->allreduce(nw);
-  for (int ip = 0; ip < myComm->size(); ip++)
-    nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  //  W.setGlobalNumWalkers(nwoff[myComm->size()]);
-  //  W.setWalkerOffsets(nwoff);
-  long id = nwoff[myComm->rank()];
-  for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
-  {
-    //    W[iw]->ID       = id;
-    //    W[iw]->ParentID = id;
-  }
-  //  app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
-  //  app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
@@ -622,6 +586,19 @@ void QMCDriverNew::measureImbalance(const std::string& tag) const
               << "    max wait at rank " << std::distance(barrier_time_all_ranks.begin(), max_it)
               << ", seconds = " << *max_it << std::endl;
   }
+}
+
+void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Communicate* comm)
+{
+  std::vector<int> nw(comm->size(), 0);
+  std::vector<int> nwoff(comm->size() + 1, 0);
+  nw[comm->rank()] = walker_configs.getActiveWalkers();
+  comm->allreduce(nw);
+  for (int ip = 0; ip < comm->size(); ip++)
+    nwoff[ip + 1] = nwoff[ip] + nw[ip];
+
+  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
+  walker_configs.setWalkerOffsets(nwoff);
 }
 
 } // namespace qmcplusplus

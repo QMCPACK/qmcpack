@@ -46,10 +46,7 @@ public:
   ///default destructor
   ~AGPDeterminant() override;
 
-  void checkInVariables(opt_variables_type& active) override;
-  void checkOutVariables(const opt_variables_type& active) override;
-  void resetParameters(const opt_variables_type& active) override;
-  void reportStatus(std::ostream& os) override;
+  std::string getClassName() const override { return "AGPDeterminant"; }
 
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
@@ -98,8 +95,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   ///Total number of particles

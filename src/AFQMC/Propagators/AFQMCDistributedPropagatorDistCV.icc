@@ -66,13 +66,13 @@ void AFQMCDistributedPropagatorDistCV::step(int nsteps_, WlkSet& wset, RealType 
   if (transposed_G_)
     G_ext = iextensions<2u>{nwalk, Gsize};
 
-  if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
+  if (std::get<0>(MFfactor.sizes()) != nsteps || std::get<1>(MFfactor.sizes()) != nwalk)
     MFfactor = CMatrix({long(nsteps), long(nwalk)});
-  if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
+  if (std::get<0>(hybrid_weight.sizes()) != nsteps || std::get<1>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
-  if (new_overlaps.size(0) != nwalk)
+  if (std::get<0>(new_overlaps.sizes()) != nwalk)
     new_overlaps = CVector(iextensions<1u>{nwalk});
-  if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
+  if (std::get<0>(new_energies.sizes()) != nwalk || std::get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
@@ -435,13 +435,13 @@ void AFQMCDistributedPropagatorDistCV::step_collective(int nsteps_, WlkSet& wset
   if (transposed_G_)
     G_ext = iextensions<2u>{nwalk, Gsize};
 
-  if (MFfactor.size(0) != nsteps || MFfactor.size(1) != nwalk)
+  if (std::get<0>(MFfactor.sizes()) != nsteps || std::get<1>(MFfactor.sizes()) != nwalk)
     MFfactor = CMatrix({long(nsteps), long(nwalk)});
-  if (hybrid_weight.size(0) != nsteps || hybrid_weight.size(1) != nwalk)
+  if (std::get<0>(hybrid_weight.sizes()) != nsteps || std::get<1>(hybrid_weight.sizes()) != nwalk)
     hybrid_weight = CMatrix({long(nsteps), long(nwalk)});
-  if (new_overlaps.size(0) != nwalk)
+  if (std::get<0>(new_overlaps.sizes()) != nwalk)
     new_overlaps = CVector(iextensions<1u>{nwalk});
-  if (new_energies.size(0) != nwalk || new_energies.size(1) != 3)
+  if (std::get<0>(new_energies.sizes()) != nwalk || std::get<1>(new_energies.sizes()) != 3)
     new_energies = CMatrix({long(nwalk), 3});
 
   //  Temporary memory usage summary:
@@ -831,15 +831,15 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   TG.local_barrier();
 
   auto&& Fields(*wset.getFields());
-  assert(Fields.size(0) >= nbpsteps);
-  assert(Fields.size(1) == globalnCV);
-  assert(Fields.size(2) == nwalk);
+  assert(std::get<0>(Fields.sizes()) >= nbpsteps);
+  assert(std::get<1>(Fields.sizes()) == globalnCV);
+  assert(std::get<2>(Fields.sizes()) == nwalk);
 
   int nrow(NMO * ((walker_type == NONCOLLINEAR) ? 2 : 1));
   int ncol(NAEA + ((walker_type == CLOSED) ? 0 : NAEB));
-  assert(Refs.size(0) == nwalk);
-  int nrefs = Refs.size(1);
-  assert(Refs.size(2) == nrow * ncol);
+  assert(std::get<0>(Refs.sizes()) == nwalk);
+  int nrefs = std::get<1>(Refs.sizes());
+  assert(std::get<2>(Refs.sizes()) == nrow * ncol);
 
   int cv0, cvN;
   std::tie(cv0, cvN) = FairDivideBoundary(TG.getLocalTGRank(), localnCV, TG.getNCoresPerTG());
@@ -852,8 +852,8 @@ void AFQMCDistributedPropagatorDistCV::BackPropagate(int nbpsteps,
   if (walker_type == COLLINEAR)
     nx = 2;
 
-  assert(detR.size(0) == nwalk);
-  assert(detR.size(1) == nrefs * nx);
+  assert(std::get<0>(detR.sizes()) == nwalk);
+  assert(std::get<1>(detR.sizes()) == nrefs * nx);
   std::fill_n(detR.origin(), detR.num_elements(), SPComplexType(1.0, 0.0));
 
   // from now on, individual work on each walker/step

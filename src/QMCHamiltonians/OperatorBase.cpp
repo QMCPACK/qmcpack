@@ -55,7 +55,7 @@ TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
 ////////  FUNCTIONS ////////////////
 void OperatorBase::addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
 
-void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
   const bool collect = update_mode_.test(COLLECTABLE);
   //exclude collectables
@@ -65,11 +65,11 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hi
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, my_index_);
-    oh.open(gid);
+    oh.open(file);
   }
 }
 
-void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
+void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const {}
 
 void OperatorBase::setObservables(PropertySetType& plist) { plist[my_index_] = value_; }
 
@@ -126,25 +126,16 @@ void OperatorBase::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
 void OperatorBase::mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                        const RefVectorWithLeader<ParticleSet>& p_list,
                                                        const opt_variables_type& optvars,
-                                                       RecordArray<ValueType>& dlogpsi,
+                                                       const RecordArray<ValueType>& dlogpsi,
                                                        RecordArray<ValueType>& dhpsioverpsi) const
 {
-  const int nparam = dlogpsi.nparam();
-  std::vector<ValueType> tmp_dlogpsi(nparam);
-  std::vector<ValueType> tmp_dhpsioverpsi(nparam);
+  const int nparam = dlogpsi.getNumOfParams();
   for (int iw = 0; iw < o_list.size(); iw++)
   {
-    for (int j = 0; j < nparam; j++)
-    {
-      tmp_dlogpsi[j] = dlogpsi.getValue(j, iw);
-    }
+    const Vector<ValueType> dlogpsi_record_view(const_cast<ValueType*>(dlogpsi[iw]), nparam);
+    Vector<ValueType> dhpsioverpsi_record_view(dhpsioverpsi[iw], nparam);
 
-    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, tmp_dlogpsi, tmp_dhpsioverpsi);
-
-    for (int j = 0; j < nparam; j++)
-    {
-      dhpsioverpsi.setValue(j, iw, dhpsioverpsi.getValue(j, iw) + tmp_dhpsioverpsi[j]);
-    }
+    o_list[iw].evaluateValueAndDerivatives(p_list[iw], optvars, dlogpsi_record_view, dhpsioverpsi_record_view);
   }
 }
 
@@ -177,9 +168,14 @@ void OperatorBase::mw_evaluatePerParticleWithToperator(
 
 OperatorBase::Return_t OperatorBase::evaluateValueAndDerivatives(ParticleSet& P,
                                                                  const opt_variables_type& optvars,
-                                                                 const std::vector<ValueType>& dlogpsi,
-                                                                 std::vector<ValueType>& dhpsioverpsi)
+                                                                 const Vector<ValueType>& dlogpsi,
+                                                                 Vector<ValueType>& dhpsioverpsi)
 {
+  if (dependsOnWaveFunction())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateValueAndDerivatives"
+                           "must be overloaded when the OperatorBase depends on a wavefunction.");
+
   return evaluate(P);
 }
 

@@ -26,15 +26,6 @@
 
 namespace qmcplusplus
 {
-template<typename T>
-inline T TESTDOT(const T* restrict f, const T* restrict l, const T* restrict b)
-{
-  T s = 0;
-  while (f != l)
-    s += (*f++) * (*b++);
-  return s;
-}
-
 namespace MatrixOperators
 {
 /** static function to perform C=AB for real matrices
@@ -173,45 +164,23 @@ inline void product(const Matrix<double>& A, const Matrix<std::complex<double>>&
 /** static function to perform y=Ax for generic matrix and vector
    */
 template<typename T>
-inline void product(const Matrix<T>& A, const Vector<T>& x, T* restrict yptr)
+inline void product(const Matrix<T>& A, const Vector<T>& x, Vector<T>& y)
 {
   const char transa = 'T';
   const T one       = 1.0;
   const T zero      = 0.0;
-  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
+  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, y.data(), 1);
 }
 
 /** static function to perform y = A^t x for generic matrix and vector
    */
 template<typename T>
-inline void product_Atx(const Matrix<T>& A, const Vector<T>& x, T* restrict yptr)
+inline void product_Atx(const Matrix<T>& A, const Vector<T>& x, Vector<T>& y)
 {
   const char transa = 'N';
   const T one       = 1.0;
   const T zero      = 0.0;
-  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, yptr, 1);
-}
-
-/** static function to perform y=Ax for generic matrix and vector
-   */
-template<typename T>
-inline void product(const Matrix<T>& A, const T* restrict xptr, T* restrict yptr)
-{
-  const char transa = 'T';
-  const T one       = 1.0;
-  const T zero      = 0.0;
-  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
-}
-
-/** static function to perform y = A^t x for generic matrix and vector
-   */
-template<typename T>
-inline void product_Atx(const Matrix<T>& A, const T* restrict xptr, T* restrict yptr)
-{
-  const char transa = 'N';
-  const T one       = 1.0;
-  const T zero      = 0.0;
-  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), xptr, 1, zero, yptr, 1);
+  BLAS::gemv(transa, A.cols(), A.rows(), one, A.data(), A.cols(), x.data(), 1, zero, y.data(), 1);
 }
 
 /** static function to perform y=Ax for generic matrix and vector
@@ -294,73 +263,7 @@ inline void product(const Matrix<std::complex<double>>& A, const Vector<double>&
   }
 }
 
-inline void product(const Matrix<std::complex<double>>& A,
-                    const std::complex<double>* restrict x,
-                    std::complex<double>* restrict yptr)
-{
-  const char transa = 'T';
-  const std::complex<double> zone(1.0, 0.0);
-  const std::complex<double> zero(0.0, 0.0);
-  zgemv(transa, A.cols(), A.rows(), zone, A.data(), A.cols(), x, 1, zero, yptr, 1);
-}
-
-/** static function to perform y=Ax for generic matrix and vector
-   */
-inline void product(const Matrix<double>& A, const Vector<std::complex<double>>& x, double* restrict yptr)
-{
-  std::cerr << " Undefined C=AB with real A and complex x " << std::endl;
-}
-
-template<typename T>
-inline void product(const Matrix<T>& A, const Matrix<T>& B, Matrix<T>& C, std::vector<int>& offset)
-{
-  int nr = C.rows();
-  int nb = offset.size() - 1;
-  for (int i = 0; i < nr; i++)
-  {
-    for (int b = 0; b < nb; b++)
-    {
-      int firstK               = offset[b];
-      int lastK                = offset[b + 1];
-      const T* restrict firstY = A[i] + firstK;
-      const T* restrict lastY  = A[i] + lastK;
-      for (int k = firstK; k < lastK; k++)
-      {
-        C(i, k) = TESTDOT(firstY, lastY, B[k] + firstK);
-      }
-    }
-  }
-}
-
-//    template<typename T>
-//      inline statis void product(const Matrix<T>& A, const T* restrict x, T* restrict y)
-//      {
-//        GEMV<T,0>::apply(A.data(),x,y,A.rows(),A.cols());
-//      }
 } // namespace MatrixOperators
-
-/** API to handle gemv */
-namespace simd
-{
-template<typename T>
-inline void gemv(const Matrix<T>& a, const T* restrict v, T* restrict b)
-{
-  MatrixOperators::product(a, v, b);
-}
-
-template<typename T, unsigned D>
-inline void gemv(const Matrix<T>& a, const TinyVector<T, D>* restrict v, TinyVector<T, D>* restrict b)
-{
-  MatrixOperators::product(a, v, b);
-}
-
-template<typename T, unsigned D>
-inline void gemv(const Matrix<T>& a, const Tensor<T, D>* restrict v, Tensor<T, D>* restrict b)
-{
-  MatrixOperators::product(a, v, b);
-}
-
-} // namespace simd
 
 } // namespace qmcplusplus
 #endif

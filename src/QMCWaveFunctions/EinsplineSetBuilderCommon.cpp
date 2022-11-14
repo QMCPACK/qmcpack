@@ -40,7 +40,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, const PSetMap& psets, C
       ParticleSets(psets),
       TargetPtcl(p),
       XMLRoot(cur),
-      H5FileID(-1),
       Format(QMCPACK),
       NumBands(0),
       NumElectrons(0),
@@ -87,8 +86,6 @@ inline TinyVector<T, 3> FracPart(const TinyVector<T, 3>& twist)
 EinsplineSetBuilder::~EinsplineSetBuilder()
 {
   DEBUG_MEMORY("EinsplineSetBuilder::~EinsplineSetBuilder");
-  if (H5FileID >= 0)
-    H5Fclose(H5FileID);
 }
 
 
@@ -729,13 +726,11 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
         ePath << eigenstatesGroup << "/twist/band/eigenvalue";
         sPath << eigenstatesGroup << "/twist/band/spin";
       }
-      HDFAttribIO<double> h_energy(band.Energy);
-      HDFAttribIO<int> h_spin(band.Spin);
       band.Energy = -1.01e100;
-      h_energy.read(H5FileID, ePath.str().c_str());
+      H5File.read(band.Energy, ePath.str());
       if (band.Energy > -1.0e100)
       {
-        h_spin.read(H5FileID, sPath.str().c_str());
+        H5File.read(band.Spin, sPath.str());
         if (band.Spin == spin)
           SortBands.push_back(band);
       }
@@ -748,8 +743,7 @@ void EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs, bool
       band.TwistIndex    = tindex;
       band.BandIndex     = cs;
       band.MakeTwoCopies = MakeTwoCopies[ti];
-      HDFAttribIO<double> h_energy(band.Energy);
-      h_energy.read(H5FileID, (CoreStatePath(ti, cs) + "eigenvalue").c_str());
+      H5File.read(band.Energy, CoreStatePath(ti, cs) + "eigenvalue");
       if (band.Energy > -1.0e100)
         SortBands.push_back(band);
     }

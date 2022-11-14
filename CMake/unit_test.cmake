@@ -27,14 +27,18 @@ function(ADD_UNIT_TEST TESTNAME PROCS THREADS TEST_BINARY)
        OR ENABLE_OFFLOAD)
       set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
     endif()
+
+    if(ENABLE_OFFLOAD)
+      set_property(
+        TEST ${TESTNAME}
+        APPEND
+        PROPERTY ENVIRONMENT "OMP_TARGET_OFFLOAD=mandatory")
+    endif()
   endif()
 
   set(TEST_LABELS_TEMP "")
   add_test_labels(${TESTNAME} TEST_LABELS_TEMP)
-  set_property(
-    TEST ${TESTNAME}
-    APPEND
-    PROPERTY LABELS "unit")
+  set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "unit")
 endfunction()
 
 # Add a test to see if the target output exists in the desired location in the build directory.

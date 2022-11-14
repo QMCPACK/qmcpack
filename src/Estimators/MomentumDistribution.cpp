@@ -313,7 +313,7 @@ void MomentumDistribution::collect(const RefVector<OperatorEstBase>& type_erased
 }
 
 
-void MomentumDistribution::registerOperatorEstimator(hid_t gid)
+void MomentumDistribution::registerOperatorEstimator(hdf_archive& file)
 {
   //descriptor for the data, 1-D data
   std::vector<int> ng(1);
@@ -323,9 +323,9 @@ void MomentumDistribution::registerOperatorEstimator(hid_t gid)
   auto& h5o = h5desc_.back();
   //h5o.set_dimensions(ng, my_index_);
   h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
-  h5o->open(gid);
-  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints");
-  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights");
+  h5o->open(file);
+  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
+  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
 }
 
 

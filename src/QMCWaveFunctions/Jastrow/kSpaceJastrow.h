@@ -65,7 +65,7 @@ public:
   }
 };
 
-class kSpaceJastrow : public WaveFunctionComponent
+class kSpaceJastrow : public WaveFunctionComponent, public OptimizableObject
 {
 public:
   typedef enum
@@ -155,11 +155,15 @@ public:
 
   void setCoefficients(std::vector<RealType>& oneBodyCoefs, std::vector<RealType>& twoBodyCoefs);
 
+  std::string getClassName() const override { return "kSpaceJastrow"; }
   //implement virtual functions for optimizations
-  void checkInVariables(opt_variables_type& active) override;
+  bool isOptimizable() const override { return true; }
   void checkOutVariables(const opt_variables_type& active) override;
-  void resetParameters(const opt_variables_type& active) override;
-  void reportStatus(std::ostream& os) override;
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
+  void checkInVariablesExclusive(opt_variables_type& active) final;
+  void resetParametersExclusive(const opt_variables_type& active) final;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -195,8 +199,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
   /** evaluate the ratio
   */

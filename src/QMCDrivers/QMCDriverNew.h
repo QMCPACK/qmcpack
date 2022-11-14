@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include "Configuration.h"
+#include "Particle/HDFWalkerIO.h"
 #include "Pools/PooledData.h"
 #include "Utilities/TimerManager.h"
 #include "Utilities/ScopedProfiler.h"
@@ -49,7 +50,6 @@ class Communicate;
 namespace qmcplusplus
 {
 //forward declarations: Do not include headers if not needed
-class HDFWalkerOutput;
 class TraceManager;
 class EstimatorManagerNew;
 class TrialWaveFunction;
@@ -102,10 +102,6 @@ public:
   std::bitset<QMC_MODE_MAX> qmc_driver_mode_;
 
 protected:
-  /// inject additional barrier and measure load imbalance.
-  void measureImbalance(const std::string& tag) const;
-  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
-  void endBlock();
   /** This is a data structure strictly for QMCDriver and its derived classes
    *
    *  i.e. its nested in scope for a reason
@@ -117,12 +113,23 @@ protected:
     std::vector<IndexType> walkers_per_crowd;
     RealType reserve_walkers;
   };
+  /** Do common section starting tasks for VMC and DMC
+   *
+   * set up population_, crowds_, rngs and step_contexts_
+   */
+  void initializeQMC(const AdjustedWalkerCounts& awc);
+
+  /// inject additional barrier and measure load imbalance.
+  void measureImbalance(const std::string& tag) const;
+  /// end of a block operations. Aggregates statistics across all MPI ranks and write to disk.
+  void endBlock();
 
 public:
   /// Constructor.
   QMCDriverNew(const ProjectData& project_data,
                QMCDriverInput&& input,
                const std::optional<EstimatorManagerInput>& global_emi,
+               WalkerConfigurations& wc,
                MCPopulation&& population,
                const std::string timer_prefix,
                Communicate* comm,
@@ -185,9 +192,6 @@ public:
 
   void putWalkers(std::vector<xmlNodePtr>& wset) override;
 
-  ///set global offsets of the walkers
-  void setWalkerOffsets();
-
   inline RefVector<RandomGenerator> getRngRefs() const
   {
     RefVector<RandomGenerator> RngRefs;
@@ -229,15 +233,6 @@ public:
    *        this stage of driver initialization is hit.
    */
   void process(xmlNodePtr cur) override = 0;
-
-  /** Do common section starting tasks
-   *
-   *  \todo This should not take xmlNodePtr
-   *        It should either take BranchEngineInput and EstimatorInput
-   *        And these are the arguments to the branch_engine and estimator_manager
-   *        Constructors or these objects should be created elsewhere.
-   */
-  void startup(xmlNodePtr cur, const QMCDriverNew::AdjustedWalkerCounts& awc);
 
   static void initialLogEvaluation(int crowd_id, UPtrVector<Crowd>& crowds, UPtrVector<ContextForSteps>& step_context);
 
@@ -313,7 +308,7 @@ protected:
   /// check logpsi and grad and lap against values computed from scratch
   static void checkLogAndGL(Crowd& crowd, const std::string_view location);
 
-  const std::string& get_root_name() const override { return project_data_.CurrentMainRoot(); }
+  const std::string& get_root_name() const override { return project_data_.currentMainRoot(); }
 
   /** The timers for the driver.
    *
@@ -403,8 +398,6 @@ protected:
 
   ///type of qmc: assigned by subclasses
   const std::string QMCType;
-  ///root of all the output files
-  std::string root_name_;
 
   /** the entire (on node) walker population
    * it serves VMCBatch and DMCBatch right now but will be polymorphic
@@ -429,7 +422,7 @@ protected:
   std::unique_ptr<EstimatorManagerNew> estimator_manager_;
 
   ///record engine for walkers
-  HDFWalkerOutput* wOut;
+  std::unique_ptr<HDFWalkerOutput> wOut;
 
   /** Per crowd move contexts, this is where the DistanceTables etc. reside
    */
@@ -470,6 +463,12 @@ protected:
 
   /// project info for accessing global fileroot and series id
   const ProjectData& project_data_;
+
+  // reference to the captured WalkerConfigurations
+  WalkerConfigurations& walker_configs_ref_;
+
+  /// update the global offsets of walker configurations after active walkers being touched.
+  static void setWalkerOffsets(WalkerConfigurations&, Communicate* comm);
 
 private:
   friend std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd);

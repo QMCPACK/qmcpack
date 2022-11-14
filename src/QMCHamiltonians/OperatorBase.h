@@ -120,6 +120,9 @@ public:
 
   virtual ~OperatorBase() = default;
 
+  /// return true if this operator depends on a wavefunction
+  virtual bool dependsOnWaveFunction() const { return false; }
+
   //////// GETTER AND SETTER FUNCTIONS ////////////////
 
   /**
@@ -142,6 +145,9 @@ public:
    * @return std::string copy of my_name_ member
    */
   std::string getName() const noexcept;
+
+  /// return class name
+  virtual std::string getClassName() const = 0;
 
   /**
    * @brief Set my_name member, uses small string optimization (pass by value)
@@ -197,7 +203,7 @@ public:
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
-  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  virtual void registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
   /*** 
    * @brief add to collectables descriptor for hdf5
@@ -207,7 +213,7 @@ public:
    * @param h5desc contains a set of hdf5 descriptors for a scalar observable
    * @param gid hdf5 group to which the observables belong
    */
-  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const;
+  virtual void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
   /** 
    * @brief Set the values evaluated by this object to plist
@@ -276,7 +282,7 @@ public:
   virtual void mw_evaluateWithParameterDerivatives(const RefVectorWithLeader<OperatorBase>& o_list,
                                                    const RefVectorWithLeader<ParticleSet>& p_list,
                                                    const opt_variables_type& optvars,
-                                                   RecordArray<ValueType>& dlogpsi,
+                                                   const RecordArray<ValueType>& dlogpsi,
                                                    RecordArray<ValueType>& dhpsioverpsi) const;
 
   /**
@@ -333,8 +339,8 @@ public:
    */
   virtual Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                                const opt_variables_type& optvars,
-                                               const std::vector<ValueType>& dlogpsi,
-                                               std::vector<ValueType>& dhpsioverpsi);
+                                               const Vector<ValueType>& dlogpsi,
+                                               Vector<ValueType>& dhpsioverpsi);
 
   /** 
    * @brief Evaluate contribution to local energy  and derivatives w.r.t ionic coordinates from OperatorBase.  

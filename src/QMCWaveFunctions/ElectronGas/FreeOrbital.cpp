@@ -2,8 +2,9 @@
 
 namespace qmcplusplus
 {
-FreeOrbital::FreeOrbital(const std::vector<PosType>& kpts_cart)
-    : kvecs(kpts_cart),
+FreeOrbital::FreeOrbital(const std::string& my_name, const std::vector<PosType>& kpts_cart)
+    : SPOSet(my_name),
+      kvecs(kpts_cart),
 #ifdef QMC_COMPLEX
       mink(0), // first k at twist may not be 0
 #else
@@ -200,16 +201,16 @@ void FreeOrbital::evaluate_notranspose(const ParticleSet& P,
       dp[j2]       = coskr * kvecs[ik];
       for (int la = 0; la < OHMMS_DIM; la++)
       {
-        hess[j1](la, la)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
-        hess[j2](la, la)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j1](la, la)    = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la];
+        hess[j2](la, la)    = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[la];
         ggg[j1][la](la, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
         ggg[j2][la](la, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[la] * (kvecs[ik])[la];
         for (int lb = la + 1; lb < OHMMS_DIM; lb++)
         {
-          hess[j1](la, lb)      = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          hess[j2](la, lb)      = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
-          hess[j1](lb, la)      = hess[j1](la, lb);
-          hess[j2](lb, la)      = hess[j2](la, lb);
+          hess[j1](la, lb)    = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j2](la, lb)    = -sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb];
+          hess[j1](lb, la)    = hess[j1](la, lb);
+          hess[j2](lb, la)    = hess[j2](la, lb);
           ggg[j1][la](lb, la) = sinkr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
           ggg[j2][la](lb, la) = -coskr * (kvecs[ik])[la] * (kvecs[ik])[lb] * (kvecs[ik])[la];
           ggg[j1][la](la, lb) = ggg[j1][la](lb, la);

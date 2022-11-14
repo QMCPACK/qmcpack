@@ -42,6 +42,7 @@ public:
   LatticeDeviationEstimator(ParticleSet& P, ParticleSet& sP, const std::string& tgroup, const std::string& sgroup);
   ~LatticeDeviationEstimator() override {}
 
+  std::string getClassName() const override { return "LatticeDeviationEstimator"; }
   bool put(xmlNodePtr cur) override;         // read input xml node, required
   bool get(std::ostream& os) const override; // class description, required
 
@@ -53,7 +54,7 @@ public:
   //void setParticlePropertyList(PropertySetType& plist, int offset); // is this method ever used?
 
   // make room in hdf5 observable registry
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
   //void addObservables(PropertySetType& plist, BufferType& collectables); // also used for multiple scalars
 
   // pure virtual functions require overrider

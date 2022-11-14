@@ -266,10 +266,11 @@ Additional information:
 - ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
   files.
 
-- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction
-  from scratch: =1 by default when using mixed precision. =0 (no
-  recompute) by default when not using mixed precision. Recomputing
-  introduces a performance penalty dependent on system size.
+- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
+  default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
+  and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
+  dependent on system size, but protects against the accumulation of numerical error, particularly in the inverses of
+  the Slater determinants. These have a cubic-scaling cost to recompute.
 
 - ``spinMass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
@@ -400,10 +401,11 @@ Additional information:
 - ``storeconfigs`` If ``storeconfigs`` is set to a nonzero value, then electron configurations during the VMC run are saved to
   files.
 
-- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction
-  from scratch: =1 by default when using mixed precision. =0 (no
-  recompute) by default when not using mixed precision. Recomputing
-  introduces a performance penalty dependent on system size.
+- ``blocks_between_recompute`` Recompute the accuracy critical determinant part of the wavefunction from scratch: =1 by
+  default when using mixed precision. =10 by default when not using mixed precision. 0 can be set for no recomputation
+  and higher performance, but numerical errors will accumulate over time. Recomputing introduces a performance penalty
+  dependent on system size, but protects against the accumulation of numerical error, particularly in the inverses of
+  the Slater determinants. These have a cubic-scaling cost to recompute.
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_load', 'checkGL_after_moves', 'checkGL_after_tmove'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
@@ -517,9 +519,9 @@ The input parameters are listed in the following table.
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | **Name**                 | **Datatype** | **Values**  | **Default** | **Description**                                  |
   +==========================+==============+=============+=============+==================================================+
-  | ``nonlocalpp``           | text         | yes, no     | no          | include non-local PP energy in the cost function |
+  | ``nonlocalpp``           | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
-  | ``use_nonlocalpp_deriv`` | text         | yes, no     | yes         | Add non-local PP energy derivative contribution  |
+  | ``use_nonlocalpp_deriv`` | text         |             |             | No more effective. Will be removed.              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
   | ``minwalkers``           | real         | 0--1        | 0.3         | Lower bound of the effective weight              |
   +--------------------------+--------------+-------------+-------------+--------------------------------------------------+
@@ -530,13 +532,7 @@ Additional information:
 
 - ``maxWeight`` The default should be good.
 
-- ``nonlocalpp`` The ``nonlocalpp`` contribution to the local energy depends on the
-  wavefunction. When a new set of parameters is proposed, this
-  contribution needs to be updated if the cost function consists of local
-  energy. Fortunately, nonlocal contribution is chosen small when making a
-  PP for small locality error. We can ignore its change and avoid the
-  expensive computational cost. An implementation issue with legacy GPU code is
-  that a large amount of memory is consumed with this option.
+- ``nonlocalpp`` and ``use_nonlocalpp_deriv`` are obsolete and will be treated as invalid options (trigger application abort) in future releases. From this point forward, the code behaves as prior versions of qmcpack did when both were set to ``yes``.
 
 - ``minwalkers`` This is a ``critical`` parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than ``minwalkers``,
   the proposed set of parameters is invalid.
@@ -548,6 +544,54 @@ The cost function consists of three components: energy, unreweighted variance, a
      <cost name="energy">                   0.95 </cost>
      <cost name="unreweightedvariance">     0.00 </cost>
      <cost name="reweightedvariance">       0.05 </cost>
+
+Variational parameter selection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The predominant way of selecting variational parameters is via ``<wavefunction>`` input.
+``<coefficients>`` entries support ``optimize="yes"/"no"`` to enable/disable variational parameters in the wavefunction optimization.
+The secondary way of selecting variational parameters is via ``variational_subset`` parameter in the ``<qmc>`` driver input.
+It allows controlling optimization granularity at each optimization step.
+If ``variational_subset`` is not provided or empty, all the variational parameters are selected.
+If variational parameters are set as not optimizable in the predominant way, the secondary way won't be able to set them optimizable even they are selected.
+
+The following example shows optimizing subsets of parameters in stages in a single QMCPACK run.
+
+::
+
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud </parameter>
+    </qmc>
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud eH </parameter>
+    </qmc>
+    <qmc method="linear">
+      ...
+      <parameter name="variational_subset"> uu ud eH CI </parameter>
+    </qmc>
+
+Variational parameter storage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+After each optimization step the new wavefunction is stored in a file with an ``.opt.xml`` suffix.
+This new wavefunction includes the updated variational parameters.
+
+Writing a new XML wavefunction becomes more complicated if parameters are stored elsewhere (e.g. multideterminant coefficients in an HDF file) and has problems scaling with the number of parameters.
+To address these issues the variational parameters are now written to an HDF file.
+The new "VP file" has the suffix ``.vp.h5`` and is written in conjunction with the ``.opt.xml`` file.
+
+The wavefunction file connects to the VP file with a tag (``override_variational_parameters``) in the ``.opt.xml`` file that points to the ``.vp.h5`` file.
+Should it be necessary to recover the previous behavior without the VP file, this tag can be be turned off with an ``output_vp_override`` parameter in the optimizer input block:
+``<parameter name="output_vp_override">no</parameter>``
+
+Both schemes for storing variational parameters coexist.  Two important points about the VP file:
+
+  * The values of the variational parameters in the VP file take precedence over the values in the XML wavefunction.
+  * When copying an optimized wavefunction, the ``.vp.h5`` file needs to be copied as well.
+
+For users that want to inspect or modify the VP file,
+the He_param test (in ``tests/molecules/He_param``) contains a python script (``convert_vp_format.py``) to read and write the VP file. The script converts to and from a simple text representation of the parameters.
+
 
 Optimizers
 ~~~~~~~~~~
@@ -725,6 +769,14 @@ block-wise directions.
   +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
   | ``nkept``                 | integer      | :math:`> 0`             |             | Number of eigenvectors to keep per block in BLM                                                 |
   +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``store_samples``         | text         | yes, no                 | no          | Whether to store derivative ratios from each sample in the LM engine (required for filtering)   |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``filter_param``          | text         | yes, no                 | no          | Whether to turn off optimization of parameters with noisy gradients                             |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``deriv_threshold``       | real         | :math:`> 0`             | 0.0         | Threshold on the ratio of the parameter gradient mean and standard deviation                    |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
+  | ``filter_info``           | text         | yes, no                 | no          | Whether to print out details on which parameters are turned on or off                           |
+  +---------------------------+--------------+-------------------------+-------------+-------------------------------------------------------------------------------------------------+
 
 Additional information:
 
@@ -761,6 +813,11 @@ Additional information:
    becomes equivalent to the standard LM. Retaining five or fewer
    directions per block is often sufficient.
 
+-  ``deriv_threshold`` This is a threshold on the ratio of the (absolute) mean value of a 
+   parameter derivative to the standard deviation of that derivative. Parameters 
+   with a ratio less than the chosen threshold will be turned off when using parameter 
+   filtration.
+
 Recommendations:
 
 -  Default ``shift_i``, ``shift_s`` should be fine.
@@ -773,6 +830,14 @@ Recommendations:
    and a handful of and often provide a good balance between memory use
    and accuracy. In general, using fewer blocks should be more accurate
    but would require more memory.
+
+-  When using parameter filtration, setting ``deriv_threshold`` to 1.0
+    is an effective choice that generally leads to roughly a third of the 
+    parameters being turned off on any given LM iteration. The precise 
+    number and identity of those parameters will vary from iteration to 
+    iteration. Using the hybrid method (see below) is recommended when parameter 
+    filtration is on so that accelerated descent can be used to optimize
+    parameters that the LM leaves untouched. :cite:`Otis2021`
 
 ::
 
@@ -1210,7 +1275,7 @@ Parameter gradients
 ~~~~~~~~~~~~~~~~~~~
 The gradients of the energy with respect to the variational parameters can be checked and optionally written to a file.
 The check compares the analytic derivatives with a finite difference approximation.
-These are activated by giving a ``gradient_test`` method in and ``optimize`` block, as follows:
+These are activated by giving a ``gradient_test`` method in an ``optimize`` block, as follows:
 
 ::
 
@@ -1230,6 +1295,8 @@ It contains one line per loop iteration, to allow using existing tools to comput
   +=======================+==============+=============+=============+============================================+
   | ``output_param_file`` | text         | yes, no     | no          |  Output parameter gradients to a file      |
   +-----------------------+--------------+-------------+-------------+--------------------------------------------+
+  | ``finite_diff_delta`` | double       | :math:`> 0` | 1e-5        |  Finite difference delta                   |
+  +-----------------------+--------------+-------------+-------------+--------------------------------------------+
 
 The input would look like the following:
 
@@ -1241,6 +1308,21 @@ The input would look like the following:
       </optimize>
       ... rest of optimizer input ...
 
+
+The output has columns for the parameter name, value, analytic gradient, numeric gradient, and relative difference (in percent). Following the relative difference, there may be exclamation marks which highlight large differences that likely indicate a problem.
+
+Sample output looks like:
+
+::
+
+ Param_Name                         Value             Numeric            Analytic        Percent
+ updet_orb_rot_0000_0002      0.000000e+00   -1.8622037512e-02    4.6904958207e-02      3.52e+02 !!!
+ updet_orb_rot_0001_0002      0.000000e+00    1.6733860519e-03    3.9023863136e-03     -1.33e+02 !!!
+ downdet_orb_rot_0000_0002    0.000000e+00   -9.3267917833e-03   -8.0747281231e-03      1.34e+01 !!!
+ downdet_orb_rot_0001_0002    0.000000e+00   -4.3276838557e-03    2.6684235669e-02      7.17e+02 !!!
+ uu_0                         0.000000e+00   -1.2724910770e-02   -1.2724906671e-02      3.22e-05
+ uu_1                         0.000000e+00    2.0305884219e-02    2.0305883999e-02      1.08e-06
+ uu_2                         0.000000e+00   -1.1644597731e-03   -1.1644591818e-03      5.08e-05
 
 
 Output of intermediate values

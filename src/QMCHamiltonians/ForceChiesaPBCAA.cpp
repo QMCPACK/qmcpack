@@ -68,7 +68,7 @@ void ForceChiesaPBCAA::InitMatrix()
   // in Numerics/DeterminantOperators.h
   invert_matrix(Sinv, false);
   // in Numerics/MatrixOperators.h
-  MatrixOperators::product(Sinv, h.data(), c.data());
+  MatrixOperators::product(Sinv, h, c);
 }
 
 void ForceChiesaPBCAA::initBreakup(ParticleSet& P)

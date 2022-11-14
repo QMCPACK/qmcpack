@@ -26,7 +26,7 @@ namespace qmcplusplus
 /**class ProjectData
  *\brief Encapsulate data for a project
  *
- * Default: m_title = getDateAndTime("%Y%m%dT%H%M")
+ * Default: title_ = getDateAndTime("%Y%m%dT%H%M")
  *
  * \todo This shouldn't contain MPI information it is only used to calculate the
  *       path information and the communication parameters should just be input params to that call.
@@ -35,24 +35,23 @@ namespace qmcplusplus
 class ProjectData
 {
 public:
-
-/** Enum for global scope switch of design from legacy driver based to batch driver based.
+  /** Enum for global scope switch of design from legacy driver based to batch driver based.
  *  This effects more than just which drivers are used. Currently it just effects the meaning of
  *  qmc section vmc, dmc, linear name attributes.
  */
-enum class DriverVersion
-{
-  LEGACY,
-  BATCH
-};
+  enum class DriverVersion
+  {
+    LEGACY,
+    BATCH
+  };
 
 private:
   inline static const std::unordered_map<std::string, DriverVersion> lookup_input_enum_value{{"legacy",
-                                                                                            DriverVersion::LEGACY},
-                                                                                           {"batch",
-                                                                                            DriverVersion::BATCH},
-                                                                                           {"batched",
-                                                                                            DriverVersion::BATCH}
+                                                                                              DriverVersion::LEGACY},
+                                                                                             {"batch",
+                                                                                              DriverVersion::BATCH},
+                                                                                             {"batched",
+                                                                                              DriverVersion::BATCH}
 
   };
 
@@ -65,76 +64,87 @@ public:
   bool put(xmlNodePtr cur);
   void reset();
 
-  ///increment a series number and reset m_projectroot
+  ///increment a series number and reset project_root_
   void advance();
 
-  ///roll-back a series number and reset m_projectroot by one
+  ///roll-back a series number and reset project_root_ by one
   void rewind();
 
   void setCommunicator(Communicate* c);
 
-  /** returns the title of the project
+  /** 
+   * @brief returns the title of the project
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
-   * translate to m_title = "det_qmc_short_sdbatch_vmcbatch_mwalkers"
+   * translate to title_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers"
    */
-  inline const std::string& getTitle() const { return m_title; }
+  const std::string& getTitle() const noexcept;
 
-  /** returns the projectmain of the project, the series id is incremented at every QMC section
+  /** 
+   * @brief returns the projectmain of the project, the series id is incremented at every QMC section
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
-   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
+   * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s000"
    */
-  inline const std::string& CurrentMainRoot() const { return m_projectmain; }
+  const std::string& currentMainRoot() const noexcept;
 
-  /** returns the nextroot of the project, the series id is incremented at every QMC section
+  /** 
+   * @brief returns the nextroot of the project, the series id is incremented at every QMC section
    * <project id="det_qmc_short_sdbatch_vmcbatch_mwalkers" series="0">
-   * translate to m_projectmain = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
+   * translate to project_main_ = "det_qmc_short_sdbatch_vmcbatch_mwalkers.s001"
    */
-  inline const std::string& NextRoot() const { return m_nextroot; }
+  const std::string& nextRoot() const noexcept;
 
-  /** return the root of the previous sequence
-   * @param oldroot is composed by the m_title and m_series
+  /** 
+   * @brief return the root of the previous sequence
+   * @param oldroot is composed by the title_ and series_
    */
-  bool PreviousRoot(std::string& oldroot) const;
+  bool previousRoot(std::string& oldroot) const;
 
-  int getSeriesIndex() const { return m_series; }
-  int getMaxCPUSeconds() const { return max_cpu_secs_; }
-  DriverVersion get_driver_version() const { return driver_version_; }
+  int getSeriesIndex() const noexcept;
+
+  int getMaxCPUSeconds() const noexcept;
+
+  DriverVersion getDriverVersion() const noexcept;
+
+  bool isComplex() const noexcept;
 
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
   ///title of the project
-  std::string m_title;
+  std::string title_;
 
   ///name of the host where the job is running
-  std::string m_host;
+  std::string host_;
 
   ///date when the job is executed
-  std::string m_date;
+  std::string date_;
 
   ///main root for all the output engines
-  std::string m_projectmain;
+  std::string project_main_;
 
   ///processor-dependent root for all the output engines
-  std::string m_projectroot;
+  std::string project_root_;
 
   ///root for the next run
-  std::string m_nextroot;
+  std::string next_root_;
 
   ///series index
-  int m_series;
+  int series_;
 
   ///communicator
-  Communicate* myComm;
+  Communicate* my_comm_;
 
   ///the xml node for <Project/>
-  xmlNodePtr m_cur;
+  xmlNodePtr cur_;
 
   ///max cpu seconds
   int max_cpu_secs_;
 
   // The driver version of the project
   DriverVersion driver_version_;
+
+  // tracks if complex wavefunction is used, true: complex, false: real
+  bool is_complex_;
 };
 } // namespace qmcplusplus
 

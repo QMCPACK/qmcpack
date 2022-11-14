@@ -18,6 +18,9 @@
 namespace qmcplusplus
 {
 /** meta data for NLPP calculation of a pair of ion and electron
+    This is not just meta data.
+    elec pos ion_elec_dist etc.
+    This is an AoS data element.
    */
 template<typename T>
 struct NLPPJob
@@ -30,6 +33,10 @@ struct NLPPJob
   const RealType ion_elec_dist;
   const PosType ion_elec_displ;
 
+  /** This allows construction using emplace back
+   *  could be a way to pull it off with aggregate initialization
+   *  but it is nontrivial
+   */
   NLPPJob(const int ion_id_in,
           const int electron_id_in,
           const PosType& elec_pos_in,

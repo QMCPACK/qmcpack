@@ -27,7 +27,7 @@ template<class T>
 struct FakeFunctor : public OptimizableFunctorBase
 {
   ///default constructor
-  FakeFunctor() {}
+  FakeFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) {}
 
   void setCusp(real_type cusp) override {}
 
@@ -131,11 +131,11 @@ struct FakeFunctor : public OptimizableFunctorBase
   bool put(xmlNodePtr cur) override { return true; }
 
 
-  void checkInVariables(opt_variables_type& active) override {}
+  void checkInVariablesExclusive(opt_variables_type& active) override {}
 
   void checkOutVariables(const opt_variables_type& active) override {}
 
-  void resetParameters(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const opt_variables_type& active) override {}
 
 
   std::vector<TinyVector<real_type, 3>> derivs_;

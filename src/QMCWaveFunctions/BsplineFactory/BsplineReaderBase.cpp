@@ -36,8 +36,7 @@ void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<
   if (myComm->rank() == 0)
   {
     std::string path = psi_g_path(ti, spin, ib);
-    HDFAttribIO<Vector<std::complex<double>>> h_cG(cG);
-    h_cG.read(mybuilder->H5FileID, path.c_str());
+    mybuilder->H5File.read(cG, path);
     ncg = cG.size();
   }
   myComm->bcast(ncg);
@@ -102,8 +101,11 @@ void BsplineReaderBase::setCommon(xmlNodePtr cur)
 std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
 {
   int ns(0);
+  std::string spo_object_name;
   OhmmsAttributeSet a;
   a.add(ns, "size");
+  a.add(spo_object_name, "name");
+  a.add(spo_object_name, "id");
   a.put(cur);
 
   if (ns == 0)
@@ -129,11 +131,17 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   vals.myName = make_bandgroup_name(mybuilder->getName(), spin, mybuilder->twist_num_, mybuilder->TileMatrix, 0, ns);
   vals.selectBands(fullband, 0, ns, false);
 
-  return create_spline_set(spin, vals);
+  return create_spline_set(spo_object_name, spin, vals);
 }
 
 std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
 {
+  std::string spo_object_name;
+  OhmmsAttributeSet a;
+  a.add(spo_object_name, "name");
+  a.add(spo_object_name, "id");
+  a.put(cur);
+
   if (spo2band.empty())
     spo2band.resize(mybuilder->states.size());
 
@@ -156,7 +164,7 @@ std::unique_ptr<SPOSet> BsplineReaderBase::create_spline_set(int spin, xmlNodePt
   vals.selectBands(fullband, spo2band[spin][input_info.min_index()], input_info.max_index() - input_info.min_index(),
                    false);
 
-  return create_spline_set(spin, vals);
+  return create_spline_set(spo_object_name, spin, vals);
 }
 
 /** build index tables to map a state to band with k-point folidng

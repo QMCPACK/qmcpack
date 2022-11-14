@@ -33,7 +33,6 @@ namespace qmcplusplus
 class MultiDiracDeterminant : public WaveFunctionComponent
 {
 public:
-  bool Optimizable;
   NewTimer &inverse_timer, &buildTable_timer, &table2ratios_timer, &evalWalker_timer, &evalOrbValue_timer,
       &evalOrbVGL_timer;
   NewTimer &updateInverse_timer, &calculateRatios_timer, &calculateGradRatios_timer, &updateRatios_timer;
@@ -147,28 +146,37 @@ public:
 
   SPOSetPtr getPhi() { return Phi.get(); };
 
-  ///optimizations  are disabled
-  inline void checkInVariables(opt_variables_type& active) override { Phi->checkInVariables(active); }
+  std::string getClassName() const override { return "MultiDiracDeterminant"; }
 
-  inline void checkOutVariables(const opt_variables_type& active) override { Phi->checkOutVariables(active); }
+  bool isFermionic() const final { return true; }
+  inline bool isOptimizable() const final { return Phi->isOptimizable(); }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) final
+  {
+    Phi->extractOptimizableObjectRefs(opt_obj_refs);
+  }
+
+  inline void checkOutVariables(const opt_variables_type& active) override
+  {
+    if (Phi->isOptimizable())
+      Phi->checkOutVariables(active);
+  }
 
   /// create optimizable orbital rotation parameters
   void buildOptVariables(std::vector<size_t>& C2node);
   ///helper function to buildOptVariables
   int build_occ_vec(const OffloadVector<int>& data, const size_t nel, const size_t nmo, std::vector<int>& occ_vec);
 
-  void resetParameters(const opt_variables_type& active) override { Phi->resetParameters(active); }
-
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const MultiDiracDeterminant& pseudo_dn,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
@@ -177,15 +185,13 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const MultiDiracDeterminant& pseudo_dn,
                              const PsiValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
                              const std::vector<size_t>& C2node_dn);
 
-
-  inline void reportStatus(std::ostream& os) override {}
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 

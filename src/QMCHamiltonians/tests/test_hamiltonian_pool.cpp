@@ -36,9 +36,9 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   c = OHMMS::Controller;
 
   // See src/QMCHamiltonians/tests/test_hamiltonian_factory for parsing tests
-  const char* hamiltonian_xml = "<hamiltonian name=\"h0\" type=\"generic\" target=\"e\"> \
-         <pairpot type=\"coulomb\" name=\"ElecElec\" source=\"e\" target=\"e\"/> \
-</hamiltonian>";
+  const char* hamiltonian_xml = R"(<hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+</hamiltonian>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(hamiltonian_xml);

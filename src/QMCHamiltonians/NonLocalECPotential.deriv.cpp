@@ -21,13 +21,18 @@ namespace qmcplusplus
 {
 NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(ParticleSet& P,
                                                                                const opt_variables_type& optvars,
-                                                                               const std::vector<ValueType>& dlogpsi,
-                                                                               std::vector<ValueType>& dhpsioverpsi)
+                                                                               const Vector<ValueType>& dlogpsi,
+                                                                               Vector<ValueType>& dhpsioverpsi)
 {
   value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       PPset[ipp]->randomize_grid(*myRNG);
+
+  /* evaluating TWF ratio values requires calling prepareGroup
+   * In evaluate() we first loop over species and call prepareGroup before looping over all the electrons of a species
+   * Here it is not necessary because TWF::evaluateLog has been called and precomputed data is up-to-date
+   */
   const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
@@ -60,8 +65,8 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
                                                                                  RealType r,
                                                                                  const PosType& dr,
                                                                                  const opt_variables_type& optvars,
-                                                                                 const std::vector<ValueType>& dlogpsi,
-                                                                                 std::vector<ValueType>& dhpsioverpsi)
+                                                                                 const Vector<ValueType>& dlogpsi,
+                                                                                 Vector<ValueType>& dhpsioverpsi)
 {
   const size_t num_vars = optvars.num_active_vars;
   dratio.resize(nknot, num_vars);

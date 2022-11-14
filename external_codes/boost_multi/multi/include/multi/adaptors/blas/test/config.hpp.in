@@ -1,0 +1,6 @@
+#ifndef MULTI_ADAPTORS_BLAS_TEST_CONFIG_HPP_IN  // NOLINT(llvm-header-guard) name is sufficient
+#define MULTI_ADAPTORS_BLAS_TEST_CONFIG_HPP_IN
+
+#cmakedefine01 CUDA_FOUND
+
+#endif

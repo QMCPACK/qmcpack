@@ -21,7 +21,6 @@
 
 #include "Configuration.h"
 #include "type_traits/complex_help.hpp"
-#include "VariableSet.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 
@@ -73,11 +72,6 @@ struct OrbitalSetTraits //: public OrbitalTraits<T>
   using GradHessMatrix = Matrix<GradHessType>;
   using VGLVector      = VectorSoaContainer<ValueType, DIM + 2>;
 };
-
-///typedef for a set of variables that are varied during an optimization
-using opt_variables_type = optimize::VariableSet;
-///typedef for a set of variables that can be varied
-using variable_map_type = optimize::VariableSet::variable_map_type;
 
 /** evaluate log(psi) as log(|psi|) and phase
  * @param psi real/complex value

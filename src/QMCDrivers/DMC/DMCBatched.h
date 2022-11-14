@@ -79,6 +79,7 @@ public:
              QMCDriverInput&& qmcdriver_input,
              const std::optional<EstimatorManagerInput>& global_emi,
              DMCDriverInput&& input,
+             WalkerConfigurations& wc,
              MCPopulation&& pop,
              Communicate* comm);
 

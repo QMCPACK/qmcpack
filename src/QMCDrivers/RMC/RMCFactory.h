@@ -29,10 +29,11 @@ private:
 public:
   RMCFactory(int vmode, xmlNodePtr cur) : RMCMode(vmode), myNode(cur) {}
 
-  QMCDriver* create(MCWalkerConfiguration& w,
-                    TrialWaveFunction& psi,
-                    QMCHamiltonian& h,
-                    Communicate* comm);
+  std::unique_ptr<QMCDriver> create(const ProjectData& project_data,
+                                    MCWalkerConfiguration& w,
+                                    TrialWaveFunction& psi,
+                                    QMCHamiltonian& h,
+                                    Communicate* comm);
 };
 } // namespace qmcplusplus
 

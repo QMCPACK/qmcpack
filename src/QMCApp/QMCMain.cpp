@@ -44,6 +44,7 @@
 #include "hdf/HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/qmc_common.h"
+#include "MemoryUsage.h"
 #ifdef BUILD_AFQMC
 #include "AFQMC/AFQMCFactory.h"
 #endif
@@ -154,7 +155,9 @@ QMCMain::QMCMain(Communicate* c)
                 << timer_manager.get_timer_threshold_string() << std::endl;
 #endif
   app_summary() << std::endl;
-  app_summary().flush();
+
+  print_mem("when QMCPACK starts", app_summary());
+  app_summary() << std::endl;
 }
 
 ///destructor
@@ -304,7 +307,7 @@ bool QMCMain::execute()
     HDFVersion cur_version;
     v_str << cur_version[0] << " " << cur_version[1];
     xmlNodePtr newmcptr = xmlNewNode(NULL, (const xmlChar*)"mcwalkerset");
-    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.CurrentMainRoot().c_str());
+    xmlNewProp(newmcptr, (const xmlChar*)"fileroot", (const xmlChar*)myProject.currentMainRoot().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"node", (const xmlChar*)"-1");
     xmlNewProp(newmcptr, (const xmlChar*)"nprocs", (const xmlChar*)np_str.str().c_str());
     xmlNewProp(newmcptr, (const xmlChar*)"version", (const xmlChar*)v_str.str().c_str());
@@ -320,6 +323,7 @@ bool QMCMain::execute()
     else
     {
       xmlReplaceNode(mcptr, newmcptr);
+      xmlFreeNode(mcptr);
     }
     saveXml();
   }
@@ -482,7 +486,7 @@ bool QMCMain::validateXML()
           myComm->barrier_and_abort("Invalid XML document");
       }
       else
-        myComm->barrier_and_abort("tag \"include\" must include an \"href\" attribute.");
+        myComm->barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {
@@ -634,7 +638,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     if (!FirstQMC && !append_run)
       myProject.advance();
 
-    qmc_driver->setStatus(myProject.CurrentMainRoot(), "", append_run);
+    qmc_driver->setStatus(myProject.currentMainRoot(), "", append_run);
     // PD:
     // Q: How does m_walkerset_in end up being non empty?
     // A: Anytime that we aren't doing a restart.

@@ -202,9 +202,13 @@ def read_eshdf_eig_data(filename, Ef_list):
     kaxes    = 2*pi*inv(axes).T
     nk       = h5int(h.electrons.number_of_kpoints)
     ns       = h5int(h.electrons.number_of_spins)
-    if len(Ef_list) != ns:
-      msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
-      error(msg)
+    if (len(Ef_list) == 1 and ns == 2):
+        # Using the same E_fermi for up and down electrons
+        E_fermi = Ef_list[0]
+        Ef_list = np.array([E_fermi, E_fermi])
+    elif len(Ef_list) != ns:
+        msg = 'Ef "%s" must have same length as nspin=%d' % (str(Ef_list), ns)
+        error(msg)
     data     = obj()
     for k in range(nk):
         kp = h.electrons['kpoint_'+str(k)]
@@ -863,6 +867,25 @@ class Convert4qmc(Simulation):
     def check_sim_status(self):
         output = open(os.path.join(self.locdir,self.outfile),'r').read()
         #errors = open(os.path.join(self.locdir,self.errfile),'r').read()
+
+        # Recent versions of convert4qmc no longer produce the orbs.h5 file.
+        # Instead, the file produced directly by e.g. Pyscf is used instead.
+        # Therefore, make a symlink to the previously produced file in 
+        # place of the orbs.h5 file.
+        orbs     = self.input.orbitals
+        finished = self.job.finished
+        h5_orbs  = orbs is not None and orbs.endswith('.h5')
+        if finished and h5_orbs:
+            orbfile     = self.get_prefix()+'.orbs.h5'
+            orbfilepath = os.path.join(self.locdir,orbfile)
+            h5_orbs_missing = not os.path.exists(orbfilepath)
+            if h5_orbs_missing:
+                cwd = os.getcwd()
+                os.chdir(self.locdir)
+                os.system('ln -s {} {}'.format(orbs,orbfile))
+                os.chdir(cwd)
+            #end if
+        #end if
 
         success = 'QMCGaussianParserBase::dump' in output
         for filename in self.list_output_files():

@@ -239,6 +239,32 @@ if(NOT QMC_CUDA)
       H4_HYBRID_SCALARS
       TRUE)
 
+    list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.004")
+
+    qmc_run_and_check(
+      short-H4-batched-hybrid
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-batched-hybrid
+      optm-batched-hybrid.xml
+      16
+      1
+      ${SUCCESS_STATUS_MP}
+      9
+      H4_BATCHED_HYBRID_SCALARS
+      TRUE)
+
+    qmc_run_and_check(
+      short-H4-batched-hybrid
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-batched-hybrid
+      optm-batched-hybrid.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      9
+      H4_BATCHED_HYBRID_SCALARS
+      TRUE)
+
     list(APPEND H4_TARGET_HYBRID_SCALARS "totenergy" "-2.13527301 0.003")
 
     qmc_run_and_check(
@@ -287,6 +313,54 @@ if(NOT QMC_CUDA)
       ${SUCCESS_STATUS_MP}
       5
       H4_OPT_SCALARS # OPT step 5
+    )
+
+    list(APPEND H4_OPT_SCALARS_ONLY_JAS "totenergy" "-2.066504 0.0009") # total energy
+    qmc_run_and_check(
+      short-H4-opt-OneShiftOnly-onlyjas
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      optm-OneShiftOnly-onlyjas.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      5
+      H4_OPT_SCALARS_ONLY_JAS # OPT step 5
+    )
+
+    list(APPEND H4_OPT_SCALARS_ONLY_MSD "totenergy" "-2.138635 0.0009") # total energy
+    qmc_run_and_check(
+      short-H4-opt-OneShiftOnly-onlymsd
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      optm-OneShiftOnly-onlymsd.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      5
+      H4_OPT_SCALARS_ONLY_MSD # OPT step 5
+    )
+
+    qmc_run_and_check(
+      short-H4-optbatch-OneShiftOnly-multistep
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      optm-OneShiftOnly-multistep.xml
+      1
+      16
+      ${SUCCESS_STATUS_MP}
+      11
+      H4_OPT_SCALARS_ONLY_MSD # OPT step 011
+    )
+
+    qmc_run_and_check(
+      deterministic-input_check-invalid_variational_subset
+      "${qmcpack_SOURCE_DIR}/tests/molecules/H4_ae"
+      H4-OneShiftOnly
+      det-input-check-optm-invalid-subset.xml
+      2
+      1
+      FALSE
     )
   else()
     message(VERBOSE

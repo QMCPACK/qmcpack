@@ -25,18 +25,6 @@ using std::setw;
 
 namespace optimize
 {
-//   VariableSet::VariableSet(variable_map_type& input):num_active_vars(0)
-//   {
-//     Index.resize(input.size(),-1);
-//     NameAndValue.resize(input.size());
-//     copy(input.begin(),input.end(),NameAndValue.begin());
-//     for(int i=0; i<Index.size(); ++i) Index[i]=i;
-//
-//     ParameterType.resize(0); Recompute.resize(0);
-//     for(int i=0; i<Index.size(); ++i) ParameterType.push_back(index_pair_type(NameAndValue[i].first,0));
-//     for(int i=0; i<Index.size(); ++i) Recompute.push_back(index_pair_type(NameAndValue[i].first,1));
-//   }
-
 void VariableSet::clear()
 {
   num_active_vars = 0;
@@ -45,22 +33,6 @@ void VariableSet::clear()
   Recompute.clear();
   ParameterType.clear();
 }
-
-/** insert name-value pairs  of this object to output
- * @param output parameters to be added
- */
-//   void VariableSet::insertTo(variable_map_type& output) const
-//   {
-//     for(int i=0; i<Index.size(); ++i)
-//     {
-//       if(Index[i]>-1)
-//       {
-//         output[NameAndValue[i].first]=NameAndValue[i].second;
-//         output[Recompute[i].first]=Recompute[i].second;
-//         output[ParameterType[i].first]=ParameterType[i].second;
-//       }
-//     }
-//   }
 
 void VariableSet::insertFrom(const VariableSet& input)
 {
@@ -160,34 +132,6 @@ void VariableSet::insertFromDiff(const VariableSet& input_1, const VariableSet& 
   num_active_vars = input_1.num_active_vars;
 }
 
-void VariableSet::activate(const variable_map_type& selected)
-{
-  //activate the variables
-  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
-  while (it != it_end)
-  {
-    iterator loc = find((*it++).first);
-    if (loc != NameAndValue.end())
-    {
-      int i = loc - NameAndValue.begin();
-      if (Index[i] < 0)
-        Index[i] = num_active_vars++;
-    }
-  }
-}
-
-void VariableSet::disable(const variable_map_type& selected)
-{
-  variable_map_type::const_iterator it(selected.begin()), it_end(selected.end());
-  while (it != it_end)
-  {
-    int loc = find((*it++).first) - NameAndValue.begin();
-    if (loc < NameAndValue.size())
-      Index[loc] = -1;
-  }
-}
-
-
 void VariableSet::removeInactive()
 {
   std::vector<int> valid(Index);
@@ -229,10 +173,10 @@ void VariableSet::getIndex(const VariableSet& selected)
   }
 }
 
-void VariableSet::setDefaults(bool optimize_all)
+void VariableSet::setIndexDefault()
 {
   for (int i = 0; i < Index.size(); ++i)
-    Index[i] = optimize_all ? i : -1;
+    Index[i] = i;
 }
 
 void VariableSet::print(std::ostream& os, int leftPadSpaces, bool printHeader) const

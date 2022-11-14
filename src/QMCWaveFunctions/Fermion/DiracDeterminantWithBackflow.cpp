@@ -32,10 +32,8 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(std::unique_ptr<SPOSe
                                                            BackflowTransformation& BF,
                                                            int first,
                                                            int last)
-    : DiracDeterminantBase("DiracDeterminantWithBackflow", std::move(spos), first, last), BFTrans_(BF)
+    : DiracDeterminantBase(getClassName(), std::move(spos), first, last), BFTrans_(BF)
 {
-  Optimizable  = true;
-  is_fermionic = true;
   NumParticles = BFTrans_.QP.getTotalNum();
   NP           = 0;
   resize(NumPtcls, NumPtcls);
@@ -597,8 +595,8 @@ void DiracDeterminantWithBackflow::restore(int iat) { curRatio = 1.0; }
 
 void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
                                                        const opt_variables_type& active,
-                                                       std::vector<ValueType>& dlogpsi,
-                                                       std::vector<ValueType>& dhpsioverpsi)
+                                                       Vector<ValueType>& dlogpsi,
+                                                       Vector<ValueType>& dhpsioverpsi)
 {
   /*  Note:
    *    Since evaluateDerivatives seems to always be called after

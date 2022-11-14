@@ -14,7 +14,7 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_NonLocalECPotential.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
@@ -57,7 +57,7 @@ foreach(CATEGORY coulomb force ham ewald2d)
   string(TOUPPER "${CATEGORY}_SRCS" SOURCE_FILE_VAR_NAME)
   add_executable(${UTEST_EXE} ${${SOURCE_FILE_VAR_NAME}})
 
-  target_link_libraries(${UTEST_EXE} catch_main qmcham)
+  target_link_libraries(${UTEST_EXE} catch_main qmcham utilities_for_test)
   if(USE_OBJECT_TARGET)
     target_link_libraries(${UTEST_EXE} qmcwfs qmcparticle qmcwfs_omptarget qmcparticle_omptarget qmcutil platform_omptarget_LA)
   endif()

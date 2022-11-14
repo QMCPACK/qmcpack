@@ -14,13 +14,10 @@
 #define QMCPLUSPLUS_H5DATATYPE_DEFINE_H
 
 #include <type_traits>
-#if defined(HAVE_LIBHDF5)
 #include <hdf5.h>
-#endif
 
 namespace qmcplusplus
 {
-#if defined(HAVE_LIBHDF5)
 /** map C types to hdf5 native types
  * bool is explicit removed due to the fact that it is implementation-dependant
  */
@@ -44,24 +41,8 @@ BOOSTSUB_H5_DATATYPE(unsigned short, H5T_NATIVE_USHORT);
 BOOSTSUB_H5_DATATYPE(unsigned int, H5T_NATIVE_UINT);
 BOOSTSUB_H5_DATATYPE(unsigned long, H5T_NATIVE_ULONG);
 BOOSTSUB_H5_DATATYPE(unsigned long long, H5T_NATIVE_ULLONG);
-//BOOSTSUB_H5_DATATYPE(uint32_t, H5T_NATIVE_UINT32);
-//BOOSTSUB_H5_DATATYPE(uint64_t, H5T_NATIVE_UINT64);
 BOOSTSUB_H5_DATATYPE(float, H5T_NATIVE_FLOAT);
 BOOSTSUB_H5_DATATYPE(double, H5T_NATIVE_DOUBLE);
 
-#else
-using hid_t           = int;
-using herr_t          = int;
-using hsize_t         = std::size_t;
-const int H5P_DEFAULT = 0;
-
-//return a non-sense integer
-template<typename T>
-inline hid_t get_h5_datatype(const T&)
-{
-  return 0;
-}
-
-#endif
 } // namespace qmcplusplus
 #endif
