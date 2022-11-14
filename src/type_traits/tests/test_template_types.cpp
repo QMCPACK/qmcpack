@@ -51,6 +51,7 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
 
   struct DerivedDummy : public Dummy
   {
+    DerivedDummy() : e(0) {}
     double e;
   };
 
@@ -58,7 +59,7 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   {
     double f;
   };
-  
+
   UPtrVector<Dummy> uvec;
   for (int i = 0; i < 3; ++i)
     uvec.emplace_back(std::make_unique<Dummy>());
@@ -71,8 +72,8 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   ddv.emplace_back(std::make_unique<DerivedDummy>());
   ddv.emplace_back(std::make_unique<DerivedDummy>());
 
-  auto dummy_ref_vec = convertUPtrToRefVector(ddv);
-  RefVector<Dummy> d_ref_vec = convertUPtrToRefVector<Dummy>(ddv);
+  auto dummy_ref_vec                 = convertUPtrToRefVector(ddv);
+  RefVector<Dummy> d_ref_vec         = convertUPtrToRefVector<Dummy>(ddv);
   RefVector<DerivedDummy> dd_ref_vec = convertUPtrToRefVector(ddv);
 
   // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
