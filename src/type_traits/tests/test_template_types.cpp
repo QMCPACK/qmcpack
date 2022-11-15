@@ -64,9 +64,9 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   for (int i = 0; i < 3; ++i)
     uvec.emplace_back(std::make_unique<Dummy>());
 
-  auto rdum  = convertUPtrToRefVector(uvec);
+  RefVector<Dummy> rdum(convertUPtrToRefVector(uvec));
   auto rdum2 = convertUPtrToRefVector(uvec);
-
+  CHECK(std::is_same_v<decltype(rdum), decltype(rdum2)>);
   // Testing to make sure meta programming stops potential ambiguous template resolution.
   UPtrVector<DerivedDummy> ddv;
   ddv.emplace_back(std::make_unique<DerivedDummy>());
@@ -75,6 +75,7 @@ TEST_CASE("convertUPtrToRefvector", "[type_traits]")
   auto dummy_ref_vec = convertUPtrToRefVector(ddv);
   auto d_ref_vec     = convertUPtrToRefVector<Dummy>(ddv);
   auto dd_ref_vec    = convertUPtrToRefVector(ddv);
+  CHECK(!std::is_same_v<decltype(d_ref_vec), decltype(dd_ref_vec)>);
 
   // This should cause a compilation error. a DerivedDummy cannot be converted to an OtherDummy.
   // RefVector<OtherDummy> od_ref_vec = convertUPtrToRefVector<OtherDummy>(ddv);
