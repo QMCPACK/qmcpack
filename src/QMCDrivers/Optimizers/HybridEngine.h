@@ -62,6 +62,9 @@ public:
   //Returns the appropriate XML for a optimization method to be handled inside QMCFixedSampleLinearOptimize
   xmlNodePtr getSelectedXML();
 
+  //Increments the counter for steps taken within a hybrid method optimization
+  void incrementStepCounter() {step_num_++;}
+
   //Determines whether to store a vector based on how many have been requested and what the current step is
   bool queryStore(int store_num, OptimizerType method_type) const;
 

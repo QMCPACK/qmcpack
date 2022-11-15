@@ -76,7 +76,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   ///set the input, analytic function
   void setInFunc(FNIN* in_) { InFunc = in_; }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     //myVars.print(os);
   }
@@ -171,10 +171,10 @@ struct CubicSplineSingle : public OptimizableFunctorBase
     return s;
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     if (InFunc)
-      InFunc->checkInVariables(active);
+      InFunc->checkInVariablesExclusive(active);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
@@ -184,11 +184,11 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   }
 
   ///reset the input/output function
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (InFunc)
     {
-      InFunc->resetParameters(active);
+      InFunc->resetParametersExclusive(active);
       reset();
     }
   }
@@ -257,11 +257,11 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   ///set the output numerical function
   void setOutFunc(FNOUT* out_) { OutFunc = out_; }
   ///reset the input/output function
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (!InFunc)
       APP_ABORT("CubicSplineBasisSet::resetParameters failed due to null input function ");
-    InFunc->resetParameters(active);
+    InFunc->resetParametersExclusive(active);
     reset();
   }
 

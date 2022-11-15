@@ -37,16 +37,16 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
   CountingGaussian gf_adk("gf_adk");
 
   // test parse/put for both input modes
-  const char * gaussian_xml_abc = "<function id=\"g0\"> \
-          <var name=\"A\" opt=\"true\">-1.5 0.353553390593273 -0.353553390593273 -2.25 -0.75 -2.25</var> \
-          <var name=\"B\" opt=\"true\">-1.5 0.353553390593273 -0.353553390593273</var> \
-          <var name=\"C\" opt=\"true\">-1.5</var> \
-        </function>";
-  const char * gaussian_xml_adk = "<function id=\"g1\"> \
-          <var name=\"A\" opt=\"true\">-1.5 0.353553390593273 -0.353553390593273 -2.25 -0.75 -2.25</var> \
-          <var name=\"D\" opt=\"true\">1.0 0.0 0.0</var> \
-          <var name=\"K\" opt=\"true\">0.0</var> \
-        </function>";
+  const char* gaussian_xml_abc = R"(<function id="g0">
+          <var name="A" opt="true">-1.5 0.353553390593273 -0.353553390593273 -2.25 -0.75 -2.25</var>
+          <var name="B" opt="true">-1.5 0.353553390593273 -0.353553390593273</var>
+          <var name="C" opt="true">-1.5</var>
+        </function>)";
+  const char* gaussian_xml_adk = R"(<function id="g1">
+          <var name="A" opt="true">-1.5 0.353553390593273 -0.353553390593273 -2.25 -0.75 -2.25</var>
+          <var name="D" opt="true">1.0 0.0 0.0</var>
+          <var name="K" opt="true">0.0</var>
+        </function>)";
   Libxml2Document doc_abc, doc_adk;
   bool parse_abc = doc_abc.parseFromString(gaussian_xml_abc);
   bool parse_adk = doc_adk.parseFromString(gaussian_xml_adk);
@@ -167,36 +167,36 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     for(int k = 0; k < 3; ++k)
       ion0.R[i][k] = Ri[i][k];
 
-  const char * cj_normgauss_xml = "<jastrow name=\"ncjf_normgauss\" type=\"Counting\">\
-      <var name=\"F\" opt=\"true\">\
-        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01\
-                   5.1408e-01 4.8658e-01 6.2182e-01\
-                              2.7189e-01 9.4951e-01\
-                                         0.0000e+00\
-      </var>\
-      <region type=\"normalized_gaussian\" reference_id=\"g0\" opt=\"true\" >\
-        <function id=\"g0\">\
-          <var name=\"A\" opt=\"False\">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>\
-          <var name=\"B\" opt=\"False\">-2.6136335251 -5.01928226905 0.0</var>\
-          <var name=\"C\" opt=\"False\">-32.0242747</var>\
-        </function>\
-        <function id=\"g1\">\
-          <var name=\"A\" opt=\"true\">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>\
-          <var name=\"B\" opt=\"true\">-3.74709851168 -3.70007145722 0.0</var>\
-          <var name=\"C\" opt=\"true\">-27.7312760448</var>\
-        </function>\
-        <function id=\"g2\">\
-          <var name=\"A\" opt=\"true\">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>\
-          <var name=\"B\" opt=\"true\">-6.11011670935 -1.66504047682 0.0</var>\
-          <var name=\"C\" opt=\"true\">-40.1058859913</var>\
-        </function>\
-        <function id=\"g3\">\
-          <var name=\"A\" opt=\"true\">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>\
-          <var name=\"B\" opt=\"true\">-8.10584803421 -7.78608266172 0.0</var>\
-          <var name=\"C\" opt=\"true\">-126.327855569</var>\
-        </function>\
-      </region>\
-    </jastrow>";
+  const char* cj_normgauss_xml = R"(<jastrow name="ncjf_normgauss" type="Counting">
+      <var name="F" opt="true">
+        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01
+                   5.1408e-01 4.8658e-01 6.2182e-01
+                              2.7189e-01 9.4951e-01
+                                         0.0000e+00
+      </var>
+      <region type="normalized_gaussian" reference_id="g0" opt="true" >
+        <function id="g0">
+          <var name="A" opt="False">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>
+          <var name="B" opt="False">-2.6136335251 -5.01928226905 0.0</var>
+          <var name="C" opt="False">-32.0242747</var>
+        </function>
+        <function id="g1">
+          <var name="A" opt="true">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>
+          <var name="B" opt="true">-3.74709851168 -3.70007145722 0.0</var>
+          <var name="C" opt="true">-27.7312760448</var>
+        </function>
+        <function id="g2">
+          <var name="A" opt="true">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>
+          <var name="B" opt="true">-6.11011670935 -1.66504047682 0.0</var>
+          <var name="C" opt="true">-40.1058859913</var>
+        </function>
+        <function id="g3">
+          <var name="A" opt="true">-1.0 -0.0 -0.0 -1.0 -0.0 -1.0</var>
+          <var name="B" opt="true">-8.10584803421 -7.78608266172 0.0</var>
+          <var name="C" opt="true">-126.327855569</var>
+        </function>
+      </region>
+    </jastrow>)";
   // test put for normalized_gaussian
   Libxml2Document doc;
   bool parse_cj = doc.parseFromString(cj_normgauss_xml);
@@ -228,17 +228,17 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   REQUIRE( ComplexApprox(Jval_exact) == logval );
   
   // test automatic/minimal voronoi generator
-  const char * cj_voronoi_xml = "<jastrow name=\"ncjf_voronoi\" type=\"Counting\" source=\"ion0\">\
-      <var name=\"F\" opt=\"true\">\
-        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01\
-                   5.1408e-01 4.8658e-01 6.2182e-01\
-                              2.7189e-01 9.4951e-01\
-                                         0.0000e+00\
-      </var>\
-      <region type=\"voronoi\" opt=\"true\">\
-        <var name=\"alpha\">1.0</var>\
-      </region>\
-    </jastrow>";
+  const char* cj_voronoi_xml = R"(<jastrow name="ncjf_voronoi" type="Counting" source="ion0">
+      <var name="F" opt="true">
+        4.4903e-01 5.3502e-01 5.2550e-01 6.8081e-01
+                   5.1408e-01 4.8658e-01 6.2182e-01
+                              2.7189e-01 9.4951e-01
+                                         0.0000e+00
+      </var>
+      <region type="voronoi" opt="true">
+        <var name="alpha">1.0</var>
+      </region>
+    </jastrow>)";
   // test put
   Libxml2Document doc2;
   bool parse_cjv = doc2.parseFromString(cj_voronoi_xml);
@@ -341,8 +341,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
      9.2144952390e+00, 4.6068416473e+00,-9.3975889104e+01,-8.8298321426e+01, 1.5097063606e+01,
      1.8605794463e+01,-7.3647009565e+00,-5.9114663448e-01,-3.9243955679e+00,-7.8630886487e+00,
     -4.4437106408e+00,-7.0313362338e+00,-2.3986142270e+01,-4.0724297500e+01};
-  std::vector<ValueType> dlogpsi;
-  std::vector<ValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
   dlogpsi.resize(num_derivs);
   dhpsioverpsi.resize(num_derivs);
   std::fill(dlogpsi.begin(), dlogpsi.end(), 0);
@@ -351,9 +351,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars;
   optVars.clear();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   optVars.resetIndex();
-  cj->checkInVariables(optVars);
+  cj->checkInVariablesExclusive(optVars);
   cj->checkOutVariables(optVars);
   optVars.print(std::cout);
 
@@ -377,9 +377,9 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // prepare variable set
   VariableSet optVars2;
   optVars2.clear();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   optVars2.resetIndex();
-  cj2->checkInVariables(optVars2);
+  cj2->checkInVariablesExclusive(optVars2);
   cj2->checkOutVariables(optVars2);
   optVars2.print(std::cout);
 
@@ -393,7 +393,7 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   // test resetParameters, recompute
   for(int p = 0; p < num_derivs; ++p)
     optVars[p] = 0;
-  cj->resetParameters(optVars);
+  cj->resetParametersExclusive(optVars);
   cj->recompute(elec);
   REQUIRE( cj->get_log_value() == LogValueType(0) );
 #endif

@@ -57,18 +57,12 @@ set(JASTROW_SRCS
     Jastrow/CountingJastrowBuilder.cpp
     Jastrow/RPAJastrow.cpp
     Jastrow/J1OrbitalSoA.cpp
-    Jastrow/J2OrbitalSoA.cpp
     LatticeGaussianProduct.cpp
     LatticeGaussianProductBuilder.cpp)
 set(JASTROW_OMPTARGET_SRCS
-    Jastrow/J2OMPTarget.cpp
+    Jastrow/TwoBodyJastrow.cpp
     Jastrow/BsplineFunctor.cpp)
-if(QMC_COMPLEX)
-  set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasComplexOrbitalBuilder.cpp)
-else(QMC_COMPLEX)
-  set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/ElectronGasOrbitalBuilder.cpp)
-
-endif(QMC_COMPLEX)
+set(FERMION_SRCS ${FERMION_SRCS} ElectronGas/FreeOrbital.cpp ElectronGas/FreeOrbitalBuilder.cpp)
 
 # wavefunctions only availbale to 3-dim problems
 if(OHMMS_DIM MATCHES 3)
@@ -102,7 +96,7 @@ if(OHMMS_DIM MATCHES 3)
         BsplineFactory/HybridRepCenterOrbitals.cpp
         BandInfo.cpp
         BsplineFactory/BsplineReaderBase.cpp)
-      set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp)
+    set(FERMION_OMPTARGET_SRCS Fermion/DiracDeterminantBatched.cpp Fermion/MultiDiracDeterminant.2.cpp)
     if(QMC_COMPLEX)
       set(FERMION_SRCS ${FERMION_SRCS} EinsplineSpinorSetBuilder.cpp BsplineFactory/SplineC2C.cpp)
       set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} BsplineFactory/SplineC2COMPTarget.cpp)
@@ -132,7 +126,6 @@ set(FERMION_SRCS
     ${FERMION_SRCS}
     Fermion/DiracDeterminant.cpp
     Fermion/MultiDiracDeterminant.cpp
-    Fermion/MultiDiracDeterminant.2.cpp
     Fermion/SlaterDet.cpp
     Fermion/SlaterDetBuilder.cpp
     Fermion/BackflowBuilder.cpp
@@ -150,7 +143,7 @@ set(FERMION_OMPTARGET_SRCS ${FERMION_OMPTARGET_SRCS} Fermion/MultiSlaterDetTable
 if(QMC_CUDA)
   set(FERMION_SRCS ${FERMION_SRCS} EinsplineSetCuda.cpp Fermion/DiracDeterminantCUDA.cpp Fermion/SlaterDetCUDA.cpp
                    TrialWaveFunction_CUDA.cpp)
-  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowOrbitalBspline.cpp Jastrow/TwoBodyJastrowOrbitalBspline.cpp)
+  set(JASTROW_SRCS ${JASTROW_SRCS} Jastrow/OneBodyJastrowCUDA.cpp Jastrow/TwoBodyJastrowCUDA.cpp)
 endif()
 
 ####################################

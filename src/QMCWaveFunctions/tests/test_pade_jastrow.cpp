@@ -33,7 +33,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
 {
   double A = -0.25;
   double B = 0.1;
-  PadeFunctor<double> pf;
+  PadeFunctor<double> pf("test_functor");
   pf.B0 = B;
   pf.setCusp(A);
 
@@ -47,7 +47,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
   double A = 0.8;
   double B = 5.0;
   double C = -0.1;
-  Pade2ndOrderFunctor<double> pf2;
+  Pade2ndOrderFunctor<double> pf2("test_functor");
   pf2.A = A;
   pf2.B = B;
   pf2.C = C;
@@ -75,7 +75,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  elec_.create({2,0});
+  elec_.create({2, 0});
   elec_.R[0][0] = -0.28;
   elec_.R[0][1] = 0.0225;
   elec_.R[0][2] = -2.709;
@@ -93,14 +93,14 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   tspecies(massIdx, upIdx)     = 1;
   tspecies(massIdx, downIdx)   = 1;
 
-  const char* particles = "<tmp> \
-<jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
-  <correlation speciesA=\"u\" speciesB=\"u\"> \
-        <var id=\"juu_b\" name=\"B\">0.1</var> \
-  </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<jastrow name="Jee" type="Two-Body" function="pade">
+  <correlation speciesA="u" speciesB="u">
+        <var id="juu_b" name="B">0.1</var>
+  </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -164,16 +164,16 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"pade2\" print=\"yes\" source=\"ion0\"> \
-    <correlation elementType=\"H\"> \
-        <var id=\"J1H_A\" name=\"A\">0.8</var> \
-        <var id=\"J1H_B\" name=\"B\">5.0</var> \
-        <var id=\"J1H_C\" name=\"C\">-0.1</var> \
-    </correlation> \
-  </jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="One-Body" function="pade2" print="yes" source="ion0">
+    <correlation elementType="H">
+        <var id="J1H_A" name="A">0.8</var>
+        <var id="J1H_B" name="B">5.0</var>
+        <var id="J1H_C" name="C">-0.1</var>
+    </correlation>
+  </jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -198,8 +198,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   REQUIRE(nparam == 3);
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   //twf.evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
 

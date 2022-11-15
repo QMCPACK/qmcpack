@@ -14,7 +14,7 @@
 
 #include <cassert>
 #include <hip/hip_runtime.h>
-#include "rocsolver.h"
+#include <rocsolver/rocsolver.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 #include "AFQMC/Numerics/detail/CPU/lapack_cpu.hpp"
 

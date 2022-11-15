@@ -18,22 +18,51 @@
 
 namespace qmcplusplus
 {
-class RotatedSPOs : public SPOSet
+class RotatedSPOs : public SPOSet, public OptimizableObject
 {
 public:
   //constructor
-  RotatedSPOs(std::unique_ptr<SPOSet>&& spos);
+  RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos);
   //destructor
   ~RotatedSPOs() override;
 
-  //vector that contains active orbital rotation parameter indices
-  std::vector<std::pair<int, int>> m_act_rot_inds;
+  std::string getClassName() const override { return "RotatedSPOs"; }
+  bool isOptimizable() const override { return true; }
+  bool isOMPoffload() const override { return Phi->isOMPoffload(); }
+  bool hasIonDerivs() const override { return Phi->hasIonDerivs(); }
+
+  // Vector of rotation matrix indices
+  using RotationIndices = std::vector<std::pair<int, int>>;
+
+  // Active orbital rotation parameter indices
+  RotationIndices m_act_rot_inds;
+
+  // Construct a list of the matrix indices for non-zero rotation parameters.
+  // (The structure for a sparse representation of the matrix)
+  // Only core->active rotations are created.
+  static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
+
+  // Fill in antisymmetric matrix from the list of rotation parameter indices
+  // and a list of parameter values.
+  // This function assumes rot_mat is properly sized upon input and is set to zero.
+  static void constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                           const std::vector<ValueType>& param,
+                                           ValueMatrix& rot_mat);
+
+  // Extract the list of rotation parameters from the entries in an antisymmetric matrix
+  // This function expects rot_indices and param are the same length.
+  static void extractParamsFromAntiSymmetricMatrix(const RotationIndices& rot_indices,
+                                                   const ValueMatrix& rot_mat,
+                                                   std::vector<ValueType>& param);
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
-  //helper function to apply_rotation
-  void exponentiate_antisym_matrix(ValueMatrix& mat);
+  // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
+  static void exponentiate_antisym_matrix(ValueMatrix& mat);
+
+  // Compute matrix log of rotation matrix to produce antisymmetric matrix
+  static void log_antisym_matrix(ValueMatrix& mat);
 
   //A particular SPOSet used for Orbitals
   std::unique_ptr<SPOSet> Phi;
@@ -62,22 +91,23 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(const size_t nel) override;
+  void buildOptVariables(size_t nel) override;
+
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations) override;
 
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi,
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi,
                            const ValueType& psiCurrent,
                            const std::vector<ValueType>& Coeff,
                            const std::vector<size_t>& C2node_up,
@@ -103,7 +133,7 @@ public:
 
   void evaluateDerivativesWF(ParticleSet& P,
                              const opt_variables_type& optvars,
-                             std::vector<ValueType>& dlogpsi,
+                             Vector<ValueType>& dlogpsi,
                              const QTFull::ValueType& psiCurrent,
                              const std::vector<ValueType>& Coeff,
                              const std::vector<size_t>& C2node_up,
@@ -118,8 +148,8 @@ public:
                              const std::vector<std::vector<int>>& lookup_tbl) override;
 
   //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
-  void table_method_eval(std::vector<ValueType>& dlogpsi,
-                         std::vector<ValueType>& dhpsioverpsi,
+  void table_method_eval(Vector<ValueType>& dlogpsi,
+                         Vector<ValueType>& dhpsioverpsi,
                          const ParticleSet::ParticleLaplacian& myL_J,
                          const ParticleSet::ParticleGradient& myG_J,
                          const size_t nel,
@@ -147,7 +177,7 @@ public:
                          const size_t NP2,
                          const std::vector<std::vector<int>>& lookup_tbl);
 
-  void table_method_evalWF(std::vector<ValueType>& dlogpsi,
+  void table_method_evalWF(Vector<ValueType>& dlogpsi,
                            const size_t nel,
                            const size_t nmo,
                            const ValueType& psiCurrent,
@@ -163,41 +193,31 @@ public:
                            const std::vector<int>& detData_up,
                            const std::vector<std::vector<int>>& lookup_tbl);
 
-  void checkInVariables(opt_variables_type& active) override
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     //reset parameters to zero after coefficient matrix has been updated
     for (int k = 0; k < myVars.size(); ++k)
       myVars[k] = 0.0;
 
-    if (Optimizable)
-    {
-      if (myVars.size())
-        active.insertFrom(myVars);
-      Phi->storeParamsBeforeRotation();
-    }
+    if (myVars.size())
+      active.insertFrom(myVars);
+    Phi->storeParamsBeforeRotation();
   }
 
-  void checkOutVariables(const opt_variables_type& active) override
-  {
-    if (Optimizable)
-    {
-      myVars.getIndex(active);
-    }
-  }
+  void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
-    if (Optimizable)
+    std::vector<RealType> param(m_act_rot_inds.size());
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
     {
-      std::vector<RealType> param(m_act_rot_inds.size());
-      for (int i = 0; i < m_act_rot_inds.size(); i++)
-      {
-        int loc  = myVars.where(i);
-        param[i] = myVars[i] = active[loc];
-      }
-      apply_rotation(param, true);
+      int loc  = myVars.where(i);
+      param[i] = myVars[i] = active[loc];
     }
+    apply_rotation(param, true);
   }
 
   //*********************************************************************************

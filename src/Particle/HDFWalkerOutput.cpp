@@ -94,7 +94,8 @@ HDFWalkerOutput::~HDFWalkerOutput()
  */
 bool HDFWalkerOutput::dump(const WalkerConfigurations& W, int nblock)
 {
-  std::string FileName = myComm->getName() + hdf::config_ext;
+  std::filesystem::path FileName = myComm->getName();
+  FileName.concat(hdf::config_ext);
   //rotate files
   //if(!myComm->rank() && currentConfigNumber)
   //{

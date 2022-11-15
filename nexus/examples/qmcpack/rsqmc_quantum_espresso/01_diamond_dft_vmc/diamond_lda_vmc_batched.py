@@ -3,10 +3,6 @@
 '''
 This example is similar to diamond_lda_vmc.py (legacy drivers) 
 but for the batched drivers.
-
-Right now, the batched drivers are only used for VMC.
-Later, this example will be updated to also use batched 
-drivers for wavefunction optimization as well.
 '''
 
 from nexus import settings,job,run_project
@@ -78,22 +74,21 @@ conv = generate_pw2qmcpack(
     )
 
 opt = generate_qmcpack(
-    #block        = True,
     identifier   = 'opt',
-    path         = 'diamond/optJ2',
+    path         = 'diamond/optJ2_batched',
     job          = job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = system,
     pseudos      = ['C.BFD.xml'],
     J2           = True,
     qmc          = 'opt',
+    driver       = 'batched',
     cycles       = 6,
     samples      = 51200,
     dependencies = (conv,'orbitals'),
     )
 
 qmc = generate_qmcpack(
-    #block            = True,
     identifier       = 'vmc',
     path             = 'diamond/vmc_batched',
     job              = job(cores=16,threads=4,app='qmcpack'),
@@ -104,8 +99,6 @@ qmc = generate_qmcpack(
     qmc              = 'vmc',
     driver           = 'batched',
     walkers_per_rank = 4,  # specify this way to get 1 walker per thread
-    estimators       = [], # no estimators are supported yet
-    corrections      = [], # no estimators are supported yet
     dependencies     = [(conv,'orbitals'),
                         (opt,'jastrow')],
     )

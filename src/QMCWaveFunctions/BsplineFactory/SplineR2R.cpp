@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
+SplineR2R<ST>::SplineR2R(const SplineR2R& in) = default;
+
+template<typename ST>
 inline void SplineR2R<ST>::set_spline(SingleSplineType* spline_r,
                                       SingleSplineType* spline_i,
                                       int twist,
@@ -57,18 +60,19 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   spl_coefs has a complicated layout depending on dimensionality of splines. 
   Luckily, for our purposes, we can think of spl_coefs as pointing to a 
   matrix of size BasisSetSize x (OrbitalSetSize + padding), with the spline 
-  index adjacent in memory. NB: The orbital index is SIMD aligned and
-  therefore may include padding.
+  index adjacent in memory. The orbital index is SIMD aligned and therefore 
+  may include padding.
     
-  In other words, due to SIMD alignment, Nsplines may be larger than the 
-  actual number of splined orbitals, which means that in practice rot_mat 
-  may be smaller than the number of 'columns' in the coefs array. 
-  Therefore, we put rot_mat inside "tmpU". The padding of the splines 
-  is at the end, so if we put rot_mat at top left corner of tmpU, then 
-  we can apply tmpU to the coefs safely regardless of padding.   
+  As a result, due to SIMD alignment, Nsplines may be larger than the 
+  actual number of splined orbitals. This means that in practice rot_mat 
+  may be smaller than the number of 'columns' in the coefs array! 
+  To fix this problem, we put rot_mat inside "tmpU", which is guaranteed to have
+  the 'right' size to match spl_coefs. The padding of the splines is at the end, 
+  so if we put rot_mat at top left corner of tmpU, then we can apply tmpU to the 
+  coefs safely regardless of padding.   
   
-  Typically, BasisSetSize >> OrbitalSetSize, so the spl_coefs "matrix"
-  is very tall and skinny.
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs 
+  "matrix" is very tall and skinny.
 */
 template<typename ST>
 void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
@@ -96,6 +100,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
 
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
+  std::vector<RealType> new_coefs(coefs_tot_size, 0);
   for (auto i = 0; i < BasisSetSize; i++)
   {
     for (auto j = 0; j < Nsplines; j++)
@@ -107,9 +112,12 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
         const auto index = i * Nsplines + k;
         newval += *(spl_coefs + index) * tmpU[k][j];
       }
-      *(spl_coefs + cur_elem) = newval;
+      new_coefs[cur_elem] = newval;
     }
   }
+
+  // Update the coefs
+  std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
 
   /*
     // Here is my attempt to use gemm but it doesn't work...
@@ -143,7 +151,7 @@ void SplineR2R<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(bc_sign, myV, psi, first, last);
@@ -169,7 +177,7 @@ void SplineR2R<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int last_real = kPoints.size() < last ? kPoints.size() : last;
 
     for (int iat = 0; iat < VP.getTotalNum(); ++iat)
@@ -268,7 +276,7 @@ void SplineR2R<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgl(bc_sign, psi, dpsi, d2psi, first, last);
@@ -351,7 +359,7 @@ void SplineR2R<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgh(bc_sign, psi, dpsi, grad_grad_psi, first, last);
@@ -529,7 +537,7 @@ void SplineR2R<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
     assign_vghgh(bc_sign, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first, last);

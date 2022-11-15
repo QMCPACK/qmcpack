@@ -91,10 +91,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"8\"/> \
-</tmp> \
-";
+  // add save_coefs="yes" to create an HDF file of spline coefficients for the eval_bspline_spo.py script
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8"/>
+</tmp>)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -110,31 +110,37 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
-  // for vgl
-  SPOSet::ValueMatrix psiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GradMatrix dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  // checking evaluations
+  // Reference values can be checked using eval_bspline_spo.py
+
+  // Test the case where the number of psi values is not the orbital set size
+  // or the number of electrons/2
+  const int psi_size = 3;
+  SPOSet::ValueMatrix psiM(elec_.R.size(), psi_size);
+  SPOSet::GradMatrix dpsiM(elec_.R.size(), psi_size);
+  SPOSet::ValueMatrix d2psiM(elec_.R.size(), psi_size);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
-  REQUIRE(std::real(psiM[1][0]) == Approx(-0.8886948824));
-  REQUIRE(std::real(psiM[1][1]) == Approx(1.4194120169));
+  CHECK(std::real(psiM[0][0]) == Approx(-0.42546836868));
+  CHECK(std::real(psiM[0][1]) == Approx(0.0));
+  CHECK(std::real(psiM[1][0]) == Approx(-0.8886948824));
+  CHECK(std::real(psiM[1][1]) == Approx(1.419412370359));
   // grad
-  REQUIRE(std::real(dpsiM[1][0][0]) == Approx(-0.0000183403));
-  REQUIRE(std::real(dpsiM[1][0][1]) == Approx(0.1655139178));
-  REQUIRE(std::real(dpsiM[1][0][2]) == Approx(-0.0000193077));
-  REQUIRE(std::real(dpsiM[1][1][0]) == Approx(-1.3131694794));
-  REQUIRE(std::real(dpsiM[1][1][1]) == Approx(-1.1174004078));
-  REQUIRE(std::real(dpsiM[1][1][2]) == Approx(-0.8462534547));
+  CHECK(std::real(dpsiM[1][0][0]) == Approx(-0.0000183403));
+  CHECK(std::real(dpsiM[1][0][1]) == Approx(0.1655139178));
+  CHECK(std::real(dpsiM[1][0][2]) == Approx(-0.0000193077));
+  CHECK(std::real(dpsiM[1][1][0]) == Approx(-1.3131694794));
+  CHECK(std::real(dpsiM[1][1][1]) == Approx(-1.1174004078));
+  CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.8462534547));
   // lapl
-  REQUIRE(std::real(d2psiM[1][0]) == Approx(1.3313053846));
-  REQUIRE(std::real(d2psiM[1][1]) == Approx(-4.712583065));
+  CHECK(std::real(d2psiM[1][0]) == Approx(1.3313053846));
+  CHECK(std::real(d2psiM[1][1]) == Approx(-4.712583065));
 
   // for vgh
-  SPOSet::ValueVector psiV(psiM[1], spo->getOrbitalSetSize());
-  SPOSet::GradVector dpsiV(dpsiM[1], spo->getOrbitalSetSize());
-  SPOSet::HessVector ddpsiV(spo->getOrbitalSetSize());
+  SPOSet::ValueVector psiV(psiM[1], psi_size);
+  SPOSet::GradVector dpsiV(dpsiM[1], psi_size);
+  SPOSet::HessVector ddpsiV(psi_size);
   spo->evaluateVGH(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)
@@ -150,8 +156,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
   REQUIRE(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
 
-  SPOSet::HessMatrix hesspsiV(elec_.R.size(), spo->getOrbitalSetSize());
-  SPOSet::GGGMatrix d3psiV(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::HessMatrix hesspsiV(elec_.R.size(), psi_size);
+  SPOSet::GGGMatrix d3psiV(elec_.R.size(), psi_size);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, hesspsiV, d3psiV);
 
   //The reference values for grad_grad_grad_psi.
@@ -202,6 +208,46 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   REQUIRE(std::real(d3psiV(1,1)[1][8] ) == Approx(5.5741839408));
   REQUIRE(std::real(d3psiV(1,1)[2][8] ) == Approx(3.1312348842));
 #endif
+
+  // Test the batched interface
+  ParticleSet elec_2(elec_);
+  // interchange positions
+  elec_2.R[0] = elec_.R[1];
+  elec_2.R[1] = elec_.R[0];
+  RefVectorWithLeader<ParticleSet> p_list(elec_);
+  p_list.push_back(elec_);
+  p_list.push_back(elec_2);
+
+  std::unique_ptr<SPOSet> spo_2(spo->makeClone());
+  RefVectorWithLeader<SPOSet> spo_list(*spo);
+  spo_list.push_back(*spo);
+  spo_list.push_back(*spo_2);
+
+  const int ne = elec_.R.size();
+  SPOSet::ValueMatrix psi(ne, psi_size);
+  SPOSet::GradMatrix dpsi(ne, psi_size);
+  SPOSet::ValueMatrix d2psi(ne, psi_size);
+  SPOSet::ValueMatrix psi_2(ne, psi_size);
+  SPOSet::GradMatrix dpsi_2(ne, psi_size);
+  SPOSet::ValueMatrix d2psi_2(ne, psi_size);
+
+  RefVector<SPOSet::ValueMatrix> psi_v_list;
+  RefVector<SPOSet::GradMatrix> dpsi_v_list;
+  RefVector<SPOSet::ValueMatrix> d2psi_v_list;
+
+  psi_v_list.push_back(psi);
+  psi_v_list.push_back(psi_2);
+  dpsi_v_list.push_back(dpsi);
+  dpsi_v_list.push_back(dpsi_2);
+  d2psi_v_list.push_back(d2psi);
+  d2psi_v_list.push_back(d2psi_2);
+  spo->mw_evaluate_notranspose(spo_list, p_list, 0, elec_.R.size(), psi_v_list, dpsi_v_list, d2psi_v_list);
+
+  CHECK(std::real(psi_v_list[0].get()[0][0]) == Approx(-0.42546836868));
+  CHECK(std::real(psi_v_list[0].get()[1][0]) == Approx(-0.8886948824));
+  // Second particle set had particle positions flipped
+  CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
+  CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
 #endif
 
@@ -448,10 +494,10 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_2x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_2x1x1.pwscf.h5\" tilematrix=\"2 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

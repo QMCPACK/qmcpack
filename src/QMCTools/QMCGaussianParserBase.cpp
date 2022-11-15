@@ -16,8 +16,6 @@
 
 
 #include "QMCGaussianParserBase.h"
-#include "ParticleIO/XMLParticleIO.h"
-#include "Numerics/HDFSTLAttrib.h"
 #include <iterator>
 #include <algorithm>
 #include <numeric>
@@ -27,7 +25,8 @@
 #include <sstream>
 #include <bitset>
 #include <iomanip>
-
+#include "ParticleIO/XMLParticleIO.h"
+#include "ModernStringUtils.hpp"
 
 //std::vector<std::string> QMCGaussianParserBase::IonName;
 const int OhmmsAsciiParser::bufferSize;
@@ -1883,7 +1882,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag, const std::string& 
       xmlAddChild(wfPtr, detPtr);
       if (addJastrow)
       {
-        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
         if (NumberOfEls > 1)
         {
           xmlAddChild(wfPtr, createJ2());
@@ -1992,7 +1991,7 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag, const std::strin
       xmlAddChild(wfPtr, detPtr);
       if (addJastrow)
       {
-        std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
+        std::cout << R"(Adding Two-Body and One-Body jastrows with rcut="10" and size="10")" << std::endl;
         if (NumberOfEls > 1)
         {
           xmlAddChild(wfPtr, createJ2());

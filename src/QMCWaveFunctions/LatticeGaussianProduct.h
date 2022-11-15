@@ -46,21 +46,7 @@ public:
 
   ~LatticeGaussianProduct() override;
 
-  /** check out optimizable variables
-   */
-  void checkOutVariables(const opt_variables_type& o) override;
-
-  /** check in an optimizable parameter
-   * @param o a super set of optimizable variables
-   */
-  void checkInVariables(opt_variables_type& o) override;
-
-  /** print the state, e.g., optimizables */
-  void reportStatus(std::ostream& os) override;
-
-  /** reset the parameters during optimizations
-   */
-  void resetParameters(const opt_variables_type& active) override;
+  std::string getClassName() const override { return "LatticeGaussianProduct"; }
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -86,8 +72,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {}
 
   void evaluateLogAndStore(const ParticleSet& P, ParticleSet::ParticleGradient& dG, ParticleSet::ParticleLaplacian& dL);

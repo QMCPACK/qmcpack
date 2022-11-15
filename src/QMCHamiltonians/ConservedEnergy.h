@@ -76,6 +76,8 @@ struct ConservedEnergy : public OperatorBase
 
   void resetTargetParticleSet(ParticleSet& P) override {}
 
+  std::string getClassName() const override { return "ConservedEnergy"; }
+
   Return_t evaluate(ParticleSet& P) override
   {
     RealType gradsq = Dot(P.G, P.G);

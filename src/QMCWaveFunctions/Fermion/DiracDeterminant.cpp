@@ -35,14 +35,14 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
                                             int last,
                                             int ndelay,
                                             DetMatInvertor matrix_inverter_kind)
-    : DiracDeterminantBase("DiracDeterminant", std::move(spos), first, last),
+    : DiracDeterminantBase(getClassName(), std::move(spos), first, last),
       ndelay_(ndelay),
       invRow_id(-1),
       matrix_inverter_kind_(matrix_inverter_kind)
 {
   resize(NumPtcls, NumPtcls);
 
-  if (Optimizable)
+  if (isOptimizable())
     Phi->buildOptVariables(NumPtcls);
 
   if (Phi->getOrbitalSetSize() < NumPtcls)
@@ -461,7 +461,8 @@ void DiracDeterminant<DU_TYPE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vect
 {
   ScopedTimer local_timer(SPOVTimer);
   Phi->evaluateValue(P, -1, psiV);
-  MatrixOperators::product(psiM, psiV.data(), &ratios[FirstIndex]);
+  Vector<ValueType> ratios_this_det(ratios.data() + FirstIndex, NumPtcls);
+  MatrixOperators::product(psiM, psiV, ratios_this_det);
 }
 
 
@@ -666,8 +667,8 @@ void DiracDeterminant<DU_TYPE>::recompute(const ParticleSet& P)
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateDerivatives(ParticleSet& P,
                                                     const opt_variables_type& active,
-                                                    std::vector<ValueType>& dlogpsi,
-                                                    std::vector<ValueType>& dhpsioverpsi)
+                                                    Vector<ValueType>& dlogpsi,
+                                                    Vector<ValueType>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
 }

@@ -19,6 +19,7 @@
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "io/hdf/hdf_archive.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -89,10 +90,14 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
 
   std::vector<ObservableHelper> h5desc;
 
-  hid_t h_file = H5Fcreate("tmp_obs.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  std::filesystem::path filename("tmp_obs.h5");
+  hdf_archive h_file;
+  h_file.create(filename);
   le_est.registerObservables(h5desc, h_file);
-  H5Fclose(h_file);
-  // Should make sure h5 file was created?  Check contents?
+  h_file.close();
+  REQUIRE(std::filesystem::exists(filename));
+  // Check contents?
+  REQUIRE(std::filesystem::remove(filename));
 
   LocalEnergyEstimator::RecordListType record;
   le_est.add2Record(record);

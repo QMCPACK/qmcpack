@@ -82,7 +82,7 @@ public:
       accumulate(**first, wgt);
   }
   void add2Record(RecordListType& record) override;
-  void registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) override;
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override;
   LocalEnergyEstimator* clone() override;
   /*@}*/
 

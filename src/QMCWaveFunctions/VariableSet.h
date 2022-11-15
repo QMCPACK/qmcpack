@@ -46,12 +46,11 @@ struct VariableSet
   using value_type = qmcplusplus::QMCTraits::ValueType;
   using real_type  = qmcplusplus::QMCTraits::RealType;
 
-  using pair_type         = std::pair<std::string, value_type>;
-  using index_pair_type   = std::pair<std::string, int>;
-  using iterator          = std::vector<pair_type>::iterator;
-  using const_iterator    = std::vector<pair_type>::const_iterator;
-  using size_type         = std::vector<pair_type>::size_type;
-  using variable_map_type = std::map<std::string, value_type>;
+  using pair_type       = std::pair<std::string, value_type>;
+  using index_pair_type = std::pair<std::string, int>;
+  using iterator        = std::vector<pair_type>::iterator;
+  using const_iterator  = std::vector<pair_type>::const_iterator;
+  using size_type       = std::vector<pair_type>::size_type;
 
   ///number of active variables
   int num_active_vars;
@@ -66,10 +65,8 @@ struct VariableSet
 
   ///default constructor
   inline VariableSet() : num_active_vars(0) {}
-  ///constructor using map
-  //       VariableSet(variable_map_type& input);
   ///viturval destructor for safety
-  virtual ~VariableSet() {}
+  virtual ~VariableSet() = default;
   /** if any of Index value is not zero, return true
    */
   inline bool is_optimizable() const { return num_active_vars > 0; }
@@ -247,10 +244,6 @@ struct VariableSet
    */
   void clear();
 
-  /** insert local variables to output
-   */
-  //       void insertTo(variable_map_type& output) const;
-
   /** insert a VariableSet to the list
    * @param input variables
    */
@@ -299,12 +292,6 @@ struct VariableSet
     }
   }
 
-  /** make the selected variables active
-   * @param selected input variables that are set to be varied
-   */
-  void activate(const variable_map_type& selected);
-
-
   /** deactivate variables for optimization
    * @param first iterator of the first name
    * @param last iterator of the last name
@@ -326,16 +313,6 @@ struct VariableSet
     }
   }
 
-  ///** make the selected variables active
-  // * @param selected input variables that are set to be varied
-  // */
-  //void activate(const std::vector<std::string>& selected, bool reindex);
-
-  /** exclude variables
-   * @param selected name-value pairs that should be dropped from the set
-   */
-  void disable(const variable_map_type& selected);
-
   /** reset Index
    */
   void resetIndex();
@@ -350,10 +327,9 @@ struct VariableSet
    */
   void getIndex(const VariableSet& selected);
 
-  /** set default Indices
-   * @param optimize_all if true, all the variables are active
+  /** set default Indices, namely all the variables are active
    */
-  void setDefaults(bool optimize_all);
+  void setIndexDefault();
 
   void print(std::ostream& os, int leftPadSpaces = 0, bool printHeader = false) const;
 

@@ -18,13 +18,31 @@
 #include <vector>
 #include <memory>
 #include <CL/sycl.hpp>
+#include "config.h"
+#if defined(ENABLE_OFFLOAD)
+#include <omp.h>
+#endif
 
 namespace qmcplusplus
 {
-struct syclDeviceInfo
+class syclDeviceInfo
 {
-  sycl::context context;
-  sycl::device device;
+public:
+#if defined(ENABLE_OFFLOAD)
+  syclDeviceInfo(const sycl::context& context, const sycl::device& device, const omp_interop_t& interop);
+#else
+  syclDeviceInfo(const sycl::context& context, const sycl::device& device);
+#endif
+  ~syclDeviceInfo();
+  const sycl::context& get_context() const { return context_; }
+  const sycl::device& get_device() const { return device_; }
+
+private:
+  sycl::context context_;
+  sycl::device device_;
+#if defined(ENABLE_OFFLOAD)
+  omp_interop_t interop_;
+#endif
 };
 
 /** SYCL device manager

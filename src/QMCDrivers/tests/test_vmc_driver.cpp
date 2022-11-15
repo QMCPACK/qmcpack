@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 
+#include "Utilities/ProjectData.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 TEST_CASE("VMC", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -77,21 +79,21 @@ TEST_CASE("VMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
-   <parameter name=\"substeps\">1</parameter> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"usedrift\">no</parameter> \
-  </qmc> \
-  ";
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+   <parameter name="substeps">1</parameter>
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="usedrift">no</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);
@@ -120,6 +122,7 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -158,22 +161,22 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = "<qmc method=\"vmc\" move=\"pbyp\"> \
-   <parameter name=\"substeps\">1</parameter> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"usedrift\">no</parameter> \
-   <parameter name=\"SpinMass\">0.25</parameter> \
-  </qmc> \
-  ";
+  const char* vmc_input = R"(<qmc method="vmc" move="pbyp">
+   <parameter name="substeps">1</parameter>
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="usedrift">no</parameter>
+   <parameter name="SpinMass">0.25</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);
@@ -206,6 +209,7 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
   c->setName("test");
   const SimulationCell simulation_cell;
@@ -244,22 +248,23 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  h.addOperator(std::make_unique<BareKineticEnergy>(elec), "Kinetic");
+  h.addOperator(std::make_unique<BareKineticEnergy>(elec, psi), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMC vmc_omp(elec, psi, h, c, false);
+  VMC vmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* vmc_input = "<qmc method=\"vmc\" move=\"alle\"> \
-   <parameter name=\"substeps\">1</parameter> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"usedrift\">no</parameter> \
-   <parameter name=\"SpinMass\">0.25</parameter> \
-  </qmc> \
-  ";
+  const char* vmc_input = R"(<qmc method="vmc" move="alle">
+   <parameter name="substeps">1</parameter>
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="usedrift">no</parameter>
+   <parameter name="SpinMass">0.25</parameter>
+  </qmc>
+  )";
+
   Libxml2Document doc;
   bool okay = doc.parseFromString(vmc_input);
   REQUIRE(okay);

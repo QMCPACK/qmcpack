@@ -25,9 +25,11 @@ public:
 
 protected:
   bool do_param_output_ = false;
+  double finite_diff_delta_ = 1e-5;
 
 public:
-  bool do_param_output() { return do_param_output_; }
+  bool do_param_output() const { return do_param_output_; }
+  double get_finite_diff_delta() const { return finite_diff_delta_; }
 };
 
 } // namespace qmcplusplus

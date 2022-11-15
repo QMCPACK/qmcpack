@@ -71,7 +71,7 @@ struct ForceBase
   ForceBase(ParticleSet& ions, ParticleSet& elns);
   virtual ~ForceBase() {}
 
-  void registerObservablesF(std::vector<ObservableHelper>& h5list, hid_t gid) const;
+  void registerObservablesF(std::vector<ObservableHelper>& h5list, hdf_archive& file) const;
 
   void addObservablesF(QMCTraits::PropertySetType& plist);
   void addObservablesStress(QMCTraits::PropertySetType& plist);
@@ -88,13 +88,14 @@ private:
 
 public:
   BareForce(ParticleSet& ions, ParticleSet& elns);
+  std::string getClassName() const override { return "BareForce"; }
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const override
+  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override
   {
-    registerObservablesF(h5list, gid);
+    registerObservablesF(h5list, file);
   }
 
   /** default implementation to add named values to  the property list

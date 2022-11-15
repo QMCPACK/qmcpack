@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 
+#include "Utilities/ProjectData.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
@@ -40,6 +41,7 @@ namespace qmcplusplus
 {
 TEST_CASE("DMC", "[drivers][dmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
@@ -84,20 +86,20 @@ TEST_CASE("DMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);
@@ -126,6 +128,7 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
 TEST_CASE("SODMC", "[drivers][dmc]")
 {
+  ProjectData project_data;
   Communicate* c = OHMMS::Controller;
 
   const SimulationCell simulation_cell;
@@ -169,21 +172,21 @@ TEST_CASE("SODMC", "[drivers][dmc]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec);
+  std::unique_ptr<BareKineticEnergy> p_bke = std::make_unique<BareKineticEnergy>(elec, psi);
   h.addOperator(std::move(p_bke), "Kinetic");
   h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMC dmc_omp(elec, psi, h, c, false);
+  DMC dmc_omp(project_data, elec, psi, h, c, false);
 
-  const char* dmc_input = "<qmc method=\"dmc\"> \
-   <parameter name=\"steps\">1</parameter> \
-   <parameter name=\"blocks\">1</parameter> \
-   <parameter name=\"timestep\">0.1</parameter> \
-   <parameter name=\"SpinMass\">0.25</parameter> \
-  </qmc> \
-  ";
+  const char* dmc_input = R"(<qmc method="dmc">
+   <parameter name="steps">1</parameter>
+   <parameter name="blocks">1</parameter>
+   <parameter name="timestep">0.1</parameter>
+   <parameter name="SpinMass">0.25</parameter>
+  </qmc>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(dmc_input);
   REQUIRE(okay);

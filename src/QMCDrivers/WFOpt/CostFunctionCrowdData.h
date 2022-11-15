@@ -35,7 +35,6 @@ public:
                         ParticleSet& P,
                         TrialWaveFunction& Psi,
                         QMCHamiltonian& H,
-                        std::vector<std::string>& H_KE_node_names,
                         RandomGenerator& Rng);
 
   /// Set the log_psi_* arrays to zero

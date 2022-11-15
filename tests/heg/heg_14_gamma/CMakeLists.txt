@@ -89,6 +89,7 @@ if(NOT QMC_CUDA)
   list(APPEND HEG14GSSJ_NEW_SCALARS "totenergy" "-1.073286  0.000271") # total energy
   list(APPEND HEG14GSSJ_NEW_SCALARS "variance" " 0.024564  0.000342") # energy variance
 
+  # legacy driver
   qmc_run_and_check(
     short-heg_14_gamma-sj_new
     "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma"
@@ -99,6 +100,42 @@ if(NOT QMC_CUDA)
     TRUE
     0
     HEG14GSSJ_NEW_SCALARS # VMC
+  )
+
+  # batch driver
+  qmc_run_and_check(
+    short-heg_14_gamma-sj_batch
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+    short_heg_SJ_batch
+    short-heg-SJ-batch.xml
+    1
+    16
+    TRUE
+    0
+    HEG14GSSJ_NEW_SCALARS # VMC
+  )
+
+  # batch deterministic
+  if(QMC_MIXED_PRECISION)
+    list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699388 0.00002")
+    list(APPEND DET_HEG14GSSJ_SCALARS "kinetic" "0.77668380 0.000005")
+    list(APPEND DET_HEG14GSSJ_SCALARS "potential" "-2.02367769 0.00002")
+  else()
+    list(APPEND DET_HEG14GSSJ_SCALARS "totenergy" "-1.24699388 0.000001")
+    list(APPEND DET_HEG14GSSJ_SCALARS "kinetic" "0.77668380 0.000001")
+    list(APPEND DET_HEG14GSSJ_SCALARS "potential" "-2.02367769 0.000001")
+  endif()
+
+  qmc_run_and_check(
+    deterministic-heg_14_gamma-sj-batch
+    "${qmcpack_SOURCE_DIR}/tests/heg/heg_14_gamma/batch"
+    deter_heg_SJ_batch
+    deter-heg-SJ-batch.xml
+    1
+    1
+    TRUE
+    0
+    DET_HEG14GSSJ_SCALARS # VMC
   )
 
   #
@@ -231,7 +268,6 @@ if(NOT QMC_CUDA)
     HEG14GLSJ_DMC_SCALARS # DMC
   )
 
-  if(NOT QMC_COMPLEX)
     #
     #  HEG14G - Slater-Jastrow-Backflow VMC
     #           Run 16x1, 4x4, 1x16 to test SJB cloning
@@ -369,10 +405,6 @@ if(NOT QMC_CUDA)
       )
 
     endif()
-
-  else()
-    message(VERBOSE "Skipping HEG backflow tests because they are not supported by complex build (QMC_COMPLEX=1)")
-  endif()
 else()
   message(VERBOSE "Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")
 endif()

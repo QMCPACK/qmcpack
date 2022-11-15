@@ -78,10 +78,10 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   int NMO  = Alpha->size(1);
   if (type == COLLINEAR)
     NAEB = Beta->size(0);
-  int nvec   = CholMat.size(1);
+  int nvec   = std::get<1>(CholMat.sizes());
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  assert(CholMat.size(0) == NMO * NMO);
+  assert(std::get<0>(CholMat.sizes()) == NMO * NMO);
   assert(kN > k0);
   if (type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
@@ -301,13 +301,13 @@ SpCType_shm_csr_matrix halfRotateCholeskyMatrixForBias(WALKER_TYPES type,
   int NMO  = Alpha->size(1);
   if (type != CLOSED)
     NAEB = Beta->size(0);
-  int nvec   = CholMat.size(1);
+  int nvec   = std::get<1>(CholMat.sizes());
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
   // to speed up, generate new communicator for eqv_nodes and split full work among all
   // cores in this comm. Then build from distributed container?
 
-  assert(CholMat.size(0) == NMO * NMO);
+  assert(std::get<0>(CholMat.sizes()) == NMO * NMO);
 
   std::size_t Qdim = NAEA * NMO;
   if (type == COLLINEAR)
@@ -476,10 +476,10 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   int NMO  = Alpha->size(1);
   if (type == COLLINEAR)
     NAEB = Beta->size(0);
-  int nvec   = CholMat.size(1);
+  int nvec   = std::get<1>(CholMat.sizes());
   int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
 
-  assert(CholMat.size(0) == NMO * NMO);
+  assert(std::get<0>(CholMat.sizes()) == NMO * NMO);
   if (type == CLOSED && kN > NMO)
     APP_ABORT(" Error: kN > NMO in halfRotateCholeskyMatrix. \n");
 
@@ -500,13 +500,13 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type,
   int Qdim = NAEA * (kN_alpha - k0_alpha) + NAEB * (kN_beta - k0_beta);
   if (transpose)
   {
-    assert(Q.size(0) == nvec);
-    assert(Q.size(1) == Qdim);
+    assert(std::get<0>(Q.sizes()) == nvec);
+    assert(std::get<1>(Q.sizes()) == Qdim);
   }
   else
   {
-    assert(Q.size(0) == Qdim);
-    assert(Q.size(1) == nvec);
+    assert(std::get<0>(Q.sizes()) == Qdim);
+    assert(std::get<1>(Q.sizes()) == nvec);
   }
   std::tie(ak0, ak1) = FairDivideBoundary(coreid, Qdim, ncores);
 
@@ -624,20 +624,20 @@ void getLank(MultiArray2DA&& Aai,
              bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na   = Aai.size(0);
+  int na   = std::get<0>(Aai.sizes());
   if (na == 0)
     return;
-  int ni    = Aai.size(1) / npol;
-  int nk    = Likn.size(1);
-  int nchol = Likn.size(2);
-  assert(Likn.size(0) == ni);
-  assert(Lank.size(0) == na);
-  assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk * npol);
-  assert(buff.size(0) >= npol * nk);
-  assert(buff.size(1) >= nchol);
+  int ni    = std::get<1>(Aai.sizes()) / npol;
+  int nk    = std::get<1>(Likn.sizes());
+  int nchol = std::get<2>(Likn.sizes());
+  assert(std::get<0>(Likn.sizes()) == ni);
+  assert(std::get<0>(Lank.sizes()) == na);
+  assert(std::get<1>(Lank.sizes()) == nchol);
+  assert(std::get<2>(Lank.sizes()) == nk * npol);
+  assert(std::get<0>(buff.sizes()) >= npol * nk);
+  assert(std::get<1>(buff.sizes()) >= nchol);
   if (noncollinear)
-    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+    assert(Aai.stride(0) == std::get<1>(Aai.sizes())); // make sure it is contiguous
 
   using elementA = typename std::decay<MultiArray2DA>::type::element;
   using element  = typename std::decay<MultiArray3DC>::type::element;
@@ -671,19 +671,19 @@ void getLank_from_Lkin(MultiArray2DA&& Aai,
                        bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na   = Aai.size(0);
+  int na   = std::get<0>(Aai.sizes());
   if (na == 0)
     return;
-  int ni    = Aai.size(1) / npol;
-  int nk    = Lkin.size(0);
-  int nchol = Lkin.size(2);
-  assert(Lkin.size(1) == ni);
-  assert(Lank.size(0) == na);
-  assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == nk * npol);
+  int ni    = std::get<1>(Aai.sizes()) / npol;
+  int nk    = std::get<0>(Lkin.sizes());
+  int nchol = std::get<2>(Lkin.sizes());
+  assert(std::get<1>(Lkin.sizes()) == ni);
+  assert(std::get<0>(Lank.sizes()) == na);
+  assert(std::get<1>(Lank.sizes()) == nchol);
+  assert(std::get<2>(Lank.sizes()) == nk * npol);
   assert(buff.num_elements() >= na * npol * nchol);
   if (noncollinear)
-    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+    assert(Aai.stride(0) == std::get<1>(Aai.sizes())); // make sure it is contiguous
 
   using Type     = typename std::decay<MultiArray3DC>::type::element;
   using elementA = typename std::decay<MultiArray2DA>::type::element;
@@ -714,25 +714,25 @@ void getLakn_Lank(MultiArray2DA&& Aai,
                   bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na   = Aai.size(0);
+  int na   = std::get<0>(Aai.sizes());
   if (na == 0)
     return;
-  int ni = Aai.size(1) / npol;
+  int ni = std::get<1>(Aai.sizes()) / npol;
 
-  int nmo   = Likn.size(0);
-  int nchol = Likn.size(2);
-  assert(Likn.size(1) == nmo);
+  int nmo   = std::get<0>(Likn.sizes());
+  int nchol = std::get<2>(Likn.sizes());
+  assert(std::get<1>(Likn.sizes()) == nmo);
 
-  assert(Lakn.size(1) == npol * nmo);
-  assert(Lakn.size(2) == nchol);
+  assert(std::get<1>(Lakn.sizes()) == npol * nmo);
+  assert(std::get<2>(Lakn.sizes()) == nchol);
 
-  assert(Lakn.size(0) >= na);
-  assert(Lakn.size(0) == Lank.size(0));
-  assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == npol * nmo);
+  assert(std::get<0>(Lakn.sizes()) >= na);
+  assert(std::get<0>(Lakn.sizes()) == std::get<0>(Lank.sizes()));
+  assert(std::get<1>(Lank.sizes()) == nchol);
+  assert(std::get<2>(Lank.sizes()) == npol * nmo);
 
   if (noncollinear)
-    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+    assert(Aai.stride(0) == std::get<1>(Aai.sizes())); // make sure it is contiguous
 
   using elmA = typename std::decay<MultiArray2DA>::type::element;
   using elmB = typename std::decay<MultiArray3DB>::type::element;
@@ -756,25 +756,25 @@ void getLakn_Lank_from_Lkin(MultiArray2DA&& Aai,
                             bool noncollinear = false)
 {
   int npol = noncollinear ? 2 : 1;
-  int na   = Aai.size(0);
+  int na   = std::get<0>(Aai.sizes());
   if (na == 0)
     return;
-  int ni = Aai.size(1) / npol;
+  int ni = std::get<1>(Aai.sizes()) / npol;
 
-  int nmo   = Lkin.size(0);
-  int nchol = Lkin.size(2);
-  assert(Lkin.size(1) == nmo);
+  int nmo   = std::get<0>(Lkin.sizes());
+  int nchol = std::get<2>(Lkin.sizes());
+  assert(std::get<1>(Lkin.sizes()) == nmo);
 
-  assert(Lakn.size(1) == npol * nmo);
-  assert(Lakn.size(2) == nchol);
+  assert(std::get<1>(Lakn.sizes()) == npol * nmo);
+  assert(std::get<2>(Lakn.sizes()) == nchol);
 
-  assert(Lakn.size(0) >= na);
-  assert(Lakn.size(0) == Lank.size(0));
-  assert(Lank.size(1) == nchol);
-  assert(Lank.size(2) == npol * nmo);
+  assert(std::get<0>(Lakn.sizes()) >= na);
+  assert(std::get<0>(Lakn.sizes()) == std::get<0>(Lank.sizes()));
+  assert(std::get<1>(Lank.sizes()) == nchol);
+  assert(std::get<2>(Lank.sizes()) == npol * nmo);
 
   if (noncollinear)
-    assert(Aai.stride(0) == Aai.size(1)); // make sure it is contiguous
+    assert(Aai.stride(0) == std::get<1>(Aai.sizes())); // make sure it is contiguous
 
   assert(buff.num_elements() >= na * npol * nchol);
 

@@ -403,6 +403,7 @@ Additional information:
     <pairpot name="PseudoPot" type="pseudo" source="i" wavefunction="psi0" format="xml" physicalSO="no">
       <pseudo elementType="Pb" href="Pb.xml"/>
     </pairpot>
+
 Details of ``<pseudo/>`` input elements are shown in the following. It
 is possible to include (or construct) a full pseudopotential directly in
 the input file without providing an external file via ``href``. The full
@@ -551,7 +552,7 @@ section (e.g., during VMC only).
   +------------------+------------------+-----------------------------------------------------------+
   |                  | chiesa           | Chiesa-Ceperley-Martin-Holzmann kinetic energy correction |
   +------------------+------------------+-----------------------------------------------------------+
-  |                  | Force            | Family of "force" estimators (see :ref:`force-est`)       |
+  |                  | Force            | Family of "force" estimators (see :ref:`ccz-force-est`)   |
   +------------------+------------------+-----------------------------------------------------------+
   |                  | ForwardWalking   | Forward walking values for existing estimators            |
   +------------------+------------------+-----------------------------------------------------------+
@@ -1788,15 +1789,16 @@ time step.
        <!--- Additional Observable blocks go here -->
    </estimator>
 
-.. _force-est:
+.. _ccz-force-est:
 
-"Force" estimators
-------------------
-
-QMCPACK supports force estimation by use of the Chiesa-Ceperly-Zhang
-(CCZ) estimator. Currently, open and periodic boundary conditions are
-supported but for all-electron calculations only.
-
+Chiesa-Ceperley-Zhang Force Estimators
+--------------------------------------
+All force estimators implemented in QMCPACK are invoked with ``type="Force"``.
+The ``mode`` determines the specific estimator to be used.  Currently,
+QMCPACK supports Chiesa-Ceperley-Zhang (CCZ) all-electron and
+Assaraf-Caffarel Zero-Variance Zero-Bias (AC) force estimators.  We'll discuss
+the CCZ estimator in this section, and the AC estimator in the following section.
+ 
 Without loss of generality, the CCZ estimator for the z-component of the
 force on an ion centered at the origin is given by the following
 expression:
@@ -1821,7 +1823,12 @@ and the s-wave filtered estimator. Specifically,
 Here, :math:`m` is the weighting exponent, :math:`f_z(r)` is the
 unfiltered radial force density for the z force component, and
 :math:`\tilde{f}_z(r)` is the smoothed polynomial function for the same
-force density. The reader is invited to refer to the original paper for
+force density. 
+
+Currently, open and periodic boundary conditions are
+supported but for all-electron calculations only.
+
+The reader is invited to refer to the original paper for
 a more thorough explanation of the methodology, but with the notation in
 hand, QMCPACK takes the following parameters.
 
@@ -1900,6 +1907,144 @@ The following is an example use case.
       <parameter name="nbasis">4</parameter>
       <parameter name="weightexp">2</parameter>
     </estimator>
+  </hamiltonian>
+
+.. _ac-force-est:
+
+Assaraf-Caffarel Force Estimators
+---------------------------------
+***WARNING:  The following estimator formally has infinite variance.  You MUST do something 
+to mitigate this in postprocessing or during the run before publishing.***
+
+ 
+QMCPACK has an implementation of force estimation using the Assaraf-Caffarel
+Zero-Variance Zero-Bias method :cite:`Tiihonen2021`.  This has the desirable 
+property that as the trial wave function and trial wave function derivative 
+become exact, the estimator itself becomes an exact estimate of the force 
+and the variance of the estimator goes to  ero--much like the local energy.  
+In practice, the estimator is usually significantly more accurate and has much 
+lower variance than the bare Hellman-Feynman estimator.  
+
+Currently, this is the only recommended way
+to estimate forces for systems with non-local pseudopotentials.  
+
+
+The zero-variance, zero-bias force estimator is given by the following 
+expression:
+
+.. math::
+  :label: eq 46
+
+  \mathbf{F}^{ZVZB}_I = \mathbf{F}^{ZV}_I+\mathbf{F}^{ZB}_I = -\nabla_I E_L(\mathbf{R}) - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
+
+The first term is the zero-variance force estimator, given by the following.
+
+.. math::
+  :label: eq 47
+
+  \mathbf{F}^{ZV}_I = -\nabla_I E_L(\mathbf{R}) = \frac{-\left(\nabla_I \hat{H}\right) \Psi_T}{\Psi_T} - \frac{\left(\hat{H} - E_L\right)\nabla_I \Psi_T}{\Psi_T}\:.
+
+The first term is the bare "Hellman-Feynman" term (denoted "hf" in output), and the second is 
+a fluctuation cancelling zero-variance term (called "pulay" in output).  This splitting allows the 
+user to investigate the individual contributions to the force estimator, but we recommend always
+adding "hf" and "pulay" terms unless there is a compelling reason to do otherwise.   
+
+ 
+The second term is the "zero-bias" term:
+
+.. math::
+  :label: eq 48
+
+  \mathbf{F}^{ZB}_I = - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
+
+Because knowledge of :math:`\langle E_L \rangle` is needed to compute the zero-bias term, QMCPACK returns 
+:math:`E_L(\mathbf{R}) \ln \Psi_T` (called "Ewfngrad" in output), and :math:`\ln \Psi_T` 
+(called "wfngrad" in output), which in conjunction with the local energy, allows one to construct the 
+zero-bias term in post-processing.   
+
+There is an initial implementation of space-warp variance reduction that is accessible to the 
+end-user, subject to the caveat that evaluation of these terms is currently slow (derivatives of local
+energy are computed with finite differences, rather than analytically).  If the space-warp option
+is enabled, the following term is added to the zero-variance force estimator:
+
+.. math::
+  :label: eq 49
+
+  \mathbf{F}^{ZV-SW}_I = - \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i E_L \:.
+
+The variance reduction with this term is observed to be rather large.  A faster, more efficient 
+implementation of this term will be available in a future QMCPACK release.  
+
+The following term is added to the wave function gradient:
+
+.. math::
+  :label: eq 50
+
+  [\nabla_I \ln \Psi_T ]_{SW} = \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i \ln \Psi_T + \frac{1}{2} \nabla_i\omega_I(\mathbf{r}_i) \:.
+
+Currently, there is only one choice for damping function :math:`\omega_I(\mathbf{r})`.  This is given by:
+
+.. math::
+  :label: eq 51
+  
+  \omega_I(\mathbf{r}) = \frac{F(|\mathbf{r}-\mathbf{R}_I|)}{\sum_I F(|\mathbf{r}-\mathbf{R}_I|)} \:.
+
+We use :math:`F(r)=r^{-4}` for the real space damping.  
+
+Finally, the estimator provides two methods to evaluate the necessary derivatives of the wave function and Hamiltonian. 
+The first is a straightforward analytic differentiation of all required terms.  While mathematically transparent,
+this algorithm has poor scaling with system size.  The second utilizes the fast-derivative algorithm of Assaraf, Moroni, 
+and Filippi :cite:`Filippi2016`, which has a smaller computational prefactor and at least an O(N) speed-up over the legacy implementation.
+Both of these methods are accessible with appropraite flags.  
+
+``estimator type=Force`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian, qmc`` |
+  +------------------+----------------------+
+  | child elements:  |  none                |
+  +------------------+----------------------+
+
+  attributes:
+
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | **Name**                       | **Datatype** | **Values**      | **Default** | **Description**                                              |
+    +================================+==============+=================+=============+==============================================================+
+    | ``mode``:math:`^o`             | text         | acforce         |             | Required to use ACForce estimator                            |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``type``:math:`^r`             | text         | Force           |             | Must be "Force"                                              |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``name``:math:`^o`             | text         | *Anything*      | ForceBase   | Unique name for this estimator                               |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``spacewarp``:math:`^o`        | text         | yes/no          | no          | Add space-warp variance reduction terms                      |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``fast_derivatives``:math:`^o` | text         | yes/no          | no          | Use Filippi fast derivative algorithm                        |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+
+
+Additional information:
+
+-  **Naming Convention**: The unique identifier ``name`` is appended
+   with a term label ( ``hf``, ``pulay``, ``Ewfngrad``, or ``wfgrad``) 
+   ``name_term_X_Y`` in the ``scalar.dat`` file, where ``X`` is the ion 
+   ID number and ``Y`` is the component ID (an integer with x=0, y=1,
+   z=2). All force components for all ions are computed and dumped to
+   the ``scalar.dat`` file.
+
+-  **Note**: The fast force algorithm returns the total derivative of the
+   local energy, and does not make the split between "Hellman-Feynman" and 
+   zero-variance terms like the legacy force implementation does.  As such, 
+   expect ``name_pulay_X_Y`` to be zero if ``fast_derivatives="yes"``.  
+   However, this will be identical to the sum of Hellman-Feynman and 
+   zero-variance terms in the legacy implementation.  
+
+
+The following is an example use case.
+
+::
+
+  <hamiltonian>
+    <estimator name="F" type="Force" mode="acforce" fast_derivatives="yes" spacewarp="no"/>
   </hamiltonian>
 
 .. _stress-est:

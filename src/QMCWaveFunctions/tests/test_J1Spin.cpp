@@ -65,17 +65,17 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   elec_.addTable(ions_);
   elec_.update();
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-<jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\" spin=\"yes\"> \
-  <correlation speciesA=\"H\" speciesB=\"u\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-    <coefficients id=\"J1uH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-  </correlation> \
-  <correlation speciesA=\"H\" speciesB=\"d\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-    <coefficients id=\"J1dH\" type=\"Array\"> 0.5 0.1 </coefficients> \
-  </correlation> \
-</jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+<jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0" spin="yes">
+  <correlation speciesA="H" speciesB="u" cusp="0.0" size="2" rcut="5.0">
+    <coefficients id="J1uH" type="Array"> 0.5 0.1 </coefficients>
+  </correlation>
+  <correlation speciesA="H" speciesB="d" cusp="0.0" size="2" rcut="5.0">
+    <coefficients id="J1dH" type="Array"> 0.5 0.1 </coefficients>
+  </correlation>
+</jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -108,10 +108,10 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
 
   // check derivatives
   twf.evaluateLog(elec_);
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
-  std::vector<ValueType> cloned_dlogpsi(nparam);
-  std::vector<ValueType> cloned_dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> cloned_dlogpsi(nparam);
+  Vector<ValueType> cloned_dhpsioverpsi(nparam);
 
   twf_component_list[0]->evaluateDerivatives(elec_, active, dlogpsi, dhpsioverpsi);
   cloned_j1spin->evaluateDerivatives(elec_, active, cloned_dlogpsi, cloned_dhpsioverpsi);

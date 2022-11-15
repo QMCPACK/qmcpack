@@ -35,9 +35,8 @@
 #include "Particle/ParticleSet.h"
 #include "LongRange/EwaldHandler3D.h"
 
-#ifdef QMC_COMPLEX //This is for the spinor test.
-#include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
-#endif
+//This is for the spinor test.
+#include "QMCWaveFunctions/ElectronGas/FreeOrbital.h"
 
 namespace qmcplusplus
 {
@@ -223,14 +222,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   TrialWaveFunction psi;
 
   //Add the two body jastrow
-  const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
-      <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
-          <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
-        </correlation> \
-  </jastrow> \
-  </tmp> \
-  ";
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="d" rcut="10" size="8">
+          <coefficients id="ud" type="Array"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -244,14 +243,14 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   // Done with two body jastrow.
 
   //Add the one body jastrow.
-  const char* particles2 = "<tmp> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" source=\"ion0\" print=\"yes\"> \
-        <correlation elementType=\"Na\" rcut=\"10\" size=\"10\" cusp=\"0\"> \
-          <coefficients id=\"eNa\" type=\"Array\"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients> \
-        </correlation> \
-      </jastrow> \
-  </tmp> \
-  ";
+  const char* particles2 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="Na" rcut="10" size="10" cusp="0">
+          <coefficients id="eNa" type="Array"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
   bool okay3             = doc.parseFromString(particles2);
   REQUIRE(okay3);
 
@@ -311,8 +310,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   }
 
   opt_variables_type optvars;
-  std::vector<ValueType> dlogpsi;
-  std::vector<ValueType> dhpsioverpsi;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();
@@ -501,22 +500,13 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   kup.resize(nelec);
   kup[0] = PosType(1, 1, 1);
 
-  k2up.resize(nelec);
-  //For some goofy reason, EGOSet needs to be initialized with:
-  //1.) A k-vector list (fine).
-  //2.) A list of -|k|^2.  To save on expensive - sign multiplication apparently.
-  k2up[0] = -dot(kup[0], kup[0]);
-
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
 
-  k2dn.resize(nelec);
-  k2dn[0] = -dot(kdn[0], kdn[0]);
+  auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
+  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
 
-  auto spo_up = std::make_unique<EGOSet>(kup, k2up);
-  auto spo_dn = std::make_unique<EGOSet>(kdn, k2dn);
-
-  auto spinor_set = std::make_unique<SpinorSet>();
+  auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
   REQUIRE(norb == 1);

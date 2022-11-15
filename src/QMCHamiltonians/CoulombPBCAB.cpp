@@ -2,18 +2,19 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include <ResourceCollection.h>
 #include "CoulombPBCAB.h"
 #include "Particle/DistanceTable.h"
 #include "Message/Communicate.h"
@@ -23,19 +24,18 @@ namespace qmcplusplus
 {
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeForces)
     : ForceBase(ions, elns),
-      PtclA(ions),
       myTableIndex(elns.addTable(ions)),
       myConst(0.0),
       ComputeForces(computeForces),
       MaxGridPoints(10000),
-      Pion(ions),
-      Peln(elns)
+      Peln(elns),
+      pset_ions_(ions)
 {
   ReportEngine PRE("CoulombPBCAB", "CoulombPBCAB");
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, elns);
   if (ComputeForces)
-    PtclA.turnOnPerParticleSK();
+    pset_ions_.turnOnPerParticleSK();
   initBreakup(elns);
   prefix = "Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
@@ -52,7 +52,7 @@ CoulombPBCAB::~CoulombPBCAB() = default;
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid = P.addTable(PtclA);
+  int tid = P.addTable(pset_ions_);
   if (tid != myTableIndex)
   {
     APP_ABORT("CoulombPBCAB::resetTargetParticleSet found inconsistent table index");
@@ -76,11 +76,19 @@ void CoulombPBCAB::checkoutParticleQuantities(TraceManager& tm)
   streaming_particles_ = request_.streaming_array(name_);
   if (streaming_particles_)
   {
-    Pion.turnOnPerParticleSK();
+    pset_ions_.turnOnPerParticleSK();
     Peln.turnOnPerParticleSK();
     Ve_sample = tm.checkout_real<1>(name_, Peln);
-    Vi_sample = tm.checkout_real<1>(name_, Pion);
+    Vi_sample = tm.checkout_real<1>(name_, pset_ions_);
   }
+}
+
+void CoulombPBCAB::informOfPerParticleListener()
+{
+  // This is written so it can be called again and again.
+  pset_ions_.turnOnPerParticleSK();
+  Peln.turnOnPerParticleSK();
+  OperatorBase::informOfPerParticleListener();
 }
 
 void CoulombPBCAB::deleteParticleQuantities()
@@ -160,7 +168,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
   }
   {
     //LR
-    const StructFact& RhoKA(PtclA.getSK());
+    const StructFact& RhoKA(pset_ions_.getSK());
     const StructFact& RhoKB(P.getSK());
     if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
     {
@@ -179,12 +187,12 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
         v1 = 0.0;
         for (int s = 0; s < NumSpeciesA; s++)
           v1 += Zspec[s] * q *
-              AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s], RhoKB.eikr_r[i],
-                           RhoKB.eikr_i[i]);
+              AB->evaluate(pset_ions_.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s], RhoKA.rhok_i[s],
+                           RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
         Ve_samp(i) += v1;
         Vlr += v1;
       }
-      for (int i = 0; i < PtclA.getTotalNum(); ++i)
+      for (int i = 0; i < pset_ions_.getTotalNum(); ++i)
       {
         q  = .5 * Zat[i];
         v1 = 0.0;
@@ -245,6 +253,115 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
 }
 #endif
 
+void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                          const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                          const RefVectorWithLeader<ParticleSet>& p_list,
+                                          const std::vector<ListenerVector<RealType>>& listeners,
+					  const std::vector<ListenerVector<RealType>>& ion_listeners) const
+{
+  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
+  auto& p_leader = p_list.getLeader();
+  assert(this == &o_list.getLeader());
+
+  auto num_centers            = p_leader.getTotalNum();
+  auto& name                  = o_leader.name_;
+  Vector<RealType>& ve_sample = o_leader.mw_res_->pp_samples_trg;
+  Vector<RealType>& vi_sample = o_leader.mw_res_->pp_samples_src;
+  const auto& ve_consts       = o_leader.mw_res_->pp_consts_trg;
+  const auto& vi_consts       = o_leader.mw_res_->pp_consts_src;
+  auto num_species            = p_leader.getSpeciesSet().getTotalNum();
+  ve_sample.resize(NptclB);
+  vi_sample.resize(NptclA);
+
+  // This lambda is mostly about getting a handle on what is being touched by the per particle evaluation.
+  auto evaluate_walker = [name, &ve_sample, &vi_sample, &ve_consts,
+                          &vi_consts](const int walker_index, const CoulombPBCAB& cpbcab, const ParticleSet& pset,
+                                      const std::vector<ListenerVector<RealType>>& listeners, const std::vector<ListenerVector<RealType>>& ion_listeners) -> RealType {
+    RealType Vsr = 0.0;
+    RealType Vlr = 0.0;
+    RealType Vc  = cpbcab.myConst;
+    std::fill(ve_sample.begin(), ve_sample.end(), 0.0);
+    std::fill(vi_sample.begin(), vi_sample.end(), 0.0);
+    auto& pset_source = cpbcab.getSourcePSet();
+    {
+      //SR
+      const auto& d_ab(pset.getDistTableAB(cpbcab.myTableIndex));
+      RealType z;
+      //Loop over distinct eln-ion pairs
+      for (size_t b = 0; b < pset.getTotalNum(); ++b)
+      {
+        z                = 0.5 * cpbcab.Qat[b];
+        const auto& dist = d_ab.getDistRow(b);
+        for (size_t a = 0; a < pset_source.getTotalNum(); ++a)
+        {
+          Return_t pairpot = z * cpbcab.Zat[a] * cpbcab.Vat[a]->splint(dist[a]) / dist[a];
+          vi_sample[a] += pairpot;
+          ve_sample[b] += pairpot;
+          Vsr += pairpot;
+        }
+      }
+      Vsr *= 2.0;
+    }
+    {
+      //LR
+      // pset_ions_ is a smelly reference to the ion particle set.
+      const StructFact& RhoKA(pset_source.getSK());
+      const StructFact& RhoKB(pset.getSK());
+      if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
+      {
+        APP_ABORT("CoulombPBCAB::evaluate_sp single particle traces have not been implemented for slab geometry");
+      }
+      else
+      {
+        assert(RhoKA.isStorePerParticle()); // ensure this so we know eikr_r has been allocated
+        assert(RhoKB.isStorePerParticle());
+        //jtk mark: needs optimizations. will likely require new function definitions
+        RealType v1; //single particle energy
+        RealType q;
+        int num_species_source = pset_source.getSpeciesSet().size();
+        for (int i = 0; i < pset.getTotalNum(); ++i)
+        {
+          q  = .5 * cpbcab.Qat[i];
+          v1 = 0.0;
+          for (int s = 0; s < num_species_source; s++)
+            v1 += cpbcab.Zspec[s] * q *
+                cpbcab.AB->evaluate(pset_source.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[s],
+                                    RhoKA.rhok_i[s], RhoKB.eikr_r[i], RhoKB.eikr_i[i]);
+          ve_sample[i] += v1;
+          Vlr += v1;
+        }
+        int num_species_target = pset.getSpeciesSet().size();
+        for (int i = 0; i < pset_source.getTotalNum(); ++i)
+        {
+          q  = .5 * cpbcab.Zat[i];
+          v1 = 0.0;
+          for (int s = 0; s < num_species_target; s++)
+            v1 += cpbcab.Qspec[s] * q *
+                cpbcab.AB->evaluate(pset.getSimulationCell().getKLists().kshell, RhoKB.rhok_r[s], RhoKB.rhok_i[s],
+                                    RhoKA.eikr_r[i], RhoKA.eikr_i[i]);
+          vi_sample[i] += v1;
+          Vlr += v1;
+        }
+      }
+    }
+    for (int i = 0; i < ve_sample.size(); ++i)
+      ve_sample[i] += ve_consts[i];
+    for (int i = 0; i < vi_sample.size(); ++i)
+      vi_sample[i] += vi_consts[i];
+    RealType value = Vsr + Vlr + Vc;
+    for (const ListenerVector<RealType>& listener : listeners)
+      listener.report(walker_index, name, ve_sample);
+    for (const ListenerVector<RealType>& ion_listener : ion_listeners)
+      ion_listener.report(walker_index, name, vi_sample);
+    return value;
+  };
+
+  for (int iw = 0; iw < o_list.size(); iw++)
+  {
+    auto& coulomb_ab  = o_list.getCastedElement<CoulombPBCAB>(iw);
+    coulomb_ab.value_ = evaluate_walker(iw, coulomb_ab, p_list[iw], listeners, ion_listeners);
+  }
+}
 
 /** Evaluate the background term. Other constants are handled by AA potentials.
  *
@@ -254,7 +371,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate_sp(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalConsts(const ParticleSet& Peln, bool report)
 {
   int nelns = Peln.getTotalNum();
-  int nions = Pion.getTotalNum();
+  int nions = pset_ions_.getTotalNum();
 #if !defined(REMOVE_TRACEMANAGER)
   Ve_const.resize(nelns);
   Vi_const.resize(nions);
@@ -313,10 +430,12 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSR(ParticleSet& P)
 CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
 {
   mRealType res = 0.0;
-  const StructFact& RhoKA(PtclA.getSK());
+  const StructFact& RhoKA(pset_ions_.getSK());
   const StructFact& RhoKB(P.getSK());
   if (RhoKA.SuperCellEnum == SUPERCELL_SLAB)
-    throw std::runtime_error("CoulombPBCAB::evalLR RhoKA.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation with complex-valued storage that may be resurrected using real-valued storage.");
+    throw std::runtime_error(
+        "CoulombPBCAB::evalLR RhoKA.SuperCellEnum == SUPERCELL_SLAB case not implemented. There was an implementation "
+        "with complex-valued storage that may be resurrected using real-valued storage.");
   else
   {
     for (int i = 0; i < NumSpeciesA; i++)
@@ -324,7 +443,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
       mRealType esum = 0.0;
       for (int j = 0; j < NumSpeciesB; j++)
         esum += Qspec[j] *
-            AB->evaluate(PtclA.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i], RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
+            AB->evaluate(pset_ions_.getSimulationCell().getKLists().kshell, RhoKA.rhok_r[i], RhoKA.rhok_i[i],
+                         RhoKB.rhok_r[j], RhoKB.rhok_i[j]);
       res += Zspec[i] * esum;
     }
   } //specion
@@ -334,11 +454,14 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLR(ParticleSet& P)
 
 void CoulombPBCAB::initBreakup(ParticleSet& P)
 {
-  SpeciesSet& tspeciesA(PtclA.getSpeciesSet());
+  // This is ridiculous so many uneeded convenience variables that also make the object invalid at construction.
+  // Illustraction of the terrible API and convoluted use of species attributes.
+  SpeciesSet& tspeciesA(pset_ions_.getSpeciesSet());
   SpeciesSet& tspeciesB(P.getSpeciesSet());
+  // Actually finding the index, code further on makes no sense if there wasn't already a charge attribute.
   int ChargeAttribIndxA = tspeciesA.addAttribute("charge");
   int ChargeAttribIndxB = tspeciesB.addAttribute("charge");
-  NptclA                = PtclA.getTotalNum();
+  NptclA                = pset_ions_.getTotalNum();
   NptclB                = P.getTotalNum();
   NumSpeciesA           = tspeciesA.TotalNum;
   NumSpeciesB           = tspeciesB.TotalNum;
@@ -352,7 +475,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   for (int spec = 0; spec < NumSpeciesA; spec++)
   {
     Zspec[spec]       = tspeciesA(ChargeAttribIndxA, spec);
-    NofSpeciesA[spec] = PtclA.groupsize(spec);
+    NofSpeciesA[spec] = pset_ions_.groupsize(spec);
   }
   for (int spec = 0; spec < NumSpeciesB; spec++)
   {
@@ -360,7 +483,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     NofSpeciesB[spec] = P.groupsize(spec);
   }
   for (int iat = 0; iat < NptclA; iat++)
-    Zat[iat] = Zspec[PtclA.GroupID[iat]];
+    Zat[iat] = Zspec[pset_ions_.GroupID[iat]];
   for (int iat = 0; iat < NptclB; iat++)
     Qat[iat] = Qspec[P.GroupID[iat]];
   //    if(totQ>std::numeric_limits<RealType>::epsilon())
@@ -369,8 +492,9 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   //      OHMMS::Controller->abort();
   //    }
   ////Test if the box sizes are same (=> kcut same for fixed dimcut)
-  kcdifferent = (std::abs(PtclA.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());
-  minkc       = std::min(PtclA.getLattice().LR_kc, P.getLattice().LR_kc);
+  kcdifferent =
+      (std::abs(pset_ions_.getLattice().LR_kc - P.getLattice().LR_kc) > std::numeric_limits<RealType>::epsilon());
+  minkc = std::min(pset_ions_.getLattice().LR_kc, P.getLattice().LR_kc);
   //AB->initBreakup(*PtclB);
   //initBreakup is called only once
   //AB = LRCoulombSingleton::getHandler(*PtclB);
@@ -444,7 +568,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
     rfunc->spline(0, deriv, ng - 1, 0.0);
     for (int iat = 0; iat < NptclA; iat++)
     {
-      if (PtclA.GroupID[iat] == groupID)
+      if (pset_ions_.GroupID[iat] == groupID)
         Vat[iat] = rfunc.get();
     }
     Vspec[groupID] = std::move(rfunc);
@@ -490,7 +614,7 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
     for (int iat = 0; iat < NptclA; iat++)
     {
-      if (PtclA.GroupID[iat] == groupID)
+      if (pset_ions_.GroupID[iat] == groupID)
       {
         fVat[iat]  = ffunc.get();
         fdVat[iat] = fdfunc.get();
@@ -520,14 +644,14 @@ void CoulombPBCAB::add(int groupID, std::unique_ptr<RadFunctorType>&& ppot)
 
 CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 {
-  //  const StructFact& RhoKA(PtclA.getSK());
+  //  const StructFact& RhoKA(pset_ions_.getSK());
   //  const StructFact& RhoKB(P.getSK());
-  std::vector<TinyVector<RealType, DIM>> grad(PtclA.getTotalNum());
+  std::vector<TinyVector<RealType, DIM>> grad(pset_ions_.getTotalNum());
   for (int j = 0; j < NumSpeciesB; j++)
   {
     for (int iat = 0; iat < grad.size(); iat++)
       grad[iat] = TinyVector<RealType, DIM>(0.0, 0.0, 0.0);
-    dAB->evaluateGrad(PtclA, P, j, Zat, grad);
+    dAB->evaluateGrad(pset_ions_, P, j, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
       forces[iat] += Qspec[j] * grad[iat];
   } // electron species
@@ -567,4 +691,57 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   }
   return res;
 }
+
+void CoulombPBCAB::evalPerParticleConsts(Vector<RealType>& pp_consts_src,
+                                         Vector<RealType>& pp_consts_trg) const
+{
+  int nelns = Peln.getTotalNum();
+  int nions = pset_ions_.getTotalNum();
+  pp_consts_trg.resize(nelns, 0.0);
+  pp_consts_src.resize(nions, 0.0);
+
+  RealType vs_k0 = AB->evaluateSR_k0();
+  RealType v1; //single particle energy
+  for (int i = 0; i < nelns; ++i)
+  {
+    v1 = 0.0;
+    for (int s = 0; s < NumSpeciesA; s++)
+      v1 += NofSpeciesA[s] * Zspec[s];
+    v1 *= -.5 * Qat[i] * vs_k0;
+    pp_consts_trg[i] = v1;
+  }
+  for (int i = 0; i < nions; ++i)
+  {
+    v1 = 0.0;
+    for (int s = 0; s < NumSpeciesB; s++)
+      v1 += NofSpeciesB[s] * Qspec[s];
+    v1 *= -.5 * Zat[i] * vs_k0;
+    pp_consts_src[i] = v1;
+  }
+}
+
+void CoulombPBCAB::createResource(ResourceCollection& collection) const
+{
+  auto new_res = std::make_unique<CoulombPBCABMultiWalkerResource>();
+  evalPerParticleConsts(new_res->pp_consts_src, new_res->pp_consts_trg);
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void CoulombPBCAB::acquireResource(ResourceCollection& collection,
+                                   const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
+  auto res_ptr   = dynamic_cast<CoulombPBCABMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("CoulombPBCAA::acquireResource dynamic_cast failed");
+  o_leader.mw_res_.reset(res_ptr);
+}
+
+void CoulombPBCAB::releaseResource(ResourceCollection& collection,
+                                   const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
+  collection.takebackResource(std::move(o_leader.mw_res_));
+}
+
 } // namespace qmcplusplus

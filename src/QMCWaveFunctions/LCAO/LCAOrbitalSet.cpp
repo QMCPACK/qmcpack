@@ -16,8 +16,8 @@
 
 namespace qmcplusplus
 {
-LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
-    : SPOSet(false, true, optimize), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
+LCAOrbitalSet::LCAOrbitalSet(const std::string& my_name, std::unique_ptr<basis_type>&& bs)
+    : SPOSet(my_name), BasisSetSize(bs ? bs->getBasisSetSize() : 0), Identity(true)
 {
   if (!bs)
     throw std::runtime_error("LCAOrbitalSet cannot take nullptr as its  basis set!");
@@ -30,7 +30,12 @@ LCAOrbitalSet::LCAOrbitalSet(std::unique_ptr<basis_type>&& bs, bool optimize)
 }
 
 LCAOrbitalSet::LCAOrbitalSet(const LCAOrbitalSet& in)
-    : SPOSet(in), myBasisSet(in.myBasisSet->makeClone()), C(in.C), BasisSetSize(in.BasisSetSize), Identity(in.Identity)
+    : SPOSet(in),
+      myBasisSet(in.myBasisSet->makeClone()),
+      C(in.C),
+      BasisSetSize(in.BasisSetSize),
+      C_copy(in.C_copy),
+      Identity(in.Identity)
 {
   Temp.resize(BasisSetSize);
   Temph.resize(BasisSetSize);
@@ -93,7 +98,7 @@ void LCAOrbitalSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& ps
     myBasisSet->evaluateV(P, iat, vTemp.data());
     assert(psi.size() <= OrbitalSetSize);
     ValueMatrix C_partial_view(C->data(), psi.size(), BasisSetSize);
-    simd::gemv(C_partial_view, vTemp.data(), psi.data());
+    MatrixOperators::product(C_partial_view, vTemp, psi);
   }
 }
 
@@ -349,7 +354,9 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   Vector<ValueType> vTemp(Temp.data(0), BasisSetSize);
   Vector<ValueType> invTemp(Temp.data(1), BasisSetSize);
 
-  MatrixOperators::product_Atx(*C, psiinv, invTemp.data());
+  // when only a subset of orbitals is used, extract limited rows of C.
+  Matrix<ValueType> C_occupied(C->data(), psiinv.size(), BasisSetSize);
+  MatrixOperators::product_Atx(C_occupied, psiinv, invTemp);
 
   for (size_t j = 0; j < VP.getTotalNum(); j++)
   {

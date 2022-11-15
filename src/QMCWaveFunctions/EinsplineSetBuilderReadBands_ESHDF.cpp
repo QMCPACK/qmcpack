@@ -30,9 +30,8 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
   int hasPsig = 1;
   if (root)
   {
-    HDFAttribIO<TinyVector<int, 3>> h_mesh(MeshSize);
-    h_mesh.read(H5FileID, "/electrons/psi_r_mesh");
-    h_mesh.read(H5FileID, "/electrons/mesh");
+    H5File.readEntry(MeshSize, "/electrons/psi_r_mesh");
+    H5File.readEntry(MeshSize, "/electrons/mesh");
   }
   myComm->bcast(MeshSize);
   hasPsig = (MeshSize[0] == 0);
@@ -69,8 +68,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
       {
         std::ostringstream Gpath;
         Gpath << "/electrons/kpoint_0/gvectors";
-        HDFAttribIO<std::vector<TinyVector<int, 3>>> h_Gvecs(Gvecs[0]);
-        h_Gvecs.read(H5FileID, Gpath.str().c_str());
+        H5File.read(Gvecs[0], Gpath.str());
         numg = Gvecs[0].size();
       }
       myComm->bcast(numg);
@@ -114,8 +112,7 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
         {
           std::ostringstream Gpath;
           Gpath << "/electrons/kpoint_" << ik << "/gvectors";
-          HDFAttribIO<std::vector<TinyVector<int, 3>>> h_Gvecs(Gvecs[ik]);
-          h_Gvecs.read(H5FileID, Gpath.str().c_str());
+          H5File.read(Gvecs[ik], Gpath.str());
           numg = Gvecs[ik].size();
         }
         myComm->bcast(numg);

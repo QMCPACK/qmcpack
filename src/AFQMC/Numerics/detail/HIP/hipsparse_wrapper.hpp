@@ -14,7 +14,7 @@
 
 #include <cassert>
 #include <hip/hip_runtime.h>
-#include "hipsparse.h"
+#include <hipsparse/hipsparse.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace hipsparse

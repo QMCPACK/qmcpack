@@ -35,12 +35,13 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
+WaveFunctionTester::WaveFunctionTester(const ProjectData& project_data,
+                                       MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool& ptclPool,
                                        Communicate* comm)
-    : QMCDriver(w, psi, h, comm, "WaveFunctionTester"),
+    : QMCDriver(project_data, w, psi, h, comm, "WaveFunctionTester"),
       PtclPool(ptclPool),
       checkRatio("no"),
       checkClone("no"),
@@ -52,7 +53,8 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
       deltaParam(0.0),
       toleranceParam(0.0),
       outputDeltaVsError(false),
-      checkSlaterDet(true)
+      checkSlaterDet(true),
+      ndim(w.getLattice().ndim)
 {
   m_param.add(checkRatio, "ratio");
   m_param.add(checkClone, "clone");
@@ -68,6 +70,12 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
+  if (ndim < 3)
+  {
+    app_log() << "WF test in " << ndim << "D" << std::endl;
+    for (int iat = 0; iat < deltaR.size(); ++iat)
+      deltaR[iat][2] = 0;
+  }
 }
 
 WaveFunctionTester::~WaveFunctionTester() {}
@@ -125,6 +133,11 @@ bool WaveFunctionTester::run()
   else if (checkRatio == "deriv")
   {
     makeGaussRandom(deltaR);
+    if (ndim < 3)
+    {
+      for (int iat = 0; iat < deltaR.size(); ++iat)
+        deltaR[iat][2] = 0;
+    }
     deltaR *= 0.2;
     runDerivTest();
     runDerivNLPPTest();
@@ -299,10 +312,10 @@ public:
     FiniteDiff_LowOrder,  // use simplest low-order formulas
     FiniteDiff_Richardson // use Richardson extrapolation
   };
-  FiniteDifference(FiniteDiffType fd_type = FiniteDiff_Richardson) : m_RichardsonSize(10), m_fd_type(fd_type) {}
+  FiniteDifference(size_t ndim_in, FiniteDiffType fd_type = FiniteDiff_Richardson) : ndim(ndim_in), m_RichardsonSize(10), m_fd_type(fd_type) {}
 
+  const size_t ndim;
   int m_RichardsonSize;
-
 
   FiniteDiffType m_fd_type;
 
@@ -354,7 +367,7 @@ void FiniteDifference::finiteDifferencePoints(RealType delta, MCWalkerConfigurat
     p.index    = iat;
     PosType r0 = W.R[iat];
 
-    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int idim = 0; idim < ndim; idim++)
     {
       p.r       = r0;
       p.r[idim] = r0[idim] - delta;
@@ -419,13 +432,13 @@ void FiniteDifference::computeFiniteDiffLowOrder(RealType delta,
   ValueType c1 = 1.0 / delta / 2.0;
   ValueType c2 = 1.0 / delta / delta;
 
-  const RealType twoD(2 * OHMMS_DIM);
+  const RealType twoD(2 * ndim);
   const int pt_per_deriv = 2; // number of points per derivative
-  for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv * OHMMS_DIM)
+  for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv * ndim)
   {
     GradType g0;
     ValueType lap0 = 0.0;
-    for (int idim = 0; idim < OHMMS_DIM; idim++)
+    for (int idim = 0; idim < ndim; idim++)
     {
       int idx            = pt_i + idim * pt_per_deriv;
       ValueType logpsi_m = values[idx];
@@ -459,7 +472,7 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
   ValueType logpsi = values[0];
 
   const int pt_per_deriv = 2 * (m_RichardsonSize + 1); // number of points per derivative
-  for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv * OHMMS_DIM)
+  for (int pt_i = 1; pt_i < values.size(); pt_i += pt_per_deriv * ndim)
   {
     GradType g0;
     GradType gmin;
@@ -480,7 +493,7 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
       RealType twodd = 2 * dd;
       RealType ddsq  = dd * dd;
       l_base[inr]    = 0.0;
-      for (int idim = 0; idim < OHMMS_DIM; idim++)
+      for (int idim = 0; idim < ndim; idim++)
       {
         int idx            = pt_i + idim * pt_per_deriv + 2 * inr;
         ValueType logpsi_m = values[idx];
@@ -510,7 +523,7 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 
       RealType err1 = 0.0;
       RealType norm = 0.0;
-      for (int idim = 0; idim < OHMMS_DIM; idim++)
+      for (int idim = 0; idim < ndim; idim++)
       {
         err1 += std::abs(g_rich[inr][idim] - g_prev[inr - 1][idim]);
         norm += std::abs(g_prev[inr - 1][idim]);
@@ -580,8 +593,7 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient& G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian& L_fd)
 {
-  FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
-  //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
+  FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_LowOrder);
   FiniteDifference::PosChangeVector positions;
 
   fd.finiteDifferencePoints(delta, W, positions);
@@ -727,9 +739,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   {
     delta = deltaParam;
   }
-  FiniteDifference fd(FiniteDifference::FiniteDiff_LowOrder);
-  //RealType delta = 1.0;
-  //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
+  FiniteDifference fd(ndim, FiniteDifference::FiniteDiff_LowOrder);
 
   FiniteDifference::PosChangeVector positions;
 
@@ -781,7 +791,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     LogValueType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->getClassName() << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -807,7 +817,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->getClassName() << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
@@ -1013,6 +1023,11 @@ void WaveFunctionTester::runBasicTest()
   RealType ratio_tol  = 1e-9;
   bool any_ratio_fail = false;
   makeGaussRandom(deltaR);
+  if (ndim < 3)
+  {
+    for (int iat = 0; iat < deltaR.size(); ++iat)
+      deltaR[iat][2] = 0;
+  }
   fout << "deltaR:" << std::endl;
   fout << deltaR << std::endl;
   fout << "Particle       Ratio of Ratios     Computed Ratio   Internal Ratio" << std::endl;
@@ -1272,6 +1287,11 @@ void WaveFunctionTester::runRatioTest2()
   for (; it != it_end; ++it)
   {
     makeGaussRandom(deltaR);
+    if (ndim < 3)
+    {
+      for (int iat = 0; iat < deltaR.size(); ++iat)
+        deltaR[iat][2] = 0;
+    }
     Walker_t::WFBuffer_t tbuffer;
     (**it).R += Tau * deltaR;
     W.loadWalker(**it, true);
@@ -1307,6 +1327,11 @@ void WaveFunctionTester::runRatioTest2()
       Psi.evaluateLog(W);
       ParticleSet::ParticleGradient realGrad(W.G);
       makeGaussRandom(deltaR);
+      if (ndim < 3)
+      {
+        for (int iat = 0; iat < deltaR.size(); ++iat)
+          deltaR[iat][2] = 0;
+      }
       //mave a move
       for (int iat = 0; iat < nat; iat++)
       {
@@ -1726,8 +1751,8 @@ void WaveFunctionTester::runDerivTest()
   wfvar_prime = wfVars;
   wfVars.print(fout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1747,7 +1772,6 @@ void WaveFunctionTester::runDerivTest()
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     //     Psi.checkOutVariables(wfvar_prime);
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -1757,7 +1781,6 @@ void WaveFunctionTester::runDerivTest()
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     //     Psi.checkOutVariables(wfvar_prime);
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;
@@ -1835,8 +1858,8 @@ void WaveFunctionTester::runDerivNLPPTest()
   wfvar_prime = wfVars;
   wfVars.print(nlout);
   int Nvars = wfVars.size();
-  std::vector<ValueType> Dsaved(Nvars);
-  std::vector<ValueType> HDsaved(Nvars);
+  Vector<ValueType> Dsaved(Nvars);
+  Vector<ValueType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
   Psi.resetParameters(wfVars);
@@ -1849,7 +1872,7 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
   Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
 
-  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved, true);
+  ene[0] = H.evaluateValueAndDerivatives(W, wfVars, Dsaved, HDsaved);
   app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff    = 1e-6;
@@ -1860,7 +1883,6 @@ void WaveFunctionTester::runDerivNLPPTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -1872,7 +1894,6 @@ void WaveFunctionTester::runDerivNLPPTest()
 
     wfvar_prime[i] = wfVars[i] - FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;
@@ -1939,8 +1960,8 @@ void WaveFunctionTester::runDerivCloneTest()
   wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
   Psi.resetParameters(wfVars);
-  std::vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
-  std::vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
+  Vector<ValueType> Dsaved(Nvars, 0), og_Dsaved(Nvars, 0);
+  Vector<ValueType> HDsaved(Nvars, 0), og_HDsaved(Nvars, 0);
   std::vector<RealType> PGradient(Nvars, 0), og_PGradient(Nvars, 0);
   std::vector<RealType> HGradient(Nvars, 0), og_HGradient(Nvars, 0);
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
@@ -1965,7 +1986,6 @@ void WaveFunctionTester::runDerivCloneTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     psi_clone->resetParameters(wfvar_prime);
-    psi_clone->reset();
     w_clone->update();
     w_clone->G          = 0;
     w_clone->L          = 0;
@@ -1974,7 +1994,6 @@ void WaveFunctionTester::runDerivCloneTest()
     RealType elocPlus = h_clone->getLocalEnergy() - h_clone->getLocalPotential();
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     psi_clone->resetParameters(wfvar_prime);
-    psi_clone->reset();
     w_clone->update();
     w_clone->G           = 0;
     w_clone->L           = 0;
@@ -1999,7 +2018,6 @@ void WaveFunctionTester::runDerivCloneTest()
       wfvar_prime[j] = wfVars[j];
     wfvar_prime[i] = wfVars[i] + FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                 = 0;
     W.L                 = 0;
@@ -2008,7 +2026,6 @@ void WaveFunctionTester::runDerivCloneTest()
     RealType elocPlus = H.getLocalEnergy() - H.getLocalPotential();
     wfvar_prime[i]    = wfVars[i] - FiniteDiff;
     Psi.resetParameters(wfvar_prime);
-    Psi.reset();
     W.update();
     W.G                  = 0;
     W.L                  = 0;

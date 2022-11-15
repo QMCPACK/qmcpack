@@ -24,14 +24,14 @@ class ConstantSizeMatrix
 {
 public:
   ConstantSizeMatrix(size_t m, size_t n, size_t m_max, size_t n_max, T val = T())
-      : m_(m), n_(n), m_max_(m_max), n_max_(n_max), data_(n_max * m_max, val)
+      : m_(m), n_(n), m_max_(m_max), n_max_(n_max), capacity_(n_max * m_max), data_(n_max * m_max, val)
   {
     if (n_max <= 0 || n > n_max || m_max <= 0 || m > m_max)
       throw std::runtime_error("Cannot construct ConstantSizeMatrix with an invalid size");
   }
 
   ConstantSizeMatrix(const ConstantSizeMatrix& csm)
-      : m_(csm.m_), n_(csm.n_), m_max_(csm.m_max_), n_max_(csm.n_max_), data_(csm.n_max_ * csm.m_max_)
+      : m_(csm.m_), n_(csm.n_), m_max_(csm.m_max_), n_max_(csm.n_max_), capacity_(csm.capacity_), data_(csm.capacity_)
   {
     //I don't just do an = here because of the posible semantics of allocator propagation.
     data_.assign(csm.begin(), csm.end());
@@ -151,7 +151,7 @@ public:
   T* data() { return data_.data(); }
   const T* data() const { return data_.data(); }
 
-  size_t capacity() { return n_max_ * m_max_; }
+  size_t capacity() { return capacity_; }
   size_t n_capacity() { return n_max_; }
 
   size_t size() const { return n_ * m_; }
@@ -160,13 +160,26 @@ public:
 
   void resize(size_t m, size_t n)
   {
-    if (n > n_max_ || m > m_max_)
+    if (n * m > capacity())
     {
       std::ostringstream error;
       error << "You cannot resize a constant size matrix beyond its initial max dimensions ( " << m << "," << n << " > "
             << m_max_ << "," << n_max_ << " )\n";
       throw std::domain_error(error.str());
     }
+
+    if (n > n_max_)
+    {
+      n_max_ = n;
+      m_max_ = capacity() / n_max_;
+    }
+
+    if (m > m_max_)
+    {
+      m_max_ = m;
+      n_max_ = capacity() / m_max_;
+    }
+
     n_ = n;
     m_ = m;
   }
@@ -181,9 +194,8 @@ private:
   size_t n_;
   size_t m_max_;
   size_t n_max_;
+  size_t capacity_;
   std::vector<T, ALLOC> data_;
-
-
 };
 
 extern template class ConstantSizeMatrix<float>;

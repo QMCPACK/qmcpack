@@ -75,11 +75,11 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
 
-  const char* wavefunction_xml = "<wavefunction> \
-  <example_he name=\"mine\" source=\"ion0\"> \
-        <var id=\"B\" name=\"B\">0.8</var> \
-  </example_he> \
-</wavefunction>";
+  const char* wavefunction_xml = R"(<wavefunction>
+  <example_he name="mine" source="ion0">
+        <var id="B" name="B">0.8</var>
+  </example_he>
+</wavefunction>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wavefunction_xml);
   REQUIRE(okay);
@@ -192,7 +192,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   const int nparam = 1;
   optimize::VariableSet var_param;
-  example_he->checkInVariables(var_param);
+  example_he->checkInVariablesExclusive(var_param);
   REQUIRE(var_param.size_of_active() == nparam);
 
   example_he->checkOutVariables(var_param);
@@ -203,7 +203,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   RealType new_B = old_B + h;
 
   var_param["B"] = new_B;
-  example_he->resetParameters(var_param);
+  example_he->resetParametersExclusive(var_param);
   REQUIRE(example_he->B == Approx(new_B));
 
   ParticleSet::ParticleGradient grad_plus_h;
@@ -219,8 +219,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   // Finite difference derivative approximation
   LogValueType fd_logpsi = (logpsi_plus_h - logpsi) / LogValueType(h);
 
-  std::vector<ValueType> dlogpsi(nparam);
-  std::vector<ValueType> dhpsioverpsi(nparam);
+  Vector<ValueType> dlogpsi(nparam);
+  Vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
   REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));

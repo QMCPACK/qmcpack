@@ -38,12 +38,12 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
      Python2=True
  
 
-  val=str(mf)
+  val=str(mf.dump_flags)
   ComputeMode= re.split('[. ]',val)
 
   SizeMode=len(ComputeMode)
   for i in range(SizeMode):
-     if ComputeMode[i] in ("UHF","KUHF","UKS"):
+     if ComputeMode[i] in ("UHF","KUHF","UKS","SymAdaptedUHF","SymAdaptedUKS"):
            Restricted=False
      if ComputeMode[i]=="pbc":
            PBC=True
@@ -570,7 +570,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[],sp_twist=[],weight=1.
   H5_qmcpack.close()
 
   print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
-  print ('Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title))
+  print ('Use: "convert4qmc -orbitals  {}.h5" to generate QMCPACK input files'.format(title))
   # Close the file before exiting
 
 

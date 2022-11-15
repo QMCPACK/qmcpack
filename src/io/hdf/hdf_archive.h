@@ -18,14 +18,15 @@
 #include "hdf_datatype.h"
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"
-#if defined(HAVE_LIBHDF5)
+#include "hdf_error_suppression.h"
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
-//#include "hdf_double_hyperslab.h"
-#endif
-#include <stack>
+
 #include <bitset>
+#include <filesystem>
+#include <stack>
+
 #ifdef HAVE_MPI
 namespace boost
 {
@@ -64,10 +65,6 @@ private:
   hid_t access_id;
   ///transfer property
   hid_t xfer_plist;
-  ///error type
-  H5E_auto2_t err_func;
-  ///error handling
-  void* client_data;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
 
@@ -89,15 +86,15 @@ public:
   template<class Comm = Communicate*>
   hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
   hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
   {
-    H5Eget_auto2(H5E_DEFAULT, &err_func, &client_data);
-    H5Eset_auto2(H5E_DEFAULT, NULL, NULL);
+    if (!hdf_error_suppression::enabled)
+      throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist();
   }
   ///destructor
@@ -117,14 +114,14 @@ public:
    * @param flags i/o mode
    * @return true, if creation is successful
    */
-  bool create(const std::string& fname, unsigned flags = H5F_ACC_TRUNC);
+  bool create(const std::filesystem::path& fname, unsigned flags = H5F_ACC_TRUNC);
 
   /** open a file
    * @param fname name of hdf5 file
    * @param flags i/o mode
    * @return file_id, if open is successful
    */
-  bool open(const std::string& fname, unsigned flags = H5F_ACC_RDWR);
+  bool open(const std::filesystem::path& fname, unsigned flags = H5F_ACC_RDWR);
 
   ///close all the open groups and file
   void close();
@@ -147,7 +144,7 @@ public:
 
   /** return the top of the group stack
    */
-  inline hid_t top() const { return group_id.empty() ? is_closed : group_id.top(); }
+  inline hid_t top() const { return group_id.empty() ? file_id : group_id.top(); }
 
   /** check if any groups are open
    *  group stack will have entries if so
@@ -167,7 +164,9 @@ public:
       return;
     hid_t g = group_id.top();
     group_id.pop();
-    H5Gclose(g);
+    herr_t err = H5Gclose(g);
+    if (err < 0)
+      throw std::runtime_error("H5Gclose failed with error.");
   }
 
   /** read the shape of multidimensional filespace from the group aname

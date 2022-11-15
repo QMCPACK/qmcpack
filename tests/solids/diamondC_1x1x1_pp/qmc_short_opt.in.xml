@@ -92,7 +92,6 @@
       <parameter name="useDrift"            >    no              </parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="samples"             >    128000          </parameter>
-      <parameter name="nonlocalpp"          >    no              </parameter>
       <parameter name="MinMethod"           >    OneShiftOnly </parameter>
          <cost name="energy">                   0.95 </cost>
          <cost name="unreweightedvariance">     0.00 </cost>

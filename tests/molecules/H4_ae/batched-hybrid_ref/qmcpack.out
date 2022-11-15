@@ -1,0 +1,2371 @@
+  Input file(s): batched-hybrid_ref.xml 
+
+=====================================================
+                    QMCPACK 3.14.9
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: part_two_param_filter
+  Last git commit: fb1d696324be11967ee4a07c887cbe1c6dc64bbd-dirty
+  Last git commit date: Thu Aug 11 15:09:14 2022 -0700
+  Last git commit subject: Add ifdef to unit test for build cases without LMYEngine
+=====================================================
+  Global options 
+
+  Total number of MPI ranks = 1
+  Number of MPI groups      = 1
+  MPI group ID              = 0
+  Number of ranks in group  = 1
+  MPI ranks per node        = 1
+  OMP 1st level threads     = 16
+  OMP nested threading disabled or only 1 thread on the 2nd level
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  CPU only build
+  Timer build option is enabled. Current timer level is coarse
+
+=================================================
+--- Memory usage report : when QMCPACK starts ---
+=================================================
+Available memory on node 0, free + buffers :   86677 MiB
+Memory footprint by rank 0 on node 0       :      45 MiB
+=================================================
+
+  Input XML = batched-hybrid_ref.xml
+
+  Project = hybrid_ref
+  date    = 2022-08-12 09:47:32 PDT
+  host    = n0266.lr6
+
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 36
+
+  Range of prime numbers to use as seeds over processors and threads = 163-251
+
+
+ Particle Set
+ ------------
+  Name: e   Offload : no
+
+  All the species have the same mass 1
+  Particle set size: 4   Groups : 2
+
+
+ Particle Set
+ ------------
+  Name: ion0   Offload : no
+
+  All the species have the same mass 1
+  Particle set size: 4   Groups : 1
+
+
+ Many-body wavefunction
+ -------------------
+  Name: psi0   Tasking: no
+
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside using sposet_collection.
+WARNING Radial orbital type cannot be determined based on the attributes of basisset line. Trying the parent element.
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 1e-06 rf = 100 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+  Setting cutoff radius 8.62979
+
+   Maximum Angular Momentum  = 0
+   Number of Radial functors = 1
+   Basis size                = 1
+
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside using sposet_collection.
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name: spo-up   Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+WARNING !!!!!!! Deprecated input style: creating SPO set inside determinantset. Support for this usage will soon be removed. SPO sets should be built outside using sposet_collection.
+Creating SPOSet in SlaterDetBuilder::put(xmlNodePtr cur).
+
+     Single particle orbitals (SPO)
+     ------------------------------
+      Name: spo-dn   Type: LCAO   Builder class name: LCAOrbitalBuilder
+
+
+   Multi Slater determinants
+   -------------------------
+
+    Using Bryan's table method.
+    Using the table method with precomputing. Faster
+Found determinant list. 
+Reading CSFs.
+Found 2 terms in the MSD expansion.
+Norm of ci vector (sum of ci^2): 0.638005
+Norm of qchem ci vector (sum of qchem_ci^2): 0.990143
+Found 2 unique group0 determinants.
+Found 2 unique group1 determinants.
+max CI coeff at det number 0 with value 0.605818
+Number of terms in pairs array: 1
+Number of terms in pairs array: 1
+CI coefficients are optimizable. 
+  Added a fermionic WaveFunctionComponent MultiSlaterDetTableMethod
+
+   Jastrow
+   -------
+    Name: J2   Type: Two-Body   Function: Bspline
+
+    Radial function for species: u - u
+     Number of parameters: 10
+     Cusp: -0.25
+     Cutoff radius: 10
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     uu_0                 5.680176e-01    1         1  ON     0
+     uu_1                 3.699138e-01    1         1  ON     1
+     uu_2                 2.108829e-01    1         1  ON     2
+     uu_3                 9.267632e-02    1         1  ON     3
+     uu_4                 5.276940e-03    1         1  ON     4
+     uu_5                -3.330962e-02    1         1  ON     5
+     uu_6                -2.484192e-02    1         1  ON     6
+     uu_7                 8.603361e-03    1         1  ON     7
+     uu_8                 3.763565e-02    1         1  ON     8
+     uu_9                 2.979626e-02    1         1  ON     9
+
+    Radial function for species: u - d
+     Number of parameters: 10
+     Cusp: -0.5
+     Cutoff radius: 10
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     ud_0                 9.168016e-01    1         1  ON     0
+     ud_1                 5.756625e-01    1         1  ON     1
+     ud_2                 3.465443e-01    1         1  ON     2
+     ud_3                 1.896617e-01    1         1  ON     3
+     ud_4                 8.747532e-02    1         1  ON     4
+     ud_5                 3.482162e-02    1         1  ON     5
+     ud_6                 3.708930e-02    1         1  ON     6
+     ud_7                 6.355172e-02    1         1  ON     7
+     ud_8                 7.720516e-02    1         1  ON     8
+     ud_9                 5.828843e-02    1         1  ON     9
+
+
+   Jastrow
+   -------
+    Name: J1   Type: One-Body   Function: Bspline
+
+    Radial function for element: H - e
+     Number of parameters: 10
+     Cusp: 1
+     Cutoff radius: 5
+
+     Name                        Value Type Recompute Use Index
+     ---- ---------------------------- ---- --------- --- -----
+     eH_0                 1.539994e-02    1         1  ON     0
+     eH_1                 2.935596e-02    1         1  ON     1
+     eH_2                -1.133046e-01    1         1  ON     2
+     eH_3                -9.452275e-02    1         1  ON     3
+     eH_4                -1.063167e-01    1         1  ON     4
+     eH_5                -7.820047e-02    1         1  ON     5
+     eH_6                -3.640043e-02    1         1  ON     6
+     eH_7                -6.827574e-03    1         1  ON     7
+     eH_8                 8.345458e-03    1         1  ON     8
+     eH_9                 4.849582e-03    1         1  ON     9
+
+  Adding psi0 TrialWaveFunction to the pool
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+
+ Hamiltonian and observables
+ ---------------------------
+  Name: h0
+
+
+   Coulomb Potential
+   -----------------
+    Name: ElecElec   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+   Coulomb Potential
+   -----------------
+    Name: IonElec   Type: AB   PBC: no
+
+  QMCHamiltonian::addOperator IonElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonElec
+
+   Coulomb Potential
+   -----------------
+    Name: IonIon   Type: AA   PBC: no
+
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+
+  QMCHamiltonian::add2WalkerProperty added
+    4 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 0 ParticleSets.
+  Initialization Execution time = 0.03583 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet 'e' contains 4 particles :  u(2) d(2)
+
+    u  1.0958951042e+00  5.1427708436e-01 -1.4428370103e+00
+    u  6.0611124208e-01 -1.7216487456e-01 -7.7962973208e-01
+    d -6.4575975825e-01  9.9108864642e-01  1.8564835946e-01
+    d -7.5318592612e-02  2.7134132518e-01 -1.1765509155e+00
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  ParticleSet 'ion0' contains 4 particles :  H(4)
+
+    H  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  1.8897259877e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  2.8345889816e+00
+    H  0.0000000000e+00  0.0000000000e+00  5.6691779632e+00
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Hamiltonian h0
+           KineticKinetic energy
+          ElecElecCoulombAB source=e
+
+           IonElecCoulombAA source/target ion0
+
+            IonIonCoulombAA source/target ion0
+
+
+Loop execution max-interations = 9
+
+========================================
+  Reading WFOpt driver XML input section
+========================================
+  Random walking with drift
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s000
+=========================================================
+HybridEngine saved MinMethod descent num_updates = 6
+HybridEngine saved MinMethod adaptive num_updates = 3
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s000
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86676 MiB
+Memory footprint by rank 0 on node 0       :      49 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86654 MiB
+Memory footprint by rank 0 on node 0       :      70 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86654 MiB
+Memory footprint by rank 0 on node 0       :      70 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 0
+    time step          = 0.05
+    reference energy   = -1.84998
+    reference variance = 0.431039
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86649 MiB
+Memory footprint by rank 0 on node 0       :      75 MiB
+=============================================
+  Execution time = 3.7652e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -1.8500e+00
+  VMC Evar = 4.3104e-01
+  Total weights = 3.2000e+04
+Energy Average: -1.850032825e+00
+Energy Variance: 4.310902713e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 6.565746502e-01
+Energy Standard Error: 3.670363875e-03
+Norm of gradient vector is: 9.395756488e-01
+  Execution time = 9.6134e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+This is num_params_: 31
+Number of Parameters: 31
+Descent Number: 0
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 4.7267e+00
+  </log>
+  <optVariables href="hybrid_ref.s000.opt.xml">
+CSFcoeff_1                -5.145546e-01 3 1  ON 0
+      uu_0                 5.680033e-01 1 1  ON 1
+      uu_1                 3.701539e-01 1 1  ON 2
+      uu_2                 2.120348e-01 1 1  ON 3
+      uu_3                 9.341751e-02 1 1  ON 4
+      uu_4                 6.402903e-03 1 1  ON 5
+      uu_5                -3.392381e-02 1 1  ON 6
+      uu_6                -2.561524e-02 1 1  ON 7
+      uu_7                 7.783056e-03 1 1  ON 8
+      uu_8                 3.711511e-02 1 1  ON 9
+      uu_9                 2.932277e-02 1 1  ON 10
+      ud_0                 9.168679e-01 1 1  ON 11
+      ud_1                 5.764444e-01 1 1  ON 12
+      ud_2                 3.471098e-01 1 1  ON 13
+      ud_3                 1.908503e-01 1 1  ON 14
+      ud_4                 8.809504e-02 1 1  ON 15
+      ud_5                 3.485953e-02 1 1  ON 16
+      ud_6                 3.643819e-02 1 1  ON 17
+      ud_7                 6.210355e-02 1 1  ON 18
+      ud_8                 7.650378e-02 1 1  ON 19
+      ud_9                 5.799470e-02 1 1  ON 20
+      eH_0                 1.468658e-02 1 1  ON 21
+      eH_1                 3.146028e-02 1 1  ON 22
+      eH_2                -1.107579e-01 1 1  ON 23
+      eH_3                -9.708088e-02 1 1  ON 24
+      eH_4                -1.063899e-01 1 1  ON 25
+      eH_5                -7.764690e-02 1 1  ON 26
+      eH_6                -3.821623e-02 1 1  ON 27
+      eH_7                -2.587325e-03 1 1  ON 28
+      eH_8                 9.528438e-03 1 1  ON 29
+      eH_9                 4.916683e-03 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 4.733 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s001
+=========================================================
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s001
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86612 MiB
+Memory footprint by rank 0 on node 0       :     111 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86630 MiB
+Memory footprint by rank 0 on node 0       :     111 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86630 MiB
+Memory footprint by rank 0 on node 0       :     111 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 1
+    time step          = 0.05
+    reference energy   = -2.05083
+    reference variance = 0.183159
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86630 MiB
+Memory footprint by rank 0 on node 0       :     111 MiB
+=============================================
+  Execution time = 3.7846e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0508e+00
+  VMC Evar = 1.8316e-01
+  Total weights = 3.2000e+04
+Energy Average: -2.050829065e+00
+Energy Variance: 1.831643361e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 4.279770275e-01
+Energy Standard Error: 2.392464316e-03
+Norm of gradient vector is: 5.540895026e-01
+  Execution time = 9.5449e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+Number of Parameters: 31
+Descent Number: 1
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 4.7392e+00
+  </log>
+  <optVariables href="hybrid_ref.s001.opt.xml">
+CSFcoeff_1                -5.100703e-01 3 1  ON 0
+      uu_0                 5.866993e-01 1 1  ON 1
+      uu_1                 3.799694e-01 1 1  ON 2
+      uu_2                 2.130188e-01 1 1  ON 3
+      uu_3                 1.072280e-01 1 1  ON 4
+      uu_4                 7.293428e-03 1 1  ON 5
+      uu_5                -4.149739e-02 1 1  ON 6
+      uu_6                -3.369164e-02 1 1  ON 7
+      uu_7                 8.755095e-03 1 1  ON 8
+      uu_8                 2.973021e-02 1 1  ON 9
+      uu_9                 2.555703e-02 1 1  ON 10
+      ud_0                 9.315211e-01 1 1  ON 11
+      ud_1                 5.742105e-01 1 1  ON 12
+      ud_2                 3.306161e-01 1 1  ON 13
+      ud_3                 1.996733e-01 1 1  ON 14
+      ud_4                 1.048058e-01 1 1  ON 15
+      ud_5                -1.463278e-03 1 1  ON 16
+      ud_6                 3.827116e-02 1 1  ON 17
+      ud_7                 5.824414e-02 1 1  ON 18
+      ud_8                 8.853435e-02 1 1  ON 19
+      ud_9                 4.750458e-02 1 1  ON 20
+      eH_0                 1.582415e-02 1 1  ON 21
+      eH_1                 3.869001e-02 1 1  ON 22
+      eH_2                -1.088528e-01 1 1  ON 23
+      eH_3                -1.031910e-01 1 1  ON 24
+      eH_4                -1.426916e-01 1 1  ON 25
+      eH_5                -8.938705e-02 1 1  ON 26
+      eH_6                -2.367777e-02 1 1  ON 27
+      eH_7                 2.300231e-04 1 1  ON 28
+      eH_8                 1.259154e-02 1 1  ON 29
+      eH_9                -3.155034e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 4.775 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s002
+=========================================================
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s002
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86611 MiB
+Memory footprint by rank 0 on node 0       :     115 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86611 MiB
+Memory footprint by rank 0 on node 0       :     115 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86611 MiB
+Memory footprint by rank 0 on node 0       :     115 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 2
+    time step          = 0.05
+    reference energy   = -2.06305
+    reference variance = 0.232642
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86610 MiB
+Memory footprint by rank 0 on node 0       :     115 MiB
+=============================================
+  Execution time = 4.3804e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0631e+00
+  VMC Evar = 2.3264e-01
+  Total weights = 3.2000e+04
+Energy Average: -2.063029385e+00
+Energy Variance: 2.326591487e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 4.823475393e-01
+Energy Standard Error: 2.696404717e-03
+Norm of gradient vector is: 5.586941487e-01
+  Execution time = 9.5005e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+Number of Parameters: 31
+Descent Number: 2
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 5.3305e+00
+  </log>
+  <optVariables href="hybrid_ref.s002.opt.xml">
+CSFcoeff_1                -5.062909e-01 3 1  ON 0
+      uu_0                 5.811927e-01 1 1  ON 1
+      uu_1                 3.768932e-01 1 1  ON 2
+      uu_2                 2.140311e-01 1 1  ON 3
+      uu_3                 9.648201e-02 1 1  ON 4
+      uu_4                 1.017635e-02 1 1  ON 5
+      uu_5                -3.797068e-02 1 1  ON 6
+      uu_6                -2.638805e-02 1 1  ON 7
+      uu_7                 9.995624e-03 1 1  ON 8
+      uu_8                 2.575512e-02 1 1  ON 9
+      uu_9                 2.350988e-02 1 1  ON 10
+      ud_0                 9.336050e-01 1 1  ON 11
+      ud_1                 5.683879e-01 1 1  ON 12
+      ud_2                 3.508894e-01 1 1  ON 13
+      ud_3                 1.971094e-01 1 1  ON 14
+      ud_4                 9.245568e-02 1 1  ON 15
+      ud_5                 1.987602e-02 1 1  ON 16
+      ud_6                 3.779064e-02 1 1  ON 17
+      ud_7                 5.475925e-02 1 1  ON 18
+      ud_8                 8.525625e-02 1 1  ON 19
+      ud_9                 5.889373e-02 1 1  ON 20
+      eH_0                 2.259386e-02 1 1  ON 21
+      eH_1                 3.486776e-02 1 1  ON 22
+      eH_2                -1.147913e-01 1 1  ON 23
+      eH_3                -9.896561e-02 1 1  ON 24
+      eH_4                -9.613839e-02 1 1  ON 25
+      eH_5                -1.128703e-01 1 1  ON 26
+      eH_6                -3.800454e-02 1 1  ON 27
+      eH_7                -1.183472e-03 1 1  ON 28
+      eH_8                 1.393758e-02 1 1  ON 29
+      eH_9                 1.274991e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 5.336 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s003
+=========================================================
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s003
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86610 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86610 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86610 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 3
+    time step          = 0.05
+    reference energy   = -2.06337
+    reference variance = 0.241343
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86609 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+=============================================
+  Execution time = 4.1405e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0634e+00
+  VMC Evar = 2.4134e-01
+  Total weights = 3.2000e+04
+Energy Average: -2.063369319e+00
+Energy Variance: 2.413505480e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 4.912744121e-01
+Energy Standard Error: 2.746307452e-03
+Norm of gradient vector is: 5.681301980e-01
+  Execution time = 9.4207e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+Number of Parameters: 31
+Descent Number: 3
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 5.0827e+00
+  </log>
+  <optVariables href="hybrid_ref.s003.opt.xml">
+CSFcoeff_1                -5.018847e-01 3 1  ON 0
+      uu_0                 5.779504e-01 1 1  ON 1
+      uu_1                 3.744487e-01 1 1  ON 2
+      uu_2                 2.110565e-01 1 1  ON 3
+      uu_3                 1.044146e-01 1 1  ON 4
+      uu_4                 2.061501e-02 1 1  ON 5
+      uu_5                -4.666479e-02 1 1  ON 6
+      uu_6                -4.032499e-02 1 1  ON 7
+      uu_7                 1.085995e-02 1 1  ON 8
+      uu_8                 2.963016e-02 1 1  ON 9
+      uu_9                 2.659656e-02 1 1  ON 10
+      ud_0                 9.026875e-01 1 1  ON 11
+      ud_1                 5.694503e-01 1 1  ON 12
+      ud_2                 3.500965e-01 1 1  ON 13
+      ud_3                 1.952334e-01 1 1  ON 14
+      ud_4                 8.772362e-02 1 1  ON 15
+      ud_5                 4.491456e-02 1 1  ON 16
+      ud_6                 3.404281e-02 1 1  ON 17
+      ud_7                 5.597955e-02 1 1  ON 18
+      ud_8                 8.285104e-02 1 1  ON 19
+      ud_9                 6.543078e-02 1 1  ON 20
+      eH_0                 1.569403e-02 1 1  ON 21
+      eH_1                 2.963467e-02 1 1  ON 22
+      eH_2                -1.064396e-01 1 1  ON 23
+      eH_3                -1.014288e-01 1 1  ON 24
+      eH_4                -1.189138e-01 1 1  ON 25
+      eH_5                -7.820269e-02 1 1  ON 26
+      eH_6                -4.393639e-02 1 1  ON 27
+      eH_7                -6.821090e-03 1 1  ON 28
+      eH_8                 2.903185e-02 1 1  ON 29
+      eH_9                 2.455347e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 5.088 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s004
+=========================================================
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s004
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86609 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86609 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86609 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 4
+    time step          = 0.05
+    reference energy   = -2.06473
+    reference variance = 0.255869
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86608 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+=============================================
+  Execution time = 4.1526e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0647e+00
+  VMC Evar = 2.5587e-01
+  Total weights = 3.2000e+04
+Energy Average: -2.064729805e+00
+Energy Variance: 2.558765696e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 5.058424356e-01
+Energy Standard Error: 2.827745180e-03
+Norm of gradient vector is: 7.405668239e-01
+  Execution time = 9.5359e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+Number of Parameters: 31
+Descent Number: 4
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+  Execution time = 5.1063e+00
+  </log>
+  <optVariables href="hybrid_ref.s004.opt.xml">
+CSFcoeff_1                -4.973867e-01 3 1  ON 0
+      uu_0                 5.781638e-01 1 1  ON 1
+      uu_1                 3.830447e-01 1 1  ON 2
+      uu_2                 2.116876e-01 1 1  ON 3
+      uu_3                 1.084940e-01 1 1  ON 4
+      uu_4                 2.428444e-02 1 1  ON 5
+      uu_5                -4.140623e-02 1 1  ON 6
+      uu_6                -3.709518e-02 1 1  ON 7
+      uu_7                -1.217331e-03 1 1  ON 8
+      uu_8                 2.105655e-02 1 1  ON 9
+      uu_9                 2.264942e-02 1 1  ON 10
+      ud_0                 9.188921e-01 1 1  ON 11
+      ud_1                 5.764718e-01 1 1  ON 12
+      ud_2                 3.411976e-01 1 1  ON 13
+      ud_3                 2.057467e-01 1 1  ON 14
+      ud_4                 8.911741e-02 1 1  ON 15
+      ud_5                 2.143044e-02 1 1  ON 16
+      ud_6                 3.767907e-02 1 1  ON 17
+      ud_7                 5.726056e-02 1 1  ON 18
+      ud_8                 7.794075e-02 1 1  ON 19
+      ud_9                 4.760895e-02 1 1  ON 20
+      eH_0                 1.717450e-02 1 1  ON 21
+      eH_1                 3.393349e-02 1 1  ON 22
+      eH_2                -9.976932e-02 1 1  ON 23
+      eH_3                -1.017037e-01 1 1  ON 24
+      eH_4                -1.436993e-01 1 1  ON 25
+      eH_5                -8.476306e-02 1 1  ON 26
+      eH_6                -2.023801e-02 1 1  ON 27
+      eH_7                 2.186073e-03 1 1  ON 28
+      eH_8                 1.879354e-02 1 1  ON 29
+      eH_9                 4.701175e-03 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 5.112 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s005
+=========================================================
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s005
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86608 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: descent
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86608 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86608 MiB
+Memory footprint by rank 0 on node 0       :     116 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 5
+    time step          = 0.05
+    reference energy   = -2.03362
+    reference variance = 0.245445
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86607 MiB
+Memory footprint by rank 0 on node 0       :     117 MiB
+=============================================
+  Execution time = 4.2083e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0336e+00
+  VMC Evar = 2.4544e-01
+  Total weights = 3.2000e+04
+Energy Average: -2.033617339e+00
+Energy Variance: 2.454523155e-01
+Weight Total: 3.200000000e+04
+Energy Standard Deviation: 4.954314438e-01
+Energy Standard Error: 2.769545966e-03
+Norm of gradient vector is: 5.839903482e-01
+  Execution time = 9.5812e-01
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+Number of Parameters: 31
+Descent Number: 5
+Finalization Descent Num (should be zero if not on last section): 0
+Parameter Type step sizes:  TJF_2Body_eta=1.0000e-02 TJF_1Body_eta=1.0000e-02 F_eta=1.0000e-03 CI_eta=1.0000e-02 Orb_eta=1.0000e-03
+Using RMSprop
+Stored Vector: 0.027613,0.022814,0.012162,0.007676,0.020029,0.011920,0.000867,-0.014223,-0.017520,-0.017534,-0.005532,-0.025430,-0.009055,0.008865,0.014988,0.002376,0.001999,-0.008608,-0.010980,0.006875,-0.005431,0.003810,-0.006093,0.003450,-0.000363,-0.006697,-0.018481,0.010174,0.006415,0.005703,0.012288,
+  Execution time = 5.1666e+00
+  </log>
+  <optVariables href="hybrid_ref.s005.opt.xml">
+CSFcoeff_1                -4.929533e-01 3 1  ON 0
+      uu_0                 5.908314e-01 1 1  ON 1
+      uu_1                 3.820756e-01 1 1  ON 2
+      uu_2                 2.185587e-01 1 1  ON 3
+      uu_3                 1.127054e-01 1 1  ON 4
+      uu_4                 1.719672e-02 1 1  ON 5
+      uu_5                -3.244270e-02 1 1  ON 6
+      uu_6                -3.906489e-02 1 1  ON 7
+      uu_7                -8.916334e-03 1 1  ON 8
+      uu_8                 2.010178e-02 1 1  ON 9
+      uu_9                 2.426380e-02 1 1  ON 10
+      ud_0                 8.913719e-01 1 1  ON 11
+      ud_1                 5.666073e-01 1 1  ON 12
+      ud_2                 3.554088e-01 1 1  ON 13
+      ud_3                 2.046493e-01 1 1  ON 14
+      ud_4                 8.985167e-02 1 1  ON 15
+      ud_5                 3.682092e-02 1 1  ON 16
+      ud_6                 2.848155e-02 1 1  ON 17
+      ud_7                 5.257187e-02 1 1  ON 18
+      ud_8                 8.408024e-02 1 1  ON 19
+      ud_9                 5.285745e-02 1 1  ON 20
+      eH_0                 1.921029e-02 1 1  ON 21
+      eH_1                 2.326307e-02 1 1  ON 22
+      eH_2                -1.098543e-01 1 1  ON 23
+      eH_3                -9.488528e-02 1 1  ON 24
+      eH_4                -1.130135e-01 1 1  ON 25
+      eH_5                -9.668122e-02 1 1  ON 26
+      eH_6                -2.622643e-02 1 1  ON 27
+      eH_7                -4.125627e-04 1 1  ON 28
+      eH_8                 1.404879e-02 1 1  ON 29
+      eH_9                 1.713771e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 5.219 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s006
+=========================================================
+test version of OpenMP threading with AdaptiveThreeShift optimizer
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s006
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86607 MiB
+Memory footprint by rank 0 on node 0       :     117 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86607 MiB
+Memory footprint by rank 0 on node 0       :     117 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86607 MiB
+Memory footprint by rank 0 on node 0       :     117 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 6
+    time step          = 0.05
+    reference energy   = -2.06863
+    reference variance = 0.1842
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86607 MiB
+Memory footprint by rank 0 on node 0       :     117 MiB
+=============================================
+  Execution time = 4.1593e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0686e+00
+  VMC Evar = 1.8420e-01
+  Total weights = 3.2000e+04
+  Execution time = 1.3134e+00
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.179451906892
+                                         uncertainty =       0.003642062540
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.002399258110
+  error estimate for blocks of size 2^( 2) =       0.002383714275
+  error estimate for blocks of size 2^( 3) =       0.002377667120
+  error estimate for blocks of size 2^( 4) =       0.002423392157
+  error estimate for blocks of size 2^( 5) =       0.002485026221
+  error estimate for blocks of size 2^( 6) =       0.003204264225
+  error estimate for blocks of size 2^( 7) =       0.004076921180
+  error estimate for blocks of size 2^( 8) =       0.005195524826
+
+      target function =                  N/A
+              le_mean =      -2.068629531537
+             les_mean =       4.463428445671
+             stat err =       0.003740434113
+             autocorr =       2.430544893409
+              std dev =       0.429185632241
+             variance =       0.184200306922
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy -2.068629531537e+00
+*************************************************************************************************
+
+shift_s 2.50e-01   vec 0   target =      -2.117058687167 +             0.00 i    delta =   -0.048449041707
+shift_s 1.00e+00   vec 0   target =      -2.090199722636 +             0.00 i    delta =   -0.021590077175
+shift_s 4.00e+00   vec 0   target =      -2.075422274538 +             0.00 i    delta =   -0.006812629077
+shift_s 2.50e-01   vec 0   target =      -2.088492348569 +             0.00 i    delta =   -0.019882703108
+shift_s 1.00e+00   vec 0   target =      -2.081573170514 +             0.00 i    delta =   -0.012963525054
+shift_s 4.00e+00   vec 0   target =      -2.074388666249 +             0.00 i    delta =   -0.005779020788
+  Execution time = 6.1633e+00
+  </log>
+  <optVariables href="hybrid_ref.s006.opt.xml">
+CSFcoeff_1                -4.929533e-01 3 1  ON 0
+      uu_0                 5.908314e-01 1 1  ON 1
+      uu_1                 3.820756e-01 1 1  ON 2
+      uu_2                 2.185587e-01 1 1  ON 3
+      uu_3                 1.127054e-01 1 1  ON 4
+      uu_4                 1.719672e-02 1 1  ON 5
+      uu_5                -3.244270e-02 1 1  ON 6
+      uu_6                -3.906489e-02 1 1  ON 7
+      uu_7                -8.916334e-03 1 1  ON 8
+      uu_8                 2.010178e-02 1 1  ON 9
+      uu_9                 2.426380e-02 1 1  ON 10
+      ud_0                 8.913719e-01 1 1  ON 11
+      ud_1                 5.666073e-01 1 1  ON 12
+      ud_2                 3.554088e-01 1 1  ON 13
+      ud_3                 2.046493e-01 1 1  ON 14
+      ud_4                 8.985167e-02 1 1  ON 15
+      ud_5                 3.682092e-02 1 1  ON 16
+      ud_6                 2.848155e-02 1 1  ON 17
+      ud_7                 5.257187e-02 1 1  ON 18
+      ud_8                 8.408024e-02 1 1  ON 19
+      ud_9                 5.285745e-02 1 1  ON 20
+      eH_0                 1.921029e-02 1 1  ON 21
+      eH_1                 2.326307e-02 1 1  ON 22
+      eH_2                -1.098543e-01 1 1  ON 23
+      eH_3                -9.488528e-02 1 1  ON 24
+      eH_4                -1.130135e-01 1 1  ON 25
+      eH_5                -9.668122e-02 1 1  ON 26
+      eH_6                -2.622643e-02 1 1  ON 27
+      eH_7                -4.125627e-04 1 1  ON 28
+      eH_8                 1.404879e-02 1 1  ON 29
+      eH_9                 1.713771e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86598 MiB
+Memory footprint by rank 0 on node 0       :     124 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86598 MiB
+Memory footprint by rank 0 on node 0       :     124 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 6
+    time step          = 0.05
+    reference energy   = -1.99798
+    reference variance = 0.274165
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86598 MiB
+Memory footprint by rank 0 on node 0       :     124 MiB
+=============================================
+  Execution time = 4.084
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -1.998
+  VMC Evar = 0.2742
+  Total weights = 3.2e+04
+  Execution time = 1.956
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 2.50e-01   vec 0   target =      -2.085614384642 +             0.00 i    delta =   -0.016984853105
+shift_s 1.00e+00   vec 0   target =      -2.041228689081 +             0.00 i    delta =    0.027400842457
+shift_s 4.00e+00   vec 0   target =      -2.011796998671 +             0.00 i    delta =    0.056832532867
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 6.041
+  </log>
+  <optVariables href="hybrid_ref.s006.opt.xml">
+CSFcoeff_1                -3.318909e-01 3 1  ON 0
+      uu_0                 6.238632e-01 1 1  ON 1
+      uu_1                 3.584416e-01 1 1  ON 2
+      uu_2                 2.214577e-01 1 1  ON 3
+      uu_3                 9.060913e-02 1 1  ON 4
+      uu_4                 8.281863e-02 1 1  ON 5
+      uu_5                 1.063952e-02 1 1  ON 6
+      uu_6                -6.275739e-03 1 1  ON 7
+      uu_7                -1.387984e-02 1 1  ON 8
+      uu_8                -6.832568e-03 1 1  ON 9
+      uu_9                -2.427802e-02 1 1  ON 10
+      ud_0                 9.287205e-01 1 1  ON 11
+      ud_1                 5.928305e-01 1 1  ON 12
+      ud_2                 3.368868e-01 1 1  ON 13
+      ud_3                 1.585698e-01 1 1  ON 14
+      ud_4                 5.945198e-02 1 1  ON 15
+      ud_5                 2.463779e-02 1 1  ON 16
+      ud_6                 2.429217e-03 1 1  ON 17
+      ud_7                 7.796062e-02 1 1  ON 18
+      ud_8                 1.107507e-01 1 1  ON 19
+      ud_9                 1.778131e-02 1 1  ON 20
+      eH_0                 5.079133e-02 1 1  ON 21
+      eH_1                 5.283934e-02 1 1  ON 22
+      eH_2                -7.028135e-02 1 1  ON 23
+      eH_3                -1.141565e-01 1 1  ON 24
+      eH_4                -1.377088e-01 1 1  ON 25
+      eH_5                -1.216735e-01 1 1  ON 26
+      eH_6                -2.290390e-02 1 1  ON 27
+      eH_7                -3.841846e-03 1 1  ON 28
+      eH_8                 1.602402e-02 1 1  ON 29
+      eH_9                 4.847416e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+Effective weight of all the samples measured by correlated sampling is 1
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.273321190825
+                                         uncertainty =       0.003644501831
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000731765226
+  error estimate for blocks of size 2^( 2) =       0.000725342420
+  error estimate for blocks of size 2^( 3) =       0.000730748311
+  error estimate for blocks of size 2^( 4) =       0.000692590118
+  error estimate for blocks of size 2^( 5) =       0.000648338371
+  error estimate for blocks of size 2^( 6) =       0.000828768012
+  error estimate for blocks of size 2^( 7) =       0.001061035604
+  error estimate for blocks of size 2^( 8) =       0.001386866846
+  error estimate for blocks of size 2^( 9) =       0.001735090468
+  error estimate for blocks of size 2^(10) =       0.002150547531
+  error estimate for blocks of size 2^(11) =       0.002509084263
+  error estimate for blocks of size 2^(12) =       0.002747748496
+
+      target function =                  N/A
+              le_mean =      -1.997983082817
+             les_mean =       4.266101801220
+             stat err =       0.002285617689
+             autocorr =       9.755835966068
+              std dev =       0.523608061432
+             variance =       0.274165401997
+
+Effective weight of all the samples measured by correlated sampling is 0.450447
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.430026449638
+                                         uncertainty =       0.001394181139
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000917098236
+  error estimate for blocks of size 2^( 2) =       0.000964247126
+  error estimate for blocks of size 2^( 3) =       0.001018177267
+  error estimate for blocks of size 2^( 4) =       0.001067668760
+  error estimate for blocks of size 2^( 5) =       0.001120327571
+  error estimate for blocks of size 2^( 6) =       0.001409969598
+  error estimate for blocks of size 2^( 7) =       0.001760419906
+  error estimate for blocks of size 2^( 8) =       0.002168197346
+  error estimate for blocks of size 2^( 9) =       0.002587219947
+  error estimate for blocks of size 2^(10) =       0.002902343780
+  error estimate for blocks of size 2^(11) =       0.003059611431
+  error estimate for blocks of size 2^(12) =       0.003177904943
+
+      target function =                  N/A
+              le_mean =      -2.096069873287
+             les_mean =       4.824135489541
+             stat err =       0.002931770026
+             autocorr =      10.219483176729
+              std dev =       0.656221438113
+             variance =       0.430626575839
+
+Effective weight of all the samples measured by correlated sampling is 0.857601
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.314027084805
+                                         uncertainty =       0.001808484920
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000783262055
+  error estimate for blocks of size 2^( 2) =       0.000775477587
+  error estimate for blocks of size 2^( 3) =       0.000797737017
+  error estimate for blocks of size 2^( 4) =       0.000811663960
+  error estimate for blocks of size 2^( 5) =       0.000835908261
+  error estimate for blocks of size 2^( 6) =       0.001059012845
+  error estimate for blocks of size 2^( 7) =       0.001337236551
+  error estimate for blocks of size 2^( 8) =       0.001671848610
+  error estimate for blocks of size 2^( 9) =       0.001988591735
+  error estimate for blocks of size 2^(10) =       0.002260176858
+  error estimate for blocks of size 2^(11) =       0.002328518031
+  error estimate for blocks of size 2^(12) =       0.002375225878
+
+      target function =                  N/A
+              le_mean =      -2.073992123419
+             les_mean =       4.615554430868
+             stat err =       0.002238128126
+             autocorr =       8.165007030354
+              std dev =       0.560456156058
+             variance =       0.314111102864
+
+Effective weight of all the samples measured by correlated sampling is 0.983778
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.274468332827
+                                         uncertainty =       0.002933478654
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000732412706
+  error estimate for blocks of size 2^( 2) =       0.000700085641
+  error estimate for blocks of size 2^( 3) =       0.000704225408
+  error estimate for blocks of size 2^( 4) =       0.000679135867
+  error estimate for blocks of size 2^( 5) =       0.000653956507
+  error estimate for blocks of size 2^( 6) =       0.000826875354
+  error estimate for blocks of size 2^( 7) =       0.001050948346
+  error estimate for blocks of size 2^( 8) =       0.001340953959
+  error estimate for blocks of size 2^( 9) =       0.001647868976
+  error estimate for blocks of size 2^(10) =       0.001957600854
+  error estimate for blocks of size 2^(11) =       0.002162323392
+  error estimate for blocks of size 2^(12) =       0.002270148585
+
+      target function =                  N/A
+              le_mean =      -2.029119171196
+             les_mean =       4.391975401066
+             stat err =       0.002009485452
+             autocorr =       7.527639991168
+              std dev =       0.524071359789
+             variance =       0.274650790151
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -1.997983082817        initial
+     2.5000e-03     2.5000e-01             2.8302e-01        -2.096069873287  <--
+     1.0000e-02     1.0000e+00             1.6106e-01        -2.073992123419
+     4.0000e-02     4.0000e+00             5.7267e-02        -2.029119171196
+
+*****************************************************************************
+Applying the update for shift_i =   2.5000e-03     and shift_s =   2.5000e-01
+*****************************************************************************
+
+  Execution time = 8.6329e+00
+  </log>
+  <optVariables href="hybrid_ref.s006.opt.xml">
+CSFcoeff_1                -2.099372e-01 3 1  ON 0
+      uu_0                 6.488744e-01 1 1  ON 1
+      uu_1                 3.405463e-01 1 1  ON 2
+      uu_2                 2.236527e-01 1 1  ON 3
+      uu_3                 7.387820e-02 1 1  ON 4
+      uu_4                 1.325064e-01 1 1  ON 5
+      uu_5                 4.326061e-02 1 1  ON 6
+      uu_6                 1.855163e-02 1 1  ON 7
+      uu_7                -1.763812e-02 1 1  ON 8
+      uu_8                -2.722678e-02 1 1  ON 9
+      uu_9                -6.103302e-02 1 1  ON 10
+      ud_0                 9.570003e-01 1 1  ON 11
+      ud_1                 6.126863e-01 1 1  ON 12
+      ud_2                 3.228622e-01 1 1  ON 13
+      ud_3                 1.236792e-01 1 1  ON 14
+      ud_4                 3.643387e-02 1 1  ON 15
+      ud_5                 1.541295e-02 1 1  ON 16
+      ud_6                -1.729715e-02 1 1  ON 17
+      ud_7                 9.718453e-02 1 1  ON 18
+      ud_8                 1.309451e-01 1 1  ON 19
+      ud_9                -8.777730e-03 1 1  ON 20
+      eH_0                 7.470394e-02 1 1  ON 21
+      eH_1                 7.523397e-02 1 1  ON 22
+      eH_2                -4.031740e-02 1 1  ON 23
+      eH_3                -1.287483e-01 1 1  ON 24
+      eH_4                -1.564077e-01 1 1  ON 25
+      eH_5                -1.405972e-01 1 1  ON 26
+      eH_6                -2.038814e-02 1 1  ON 27
+      eH_7                -6.438438e-03 1 1  ON 28
+      eH_8                 1.751964e-02 1 1  ON 29
+      eH_9                 7.220157e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 14.83 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s007
+=========================================================
+test version of OpenMP threading with AdaptiveThreeShift optimizer
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s007
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86562 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 7
+    time step          = 0.05
+    reference energy   = -2.08284
+    reference variance = 0.441432
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+=============================================
+  Execution time = 4.1366e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.0828e+00
+  VMC Evar = 4.4143e-01
+  Total weights = 3.2000e+04
+  Execution time = 1.3139e+00
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.433539082806
+                                         uncertainty =       0.009466306682
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.003714213183
+  error estimate for blocks of size 2^( 2) =       0.003717944939
+  error estimate for blocks of size 2^( 3) =       0.003699412086
+  error estimate for blocks of size 2^( 4) =       0.003688809562
+  error estimate for blocks of size 2^( 5) =       0.003725543767
+  error estimate for blocks of size 2^( 6) =       0.004736981981
+  error estimate for blocks of size 2^( 7) =       0.005924142133
+  error estimate for blocks of size 2^( 8) =       0.007158994151
+
+      target function =                  N/A
+              le_mean =      -2.082867732917
+             les_mean =       4.779776343763
+             stat err =       0.005386415508
+             autocorr =       2.103195390415
+              std dev =       0.664408271274
+             variance =       0.441438350938
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy -2.082867732917e+00
+*************************************************************************************************
+
+shift_s 6.25e-02   vec 0   target =      -2.139628368229 +             0.00 i    delta =   -0.056707413976
+shift_s 2.50e-01   vec 0   target =      -2.134840914721 +             0.00 i    delta =   -0.051919960467
+shift_s 1.00e+00   vec 0   target =      -2.123477355111 +             0.00 i    delta =   -0.040556400857
+shift_s 6.25e-02   vec 0   target =      -2.127988976947 +             0.00 i    delta =   -0.045068022694
+shift_s 2.50e-01   vec 0   target =      -2.125281567368 +             0.00 i    delta =   -0.042360613114
+shift_s 1.00e+00   vec 0   target =      -2.118313048115 +             0.00 i    delta =   -0.035392093862
+  Execution time = 5.4553e+00
+  </log>
+  <optVariables href="hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -2.099372e-01 3 1  ON 0
+      uu_0                 6.488744e-01 1 1  ON 1
+      uu_1                 3.405463e-01 1 1  ON 2
+      uu_2                 2.236527e-01 1 1  ON 3
+      uu_3                 7.387820e-02 1 1  ON 4
+      uu_4                 1.325064e-01 1 1  ON 5
+      uu_5                 4.326061e-02 1 1  ON 6
+      uu_6                 1.855163e-02 1 1  ON 7
+      uu_7                -1.763812e-02 1 1  ON 8
+      uu_8                -2.722678e-02 1 1  ON 9
+      uu_9                -6.103302e-02 1 1  ON 10
+      ud_0                 9.570003e-01 1 1  ON 11
+      ud_1                 6.126863e-01 1 1  ON 12
+      ud_2                 3.228622e-01 1 1  ON 13
+      ud_3                 1.236792e-01 1 1  ON 14
+      ud_4                 3.643387e-02 1 1  ON 15
+      ud_5                 1.541295e-02 1 1  ON 16
+      ud_6                -1.729715e-02 1 1  ON 17
+      ud_7                 9.718453e-02 1 1  ON 18
+      ud_8                 1.309451e-01 1 1  ON 19
+      ud_9                -8.777730e-03 1 1  ON 20
+      eH_0                 7.470394e-02 1 1  ON 21
+      eH_1                 7.523397e-02 1 1  ON 22
+      eH_2                -4.031740e-02 1 1  ON 23
+      eH_3                -1.287483e-01 1 1  ON 24
+      eH_4                -1.564077e-01 1 1  ON 25
+      eH_5                -1.405972e-01 1 1  ON 26
+      eH_6                -2.038814e-02 1 1  ON 27
+      eH_7                -6.438438e-03 1 1  ON 28
+      eH_8                 1.751964e-02 1 1  ON 29
+      eH_9                 7.220157e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 7
+    time step          = 0.05
+    reference energy   = -2.10536
+    reference variance = 0.411227
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86563 MiB
+Memory footprint by rank 0 on node 0       :     191 MiB
+=============================================
+  Execution time = 4.092
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.105
+  VMC Evar = 0.4112
+  Total weights = 3.2e+04
+  Execution time = 1.961
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 6.25e-02   vec 0   target =      -2.107809391355 +             0.00 i    delta =   -0.024941658439
+shift_s 2.50e-01   vec 0   target =      -2.107212943604 +             0.00 i    delta =   -0.024345210688
+shift_s 1.00e+00   vec 0   target =      -2.106305454927 +             0.00 i    delta =   -0.023437722011
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 6.053
+  </log>
+  <optVariables href="hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -1.701938e-01 3 1  ON 0
+      uu_0                 6.484917e-01 1 1  ON 1
+      uu_1                 3.260998e-01 1 1  ON 2
+      uu_2                 2.072206e-01 1 1  ON 3
+      uu_3                 4.975418e-02 1 1  ON 4
+      uu_4                 1.207067e-01 1 1  ON 5
+      uu_5                 4.382554e-02 1 1  ON 6
+      uu_6                 2.494395e-02 1 1  ON 7
+      uu_7                 1.988531e-03 1 1  ON 8
+      uu_8                -2.914733e-03 1 1  ON 9
+      uu_9                -3.486319e-02 1 1  ON 10
+      ud_0                 9.612503e-01 1 1  ON 11
+      ud_1                 6.146963e-01 1 1  ON 12
+      ud_2                 3.324133e-01 1 1  ON 13
+      ud_3                 1.382832e-01 1 1  ON 14
+      ud_4                 4.373935e-02 1 1  ON 15
+      ud_5                 1.513778e-02 1 1  ON 16
+      ud_6                -1.788556e-02 1 1  ON 17
+      ud_7                 9.775796e-02 1 1  ON 18
+      ud_8                 1.315474e-01 1 1  ON 19
+      ud_9                -9.569953e-03 1 1  ON 20
+      eH_0                 7.541722e-02 1 1  ON 21
+      eH_1                 7.590197e-02 1 1  ON 22
+      eH_2                -3.942361e-02 1 1  ON 23
+      eH_3                -1.291835e-01 1 1  ON 24
+      eH_4                -1.569654e-01 1 1  ON 25
+      eH_5                -1.411617e-01 1 1  ON 26
+      eH_6                -2.031310e-02 1 1  ON 27
+      eH_7                -6.515892e-03 1 1  ON 28
+      eH_8                 1.756425e-02 1 1  ON 29
+      eH_9                 7.290933e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+Effective weight of all the samples measured by correlated sampling is 1
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.410511663523
+                                         uncertainty =       0.001975488897
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000896203216
+  error estimate for blocks of size 2^( 2) =       0.000893033787
+  error estimate for blocks of size 2^( 3) =       0.000871760702
+  error estimate for blocks of size 2^( 4) =       0.000889931655
+  error estimate for blocks of size 2^( 5) =       0.000910898465
+  error estimate for blocks of size 2^( 6) =       0.001146907040
+  error estimate for blocks of size 2^( 7) =       0.001422152294
+  error estimate for blocks of size 2^( 8) =       0.001658506775
+  error estimate for blocks of size 2^( 9) =       0.001894877779
+  error estimate for blocks of size 2^(10) =       0.002106439310
+  error estimate for blocks of size 2^(11) =       0.002111825622
+  error estimate for blocks of size 2^(12) =       0.002200645295
+
+      target function =                  N/A
+              le_mean =      -2.105361357305
+             les_mean =       4.843773906368
+             stat err =       0.002078447002
+             autocorr =       5.378556831412
+              std dev =       0.641270193861
+             variance =       0.411227461535
+
+Effective weight of all the samples measured by correlated sampling is 0.985151
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.411456647140
+                                         uncertainty =       0.002050002795
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000897110296
+  error estimate for blocks of size 2^( 2) =       0.000897387323
+  error estimate for blocks of size 2^( 3) =       0.000879177023
+  error estimate for blocks of size 2^( 4) =       0.000900998461
+  error estimate for blocks of size 2^( 5) =       0.000922728028
+  error estimate for blocks of size 2^( 6) =       0.001163330162
+  error estimate for blocks of size 2^( 7) =       0.001439473977
+  error estimate for blocks of size 2^( 8) =       0.001679109353
+  error estimate for blocks of size 2^( 9) =       0.001929057283
+  error estimate for blocks of size 2^(10) =       0.002138978341
+  error estimate for blocks of size 2^(11) =       0.002147009972
+  error estimate for blocks of size 2^(12) =       0.002213913723
+
+      target function =                  N/A
+              le_mean =      -2.107847854050
+             les_mean =       4.855082895520
+             stat err =       0.002107239830
+             autocorr =       5.517433389369
+              std dev =       0.641919247023
+             variance =       0.412060319698
+
+Effective weight of all the samples measured by correlated sampling is 0.991745
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.410850468773
+                                         uncertainty =       0.002032559551
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000896482418
+  error estimate for blocks of size 2^( 2) =       0.000895428864
+  error estimate for blocks of size 2^( 3) =       0.000876084981
+  error estimate for blocks of size 2^( 4) =       0.000896936547
+  error estimate for blocks of size 2^( 5) =       0.000918478412
+  error estimate for blocks of size 2^( 6) =       0.001157642608
+  error estimate for blocks of size 2^( 7) =       0.001433186878
+  error estimate for blocks of size 2^( 8) =       0.001671616555
+  error estimate for blocks of size 2^( 9) =       0.001917743421
+  error estimate for blocks of size 2^(10) =       0.002128238700
+  error estimate for blocks of size 2^(11) =       0.002136231895
+  error estimate for blocks of size 2^(12) =       0.002209230157
+
+      target function =                  N/A
+              le_mean =      -2.107604374513
+             les_mean =       4.853479927261
+             stat err =       0.002097861043
+             autocorr =       5.476091950573
+              std dev =       0.641469974195
+             variance =       0.411483727794
+
+Effective weight of all the samples measured by correlated sampling is 0.997985
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.410393971555
+                                         uncertainty =       0.002005210456
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000896031714
+  error estimate for blocks of size 2^( 2) =       0.000893574263
+  error estimate for blocks of size 2^( 3) =       0.000873006011
+  error estimate for blocks of size 2^( 4) =       0.000892491018
+  error estimate for blocks of size 2^( 5) =       0.000913753986
+  error estimate for blocks of size 2^( 6) =       0.001151126540
+  error estimate for blocks of size 2^( 7) =       0.001426253498
+  error estimate for blocks of size 2^( 8) =       0.001663383387
+  error estimate for blocks of size 2^( 9) =       0.001904314433
+  error estimate for blocks of size 2^(10) =       0.002115496425
+  error estimate for blocks of size 2^(11) =       0.002122715430
+  error estimate for blocks of size 2^(12) =       0.002204158266
+
+      target function =                  N/A
+              le_mean =      -2.106772017318
+             les_mean =       4.849558420437
+             stat err =       0.002086671139
+             autocorr =       5.423280958079
+              std dev =       0.641147477171
+             variance =       0.411070087483
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -2.105361357305        initial
+     6.2500e-04     6.2500e-02             5.2358e-02        -2.107847854050  <--
+     2.5000e-03     2.5000e-01             3.9743e-02        -2.107604374513
+     1.0000e-02     1.0000e+00             2.0219e-02        -2.106772017318
+
+*****************************************************************************
+Applying the update for shift_i =   6.2500e-04     and shift_s =   6.2500e-02
+*****************************************************************************
+
+  Execution time = 8.6136e+00
+  </log>
+  <optVariables href="hybrid_ref.s007.opt.xml">
+CSFcoeff_1                -1.575788e-01 3 1  ON 0
+      uu_0                 6.483703e-01 1 1  ON 1
+      uu_1                 3.215144e-01 1 1  ON 2
+      uu_2                 2.020048e-01 1 1  ON 3
+      uu_3                 4.209693e-02 1 1  ON 4
+      uu_4                 1.169614e-01 1 1  ON 5
+      uu_5                 4.400486e-02 1 1  ON 6
+      uu_6                 2.697294e-02 1 1  ON 7
+      uu_7                 8.218259e-03 1 1  ON 8
+      uu_8                 4.802196e-03 1 1  ON 9
+      uu_9                -2.655658e-02 1 1  ON 10
+      ud_0                 9.625993e-01 1 1  ON 11
+      ud_1                 6.153343e-01 1 1  ON 12
+      ud_2                 3.354449e-01 1 1  ON 13
+      ud_3                 1.429187e-01 1 1  ON 14
+      ud_4                 4.605819e-02 1 1  ON 15
+      ud_5                 1.505044e-02 1 1  ON 16
+      ud_6                -1.807233e-02 1 1  ON 17
+      ud_7                 9.793997e-02 1 1  ON 18
+      ud_8                 1.317386e-01 1 1  ON 19
+      ud_9                -9.821414e-03 1 1  ON 20
+      eH_0                 7.564363e-02 1 1  ON 21
+      eH_1                 7.611401e-02 1 1  ON 22
+      eH_2                -3.913991e-02 1 1  ON 23
+      eH_3                -1.293217e-01 1 1  ON 24
+      eH_4                -1.571425e-01 1 1  ON 25
+      eH_5                -1.413409e-01 1 1  ON 26
+      eH_6                -2.028928e-02 1 1  ON 27
+      eH_7                -6.540476e-03 1 1  ON 28
+      eH_8                 1.757841e-02 1 1  ON 29
+      eH_9                 7.313398e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 14.16 secs
+
+=========================================================
+  Start QMCLinearOptimizeBatched
+  File Root hybrid_ref.s008
+=========================================================
+test version of OpenMP threading with AdaptiveThreeShift optimizer
+<estimator> nodes not contained in <estimators>...</estimators> is a deprecated input xml idiom
+  Random walking with drift
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s008
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+VMCBatched Driver collecting samples, samples per rank = 32000
+                                      total samples    = 32000
+ Using QMCCostFunctionBatched::QMCCostFunctionBatched
+ Using Default Cost Function: Cost = <|E-E_ff|^2>
+Doing hybrid run
+This is methodName: adaptive
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 8
+    time step          = 0.05
+    reference energy   = -2.11149
+    reference variance = 0.426169
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=============================================
+  Execution time = 4.1693e+00
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.1115e+00
+  VMC Evar = 4.2617e-01
+  Total weights = 3.2000e+04
+  Execution time = 1.3195e+00
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.419337635004
+                                         uncertainty =       0.005729984250
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.003649410647
+  error estimate for blocks of size 2^( 2) =       0.003665055480
+  error estimate for blocks of size 2^( 3) =       0.003692768665
+  error estimate for blocks of size 2^( 4) =       0.003663348357
+  error estimate for blocks of size 2^( 5) =       0.003733061905
+  error estimate for blocks of size 2^( 6) =       0.004741251625
+  error estimate for blocks of size 2^( 7) =       0.005933679365
+  error estimate for blocks of size 2^( 8) =       0.007239988517
+
+      target function =                  N/A
+              le_mean =      -2.111492014296
+             les_mean =       4.884567546383
+             stat err =       0.005411995353
+             autocorr =       2.199292192762
+              std dev =       0.652816222186
+             variance =       0.426169019949
+
+
+*************************************************************************************************
+Solving the linear method equations on the initial sample with initial energy -2.111492014296e+00
+*************************************************************************************************
+
+shift_s 1.56e-02   vec 0   target =      -2.121169695834 +             0.00 i    delta =   -0.009596459895
+shift_s 6.25e-02   vec 0   target =      -2.120647409618 +             0.00 i    delta =   -0.009074173679
+shift_s 2.50e-01   vec 0   target =      -2.119094632562 +             0.00 i    delta =   -0.007521396623
+shift_s 1.56e-02   vec 0   target =      -2.153117600673 +             0.00 i    delta =   -0.041544364734
+shift_s 6.25e-02   vec 0   target =      -2.152413390509 +             0.00 i    delta =   -0.040840154570
+shift_s 2.50e-01   vec 0   target =      -2.150001222470 +             0.00 i    delta =   -0.038427986532
+  Execution time = 5.4934e+00
+  </log>
+  <optVariables href="hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.575788e-01 3 1  ON 0
+      uu_0                 6.483703e-01 1 1  ON 1
+      uu_1                 3.215144e-01 1 1  ON 2
+      uu_2                 2.020048e-01 1 1  ON 3
+      uu_3                 4.209693e-02 1 1  ON 4
+      uu_4                 1.169614e-01 1 1  ON 5
+      uu_5                 4.400486e-02 1 1  ON 6
+      uu_6                 2.697294e-02 1 1  ON 7
+      uu_7                 8.218259e-03 1 1  ON 8
+      uu_8                 4.802196e-03 1 1  ON 9
+      uu_9                -2.655658e-02 1 1  ON 10
+      ud_0                 9.625993e-01 1 1  ON 11
+      ud_1                 6.153343e-01 1 1  ON 12
+      ud_2                 3.354449e-01 1 1  ON 13
+      ud_3                 1.429187e-01 1 1  ON 14
+      ud_4                 4.605819e-02 1 1  ON 15
+      ud_5                 1.505044e-02 1 1  ON 16
+      ud_6                -1.807233e-02 1 1  ON 17
+      ud_7                 9.793997e-02 1 1  ON 18
+      ud_8                 1.317386e-01 1 1  ON 19
+      ud_9                -9.821414e-03 1 1  ON 20
+      eH_0                 7.564363e-02 1 1  ON 21
+      eH_1                 7.611401e-02 1 1  ON 22
+      eH_2                -3.913991e-02 1 1  ON 23
+      eH_3                -1.293217e-01 1 1  ON 24
+      eH_4                -1.571425e-01 1 1  ON 25
+      eH_5                -1.413409e-01 1 1  ON 26
+      eH_6                -2.028928e-02 1 1  ON 27
+      eH_7                -6.540476e-03 1 1  ON 28
+      eH_8                 1.757841e-02 1 1  ON 29
+      eH_9                 7.313398e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+entering engine_start function
+<optimization-report>
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 8
+    time step          = 0.05
+    reference energy   = -2.10534
+    reference variance = 0.437265
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86561 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=============================================
+  Execution time = 4.115
+</vmc>
+<opt stage="setup">
+  <log>
+     Reading configurations from h5FileRoot 
+  Using Nonlocal PP in Opt: no
+  VMC Eavg = -2.105
+  VMC Evar = 0.4373
+  Total weights = 3.2e+04
+  Execution time = 1.97
+  </log>
+</opt>
+<opt stage="main" walkers="32000">
+  <log>
+
+*********************************************************
+Solving the linear method equations on the initial sample
+*********************************************************
+
+shift_s 1.56e-02   vec 0   target =      -2.105178742336 +             0.00 i    delta =    0.006313271959
+shift_s 6.25e-02   vec 0   target =      -2.105194762791 +             0.00 i    delta =    0.006297251504
+shift_s 2.50e-01   vec 0   target =      -2.105240039020 +             0.00 i    delta =    0.006251975275
+
+
+************************************************************
+Updating the guiding function with the middle shift's update
+************************************************************
+
+  Execution time = 6.086
+  </log>
+  <optVariables href="hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.385224e-01 3 1  ON 0
+      uu_0                 6.479003e-01 1 1  ON 1
+      uu_1                 3.173474e-01 1 1  ON 2
+      uu_2                 1.990696e-01 1 1  ON 3
+      uu_3                 3.923592e-02 1 1  ON 4
+      uu_4                 1.149543e-01 1 1  ON 5
+      uu_5                 4.482229e-02 1 1  ON 6
+      uu_6                 2.795471e-02 1 1  ON 7
+      uu_7                 1.040878e-02 1 1  ON 8
+      uu_8                 9.377060e-03 1 1  ON 9
+      uu_9                -2.052498e-02 1 1  ON 10
+      ud_0                 9.584316e-01 1 1  ON 11
+      ud_1                 6.108332e-01 1 1  ON 12
+      ud_2                 3.357614e-01 1 1  ON 13
+      ud_3                 1.449010e-01 1 1  ON 14
+      ud_4                 4.681052e-02 1 1  ON 15
+      ud_5                 1.505027e-02 1 1  ON 16
+      ud_6                -1.807270e-02 1 1  ON 17
+      ud_7                 9.794032e-02 1 1  ON 18
+      ud_8                 1.317390e-01 1 1  ON 19
+      ud_9                -9.821903e-03 1 1  ON 20
+      eH_0                 7.564407e-02 1 1  ON 21
+      eH_1                 7.611442e-02 1 1  ON 22
+      eH_2                -3.913936e-02 1 1  ON 23
+      eH_3                -1.293219e-01 1 1  ON 24
+      eH_4                -1.571428e-01 1 1  ON 25
+      eH_5                -1.413412e-01 1 1  ON 26
+      eH_6                -2.028924e-02 1 1  ON 27
+      eH_7                -6.540524e-03 1 1  ON 28
+      eH_8                 1.757844e-02 1 1  ON 29
+      eH_9                 7.313442e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+
+*************************************************************
+Generating a new sample based on the updated guiding function
+*************************************************************
+
+
+******************************************************************
+Comparing different shifts' cost function values on updated sample
+******************************************************************
+
+Effective weight of all the samples measured by correlated sampling is 1
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.436401236047
+                                         uncertainty =       0.002517519207
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000924139733
+  error estimate for blocks of size 2^( 2) =       0.000921516463
+  error estimate for blocks of size 2^( 3) =       0.000914571052
+  error estimate for blocks of size 2^( 4) =       0.000908038497
+  error estimate for blocks of size 2^( 5) =       0.000912559397
+  error estimate for blocks of size 2^( 6) =       0.001154371332
+  error estimate for blocks of size 2^( 7) =       0.001431836365
+  error estimate for blocks of size 2^( 8) =       0.001724474371
+  error estimate for blocks of size 2^( 9) =       0.001863675262
+  error estimate for blocks of size 2^(10) =       0.002135640252
+  error estimate for blocks of size 2^(11) =       0.002394011563
+  error estimate for blocks of size 2^(12) =       0.002635090020
+
+      target function =                  N/A
+              le_mean =      -2.105342796598
+             les_mean =       4.869732971568
+             stat err =       0.002257104274
+             autocorr =       5.965252183109
+              std dev =       0.661259918929
+             variance =       0.437264680382
+
+Effective weight of all the samples measured by correlated sampling is 0.996826
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.433936295231
+                                         uncertainty =       0.002474348525
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000921478870
+  error estimate for blocks of size 2^( 2) =       0.000918914100
+  error estimate for blocks of size 2^( 3) =       0.000911629361
+  error estimate for blocks of size 2^( 4) =       0.000904197526
+  error estimate for blocks of size 2^( 5) =       0.000912546339
+  error estimate for blocks of size 2^( 6) =       0.001154414133
+  error estimate for blocks of size 2^( 7) =       0.001433124732
+  error estimate for blocks of size 2^( 8) =       0.001729638458
+  error estimate for blocks of size 2^( 9) =       0.001866680054
+  error estimate for blocks of size 2^(10) =       0.002140302357
+  error estimate for blocks of size 2^(11) =       0.002410699313
+  error estimate for blocks of size 2^(12) =       0.002636253992
+
+      target function =                  N/A
+              le_mean =      -2.105451100969
+             les_mean =       4.867674623049
+             stat err =       0.002263483929
+             autocorr =       6.033716724546
+              std dev =       0.659355961888
+             variance =       0.434750284477
+
+Effective weight of all the samples measured by correlated sampling is 0.997304
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.434098189676
+                                         uncertainty =       0.002477303316
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000921654181
+  error estimate for blocks of size 2^( 2) =       0.000919032807
+  error estimate for blocks of size 2^( 3) =       0.000911742086
+  error estimate for blocks of size 2^( 4) =       0.000904358508
+  error estimate for blocks of size 2^( 5) =       0.000912402971
+  error estimate for blocks of size 2^( 6) =       0.001154221480
+  error estimate for blocks of size 2^( 7) =       0.001432779166
+  error estimate for blocks of size 2^( 8) =       0.001728924188
+  error estimate for blocks of size 2^( 9) =       0.001866053498
+  error estimate for blocks of size 2^(10) =       0.002139396590
+  error estimate for blocks of size 2^(11) =       0.002408658562
+  error estimate for blocks of size 2^(12) =       0.002635367171
+
+      target function =                  N/A
+              le_mean =      -2.105473480533
+             les_mean =       4.867934299913
+             stat err =       0.002262368955
+             autocorr =       6.025480955119
+              std dev =       0.659481404352
+             variance =       0.434915722687
+
+Effective weight of all the samples measured by correlated sampling is 0.998437
+energy and target function accumulation statistics:
+
+
+
+Crude block analysis of variance gives:     variance =       0.434580100266
+                                         uncertainty =       0.002485983867
+
+Now for a blocking analysis of energy uncertainty:
+
+  error estimate for blocks of size 2^( 1) =       0.000922175555
+  error estimate for blocks of size 2^( 2) =       0.000919441919
+  error estimate for blocks of size 2^( 3) =       0.000912164950
+  error estimate for blocks of size 2^( 4) =       0.000904938175
+  error estimate for blocks of size 2^( 5) =       0.000912132659
+  error estimate for blocks of size 2^( 6) =       0.001153854162
+  error estimate for blocks of size 2^( 7) =       0.001432034265
+  error estimate for blocks of size 2^( 8) =       0.001727205117
+  error estimate for blocks of size 2^( 9) =       0.001864659130
+  error estimate for blocks of size 2^(10) =       0.002137358410
+  error estimate for blocks of size 2^(11) =       0.002403609835
+  error estimate for blocks of size 2^(12) =       0.002633621361
+
+      target function =                  N/A
+              le_mean =      -2.105509145090
+             les_mean =       4.868576679751
+             stat err =       0.002259812184
+             autocorr =       6.005073514566
+              std dev =       0.659854468571
+             variance =       0.435407919693
+
+
+        shift_i        shift_s       max param change    cost function value
+   ------------   ------------   --------------------   --------------------
+            N/A            N/A                    N/A        -2.105342796598        initial
+     1.5625e-04     1.5625e-02             2.0624e-02        -2.105451100969
+     6.2500e-04     6.2500e-02             1.9056e-02        -2.105473480533
+     2.5000e-03     2.5000e-01             1.4615e-02        -2.105509145090  <--
+
+*****************************************************************************
+Applying the update for shift_i =   2.5000e-03     and shift_s =   2.5000e-01
+*****************************************************************************
+
+  Execution time = 8.6566e+00
+  </log>
+  <optVariables href="hybrid_ref.s008.opt.xml">
+CSFcoeff_1                -1.429642e-01 3 1  ON 0
+      uu_0                 6.480098e-01 1 1  ON 1
+      uu_1                 3.183187e-01 1 1  ON 2
+      uu_2                 1.997537e-01 1 1  ON 3
+      uu_3                 3.990279e-02 1 1  ON 4
+      uu_4                 1.154222e-01 1 1  ON 5
+      uu_5                 4.463176e-02 1 1  ON 6
+      uu_6                 2.772587e-02 1 1  ON 7
+      uu_7                 9.898199e-03 1 1  ON 8
+      uu_8                 8.310721e-03 1 1  ON 9
+      uu_9                -2.193086e-02 1 1  ON 10
+      ud_0                 9.594030e-01 1 1  ON 11
+      ud_1                 6.118824e-01 1 1  ON 12
+      ud_2                 3.356876e-01 1 1  ON 13
+      ud_3                 1.444389e-01 1 1  ON 14
+      ud_4                 4.663516e-02 1 1  ON 15
+      ud_5                 1.505031e-02 1 1  ON 16
+      ud_6                -1.807261e-02 1 1  ON 17
+      ud_7                 9.794024e-02 1 1  ON 18
+      ud_8                 1.317389e-01 1 1  ON 19
+      ud_9                -9.821789e-03 1 1  ON 20
+      eH_0                 7.564397e-02 1 1  ON 21
+      eH_1                 7.611432e-02 1 1  ON 22
+      eH_2                -3.913949e-02 1 1  ON 23
+      eH_3                -1.293219e-01 1 1  ON 24
+      eH_4                -1.571427e-01 1 1  ON 25
+      eH_5                -1.413411e-01 1 1  ON 26
+      eH_6                -2.028925e-02 1 1  ON 27
+      eH_7                -6.540513e-03 1 1  ON 28
+      eH_8                 1.757843e-02 1 1  ON 29
+      eH_9                 7.313432e-02 1 1  ON 30
+  </optVariables>
+</opt>
+</optimization-report>
+Finished a hybrid step
+  QMC Execution time = 14.16 secs
+
+========================================
+  Reading VMC driver XML input section
+========================================
+  Random walking with drift
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+EstimatorManager setup for this section:
+  Main Estimator:  LocalEnergy
+
+=========================================================
+  Start VMCBatched
+  File Root hybrid_ref.s009
+=========================================================
+==============================================================
+--- Memory usage report : VMCBatched before initialization ---
+==============================================================
+Available memory on node 0, free + buffers :   86583 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+==============================================================
+VMCBatched Driver running with
+             total_walkers     = 16
+             walkers_per_rank  = [16]
+             num_crowds        = 16
+  on rank 0, walkers_per_crowd = [1(x16)]
+
+===================================================================
+--- Memory usage report : VMCBatched after initialLogEvaluation ---
+===================================================================
+Available memory on node 0, free + buffers :   86583 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+===================================================================
+Warm-up is completed!
+=====================================================
+--- Memory usage report : VMCBatched after Warmup ---
+=====================================================
+Available memory on node 0, free + buffers :   86583 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=====================================================
+====================================================
+  End of a VMC block
+    QMC counter        = 9
+    time step          = 0.05
+    reference energy   = -2.10456
+    reference variance = 0.426941
+====================================================
+=============================================
+--- Memory usage report : VMCBatched ends ---
+=============================================
+Available memory on node 0, free + buffers :   86882 MiB
+Memory footprint by rank 0 on node 0       :     194 MiB
+=============================================
+  QMC Execution time = 1212 secs
+  Total Execution time = 1285 secs
+
+=========================================================
+  A new xml input file : hybrid_ref.s009.cont.xml
+
+Use --enable-timers=<value> command line option to increase or decrease level of timing information
+Stack timer profile
+Timer                       Inclusive_time  Exclusive_time  Calls       Time_per_call
+Total                       1285.5208     0.0012              1    1285.520808296
+  QMCLinearOptimizeBatched    73.5442     0.0198              1      73.544200217
+    VMCBatched                73.5244    73.5244              9       8.169376226
+  Startup                      0.0360     0.0360              1       0.035980882
+  VMCBatched                1211.9394  1211.9394              1    1211.939401675
+
+QMCPACK execution completed successfully

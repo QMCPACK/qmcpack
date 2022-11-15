@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2022 QMCPACK developers.
+//
+// File developed by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
+//
+// File created by: Yubo "Paul" Yang, yubo.paul.yang@gmail.com, CCQ @ Flatiron
+//////////////////////////////////////////////////////////////////////////////////////
 #include "catch.hpp"
 
 #include "Particle/ParticleSet.h"
@@ -194,7 +204,7 @@ TEST_CASE("Coulomb PBC A-A Ewald2D tri. in rect.", "[hamiltonian]")
   elec.setName("e");
   elec.create({2});
   elec.R[0] = {0.0, 0.0, 0.0};
-  elec.R[1] = {alat/2, std::sqrt(3)*alat/2, 0.0};
+  elec.R[1] = {alat/2, std::sqrt(3.0)*alat/2, 0.0};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");

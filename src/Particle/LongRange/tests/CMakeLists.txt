@@ -13,7 +13,7 @@ set(SRC_DIR longrange)
 set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
-add_executable(${UTEST_EXE} test_lrhandler.cpp test_ewald3d.cpp test_temp.cpp test_srcoul.cpp test_StructFact.cpp)
+add_executable(${UTEST_EXE} test_lrhandler.cpp test_ewald3d.cpp test_temp.cpp test_srcoul.cpp test_StructFact.cpp test_kcontainer.cpp)
 target_link_libraries(${UTEST_EXE} catch_main qmcparticle)
 if(USE_OBJECT_TARGET)
   target_link_libraries(${UTEST_EXE} qmcutil qmcparticle_omptarget)

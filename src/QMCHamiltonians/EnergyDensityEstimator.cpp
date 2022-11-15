@@ -477,35 +477,34 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 }
 
 
-void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  hid_t g = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  file.push(name_, true);
   h5desc.emplace_back("variables");
   auto& oh = h5desc.back();
-  oh.open(g);
-  oh.addProperty(const_cast<int&>(nparticles), "nparticles");
+  oh.open(file);
+  oh.addProperty(const_cast<int&>(nparticles), "nparticles", file);
   int nspacegrids = spacegrids.size();
-  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids");
-  oh.addProperty(const_cast<int&>(nsamples), "nsamples");
+  oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids", file);
+  oh.addProperty(const_cast<int&>(nsamples), "nsamples", file);
   if (ion_points)
   {
-    oh.addProperty(const_cast<int&>(nions), "nions");
-    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions");
+    oh.addProperty(const_cast<int&>(nions), "nions", file);
+    oh.addProperty(const_cast<Matrix<RealType>&>(Rion), "ion_positions", file);
   }
 
-
-  ref.save(h5desc, g);
+  ref.save(h5desc, file);
 
   h5desc.emplace_back("outside");
   auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
   ohOutside.set_dimensions(ng, outside_buffer_offset);
-  ohOutside.open(g);
+  ohOutside.open(file);
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
-    sg.registerCollectables(h5desc, g, i);
+    sg.registerCollectables(h5desc, file, i);
   }
   if (ion_points)
   {
@@ -516,8 +515,9 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
     h5desc.emplace_back("ions");
     auto& ohIons = h5desc.back();
     ohIons.set_dimensions(ng2, ion_buffer_offset);
-    ohIons.open(g);
+    ohIons.open(file);
   }
+  file.pop();
 }
 
 void EnergyDensityEstimator::setObservables(PropertySetType& plist)

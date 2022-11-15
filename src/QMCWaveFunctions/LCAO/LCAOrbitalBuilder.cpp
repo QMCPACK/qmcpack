@@ -452,13 +452,12 @@ LCAOrbitalBuilder::BasisSet_t* LCAOrbitalBuilder::createBasisSetH5()
 std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   ReportEngine PRE(ClassName, "createSPO(xmlNodePtr)");
-  std::string spo_name(""), id, cusp_file(""), optimize("no");
+  std::string spo_name(""), cusp_file(""), optimize("no");
   std::string basisset_name("LCAOBSet");
   OhmmsAttributeSet spoAttrib;
   spoAttrib.add(spo_name, "name");
-  spoAttrib.add(id, "id");
+  spoAttrib.add(spo_name, "id");
   spoAttrib.add(cusp_file, "cuspInfo");
-  spoAttrib.add(optimize, "optimize");
   spoAttrib.add(basisset_name, "basisset");
   spoAttrib.put(cur);
 
@@ -468,9 +467,6 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     myBasisSet.reset(basisset_map_[basisset_name]->makeClone());
 
-  if (optimize == "yes")
-    app_log() << "  SPOSet " << spo_name << " is optimizable\n";
-
   std::unique_ptr<LCAOrbitalSet> lcos;
   if (doCuspCorrection)
   {
@@ -479,12 +475,11 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
         "LCAOrbitalBuilder::createSPOSetFromXML cusp correction is not supported on complex LCAO.");
 #else
     app_summary() << "        Using cusp correction." << std::endl;
-    lcos =
-        std::make_unique<LCAOrbitalSetWithCorrection>(sourcePtcl, targetPtcl, std::move(myBasisSet), optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSetWithCorrection>(spo_name, sourcePtcl, targetPtcl, std::move(myBasisSet));
 #endif
   }
   else
-    lcos = std::make_unique<LCAOrbitalSet>(std::move(myBasisSet), optimize == "yes");
+    lcos = std::make_unique<LCAOrbitalSet>(spo_name, std::move(myBasisSet));
   loadMO(*lcos, cur);
 
 #if !defined(QMC_COMPLEX)
@@ -502,29 +497,40 @@ std::unique_ptr<SPOSet> LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
     const int num_centers = sourcePtcl.getTotalNum();
     auto& lcwc            = dynamic_cast<LCAOrbitalSetWithCorrection&>(*lcos);
 
-    // Sometimes sposet attribute is 'name' and sometimes it is 'id'
-    if (id == "")
-      id = spo_name;
-
     const int orbital_set_size = lcos->getOrbitalSetSize();
     Matrix<CuspCorrectionParameters> info(num_centers, orbital_set_size);
 
-    /// use int instead of bool to handle MPI bcast properly.
-    int valid = false;
-    if (myComm->rank() == 0)
-      valid = readCuspInfo(cusp_file, id, orbital_set_size, info);
+    // set a default file name if not given
+    if (cusp_file.empty())
+      cusp_file = spo_name + ".cuspInfo.xml";
 
+    bool file_exists(myComm->rank() == 0 && std::ifstream(cusp_file).good());
+    myComm->bcast(file_exists);
+    app_log() << "  Cusp correction file " << cusp_file << (file_exists? " exits.": " doesn't exist.") << std::endl;
+
+    // validate file if it exists
+    if (file_exists)
+    {
+      bool valid = 0;
+      if (myComm->rank() == 0)
+        valid = readCuspInfo(cusp_file, spo_name, orbital_set_size, info);
+      myComm->bcast(valid);
+      if (!valid)
+        myComm->barrier_and_abort("Invalid cusp correction file " + cusp_file);
 #ifdef HAVE_MPI
-    myComm->comm.broadcast_value(valid);
-    if (valid)
       for (int orb_idx = 0; orb_idx < orbital_set_size; orb_idx++)
         for (int center_idx = 0; center_idx < num_centers; center_idx++)
           broadcastCuspInfo(info(center_idx, orb_idx), *myComm, 0);
 #endif
-    if (!valid)
-      generateCuspInfo(orbital_set_size, num_centers, info, tmp_targetPtcl, sourcePtcl, lcwc, id, *myComm);
+    }
+    else
+    {
+      generateCuspInfo(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name, *myComm);
+      if (myComm->rank() == 0)
+        saveCusp(cusp_file, info, spo_name);
+    }
 
-    applyCuspCorrection(info, num_centers, orbital_set_size, tmp_targetPtcl, sourcePtcl, lcwc, id);
+    applyCuspCorrection(info, tmp_targetPtcl, sourcePtcl, lcwc, spo_name);
   }
 #endif
 
@@ -661,7 +667,6 @@ bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-#if defined(HAVE_LIBHDF5)
   int neigs  = spo.getBasisSetSize();
   int setVal = -1;
   std::string setname;
@@ -723,9 +728,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
     }
   }
   myComm->bcast(spo.C->data(), spo.C->size());
-#else
-  APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
-#endif
   return true;
 }
 
@@ -736,7 +738,6 @@ bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
    */
 bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
 {
-#if defined(HAVE_LIBHDF5)
   ReportEngine PRE("LCAOrbitalBuilder", "LCAOrbitalBuilder::putPBCFromH5");
   int norbs      = spo.getOrbitalSetSize();
   int neigs      = spo.getBasisSetSize();
@@ -821,10 +822,6 @@ bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet& spo, xmlNodePtr coeff_ptr)
   }
 #ifdef HAVE_MPI
   myComm->comm.broadcast_n(spo.C->data(), spo.C->size());
-#endif
-
-#else
-  APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
 #endif
   return true;
 }

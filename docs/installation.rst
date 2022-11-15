@@ -415,11 +415,11 @@ and is not suitable for production. Additional implementation in QMCPACK as
 well as improvements in open-source and vendor compilers is required for production status 
 to be reached. The following compilers have been verified:
 
-- LLVM Clang 14. Support NVIDIA GPUs.
+- LLVM Clang 15. Support NVIDIA GPUs.
 
   ::
 
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON
+    -D ENABLE_OFFLOAD=ON
 
   Clang and its downstream compilers support two extra options
   
@@ -452,7 +452,7 @@ For example, using Clang 14 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D USE_OBJECT_TARGET=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
 
 Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
 
@@ -881,6 +881,12 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
   cmake -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment ..
   make -j 24
   ls -l bin/qmcpack
+
+Installing on ALCF Polaris
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Polaris is a HPE Apollo Gen10+ based 44 petaflops system.
+Each node features a AMD EPYC 7543P CPU and 4 NVIDIA A100 GPUs.
+A build recipe for Polaris can be found at ``<qmcpack_source>/config/build_alcf_polaris_Clang.sh``
 
 Installing on ORNL OLCF Summit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1716,9 +1722,8 @@ The NiO tests are for bulk supercells of varying size. The QMC runs consist of s
 without drift (2) VMC with drift term included, and (3) DMC with
 constant population. The tests use spline wavefunctions that must be
 downloaded as described in the README file because of their large size. You
-will need to set ``-DQMC_DATA=YOUR_DATA_FOLDER``
-when running CMake as
-described in the README file.
+will need to set ``-DQMC_DATA=<full path to your data folder>``
+when running CMake as described in the README file.
 
 Two sets of wavefunction are tested: spline orbitals with one- and
 two-body Jastrow functions and a more complex form with an additional
@@ -1727,6 +1732,10 @@ and are not reoptimized, as might be done for research purposes.  Runs
 in the hundreds of electrons up to low thousands of electrons are representative of
 research runs performed in 2017. The largest runs target
 future machines and require very large memory.
+
+All system sizes in the table below will be tested as long as the corresponding h5 files are available in the data folder.
+You may limit the maximal system size of tests by an atom count via ``-DQMC_PERFORMANCE_NIO_MAX_ATOMS=<number of atoms>``.
+Only tests with their atom counts below and equal to ``<number of atoms>`` are added to the performance tests.
 
 .. table:: System sizes and names for NiO performance tests. GPU performance
     tests are named similarly but have different walker counts.

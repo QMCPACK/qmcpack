@@ -97,10 +97,10 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   ParticleSet elec_clone(elec_);
 
   //diamondC_1x1x1
-  const char* spo_xml = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"2\"/> \
-</tmp> \
-";
+  const char* spo_xml = R"(<tmp> \
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="2"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(spo_xml);
@@ -122,14 +122,14 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   TrialWaveFunction psi;
   psi.addComponent(std::move(slater_det));
 
-  const char* jas_input = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-   <correlation size=\"10\" speciesA=\"u\" speciesB=\"u\"> \
-      <coefficients id=\"uu\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-   </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* jas_input = R"(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+   <correlation size="10" speciesA="u" speciesB="u">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+   </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc_jas;
   okay = doc.parseFromString(jas_input);
   REQUIRE(okay);
@@ -145,7 +145,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
 
-  //std::cout << "debug before YYY " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
+  //app_log() << "debug before YYY " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(logpsi == Approx(-0.1201465271523596));
 #else
@@ -176,9 +176,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   ValueType r_fermionic_val = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::FERMIONIC);
   ValueType r_bosonic_val   = psi.calcRatio(elec_, moved_elec_id, TrialWaveFunction::ComputeType::NONFERMIONIC);
 
-  //std::cout << "debug YYY " << std::setprecision(16) << r_all_val << std::endl;
-  //std::cout << "debug YYY " << std::setprecision(16) << r_fermionic_val << std::endl;
-  //std::cout << "debug YYY " << std::setprecision(16) << r_bosonic_val << std::endl;
+  //app_log() << "debug YYY " << std::setprecision(16) << r_all_val << std::endl;
+  //app_log() << "debug YYY " << std::setprecision(16) << r_fermionic_val << std::endl;
+  //app_log() << "debug YYY " << std::setprecision(16) << r_bosonic_val << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(r_all_val == ComplexApprox(ValueType(1.653821746120792, 0.5484992491019633)));
   CHECK(r_fermionic_val == ComplexApprox(ValueType(1.804065087219802, 0.598328295048828)));
@@ -203,6 +203,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #else
   REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
+
+  const auto opt_obj_refs = psi.extractOptimizableObjectRefs();
+  REQUIRE(opt_obj_refs.size() == 1);
 
   // testing batched interfaces
   ResourceCollection pset_res("test_pset_res");
@@ -238,7 +241,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   grad_old.grads_positions[0] = wf_ref_list[0].evalGrad(p_ref_list[0], moved_elec_id);
   grad_old.grads_positions[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
 
-  std::cout << "evalGrad " << std::setprecision(14) << grad_old.grads_positions[0][0] << " "
+  app_log() << "evalGrad " << std::setprecision(14) << grad_old.grads_positions[0][0] << " "
             << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
             << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
             << grad_old.grads_positions[1][2] << std::endl;
@@ -291,7 +294,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   std::vector<PsiValueType> ratios(2);
   TrialWaveFunction::mw_calcRatio(wf_ref_list, p_ref_list, moved_elec_id, ratios);
-  std::cout << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
+  app_log() << "calcRatio " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(ratios[0] == ComplexApprox(PsiValueType(1, 0)));
   CHECK(ratios[1] == ComplexApprox(PsiValueType(1.6538214581548, 0.54849918598717)));
@@ -308,7 +311,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
     ratios[0] = wf_ref_list[0].calcRatioGrad(p_ref_list[0], moved_elec_id, grad_new.grads_positions[0]);
     ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new.grads_positions[1]);
 
-    std::cout << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
+    app_log() << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
               << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
               << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
               << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;

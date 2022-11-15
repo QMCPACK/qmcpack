@@ -211,12 +211,13 @@ void test_Ne(bool transform)
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
+    const int norbs = 5;
     SPOSet::ValueVector values;
     SPOSet::GradVector dpsi;
     SPOSet::ValueVector d2psi;
-    values.resize(5);
-    dpsi.resize(5);
-    d2psi.resize(5);
+    values.resize(norbs);
+    dpsi.resize(norbs);
+    d2psi.resize(norbs);
 
     ParticleSet::SingleParticlePos newpos(0.00001, 0.0, 0.0);
     elec.makeMove(0, newpos);
@@ -253,6 +254,19 @@ void test_Ne(bool transform)
     REQUIRE(dpsi[0][1] == Approx(0));
     REQUIRE(dpsi[0][2] == Approx(0));
     REQUIRE(d2psi[0] == Approx(-0.01551755818));
+
+    // when a determinant only contains a single particle.
+    SPOSet::ValueVector phi(1), phiinv(1);
+    phiinv[0] = 100;
+    VirtualParticleSet VP(elec, 2);
+    std::vector<ParticleSet::SingleParticlePos> newpos2(2);
+    std::vector<SPOSet::ValueType> ratios2(2);
+    newpos2[0] = disp;
+    newpos2[1] = -disp;
+    VP.makeMoves(0, elec.R[0], newpos2);
+    sposet->evaluateDetRatios(VP, phi, phiinv, ratios2);
+    CHECK(ratios2[0] == Approx(-0.504163137)); // values[0] * phiinv[0]
+    CHECK(ratios2[1] == Approx(-0.504163137)); // symmetric move
   }
 }
 

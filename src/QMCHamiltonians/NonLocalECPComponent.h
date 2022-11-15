@@ -27,6 +27,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class TestNonLocalECPotential;
+}
+
 /** Contains a set of radial grid potentials around a center.
 */
 class NonLocalECPComponent : public QMCTraits
@@ -94,7 +99,7 @@ private:
 
   /// scratch spaces used by evaluateValueAndDerivatives
   Matrix<ValueType> dratio;
-  std::vector<ValueType> dlogpsi_vp;
+  Vector<ValueType> dlogpsi_vp;
 
   // For Pulay correction to the force
   std::vector<RealType> WarpNorm;
@@ -118,10 +123,10 @@ private:
 public:
   NonLocalECPComponent();
 
-  ///destructor
-  ~NonLocalECPComponent();
+  /// Make a copy but have it associated with pset instead of nl_ecpc's pset
+  NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset);
 
-  NonLocalECPComponent* makeClone(const ParticleSet& qp);
+  ~NonLocalECPComponent();
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -241,8 +246,8 @@ public:
                                        RealType r,
                                        const PosType& dr,
                                        const opt_variables_type& optvars,
-                                       const std::vector<ValueType>& dlogpsi,
-                                       std::vector<ValueType>& dhpsioverpsi);
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi);
 
   /** 
    * @brief Evaluate contribution to B of election iel and ion iat.  Filippi scheme for computing fast derivatives.
@@ -308,7 +313,11 @@ public:
   friend struct ECPComponentBuilder;
   // a lazy temporal solution
   friend class NonLocalECPotential_CUDA;
-}; //end of RadialPotentialSet
+
+  // for testing
+  friend class testing::TestNonLocalECPotential;
+};
+
 
 } // namespace qmcplusplus
 #endif

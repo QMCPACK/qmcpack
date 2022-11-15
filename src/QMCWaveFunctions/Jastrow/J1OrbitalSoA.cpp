@@ -46,7 +46,7 @@ struct J1OrbitalSoAMultiWalkerMem : public Resource
 
 template<typename FT>
 J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& ions, ParticleSet& els, bool use_offload)
-    : WaveFunctionComponent("J1OrbitalSoA", obj_name),
+    : WaveFunctionComponent(obj_name),
       use_offload_(use_offload),
       myTableID(els.addTable(ions, use_offload ? DTModes::ALL_OFF : DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
       Nions(ions.getTotalNum()),
@@ -54,7 +54,7 @@ J1OrbitalSoA<FT>::J1OrbitalSoA(const std::string& obj_name, const ParticleSet& i
       NumGroups(ions.groups()),
       Ions(ions)
 {
-  if (myName.empty())
+  if (my_name_.empty())
     throw std::runtime_error("J1OrbitalSoA object name cannot be empty!");
 
   if (use_offload_)
