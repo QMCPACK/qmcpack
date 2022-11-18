@@ -67,7 +67,6 @@ QMCMain::QMCMain(Communicate* c)
 #endif
 {
   Communicate node_comm{OHMMS::Controller->NodeComm()};
-// node_comm.initializeAsNodeComm(*OHMMS::Controller);
   // assign accelerators within a node
   DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
