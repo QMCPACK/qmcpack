@@ -795,11 +795,11 @@ if(ENABLE_ROCM)
     # explicit ROCM_ROOT takes precedence
     list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
   endif()
-  # use hip package to verify hip runtime can be found
-  #find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
 
+  # use hip package to supply the hip runtime for CXX source code.
+  find_package(hip CONFIG REQUIRED)
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
