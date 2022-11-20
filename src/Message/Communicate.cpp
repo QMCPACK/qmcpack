@@ -97,13 +97,9 @@ void Communicate::initialize(const mpi3::environment& env)
 // For unit tests until they can be changed and this will be removed.
 void Communicate::initialize(int argc, char** argv) {}
 
-void Communicate::initializeAsNodeComm(const Communicate& parent)
-{
+Communicate Communicate::NodeComm() const {
   // comm is mutable member
-  comm        = parent.comm.split_shared();
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
+  return Communicate{comm.split_shared()};
 }
 
 void Communicate::finalize()
@@ -125,7 +121,7 @@ void Communicate::barrier() const { comm.barrier(); }
 
 void Communicate::initialize(int argc, char** argv) {}
 
-void Communicate::initializeAsNodeComm(const Communicate& parent) {}
+Communicate Communicate::NodeComm() const {return Communicate{};}
 
 void Communicate::finalize() {}
 
