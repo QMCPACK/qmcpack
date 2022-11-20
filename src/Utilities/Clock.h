@@ -19,9 +19,33 @@
 
 #include <sys/time.h>
 #include <stddef.h>
+#include <chrono>
 
 namespace qmcplusplus
 {
+
+
+// Implements a std::chrono clock
+// See https://github.com/korfuri/fake_clock
+
+class FakeChronoClock
+{
+public:
+  using duration   = std::chrono::nanoseconds;
+  using rep        = duration::rep;
+  using period     = duration::period;
+  using time_point = std::chrono::time_point<FakeChronoClock>;
+  static time_point now() noexcept
+  {
+    fake_chrono_clock_value += fake_chrono_clock_increment;
+    return fake_chrono_clock_value;
+  }
+
+  static time_point fake_chrono_clock_value;
+  static duration fake_chrono_clock_increment;
+};
+
+
 /** functor for fake clock
  * calling FakeCPUClock()() returns the clock value
  */

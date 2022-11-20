@@ -14,6 +14,10 @@
 
 namespace qmcplusplus
 {
+
+FakeChronoClock::time_point FakeChronoClock::fake_chrono_clock_value = FakeChronoClock::time_point();
+FakeChronoClock::duration   FakeChronoClock::fake_chrono_clock_increment = std::chrono::seconds(1);
+
 double FakeCPUClock::fake_cpu_clock_value     = 0.0;
 double FakeCPUClock::fake_cpu_clock_increment = 1.0;
 } // namespace qmcplusplus
