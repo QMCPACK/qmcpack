@@ -135,7 +135,7 @@ jobs:
           fail_ci_if_error: true # optional (default = false)
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-11
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
