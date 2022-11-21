@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-template<class CLOCK = std::chrono::system_clock>
+template<class CLOCK = ChronoClock>
 class RunTimeManager
 {
 public:
@@ -42,12 +42,12 @@ private:
   bool need_to_stop_;
 };
 
-extern RunTimeManager<std::chrono::system_clock> run_time_manager;
+extern RunTimeManager<ChronoClock> run_time_manager;
 
-extern template class RunTimeManager<std::chrono::system_clock>;
+extern template class RunTimeManager<ChronoClock>;
 extern template class RunTimeManager<FakeChronoClock>;
 
-template<class CLOCK = std::chrono::system_clock>
+template<class CLOCK = ChronoClock>
 class LoopTimer
 {
 public:
@@ -63,10 +63,10 @@ private:
   double total_time;
 };
 
-extern template class LoopTimer<std::chrono::system_clock>;
+extern template class LoopTimer<ChronoClock>;
 extern template class LoopTimer<FakeChronoClock>;
 
-template<class CLOCK = std::chrono::system_clock>
+template<class CLOCK = ChronoClock>
 class RunTimeControl
 {
   const int MaxCPUSecs;
@@ -112,7 +112,7 @@ public:
   void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
 };
 
-extern template class RunTimeControl<std::chrono::system_clock>;
+extern template class RunTimeControl<ChronoClock>;
 extern template class RunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus

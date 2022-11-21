@@ -231,9 +231,9 @@ public:
   friend void set_num_calls(TimerType<CLOCK1>* timer, long num_calls_input);
 };
 
-using NewTimer  = TimerType<std::chrono::system_clock>;
+using NewTimer  = TimerType<ChronoClock>;
 using FakeTimer = TimerType<FakeChronoClock>;
-extern template class TimerType<std::chrono::system_clock>;
+extern template class TimerType<ChronoClock>;
 extern template class TimerType<FakeChronoClock>;
 
 // Wrapper for timer that starts on construction and stops on destruction

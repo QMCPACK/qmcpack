@@ -17,13 +17,13 @@
 
 #include "Concurrency/OpenMP.h"
 
-#include <sys/time.h>
 #include <stddef.h>
 #include <chrono>
 
 namespace qmcplusplus
 {
 
+using ChronoClock = std::chrono::system_clock;
 
 // Implements a std::chrono clock
 // See https://github.com/korfuri/fake_clock

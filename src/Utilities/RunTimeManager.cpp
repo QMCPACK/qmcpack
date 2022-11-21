@@ -21,9 +21,9 @@
 
 namespace qmcplusplus
 {
-RunTimeManager<std::chrono::system_clock> run_time_manager;
+RunTimeManager<ChronoClock> run_time_manager;
 
-template class RunTimeManager<std::chrono::system_clock>;
+template class RunTimeManager<ChronoClock>;
 template class RunTimeManager<FakeChronoClock>;
 
 template<class CLOCK>
@@ -59,7 +59,7 @@ double LoopTimer<CLOCK>::get_time_per_iteration() const
   return 0.0;
 }
 
-template class LoopTimer<std::chrono::system_clock>;
+template class LoopTimer<ChronoClock>;
 template class LoopTimer<FakeChronoClock>;
 
 template<class CLOCK>
@@ -153,7 +153,7 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driver
   return log.str();
 }
 
-template class RunTimeControl<std::chrono::system_clock>;
+template class RunTimeControl<ChronoClock>;
 template class RunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus
