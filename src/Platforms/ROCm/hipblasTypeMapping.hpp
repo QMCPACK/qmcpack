@@ -16,7 +16,7 @@
 
 #include <type_traits>
 #include "type_traits/type_mapping.hpp"
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 
 namespace qmcplusplus
 {

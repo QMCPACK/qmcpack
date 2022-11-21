@@ -71,34 +71,34 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
 
-  const char* wavefunction_xml = "<wavefunction name=\"psi0\" target=\"e\">  \
-     <jastrow name=\"Jee\" type=\"Two-Body\" function=\"pade\"> \
-      <correlation speciesA=\"u\" speciesB=\"d\"> \
-        <var id=\"jud_b\" name=\"B\">0.8</var> \
-      </correlation> \
-     </jastrow> \
-     <determinantset type=\"MO\" key=\"STO\" transform=\"no\" source=\"ion0\"> \
-      <basisset> \
-        <atomicBasisSet type=\"STO\" elementType=\"He\"> \
-          <basisGroup rid=\"R0\" n=\"1\" l=\"0\" m=\"0\" type=\"Slater\"> \
-             <radfunc exponent=\"2.0\"/> \
-          </basisGroup> \
-        </atomicBasisSet> \
-      </basisset> \
-      <slaterdeterminant> \
-        <determinant id=\"updet\" spin=\"1\" size=\"1\"> \
-          <coefficient id=\"updetC\" type=\"Array\" size=\"1\"> \
-            1.0 \
-          </coefficient> \
-        </determinant> \
-        <determinant id=\"downdet\" spin=\"-1\" size=\"1\"> \
-          <coefficient id=\"downdetC\" type=\"Array\" size=\"1\"> \
-            1.0 \
-          </coefficient> \
-        </determinant> \
-      </slaterdeterminant> \
-      </determinantset> \
-    </wavefunction>";
+  const char* wavefunction_xml = R"(<wavefunction name="psi0" target="e">
+     <jastrow name="Jee" type="Two-Body" function="pade">
+      <correlation speciesA="u" speciesB="d">
+        <var id="jud_b" name="B">0.8</var>
+      </correlation>
+     </jastrow>
+     <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <basisset>
+        <atomicBasisSet type="STO" elementType="He">
+          <basisGroup rid="R0" n="1" l="0" m="0" type="Slater">
+             <radfunc exponent="2.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" spin="1" size="1">
+          <coefficient id="updetC" type="Array" size="1">
+            1.0
+          </coefficient>
+        </determinant>
+        <determinant id="downdet" spin="-1" size="1">
+          <coefficient id="downdetC" type="Array" size="1">
+            1.0
+          </coefficient>
+        </determinant>
+      </slaterdeterminant>
+      </determinantset>
+    </wavefunction>)";
 
 
   Libxml2Document doc;

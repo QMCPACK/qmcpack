@@ -38,11 +38,11 @@ if(NOT CXX17_LIBRARY_OKAY)
   message("compiler is ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
   if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     message("Compiler detected is g++.\n  Use version 9.0 or newer for complete C++17 standard library support.")
-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     message(
-      "Compiler detected is clang++.\n  If not using libcxx, ensure a GCC toolchain version equal or greater "
-      "than 9.0 gets picked up. Check with 'clang++ -v'. Or use the --gcc-toolchain compiler option "
-      "(added to CMAKE_CXX_FLAGS) to point to a newer GCC installation."
+      "Compiler detected is <Clang> namely clang++ or a vendor variant (icpx, amdclang++, armclang++).\n  If not using libcxx, ensure a GCC toolchain version equal or greater "
+      "than 9.0 gets picked up. Check with '<Clang> -v'. Or use the --gcc-toolchain compiler option "
+      "(added to both CMAKE_C_FLAGS and CMAKE_CXX_FLAGS) to point to a newer GCC installation."
     )
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
     message(

@@ -90,19 +90,19 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.update();
 
   //BCC H
-  const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"bccH.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
-   <slaterdeterminant> \
-     <determinant id=\"updet\" size=\"1\"> \
-      <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-     <determinant id=\"downdet\" size=\"1\"> \
-        <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-  </slaterdeterminant> \
-</determinantset> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="PW" href="bccH.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion">
+   <slaterdeterminant>
+     <determinant id="updet" size="1">
+      <occupation mode="ground" spindataset="0"/>
+     </determinant>
+     <determinant id="downdet" size="1">
+        <occupation mode="ground" spindataset="0"/>
+     </determinant>
+  </slaterdeterminant>
+</determinantset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -235,19 +235,19 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.update();
 
   //diamondC_1x1x1
-  const char* particles = "<tmp> \
-<determinantset type=\"PW\" href=\"LiH-arb.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\"> \
-   <slaterdeterminant> \
-     <determinant id=\"updet\" size=\"2\"> \
-      <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-     <determinant id=\"downdet\" size=\"2\"> \
-        <occupation mode=\"ground\" spindataset=\"0\"/> \
-     </determinant> \
-  </slaterdeterminant> \
-</determinantset> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="PW" href="LiH-arb.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion">
+   <slaterdeterminant>
+     <determinant id="updet" size="2">
+      <occupation mode="ground" spindataset="0"/>
+     </determinant>
+     <determinant id="downdet" size="2">
+        <occupation mode="ground" spindataset="0"/>
+     </determinant>
+  </slaterdeterminant>
+</determinantset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

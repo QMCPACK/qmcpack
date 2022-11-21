@@ -6,6 +6,7 @@
 import autograd.numpy as np
 from autograd import hessian,grad
 from stats import averager
+from run_qmc import run_qmc
 
 # Point values used in test_RotatedSPOs_LCAO.cpp
 # QMC values used to validate tests/molecules/He_param/He_orb_rot_param_grad_legacy
@@ -17,19 +18,19 @@ class Wavefunction:
         self.use_jastrow = use_jastrow
 
         # Spatial derivatives
-        self.hess0 = hessian(self.psi, 0)
-        self.hess1 = hessian(self.psi, 1)
+        self.hess0 = hessian(self.psi_internal, 0)
+        self.hess1 = hessian(self.psi_internal, 1)
 
-        self.hess_log_0 = hessian(self.log_psi, 0)
-        self.hess_log_1 = hessian(self.log_psi, 1)
+        self.hess_log_0 = hessian(self.log_psi_internal, 0)
+        self.hess_log_1 = hessian(self.log_psi_internal, 1)
 
-        self.grad0 = grad(self.psi, 0)
-        self.grad1 = grad(self.psi, 1)
+        self.grad0 = grad(self.psi_internal, 0)
+        self.grad1 = grad(self.psi_internal, 1)
 
         # Derivative wrt parameters
-        self.dpsi = grad(self.psi, 2)
+        self.dpsi = grad(self.psi, 1)
 
-        self.dlocal_energy = grad(self.local_energy, 2)
+        self.dlocal_energy = grad(self.local_energy, 1)
 
     def set_coeff(self, coeff):
         self.coeff = coeff
@@ -86,7 +87,14 @@ class Wavefunction:
         j = self.jastrow(r12, B)
         return o1*o2*j
 
-    def psi(self, r1, r2, VP):
+    def psi(self, r, VP):
+        r1 = r[0,:]
+        r2 = r[1,:]
+        return self.psi_internal(r1, r2, VP)
+
+    # It's easier to take spatial derivatives if each particle is a separate argument.
+    # Hence the use of psi as a uniform interface to run_qmc, and psi_internal for spatial derivatives.
+    def psi_internal(self, r1, r2, VP):
         theta1 = VP[0]
         theta2 = VP[1]
         j = 1.0
@@ -99,8 +107,8 @@ class Wavefunction:
         o2 = self.rot_orb(r2,theta2)
         return o1*o2*j
 
-    def log_psi(self, r1, r2, B):
-        return np.log(self.psi(r1, r2, B))
+    def log_psi_internal(self, r1, r2, B):
+        return np.log(self.psi_internal(r1, r2, B))
 
     def lap0(self, r1, r2, VP):
         h0 = np.sum(np.diag(self.hess_log_0(r1, r2, VP)))
@@ -126,9 +134,11 @@ class Wavefunction:
         r12_mag = self.mag(r12)
         return 1.0/r12_mag
 
-    def local_energy(self, r1, r2, VP):
+    def local_energy(self, r, VP):
+        r1 = r[0,:]
+        r2 = r[1,:]
         pot = self.en_pot(r1, r2) + self.ee_pot(r1, r2)
-        psi_val = self.psi(r1, r2, VP)
+        psi_val = self.psi_internal(r1, r2, VP)
         lapl = self.lap(r1, r2, VP)
 
         h = -0.5*lapl/psi_val + pot
@@ -158,8 +168,11 @@ def print_wf_values(theta1=0.0, theta2=0.0,  use_j=False, B=0.0):
 
     r1 = np.array([1.0, 2.0, 3.0])
     r2 = np.array([0.0, 1.1, 2.2])
+    r = np.zeros((2,3))
+    r[0,:] = r1
+    r[1,:] = r2
 
-    psi_val = wf.psi(r1, r2, VP)
+    psi_val = wf.psi(r, VP)
     print("  wf = ",psi_val," log wf = ",np.log(np.abs(psi_val)))
 
     g0 = wf.grad0(r1, r2, VP)/psi_val
@@ -172,13 +185,13 @@ def print_wf_values(theta1=0.0, theta2=0.0,  use_j=False, B=0.0):
     lap_1 = wf.lap1(r1, r2, VP)
     print(" laplacian for log psi particle 1 = ",lap_1)
 
-    eloc = wf.local_energy(r1, r2, VP)
+    eloc = wf.local_energy(r, VP)
     print("  local energy = ",eloc)
 
-    dp = wf.dpsi(r1, r2, VP)
+    dp = wf.dpsi(r, VP)
     print("  parameter derivative of log psi = ",dp / psi_val)
 
-    deloc = wf.dlocal_energy(r1, r2, VP)
+    deloc = wf.dlocal_energy(r, VP)
     print("  parameter derivative of local energy = ",deloc)
 
     print("")
@@ -196,107 +209,6 @@ def print_point_values():
     print_wf_values(theta1=0.0, theta2=0.0)
 
     print_wf_values(theta1=0.0, theta2=0.0, use_j=True, B=0.1)
-
-def run_qmc(wf, VP):
-    r1 = np.array([1.0, 2.0, 3.0])
-    r2 = np.array([0.0, 1.1, 2.2])
-
-    # Outer loop for statistics
-    nblock = 20
-
-    # Loop to gather data
-    nstep = 10
-
-    # Loop for decorrelation
-    nsubstep = 10
-
-    nelectron = 2
-
-    # Step size for trial move
-    delta = 1.2
-
-    r = np.zeros((2,3))
-    r[0,:] = r1
-    r[1,:] = r2
-
-    r_old = np.zeros(3)
-    r_trial = np.zeros(3)
-
-    block_dp_ave = averager()
-    total_en_ave = averager()
-
-    # Outer loop for statistics
-    for nb in range(nblock):
-
-        naccept = 0
-        en_ave = averager()
-        dpsi_ave = averager()
-        deloc_ave = averager()
-        eloc_dpsi_ave = averager()
-
-        # Loop to gather data
-        for ns in range(nstep):
-            # Loop for decorrelation
-            for nss in range(nsubstep):
-                # Loop over electrons
-                for ne in range(nelectron):
-
-                    wf_old = wf.psi(r[0,:], r[1,:], VP)
-                    r_old[:] = r[ne,:]
-
-                    change = delta*(np.random.rand(3)-0.5)
-
-                    r_trial[:] = r_old[:] + change
-                    r[ne,:] = r_trial[:]
-
-                    wf_new = wf.psi(r[0,:], r[1,:], VP)
-
-                    wf_ratio = (wf_new/wf_old)**2
-
-                    if wf_ratio > np.random.random():
-                        naccept += 1
-                    else:
-                        r[ne,:] = r_old[:]
-
-            eloc = wf.local_energy(r[0,:], r[1,:], VP)
-            en_ave.add_value(eloc)
-
-            psi_val = wf.psi(r[0,:], r[1,:], VP)
-            dpsi_val = wf.dpsi(r[0,:], r[1,:], VP)
-            dpsi_ave.add_value(dpsi_val/psi_val)
-
-            deloc_val = wf.dlocal_energy(r[0,:], r[1,:], VP)
-            deloc_ave.add_value(deloc_val)
-
-            eloc_dpsi_ave.add_value(eloc * dpsi_val/psi_val)
-
-
-        en = en_ave.average()
-        en_err = en_ave.error()
-        ar = naccept/(nstep*nsubstep*nelectron)
-        print('block = ',nb, ' energy = ',en,en_err,' acceptance ratio = ',ar, flush=True)
-
-
-        dp = dpsi_ave.average()
-        dp_err = dpsi_ave.error()
-
-        deloc = deloc_ave.average()
-        deloc_err = deloc_ave.error()
-
-        eloc_dpsi = eloc_dpsi_ave.average()
-        eloc_dpsi_err = eloc_dpsi_ave.error()
-
-        # For the parameter derivative formula, see
-        # https://github.com/QMCPACK/qmc_algorithms/blob/master/Variational/Parameter_Optimization.ipynb
-
-        dg = deloc + 2*eloc_dpsi - 2*en*dp
-        block_dp_ave.add_value(dg)
-
-    dg = block_dp_ave.average()
-    dg_err = block_dp_ave.error()
-    print('parameter values = ',VP)
-    print('parameter derivatives = ',dg)
-    print('parameter derivative errors = ',dg_err)
 
 
 def run_qmc_parameter_derivatives():
@@ -317,7 +229,10 @@ def run_qmc_parameter_derivatives():
     beta = 0.2
     VP = np.array([theta1, theta2, beta])
 
-    run_qmc(wf, VP)
+    r = np.array([[1.0, 2.0, 3.0],
+                  [0.0, 1.1, 2.2]])
+
+    run_qmc(r, wf, VP)
 
 # Some results from run_qmc_parameter_derivatives
 

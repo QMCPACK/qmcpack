@@ -13,7 +13,7 @@
 
 
 #include "hipBLAS.hpp"
-#include <rocsolver.h>
+#include <rocsolver/rocsolver.h>
 
 //------------------------------------------------------------------------------
 hipblasStatus_t

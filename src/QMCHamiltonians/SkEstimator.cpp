@@ -114,7 +114,7 @@ void SkEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
 }
 
 
-void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
   if (hdf5_out)
   {
@@ -122,21 +122,21 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hi
     h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, my_index_);
-    h5o.open(gid);
+    h5o.open(file);
 
     hsize_t kdims[2];
     kdims[0]          = NumK;
     kdims[1]          = OHMMS_DIM;
     std::string kpath = name_ + "/kpoints";
     hid_t k_space     = H5Screate_simple(2, kdims, NULL);
-    hid_t k_set       = H5Dcreate(gid, kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
+    hid_t k_set       = H5Dcreate(file.getFileID(), kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
     hid_t mem_space   = H5Screate_simple(2, kdims, NULL);
     auto* ptr         = &(sourcePtcl->getSimulationCell().getKLists().kpts_cart[0][0]);
     herr_t ret        = H5Dwrite(k_set, H5T_NATIVE_DOUBLE, mem_space, k_space, H5P_DEFAULT, ptr);
     H5Dclose(k_set);
     H5Sclose(mem_space);
     H5Sclose(k_space);
-    H5Fflush(gid, H5F_SCOPE_GLOBAL);
+    file.flush();
   }
 }
 

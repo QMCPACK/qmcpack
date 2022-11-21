@@ -29,7 +29,7 @@ public:
 
   void addObservables(PropertySetType& plist) {}
   void addObservables(PropertySetType& plist, BufferType& olist) override;
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const override;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const override;
   void setObservables(PropertySetType& plist) override;
   void setParticlePropertyList(PropertySetType& plist, int offset) override;
   bool putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootNode);

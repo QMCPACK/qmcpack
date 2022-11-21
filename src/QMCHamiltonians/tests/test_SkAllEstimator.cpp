@@ -55,56 +55,56 @@ TEST_CASE("SkAll", "[hamiltonian]")
     Minimal xml input blocks
   */
   // Lattice block
-  const char* lat_xml = "<simulationcell>                                         \
-                        <parameter name=\"lattice\" units=\"bohr\"> \
-                          2.0 0.0 0.0 \
-                          0.0 2.0 0.0 \
-                          0.0 0.0 2.0 \
-                        </parameter> \
-                         <parameter name=\"bconds\">                            \
-                           p p p                                                \
-                         </parameter>                                           \
-                         <parameter name=\"LR_dim_cutoff\" >     6  </parameter>\
-                         <parameter name=\"rs\"            >   1.0  </parameter>\
-                         <parameter name=\"nparticles\"    >     8  </parameter>\
-                       </simulationcell>";
+  const char* lat_xml = R"(<simulationcell>
+                        <parameter name="lattice" units="bohr">
+                          2.0 0.0 0.0
+                          0.0 2.0 0.0
+                          0.0 0.0 2.0
+                        </parameter>
+                         <parameter name="bconds">
+                           p p p
+                         </parameter>
+                         <parameter name="LR_dim_cutoff" >     6  </parameter>
+                         <parameter name="rs"            >   1.0  </parameter>
+                         <parameter name="nparticles"    >     8  </parameter>
+                       </simulationcell>)";
 
   // Particleset block for the electrons
-  const char* elec_pset_xml = "<particleset name=\"e\" random=\"yes\">            \
-                               <group name=\"u\" size=\"4\">	                \
-                                 <parameter name=\"charge\" >   -1  </parameter>\
-                                 <parameter name=\"mass\"   >  1.0  </parameter>\
-                               </group>                                         \
-                               <group name=\"d\" size=\"4\">                    \
-                                 <parameter name=\"charge\" >   -1  </parameter>\
-                                 <parameter name=\"mass\"   >  1.0  </parameter>\
-                               </group>                                         \
-                             </particleset>";
+  const char* elec_pset_xml = R"(<particleset name="e" random="yes">
+                                 <group name="u" size="4">
+                                 <parameter name="charge" >   -1  </parameter>
+                                 <parameter name="mass"   >  1.0  </parameter>
+                               </group>
+                               <group name="d" size="4">
+                                 <parameter name="charge" >   -1  </parameter>
+                                 <parameter name="mass"   >  1.0  </parameter>
+                               </group>
+                             </particleset>)";
 
   // Particleset block for the ions
-  const char* ion_pset_xml = "<particleset name=\"i\" size=\"4\">                 \
-                              <group name=\"He\">                               \
-                                <parameter name=\"charge\"      > 2 </parameter>\
-                                <parameter name=\"valence\"     > 2 </parameter>\
-                                <parameter name=\"atomicnumber\"> 2 </parameter>\
-                              </group>                                          \
-                              <attrib name=\"position\" datatype=\"posArray\"   \
-                                                        condition=\"1\">        \
-                                0.00 0.00 0.00                                  \
-                                0.25 0.25 0.25                                  \
-                                0.50 0.50 0.50                                  \
-                                0.75 0.75 0.75                                  \
-                              </attrib>                                         \
-                              <attrib name=\"ionid\" datatype=\"stringArray\">  \
-                                He He He He                                     \
-                              </attrib>                                         \
-                            </particleset>";
+  const char* ion_pset_xml = R"(<particleset name="i" size="4">
+                                <group name="He">
+                                <parameter name="charge"      > 2 </parameter>
+                                <parameter name="valence"     > 2 </parameter>
+                                <parameter name="atomicnumber"> 2 </parameter>
+                              </group>
+                              <attrib name="position" datatype="posArray"
+                                                        condition="1">
+                                0.00 0.00 0.00
+                                0.25 0.25 0.25
+                                0.50 0.50 0.50
+                                0.75 0.75 0.75
+                              </attrib>
+                              <attrib name="ionid" datatype="stringArray">
+                                He He He He
+                              </attrib>
+                            </particleset>)";
 
   // SKAllEstimator block, seems that writeionion does nothing?
-  const char* skall_xml = "<estimator                                           \
-                             name=\"Skall\" type=\"skall\"                      \
-                             source=\"i\" target=\"e\" hdf5=\"yes\"             \
-                           />";
+  const char* skall_xml = R"(<estimator
+                             name="Skall" type="skall"
+                             source="i" target="e" hdf5="yes"
+                            />)";
 
   // Read in xml, add to pset_builder below
   bool lat_okay = doc.parseFromString(lat_xml);

@@ -32,37 +32,37 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
   // test that particle distances are properly calculated
 
 
-  const char* particles = "<tmp> \
-<particleset name=\"e\" random=\"yes\"> \
-   <group name=\"u\" size=\"1\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000        0.20000000\
-      </attrib>\
-   </group>\
-   <group name=\"d\" size=\"1\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000       -0.20000000\
-      </attrib>\
-   </group>\
-</particleset>\
-<particleset name=\"ion0\">\
-   <group name=\"H\" size=\"2\" mass=\"1836.15\">\
-      <parameter name=\"charge\"              >    1                     </parameter>\
-      <parameter name=\"valence\"             >    1                     </parameter>\
-      <parameter name=\"atomicnumber\"        >    1                     </parameter>\
-      <parameter name=\"mass\"                >    1836.15               </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000        0.00000000\
-               0.00000000        0.00000000        0.50000000\
-      </attrib>\
-   </group>\
-</particleset>\
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<particleset name="e" random="yes">
+   <group name="u" size="1" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.20000000
+      </attrib>
+   </group>
+   <group name="d" size="1" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000       -0.20000000
+      </attrib>
+   </group>
+</particleset>
+<particleset name="ion0">
+   <group name="H" size="2" mass="1836.15">
+      <parameter name="charge"              >    1                     </parameter>
+      <parameter name="valence"             >    1                     </parameter>
+      <parameter name="atomicnumber"        >    1                     </parameter>
+      <parameter name="mass"                >    1836.15               </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+               0.00000000        0.00000000        0.50000000
+      </attrib>
+   </group>
+</particleset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -125,38 +125,38 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
 TEST_CASE("distance_open_xy", "[distance_table][xml]")
 {
-  const char* particles = "<tmp> \
-<particleset name=\"e\" random=\"yes\"> \
-   <group name=\"u\" size=\"2\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.70000000        0.00000000        0.00000000\
-               0.00000000        1.00000000        0.00000000\
-      </attrib>\
-   </group>\
-   <group name=\"d\" size=\"1\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-              -0.90000000        0.00000000        0.00000000\
-      </attrib>\
-   </group>\
-</particleset>\
-<particleset name=\"ion0\">\
-   <group name=\"H\" size=\"2\" mass=\"1836.15\">\
-      <parameter name=\"charge\"              >    1                     </parameter>\
-      <parameter name=\"valence\"             >    1                     </parameter>\
-      <parameter name=\"atomicnumber\"        >    1                     </parameter>\
-      <parameter name=\"mass\"                >    1836.15               </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000        0.00000000\
-               1.00000000        0.00000000        0.00000000\
-      </attrib>\
-   </group>\
-</particleset>\
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<particleset name="e" random="yes">
+   <group name="u" size="2" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.70000000        0.00000000        0.00000000
+               0.00000000        1.00000000        0.00000000
+      </attrib>
+   </group>
+   <group name="d" size="1" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+              -0.90000000        0.00000000        0.00000000
+      </attrib>
+   </group>
+</particleset>
+<particleset name="ion0">
+   <group name="H" size="2" mass="1836.15">
+      <parameter name="charge"              >    1                     </parameter>
+      <parameter name="valence"             >    1                     </parameter>
+      <parameter name="atomicnumber"        >    1                     </parameter>
+      <parameter name="mass"                >    1836.15               </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+               1.00000000        0.00000000        0.00000000
+      </attrib>
+   </group>
+</particleset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -216,38 +216,38 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
   // pull out distances between specific species
 
 
-  const char* particles = "<tmp> \
-<particleset name=\"e\" random=\"yes\"> \
-   <group name=\"u\" size=\"2\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.70000000        0.00000000        0.00000000\
-               0.00000000        1.00000000        0.00000000\
-      </attrib>\
-   </group>\
-   <group name=\"d\" size=\"1\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-              -0.90000000        0.00000000        0.00000000\
-      </attrib>\
-   </group>\
-</particleset>\
-<particleset name=\"ion0\">\
-   <group name=\"H\" size=\"2\" mass=\"1836.15\">\
-      <parameter name=\"charge\"              >    1                     </parameter>\
-      <parameter name=\"valence\"             >    1                     </parameter>\
-      <parameter name=\"atomicnumber\"        >    1                     </parameter>\
-      <parameter name=\"mass\"                >    1836.15               </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000        0.00000000\
-               1.00000000        0.00000000        0.00000000\
-      </attrib>\
-   </group>\
-</particleset>\
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<particleset name="e" random="yes">
+   <group name="u" size="2" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.70000000        0.00000000        0.00000000
+               0.00000000        1.00000000        0.00000000
+      </attrib>
+   </group>
+   <group name="d" size="1" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+              -0.90000000        0.00000000        0.00000000
+      </attrib>
+   </group>
+</particleset>
+<particleset name="ion0">
+   <group name="H" size="2" mass="1836.15">
+      <parameter name="charge"              >    1                     </parameter>
+      <parameter name="valence"             >    1                     </parameter>
+      <parameter name="atomicnumber"        >    1                     </parameter>
+      <parameter name="mass"                >    1836.15               </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+               1.00000000        0.00000000        0.00000000
+      </attrib>
+   </group>
+</particleset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -315,20 +315,20 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
 SimulationCell parse_pbc_lattice()
 {
-  const char* particles = "<tmp> \
-  <simulationcell>\
-     <parameter name=\"lattice\" units=\"bohr\">\
-              6.00000000        0.00000000        0.00000000\
-              0.00000000        6.00000000        0.00000000\
-              0.00000000        0.00000000        6.00000000\
-     </parameter>\
-     <parameter name=\"bconds\">\
-        p p p\
-     </parameter>\
-     <parameter name=\"LR_dim_cutoff\"       >    15                 </parameter>\
-  </simulationcell>\
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        0.00000000        0.00000000
+              0.00000000        6.00000000        0.00000000
+              0.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+  </simulationcell>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -348,44 +348,44 @@ SimulationCell parse_pbc_lattice()
 
 void parse_electron_ion_pbc_z(ParticleSet& ions, ParticleSet& electrons)
 {
-  const char* particles = "<tmp> \
-  <particleset name=\"e\">\
-     <group name=\"u\" size=\"2\" mass=\"1.0\">\
-        <parameter name=\"charge\"              >    -1                    </parameter>\
-        <parameter name=\"mass\"                >    1.0                   </parameter>\
-        <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-                 0.00000000        0.00000000        0.00000000\
-                 3.00000000        0.00000000        0.00000000\
-        </attrib>\
-     </group>\
-     <group name=\"d\" size=\"1\" mass=\"1.0\">\
-        <parameter name=\"charge\"              >    -1                    </parameter>\
-        <parameter name=\"mass\"                >    1.0                   </parameter>\
-        <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-                 0.00000000        0.00000000        3.00000000\
-        </attrib>\
-     </group>\
-  </particleset>\
-  <particleset name=\"ion0\">\
-     <group name=\"H\" size=\"8\" mass=\"1836.15\">\
-        <parameter name=\"charge\"              >    1                     </parameter>\
-        <parameter name=\"valence\"             >    1                     </parameter>\
-        <parameter name=\"atomicnumber\"        >    1                     </parameter>\
-        <parameter name=\"mass\"                >    1836.15               </parameter>\
-        <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-                 0.00000000        0.00000000        0.00000000\
-                 3.00000000        0.00000000        0.00000000\
-                 0.00000000        3.00000000        0.00000000\
-                 3.00000000        3.00000000        0.00000000\
-                 0.00000000        0.00000000        3.00000000\
-                 3.00000000        0.00000000        3.00000000\
-                 0.00000000        3.00000000        3.00000000\
-                 3.00000000        3.00000000        3.00000000\
-        </attrib>\
-     </group>\
-  </particleset>\
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+  <particleset name="e">
+     <group name="u" size="2" mass="1.0">
+        <parameter name="charge"              >    -1                    </parameter>
+        <parameter name="mass"                >    1.0                   </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+                 0.00000000        0.00000000        0.00000000
+                 3.00000000        0.00000000        0.00000000
+        </attrib>
+     </group>
+     <group name="d" size="1" mass="1.0">
+        <parameter name="charge"              >    -1                    </parameter>
+        <parameter name="mass"                >    1.0                   </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+                 0.00000000        0.00000000        3.00000000
+        </attrib>
+     </group>
+  </particleset>
+  <particleset name="ion0">
+     <group name="H" size="8" mass="1836.15">
+        <parameter name="charge"              >    1                     </parameter>
+        <parameter name="valence"             >    1                     </parameter>
+        <parameter name="atomicnumber"        >    1                     </parameter>
+        <parameter name="mass"                >    1836.15               </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+                 0.00000000        0.00000000        0.00000000
+                 3.00000000        0.00000000        0.00000000
+                 0.00000000        3.00000000        0.00000000
+                 3.00000000        3.00000000        0.00000000
+                 0.00000000        0.00000000        3.00000000
+                 3.00000000        0.00000000        3.00000000
+                 0.00000000        3.00000000        3.00000000
+                 3.00000000        3.00000000        3.00000000
+        </attrib>
+     </group>
+  </particleset>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

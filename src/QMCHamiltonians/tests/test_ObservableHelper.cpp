@@ -28,9 +28,6 @@ TEST_CASE("ObservableHelper::ObservableHelper(const std::string&)", "[hamiltonia
 {
   ObservableHelper oh("u");
   CHECK(oh.lower_bound == 0);
-  CHECK(oh.data_id == -1);
-  CHECK(oh.space1_id == -1);
-  CHECK(oh.value1_id == -1);
   CHECK(oh.mydims == std::vector<hsize_t>());
   CHECK(oh.maxdims == std::vector<hsize_t>());
   CHECK(oh.curdims == std::vector<hsize_t>());
@@ -46,7 +43,7 @@ TEST_CASE("ObservableHelper::ObservableHelper(ObservableHelper&&)", "[hamiltonia
   hFile.create(filename);
 
   ObservableHelper ohIn("u");
-  ohIn.open(hFile.getFileID());
+  ohIn.open(hFile);
   CHECK(ohIn.isOpened() == true);
   {
     ObservableHelper oh(std::move(ohIn));
@@ -81,25 +78,25 @@ TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
   hFile.create(filename);
 
   ObservableHelper oh("u");
-  oh.open(hFile.getFileID());
+  oh.open(hFile);
   std::vector<int> dims = {10, 10};
   float propertyFloat   = 10.f;
-  oh.addProperty(propertyFloat, "propertyFloat");
+  oh.addProperty(propertyFloat, "propertyFloat", hFile);
 
   Tensor<float, OHMMS_DIM> propertyTensor;
-  oh.addProperty(propertyTensor, "propertyTensor");
+  oh.addProperty(propertyTensor, "propertyTensor", hFile);
 
   Matrix<float> propertyMatrix;
-  oh.addProperty(propertyMatrix, "propertyMatrix");
+  oh.addProperty(propertyMatrix, "propertyMatrix", hFile);
 
   TinyVector<float, OHMMS_DIM> propertyTinyVector;
-  oh.addProperty(propertyTensor, "propertyTinyVector");
+  oh.addProperty(propertyTensor, "propertyTinyVector", hFile);
 
   std::vector<float> propertyVector;
-  oh.addProperty(propertyVector, "propertyVector");
+  oh.addProperty(propertyVector, "propertyVector", hFile);
 
   std::vector<TinyVector<float, OHMMS_DIM>> propertyVectorTinyVector;
-  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector");
+  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector", hFile);
 
   hFile.close();
   REQUIRE(std::filesystem::exists(filename));

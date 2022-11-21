@@ -411,6 +411,26 @@ if(add_estimator_tests)
     qmc-ref/qmc_dens_dmc_short.s001.stat_ref_density.dat)
 
   simple_run_and_check(
+    short-diamondC_1x1x1_pp-rmc-estimator-density
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_rmc_short.in.xml
+    ${NMPI}
+    ${NOMP}
+    check_stats.py
+    -s
+    1
+    -q
+    density
+    -e
+    20
+    -c
+    8
+    -p
+    qmc_dens_rmc_short
+    -r
+    qmc-ref/qmc_dens_rmc_short.s001.stat_ref_density.dat)
+
+  simple_run_and_check(
     long-diamondC_1x1x1_pp-vmc-estimator-density
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_dens_long${IFEXT}.in.xml
@@ -449,6 +469,26 @@ if(add_estimator_tests)
     qmc_dens_dmc_long
     -r
     qmc-ref/qmc_dens_dmc_long.s001.stat_ref_density.dat)
+
+  simple_run_and_check(
+    long-diamondC_1x1x1_pp-rmc-estimator-density
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_rmc_long.in.xml
+    ${NMPI}
+    ${NOMP}
+    check_stats.py
+    -s
+    1
+    -q
+    density
+    -e
+    20
+    -c
+    8
+    -p
+    qmc_dens_rmc_long
+    -r
+    qmc-ref/qmc_dens_rmc_long.s001.stat_ref_density.dat)
 
   # spindensity tests
   simple_run_and_check(
@@ -538,6 +578,26 @@ if(add_estimator_tests)
     qmc-ref/qmc_spindens_dmc_short.s001.stat_ref_spindensity.dat)
 
   simple_run_and_check(
+    short-diamondC_1x1x1_pp-rmc-estimator-spindensity
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_rmc_short.in.xml
+    ${NMPI}
+    ${NOMP}
+    check_stats.py
+    -s
+    1
+    -q
+    spindensity
+    -e
+    20
+    -c
+    8
+    -p
+    qmc_spindens_rmc_short
+    -r
+    qmc-ref/qmc_spindens_rmc_short.s001.stat_ref_spindensity.dat)
+
+  simple_run_and_check(
     long-diamondC_1x1x1_pp-vmc-estimator-spindensity
     "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_long${IFEXT}.in.xml
@@ -576,6 +636,26 @@ if(add_estimator_tests)
     qmc_spindens_dmc_long
     -r
     qmc-ref/qmc_spindens_dmc_long.s001.stat_ref_spindensity.dat)
+
+  simple_run_and_check(
+    long-diamondC_1x1x1_pp-rmc-estimator-spindensity
+    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_rmc_long.in.xml
+    ${NMPI}
+    ${NOMP}
+    check_stats.py
+    -s
+    1
+    -q
+    spindensity
+    -e
+    20
+    -c
+    8
+    -p
+    qmc_spindens_rmc_long
+    -r
+    qmc-ref/qmc_spindens_rmc_long.s001.stat_ref_spindensity.dat)
 
   # 1rdm tests
   if(NOT QMC_CUDA)
@@ -880,6 +960,26 @@ if(NOT QMC_CUDA)
       -r
       qmc-ref/det_qmc_dens_short_vmc_dmc.s001.stat_ref_density_4_4${OFEXT}.dat)
 
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-rmc-estimator-density
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_dens_short_vmc_rmc.in.xml
+      1
+      1
+      check_stats.py
+      -s
+      1
+      -q
+      density
+      -e
+      1
+      -c
+      8
+      -p
+      det_qmc_dens_short_vmc_rmc
+      -r
+      qmc-ref/det_qmc_dens_short_vmc_rmc.s001.stat_ref_density_1_1.dat)
+
     # spindensity tests
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-estimator-spindensity
@@ -968,6 +1068,26 @@ if(NOT QMC_CUDA)
       det_qmc_spindens_short_vmc_dmc
       -r
       qmc-ref/det_qmc_spindens_short_vmc_dmc.s001.stat_ref_spindensity_4_4${OFEXT}.dat)
+
+    simple_run_and_check(
+      deterministic-diamondC_1x1x1_pp-rmc-estimator-spindensity
+      "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      det_qmc_spindens_short_vmc_rmc.in.xml
+      1
+      1
+      check_stats.py
+      -s
+      1
+      -q
+      spindensity
+      -e
+      1
+      -c
+      8
+      -p
+      det_qmc_spindens_short_vmc_rmc
+      -r
+      qmc-ref/det_qmc_spindens_short_vmc_rmc.s001.stat_ref_spindensity_1_1.dat)
 
     simple_run_and_check(
       deterministic-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
@@ -2223,7 +2343,7 @@ if(NOT QMC_CUDA)
     list(APPEND DET_DIAMOND_PARAM_LEGACY ud_0 -1.0951e-03 0.00001)
     list(APPEND DET_DIAMOND_PARAM_LEGACY ud_1 -7.7416e-03 0.00001)
     list(APPEND DET_DIAMOND_PARAM_LEGACY eC_2 1.8608 0.00002)
-    list(APPEND DET_DIAMOND_PARAM_LEGACY eC_3 4.7107 0.00002)
+    list(APPEND DET_DIAMOND_PARAM_LEGACY eC_3 4.7107 0.00003)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME

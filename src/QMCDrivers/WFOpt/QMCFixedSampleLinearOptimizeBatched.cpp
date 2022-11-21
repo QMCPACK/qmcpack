@@ -90,6 +90,7 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
           *timer_manager.createTimer("QMCLinearOptimizeBatched::GenerateSamples", timer_level_medium)),
       initialize_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Initialize", timer_level_medium)),
       eigenvalue_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Eigenvalue", timer_level_medium)),
+      involvmat_timer_(*timer_manager.createTimer("QMCLinearOptimizedBatched::invert_matrix", timer_level_medium)),
       line_min_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::Line_Minimization", timer_level_medium)),
       cost_function_timer_(*timer_manager.createTimer("QMCLinearOptimizeBatched::CostFunction", timer_level_medium)),
       wfNode(NULL),
@@ -213,7 +214,7 @@ void QMCFixedSampleLinearOptimizeBatched::start()
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
   app_log() << "</opt>" << std::endl;
-  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
   t1.restart();
 }
@@ -259,7 +260,7 @@ void QMCFixedSampleLinearOptimizeBatched::engine_start(cqmc::engine::LMYEngine<V
   app_log() << "  Execution time = " << std::setprecision(4) << t1.elapsed() << std::endl;
   app_log() << "  </log>" << std::endl;
   app_log() << "</opt>" << std::endl;
-  app_log() << "<opt stage=\"main\" walkers=\"" << optTarget->getNumSamples() << "\">" << std::endl;
+  app_log() << R"(<opt stage="main" walkers=")" << optTarget->getNumSamples() << "\">" << std::endl;
   app_log() << "  <log>" << std::endl;
   t1.restart();
 }
@@ -426,10 +427,11 @@ bool QMCFixedSampleLinearOptimizeBatched::previous_linear_methods_run()
       for (int i = 1; i < N; i++)
         Right(i, i) += std::exp(XS);
       app_log() << "  Using XS:" << XS << " " << failedTries << " " << stability << std::endl;
-      eigenvalue_timer_.start();
-      getLowestEigenvector(Right, currentParameterDirections);
-      objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
-      eigenvalue_timer_.stop();
+      {
+        ScopedTimer local(eigenvalue_timer_);
+        getLowestEigenvector(Right, currentParameterDirections);
+        objFuncWrapper_.Lambda = getNonLinearRescale(currentParameterDirections, S, *optTarget);
+      }
       //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
       for (int i = 0; i < numParams; i++)
@@ -1650,7 +1652,10 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   }
 
   // compute the inverse of the overlap matrix
-  invert_matrix(invMat, false);
+  {
+    ScopedTimer local(involvmat_timer_);
+    invert_matrix(invMat, false);
+  }
 
   // apply the overlap shift
   for (int i = 1; i < N; i++)
@@ -1666,7 +1671,11 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
       std::swap(prdMat(i, j), prdMat(j, i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  RealType lowestEV = 0.;
+  {
+    ScopedTimer local(eigenvalue_timer_);
+    lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  }
 
   // compute the scaling constant to apply to the update
   objFuncWrapper_.Lambda = getNonLinearRescale(parameterDirections, ovlMat, *optTarget);

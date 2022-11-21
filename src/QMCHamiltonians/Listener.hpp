@@ -60,23 +60,27 @@ private:
 };
 
 /** Convenience container for common optional element to mw_eval.._impl.
- *  This can allow the per_particle and reduced mw_eval to share the same
+ *  This allows the per_particle and reduced mw_eval_... to share the same
  *  implementation method.
  *
+ *  member naming is such that on usage:
+ *       ListenerOption listeners
+ *       ...
+ *       if (listeners)
+ *         for (const ListenerVector<Real>& listener : listeners->electron_values)
+ *           listener.report(iw, O_leader.getName(), ve_sample);
+ *
  *  see NonLocalECPotential for example of usage.
- *  I anticipate it could be used elsewhere.
  */
 template<typename T>
 struct ListenerOption
 {
-    ListenerOption(const std::vector<ListenerVector<T>>& le, const std::vector<ListenerVector<T>>& li)
-        : electrons(le), ions(li)
-    {}
-    const std::vector<ListenerVector<T>>& electrons;
-    const std::vector<ListenerVector<T>>& ions;
+  ListenerOption(const std::vector<ListenerVector<T>>& le, const std::vector<ListenerVector<T>>& li)
+      : electron_values(le), ion_values(li)
+  {}
+  const std::vector<ListenerVector<T>>& electron_values;
+  const std::vector<ListenerVector<T>>& ion_values;
 };
-
-
 
 } // namespace qmcplusplus
 
