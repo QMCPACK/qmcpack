@@ -94,7 +94,8 @@ public:
 private:
   /// "file pointer" for h5d_append
   hsize_t current = 0;
-  ///name of this observable
+  /// Path of this observable
+  /// The HDF5 path may contain multiple groups. The full path is each individual group joined by `/`.
   std::vector<std::string> group_name;
   ///my dimensions
   std::vector<hsize_t> mydims;
