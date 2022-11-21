@@ -129,7 +129,7 @@ public:
 using StackKey = StackKeyParam<2>;
 
 /** Timer accumulates time and call counts
- * @tparam CLOCK can be CPUClock or FakeCPUClock
+ * @tparam CLOCK can be a std::chrono clock or FakeChronoClock
  */
 template<class CLOCK>
 class TimerType
