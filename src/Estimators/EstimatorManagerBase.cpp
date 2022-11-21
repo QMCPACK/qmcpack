@@ -201,9 +201,9 @@ void EstimatorManagerBase::start(int blocks, bool record)
     fname  = myComm->getName() + ".stat.h5";
     h_file.create(fname);
     for (int i = 0; i < Estimators.size(); i++)
-      Estimators[i]->registerObservables(h5desc, h_file.getFileID());
+      Estimators[i]->registerObservables(h5desc, h_file);
     if (Collectables)
-      Collectables->registerObservables(h5desc, h_file.getFileID());
+      Collectables->registerObservables(h5desc, h_file);
   }
 }
 

@@ -135,7 +135,7 @@ jobs:
           fail_ci_if_error: true # optional (default = false)
 
   macos:
-    runs-on: macos-latest
+    runs-on: macos-11
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: macOS
@@ -148,6 +148,11 @@ jobs:
     steps:
       - name: Checkout Action
         uses: actions/checkout@v3
+
+      - name: Set Python Version
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
       - name: Setup Dependencies
         run: |

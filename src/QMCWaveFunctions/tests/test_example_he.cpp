@@ -75,11 +75,11 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   WaveFunctionFactory wff(elec, particle_set_map, c);
 
-  const char* wavefunction_xml = "<wavefunction> \
-  <example_he name=\"mine\" source=\"ion0\"> \
-        <var id=\"B\" name=\"B\">0.8</var> \
-  </example_he> \
-</wavefunction>";
+  const char* wavefunction_xml = R"(<wavefunction>
+  <example_he name="mine" source="ion0">
+        <var id="B" name="B">0.8</var>
+  </example_he>
+</wavefunction>)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(wavefunction_xml);
   REQUIRE(okay);

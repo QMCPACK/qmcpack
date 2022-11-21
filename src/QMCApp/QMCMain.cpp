@@ -66,8 +66,7 @@ QMCMain::QMCMain(Communicate* c)
       traces_xml(NULL)
 #endif
 {
-  Communicate node_comm;
-  node_comm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm{OHMMS::Controller->NodeComm()};
   // assign accelerators within a node
   DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
@@ -486,7 +485,7 @@ bool QMCMain::validateXML()
           myComm->barrier_and_abort("Invalid XML document");
       }
       else
-        myComm->barrier_and_abort("tag \"include\" must include an \"href\" attribute.");
+        myComm->barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {

@@ -83,13 +83,13 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-  </Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(xml_block);

@@ -86,13 +86,13 @@ void wfn_fac(boost::mpi3::communicator& world)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -109,18 +109,18 @@ void wfn_fac(boost::mpi3::communicator& world)
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">noncollinear</parameter>  \
-</WalkerSet> \
-";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+      </WalkerSet>
+    )";
 
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
@@ -131,15 +131,15 @@ void wfn_fac(boost::mpi3::communicator& world)
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="restart_file">)" +
+        restart_file + R"(</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -277,12 +277,12 @@ void wfn_fac(boost::mpi3::communicator& world)
       return;
 
       // Restarting Wavefunction from file
-      const char* wfn_xml_block_restart = "<Wavefunction name=\"wfn1\" info=\"info0\"> \
-      <parameter name=\"filetype\">hdf5</parameter> \
-      <parameter name=\"filename\">./dummy.h5</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+      const char* wfn_xml_block_restart = R"(<Wavefunction name="wfn1" info="info0">
+        <parameter name="filetype">hdf5</parameter>
+        <parameter name="filename">./dummy.h5</parameter>
+        <parameter name="cutoff">1e-6</parameter>
+      </Wavefunction>
+      )";
       Libxml2Document doc4;
       okay = doc4.parseFromString(wfn_xml_block_restart);
       REQUIRE(okay);
@@ -424,13 +424,13 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     std::map<std::string, AFQMCInfo> InfoMap;
     InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-<parameter name=\"filetype\">hdf5</parameter> \
-<parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-<parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-</Hamiltonian> \
-";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -447,18 +447,18 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     Allocator alloc_(make_localTG_allocator<ComplexType>(TG));
 
-    const char* wlk_xml_block_closed = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">closed</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_coll   = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
-    const char* wlk_xml_block_noncol = "<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">noncollinear</parameter>  \
-</WalkerSet> \
-";
+    const char* wlk_xml_block_closed = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">closed</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_coll   = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
+    const char* wlk_xml_block_noncol = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">noncollinear</parameter>
+    </WalkerSet>
+    )";
 
     const char* wlk_xml_block =
         ((type == CLOSED) ? (wlk_xml_block_closed) : (type == COLLINEAR ? wlk_xml_block_coll : wlk_xml_block_noncol));
@@ -470,15 +470,15 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     std::string restart_file = create_test_hdf(UTEST_WFN, UTEST_HAMIL);
     app_log() << " wfn_fac_distributed destroy restart_file " << restart_file << "\n";
     if (!remove_file(restart_file)) APP_ABORT("failed to remove restart_file");
-    std::string wfn_xml      = "<Wavefunction name=\"wfn0\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-      <parameter name=\"restart_file\">" +
-        restart_file + "</parameter> \
-  </Wavefunction> \
-";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+      <parameter name="restart_file">)" +
+        restart_file + R"(</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -634,12 +634,12 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     return;
 
     // Restarting Wavefunction from file
-    const char* wfn_xml_block_restart = "<Wavefunction name=\"wfn1\" info=\"info0\"> \
-      <parameter name=\"filetype\">hdf5</parameter> \
-      <parameter name=\"filename\">./dummy.h5</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    const char* wfn_xml_block_restart = R"(<Wavefunction name="wfn1" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">./dummy.h5</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
     Libxml2Document doc4;
     okay = doc4.parseFromString(wfn_xml_block_restart);
     REQUIRE(okay);
@@ -801,14 +801,14 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     std::map<std::string,AFQMCInfo> InfoMap;
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
-    const char *ham_xml_block =
-"<Hamiltonian name=\"ham0\" info=\"info0\"> \
-    <parameter name=\"filetype\">hdf5</parameter> \
-    <parameter name=\"filename\">./afqmc_phmsd.h5</parameter> \
-    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
-    <parameter name=\"useHalfRotatedMuv\">no</parameter> \
-  </Hamiltonian> \
-";
+    const char *ham_xml_block = 
+    R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">./afqmc_phmsd.h5</parameter>
+      <parameter name="cutoff_decomposition">1e-5</parameter>
+      <parameter name="useHalfRotatedMuv">no</parameter>
+    </Hamiltonian>
+    )";
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
     REQUIRE(okay);
@@ -823,22 +823,22 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator rng;
 
-const char *wlk_xml_block =
-"<WalkerSet name=\"wset0\">  \
-  <parameter name=\"walker_type\">collinear</parameter>  \
-</WalkerSet> \
-";
+    const char *wlk_xml_block =
+    R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
 
     const char *wfn_xml_block =
-"<Wavefunction name=\"wfn0\" type=\"phmsd\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    R"(<Wavefunction name="wfn0" type="phmsd" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">./wfn_phmsd.dat</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
 
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -849,12 +849,12 @@ const char *wlk_xml_block =
     Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk);
 
     const char *wfn_xml_block2 =
-"<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
-      <parameter name=\"filetype\">ascii</parameter> \
-      <parameter name=\"filename\">./wfn_phmsd.dat</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-";
+    R"(<Wavefunction name="wfn1" type="nomsd" info="info0">
+      <parameter name="filetype">ascii</parameter>
+      <parameter name="filename">./wfn_phmsd.dat</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
 
 #define __compare__
 #ifdef __compare__

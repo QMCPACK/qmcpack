@@ -701,7 +701,7 @@ int SpaceGrid::allocate_buffer_space(BufferType& buf)
 }
 
 
-void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid, int grid_index) const
+void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file, int grid_index) const
 {
   using iMatrix = Matrix<int>;
   iMatrix imat;
@@ -717,31 +717,31 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
   else
     ng[0] = nvalues_per_domain * npvalues * ndomains;
   oh.set_dimensions(ng, buffer_offset);
-  oh.open(gid);
+  oh.open(file);
   int coord = (int)coordinate;
-  oh.addProperty(const_cast<int&>(coord), "coordinate");
-  oh.addProperty(const_cast<int&>(ndomains), "ndomains");
-  oh.addProperty(const_cast<int&>(nvalues_per_domain), "nvalues_per_domain");
-  oh.addProperty(const_cast<RealType&>(volume), "volume");
-  oh.addProperty(const_cast<Matrix_t&>(domain_volumes), "domain_volumes");
-  oh.addProperty(const_cast<Matrix_t&>(domain_centers), "domain_centers");
+  oh.addProperty(const_cast<int&>(coord), "coordinate", file);
+  oh.addProperty(const_cast<int&>(ndomains), "ndomains", file);
+  oh.addProperty(const_cast<int&>(nvalues_per_domain), "nvalues_per_domain", file);
+  oh.addProperty(const_cast<RealType&>(volume), "volume", file);
+  oh.addProperty(const_cast<Matrix_t&>(domain_volumes), "domain_volumes", file);
+  oh.addProperty(const_cast<Matrix_t&>(domain_centers), "domain_centers", file);
   if (chempot)
   {
-    oh.addProperty(const_cast<int&>(npmin), "min_part");
-    oh.addProperty(const_cast<int&>(npmax), "max_part");
+    oh.addProperty(const_cast<int&>(npmin), "min_part", file);
+    oh.addProperty(const_cast<int&>(npmax), "max_part", file);
     int ref = (int)reference;
-    oh.addProperty(const_cast<int&>(ref), "reference");
+    oh.addProperty(const_cast<int&>(ref), "reference", file);
     imat.resize(reference_count.size(), 1);
     for (int i = 0; i < reference_count.size(); i++)
       imat(i, 0) = reference_count[i];
-    oh.addProperty(const_cast<iMatrix&>(imat), "reference_count");
+    oh.addProperty(const_cast<iMatrix&>(imat), "reference_count", file);
   }
   if (coordinate != voronoi)
   {
-    oh.addProperty(const_cast<Point&>(origin), "origin");
-    oh.addProperty(const_cast<Tensor_t&>(axes), "axes");
-    oh.addProperty(const_cast<Tensor_t&>(axinv), "axinv");
-    oh.addProperty(const_cast<Matrix_t&>(domain_uwidths), "domain_uwidths");
+    oh.addProperty(const_cast<Point&>(origin), "origin", file);
+    oh.addProperty(const_cast<Tensor_t&>(axes), "axes", file);
+    oh.addProperty(const_cast<Tensor_t&>(axinv), "axinv", file);
+    oh.addProperty(const_cast<Matrix_t&>(domain_uwidths), "domain_uwidths", file);
     //add dimensioned quantities
     std::map<std::string, int> axtmap;
     axtmap["x"]     = 0;
@@ -787,7 +787,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
     {
       for (int d = 0; d < DIM; d++)
         imat(d, 0) = ivar[i][d];
-      oh.addProperty(const_cast<iMatrix&>(imat), iname[i]);
+      oh.addProperty(const_cast<iMatrix&>(imat), iname[i], file);
     }
     Matrix_t rmat;
     rmat.resize(DIM, 1);
@@ -795,7 +795,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
     {
       for (int d = 0; d < DIM; d++)
         rmat(d, 0) = rvar[i][d];
-      oh.addProperty(const_cast<Matrix_t&>(rmat), rname[i]);
+      oh.addProperty(const_cast<Matrix_t&>(rmat), rname[i], file);
     }
     for (int d = 0; d < DIM; d++)
     {
@@ -808,7 +808,7 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_
       }
       int ival           = d + 1;
       std::string gmname = "gmap" + int2string(ival);
-      oh.addProperty(const_cast<iMatrix&>(imat), gmname);
+      oh.addProperty(const_cast<iMatrix&>(imat), gmname, file);
     }
   }
 

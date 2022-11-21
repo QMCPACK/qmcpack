@@ -30,37 +30,37 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
   // test that particle masses are properly read in
 
 
-  const char* particles = "<tmp> \
-<particleset name=\"e\" random=\"yes\"> \
-   <group name=\"u\" size=\"4\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-   </group>\
-   <group name=\"d\" size=\"4\" mass=\"1.0\">\
-      <parameter name=\"charge\"              >    -1                    </parameter>\
-      <parameter name=\"mass\"                >    1.0                   </parameter>\
-   </group>\
-</particleset>\
-<particleset name=\"ion0\">\
-   <group name=\"H\" size=\"8\" mass=\"1836.15\">\
-      <parameter name=\"charge\"              >    1                     </parameter>\
-      <parameter name=\"valence\"             >    1                     </parameter>\
-      <parameter name=\"atomicnumber\"        >    1                     </parameter>\
-      <parameter name=\"mass\"                >    1836.15               </parameter>\
-      <attrib name=\"position\" datatype=\"posArray\" condition=\"0\">\
-               0.00000000        0.00000000        0.00000000\
-               2.11170946        0.00000000        0.00000000\
-               0.00000000        2.11170946        0.00000000\
-               2.11170946        2.11170946        0.00000000\
-               0.00000000        0.00000000        2.11170946\
-               2.11170946        0.00000000        2.11170946\
-               0.00000000        2.11170946        2.11170946\
-               2.11170946        2.11170946        2.11170946\
-      </attrib>\
-   </group>\
-</particleset>\
-</tmp> \
-"; // simple cubic lattice at rs=1.31
+  const char* particles = R"(<tmp> 
+<particleset name="e" random="yes"> 
+   <group name="u" size="4" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+   </group>
+   <group name="d" size="4" mass="1.0">
+      <parameter name="charge"              >    -1                    </parameter>
+      <parameter name="mass"                >    1.0                   </parameter>
+   </group>
+</particleset>
+<particleset name="ion0">
+   <group name="H" size="8" mass="1836.15">
+      <parameter name="charge"              >    1                     </parameter>
+      <parameter name="valence"             >    1                     </parameter>
+      <parameter name="atomicnumber"        >    1                     </parameter>
+      <parameter name="mass"                >    1836.15               </parameter>
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+               2.11170946        0.00000000        0.00000000
+               0.00000000        2.11170946        0.00000000
+               2.11170946        2.11170946        0.00000000
+               0.00000000        0.00000000        2.11170946
+               2.11170946        0.00000000        2.11170946
+               0.00000000        2.11170946        2.11170946
+               2.11170946        2.11170946        2.11170946
+      </attrib>
+   </group>
+</particleset>
+</tmp>
+)"; // simple cubic lattice at rs=1.31
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);

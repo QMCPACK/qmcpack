@@ -35,7 +35,7 @@ public:
                   RandomGenerator& rng) override
   {}
 
-  void registerOperatorEstimator(hid_t gid) override {}
+  void registerOperatorEstimator(hdf_archive& file) override {}
 
   void startBlock(int nsteps) override {}
 

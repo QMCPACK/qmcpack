@@ -524,7 +524,7 @@ void DensityMatrices1B::addObservables(PropertySetType& plist, BufferType& colle
 }
 
 
-void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
 #if defined(QMC_COMPLEX)
   std::vector<int> ng(3);
@@ -540,30 +540,33 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
 #endif
 
   std::string dname = name_;
-  hid_t dgid        = H5Gcreate2(gid, dname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  file.push(dname, true);
 
   std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate2(dgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  file.push(nname, true);
   for (int s = 0; s < nspecies; ++s)
   {
     h5desc.emplace_back(species_name[s]);
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, nindex + s * nentries);
-    oh.open(ngid);
+    oh.open(file);
   }
+  file.pop();
 
   if (energy_mat)
   {
     std::string ename = "energy_matrix";
-    hid_t egid        = H5Gcreate2(dgid, ename.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    file.push(ename, true);
     for (int s = 0; s < nspecies; ++s)
     {
       h5desc.emplace_back(species_name[s]);
       auto& oh = h5desc.back();
       oh.set_dimensions(ng, eindex + s * nentries);
-      oh.open(egid);
+      oh.open(file);
     }
+    file.pop();
   }
+  file.pop();
 }
 
 

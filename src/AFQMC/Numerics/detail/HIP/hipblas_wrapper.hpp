@@ -14,8 +14,8 @@
 
 #include <cassert>
 #include <hip/hip_runtime.h>
-#include "hipblas.h"
-#include "rocsolver.h"
+#include <hipblas/hipblas.h>
+#include <rocsolver/rocsolver.h>
 #include "AFQMC/Memory/HIP/hip_utilities.h"
 
 namespace hipblas

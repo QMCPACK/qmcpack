@@ -821,9 +821,9 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   }
 }
 
-void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hid_t gid) const
+void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const
 {
-  OperatorBase::registerObservables(h5list, gid);
+  OperatorBase::registerObservables(h5list, file);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
@@ -832,7 +832,7 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
     h5list.emplace_back("FNL");
     auto& h5o1 = h5list.back();
     h5o1.set_dimensions(ndim, FirstForceIndex);
-    h5o1.open(gid);
+    h5o1.open(file);
   }
 }
 

@@ -49,8 +49,7 @@ int main(int argc, char* argv[])
   OHMMS::Controller->initialize(env);
   if (OHMMS::Controller->rank())
     outputManager.shutOff();
-  Communicate node_comm;
-  node_comm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm{OHMMS::Controller->NodeComm()};
   // assign accelerators within a node
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 #else
