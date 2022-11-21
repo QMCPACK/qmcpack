@@ -236,7 +236,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   FakeTimer* t5 = tm.createTimer("timer5");
 
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t3->start();
@@ -287,7 +287,7 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
   FakeTimer* t3  = tm.createTimer("timer3");
 
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t3->start();
