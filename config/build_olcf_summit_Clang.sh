@@ -1,9 +1,11 @@
 #!/bin/bash
-
-echo "----------------------- WARNING ------------------------------------"
-echo "This is **not** production ready and intended for development only!!"
-echo "Use config/build_olcf_summit.sh for production on Summit."
-echo "----------------------- WARNING ------------------------------------"
+# This recipe is intended for OLCF Summit https://www.olcf.ornl.gov/summit/
+# It builds all the varaints of QMCPACK in the current directory
+# last revision: Aug 29th 2022
+#
+# How to invoke this script?
+# build_olcf_summit_Clang.sh # build all the variants assuming the current directory is the source directory.
+# build_olcf_summit_Clang.sh <source_dir> # build all the variants with a given source directory <source_dir>
 
 echo "Purging current module set"
 module purge
@@ -25,7 +27,7 @@ if [[ ! -d /gpfs/alpine/mat151/world-shared/opt/modules ]] ; then
   exit 1
 fi
 module use /gpfs/alpine/mat151/world-shared/opt/modules
-module load llvm/main-20220317-cuda11.0
+module load llvm/release-15.0.0-cuda11.0
 
 TYPE=Release
 Compiler=Clang
@@ -58,11 +60,11 @@ if [[ $name == *"_MP"* ]]; then
 fi
 
 if [[ $name == *"offload"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DUSE_OBJECT_TARGET=ON -DOFFLOAD_ARCH=sm_70"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_OFFLOAD=ON -DOFFLOAD_ARCH=sm_70"
 fi
 
 if [[ $name == *"cuda"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=70 -DCMAKE_CUDA_HOST_COMPILER=`which g++`"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=70"
 fi
 
 folder=build_summit_${Compiler}_${name}

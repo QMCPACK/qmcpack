@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 template<typename ST>
+SplineC2C<ST>::SplineC2C(const SplineC2C& in) = default;
+
+template<typename ST>
 inline void SplineC2C<ST>::set_spline(SingleSplineType* spline_r,
                                       SingleSplineType* spline_i,
                                       int twist,
@@ -83,7 +86,8 @@ void SplineC2C<ST>::evaluateValue(const ParticleSet& P, const int iat, ValueVect
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(r, myV, psi, first / 2, last / 2);
@@ -109,7 +113,8 @@ void SplineC2C<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 #pragma omp barrier
     }
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), tid, first, last);
     const int first_cplx = first / 2;
     const int last_cplx  = kPoints.size() < last / 2 ? kPoints.size() : last / 2;
 
@@ -289,7 +294,8 @@ void SplineC2C<ST>::evaluateVGL(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgl(r, psi, dpsi, d2psi, first / 2, last / 2);
@@ -428,7 +434,8 @@ void SplineC2C<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
@@ -683,7 +690,8 @@ void SplineC2C<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
     assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);

@@ -562,8 +562,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s)
       DetSigns(s.DetSigns),
       ndets_per_excitation_level_(s.ndets_per_excitation_level_)
 {
-  Optimizable = s.Optimizable;
-
   resize();
 }
 
@@ -581,23 +579,22 @@ std::unique_ptr<WaveFunctionComponent> MultiDiracDeterminant::makeClone(Particle
  *@param spinor flag to determinane if spin arrays need to be resized and used
  */
 MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, bool spinor, int first, int nel)
-    : WaveFunctionComponent("MultiDiracDet"),
-      inverse_timer(*timer_manager.createTimer(ClassName + "::invertRefDet")),
-      buildTable_timer(*timer_manager.createTimer(ClassName + "::buildTable")),
-      table2ratios_timer(*timer_manager.createTimer(ClassName + "::table2ratios")),
-      evalWalker_timer(*timer_manager.createTimer(ClassName + "::evalWalker")),
-      evalOrbValue_timer(*timer_manager.createTimer(ClassName + "::evalOrbValue")),
-      evalOrbVGL_timer(*timer_manager.createTimer(ClassName + "::evalOrbVGL")),
-      updateInverse_timer(*timer_manager.createTimer(ClassName + "::updateRefDetInv")),
-      calculateRatios_timer(*timer_manager.createTimer(ClassName + "::calcRatios")),
-      calculateGradRatios_timer(*timer_manager.createTimer(ClassName + "::calcGradRatios")),
-      updateRatios_timer(*timer_manager.createTimer(ClassName + "::updateRatios")),
-      evaluateDetsForPtclMove_timer(*timer_manager.createTimer(ClassName + "::evaluateDet")),
-      evaluateDetsAndGradsForPtclMove_timer(*timer_manager.createTimer(ClassName + "::evaluateDetAndGrad")),
-      evaluateGrads_timer(*timer_manager.createTimer(ClassName + "::evaluateGrad")),
-      offload_timer(*timer_manager.createTimer(ClassName + "::offload")),
-      transferH2D_timer(*timer_manager.createTimer(ClassName + "::transferH2D")),
-      transferD2H_timer(*timer_manager.createTimer(ClassName + "::transferD2H")),
+    : inverse_timer(*timer_manager.createTimer(getClassName() + "::invertRefDet")),
+      buildTable_timer(*timer_manager.createTimer(getClassName() + "::buildTable")),
+      table2ratios_timer(*timer_manager.createTimer(getClassName() + "::table2ratios")),
+      evalWalker_timer(*timer_manager.createTimer(getClassName() + "::evalWalker")),
+      evalOrbValue_timer(*timer_manager.createTimer(getClassName() + "::evalOrbValue")),
+      evalOrbVGL_timer(*timer_manager.createTimer(getClassName() + "::evalOrbVGL")),
+      updateInverse_timer(*timer_manager.createTimer(getClassName() + "::updateRefDetInv")),
+      calculateRatios_timer(*timer_manager.createTimer(getClassName() + "::calcRatios")),
+      calculateGradRatios_timer(*timer_manager.createTimer(getClassName() + "::calcGradRatios")),
+      updateRatios_timer(*timer_manager.createTimer(getClassName() + "::updateRatios")),
+      evaluateDetsForPtclMove_timer(*timer_manager.createTimer(getClassName() + "::evaluateDet")),
+      evaluateDetsAndGradsForPtclMove_timer(*timer_manager.createTimer(getClassName() + "::evaluateDetAndGrad")),
+      evaluateGrads_timer(*timer_manager.createTimer(getClassName() + "::evaluateGrad")),
+      offload_timer(*timer_manager.createTimer(getClassName() + "::offload")),
+      transferH2D_timer(*timer_manager.createTimer(getClassName() + "::transferH2D")),
+      transferD2H_timer(*timer_manager.createTimer(getClassName() + "::transferD2H")),
       Phi(std::move(spos)),
       NumOrbitals(Phi->getOrbitalSetSize()),
       FirstIndex(first),
@@ -605,8 +602,6 @@ MultiDiracDeterminant::MultiDiracDeterminant(std::unique_ptr<SPOSet>&& spos, boo
       LastIndex(first + nel),
       is_spinor_(spinor)
 {
-  (Phi->isOptimizable() == true) ? Optimizable = true : Optimizable = false;
-
   ciConfigList                = std::make_shared<std::vector<ci_configuration2>>();
   refdet_occup                = std::make_shared<OffloadVector<size_t>>();
   detData                     = std::make_shared<OffloadVector<int>>();
@@ -769,7 +764,7 @@ void MultiDiracDeterminant::resize()
 
 void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const size_t nel = NumPtcls;
@@ -846,15 +841,15 @@ int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
 
 void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
                                                 const opt_variables_type& optvars,
-                                                std::vector<ValueType>& dlogpsi,
-                                                std::vector<ValueType>& dhpsioverpsi,
+                                                Vector<ValueType>& dlogpsi,
+                                                Vector<ValueType>& dhpsioverpsi,
                                                 const MultiDiracDeterminant& pseudo_dn,
                                                 const ValueType& psiCurrent,
                                                 const std::vector<ValueType>& Coeff,
                                                 const std::vector<size_t>& C2node_up,
                                                 const std::vector<size_t>& C2node_dn)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();
@@ -895,14 +890,14 @@ void MultiDiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
 void MultiDiracDeterminant::evaluateDerivativesWF(ParticleSet& P,
                                                   const opt_variables_type& optvars,
-                                                  std::vector<ValueType>& dlogpsi,
+                                                  Vector<ValueType>& dlogpsi,
                                                   const MultiDiracDeterminant& pseudo_dn,
                                                   const PsiValueType& psiCurrent,
                                                   const std::vector<ValueType>& Coeff,
                                                   const std::vector<size_t>& C2node_up,
                                                   const std::vector<size_t>& C2node_dn)
 {
-  if (!Optimizable)
+  if (!isOptimizable())
     return;
 
   const OffloadVector<ValueType>& detValues_up = getRatiosToRefDet();

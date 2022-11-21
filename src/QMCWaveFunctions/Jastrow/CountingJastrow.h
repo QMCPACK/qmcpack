@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 template<class RegionType>
-class CountingJastrow : public WaveFunctionComponent
+class CountingJastrow : public WaveFunctionComponent, public OptimizableObject
 {
 protected:
   // number of electrons
@@ -91,18 +91,27 @@ protected:
 
 public:
   // constructor
-  CountingJastrow(ParticleSet& P, std::unique_ptr<RegionType> c, const Matrix<RealType>& f)
-      : WaveFunctionComponent("CountingJastrow"), F(f), C(std::move(c))
+  CountingJastrow(ParticleSet& P,
+                  std::unique_ptr<RegionType> c,
+                  const Matrix<RealType>& f,
+                  bool opt_C_flag,
+                  bool opt_F_flag)
+      : OptimizableObject("countingjas"), F(f), C(std::move(c)), opt_F(opt_F_flag), opt_C(opt_C_flag)
   {
     num_els = P.getTotalNum();
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  std::string getClassName() const override { return "CountingJastrow"; }
+
+  bool isOptimizable() const override { return opt_C || opt_F; }
+
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+
+  void checkInVariablesExclusive(opt_variables_type& active) final
   {
     active.insertFrom(myVars);
     C->checkInVariables(active);
   }
-
 
   void checkOutVariables(const opt_variables_type& active) override
   {
@@ -111,7 +120,7 @@ public:
   }
 
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     int ia, IJ, JI;
     std::string id;
@@ -457,9 +466,7 @@ public:
 
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override
   {
-    auto cjc = std::make_unique<CountingJastrow>(tqp, C->makeClone(), F);
-    cjc->setOptimizable(opt_C || opt_F);
-    cjc->addOpt(opt_C, opt_F);
+    auto cjc = std::make_unique<CountingJastrow>(tqp, C->makeClone(), F, opt_C, opt_F);
     cjc->addDebug(debug, debug_seqlen, debug_period);
     cjc->initialize();
     return cjc;
@@ -467,8 +474,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override
   {
 #ifdef QMC_COMPLEX
     APP_ABORT("CountingJastrow::evaluateDerivatives is not available on complex builds.");
@@ -668,12 +675,6 @@ public:
       deriv_print_index++;
     }
 #endif
-  }
-
-  void addOpt(bool opt_C_flag, bool opt_F_flag)
-  {
-    opt_F = opt_F_flag;
-    opt_C = opt_C_flag;
   }
 
   void addDebug(bool debug_flag, int seqlen, int period)

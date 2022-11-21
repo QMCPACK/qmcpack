@@ -28,7 +28,7 @@
 #include <cublas_v2.h>
 #else
 #include <hip/hip_runtime.h>
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include "Platforms/ROCm/cuda2hip.h"
 #endif
 

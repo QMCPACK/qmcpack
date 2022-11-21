@@ -206,8 +206,8 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-1.626231256363484));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.2062050179872));
@@ -222,15 +222,15 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
 
   int nparam = 2;
   int nentry = 1;
-  RecordArray<ValueType> dlogpsi_list(nparam, nentry);
-  RecordArray<ValueType> dhpsi_over_psi_list(nparam, nentry);
+  RecordArray<ValueType> dlogpsi_list(nentry, nparam);
+  RecordArray<ValueType> dhpsi_over_psi_list(nentry, nparam);
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, opt_vars, dlogpsi_list, dhpsi_over_psi_list);
 
-  CHECK(dlogpsi_list.getValue(0, 0) == ValueApprox(32.2062050179872));
-  CHECK(dlogpsi_list.getValue(1, 0) == ValueApprox(5.87482925187464));
-  CHECK(dhpsi_over_psi_list.getValue(0, 0) == ValueApprox(46.0088643114103));
-  CHECK(dhpsi_over_psi_list.getValue(1, 0) == ValueApprox(7.84119772047731));
+  CHECK(dlogpsi_list[0][0] == ValueApprox(32.2062050179872));
+  CHECK(dlogpsi_list[0][1] == ValueApprox(5.87482925187464));
+  CHECK(dhpsi_over_psi_list[0][0] == ValueApprox(46.0088643114103));
+  CHECK(dhpsi_over_psi_list[0][1] == ValueApprox(7.84119772047731));
 }
 
 // No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
@@ -278,8 +278,8 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
@@ -373,8 +373,8 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-1.2132292565412577));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(3);
-  std::vector<ValueType> dhpsioverpsi(3);
+  Vector<ValueType> dlogpsi(3);
+  Vector<ValueType> dhpsioverpsi(3);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
   CHECK(dlogpsi[0] == ValueApprox(32.206205017987166));
@@ -442,8 +442,8 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 
@@ -505,8 +505,8 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   CHECK(elec->L[1] == ValueApprox(-0.6035591598540904));
 
   using ValueType = QMCTraits::ValueType;
-  std::vector<ValueType> dlogpsi(2);
-  std::vector<ValueType> dhpsioverpsi(2);
+  Vector<ValueType> dlogpsi(2);
+  Vector<ValueType> dhpsioverpsi(2);
   psi->evaluateDerivatives(*elec, opt_vars, dlogpsi, dhpsioverpsi);
 
 

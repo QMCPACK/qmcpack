@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -11,6 +11,7 @@
 //                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Alfredo A. Correa, correaa@llnl.gov, Lawrence Livermore National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +76,8 @@ public:
   Communicate(const mpi3::environment& env);
 
   ///constructor with communicator
-  Communicate(const mpi3::communicator& in_comm);
+  Communicate(mpi3::communicator& in_comm);
+  Communicate(mpi3::communicator&& in_comm);
 #endif
 
   /** constructor that splits in_comm
@@ -96,8 +98,9 @@ public:
 #ifdef HAVE_MPI
   void initialize(const mpi3::environment& env);
 #endif
-  /// initialize this as a node/shared-memory communicator
-  void initializeAsNodeComm(const Communicate& parent);
+  /// provide a node/shared-memory communicator from current (parent) communicator
+  Communicate NodeComm() const;
+
   void finalize();
   void barrier() const;
   void abort() const;
@@ -231,7 +234,7 @@ public:
 
 #ifdef HAVE_MPI
   /// mpi3 communicator wrapper
-  mpi3::communicator comm;
+  mutable mpi3::communicator comm;
 #endif
 };
 

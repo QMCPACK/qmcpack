@@ -125,14 +125,16 @@ struct SplineSetReader : public BsplineReaderBase
     return target;
   }
 
-  std::unique_ptr<SPOSet> create_spline_set(int spin, const BandInfoGroup& bandgroup) override
+  std::unique_ptr<SPOSet> create_spline_set(const std::string& my_name,
+                                            int spin,
+                                            const BandInfoGroup& bandgroup) override
   {
     ReportEngine PRE("SplineSetReader", "create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline = new splineset_t;
+    bspline = new splineset_t(my_name);
     app_log() << "  ClassName = " << bspline->getClassName() << std::endl;
-    if (bspline->is_complex)
+    if (bspline->isComplex())
       app_log() << "  Using complex einspline table" << std::endl;
     else
       app_log() << "  Using real einspline table" << std::endl;
@@ -167,7 +169,7 @@ struct SplineSetReader : public BsplineReaderBase
       {
         std::string aname("none");
         foundspline = h5f.readEntry(aname, "class_name");
-        foundspline = (aname.find(bspline->KeyWord) != std::string::npos);
+        foundspline = (aname.find(bspline->getKeyword()) != std::string::npos);
       }
       if (foundspline)
       {
@@ -205,13 +207,13 @@ struct SplineSetReader : public BsplineReaderBase
         FFTplan = fftw_plan_dft_3d(nx, ny, nz, reinterpret_cast<fftw_complex*>(FFTbox.data()),
                                    reinterpret_cast<fftw_complex*>(FFTbox.data()), +1, FFTW_ESTIMATE);
         splineData_r.resize(nx, ny, nz);
-        if (bspline->is_complex)
+        if (bspline->isComplex())
           splineData_i.resize(nx, ny, nz);
 
         TinyVector<double, 3> start(0.0);
         TinyVector<double, 3> end(1.0);
         spline_r = einspline::create(spline_r, start, end, MeshSize, bspline->HalfG);
-        if (bspline->is_complex)
+        if (bspline->isComplex())
           spline_i = einspline::create(spline_i, start, end, MeshSize, bspline->HalfG);
 
         now.restart();
@@ -254,7 +256,7 @@ struct SplineSetReader : public BsplineReaderBase
   {
     unpack4fftw(cG, mybuilder->Gvecs[0], MeshSize, FFTbox);
     fftw_execute(FFTplan);
-    if (bspline->is_complex)
+    if (bspline->isComplex())
     {
       if (rotate)
         fix_phase_rotate_c2c(FFTbox, splineData_r, splineData_i, mybuilder->TwistAngles[ti], rotate_phase_r,

@@ -20,9 +20,7 @@
 #define QMCPLUSPLUS_OBSERVABLEHELPER_H
 
 #include "Configuration.h"
-#include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/HDFNumericAttrib.h"
-#include "Numerics/HDFSTLAttrib.h"
+#include "hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -36,15 +34,15 @@ using value_type = QMCTraits::FullPrecRealType;
  */
 class ObservableHelper
 {
-public:
-  ///starting index
-  hsize_t lower_bound = 0;
-  ///id of this observable
-  hid_t data_id = -1;
+private:
   ///dataspace for value
   hid_t space1_id = -1;
   ///id of the value dataset
   hid_t value1_id = -1;
+
+public:
+  ///starting index
+  hsize_t lower_bound = 0;
   ///my dimensions
   std::vector<hsize_t> mydims;
   ///maximum dimensions
@@ -90,26 +88,27 @@ public:
    * open a h5 group of this observable
    * Create a group for an observable and dataspace
    */
-  void open(hid_t grp_id);
-
+  void open(hdf_archive& file);
 
   /** add named property to describe the collectable this helper class handles
    * @param p any intrinsic datatype including vector, basic containers
    * @param pname property
    */
   template<typename T>
-  inline void addProperty(T& p, const std::string& pname)
+  inline void addProperty(T& p, const std::string& pname, hdf_archive& file)
   {
-    HDFAttribIO<T> a(p);
-    a.write(data_id, pname.c_str());
+    file.push(group_name, false);
+    file.write(p, pname);
+    file.pop();
   }
 
-  void addProperty(float& p, const std::string& pname);
-  void addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname);
-  void addProperty(Matrix<float>& p, const std::string& pname);
-  void addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname);
-  void addProperty(std::vector<float>& p, const std::string& pname);
-  void addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p, const std::string& pname);
+  void addProperty(float& p, const std::string& pname, hdf_archive& file);
+  void addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file);
+  void addProperty(Matrix<float>& p, const std::string& pname, hdf_archive& file);
+  void addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file);
+  void addProperty(std::vector<float>& p, const std::string& pname, hdf_archive& file);
+  void addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p, const std::string& pname, hdf_archive& file);
+
 
   void write(const value_type* first_v, const value_type* first_vv);
 

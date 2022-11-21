@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="C2_TZ_PP_SHORT_H5_MSDJ" series="1">
+     <parameter name="driver_version">batched</parameter>
+  </project>
+  <random seed="2"/>
+
+  <!-- input from gaussian converter -->
+  <include href="C2.structure.xml"/>
+  <include href="C2-H5.wfj.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+      <pseudo elementType="C" href="C.BFD.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+  </hamiltonian>
+
+ <loop max="1">
+  <qmc gpu="yes" method="linear" move="pbyp">
+    <optimize method="gradient_test">
+      <parameter name="output_param_file">yes</parameter>
+    </optimize>
+    <estimator hdf5="no" name="LocalEnergy" />
+    <parameter name="walkers_per_rank">       1 </parameter>
+    <parameter name="warmupSteps">            1 </parameter>
+    <parameter name="substeps">               1 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 1 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">             yes </parameter>
+    <cost name="energy"> 1.0 </cost>
+    <cost name="reweightedvariance"> 0.0 </cost>
+  </qmc>
+</loop>
+</simulation>

@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OMPTarget/ompBLAS.hpp"
-#include "OMPTarget/ompReduction.hpp"
+#include "OMPTarget/ompReductionComplex.hpp"
 #include "ResourceCollection.h"
 #include "DiracMatrixComputeOMPTarget.hpp"
 #include "WaveFunctionTypes.hpp"

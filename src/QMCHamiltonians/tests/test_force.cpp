@@ -457,31 +457,50 @@ TEST_CASE("AC Force", "[hamiltonian]")
   TrialWaveFunction psi;
   QMCHamiltonian qmcHamiltonian;
 
-  ACForce force(ions, elec, psi, qmcHamiltonian);
-
-  const std::string acforceXML = R"(<tmp> 
+  //This is redundant code, but necessary to avoid adding API's to
+  //modify internal state.  Avoid constructor+put() complexities for now.
+  //Revisit in future.  
+  //
+  //Old algorithm is the legacy force path, new is the fast force derivative path.
+  ACForce force_old(ions, elec, psi, qmcHamiltonian);
+  ACForce force_new(ions, elec, psi, qmcHamiltonian);
+  const std::string acforceXMLold = R"(<tmp> 
   <acforce spacewarp="no" swpow="2." delta="1.e-3">  
   </acforce> 
   </tmp> 
   )";
 
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(acforceXML);
-  REQUIRE(okay);
+  const std::string acforceXMLnew = R"(<tmp> 
+  <acforce spacewarp="no" swpow="2." delta="1.e-3" fast_derivatives="yes">  
+  </acforce> 
+  </tmp> 
+  )";
 
-  xmlNodePtr root = doc.getRoot();
-  xmlNodePtr h1   = xmlFirstElementChild(root);
+  Libxml2Document olddoc;
+  Libxml2Document newdoc;
+  bool oldokay = olddoc.parseFromString(acforceXMLold);
+  REQUIRE(oldokay);
+  bool newokay = newdoc.parseFromString(acforceXMLnew);
+  REQUIRE(newokay);
 
-  force.put(h1);
-  const auto v = force.evaluate(elec);
-  force.resetTargetParticleSet(elec); // does nothing?
+  xmlNodePtr oldroot = olddoc.getRoot();
+  xmlNodePtr oldh1   = xmlFirstElementChild(oldroot);
+  xmlNodePtr newroot = newdoc.getRoot();
+  xmlNodePtr newh1   = xmlFirstElementChild(newroot);
 
-  REQUIRE(v == Approx(0));
-  REQUIRE(force.get(std::cout) == true);
+  force_old.put(oldh1);
+  force_new.put(newh1);
+  const auto vold = force_old.evaluate(elec);
+  const auto vnew = force_new.evaluate(elec);
+  force_old.resetTargetParticleSet(elec); // does nothing?
 
-  force.add2Hamiltonian(elec, psi, qmcHamiltonian);
+  REQUIRE(vold == Approx(0));
+  REQUIRE(vnew == Approx(0));
+  REQUIRE(force_old.get(std::cout) == true);
 
-  auto clone = force.makeClone(elec, psi, qmcHamiltonian);
+  force_old.add2Hamiltonian(elec, psi, qmcHamiltonian);
+
+  auto clone = force_old.makeClone(elec, psi, qmcHamiltonian);
   REQUIRE(clone);
 }
 

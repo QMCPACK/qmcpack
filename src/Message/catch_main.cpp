@@ -19,6 +19,7 @@
 #endif
 #include "Host/OutputManager.h"
 #include "MemoryUsage.h"
+#include "io/hdf/hdf_error_suppression.h"
 
 // Replacement unit test main function to ensure that MPI is finalized once
 // (and only once) at the end of the unit test.
@@ -31,6 +32,8 @@ std::string UTEST_HAMIL, UTEST_WFN;
 
 int main(int argc, char* argv[])
 {
+  // Suppress HDF5 warning and error messages.
+  qmcplusplus::hdf_error_suppression hide_hdf_errors;
   Catch::Session session;
   using namespace Catch::clara;
   // Build command line parser.
@@ -46,8 +49,7 @@ int main(int argc, char* argv[])
   OHMMS::Controller->initialize(env);
   if (OHMMS::Controller->rank())
     outputManager.shutOff();
-  Communicate node_comm;
-  node_comm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm{OHMMS::Controller->NodeComm()};
   // assign accelerators within a node
   qmcplusplus::DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 #else

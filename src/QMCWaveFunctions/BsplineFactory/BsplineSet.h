@@ -35,8 +35,6 @@ class BsplineSet : public SPOSet
 {
 protected:
   static const int D = DIM;
-  ///true if the computed values are complex
-  bool is_complex;
   ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
   size_t MyIndex;
   ///first index of the SPOs this Spline handles
@@ -56,13 +54,12 @@ protected:
   aligned_vector<int> BandIndexMap;
   ///band offsets used for communication
   std::vector<int> offset;
-  ///keyword used to match hdf5
-  std::string KeyWord;
 
 public:
-  BsplineSet(bool use_OMP_offload = false, bool ion_deriv = false, bool optimizable = false)
-      : SPOSet(use_OMP_offload, ion_deriv, optimizable), is_complex(false), MyIndex(0), first_spo(0), last_spo(0)
-  {}
+  BsplineSet(const std::string& my_name) : SPOSet(my_name), MyIndex(0), first_spo(0), last_spo(0) {}
+
+  virtual bool isComplex() const         = 0;
+  virtual std::string getKeyword() const = 0;
 
   auto& getHalfG() const { return HalfG; }
 
@@ -119,8 +116,6 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override = 0;
 
-  void resetParameters(const opt_variables_type& active) override {}
-
   void setOrbitalSetSize(int norbs) override { OrbitalSetSize = norbs; }
 
   void evaluate_notranspose(const ParticleSet& P,
@@ -134,9 +129,9 @@ public:
     using grad_type  = GradMatrix::value_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      ValueVector l(d2logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      ValueVector l(d2logdet[i], d2logdet.cols());
       evaluateVGL(P, iat, v, g, l);
     }
   }
@@ -178,9 +173,9 @@ public:
 
       for (int iw = 0; iw < nw; iw++)
       {
-        mw_psi_v.emplace_back(logdet_list[iw].get()[i], OrbitalSetSize);
-        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], OrbitalSetSize);
-        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], OrbitalSetSize);
+        mw_psi_v.emplace_back(logdet_list[iw].get()[i], logdet_list[iw].get().cols());
+        mw_dpsi_v.emplace_back(dlogdet_list[iw].get()[i], dlogdet_list[iw].get().cols());
+        mw_d2psi_v.emplace_back(d2logdet_list[iw].get()[i], d2logdet_list[iw].get().cols());
         psi_v_list.push_back(mw_psi_v.back());
         dpsi_v_list.push_back(mw_dpsi_v.back());
         d2psi_v_list.push_back(mw_d2psi_v.back());
@@ -199,9 +194,9 @@ public:
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      HessVector h(grad_grad_logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      HessVector h(grad_grad_logdet[i], grad_grad_logdet.cols());
       evaluateVGH(P, iat, v, g, h);
     }
   }
@@ -216,10 +211,10 @@ public:
   {
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
-      ValueVector v(logdet[i], OrbitalSetSize);
-      GradVector g(dlogdet[i], OrbitalSetSize);
-      HessVector h(grad_grad_logdet[i], OrbitalSetSize);
-      GGGVector gh(grad_grad_grad_logdet[i], OrbitalSetSize);
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      HessVector h(grad_grad_logdet[i], grad_grad_logdet.cols());
+      GGGVector gh(grad_grad_grad_logdet[i], grad_grad_grad_logdet.cols());
       evaluateVGHGH(P, iat, v, g, h, gh);
     }
   }

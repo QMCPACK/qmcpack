@@ -47,13 +47,14 @@ class SoaCuspCorrection
   size_t NumTargets;
   ///number of quantum particles
   const int myTableIndex;
-  ///size of the basis set
-  int BasisSetSize;
+  /** Maximal number of supported MOs
+   * this is not the AO basis because cusp correction is applied on the MO directly.
+   */
+  int MaxOrbSize;
 
   ///COMPLEX WON'T WORK
   using COT = CuspCorrectionAtomicBasis<RealType>;
 
-  int unused = 1;
   /** container of the unique pointers to the Atomic Orbitals
    *
    * size of LOBasisSet = number of centers (atoms)
@@ -73,10 +74,9 @@ public:
   /** copy constructor */
   SoaCuspCorrection(const SoaCuspCorrection& a);
 
-
-  /** set BasisSetSize and allocate mVGL container
+  /** set the number of orbitals this cusp correction may serve. call this before adding any correction centers.
    */
-  void setBasisSetSize(int nbs);
+  void setOrbitalSetSize(int norbs);
 
   /** compute VGL
    * @param P quantum particleset

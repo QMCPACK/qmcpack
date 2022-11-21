@@ -20,13 +20,13 @@ namespace qmcplusplus
 {
 // Modifies orbital set lcwc
 void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
-                         int num_centers,
-                         int orbital_set_size,
                          ParticleSet& targetPtcl,
                          ParticleSet& sourcePtcl,
                          LCAOrbitalSetWithCorrection& lcwc,
                          const std::string& id)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   using RealType = QMCTraits::RealType;
 
   NewTimer& cuspApplyTimer =
@@ -34,10 +34,10 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
 
   ScopedTimer cuspApplyTimerWrapper(cuspApplyTimer);
 
-  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
-  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
 
@@ -113,8 +113,10 @@ void applyCuspCorrection(const Matrix<CuspCorrectionParameters>& info,
   removeSTypeOrbitals(corrCenter, lcwc);
 }
 
-void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParameters>& info, const std::string& id)
+void saveCusp(std::string filename, Matrix<CuspCorrectionParameters>& info, const std::string& id)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   xmlDocPtr doc       = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr cuspRoot = xmlNewNode(NULL, BAD_CAST "qmcsystem");
   xmlNodePtr spo      = xmlNewNode(NULL, (const xmlChar*)"sposet");
@@ -174,21 +176,20 @@ void saveCusp(int orbital_set_size, int num_centers, Matrix<CuspCorrectionParame
     xmlAddChild(spo, ctr);
   }
 
-  std::string fname = id + ".cuspInfo.xml";
-  app_log() << "Saving resulting cusp Info xml block to: " << fname << std::endl;
-  xmlSaveFormatFile(fname.c_str(), doc, 1);
+  app_log() << "Saving resulting cusp Info xml block to: " << filename << std::endl;
+  xmlSaveFormatFile(filename.c_str(), doc, 1);
   xmlFreeDoc(doc);
 }
 
-void generateCuspInfo(int orbital_set_size,
-                      int num_centers,
-                      Matrix<CuspCorrectionParameters>& info,
+void generateCuspInfo(Matrix<CuspCorrectionParameters>& info,
                       const ParticleSet& targetPtcl,
                       const ParticleSet& sourcePtcl,
                       const LCAOrbitalSetWithCorrection& lcwc,
                       const std::string& id,
                       Communicate& Comm)
 {
+  const int num_centers = info.rows();
+  const int orbital_set_size = info.cols();
   using RealType = QMCTraits::RealType;
 
   NewTimer& cuspCreateTimer =
@@ -199,10 +200,10 @@ void generateCuspInfo(int orbital_set_size,
 
   ScopedTimer createCuspTimerWrapper(cuspCreateTimer);
 
-  LCAOrbitalSet phi(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet phi("phi", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   phi.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
-  LCAOrbitalSet eta(std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()), lcwc.isOptimizable());
+  LCAOrbitalSet eta("eta", std::unique_ptr<LCAOrbitalSet::basis_type>(lcwc.myBasisSet->makeClone()));
   eta.setOrbitalSetSize(lcwc.getOrbitalSetSize());
 
 
@@ -229,12 +230,10 @@ void generateCuspInfo(int orbital_set_size,
       ParticleSet localTargetPtcl(targetPtcl);
       ParticleSet localSourcePtcl(sourcePtcl);
 
-      LCAOrbitalSet local_phi(std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()),
-                              phi.isOptimizable());
+      LCAOrbitalSet local_phi("local_phi", std::unique_ptr<LCAOrbitalSet::basis_type>(phi.myBasisSet->makeClone()));
       local_phi.setOrbitalSetSize(phi.getOrbitalSetSize());
 
-      LCAOrbitalSet local_eta(std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()),
-                              eta.isOptimizable());
+      LCAOrbitalSet local_eta("local_eta", std::unique_ptr<LCAOrbitalSet::basis_type>(eta.myBasisSet->makeClone()));
       local_eta.setOrbitalSetSize(eta.getOrbitalSetSize());
 
 #pragma omp critical
@@ -309,11 +308,6 @@ void generateCuspInfo(int orbital_set_size,
         broadcastCuspInfo(info(center_idx, mo_idx), Comm, root);
       }
     }
-  }
-
-  if (Comm.rank() == 0)
-  {
-    saveCusp(orbital_set_size, num_centers, info, id);
   }
 }
 

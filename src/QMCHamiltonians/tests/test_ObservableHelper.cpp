@@ -13,6 +13,9 @@
 #include "catch.hpp"
 
 #include "QMCHamiltonians/ObservableHelper.h"
+#include "io/hdf/hdf_archive.h"
+
+#include <filesystem>
 
 /*
   -- 05/07/2021 --
@@ -25,9 +28,6 @@ TEST_CASE("ObservableHelper::ObservableHelper(const std::string&)", "[hamiltonia
 {
   ObservableHelper oh("u");
   CHECK(oh.lower_bound == 0);
-  CHECK(oh.data_id == -1);
-  CHECK(oh.space1_id == -1);
-  CHECK(oh.value1_id == -1);
   CHECK(oh.mydims == std::vector<hsize_t>());
   CHECK(oh.maxdims == std::vector<hsize_t>());
   CHECK(oh.curdims == std::vector<hsize_t>());
@@ -38,7 +38,9 @@ TEST_CASE("ObservableHelper::ObservableHelper(const std::string&)", "[hamiltonia
 
 TEST_CASE("ObservableHelper::ObservableHelper(ObservableHelper&&)", "[hamiltonian]")
 {
-  hid_t hFile = H5Fcreate("tmp_ObservableHelper1.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  std::filesystem::path filename("tmp_ObservableHelper1.h5");
+  hdf_archive hFile;
+  hFile.create(filename);
 
   ObservableHelper ohIn("u");
   ohIn.open(hFile);
@@ -50,7 +52,9 @@ TEST_CASE("ObservableHelper::ObservableHelper(ObservableHelper&&)", "[hamiltonia
   }
   CHECK(ohIn.isOpened() == false);
 
-  H5Fclose(hFile);
+  hFile.close();
+  REQUIRE(std::filesystem::exists(filename));
+  REQUIRE(std::filesystem::remove(filename));
 }
 
 TEST_CASE("ObservableHelper::set_dimensions", "[hamiltonian]")
@@ -69,30 +73,34 @@ TEST_CASE("ObservableHelper::set_dimensions", "[hamiltonian]")
 
 TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
 {
-  hid_t hFile = H5Fcreate("tmp_ObservableHelper2.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  std::filesystem::path filename("tmp_ObservableHelper2.h5");
+  hdf_archive hFile;
+  hFile.create(filename);
 
   ObservableHelper oh("u");
   oh.open(hFile);
   std::vector<int> dims = {10, 10};
   float propertyFloat   = 10.f;
-  oh.addProperty(propertyFloat, "propertyFloat");
+  oh.addProperty(propertyFloat, "propertyFloat", hFile);
 
   Tensor<float, OHMMS_DIM> propertyTensor;
-  oh.addProperty(propertyTensor, "propertyTensor");
+  oh.addProperty(propertyTensor, "propertyTensor", hFile);
 
   Matrix<float> propertyMatrix;
-  oh.addProperty(propertyMatrix, "propertyMatrix");
+  oh.addProperty(propertyMatrix, "propertyMatrix", hFile);
 
   TinyVector<float, OHMMS_DIM> propertyTinyVector;
-  oh.addProperty(propertyTensor, "propertyTinyVector");
+  oh.addProperty(propertyTensor, "propertyTinyVector", hFile);
 
   std::vector<float> propertyVector;
-  oh.addProperty(propertyVector, "propertyVector");
+  oh.addProperty(propertyVector, "propertyVector", hFile);
 
   std::vector<TinyVector<float, OHMMS_DIM>> propertyVectorTinyVector;
-  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector");
+  oh.addProperty(propertyVectorTinyVector, "propertyVectorTinyVector", hFile);
 
-  H5Fclose(hFile);
+  hFile.close();
+  REQUIRE(std::filesystem::exists(filename));
+  REQUIRE(std::filesystem::remove(filename));
 }
 
 } // namespace qmcplusplus

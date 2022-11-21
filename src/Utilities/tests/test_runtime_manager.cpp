@@ -24,6 +24,7 @@ TEST_CASE("test_runtime_manager", "[utilities]")
   // Use a local version rather than the global timer_manager, otherwise
   //  changes will persist from test to test.
   RunTimeManager<FakeCPUClock> rm;
+  FakeCPUClock::fake_cpu_clock_increment = 1.0;
   double e = rm.elapsed();
   REQUIRE(e == Approx(1.0));
 }

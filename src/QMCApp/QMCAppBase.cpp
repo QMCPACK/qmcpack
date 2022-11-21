@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-QMCAppBase::QMCAppBase() {}
+QMCAppBase::QMCAppBase() = default;
 
 QMCAppBase::~QMCAppBase()
 {
@@ -71,7 +71,7 @@ void QMCAppBase::saveXml()
 {
   if (!XmlDocStack.empty())
   {
-    std::string newxml(myProject.CurrentMainRoot());
+    std::string newxml(myProject.currentMainRoot());
     newxml.append(".cont.xml");
     app_log() << "\n========================================================="
               << "\n  A new xml input file : " << newxml << std::endl;

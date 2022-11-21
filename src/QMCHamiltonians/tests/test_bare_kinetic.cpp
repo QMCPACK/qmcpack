@@ -61,10 +61,8 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.addTable(ions);
   elec.update();
 
+  const char* particles = R"(<tmp></tmp>)";
 
-  const char* particles = "<tmp> \
-</tmp> \
-";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -73,7 +71,8 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec);
+  TrialWaveFunction psi;
+  BareKineticEnergy bare_ke(elec, psi);
   bare_ke.put(h1);
 
   elec.L[0] = 1.0;
@@ -164,14 +163,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   TrialWaveFunction psi;
 
   //Add the two body jastrow
-  const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
-      <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
-          <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
-        </correlation> \
-  </jastrow> \
-  </tmp> \
-  ";
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="d" rcut="10" size="8">
+          <coefficients id="ud" type="Array"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -185,14 +184,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // Done with two body jastrow.
 
   //Add the one body jastrow.
-  const char* particles2 = "<tmp> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" source=\"ion0\" print=\"yes\"> \
-        <correlation elementType=\"Na\" rcut=\"10\" size=\"10\" cusp=\"0\"> \
-          <coefficients id=\"eNa\" type=\"Array\"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients> \
-        </correlation> \
-      </jastrow> \
-  </tmp> \
-  ";
+  const char* particles2 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="Na" rcut="10" size="10" cusp="0">
+          <coefficients id="eNa" type="Array"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
   bool okay3             = doc.parseFromString(particles2);
   REQUIRE(okay3);
 
@@ -203,15 +202,13 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
   psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
-  const char* kexml = "<tmp> \
-</tmp> \
-";
+  const char* kexml = R"(<tmp></tmp>)";
 
   root = doc.getRoot();
 
   xmlNodePtr h1 = xmlFirstElementChild(root);
 
-  BareKineticEnergy bare_ke(elec);
+  BareKineticEnergy bare_ke(elec, psi);
   bare_ke.put(h1);
 
   // update all distance tables
@@ -298,11 +295,13 @@ void testElecCase(double mass_up,
   elec2.R[1][2] = 1.0;
   elec2.update();
 
+  TrialWaveFunction psi, psi_clone;
+
   RefVector<ParticleSet> ptcls{elec, elec2};
   RefVectorWithLeader<ParticleSet> p_list(elec, ptcls);
 
-  BareKineticEnergy bare_ke(elec);
-  BareKineticEnergy bare_ke2(elec);
+  BareKineticEnergy bare_ke(elec, psi);
+  BareKineticEnergy bare_ke2(elec, psi_clone);
 
   RefVector<OperatorBase> bare_kes{bare_ke, bare_ke2};
   RefVectorWithLeader<OperatorBase> o_list(bare_ke, bare_kes);
@@ -310,9 +309,6 @@ void testElecCase(double mass_up,
   elec.L[1]  = 0.0;
   elec2.L[0] = 1.0;
   elec2.L[1] = 0.0;
-
-  TrialWaveFunction psi;
-  TrialWaveFunction psi_clone;
 
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 

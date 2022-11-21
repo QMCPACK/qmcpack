@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 
 #include <cstdio>
 #include <string>
@@ -50,7 +50,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   ions_.R[0][2] = 0.0;
 
   elec_.setName("elec");
-  elec_.create({1,1});
+  elec_.create({1, 1});
   elec_.R[0][0] = 1.00;
   elec_.R[0][1] = 0.0;
   elec_.R[0][2] = 0.0;
@@ -66,14 +66,14 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   tspecies(chargeIdx, downIdx) = -1;
   elec_.resetGroups();
 
-  const char* particles = "<tmp> \
-<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\"> \
-   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
-      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-    </correlation> \
-</jastrow> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+   <correlation rcut="10" size="10" speciesA="u" speciesB="d">
+      <coefficients id="ud" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+    </correlation>
+</jastrow>
+</tmp>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -84,7 +84,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 
   RadialJastrowBuilder jastrow(c, elec_);
 
-  using J2Type = J2OrbitalSoA<BsplineFunctor<RealType>>;
+  using J2Type = TwoBodyJastrow<BsplineFunctor<RealType>>;
   auto j2_uptr = jastrow.buildComponent(jas1);
   J2Type* j2   = dynamic_cast<J2Type*>(j2_uptr.get());
   REQUIRE(j2);
@@ -98,11 +98,16 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
   REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
 
-  opt_variables_type optvars;
-  std::vector<WaveFunctionComponent::ValueType> dlogpsi;
-  std::vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+  UniqueOptObjRefs opt_obj_refs;
+  j2->extractOptimizableObjectRefs(opt_obj_refs);
+  REQUIRE(opt_obj_refs.size() == 1);
 
-  j2->checkInVariables(optvars);
+  opt_variables_type optvars;
+  Vector<WaveFunctionComponent::ValueType> dlogpsi;
+  Vector<WaveFunctionComponent::ValueType> dhpsioverpsi;
+
+  for (OptimizableObject& obj : opt_obj_refs)
+    obj.checkInVariablesExclusive(optvars);
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   j2->checkOutVariables(optvars);
@@ -110,10 +115,10 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   dhpsioverpsi.resize(NumOptimizables);
   j2->evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
 
-  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  app_log() << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for (int iparam = 0; iparam < NumOptimizables; iparam++)
-    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
-  std::cout << std::endl;
+    app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+  app_log() << std::endl;
 
   CHECK(std::real(dlogpsi[2]) == Approx(-0.2211666667));
   CHECK(std::real(dhpsioverpsi[3]) == Approx(0.1331717179));
@@ -124,7 +129,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   grad_grad_psi.resize(elec_.getTotalNum());
   grad_grad_psi = 0.0;
 
-  std::cout << "eval hess" << std::endl;
+  app_log() << "eval hess" << std::endl;
   j2->evaluateHessian(elec_, grad_grad_psi);
   std::vector<double> hess_values = {
       -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652, -0.0627236, 0, 0, 0, 0.10652, 0, 0, 0, 0.10652,

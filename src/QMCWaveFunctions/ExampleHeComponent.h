@@ -23,11 +23,11 @@
  */
 namespace qmcplusplus
 {
-class ExampleHeComponent : public WaveFunctionComponent
+class ExampleHeComponent : public WaveFunctionComponent, OptimizableObject
 {
 public:
   ExampleHeComponent(const ParticleSet& ions, ParticleSet& els)
-      : WaveFunctionComponent("ExampleHeComponent"),
+      : OptimizableObject("example"),
         ions_(ions),
         my_table_ee_idx_(els.addTable(els, DTModes::NEED_TEMP_DATA_ON_HOST | DTModes::NEED_VP_FULL_TABLE_ON_HOST)),
         my_table_ei_idx_(els.addTable(ions, DTModes::NEED_VP_FULL_TABLE_ON_HOST)){};
@@ -35,12 +35,12 @@ public:
   using OptVariablesType = optimize::VariableSet;
   using PtclGrpIndexes   = QMCTraits::PtclGrpIndexes;
 
-  void checkInVariables(OptVariablesType& active) override { active.insertFrom(my_vars_); }
+  std::string getClassName() const override { return "ExampleHeComponent"; }
+  void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
+  bool isOptimizable() const override { return true; }
+  void checkInVariablesExclusive(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
-  void resetParameters(const OptVariablesType& active) override;
-
-
-  void reportStatus(std::ostream& os) override {}
+  void resetParametersExclusive(const OptVariablesType& active) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
@@ -58,8 +58,8 @@ public:
 
   void evaluateDerivatives(ParticleSet& P,
                            const OptVariablesType& optvars,
-                           std::vector<ValueType>& dlogpsi,
-                           std::vector<ValueType>& dhpsioverpsi) override;
+                           Vector<ValueType>& dlogpsi,
+                           Vector<ValueType>& dhpsioverpsi) override;
 
 
   void registerData(ParticleSet& P, WFBufferType& buf) override {}

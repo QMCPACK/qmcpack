@@ -12,7 +12,7 @@
 #include <cassert>
 #include <complex>
 #include <hip/hip_runtime.h>
-#include "rocrand/rocrand.h"
+#include <rocrand/rocrand.h>
 #include "AFQMC/Numerics/detail/HIP/Kernels/hip_settings.h"
 #include "AFQMC/Numerics/detail/HIP/Kernels/zero_complex_part.hip.h"
 #include "AFQMC/Numerics/detail/HIP/hip_kernel_utils.h"

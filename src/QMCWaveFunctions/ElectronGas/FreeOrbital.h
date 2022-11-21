@@ -24,8 +24,10 @@ namespace qmcplusplus
 class FreeOrbital : public SPOSet
 {
 public:
-  FreeOrbital(const std::vector<PosType>& kpts_cart);
+  FreeOrbital(const std::string& my_name, const std::vector<PosType>& kpts_cart);
   ~FreeOrbital();
+
+  std::string getClassName() const override { return "FreeOrbital"; }
 
   // phi[i][j] is phi_j(r_i), i.e. electron i in orbital j
   //  i \in [first, last)
@@ -60,7 +62,6 @@ public:
   void report(const std::string& pad) const override;
   // ---- begin required overrides
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<FreeOrbital>(*this); }
-  void resetParameters(const opt_variables_type& optVariables) override {} //called by BFTrans}
   void setOrbitalSetSize(int norbs) override { throw std::runtime_error("not implemented"); }
   // required overrides end ----
 private:

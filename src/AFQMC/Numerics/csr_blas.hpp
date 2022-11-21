@@ -42,19 +42,19 @@ template<class T,
 MultiArray1D axpy(char TA, T a, SparseArray1D&& x, MultiArray1D&& y)
 {
   using ma::conj;
-  assert(x.size(0) == y.size(0));
+  assert(std::get<0>(x.sizes()) == std::get<0>(y.sizes()));
   auto vals = x.non_zero_values_data();
   auto cols = x.non_zero_indices2_data();
   if (TA == 'C')
     for (std::size_t i = 0, iend = x.num_non_zero_elements(); i < iend; ++i, ++vals, ++cols)
     {
-      assert(*cols >= 0 && *cols < y.size(0));
+      assert(*cols >= 0 && *cols < y.size());
       y[*cols] += ma::conj(*vals) * a;
     }
   else
     for (std::size_t i = 0, iend = x.num_non_zero_elements(); i < iend; ++i, ++vals, ++cols)
     {
-      assert(*cols >= 0 && *cols < y.size(0));
+      assert(*cols >= 0 && *cols < y.size());
       y[*cols] += (*vals) * a;
     }
   return std::forward<MultiArray1D>(y);
@@ -378,8 +378,8 @@ MultiArray2D transpose(csr_matrix&& A, MultiArray2D&& AT)
 {
   using integer = typename std::decay<csr_matrix>::type::index_type;
   using Type    = typename std::decay<MultiArray2D>::type::element;
-  assert(A.size(0) == AT.size(1));
-  assert(A.size(1) == AT.size(0));
+  assert(std::get<0>(A.sizes()) == std::get<1>(AT.sizes()));
+  assert(std::get<1>(A.sizes()) == std::get<0>(AT.sizes()));
   auto& comm = *A.getAlloc().commP_;
   integer r0, rN, nrows = integer(A.size(0));
   integer rank = comm.rank(), size = comm.size();

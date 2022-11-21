@@ -94,14 +94,35 @@ private:
   /// \brief [out]flag to well whethet engine has fully initialized
   bool _fully_initialized;
 
+   ///\brief whether to store samples and derivatives to build matrices
+   bool store_samples_;
+
+   ///\brief whether to turn noisy parameters off
+   bool filter_param_;
+
+   ///\brief whether to print details on which parameters are turned off
+   bool filter_info_;
+
   /// \brief [in]total number of samples 
   int _num_samp;
 
   /// \brief sample count 
   int _samp_count;
 
-  /// \brief number of optimizable parameters
+  /// \brief number of optimizable parameters, may vary from iteration to iteration if parameters are filtered
   int _num_params;
+
+  /// \brief total number of optimizable parameters, constant over an optimization even with parameter filtering
+  //int total_num_params_;
+
+  /// \brief threshold for parameter filtration
+  double ratio_threshold_;
+
+  /// \brief whether each parameter is being optimized on the current iteration
+  std::vector<bool> parameterSettings;
+
+  /// \brief Whether LM is being used as part of a hybrid optimization
+  bool on_hybrid_;
 
   /// \brief [in]maximum number of iteration allowed in the davidson solver
   int _lm_krylov_iter;
@@ -251,6 +272,18 @@ private:
   /// \brief [in]output stream
   std::ostream & output;
 
+  /// \brief History of <n|Psi_i>/<n|Psi> ratios
+  formic::Matrix<S>  der_rat_history;
+
+  /// \brief History of <n|H|Psi_i>/<n|Psi> ratios
+  formic::Matrix<S>  le_der_rat_history;
+
+  /// \brief History of |<n|value_fn>/<n|guiding_fn>|^2 values
+  std::vector<double>  vgs_history;
+
+  /// \brief History of sample weights
+  std::vector<double>  weight_history;
+  
 public:
   
   /////////////////////////////////////////////////////////////////////////////////
@@ -407,6 +440,40 @@ public:
                    double vgs_samp,
                    double weight_samp);
 
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////
+   /// \brief  Function that Take Sample Data from the Host Code to store in vectors of vectors
+   /// 
+   /// \param[in]  der_rat_samp   <n|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+   /// \param[in]  le_der_samp    <n|H|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+   /// \param[in]  ls_der_samp    <|S^2|Psi_i>/<n|Psi> (i = 0 (|Psi>), 1, ... N_var )
+   /// \param[in]  vgs_samp       |<n|value_fn>/<n|guiding_fn>|^2
+   /// \param[in]  weight_samp    weight for this sample
+   /// \param[in]  sample_index   index of a sample on a MPI rank
+   ///
+   ////////////////////////////////////////////////////////////////////////////////////////////////////////
+   void store_sample(std::vector<S> & der_rat_samp,
+                    std::vector<S> & le_der_samp,
+                    std::vector<S> & ls_der_samp,
+                    double vgs_samp,    // trial-to-guiding square ratio
+                    double weight_samp,
+                    int sample_index);
+
+
+   /// \brief Function for sizing history vectors
+   void setUpStorage(int numParams, int numSamples);
+
+   /// \brief Function for selecting parameters to be optimized by LM
+   void selectParameters();
+
+   /// \brief Helper function for computing mean and standard deviation of parameter derivatives
+   std::vector<double> computeSigma_helper(std::vector<double> weights, std::vector<double> numerSamples, std::vector<double> denomSamples);
+
+   /// \brief Function for constructing LM matrices from stored histories of derivative ratios
+   void buildMatricesFromDerivatives();
+
+   /// \brief Function for clearing histories of derivative ratios
+   void clear_histories();
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Function that reduces all block matrices information from all processors to the root
   ///         processor
@@ -524,6 +591,42 @@ public:
   //function that transfers vectors from descent to the LMBlocker object
   void setHybridBLM_Input(std::vector< std::vector<double> >& from_descent);
   
+  /// \brief Returns whether LM is part of hybrid optimization
+  bool getOnHybrid() {return on_hybrid_;}
+
+  /// \brief Sets whether LM is being used as part of hybrid optimization
+  void setOnHybrid(bool input) {on_hybrid_ = input;}
+
+  /// \brief Returns whether derivative ratios are being stored
+  bool getStoringSamples() {return store_samples_;}
+
+  /// \brief Returns whether noisy parameters are being turned off
+  bool getParameterFiltering() {return filter_param_;}
+
+   /// \brief Returns whether block linear method is being used
+  bool use_blm() {return _block_lm;}
+
+  /// \brief Sets whether samples and derivative ratios are being stored
+  void setStoringSamples(bool storing) {store_samples_ = storing;}
+
+  /// \brief Sets whether parameters are being filtered
+  void setFiltering(bool use_filtering) {filter_param_ = use_filtering;}
+
+  /// \brief Sets whether to print out details on which parameters are turned off
+  void setFilterInfo(bool print_info) {filter_info_ = print_info;}
+
+  /// \brief Sets the threshold used for parameter filtrations
+  void setThreshold(double thres) {ratio_threshold_ = thres;}
+
+  /// \brief Returns whether a particular parameter is on or off
+  bool getParameterSetting(int i) {return parameterSettings[i];}
+
+  /// \brief Resets the number of parameters optimized by the LM engine.
+  void resetParamNumber(int new_num);
+
+  /// \brief Stores blocking information used by blocked LM
+  void store_blocked_lm_info(int nblock,int nkeps);
+
   ////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///
   /// \brief  harmonic davidson energy calculation function

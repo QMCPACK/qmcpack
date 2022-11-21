@@ -80,10 +80,18 @@ case "$1" in
       ;;
     esac
 
-    # Path to QMC_DATA in self-hosted CI system
+    # Path to QMC_DATA in self-hosted CI system and point at minimum gcc-9
     if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
     then
       QMC_DATA_DIR=/scratch/ci/QMC_DATA_FULL
+
+      # use gcc-9
+      export PATH=/opt/rh/gcc-toolset-9/root/bin:$PATH
+      export LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH
+      
+      # Make current environment variables available to subsequent steps
+      echo "PATH=/opt/rh/gcc-toolset-9/root/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH" >> $GITHUB_ENV
     fi
     
     case "${GH_JOBNAME}" in
@@ -136,6 +144,7 @@ case "$1" in
               -DQMC_MPI=0 \
               -DCMAKE_CXX_FLAGS=-Werror \
               -DQMC_COMPLEX=$IS_COMPLEX \
+              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
@@ -161,19 +170,20 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Clang14-MPI-CUDA-AFQMC-Offload"*)
+      *"Clang15-MPI-CUDA-AFQMC-Offload"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC using OpenMP offload on x86_64 " \
               "with latest llvm, need built-from-source OpenBLAS due to bug in rpm"
 
-        export OMPI_CC=/opt/llvm/14.0.1/bin/clang
-        export OMPI_CXX=/opt/llvm/14.0.1/bin/clang++
+        # todo: update to llvm 15 release, currently using release candidate
+        export OMPI_CC=/opt/llvm/15.0.0/bin/clang
+        export OMPI_CXX=/opt/llvm/15.0.0/bin/clang++
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/llvm/14.0.1/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/llvm/14.0.1/bin/clang++" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/llvm/15.0.0/bin/clang" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/llvm/15.0.0/bin/clang++" >> $GITHUB_ENV
 
         # Confirm that cuda 11.2 gets picked up by the compiler
-        /opt/llvm/14.0.1/bin/clang++ -v
+        /opt/llvm/15.0.0/bin/clang++ -v
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -182,7 +192,6 @@ case "$1" in
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
               -DENABLE_OFFLOAD=ON \
-              -DUSE_OBJECT_TARGET=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -218,6 +227,11 @@ case "$1" in
       ;;
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+        export ROCM_PATH=/opt/rocm
+        
+        # Make current environment variables available to subsequent steps
+        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
+        
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
               -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
@@ -234,10 +248,12 @@ case "$1" in
       *"ROCm-Clang13-MPI-Legacy-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
 
+        export ROCM_PATH=/opt/rocm
         export OMPI_CC=/opt/rocm/llvm/bin/clang
         export OMPI_CXX=/opt/rocm/llvm/bin/clang++
 
         # Make current environment variables available to subsequent steps
+        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
         echo "OMPI_CC=/opt/rocm/llvm/bin/clang" >> $GITHUB_ENV
         echo "OMPI_CXX=/opt/rocm/llvm/bin/clang++" >> $GITHUB_ENV
 
@@ -254,7 +270,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-MPI-CUDA-AFQMC"*)
+      *"GCC9-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
@@ -269,7 +285,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-NoMPI-Legacy-CUDA"*)
+      *"GCC9-NoMPI-Legacy-CUDA"*)
         echo 'Configure for building with Legacy CUDA'
         cmake -GNinja \
               -DQMC_CUDA=1 \
@@ -280,7 +296,7 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC8-NoMPI-MKL-"*)
+      *"GCC9-NoMPI-MKL-"*)
         echo 'Configure for building with GCC and Intel MKL'
 
         source /opt/intel2020/mkl/bin/mklvars.sh intel64
@@ -374,7 +390,7 @@ case "$1" in
 
     if [[ "${GH_JOBNAME}" =~ (AFQMC-Offload) ]]
     then
-       export LD_LIBRARY_PATH=/opt/llvm/14.0.1/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+       export LD_LIBRARY_PATH=/opt/llvm/15.0.0/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
     if [[ "${GH_JOBNAME}" =~ (Intel19) ]]

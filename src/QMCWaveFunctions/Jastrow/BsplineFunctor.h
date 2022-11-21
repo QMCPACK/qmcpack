@@ -82,7 +82,8 @@ struct BsplineFunctor : public OptimizableFunctorBase
   bool periodic;
 
   ///constructor
-  BsplineFunctor(Real cusp = 0.0) : NumParams(0), CuspValue(cusp), notOpt(false), periodic(true)
+  BsplineFunctor(const std::string& my_name, Real cusp = 0.0)
+      : OptimizableFunctorBase(my_name), NumParams(0), CuspValue(cusp), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
   }
@@ -553,7 +554,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
                     << ".  Performing fit:\n";
           // Fit function to new number of parameters
           const int numPoints = 500;
-          BsplineFunctor<REAL> tmp_func(CuspValue);
+          BsplineFunctor<REAL> tmp_func("tmp_func", CuspValue);
           tmp_func.cutoff_radius = cutoff_radius;
           tmp_func.resize(params.size());
           tmp_func.Parameters = params;
@@ -663,7 +664,7 @@ struct BsplineFunctor : public OptimizableFunctorBase
     reset();
   }
 
-  void reportStatus(std::ostream& os)
+  void reportStatus(std::ostream& os) override
   {
     if (notOpt)
       return;
@@ -677,14 +678,15 @@ struct BsplineFunctor : public OptimizableFunctorBase
     myVars.getIndex(active);
   }
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     if (notOpt)
       return;
+    myVars.setIndexDefault();
     active.insertFrom(myVars);
   }
 
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (notOpt)
       return;

@@ -23,16 +23,16 @@ TEST_CASE("RecordArray basics", "[containers]")
 
   int nentry = 1;
   int nparam = 2;
-  records.resize(nparam, nentry);
+  records.resize(nentry, nparam);
 
-  records.setValue(0, 0, 1.1);
-  records.setValue(1, 0, 1.2);
+  records[0][0] = 1.1;
+  records[0][1] = 1.2;
 
-  REQUIRE(records.nparam() == 2);
-  REQUIRE(records.nentry() == 1);
+  REQUIRE(records.getNumOfParams() == 2);
+  REQUIRE(records.getNumOfEntries() == 1);
 
-  REQUIRE(records.getValue(0, 0) == Approx(1.1));
-  REQUIRE(records.getValue(1, 0) == Approx(1.2));
+  REQUIRE(records[0][0] == Approx(1.1));
+  REQUIRE(records[0][1] == Approx(1.2));
 }
 
 } // namespace qmcplusplus

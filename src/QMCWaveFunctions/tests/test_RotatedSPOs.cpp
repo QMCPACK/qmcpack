@@ -94,10 +94,10 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
 
   //diamondC_1x1x1 - 8 bands available
-  const char* particles = "<tmp> \
-<determinantset type=\"einspline\" href=\"diamondC_1x1x1.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"8\"/> \
-</tmp> \
-";
+  const char* particles = R"(<tmp>
+<determinantset type="einspline" href="diamondC_1x1x1.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="8"/>
+</tmp>
+)";
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -120,7 +120,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
 #if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
 
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
-  auto rot_spo = std::make_unique<RotatedSPOs>(std::move(spo));
+  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 2 electrons, 8 orbitals, & 79507 coefs/orb.
   const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
@@ -342,6 +342,252 @@ TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
 
   CheckMatrixResult check_matrix_result = checkMatrix(m3, expected_m3, true);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  std::vector<ValueType> params_out(2);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, m3, params_out);
+  CHECK(params_out[0] == Approx(0.1));
+  CHECK(params_out[1] == Approx(0.2));
 }
+
+// Expected values of the matrix exponential come from gen_matrix_ops.py
+TEST_CASE("RotatedSPOs exponentiate matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  std::vector<SPOSet::ValueType> mat1_data = {0.0};
+  SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
+  RotatedSPOs::exponentiate_antisym_matrix(m1);
+  // Always return 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
+  CHECK(m1(0, 0) == ValueApprox(1.0));
+
+  // clang-format off
+  std::vector<SPOSet::ValueType> mat2_data = { 0.0, -0.1,
+                                               0.1,  0.0 };
+  // clang-format on
+
+  SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
+  RotatedSPOs::exponentiate_antisym_matrix(m2);
+
+  // clang-format off
+  std::vector<ValueType> expected_rot2 = {  0.995004165278026,  -0.0998334166468282,
+                                            0.0998334166468282,  0.995004165278026 };
+  // clang-format on
+
+  ValueMatrix expected_m2(expected_rot2.data(), 2, 2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, expected_m2, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+
+  // clang-format off
+  std::vector<ValueType> m3_input_data = { 0.0,  -0.3, -0.1,
+                                           0.3,   0.0, -0.2,
+                                           0.1,   0.2,  0.0 };
+
+
+  std::vector<ValueType> expected_rot3 = {  0.950580617906092, -0.302932713402637, -0.0680313164049401,
+                                            0.283164960565074,  0.935754803277919, -0.210191705950743,
+                                            0.127334574917630,  0.180540076694398,  0.975290308953046 };
+
+  // clang-format on
+
+  ValueMatrix m3(m3_input_data.data(), 3, 3);
+  ValueMatrix expected_m3(expected_rot3.data(), 3, 3);
+
+  RotatedSPOs::exponentiate_antisym_matrix(m3);
+
+  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, expected_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+}
+
+TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  std::vector<SPOSet::ValueType> mat1_data = {1.0};
+  SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
+  RotatedSPOs::log_antisym_matrix(m1);
+  // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
+  CHECK(m1(0, 0) == ValueApprox(0.0));
+
+  // clang-format off
+  std::vector<ValueType> start_rot2 = {  0.995004165278026,  -0.0998334166468282,
+                                         0.0998334166468282,  0.995004165278026 };
+
+  std::vector<SPOSet::ValueType> mat2_data = { 0.0, -0.1,
+                                               0.1,  0.0 };
+  // clang-format on
+
+  ValueMatrix rot_m2(start_rot2.data(), 2, 2);
+  RotatedSPOs::log_antisym_matrix(rot_m2);
+
+  SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, rot_m2, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+  // clang-format off
+  std::vector<ValueType> start_rot3 = {  0.950580617906092, -0.302932713402637, -0.0680313164049401,
+                                         0.283164960565074,  0.935754803277919, -0.210191705950743,
+                                         0.127334574917630,  0.180540076694398,  0.975290308953046 };
+
+  std::vector<ValueType> m3_input_data = { 0.0,  -0.3, -0.1,
+                                           0.3,   0.0, -0.2,
+                                           0.1,   0.2,  0.0 };
+  // clang-format on
+  ValueMatrix rot_m3(start_rot3.data(), 3, 3);
+  RotatedSPOs::log_antisym_matrix(rot_m3);
+
+  SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
+  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, rot_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+}
+
+// Test round trip A -> exp(A) -> log(exp(A))
+// The log is multi-valued so this test may fail if the rotation parameters are too large.
+// The exponentials will be the same, though
+//   exp(log(exp(A))) == exp(A)
+TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  RotatedSPOs::RotationIndices rot_ind;
+  int nel = 2;
+  int nmo = 4;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+
+  ValueMatrix rot_m4(nmo, nmo);
+  rot_m4 = ValueType(0);
+
+  std::vector<ValueType> params4 = {-1.1, 1.5, 0.2, -0.15};
+
+  RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
+  ValueMatrix orig_rot_m4 = rot_m4;
+
+  RotatedSPOs::exponentiate_antisym_matrix(rot_m4);
+
+  RotatedSPOs::log_antisym_matrix(rot_m4);
+
+  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, orig_rot_m4, true);
+  CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
+
+  std::vector<ValueType> params4out(4);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, rot_m4, params4out);
+  for (int i = 0; i < params4.size(); i++)
+  {
+    CHECK(params4[i] == Approx(params4out[i]));
+  }
+}
+
+TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
+{
+  using RealType = QMCTraits::RealType;
+  Communicate* c = OHMMS::Controller;
+
+  ParticleSet::ParticleLayout lattice;
+  lattice.R(0, 0) = 4.32747284;
+  lattice.R(0, 1) = 0.00000000;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = -2.16373642;
+  lattice.R(1, 1) = 3.74770142;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = 0.00000000;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 6.78114995;
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
+  ptcl.setSimulationCell(lattice);
+  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  ParticleSet& ions(*ions_uptr);
+  ParticleSet& elec(*elec_uptr);
+
+  ions.setName("ion");
+  ptcl.addParticleSet(std::move(ions_uptr));
+  ions.create({1});
+  ions.R[0] = {0.0, 0.0, 0.0};
+
+  elec.setName("elec");
+  ptcl.addParticleSet(std::move(elec_uptr));
+  elec.create({1});
+  elec.R[0] = {0.0, 0.0, 0.0};
+
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
+
+  // Add the attribute save_coefs="yes" to the sposet_builder tag to generate the
+  // spline file for use in eval_bspline_spo.py
+
+  const char* particles = R"(<tmp>
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
+    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+</sposet_builder>
+</tmp>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr ein1 = xmlFirstElementChild(root);
+
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, ein1);
+  auto spo = einSet.createSPOSetFromXML(ein1);
+  REQUIRE(spo);
+
+  auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
+
+  // Sanity check for orbs. Expect 1 electron, 2 orbitals
+  const auto orbitalsetsize = rot_spo->getOrbitalSetSize();
+  REQUIRE(orbitalsetsize == 2);
+
+  rot_spo->buildOptVariables(elec.R.size());
+
+  SPOSet::ValueMatrix psiM_bare(elec.R.size(), orbitalsetsize);
+  SPOSet::GradMatrix dpsiM_bare(elec.R.size(), orbitalsetsize);
+  SPOSet::ValueMatrix d2psiM_bare(elec.R.size(), orbitalsetsize);
+  rot_spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
+
+  // Values generated from eval_bspline_spo.py, the generate_point_values_hcpBe function
+  CHECK(std::real(psiM_bare[0][0]) == Approx(0.210221765375514));
+  CHECK(std::real(psiM_bare[0][1]) == Approx(-2.984345024542937e-06));
+
+  CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.303848362116568));
+
+  opt_variables_type opt_vars;
+  rot_spo->checkInVariablesExclusive(opt_vars);
+  opt_vars.resetIndex();
+  rot_spo->checkOutVariables(opt_vars);
+  rot_spo->resetParametersExclusive(opt_vars);
+
+  using ValueType = QMCTraits::ValueType;
+  Vector<ValueType> dlogpsi(1);
+  Vector<ValueType> dhpsioverpsi(1);
+  rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
+
+  CHECK(dlogpsi[0] == ValueApprox(-1.41961753e-05));
+  CHECK(dhpsioverpsi[0] == ValueApprox(-0.00060853));
+
+  std::vector<RealType> params = {0.1};
+  rot_spo->apply_rotation(params, false);
+
+  rot_spo->evaluate_notranspose(elec, 0, elec.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
+  CHECK(std::real(psiM_bare[0][0]) == Approx(0.20917123424337608));
+  CHECK(std::real(psiM_bare[0][1]) == Approx(-0.02099012652669549));
+
+  CHECK(std::real(d2psiM_bare[0][0]) == Approx(5.277362065087747));
+
+  dlogpsi[0]      = 0.0;
+  dhpsioverpsi[0] = 0.0;
+
+  rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
+  CHECK(dlogpsi[0] == ValueApprox(-0.10034901119468914));
+  CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
+}
+
 
 } // namespace qmcplusplus

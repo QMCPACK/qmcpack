@@ -16,7 +16,10 @@
 
 
 #include <cstdio>
-#include <Configuration.h>
+#include <sstream>
+#include <typeinfo>
+#include <stdexcept>
+#include <vector>
 
 namespace qmcplusplus
 {
@@ -139,9 +142,29 @@ inline bool string2bool(const std::string& s)
   }
   else
   {
-    APP_ABORT("string2bool received non-boolean string: " + s);
+    throw std::runtime_error("string2bool received non-boolean string: " + s);
     return false;
   }
+}
+
+/// extract the contents of a string to a vector of something. separator is white spaces.
+template<class T>
+inline std::vector<T> convertStrToVec(const std::string& s)
+{
+  std::istringstream stream(s);
+  std::vector<T> b;
+  while (!stream.eof())
+  {
+    if (T t; stream >> t)
+      b.push_back(t);
+    else if (!stream.eof() && stream.fail())
+    {
+      std::ostringstream msg;
+      msg << "Error parsing string '" << s << "' for type (type_info::name) " << typeid(T).name() << "." << std::endl;
+      throw std::runtime_error(msg.str());
+    }
+  }
+  return b;
 }
 
 
@@ -165,10 +188,7 @@ inline std::ostream& operator<<(std::ostream& os, const astring& rhs)
   return os;
 }
 
-inline bool operator==(const astring& lhs, const astring& rhs)
-{
-  return lhs.s == rhs.s;
-}
+inline bool operator==(const astring& lhs, const astring& rhs) { return lhs.s == rhs.s; }
 } // namespace qmcplusplus
 
 #endif

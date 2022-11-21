@@ -434,16 +434,6 @@ void NOMSD<devPsiT>::MixedDensityMatrix_for_E_from_SM(const MatSM& SM,
   TG.local_barrier();
 }
 
-template<class T, class... As>
-auto Sizes(boost::multi::array<T, 2, As...> const& m)
-->decltype(m.sizes()) {
-	return m.sizes(); }
-
-template<class Matrix>
-auto Sizes(Matrix const& m)
-->decltype(std::array<long, 2>{static_cast<long>(m.size(0)), static_cast<long>(m.size(1))}) {
-	return std::array<long, 2>{static_cast<long>(m.size(0)), static_cast<long>(m.size(1))}; }
-
 /* 
    * Computes the density matrix for a given reference. 
    * G and Ov are expected to be in shared memory.
@@ -480,9 +470,9 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
   if (walker_type != COLLINEAR)
   {
     if (herm) {
-      assert(std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     } else {
-      assert(std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
 
     auto Gdims = dm_dims(not compact, Alpha);
@@ -507,14 +497,14 @@ void NOMSD<devPsiT>::DensityMatrix_shared(const WlkSet& wset,
   else
   {
     if (herm) {
-      assert(std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     } else {
-      assert(std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
     if (herm) {
-      assert(std::get<0>(Sizes(RefB)) == dm_dims(false, Beta).first && std::get<1>(Sizes(RefB)) == dm_dims(false, Beta).second);
+      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
     } else {
-      assert(std::get<1>(Sizes(RefB)) == dm_dims(false, Beta).first && std::get<0>(Sizes(RefB)) == dm_dims(false, Beta).second);
+      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
     }
     StaticVector ovlp2(iextensions<1u>{2 * nw}, buffer_manager.get_generator().template get_allocator<ComplexType>());
     fill_n(ovlp2.origin(), 2 * nw, ComplexType(0.0));
@@ -618,9 +608,9 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   if (walker_type != COLLINEAR)
   {
     if (herm) {
-      assert(std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     } else {
-      assert(std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
     Static3Tensor G3D_({nbatch__, GAdims.first, GAdims.second},
                        buffer_manager.get_generator().template get_allocator<ComplexType>());
@@ -658,14 +648,14 @@ void NOMSD<devPsiT>::DensityMatrix_batched(const WlkSet& wset,
   else
   {
     if (herm) {
-      assert(std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).second);
     } else {
-      assert(std::get<1>(Sizes(RefA)) == dm_dims(false, Alpha).first && std::get<0>(Sizes(RefA)) == dm_dims(false, Alpha).second);
+      assert(std::get<1>(RefA.sizes()) == dm_dims(false, Alpha).first && std::get<0>(RefA.sizes()) == dm_dims(false, Alpha).second);
     }
     if (herm) {
-      assert(std::get<0>(Sizes(RefB)) == dm_dims(false, Beta).first && std::get<1>(Sizes(RefB)) == dm_dims(false, Beta).second);
+      assert(std::get<0>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<1>(RefB.sizes()) == dm_dims(false, Beta).second);
     } else {
-      assert(std::get<1>(Sizes(RefB)) == dm_dims(false, Beta).first && std::get<0>(Sizes(RefB)) == dm_dims(false, Beta).second);
+      assert(std::get<1>(RefB.sizes()) == dm_dims(false, Beta).first && std::get<0>(RefB.sizes()) == dm_dims(false, Beta).second);
     }
 
     auto GBdims = dm_dims(not compact, Beta);

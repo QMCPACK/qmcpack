@@ -148,7 +148,7 @@ public:
   }
 
   void add2Record(RecordListType& record) override;
-  void registerObservables(std::vector<ObservableHelper>& h5dec, hid_t gid) override {}
+  void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override {}
   RMCLocalEnergyEstimator* clone() override;
   const std::string& getSubTypeStr() const override { return input_.get_type(); }
   /// RMCLocalEnergyEstimator is the main estimator type for RMC driver

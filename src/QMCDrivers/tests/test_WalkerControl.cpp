@@ -36,11 +36,10 @@ UnifiedDriverWalkerControlMPITest::UnifiedDriverWalkerControlMPITest() : wc_(dpo
   if (num_ranks != 3)
     throw std::runtime_error("Bad Rank Count, WalkerControlMPI tests can only be run with 3 MPI ranks.");
   pop_ =
-      std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), walker_confs,
-                                     dpools_.particle_pool->getParticleSet("e"),
+      std::make_unique<MCPopulation>(num_ranks, dpools_.comm->rank(), dpools_.particle_pool->getParticleSet("e"),
                                      dpools_.wavefunction_pool->getPrimary(), dpools_.hamiltonian_pool->getPrimary());
 
-  pop_->createWalkers(1);
+  pop_->createWalkers(1, walker_confs);
 }
 
 /** Getting the "fat" walker valid enough to be MPI swapable

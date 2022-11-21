@@ -1,13 +1,14 @@
 #if COMPILATION_INSTRUCTIONS
-c++ -std=c++14 `#-DNDEBUG` -Ofast -Wall -Wextra $0 -o $0x.x -lpthread && $0x.x 16384 128 128 $@ && rm -f $0x.x; exit
+c++ -std=c++17 `#-DNDEBUG` -Ofast -Wall -Wextra $0 -o $0x.x -lpthread && $0x.x 16384 128 128 $@ && rm -f $0x.x; exit
 #endif
 
 #include<iostream>
 #include<cstdlib>
 #include<sys/time.h>
 #include<numeric>
-#include "/home/correaa/prj/alf/boost/multi/array.hpp"
 #include <future>
+
+#include "../include/multi/array.hpp"
 
 using std::cout;
 using std::cerr;
@@ -152,11 +153,13 @@ double trace_AA4(Matrix1 const& A, Matrix2 const& B, index const ni, index const
 
 template<class Matrix1, class Matrix2>
 auto tr_prod_direct(Matrix1 const& A, Matrix2 const& B){
-	assert(A.size(1) == B.size(0));
+	assert( std::get<1>(A.sizes()) == std::get<0>(B.sizes()) );
 	typename Matrix1::element s = 0.;
-	for(auto i : extension(A))
-		for(auto j : extension(B))
+	for(auto i : extension(A)) {
+		for(auto j : extension(B)) {
           s += A[i][j]*B[j][i];
+		}
+	}
 	return s;
 }
 
@@ -175,19 +178,19 @@ auto tr_prod_algo(Matrix1 const& A, Matrix2 const& B){
 template<class Matrix1, class Matrix2>
 auto tr_prod_block2(Matrix1 const& A, Matrix2 const& B){
 	if(A.size() < 32 or B.size() < 32) return tr_prod_direct(A, B);
-	assert(A.size(1) == B.size(0));
+	assert( std::get<1>(A.sizes()) == std::get<0>(B.sizes()) );
+
 	auto const as = A.size();
 	auto const bs = B.size();
 	auto const i2 = as/2;
 	auto const j2 = bs/2;
-	if(A.size() > 1024){
-		auto t1 = std::async([&]{return tr_prod_block2(A({ 0, i2}, { 0, j2}), B({ 0, j2}, { 0, i2}));});
-		auto t2 = std::async([&]{return tr_prod_block2(A({ 0, i2}, {j2, bs}), B({j2, bs}, { 0, i2}));});
-		auto t3 = std::async([&]{return tr_prod_block2(A({i2, as}, { 0, j2}), B({ 0, j2}, {i2, as}));});
-		auto t4 = std::async([&]{return tr_prod_block2(A({i2, as}, {j2, bs}), B({j2, bs}, {i2, as}));});
+	if(A.size() > 1024) {
+		auto t1 = std::async([&] {return tr_prod_block2(A({ 0, i2}, { 0, j2}), B({ 0, j2}, { 0, i2}));});
+		auto t2 = std::async([&] {return tr_prod_block2(A({ 0, i2}, {j2, bs}), B({j2, bs}, { 0, i2}));});
+		auto t3 = std::async([&] {return tr_prod_block2(A({i2, as}, { 0, j2}), B({ 0, j2}, {i2, as}));});
+		auto t4 = std::async([&] {return tr_prod_block2(A({i2, as}, {j2, bs}), B({j2, bs}, {i2, as}));});
 		return t1.get() + t2.get() + t3.get() + t4.get();
-	}else
-	{
+	} else {
 	//	boost::multi::array<std::decay_t<decltype(A({ 0, i2}, { 0, j2}))>, 1> v =
 	//		{A({ 0, i2}, { 0, j2}), A({ 0, i2}, {j2, bs})};
 	//		 {A({i2, as}, { 0, j2}), A({i2, as}, {j2, bs})}};
@@ -207,26 +210,26 @@ auto tr_prod_block2(Matrix1 const& A, Matrix2 const& B){
 }
 
 template<class Matrix>
-auto tr_square_direct(Matrix const& A){
-	assert(A.size(0) == A.size(1));
+auto tr_square_direct(Matrix const& A) {
+	assert( std::get<0>(A.sizes()) == std::get<1>(A.sizes()) );
 	return tr_prod_direct(A, A);
 }
 
 template<class Matrix>
-auto tr_square_block2(Matrix const& A){
-	assert(A.size(0) == A.size(1));
+auto tr_square_block2(Matrix const& A) {
+	assert( std::get<0>(A.sizes()) == std::get<1>(A.sizes()) );
 	return tr_prod_block2(A, A);
 }
 
 namespace multi = boost::multi;
 
-int main(){	
+int main() {
 
-	multi::array<double, 2> A = 
-		{{1.,2.,3.},
-		 {4.,5.,8.},
-		 {1.,2.,3.}}
-	;
+	multi::array<double, 2> A = {
+		{1.,2.,3.},
+		{4.,5.,8.},
+		{1.,2.,3.}
+	};
 
 	assert(( std::get<0>(extensions(A)) == multi::index_extension{3} ));
 	assert(( std::get<1>(extensions(A)) == multi::index_extension{3} ));
@@ -238,9 +241,9 @@ int main(){
 	{
 		int const N = 32768/2;
 		multi::array<double, 2> A({N, N});
-		std::iota(A.data(), A.data() + N*N, 1.11);
+		std::iota(A.data_elements(), A.data_elements() + N*N, 1.11);
 		double warm = tr_square_direct(A); cout << warm << '\n';
-		std::iota(A.data(), A.data() + N*N, 1.23);
+		std::iota(A.data_elements(), A.data_elements() + N*N, 1.23);
 		multi::array<double, 2> B(A.extensions()); B[10][10] = 1.;
 		double t1 = getTime();
 		//		multi::array<double, 2> 

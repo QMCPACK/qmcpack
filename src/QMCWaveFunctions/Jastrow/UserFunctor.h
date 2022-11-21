@@ -63,7 +63,7 @@ struct UserFunctor : public OptimizableFunctorBase
 
 
   ///default constructor
-  UserFunctor() { reset(); }
+  UserFunctor(const std::string& my_name) : OptimizableFunctorBase(my_name) { reset(); }
 
   // void setCusp(real_type cusp)
 
@@ -304,21 +304,17 @@ struct UserFunctor : public OptimizableFunctorBase
   }
 
 
-  void checkInVariables(opt_variables_type& active) override
+  void checkInVariablesExclusive(opt_variables_type& active) override
   {
     active.insertFrom(myVars);
-    //myVars.print(std::cout);
   }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     myVars.getIndex(active);
-    //myVars.print(std::cout);
   }
 
-  //void resetParameters(const opt_variables_type& active)
-
-  void resetParameters(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active) override
   {
     if (myVars.size())
     {

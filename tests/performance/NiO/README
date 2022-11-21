@@ -142,9 +142,9 @@ affinity, please read the next section.
 To activate the ctest route, add the following option in your cmake
 command line before building your binary:
 
--DQMC_DATA=YOUR_DATA_FOLDER
+-DQMC_DATA=<full path to your data folder>
 
-All the h5 files must be placed in a subdirectory YOUR_DATA_FOLDER/NiO.
+All the h5 files must be placed in a subdirectory <full path to your data folder>/NiO.
 Run tests with command "ctest -R performance-NiO" after building
 QMCPACK. Add "-VV" to capture the QMCPACK output. Enabling the timers
 is not essential, but activates fine grained timers and counters useful for

@@ -111,19 +111,20 @@ protected:
   ghContainer_type mygH;
 
 public:
-  SplineC2ROMPTarget()
-      : BsplineSet(true),
+  SplineC2ROMPTarget(const std::string& my_name)
+      : BsplineSet(my_name),
         offload_timer_(*timer_manager.createTimer("SplineC2ROMPTarget::offload", timer_level_fine)),
         nComplexBands(0),
         GGt_offload(std::make_shared<OffloadVector<ST>>(9)),
         PrimLattice_G_offload(std::make_shared<OffloadVector<ST>>(9))
-  {
-    is_complex = true;
-    className  = "SplineC2ROMPTarget";
-    KeyWord    = "SplineC2R";
-  }
+  {}
 
-  SplineC2ROMPTarget(const SplineC2ROMPTarget& in) = default;
+  SplineC2ROMPTarget(const SplineC2ROMPTarget& in);
+
+  virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
+  virtual std::string getKeyword() const override { return "SplineC2R"; }
+  bool isComplex() const override { return true; };
+  bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
   {

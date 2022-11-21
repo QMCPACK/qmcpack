@@ -15,7 +15,7 @@
 #ifndef HIPBLAS_HPP
 #define HIPBLAS_HPP
 
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include <hip/hip_complex.h>
 
 //------------------------------------------------------------------------------
