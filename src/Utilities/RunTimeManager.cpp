@@ -21,13 +21,13 @@
 
 namespace qmcplusplus
 {
-RunTimeManager<CPUClock> run_time_manager;
+RunTimeManager<ChronoClock> run_time_manager;
 
-template class RunTimeManager<CPUClock>;
-template class RunTimeManager<FakeCPUClock>;
+template class RunTimeManager<ChronoClock>;
+template class RunTimeManager<FakeChronoClock>;
 
 template<class CLOCK>
-LoopTimer<CLOCK>::LoopTimer() : nloop(0), ticking(false), start_time(0.0), total_time(0.0)
+LoopTimer<CLOCK>::LoopTimer() : nloop(0), ticking(false), total_time(0.0)
 {}
 
 template<class CLOCK>
@@ -35,7 +35,7 @@ void LoopTimer<CLOCK>::start()
 {
   if (ticking)
     throw std::runtime_error("LoopTimer started already!");
-  start_time = CLOCK()();
+  start_time = CLOCK::now();
   ticking    = true;
 }
 
@@ -45,7 +45,9 @@ void LoopTimer<CLOCK>::stop()
   if (!ticking)
     throw std::runtime_error("LoopTimer didn't start but called stop!");
   nloop++;
-  total_time += CLOCK()() - start_time;
+  std::chrono::duration<double> elapsed = CLOCK::now() - start_time;
+  total_time += elapsed.count();
+
   ticking = false;
 }
 
@@ -57,8 +59,8 @@ double LoopTimer<CLOCK>::get_time_per_iteration() const
   return 0.0;
 }
 
-template class LoopTimer<CPUClock>;
-template class LoopTimer<FakeCPUClock>;
+template class LoopTimer<ChronoClock>;
+template class LoopTimer<FakeChronoClock>;
 
 template<class CLOCK>
 RunTimeControl<CLOCK>::RunTimeControl(RunTimeManager<CLOCK>& rm,
@@ -151,7 +153,7 @@ std::string RunTimeControl<CLOCK>::generateStopMessage(const std::string& driver
   return log.str();
 }
 
-template class RunTimeControl<CPUClock>;
-template class RunTimeControl<FakeCPUClock>;
+template class RunTimeControl<ChronoClock>;
+template class RunTimeControl<FakeChronoClock>;
 
 } // namespace qmcplusplus
