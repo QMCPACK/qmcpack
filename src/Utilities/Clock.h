@@ -17,13 +17,13 @@
 
 #include "Concurrency/OpenMP.h"
 
-#include <sys/time.h>
 #include <stddef.h>
 #include <chrono>
 
 namespace qmcplusplus
 {
 
+using ChronoClock = std::chrono::system_clock;
 
 // Implements a std::chrono clock
 // See https://github.com/korfuri/fake_clock
@@ -43,41 +43,6 @@ public:
 
   static time_point fake_chrono_clock_value;
   static duration fake_chrono_clock_increment;
-};
-
-
-/** functor for fake clock
- * calling FakeCPUClock()() returns the clock value
- */
-class FakeCPUClock
-{
-public:
-  static double fake_cpu_clock_value;
-  static double fake_cpu_clock_increment;
-
-  double operator()()
-  {
-    fake_cpu_clock_value += fake_cpu_clock_increment;
-    return fake_cpu_clock_value;
-  }
-};
-
-/** functor for high precision clock
- * calling CPUClock()() returns the clock value
- */
-class CPUClock
-{
-public:
-  double operator()()
-  {
-#ifdef _OPENMP
-    return omp_get_wtime();
-#else
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec + (1.e-6) * tv.tv_usec;
-#endif
-  }
 };
 
 } // namespace qmcplusplus
