@@ -479,10 +479,10 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  file.push(name_, true);
-  h5desc.emplace_back("variables");
+  using namespace std::string_literals;
+
+  h5desc.emplace_back(std::vector<std::string>{name_, "variables"s});
   auto& oh = h5desc.back();
-  oh.open(file);
   oh.addProperty(const_cast<int&>(nparticles), "nparticles", file);
   int nspacegrids = spacegrids.size();
   oh.addProperty(const_cast<int&>(nspacegrids), "nspacegrids", file);
@@ -495,12 +495,11 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
 
   ref.save(h5desc, file);
 
-  h5desc.emplace_back("outside");
+  h5desc.emplace_back(std::vector<std::string>{name_, "outside"s});
   auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
   ohOutside.set_dimensions(ng, outside_buffer_offset);
-  ohOutside.open(file);
   for (int i = 0; i < spacegrids.size(); i++)
   {
     SpaceGrid& sg = *spacegrids[i];
@@ -512,12 +511,10 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
 
-    h5desc.emplace_back("ions");
+    h5desc.emplace_back(std::vector<std::string>{name_, "ions"s});
     auto& ohIons = h5desc.back();
     ohIons.set_dimensions(ng2, ion_buffer_offset);
-    ohIons.open(file);
   }
-  file.pop();
 }
 
 void EnergyDensityEstimator::setObservables(PropertySetType& plist)
