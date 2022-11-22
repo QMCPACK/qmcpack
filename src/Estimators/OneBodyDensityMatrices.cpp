@@ -11,7 +11,7 @@
 // File refactored from: QMCHamiltonians/DensityMatrices1B.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-
+#include "Concurrency/OpenMP.h"
 #include "OneBodyDensityMatrices.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
