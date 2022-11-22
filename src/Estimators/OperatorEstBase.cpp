@@ -41,7 +41,6 @@ void OperatorEstBase::normalize(QMCT::RealType invTotWgt)
 
 void OperatorEstBase::write(hdf_archive& file)
 {
-  std::cout << "group_name????: " << my_name_ << '\n';
   if (h5desc_.empty())
     return;
     // We have to do this to deal with the legacy design that Observables using
