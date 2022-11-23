@@ -7544,6 +7544,7 @@ gen_basic_afqmc_input_defaults = obj(
     wset_name   = 'wset0',
     prop_name   = 'prop0',
     system      = None,
+    run_path    = None,
     )
 
 def generate_basic_afqmc_input(**kwargs):
