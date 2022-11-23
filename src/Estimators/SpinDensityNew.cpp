@@ -224,9 +224,9 @@ void SpinDensityNew::registerOperatorEstimator(hdf_archive& file)
 
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.push_back(std::make_unique<ObservableHelper>(std::vector<std::string>{my_name_, species_.speciesName[s]}));
+    h5desc_.push_back({{my_name_, species_.speciesName[s]}});
     auto& oh = h5desc_.back();
-    oh->set_dimensions(ng, 0);
+    oh.set_dimensions(ng, 0);
   }
 }
 

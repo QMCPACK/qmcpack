@@ -319,12 +319,12 @@ void MomentumDistribution::registerOperatorEstimator(hdf_archive& file)
   std::vector<int> ng(1);
   //add nofk
   ng[0] = nofK.size();
-  h5desc_.push_back(std::make_unique<ObservableHelper>("nofk"));
+  h5desc_.push_back({{"nofk"}});
   auto& h5o = h5desc_.back();
   //h5o.set_dimensions(ng, my_index_);
-  h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
-  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
-  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
+  h5o.set_dimensions(ng, 0); // JTK: doesn't seem right
+  h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
+  h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
 }
 
 

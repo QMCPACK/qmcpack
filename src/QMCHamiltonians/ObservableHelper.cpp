@@ -20,7 +20,6 @@
 
 namespace qmcplusplus
 {
-ObservableHelper::ObservableHelper(const std::string& title) : group_name{title} {}
 ObservableHelper::ObservableHelper(std::vector<std::string> title) : group_name(std::move(title)) {}
 
 ObservableHelper::~ObservableHelper() = default;

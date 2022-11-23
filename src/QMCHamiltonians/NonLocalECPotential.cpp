@@ -829,7 +829,7 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
     std::vector<int> ndim(2);
     ndim[0] = Nnuc;
     ndim[1] = OHMMS_DIM;
-    h5list.emplace_back("FNL");
+    h5list.push_back({{"FNL"}});
     auto& h5o1 = h5list.back();
     h5o1.set_dimensions(ndim, FirstForceIndex);
   }

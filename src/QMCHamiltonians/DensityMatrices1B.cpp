@@ -541,7 +541,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   using namespace std::string_literals;
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.emplace_back(std::vector<std::string>{name_, "number_matrix"s, species_name[s]});
+    h5desc.push_back({{name_, "number_matrix"s, species_name[s]}});
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, nindex + s * nentries);
   }
@@ -550,7 +550,7 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   {
     for (int s = 0; s < nspecies; ++s)
     {
-      h5desc.emplace_back(std::vector<std::string>{name_, "energy_matrix", species_name[s]});
+      h5desc.push_back({{name_, "energy_matrix", species_name[s]}});
       auto& oh = h5desc.back();
       oh.set_dimensions(ng, eindex + s * nentries);
     }

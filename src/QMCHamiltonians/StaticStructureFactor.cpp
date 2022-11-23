@@ -106,7 +106,7 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 
 void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  h5desc.emplace_back(std::vector<std::string>{name_, "kpoints"});
+  h5desc.push_back({{name_, "kpoints"}});
   auto& oh = h5desc.back();
   oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().kpts_cart), "value", file);
 
@@ -115,7 +115,7 @@ void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& 
   ng[1] = nkpoints;
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.emplace_back(species_name[s]);
+    h5desc.push_back({{species_name[s]}});
     auto& ohSpeciesName = h5desc.back();
     ohSpeciesName.set_dimensions(ng, my_index_ + s * 2 * nkpoints);
   }

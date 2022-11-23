@@ -35,10 +35,11 @@ using value_type = QMCTraits::FullPrecRealType;
 class ObservableHelper
 {
 public:
+  ObservableHelper() = delete;
   /**
-   * default constructor
+   * Favored constructor
+   * \param[in] title         is the ordered hdf5 group path elements of the observable
    */
-  ObservableHelper(const std::string& title = "dummy");
   ObservableHelper(std::vector<std::string> title);
 
   /**

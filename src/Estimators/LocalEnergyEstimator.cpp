@@ -41,9 +41,9 @@ void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5
     return;
   int loc = h5desc.size();
   //add LocalEnergy and LocalPotential
-  h5desc.emplace_back("LocalEnergy");
-  h5desc.emplace_back("LocalEnergy_sq");
-  h5desc.emplace_back("LocalPotential");
+  h5desc.push_back({{"LocalEnergy"}});
+  h5desc.push_back({{"LocalEnergy_sq"}});
+  h5desc.push_back({{"LocalPotential"}});
   std::vector<int> onedim(1, 1);
   h5desc[loc++].set_dimensions(onedim, FirstIndex);
   h5desc[loc++].set_dimensions(onedim, FirstIndex + 1);
