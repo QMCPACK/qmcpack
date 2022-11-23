@@ -45,14 +45,14 @@ public:
   /**
    * delete copy constructor as hdf5 handlers must have unique owners
    */
-  ObservableHelper(const ObservableHelper&) = delete;
+  ObservableHelper(const ObservableHelper&)            = delete;
   ObservableHelper& operator=(const ObservableHelper&) = delete;
 
   /**
    * Move constructor.
    * @param in input object to be moved to this
    */
-  ObservableHelper(ObservableHelper&&) noexcept = default;
+  ObservableHelper(ObservableHelper&&) noexcept            = default;
   ObservableHelper& operator=(ObservableHelper&&) noexcept = default;
 
   /**
@@ -92,6 +92,7 @@ public:
 
   ///starting index
   hsize_t lower_bound = 0;
+
 private:
   /// "file pointer" for h5d_append
   hsize_t current = 0;

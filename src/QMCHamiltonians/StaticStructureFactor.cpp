@@ -106,7 +106,8 @@ void StaticStructureFactor::addObservables(PropertySetType& plist, BufferType& c
 
 void StaticStructureFactor::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  h5desc.push_back({{name_, "kpoints"}});
+  using namespace std::string_literals;
+  h5desc.push_back({{name_, "kpoints"s}});
   auto& oh = h5desc.back();
   oh.addProperty(const_cast<std::vector<PosType>&>(Pinit.getSimulationCell().getKLists().kpts_cart), "value", file);
 
