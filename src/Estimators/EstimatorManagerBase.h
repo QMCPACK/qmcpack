@@ -248,7 +248,7 @@ protected:
   ///column map
   std::map<std::string, int> EstimatorMap;
   ///estimators of simple scalars
-  std::vector<std::unique_ptr<EstimatorType>> Estimators;
+  UPtrVector<EstimatorType> Estimators;
   ///convenient descriptors for hdf5
   std::vector<ObservableHelper> h5desc;
   /////estimators of composite data

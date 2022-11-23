@@ -65,7 +65,6 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hd
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, my_index_);
-    oh.open(file);
   }
 }
 

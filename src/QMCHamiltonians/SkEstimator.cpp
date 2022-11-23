@@ -122,7 +122,6 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
     h5desc.emplace_back(name_);
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, my_index_);
-    h5o.open(file);
 
     hsize_t kdims[2];
     kdims[0]          = NumK;

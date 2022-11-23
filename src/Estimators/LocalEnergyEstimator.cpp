@@ -45,12 +45,9 @@ void LocalEnergyEstimator::registerObservables(std::vector<ObservableHelper>& h5
   h5desc.emplace_back("LocalEnergy_sq");
   h5desc.emplace_back("LocalPotential");
   std::vector<int> onedim(1, 1);
-  h5desc[loc].set_dimensions(onedim, FirstIndex);
-  h5desc[loc++].open(file);
-  h5desc[loc].set_dimensions(onedim, FirstIndex + 1);
-  h5desc[loc++].open(file);
-  h5desc[loc].set_dimensions(onedim, FirstIndex + 2);
-  h5desc[loc++].open(file);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex + 1);
+  h5desc[loc++].set_dimensions(onedim, FirstIndex + 2);
   //hamiltonian adds more
   refH.registerObservables(h5desc, file);
   int correction = FirstIndex + 3;

@@ -152,7 +152,7 @@ void ProjectData::reset()
 
 bool ProjectData::previousRoot(std::string& oldroot) const
 {
-  oldroot.erase(oldroot.begin(), oldroot.end());
+  oldroot.clear();
   if (series_)
   {
     char fileroot[128];

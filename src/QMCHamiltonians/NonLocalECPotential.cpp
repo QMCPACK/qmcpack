@@ -832,7 +832,6 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
     h5list.emplace_back("FNL");
     auto& h5o1 = h5list.back();
     h5o1.set_dimensions(ndim, FirstForceIndex);
-    h5o1.open(file);
   }
 }
 
