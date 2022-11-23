@@ -76,10 +76,10 @@ static RefVector<T> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
  *  the static assert prevents ambiguity between this function and the above
  *  when T is a derived type of T2.
  */
-  template<class T2, class T> //,  typename = std::enable_if_t<!std::is_same_v<T2,T>>>
+template<class T2, class T>
 static RefVector<T2> convertUPtrToRefVector(const UPtrVector<T>& ptr_list)
 {
-  static_assert(!std::is_same_v<T2,T> && std::is_base_of_v<T2, T>);
+  static_assert(!std::is_same_v<T2, T> && std::is_base_of_v<T2, T>);
   RefVector<T2> ref_list;
   ref_list.reserve(ptr_list.size());
   for (const UPtr<T>& ptr : ptr_list)
