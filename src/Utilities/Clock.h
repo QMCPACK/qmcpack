@@ -15,8 +15,6 @@
 #ifndef QMCPLUSPLUS_CLOCK_H
 #define QMCPLUSPLUS_CLOCK_H
 
-#include "Concurrency/OpenMP.h"
-
 #include <stddef.h>
 #include <chrono>
 

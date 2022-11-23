@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include "mpi/collectives.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "Concurrency/OpenMP.h"
 
 using namespace std;
 using namespace qmcplusplus;
