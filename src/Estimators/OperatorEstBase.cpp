@@ -53,10 +53,10 @@ void OperatorEstBase::write(hdf_archive& file)
   // auto total = std::accumulate(data_->begin(), data_->end(), 0.0);
   // std::cout << "data size: " << data_->size() << " : " << total << '\n';
   for (auto& h5d : h5desc_)
-    h5d->write(expanded_data.data(), file);
+    h5d.write(expanded_data.data(), file);
 #else
   for (auto& h5d : h5desc_)
-    h5d->write(data_.data(), file);
+    h5d.write(data_.data(), file);
 #endif
   file.pop();
 }
