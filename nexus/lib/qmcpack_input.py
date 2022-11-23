@@ -7163,6 +7163,8 @@ gen_basic_input_defaults = obj(
     hybrid_rcut    = None,             
     hybrid_lmax    = None,             
     orbitals_h5    = 'MISSING.h5',     
+    run_path       = None,
+    check_paths    = True,
     excitation     = None,             
     system         = 'missing',        
     pseudos        = None,
@@ -7330,6 +7332,15 @@ def generate_basic_input(**kwargs):
         else:
             if kw.orbspline is None:
                 kw.orbspline = 'bspline'
+            #end if
+            if kw.orbitals_h5!='MISSING.h5':
+                orbfile_exists = os.path.exists(kw.orbitals_h5)
+                if kw.check_paths and not orbfile_exists:
+                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5))
+                #end if
+                if kw.run_path is not None:
+                    kw.orbitals_h5 = os.path.relpath(kw.orbitals_h5,kw.run_path)
+                #end if
             #end if
             ssb = generate_sposet_builder(
                 type           = kw.orbspline,
