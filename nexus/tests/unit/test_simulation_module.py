@@ -2387,7 +2387,10 @@ def test_execute():
     assert(os.path.exists(outfile))
     assert(os.path.exists(errfile))
     assert(open(outfile,'r').read().strip()=='run')
-    assert(open(errfile,'r').read().strip()=='')
+    err_contents = open(errfile,'r').read().strip()
+    # workaround for openmpi issue on some systems
+    err_contents = err_contents.replace('Invalid MIT-MAGIC-COOKIE-1 key','').strip()
+    assert(err_contents=='')
 
     restore_nexus()
 
