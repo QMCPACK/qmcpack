@@ -7136,6 +7136,15 @@ def generate_qmcpack_input(**kwargs):
 
 
 
+def read_jastrows(filepath):
+    qi = QmcpackInput(filepath)
+    qi.pluralize()
+    jastrows = qi.get('jastrows')
+    return jastrows
+#end def read_jastrows
+
+
+
 gen_basic_input_defaults = obj(
     id             = 'qmc',            
     series         = 0,                
@@ -7336,7 +7345,7 @@ def generate_basic_input(**kwargs):
             if kw.orbitals_h5!='MISSING.h5':
                 orbfile_exists = os.path.exists(kw.orbitals_h5)
                 if kw.check_paths and not orbfile_exists:
-                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5))
+                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5),'generate_qmcpack_input')
                 #end if
                 if kw.run_path is not None:
                     kw.orbitals_h5 = os.path.relpath(kw.orbitals_h5,kw.run_path)
@@ -7399,7 +7408,16 @@ def generate_basic_input(**kwargs):
         determinantset = dset,
         )
 
-    if kw.J1 or kw.J2 or kw.J3:
+    if isinstance(kw.jastrows,str) and kw.jastrows.endswith('.xml'):
+        if not os.path.exists(kw.jastrows):
+            QmcpackInput.class_error('user provided "jastrows" file path does not exist\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+        #end if
+        jastrows = read_jastrows(kw.jastrows)
+        if jastrows is None:
+            QmcpackInput.class_error('no jastrows found at user provided "jastrows" file.\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+        #end if
+        kw.jastrows = jastrows
+    elif kw.J1 or kw.J2 or kw.J3:
         kw.jastrows = generate_jastrows_alt(
             J1           = kw.J1          ,
             J2           = kw.J2          ,
