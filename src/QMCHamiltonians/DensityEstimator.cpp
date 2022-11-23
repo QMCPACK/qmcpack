@@ -127,7 +127,6 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
   h5desc.emplace_back(name_);
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, my_index_);
-  h5o.open(file);
 }
 
 void DensityEstimator::setObservables(PropertySetType& plist)

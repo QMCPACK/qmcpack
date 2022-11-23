@@ -334,7 +334,7 @@ void EstimatorManagerBase::collectBlockAverages()
       *Archive << std::setw(max_block_avg_name_) << PropertyCache[j];
     *Archive << std::endl;
     for (int o = 0; o < h5desc.size(); ++o)
-      h5desc[o].write(AverageCache.data(), SquaredAverageCache.data());
+      h5desc[o].write(AverageCache.data(), h_file);
     h_file.flush();
   }
   RecordCount++;

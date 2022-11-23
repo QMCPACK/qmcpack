@@ -3042,6 +3042,9 @@ class Summit(Supercomputer):
     def write_job_header(self,job):
         c ='#!/bin/bash\n'
         c+='#BSUB -P {0}\n'.format(job.account)
+        if job.queue is not None:
+            c+='#BSUB -q {0}\n'.format(job.queue)
+        #end if
         c+='#BSUB -J {0}\n'.format(job.name)
         c+='#BSUB -o {0}\n'.format(job.outfile)
         c+='#BSUB -e {0}\n'.format(job.errfile)

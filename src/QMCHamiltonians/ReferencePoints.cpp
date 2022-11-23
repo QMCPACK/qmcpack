@@ -135,7 +135,6 @@ void ReferencePoints::save(std::vector<ObservableHelper>& h5desc, hdf_archive& f
 {
   h5desc.emplace_back("reference_points");
   auto& oh = h5desc.back();
-  oh.open(file);
   std::map<std::string, Point>::const_iterator it;
   for (it = points.begin(); it != points.end(); ++it)
   {

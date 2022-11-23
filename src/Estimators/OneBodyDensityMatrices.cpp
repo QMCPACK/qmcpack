@@ -601,7 +601,6 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
 
 void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
 {
-  file.push(my_name_, true);
   std::vector<int> my_indexes(2, basis_size_);
   if constexpr (IsComplex_t<Value>::value)
   {
@@ -609,17 +608,14 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
   }
   int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
 
-  std::string nname = "number_matrix";
-  file.push(nname, true);
+  using namespace std::string_literals;
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    h5desc_.push_back(std::make_unique<ObservableHelper>(
+        std::vector<std::string>{my_name_, "number_matrix"s, species_.speciesName[s]}));
     auto& oh = h5desc_.back();
     oh->set_dimensions(my_indexes, 0);
-    oh->open(file);
   }
-  file.pop();
-  file.pop();
 }
 
 template void OneBodyDensityMatrices::generateSamples<RandomGenerator>(Real weight,
