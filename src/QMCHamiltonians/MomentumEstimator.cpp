@@ -104,6 +104,7 @@ void MomentumEstimator::registerCollectables(std::vector<ObservableHelper>& h5de
     //descriptor for the data, 1-D data
     std::vector<int> ng(1);
     //add nofk
+    ng[0] = nofK.size();
     using namespace std::string_literals;
     h5desc.push_back({{"nofk"s}});
     auto& h5o = h5desc.back();
