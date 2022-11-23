@@ -18,6 +18,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "CPU/SIMD/aligned_allocator.hpp"
 #include "Numerics/DeterminantOperators.h"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
