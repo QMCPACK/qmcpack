@@ -133,7 +133,8 @@ void ReferencePoints::write_description(std::ostream& os, std::string& indent)
 
 void ReferencePoints::save(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  h5desc.emplace_back("reference_points");
+  using namespace std::string_literals;
+  h5desc.push_back({{"reference_points"s}});
   auto& oh = h5desc.back();
   std::map<std::string, Point>::const_iterator it;
   for (it = points.begin(); it != points.end(); ++it)

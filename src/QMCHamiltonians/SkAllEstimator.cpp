@@ -228,7 +228,7 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
 
   using namespace std::string_literals;
   // Add k-point information
-  h5desc.emplace_back(std::vector<std::string>{name_, "kpoints"s});
+  h5desc.push_back({{name_, "kpoints"s}});
   auto& ohKPoints = h5desc.back();
   ohKPoints.addProperty(const_cast<std::vector<PosType>&>(ions->getSimulationCell().getKLists().kpts_cart), "value",
                         file);
@@ -237,15 +237,15 @@ void SkAllEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc,
   std::vector<int> ng(1);
   ng[0] = NumK;
   //  modulus
-  h5desc.emplace_back(std::vector<std::string>{name_, "rhok_e_e"s});
+  h5desc.push_back({{name_, "rhok_e_e"s}});
   auto& ohRhoKEE = h5desc.back();
   ohRhoKEE.set_dimensions(ng, my_index_);
   //  real part
-  h5desc.emplace_back(std::vector<std::string>{name_, "rhok_e_r"s});
+  h5desc.push_back({{name_, "rhok_e_r"s}});
   auto& ohRhoKER = h5desc.back();
   ohRhoKER.set_dimensions(ng, my_index_ + NumK);
   //  imaginary part
-  h5desc.emplace_back(std::vector<std::string>{name_, "rhok_e_i"s});
+  h5desc.push_back({{name_, "rhok_e_i"s}});
   auto& ohRhoKEI = h5desc.back();
   ohRhoKEI.set_dimensions(ng, my_index_ + 2 * NumK);
 }

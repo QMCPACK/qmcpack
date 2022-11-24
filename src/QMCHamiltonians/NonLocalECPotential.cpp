@@ -823,13 +823,15 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
 
 void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const
 {
+  using namespace std::string_literals;
+
   OperatorBase::registerObservables(h5list, file);
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
     ndim[0] = Nnuc;
     ndim[1] = OHMMS_DIM;
-    h5list.emplace_back("FNL");
+    h5list.push_back({{"FNL"s}});
     auto& h5o1 = h5list.back();
     h5o1.set_dimensions(ndim, FirstForceIndex);
   }

@@ -24,22 +24,18 @@
 
 namespace qmcplusplus
 {
-TEST_CASE("ObservableHelper::ObservableHelper(const std::string&)", "[hamiltonian]")
-{
-  ObservableHelper oh("u");
-  CHECK(oh.lower_bound == 0);
-}
+
+using namespace std::string_literals;
 
 TEST_CASE("ObservableHelper::ObservableHelper(std::vector<std::string>)", "[hamiltonian]")
 {
-  using namespace std::string_literals;
   ObservableHelper oh({"u"s, "v"s});
   CHECK(oh.lower_bound == 0);
 }
 
 TEST_CASE("ObservableHelper::set_dimensions", "[hamiltonian]")
 {
-  ObservableHelper oh("u");
+  ObservableHelper oh{{"u"s}};
 
   std::vector<int> dims = {10, 10};
   oh.set_dimensions(dims, 1);
@@ -53,7 +49,7 @@ TEST_CASE("ObservableHelper::ObservableHelper()", "[hamiltonian]")
   hdf_archive hFile;
   hFile.create(filename);
 
-  ObservableHelper oh("u");
+  ObservableHelper oh{{"u"s}};
   std::vector<int> dims = {10, 10};
   float propertyFloat   = 10.f;
   oh.addProperty(propertyFloat, "propertyFloat", hFile);
