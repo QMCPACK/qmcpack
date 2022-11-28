@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
@@ -36,22 +36,22 @@ class ObservableHelper
 {
 public:
   /**
-   * default constructor
+   * Favored constructor
+   * \param[in] title         is the ordered hdf5 group path elements of the observable
    */
-  ObservableHelper(const std::string& title = "dummy");
   ObservableHelper(std::vector<std::string> title);
 
   /**
    * delete copy constructor as hdf5 handlers must have unique owners
    */
-  ObservableHelper(const ObservableHelper&) = delete;
+  ObservableHelper(const ObservableHelper&)            = delete;
   ObservableHelper& operator=(const ObservableHelper&) = delete;
 
   /**
    * Move constructor.
    * @param in input object to be moved to this
    */
-  ObservableHelper(ObservableHelper&&) noexcept = default;
+  ObservableHelper(ObservableHelper&&) noexcept            = default;
   ObservableHelper& operator=(ObservableHelper&&) noexcept = default;
 
   /**
@@ -91,6 +91,7 @@ public:
 
   ///starting index
   hsize_t lower_bound = 0;
+
 private:
   /// "file pointer" for h5d_append
   hsize_t current = 0;

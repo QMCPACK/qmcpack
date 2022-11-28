@@ -23,6 +23,7 @@
 #include "Utilities/Timer.h"
 #include "Sandbox/common.hpp"
 #include "Sandbox/einspline_spo.hpp"
+#include "Concurrency/OpenMP.h"
 #include <getopt.h>
 
 using namespace std;
