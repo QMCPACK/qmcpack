@@ -129,14 +129,14 @@ public:
 using StackKey = StackKeyParam<2>;
 
 /** Timer accumulates time and call counts
- * @tparam CLOCK can be CPUClock or FakeCPUClock
+ * @tparam CLOCK can be a std::chrono clock or FakeChronoClock
  */
 template<class CLOCK>
 class TimerType
 {
 protected:
   /// start time of the current measurement
-  double start_time;
+  typename CLOCK::time_point start_time;
   /// total time accumulated of all the calls
   double total_time;
   /// total call counts
@@ -231,10 +231,10 @@ public:
   friend void set_num_calls(TimerType<CLOCK1>* timer, long num_calls_input);
 };
 
-using NewTimer  = TimerType<CPUClock>;
-using FakeTimer = TimerType<FakeCPUClock>;
-extern template class TimerType<CPUClock>;
-extern template class TimerType<FakeCPUClock>;
+using NewTimer  = TimerType<ChronoClock>;
+using FakeTimer = TimerType<FakeChronoClock>;
+extern template class TimerType<ChronoClock>;
+extern template class TimerType<FakeChronoClock>;
 
 // Wrapper for timer that starts on construction and stops on destruction
 template<class TIMER = NewTimer>

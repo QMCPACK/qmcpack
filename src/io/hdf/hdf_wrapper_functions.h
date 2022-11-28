@@ -362,8 +362,8 @@ inline bool h5d_append(hid_t grp,
                        const std::string& aname,
                        hsize_t& current,
                        hsize_t ndims,
-                       const hsize_t* dims,
-                       const T* first,
+                       const hsize_t* const dims,
+                       const T* const first,
                        hsize_t chunk_size = 1,
                        hid_t xfer_plist   = H5P_DEFAULT)
 {
