@@ -790,16 +790,23 @@ endif(USE_NVTX_API)
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_ROCM)
+  enable_language(HIP)
+  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
   if(DEFINED ROCM_ROOT)
     message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
     # explicit ROCM_ROOT takes precedence
     list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
+  elseif(CMAKE_HIP_COMPILER_ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
   endif()
-  enable_language(HIP)
-  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
 
   # use hip package to supply the hip runtime for CXX source code.
-  find_package(hip CONFIG REQUIRED)
+  find_package(hip CONFIG)
+  if(NOT hip_FOUND)
+    message(FATAL_ERROR "The HIP runtime library cmake configure file hip-config.cmake cannot be found! "
+                        "This happens when the ROCm installation cannot be found by CMake. "
+                        "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
+  endif()
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
