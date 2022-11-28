@@ -236,14 +236,17 @@ case "$1" in
       ;;
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
-        
+        export ROCM_PATH=/opt/rocm
+
+        # Make current environment variables available to subsequent steps
+        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
+
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
               -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
               -DQMC_MPI=0 \
               -DENABLE_CUDA=ON \
               -DQMC_CUDA2HIP=ON \
-              -DROCM_ROOT=/opt/rocm \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
@@ -254,10 +257,12 @@ case "$1" in
       *"ROCm-Clang13-MPI-Legacy-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
 
+        export ROCM_PATH=/opt/rocm
         export OMPI_CC=/opt/rocm/llvm/bin/clang
         export OMPI_CXX=/opt/rocm/llvm/bin/clang++
 
         # Make current environment variables available to subsequent steps
+        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
         echo "OMPI_CC=/opt/rocm/llvm/bin/clang" >> $GITHUB_ENV
         echo "OMPI_CXX=/opt/rocm/llvm/bin/clang++" >> $GITHUB_ENV
 
@@ -267,7 +272,6 @@ case "$1" in
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
               -DQMC_CUDA=1 \
               -DQMC_CUDA2HIP=ON \
-              -DROCM_ROOT=/opt/rocm \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
