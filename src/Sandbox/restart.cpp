@@ -261,11 +261,11 @@ int main(int argc, char** argv)
   elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
 
   // load walkers
-  std::string restart_input_directory = "<tmp> \
-  <mcwalkerset fileroot=\"" + directory + "restart\" node=\"-1\" version=\"3 0\" collected=\"yes\"/> \
-</tmp> \
-";
-  const char* restart_input = restart_input_directory.c_str();
+  std::string restart_input = R"(
+    <tmp>
+      <mcwalkerset fileroot=")" + directory + R"(restart" node="-1" version="3 0" collected="yes"/>
+    </tmp>
+  )";
 
   Libxml2Document doc;
   bool okay               = doc.parseFromString(restart_input);
