@@ -812,8 +812,13 @@ if(ENABLE_ROCM)
   find_package(rocthrust CONFIG REQUIRED)
 
   # architecture flags
+  if(DEFINED HIP_ARCH)
+    unset(HIP_ARCH CACHE)
+    message(
+      FATAL_ERROR "HIP_ARCH option has been removed. Use -DCMAKE_HIP_ARCHITECTURES=gfx90a if -DHIP_ARCH=gfx90a was used.")
+  endif()
   if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES gfx906)
+    set(CMAKE_HIP_ARCHITECTURES gfx906)
   endif()
 
   set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fPIC -ffast-math --gpu-max-threads-per-block=256")

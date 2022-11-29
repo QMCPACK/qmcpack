@@ -13,6 +13,10 @@ Notable changes to QMCPACK are documented in this file.
   appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be
   used. The actual NVIDIA drivers can be more recent.
 
+* Enabled HIP as language in CMake. When using HIP targeting AMD GPUs, replace
+  HIP_ARCH with CMAKE_HIP_ARCHITECTURES if HIP_ARCH was used to specify the GPU
+  architectures.
+
 ##  [3.15.0] - 2022-09-29
 
 This is a recommended release for all users. There are many quality of life
