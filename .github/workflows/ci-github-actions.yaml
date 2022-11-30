@@ -127,12 +127,16 @@ jobs:
 
       - name: Upload Coverage
         if: contains(matrix.jobname, 'Gcov') && github.repository_owner == 'QMCPACK'
-        uses: codecov/codecov-action@v3
+        uses: Wandalen/wretry.action@v1.0.36
         with:
-          files: ../qmcpack-build/coverage.xml
-          flags: tests-deterministic # optional
-          name: codecov-QMCPACK # optional
-          fail_ci_if_error: true # optional (default = false)
+          action: codecov/codecov-action@v3
+          with: |
+            files: ../qmcpack-build/coverage.xml
+            flags: tests-deterministic
+            name: codecov-QMCPACK 
+            fail_ci_if_error: true
+          attempt_limit: 5
+          attempt_delay: 60000 # in ms
 
   macos:
     runs-on: macos-11
@@ -152,7 +156,7 @@ jobs:
       - name: Set Python Version
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Setup Dependencies
         run: |
