@@ -694,7 +694,7 @@ if(HDF5_FOUND)
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
   target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
-  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_18_API")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_110_API")
   target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
     target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
