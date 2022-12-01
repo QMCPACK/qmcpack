@@ -8,6 +8,15 @@ case "$1" in
   # Configure qmcpack using cmake out-of-source builds 
   configure)
     
+    if [[ "$HOST_NAME" =~ (sulfur) || "$HOST_NAME" =~ (nitrogen) ]]
+    then
+      echo "Use recent cmake v3.21.3"
+      export PATH=/opt/cmake-3.21.3-linux-x86_64/bin:$PATH
+      # Make current environment variables available to subsequent steps, 
+      # e.g. ctest
+      echo "PATH=$PATH" >> $GITHUB_ENV
+    fi
+    
     if [ -d ${GITHUB_WORKSPACE}/../qmcpack-build ]
     then
       echo "Found existing out-of-source build directory ${GITHUB_WORKSPACE}/../qmcpack-build, removing"
@@ -228,10 +237,10 @@ case "$1" in
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
         export ROCM_PATH=/opt/rocm
-        
+
         # Make current environment variables available to subsequent steps
         echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
-        
+
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
               -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \

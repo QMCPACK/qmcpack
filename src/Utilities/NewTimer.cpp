@@ -129,7 +129,7 @@ void TimerType<CLOCK>::set_active_by_timer_threshold(const timer_levels threshol
     active = false;
 }
 
-template class TimerType<std::chrono::system_clock>;
+template class TimerType<ChronoClock>;
 template class TimerType<FakeChronoClock>;
 
 } // namespace qmcplusplus

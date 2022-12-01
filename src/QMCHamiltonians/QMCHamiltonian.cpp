@@ -41,7 +41,9 @@ QMCHamiltonian::QMCHamiltonian(const std::string& aname)
       l2_ptr(nullptr),
       ham_timer_(*timer_manager.createTimer("Hamiltonian:" + aname + "::evaluate", timer_level_medium)),
       eval_vals_derivs_timer_(
-          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium))
+          *timer_manager.createTimer("Hamiltonian:" + aname + "::ValueParamDerivs", timer_level_medium)),
+      eval_ion_derivs_fast_timer_(
+          *timer_manager.createTimer("Hamiltonian:" + aname + ":::evaluateIonDerivsDeterministicFast", timer_level_medium))
 #if !defined(REMOVE_TRACEMANAGER)
       ,
       streaming_position(false),
@@ -1206,7 +1208,7 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
                                                                                     ParticleSet::ParticlePos& dEdR,
                                                                                     ParticleSet::ParticlePos& wf_grad)
 {
-  ScopedTimer evaluatederivtimer(*timer_manager.createTimer("FastDeriv::evaluateIonDerivsFast"));
+  ScopedTimer local_timer(eval_ion_derivs_fast_timer_);
   P.update();
   //resize everything;
   const int ngroups = psi_wrapper_in.numGroups();
@@ -1224,7 +1226,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   std::vector<std::vector<ValueMatrix>> dB_gs_;
 
   {
-    //  ScopedTimer resizetimer(*timer_manager.createTimer("NEW::Resize"));
     M_.resize(ngroups);
     M_gs_.resize(ngroups);
     X_.resize(ngroups);
@@ -1300,11 +1301,9 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   RealType localEnergy = 0.0;
 
   {
-    ScopedTimer getmtimer(*timer_manager.createTimer("FastDeriv::getM"));
     psi_wrapper_in.getM(P, M_);
   }
   {
-    //  ScopedTimer invertmtimer(*timer_manager.createTimer("NEW::InvertMTimer"));
     psi_wrapper_in.getGSMatrices(M_, M_gs_);
     psi_wrapper_in.invertMatrices(M_gs_, Minv_);
   }
@@ -1313,12 +1312,10 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   {
     if (H[i]->dependsOnWaveFunction())
     {
-      ScopedTimer bmattimer(*timer_manager.createTimer("FastDeriv::B"));
       H[i]->evaluateOneBodyOpMatrix(P, psi_wrapper_in, B_);
     }
     else
     {
-      //   ScopedTimer othertimer(*timer_manager.createTimer("NEW::Other_Timer"));
       localEnergy += H[i]->evaluateWithIonDerivsDeterministic(P, ions, psi_in, hfdiag_, pulayterms_);
     }
   }
@@ -1332,7 +1329,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
   localEnergy += nondiag_cont_re;
 
   {
-    ScopedTimer buildXtimer(*timer_manager.createTimer("FastDeriv::buildX"));
     psi_wrapper_in.buildX(Minv_, B_gs_, X_);
   }
   //And now we compute the 3N force derivatives.  3 at a time for each atom.
@@ -1352,7 +1348,6 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     }
 
     {
-      ScopedTimer dmtimer(*timer_manager.createTimer("FastDeriv::dM"));
       //ion derivative of slater matrix.
       psi_wrapper_in.getIonGradM(P, ions, iat, dM_);
     }
@@ -1360,14 +1355,12 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateIonDerivsDeterministicF
     {
       if (H[i]->dependsOnWaveFunction())
       {
-        ScopedTimer dBtimer(*timer_manager.createTimer("FastDeriv::dB"));
         H[i]->evaluateOneBodyOpMatrixForceDeriv(P, ions, psi_wrapper_in, iat, dB_);
       }
     }
 
     for (int idim = 0; idim < OHMMS_DIM; idim++)
     {
-      ScopedTimer computederivtimer(*timer_manager.createTimer("FastDeriv::compute_deriv"));
       psi_wrapper_in.getGSMatrices(dB_[idim], dB_gs_[idim]);
       psi_wrapper_in.getGSMatrices(dM_[idim], dM_gs_[idim]);
 

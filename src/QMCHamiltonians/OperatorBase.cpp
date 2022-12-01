@@ -61,11 +61,10 @@ void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hd
   //exclude collectables
   if (!collect)
   {
-    h5desc.emplace_back(name_);
+    h5desc.push_back({{name_}});
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, my_index_);
-    oh.open(file);
   }
 }
 
