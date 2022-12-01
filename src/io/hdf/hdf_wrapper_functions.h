@@ -438,7 +438,7 @@ inline bool h5d_append(hid_t grp,
     start[0] = current;
     end[0]   = start[0] + dims[0];
     //extend the dataset (file)
-    herr_t he = H5Dextend(dataset, end.data());
+    herr_t he = H5Dset_extent(dataset, end.data());
     //get the corresponding dataspace (filespace)
     dataspace = H5Dget_space(dataset);
     //set the extent
