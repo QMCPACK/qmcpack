@@ -4,21 +4,20 @@
 # See https://github.com/QMCPACK/qmcpack/pull/4123 for more details on the module file if needed
 
 echo "Loading QMCPACK dependency modules for crusher"
+module unload PrgEnv-gnu PrgEnv-cray PrgEnv-amd PrgEnv-gnu-amd PrgEnv-cray-amd
+module unload amd amd-mixed gcc gcc-mixed cce cce-mixed
+module load PrgEnv-amd amd/5.3.0 gcc-mixed/11.2.0
+module unload cray-libsci
 module load cmake/3.22.2
 module load cray-fftw
 module load openblas/0.3.17-omp
-module load boost/1.77.0-cxx17
-# private module until OLCF provides MPI compiler wrappers for afar compilers.
-if [[ ! -d /ccs/proj/mat189/modules/crusher ]] ; then
-  echo "Required module folder /ccs/proj/mat189/modules/crusher not found!"
-  exit 1
-fi
-module use /ccs/proj/mat189/modules/crusher
-module load mpiwrappers/cray-mpich-afar
 module load cray-hdf5-parallel
+module load boost/1.78.0
+
+module list >& module_list.txt
 
 TYPE=Release
-Compiler=afar
+Compiler=rocm530
 
 if [[ $# -eq 0 ]]; then
   source_folder=`pwd`
@@ -52,7 +51,7 @@ if [[ $name == *"offload"* ]]; then
 fi
 
 if [[ $name == *"cuda2hip"* ]]; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON -DHIP_ARCH=gfx90a"
+  CMAKE_FLAGS="$CMAKE_FLAGS -DENABLE_CUDA=ON -DQMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx90a"
 fi
 
 folder=build_crusher_${Compiler}_${name}
@@ -63,7 +62,9 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx $source_folder
+cmake $CMAKE_FLAGS -DCMAKE_C_COMPILER=cc -DCMAKE_CXX_COMPILER=CC -DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment \
+      -DCMAKE_C_FLAGS=--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos -DCMAKE_CXX_FLAGS=--gcc-toolchain=/opt/cray/pe/gcc/11.2.0/snos \
+      $source_folder
 fi
 make -j16
 cd ..

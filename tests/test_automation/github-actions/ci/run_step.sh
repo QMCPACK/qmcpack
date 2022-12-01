@@ -237,10 +237,10 @@ case "$1" in
       *"ROCm-Clang13-NoMPI-CUDA2HIP"*)
         echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
         export ROCM_PATH=/opt/rocm
-        
+
         # Make current environment variables available to subsequent steps
         echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
-        
+
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
               -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \

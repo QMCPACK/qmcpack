@@ -458,7 +458,7 @@ Similarly, HIP features can be enabled in conjunction with the offload code path
 
   ::
 
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -DHIP_ARCH=gfx906
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx906
 
 Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
 
