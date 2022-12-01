@@ -36,7 +36,6 @@ public:
 
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
-
   RotationIndices m_full_rot_inds;
 
   // Construct a list of the matrix indices for non-zero rotation parameters.
@@ -328,6 +327,10 @@ public:
 
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
+  //
+  void set_use_global_rotation() {
+    use_global_rot_ = true;
+  }
 
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
