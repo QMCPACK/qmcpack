@@ -32,9 +32,17 @@ std::unique_ptr<QMCDriverInterface> DMCFactoryNew::create(const ProjectData& pro
                 << std::endl;
 
   QMCDriverInput qmcdriver_input;
-  qmcdriver_input.readXML(input_node_);
   DMCDriverInput dmcdriver_input;
-  dmcdriver_input.readXML(input_node_);
+  try
+  {
+    qmcdriver_input.readXML(input_node_);
+    dmcdriver_input.readXML(input_node_);
+  }
+  catch (const std::exception& e)
+  {
+    throw UniformCommunicateError(e.what());
+  }
+
   auto qmc = std::make_unique<DMCBatched>(project_data, std::move(qmcdriver_input), global_emi,
                                           std::move(dmcdriver_input), wc, std::move(pop), comm);
   // This can probably be eliminated completely since we only support PbyP
