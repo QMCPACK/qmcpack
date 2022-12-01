@@ -178,6 +178,7 @@ job_defaults_assign = obj(
     core_spec          = None, # slurm specific, Cori
     switches           = None, # slurm specific, SuperMUC-NG
     alloc_flags        = None, # lsf specific, Summit
+    filesystems        = None, # pbs specific
     qos                = None,
     group_list         = None,
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
@@ -3371,6 +3372,50 @@ class Tomcat3(Supercomputer):
 
 
 
+class Polaris(Supercomputer):
+    name = 'polaris'
+    requires_account = True
+    batch_capable    = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                ppn     = '--ppn {}'.format(job.processes_per_node),
+                depth   = '--depth={}'.format(job.threads),
+                cpubind = '--cpu-bind depth',
+                threads = '--env OMP_NUM_THREADS={}'.format(job.threads),
+                )
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'prod'
+        #end if
+        if job.filesystems is None:
+            job.filesystems = 'home:eagle'
+        #end if
+        c= '#!/bin/sh\n'
+        c+='#PBS -l select={}:system=polaris\n'.format(job.nodes)
+        c+='#PBS -l place=scatter\n'
+        c+='#PBS -l filesystems={}\n'.format(job.filesystems)
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+
+        return c
+    #end def write_job_header
+#end class Polaris
+
+
+
 
 #Known machines
 #  workstations
@@ -3414,6 +3459,7 @@ Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
 
 
 #machine accessor functions
