@@ -95,6 +95,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
+    sposet->storeParamsBeforeRotation();
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";

@@ -162,7 +162,16 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   if (!vp_file_to_load.empty())
   {
     app_log() << "  Reading variational parameters from " << vp_file_to_load << std::endl;
-    dummy.readFromHDF(vp_file_to_load);
+
+    hdf_archive hin;
+    dummy.readFromHDF(vp_file_to_load, hin);
+    UniqueOptObjRefs opt_obj_refs = targetPsi->extractOptimizableObjectRefs();
+    for (auto opt_obj : opt_obj_refs)
+      opt_obj.get().readExtraParameters(hin);
+
+    // Get the latest values of the parameters for dummy so the following resetParameters
+    // doesn't mess up the rotation
+    targetPsi->checkInVariables(dummy);
   }
 
   targetPsi->resetParameters(dummy);
