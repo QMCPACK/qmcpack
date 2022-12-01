@@ -49,16 +49,16 @@ if(QMC_OMP)
 
     if(NOT DEFINED OFFLOAD_ARCH
        AND OFFLOAD_TARGET MATCHES "amdgcn")
-      if (DEFINED HIP_ARCH)
-        list(LENGTH HIP_ARCH NUMBER_HIP_ARCHITECTURES)
-        if(NUMBER_HIP_ARCHITECTURES EQUAL "1")
-          set(OFFLOAD_ARCH ${HIP_ARCH})
+      if (DEFINED CMAKE_HIP_ARCHITECTURES)
+        list(LENGTH CMAKE_HIP_ARCHITECTURES NUMBER_CMAKE_HIP_ARCHITECTURESITECTURES)
+        if(NUMBER_CMAKE_HIP_ARCHITECTURESITECTURES EQUAL "1")
+          set(OFFLOAD_ARCH ${CMAKE_HIP_ARCHITECTURES})
         else()
           message(
             FATAL_ERROR
               "LLVM does not yet support offload to multiple architectures! "
-              "Deriving OFFLOAD_ARCH from HIP_ARCH failed. "
-              "Please keep only one entry in HIP_ARCH or set OFFLOAD_ARCH.")
+              "Deriving OFFLOAD_ARCH from CMAKE_HIP_ARCHITECTURES failed. "
+              "Please keep only one entry in CMAKE_HIP_ARCHITECTURES or set OFFLOAD_ARCH.")
         endif()
       else()
         set(OFFLOAD_ARCH gfx906)
