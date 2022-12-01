@@ -137,7 +137,10 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
       old_param[i] = myVarsFull[i];
     }
 
-    apply_delta_rotation(delta_param, old_param, new_param);
+    if (use_this_copy_to_apply_rotation_)
+    {
+      apply_delta_rotation(delta_param, old_param, new_param);
+    }
 
     // Save the active params
     for (int i = 0; i < m_act_rot_inds.size(); i++)
