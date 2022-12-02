@@ -572,6 +572,9 @@ class Job(NexusCore):
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
+        elif machine.special_bundling:
+            c+='\n'
+            c+=machine.specialized_bundle_commands(self,launcher,serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -721,6 +724,7 @@ class Machine(NexusCore):
     executable_subfile  = False
     redirect_output     = False
     query_with_username = False
+    special_bundling    = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -834,6 +838,9 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def submit_job
 
+    def specialized_bundle_commands(self,job,launcher,serial):
+        self.not_implemented()
+    #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
         self.name = name
@@ -3376,6 +3383,7 @@ class Polaris(Supercomputer):
     name = 'polaris'
     requires_account = True
     batch_capable    = True
+    special_bundling = True
 
     def post_process_job(self,job):
         if len(job.run_options)==0: 
@@ -3412,6 +3420,24 @@ class Polaris(Supercomputer):
 
         return c
     #end def write_job_header
+
+    def specialized_bundle_commands(self,job,launcher,serial):
+        c = ''
+        j0 = job.bundled_jobs[0]
+        c+='split --lines={} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'.format(j0.nodes)
+        c+='\n'
+        lhfiles = ['local_hostfile.'+str(n+1).zfill(3) for n in range(len(job.bundled_jobs))]
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            c+='cp {} {}\n'.format(lh,j.abs_subdir)
+        #end for
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            j.run_options.add(hostfile='--hostfile '+lh)
+            c+='\ncd '+j.abs_subdir+'\n'
+            c+=j.run_command(launcher,redirect=True,serial=serial)+'\n'
+        #end for
+        c+='\nwait\n'
+        return c
+    #end def specialized_bundle_commands
 #end class Polaris
 
 
