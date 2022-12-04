@@ -114,7 +114,7 @@ public:
   // Single Slater creation
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations) {}
+  virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations, const std::vector<std::pair<int, int>>& full_rotations) {}
   /// return true if this SPOSet can be wrappered by RotatedSPO
   virtual bool isRotationSupported() const { return false; }
   /// store parameters before getting destroyed by rotation.
