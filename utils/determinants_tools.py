@@ -154,12 +154,22 @@ if __name__ == '__main__':
             sys.exit(1)
 
     with h5py.File(args.h5path, 'r') as f:
+        alpha_group = 'MultiDet/CI_Alpha'
+        if alpha_group not in f:
+            alpha_group = 'MultiDet/CI_0'
+        beta_group = 'MultiDet/CI_Beta'
+        if beta_group not in f:
+            beta_group = 'MultiDet/CI_1'
 
-        bit_kind_size = f['MultiDet/CI_Alpha'].dtype.itemsize * 8
+        if f[alpha_group].dtype == 'uint64':
+            raise TypeError("This HDF5 file uses unsigned 64 bit integers (uint64) to represent the determinants. QMCPACK expects signed integers (int64) this can cause issues when used in qmcpack.")
+
+        bit_kind_size = f[alpha_group].dtype.itemsize * 8
+        print(f[alpha_group].dtype)
 
         # We sanitize the determinants. Aka we transform any negative integers, into the proper unsigned one.
-        i_alpha= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Alpha'])
-        i_beta= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Beta'])
+        i_alpha= (sanitize(d,bit_kind_size) for d in f[alpha_group])
+        i_beta= (sanitize(d,bit_kind_size) for d in f[beta_group])
         i_det = zip(i_alpha, i_beta)
 
         # Getting the reference determinant to compute the excitation degree.
