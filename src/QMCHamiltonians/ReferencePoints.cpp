@@ -122,10 +122,9 @@ bool ReferencePoints::put(ParticleSet& P, std::vector<ParticleSet*>& Psets)
 void ReferencePoints::write_description(std::ostream& os, std::string& indent)
 {
   os << indent + "reference_points" << std::endl;
-  std::map<std::string, Point>::const_iterator it, end = points.end();
-  for (it = points.begin(); it != end; ++it)
+  for (const auto& [name, point] : points)
   {
-    os << indent + "  " << it->first << ": " << it->second << std::endl;
+    os << indent + "  " << name << ": " << point << std::endl;
   }
   os << indent + "end reference_points" << std::endl;
   return;
@@ -133,11 +132,9 @@ void ReferencePoints::write_description(std::ostream& os, std::string& indent)
 
 void ReferencePoints::save(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  using namespace std::string_literals;
-  h5desc.push_back({{"reference_points"s}});
+  h5desc.emplace_back(hdf_path{"reference_points"});
   auto& oh = h5desc.back();
-  std::map<std::string, Point>::const_iterator it;
-  for (it = points.begin(); it != points.end(); ++it)
+  for (auto it = points.cbegin(); it != points.cend(); ++it)
   {
     oh.addProperty(const_cast<Point&>(it->second), it->first, file);
   }

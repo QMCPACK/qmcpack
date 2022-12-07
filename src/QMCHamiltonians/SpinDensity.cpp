@@ -192,9 +192,10 @@ void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
   std::vector<int> ng(1);
   ng[0] = npoints;
 
+  hdf_path hdf_name{name_};
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.push_back({{name_, species_name[s]}});
+    h5desc.emplace_back(hdf_name / species_name[s]);
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, my_index_ + s * npoints);
   }
