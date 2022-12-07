@@ -119,7 +119,7 @@ public:
    *  if you haven't registered Operator Estimator 
    *  this will do nothing.
    */
-  void write();
+  void write(hdf_archive& file);
 
   /** zero data appropriately for the DataLocality
    */
@@ -140,7 +140,7 @@ protected:
   QMCT::FullPrecRealType walkers_weight_;
 
   // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
-  UPtrVector<ObservableHelper> h5desc_;
+  std::vector<ObservableHelper> h5desc_;
 
   Data data_;
 

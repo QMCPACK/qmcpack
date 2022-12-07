@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
 #include "OMPTarget/OMPTargetMath.hpp"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {

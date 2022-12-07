@@ -96,7 +96,7 @@ struct h5data_proxy<std::string>
 
   inline bool read(data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT)
   {
-    hid_t dataset = H5Dopen(grp, aname.c_str());
+    hid_t dataset = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
     if (dataset > -1)
     {
       hid_t datatype = H5Dget_type(dataset);
@@ -127,11 +127,11 @@ struct h5data_proxy<std::string>
     hsize_t dim = 1;
 
     herr_t ret = -1;
-    hid_t h1   = H5Dopen(grp, aname.c_str());
+    hid_t h1   = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
     if (h1 < 0) // missing create one
     {
       hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-      hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), str80, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       ret             = H5Dwrite(dataset, str80, H5S_ALL, H5S_ALL, xfer_plist, ref.data());
       H5Sclose(dataspace);
       H5Dclose(dataset);
@@ -157,7 +157,7 @@ struct h5data_proxy<std::vector<std::string>>
   {
     hid_t datatype = H5Tcopy(H5T_C_S1);
     H5Tset_size(datatype, H5T_VARIABLE);
-    hid_t dataset = H5Dopen(grp, aname.c_str());
+    hid_t dataset = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
     std::vector<char*> char_list;
     herr_t ret = -1;
     if (dataset > -1)
@@ -198,12 +198,12 @@ struct h5data_proxy<std::vector<std::string>>
     for (int i = 0; i < ref.size(); i++)
       char_list.push_back(ref[i].data());
 
-    hid_t h1   = H5Dopen(grp, aname.c_str());
+    hid_t h1   = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
     herr_t ret = -1;
     if (h1 < 0) // missing create one
     {
       hid_t dataspace = H5Screate_simple(1, &dim, NULL);
-      hid_t dataset   = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT);
+      hid_t dataset   = H5Dcreate(grp, aname.c_str(), datatype, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       ret             = H5Dwrite(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist, char_list.data());
       H5Sclose(dataspace);
       H5Dclose(dataset);

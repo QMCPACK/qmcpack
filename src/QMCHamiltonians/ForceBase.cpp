@@ -76,10 +76,9 @@ void ForceBase::registerObservablesF(std::vector<ObservableHelper>& h5list, hdf_
   ndim[0] = Nnuc;
   ndim[1] = OHMMS_DIM;
 
-  h5list.emplace_back(prefix);
+  h5list.push_back({{prefix}});
   auto& h5o = h5list.back();
   h5o.set_dimensions(ndim, FirstForceIndex);
-  h5o.open(file);
 }
 
 void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)

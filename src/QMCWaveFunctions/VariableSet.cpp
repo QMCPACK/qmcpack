@@ -165,6 +165,7 @@ void VariableSet::resetIndex()
 
 void VariableSet::getIndex(const VariableSet& selected)
 {
+  num_active_vars = 0;
   for (int i = 0; i < NameAndValue.size(); ++i)
   {
     Index[i] = selected.getIndex(NameAndValue[i].first);
@@ -172,6 +173,18 @@ void VariableSet::getIndex(const VariableSet& selected)
       num_active_vars++;
   }
 }
+
+  int VariableSet::getIndex(const std::string& vname) const
+  {
+    int loc = 0;
+    while (loc != NameAndValue.size())
+    {
+      if (NameAndValue[loc].first == vname)
+        return Index[loc];
+      ++loc;
+    }
+    return -1;
+  }
 
 void VariableSet::setIndexDefault()
 {

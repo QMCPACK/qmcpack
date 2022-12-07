@@ -710,14 +710,13 @@ void SpaceGrid::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_
   std::stringstream ss;
   ss << grid_index + cshift;
   std::string name = "spacegrid" + ss.str();
-  h5desc.emplace_back(name);
+  h5desc.push_back({{name}});
   auto& oh = h5desc.back();
   if (!chempot)
     ng[0] = nvalues_per_domain * ndomains;
   else
     ng[0] = nvalues_per_domain * npvalues * ndomains;
   oh.set_dimensions(ng, buffer_offset);
-  oh.open(file);
   int coord = (int)coordinate;
   oh.addProperty(const_cast<int&>(coord), "coordinate", file);
   oh.addProperty(const_cast<int&>(ndomains), "ndomains", file);

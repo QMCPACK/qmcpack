@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include "mpi/collectives.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#include "Concurrency/OpenMP.h"
 
 using namespace std;
 using namespace qmcplusplus;
@@ -53,9 +54,7 @@ int main(int argc, char** argv)
   qmcplusplus::hdf_error_suppression hide_hdf_errors;
 
   Communicate* myComm = OHMMS::Controller;
-  myComm->setName("restart");
-  myComm->barrier();
-
+  
   using RealType    = QMCTraits::RealType;
   using ParticlePos = ParticleSet::ParticlePos;
   using LatticeType = ParticleSet::ParticleLayout;
@@ -72,6 +71,7 @@ int main(int argc, char** argv)
   int nsteps                = 100;
   int iseed                 = 11;
   int AverageWalkersPerNode = 0;
+  string directory          = "";
   int nwtot;
   std::vector<int> wPerNode;
   RealType Rmax(1.7);
@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 
   char* g_opt_arg;
   int opt;
-  while ((opt = getopt(argc, argv, "hg:i:r:")) != -1)
+  while ((opt = getopt(argc, argv, "hg:i:r:s:d:")) != -1)
   {
     switch (opt)
     {
@@ -102,8 +102,17 @@ int main(int argc, char** argv)
     case 'r': //rmax
       Rmax = atof(optarg);
       break;
+    case 'd': //directory
+      directory = optarg;
+      if (directory.back() != '/') {
+        directory += "/";
+      }
+      break;
     }
   }
+
+  myComm->setName(directory + "restart");
+  myComm->barrier();
 
   // set the number of walkers equal to the threads.
   if (!AverageWalkersPerNode)
@@ -183,7 +192,7 @@ int main(int argc, char** argv)
   // dump random seeds
   myComm->barrier();
   h5clock.restart(); //start timer
-  RandomNumberControl::write("restart", myComm);
+  RandomNumberControl::write(directory + "restart", myComm);
   myComm->barrier();
   h5write += h5clock.elapsed(); //store timer
 
@@ -201,7 +210,7 @@ int main(int argc, char** argv)
   // load random seeds
   myComm->barrier();
   h5clock.restart(); //start timer
-  RandomNumberControl::read("restart", myComm);
+  RandomNumberControl::read(directory + "restart", myComm);
   myComm->barrier();
   h5read += h5clock.elapsed(); //store timer
 
@@ -236,7 +245,7 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  HDFWalkerOutput wOut(elecs[0].getTotalNum(), "restart", myComm);
+  HDFWalkerOutput wOut(elecs[0].getTotalNum(), directory + "restart", myComm);
   myComm->barrier();
   h5clock.restart(); //start timer
   wOut.dump(elecs[0], 1);
@@ -252,10 +261,11 @@ int main(int argc, char** argv)
   elecs[0].destroyWalkers(elecs[0].begin(), elecs[0].end());
 
   // load walkers
-  const char* restart_input = "<tmp> \
-  <mcwalkerset fileroot=\"restart\" node=\"-1\" version=\"3 0\" collected=\"yes\"/> \
-</tmp> \
-";
+  std::string restart_input = R"(
+    <tmp>
+      <mcwalkerset fileroot=")" + directory + R"(restart" node="-1" version="3 0" collected="yes"/>
+    </tmp>
+  )";
 
   Libxml2Document doc;
   bool okay               = doc.parseFromString(restart_input);

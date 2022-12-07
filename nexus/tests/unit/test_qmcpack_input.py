@@ -1285,6 +1285,7 @@ def test_generate():
         spin_polarized  = True,
         twistnum        = 0,
         orbitals_h5     = '../scf/pwscf_output/pwscf.pwscf.h5',
+        check_paths     = False,
         estimators      = [spindensity(grid=(72,44,44))],
         qmc = 'dmc',
         # vmc inputs
@@ -1323,6 +1324,7 @@ def test_generate():
         spin_polarized   = True,
         twistnum         = 0,
         orbitals_h5      = '../scf/pwscf_output/pwscf.pwscf.h5',
+        check_paths      = False,
         estimators       = [],
         corrections      = [],
         qmc              = 'dmc',
@@ -1829,7 +1831,8 @@ def test_incorporate_system():
         spin_polarized  = True,
         twistnum        = 0,
         orbitals_h5     = 'scf.pwscf.h5',
-        qmc = 'dmc',
+        check_paths     = False,
+        qmc             = 'dmc',
         )
 
     qi_ref = qi.copy()

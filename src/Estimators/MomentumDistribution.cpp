@@ -42,7 +42,7 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   //length of reciprocal lattice vector
   for (int i = 0; i < OHMMS_DIM; i++)
     vec_length[i] = 2.0 * M_PI * std::sqrt(dot(Lattice.Gv[i], Lattice.Gv[i]));
-  RealType kmax = input_.get_kmax();
+  RealType kmax      = input_.get_kmax();
   PosType kmaxs      = {input_.get_kmax0(), input_.get_kmax1(), input_.get_kmax2()};
   RealType sum_kmaxs = kmaxs[0] + kmaxs[1] + kmaxs[2];
   RealType sphere_kmax;
@@ -123,8 +123,8 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       sums[1] += kcount1[i];
       sums[2] += kcount2[i];
     }
-    app_log() << "    Using all k-space points within cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1() << ", " << input_.get_kmax2()
-              << " for Momentum Distribution." << std::endl;
+    app_log() << "    Using all k-space points within cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1()
+              << ", " << input_.get_kmax2() << " for Momentum Distribution." << std::endl;
     app_log() << "    Total number of k-points for Momentum Distribution: " << kPoints.size() << std::endl;
     app_log() << "      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
     app_log() << "      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
@@ -143,8 +143,8 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
       sums[2] += kcount2[i];
     }
     app_log() << "    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < " << sphere_kmax << ", and" << std::endl;
-    app_log() << "    within the cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1() << ", " << input_.get_kmax2() << " for Momentum Distribution."
-              << std::endl;
+    app_log() << "    within the cut-offs " << input_.get_kmax0() << ", " << input_.get_kmax1() << ", "
+              << input_.get_kmax2() << " for Momentum Distribution." << std::endl;
     app_log() << "    Total number of k-points for Momentum Distribution is " << kPoints.size() << std::endl;
     app_log() << "    The number of k-points within the cut-off region: " << sums[0] * sums[1] * sums[2] << std::endl;
     app_log() << "      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
@@ -170,20 +170,21 @@ MomentumDistribution::MomentumDistribution(MomentumDistributionInput&& mdi,
   data_.resize(data_size, 0.0);
 }
 
-MomentumDistribution::MomentumDistribution(const MomentumDistribution& md, DataLocality dl): MomentumDistribution(md) {
+MomentumDistribution::MomentumDistribution(const MomentumDistribution& md, DataLocality dl) : MomentumDistribution(md)
+{
   data_locality_ = dl;
 }
- 
+
 std::unique_ptr<OperatorEstBase> MomentumDistribution::spawnCrowdClone() const
 {
-  std::size_t data_size = data_.size();
+  std::size_t data_size    = data_.size();
   auto spawn_data_locality = data_locality_;
 
   if (data_locality_ == DataLocality::rank)
   {
     // This is just a stub until a memory saving optimization is deemed necessary
     spawn_data_locality = DataLocality::queue;
-    data_size = 0;
+    data_size           = 0;
     throw std::runtime_error("There is no memory savings implementation for MomentumDistribution");
   }
 
@@ -295,7 +296,6 @@ void MomentumDistribution::accumulate(const RefVector<MCPWalker>& walkers,
     // accumulate data
     for (int ik = 0; ik < nofK.size(); ++ik)
       data_[ik] += weight * nofK[ik] * norm_nofK;
-
   }
 }
 
@@ -315,17 +315,17 @@ void MomentumDistribution::collect(const RefVector<OperatorEstBase>& type_erased
 
 void MomentumDistribution::registerOperatorEstimator(hdf_archive& file)
 {
+  using namespace std::string_literals;
   //descriptor for the data, 1-D data
   std::vector<int> ng(1);
   //add nofk
   ng[0] = nofK.size();
-  h5desc_.emplace_back(std::make_unique<ObservableHelper>("nofk"));
+  h5desc_.push_back({{"nofk"s}});
   auto& h5o = h5desc_.back();
   //h5o.set_dimensions(ng, my_index_);
-  h5o->set_dimensions(ng, 0); // JTK: doesn't seem right
-  h5o->open(file);
-  h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
-  h5o->addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
+  h5o.set_dimensions(ng, 0); // JTK: doesn't seem right
+  h5o.addProperty(const_cast<std::vector<PosType>&>(kPoints), "kpoints", file);
+  h5o.addProperty(const_cast<std::vector<int>&>(kWeights), "kweights", file);
 }
 
 
