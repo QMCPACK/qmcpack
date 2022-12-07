@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/BsplineFactory/HybridRepCenterOrbitals.h"
 #include "OhmmsData/AttributeSet.h"
 #include "CPU/math.hpp"
+#include "Concurrency/OpenMP.h"
 
 //#include "QMCHamiltonians/Ylm.h"
 //#define PRINT_RADIAL

@@ -653,7 +653,7 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-find_package(HDF5 COMPONENTS C)
+find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
@@ -694,7 +694,7 @@ if(HDF5_FOUND)
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
   target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
-  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_16_API")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_110_API")
   target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
     target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
@@ -722,6 +722,9 @@ set(HAVE_CUDA 0)
 if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
+    if(CMAKE_VERSION VERSION_LESS 3.21.0)
+      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
+    endif()
   else(QMC_CUDA2HIP)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
@@ -787,46 +790,44 @@ endif(USE_NVTX_API)
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_ROCM)
-  if(ROCM_ROOT)
-    message(STATUS "ROCM_ROOT provided. Searching for FindHIP.cmake file")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS ${ROCM_ROOT}
-      PATH_SUFFIXES hip/cmake REQUIRED
-      NO_DEFAULT_PATH)
-  else()
-    message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS $ENV{ROCM_PATH} /opt/rocm
-      PATH_SUFFIXES hip/cmake)
-    if(HIP_MODULE_FILE_DIR)
-      message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
-    else()
-      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installation.")
-    endif()
-    string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
+  enable_language(HIP)
+  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
+  if(DEFINED ROCM_ROOT)
+    message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
+    # explicit ROCM_ROOT takes precedence
+    list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
+  elseif(CMAKE_HIP_COMPILER_ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
   endif()
-  message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
 
-  list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
-  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-  # need FindHIP for hip_add_library similar to deprecated FindCUDA style
-  find_package(HIP MODULE REQUIRED)
-  # need hip in config mode for hip::host target.
-  find_package(hip CONFIG REQUIRED)
+  # use hip package to supply the hip runtime for CXX source code.
+  find_package(hip CONFIG)
+  if(NOT hip_FOUND)
+    message(FATAL_ERROR "The HIP runtime library cmake configure file hip-config.cmake cannot be found! "
+                        "This happens when the ROCm installation cannot be found by CMake. "
+                        "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
+  endif()
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
+
   # architecture flags
-  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
-  list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
-  list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
+  if(DEFINED HIP_ARCH)
+    unset(HIP_ARCH CACHE)
+    message(
+      FATAL_ERROR "HIP_ARCH option has been removed. Use -DCMAKE_HIP_ARCHITECTURES=gfx90a if -DHIP_ARCH=gfx90a was used.")
+  endif()
+  if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
+    set(CMAKE_HIP_ARCHITECTURES gfx906)
+  endif()
+
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fPIC -ffast-math --gpu-max-threads-per-block=256")
   # warning suppression
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -Wno-vla -Wno-deprecated-declarations -Wno-unused-command-line-argument")
+
+  if(NOT DEFINED ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
+  endif()
 
   if(BUILD_AFQMC)
     find_package(rocrand CONFIG REQUIRED)

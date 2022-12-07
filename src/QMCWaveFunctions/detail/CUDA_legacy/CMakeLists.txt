@@ -12,10 +12,9 @@
 set(WFSSRCS_CUDA determinant_update.cu delayed_update.cu PhaseFactors.cu AtomicOrbitalCuda.cu BsplineJastrowCuda.cu
                  BsplineJastrowCudaPBC.cu)
 
-if(NOT QMC_CUDA2HIP)
-  add_library(qmcwfs_cuda_legacy ${WFSSRCS_CUDA})
-else()
-  hip_add_library(qmcwfs_cuda_legacy ${WFSSRCS_CUDA})
-endif(NOT QMC_CUDA2HIP)
+add_library(qmcwfs_cuda_legacy ${WFSSRCS_CUDA})
+if(QMC_CUDA2HIP)
+  set_source_files_properties(${WFSSRCS_CUDA} PROPERTIES LANGUAGE HIP)
+endif()
 
 target_link_libraries(qmcwfs_cuda_legacy PRIVATE platform_runtime qmc_external_thrust)

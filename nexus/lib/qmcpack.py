@@ -880,6 +880,11 @@ def generate_qmcpack(**kwargs):
     #end if
 
     if 'input' not in sim_args:
+        run_path = None
+        if 'path' in sim_args:
+            run_path = os.path.join(nexus_core.local_directory,nexus_core.runs,sim_args.path)
+        #end if
+        inp_args.run_path = run_path
         sim_args.input = generate_qmcpack_input(**inp_args)
     #end if
     qmcpack = Qmcpack(**sim_args)

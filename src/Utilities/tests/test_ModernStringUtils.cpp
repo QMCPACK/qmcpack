@@ -35,12 +35,29 @@ TEST_CASE("ModernStringUtils_strToLower", "[utilities]")
 TEST_CASE("ModernStringUtils_split", "[utilities]")
 {
   using modernstrutil::split;
-  std::string test_line{"hi there 101, random line"};
-  auto tokens = split(test_line, " ");
-  CHECK(tokens[0].size() == 2);
-  CHECK(tokens[4].size() == 4);
-  CHECK(tokens[3] == "random");
 
+  std::string nothing;
+  auto no_tokens = split(nothing, " ");
+  CHECK(no_tokens.empty());
+  no_tokens = split(nothing, "");
+  CHECK(no_tokens.empty());
+
+  std::string white_space{"             "};
+  auto tokens = split(white_space, ".");
+  CHECK(tokens.size() == 1);
+  CHECK(tokens[0] == "             ");
+
+  tokens = split(white_space, " ");
+  CHECK(tokens.empty());
+  
+  std::string test_line{"hi there 101, random line"};
+  tokens = split(test_line, " ");
+  tokens = split(test_line, "");
+  CHECK(tokens.size() == 1);
+
+  tokens = split(test_line, ";");
+  CHECK(tokens.size() == 1);
+  
   std::string test_lines{R"(
 this is a multi
 line
@@ -67,6 +84,16 @@ TEST_CASE("ModernStringUtils_string2Real", "[utilities]")
 
 TEST_CASE("ModernStringUtils_strip", "[utilities]")
 {
+  using modernstrutil::strip;
+
+  std::string nothing;
+  auto stripped_nothing = strip(nothing);
+  CHECK(stripped_nothing.empty());
+
+  std::string white_space{"           "};
+  auto stripped_white_space = strip(white_space);
+  CHECK(stripped_white_space.empty());
+
   std::string test_lines{R"(
     r1 1 0 0
     r2 0 1 0

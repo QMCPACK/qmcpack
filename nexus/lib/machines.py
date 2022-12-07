@@ -183,6 +183,7 @@ job_defaults_assign = obj(
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
     ntasks_per_core    = None,
     cpus_per_task      = None,
+    template           = None,
     )
 
     # these are not assigned directly
@@ -264,6 +265,11 @@ class Job(NexusCore):
         # assign fake job
         self.fake_job           = fake
 
+        # check template
+        if self.template is not None and not isinstance(self.template,str):
+            self.error('template must be a string\nReceived type: {}'.format(self.template.__class__.__name__))
+        #end if
+
         # initialize other internal variables
         self.app_options        = Options()
         self.run_options        = Options()
@@ -331,6 +337,7 @@ class Job(NexusCore):
         #end if
 
         self.normalize_time()
+
     #end def __init__
 
 
@@ -340,6 +347,9 @@ class Job(NexusCore):
 
 
     def process(self,machine=None):
+        if self.template is not None:
+            return
+        #end if
         if machine is None:
             machine = self.get_machine()
         #end if
@@ -349,6 +359,9 @@ class Job(NexusCore):
 
     # test needed
     def process_options(self,machine=None):
+        if self.template is not None:
+            return
+        #end if
         if machine is None:
             machine = self.get_machine()
         #end if
@@ -523,6 +536,9 @@ class Job(NexusCore):
 
 
     def run_command(self,launcher=None,redirect=False,serial=False):
+        if self.template is not None:
+            return ''
+        #end if
         machine = self.get_machine()
         if launcher is None:
             launcher = machine.app_launcher
@@ -853,7 +869,9 @@ class Machine(NexusCore):
 
     def add_job(self,job):
         if isinstance(job,Job):
-            self.process_job(job)
+            if job.template is None:
+                self.process_job(job)
+            #end if
             self.write_job(job)
             jid = job.internal_id
             self.jobs[jid] = job
@@ -1803,17 +1821,21 @@ class Supercomputer(Machine):
 
     def write_job(self,job,file=False):
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
-        env = self.setup_environment(job)
-        command = job.run_command(self.app_launcher,serial=job.serial)
+        if job.template is None:
+            env = self.setup_environment(job)
+            command = job.run_command(self.app_launcher,serial=job.serial)
 
-        c = self.write_job_header(job)+'\n'
-        if len(job.presub)>0:
-            c+=job.presub+'\n'
-        #end if
-        c+=env
-        c+=command+'\n'
-        if len(job.postsub)>0:
-            c+=job.postsub+'\n'
+            c = self.write_job_header(job)+'\n'
+            if len(job.presub)>0:
+                c+=job.presub+'\n'
+            #end if
+            c+=env
+            c+=command+'\n'
+            if len(job.postsub)>0:
+                c+=job.postsub+'\n'
+            #end if
+        else:
+            c = job.template
         #end if
         if file:
             filepath = os.path.join(job.directory,job.subfile)

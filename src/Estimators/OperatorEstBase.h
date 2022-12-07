@@ -158,6 +158,11 @@ protected:
 
   QMCT::FullPrecRealType walkers_weight_;
 
+  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
+  std::vector<ObservableHelper> h5desc_;
+
+  Data data_;
+
   bool requires_listener_ = false;
 
   friend testing::OEBAccessor;
