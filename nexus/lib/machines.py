@@ -3402,7 +3402,7 @@ class Polaris(Supercomputer):
             job.queue = 'prod'
         #end if
         if job.filesystems is None:
-            job.filesystems = 'home:eagle'
+            job.filesystems = 'home:eagle:grand'
         #end if
         c= '#!/bin/sh\n'
         c+='#PBS -l select={}:system=polaris\n'.format(job.nodes)
