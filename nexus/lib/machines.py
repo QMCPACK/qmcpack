@@ -2198,6 +2198,13 @@ class Perlmutter(NerscMachine):
     name = 'perlmutter'
 
     def pre_process_job(self,job):
+        # Set default queue and node type
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        if job.constraint is None:
+            job.constraint = 'cpu'
+        #end if
         # Account for dual nature of Perlmutter
         if 'cpu' in job.constraint:
             self.nodes          = 3072
@@ -2212,14 +2219,6 @@ class Perlmutter(NerscMachine):
             self.gpus_per_node  = 4
         else:
             self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
-        #end if
-
-        # Set default queue and node type
-        if job.queue is None:
-            job.queue = 'regular'
-        #end if
-        if job.constraint is None:
-            job.constraint = 'cpu'
         #end if
     #end def pre_process_job
 
