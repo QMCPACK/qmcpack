@@ -15,7 +15,6 @@
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
-#include "PerParticleHamiltonianLoggerInput.h"
 #include "ModernStringUtils.hpp"
 
 namespace qmcplusplus
@@ -86,8 +85,6 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
         appendEstimatorInput<SpinDensityInput>(child);
       else if (atype == "momentumdistribution")
         appendEstimatorInput<MomentumDistributionInput>(child);
-      else if (atype == "perparticlehamiltonianlogger")
-        appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
       else
         throw UniformCommunicateError(error_tag + "unparsable <estimator> node, name: " + aname + " type: " + atype +
                                       " in Estimators input.");

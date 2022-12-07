@@ -52,6 +52,10 @@ TEST_CASE("ModernStringUtils_split", "[utilities]")
   
   std::string test_line{"hi there 101, random line"};
   tokens = split(test_line, " ");
+  CHECK(tokens[0].size() == 2);
+  CHECK(tokens[4].size() == 4);
+  CHECK(tokens[3] == "random");
+
   tokens = split(test_line, "");
   CHECK(tokens.size() == 1);
 
@@ -100,7 +104,6 @@ TEST_CASE("ModernStringUtils_strip", "[utilities]")
     r3 0 0 1
 )"};
 
-  using modernstrutil::strip;
   std::string_view stripped_lines = strip(test_lines);
 
   std::string_view ref_stripped{"r1 1 0 0\n    r2 0 1 0\n    r3 0 0 1"};

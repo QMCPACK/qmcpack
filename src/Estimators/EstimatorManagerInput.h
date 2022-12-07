@@ -39,12 +39,8 @@ class EstimatorManagerInputTests;
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
-class PerParticleHamiltonianLoggerInput;
-using EstimatorInput  = std::variant<std::monostate,
-                                    MomentumDistributionInput,
-                                    SpinDensityInput,
-                                    OneBodyDensityMatricesInput,
-                                    PerParticleHamiltonianLoggerInput>;
+using EstimatorInput =
+    std::variant<std::monostate, MomentumDistributionInput, SpinDensityInput, OneBodyDensityMatricesInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs

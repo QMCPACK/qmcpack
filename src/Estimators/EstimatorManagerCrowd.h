@@ -38,12 +38,14 @@ class QMCHamiltonian;
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType  = EstimatorManagerNew::RealType;
+  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType      = EstimatorManagerNew::RealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
+   *
+   *  This coupling should be removed.
    */
-  EstimatorManagerCrowd(EstimatorManagerNew& em, const int crowd_id);
+  EstimatorManagerCrowd(EstimatorManagerNew& em);
 
   ///destructor
   ~EstimatorManagerCrowd(){};
@@ -64,7 +66,7 @@ public:
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
    *  \param[inout]  rng             crowd scope RandomGenerator
-   */
+   */ 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
@@ -77,13 +79,7 @@ public:
   RealType get_block_num_samples() const { return block_num_samples_; }
   RealType get_block_weight() const { return block_weight_; }
 
-  /** This registers the crowd lever estimators that require listeners into the QMCHamiltonianMultiWalkerResources
-   *  We really only need a QMCHamiltonian leader but resource acquisition and release works better this way.
-   */
-  void registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list);
-
 private:
-  const int crowd_id_;
   ///number of samples accumulated in a block
   RealType block_num_samples_;
   ///total weight accumulated in a block
