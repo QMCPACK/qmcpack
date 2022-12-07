@@ -132,14 +132,6 @@ public:
 
   DataLocality get_data_locality() { return data_locality_; }
 protected:
-  // convenient Descriptors hdf5 for Operator Estimators only populated for rank scope OperatorEstimator
-  UPtrVector<ObservableHelper> h5desc_;
-
-  /** generic data buffer for estimators
-   *  base class provides default reduction behavior over these buffers.
-   */
-  Data data_;
-
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
    *  The default is:
