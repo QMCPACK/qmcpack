@@ -120,7 +120,7 @@ public:
 
   bool isListenerRequired() { return requires_listener_; }
 
-  DataLocality get_data_locality() { return data_locality_; }
+  DataLocality get_data_locality() const { return data_locality_; }
 protected:
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
