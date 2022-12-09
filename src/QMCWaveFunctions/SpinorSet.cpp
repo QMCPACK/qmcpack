@@ -146,7 +146,7 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
                                        const RefVector<ValueVector>& psi_v_list,
                                        const RefVector<GradVector>& dpsi_v_list,
                                        const RefVector<ValueVector>& d2psi_v_list,
-                                       const RefVector<ValueVector>& dspin_v_list) const
+                                       DualMatrix<ComplexType>& mw_dspin) const
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& P_leader   = P_list.getLeader();
@@ -157,45 +157,17 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   auto& up_spo_leader             = up_spo_list.getLeader();
   auto& dn_spo_leader             = dn_spo_list.getLeader();
 
-  std::vector<ValueVector> mw_up_psi_work, mw_dn_psi_work;
-  std::vector<GradVector> mw_up_dpsi_work, mw_dn_dpsi_work;
-  std::vector<ValueVector> mw_up_d2psi_work, mw_dn_d2psi_work;
-  mw_up_psi_work.reserve(nw);
-  mw_up_dpsi_work.reserve(nw);
-  mw_up_d2psi_work.reserve(nw);
-  mw_dn_psi_work.reserve(nw);
-  mw_dn_dpsi_work.reserve(nw);
-  mw_dn_d2psi_work.reserve(nw);
-
-  RefVector<ValueVector> up_psi_v_list, dn_psi_v_list;
-  RefVector<GradVector> up_dpsi_v_list, dn_dpsi_v_list;
-  RefVector<ValueVector> up_d2psi_v_list, dn_d2psi_v_list;
-  up_psi_v_list.reserve(nw);
-  up_dpsi_v_list.reserve(nw);
-  up_d2psi_v_list.reserve(nw);
-  dn_psi_v_list.reserve(nw);
-  dn_dpsi_v_list.reserve(nw);
-  dn_d2psi_v_list.reserve(nw);
-
-  ValueVector tmp_val_vec(OrbitalSetSize);
-  GradVector tmp_grad_vec(OrbitalSetSize);
-  for (int iw = 0; iw < nw; iw++)
-  {
-    mw_up_psi_work.emplace_back(tmp_val_vec);
-    up_psi_v_list.emplace_back(mw_up_psi_work.back());
-    mw_dn_psi_work.emplace_back(tmp_val_vec);
-    dn_psi_v_list.emplace_back(mw_dn_psi_work.back());
-
-    mw_up_dpsi_work.emplace_back(tmp_grad_vec);
-    up_dpsi_v_list.emplace_back(mw_up_dpsi_work.back());
-    mw_dn_dpsi_work.emplace_back(tmp_grad_vec);
-    dn_dpsi_v_list.emplace_back(mw_dn_dpsi_work.back());
-
-    mw_up_d2psi_work.emplace_back(tmp_val_vec);
-    up_d2psi_v_list.emplace_back(mw_up_d2psi_work.back());
-    mw_dn_d2psi_work.emplace_back(tmp_val_vec);
-    dn_d2psi_v_list.emplace_back(mw_dn_d2psi_work.back());
-  }
+  ValueVector sized_val(OrbitalSetSize);
+  GradVector sized_grad(OrbitalSetSize);
+  std::vector<ValueVector> mw_up_psi_work(nw, sized_val), mw_dn_psi_work(nw, sized_val);
+  std::vector<GradVector> mw_up_dpsi_work(nw, sized_grad), mw_dn_dpsi_work(nw, sized_grad);
+  std::vector<ValueVector> mw_up_d2psi_work(nw, sized_val), mw_dn_d2psi_work(nw, sized_val);
+  auto up_psi_v_list   = makeRefVector<ValueVector>(mw_up_psi_work);
+  auto dn_psi_v_list   = makeRefVector<ValueVector>(mw_dn_psi_work);
+  auto up_dpsi_v_list  = makeRefVector<GradVector>(mw_up_dpsi_work);
+  auto dn_dpsi_v_list  = makeRefVector<GradVector>(mw_dn_dpsi_work);
+  auto up_d2psi_v_list = makeRefVector<ValueVector>(mw_up_d2psi_work);
+  auto dn_d2psi_v_list = makeRefVector<ValueVector>(mw_dn_d2psi_work);
 
   up_spo_leader.mw_evaluateVGL(up_spo_list, P_list, iat, up_psi_v_list, up_dpsi_v_list, up_d2psi_v_list);
   dn_spo_leader.mw_evaluateVGL(dn_spo_list, P_list, iat, dn_psi_v_list, dn_dpsi_v_list, dn_d2psi_v_list);
@@ -213,8 +185,11 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
     psi_v_list[iw].get()   = eis * up_psi_v_list[iw].get() + emis * dn_psi_v_list[iw].get();
     dpsi_v_list[iw].get()  = eis * up_dpsi_v_list[iw].get() + emis * dn_dpsi_v_list[iw].get();
     d2psi_v_list[iw].get() = eis * up_d2psi_v_list[iw].get() + emis * dn_d2psi_v_list[iw].get();
-    dspin_v_list[iw].get() = eye * (eis * up_psi_v_list[iw].get() - emis * dn_psi_v_list[iw].get());
+    for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+      mw_dspin(iw, iorb) = eye * (eis * (up_psi_v_list[iw].get())[iorb] - emis * (dn_psi_v_list[iw].get())[iorb]);
   }
+  //data was all on host, sync with device
+  mw_dspin.updateTo();
 }
 
 void SpinorSet::mw_evaluateVGLandDetRatioGradsWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,

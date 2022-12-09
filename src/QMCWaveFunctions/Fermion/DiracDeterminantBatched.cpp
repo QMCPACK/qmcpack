@@ -207,13 +207,13 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
 {
   assert(this == &wfc_list.getLeader());
   auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res     = *wfc_leader.mw_res_;
+  auto& mw_dspin   = mw_res.mw_dspin;
   ScopedTimer local_timer(RatioTimer);
 
   const int nw = wfc_list.size();
   const int num_orbitals = wfc_leader.Phi->size();
-  SPOSet::ValueVector sized_val(num_orbitals);
-  std::vector<SPOSet::ValueVector> dspin_values(nw, sized_val);
-  auto dspin_v_list = makeRefVector<SPOSet::ValueVector>(dspin_values);
+  mw_dspin.resize(nw, num_orbitals);
 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
@@ -228,7 +228,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
   }
 
   auto& phi_leader = phi_list.getLeader();
-  phi_leader.mw_evaluateVGLWithSpin(phi_list, p_list, iat, psi_v_list, grad_v_list, lap_v_list, dspin_v_list);
+  phi_leader.mw_evaluateVGLWithSpin(phi_list, p_list, iat, psi_v_list, grad_v_list, lap_v_list, mw_dspin);
 
   std::vector<const Value*> dpsiM_row_list(nw, nullptr);
   std::vector<const Value*> dspin_row_list(nw, nullptr);
@@ -242,11 +242,10 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
     // capacity is the size of each vector in the VGL so this advances us to the g then makes
     // an offset into the gradients
     dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
-    dspin_row_list[iw] = dspin_values[iw].data();
     engine_list.push_back(det.det_engine_);
   }
 
-  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, dspin_row_list, WorkingIndex, grad_now, spingrad_now);
+//  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, dspin_row_list, WorkingIndex, grad_now, spingrad_now);
 
 #ifndef NDEBUG
   for (int iw = 0; iw < nw; iw++)
