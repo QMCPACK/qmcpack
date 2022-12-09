@@ -218,7 +218,6 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
 
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
@@ -236,8 +235,6 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   species_set = testing::makeSpeciesSet(SpeciesCases::NO_MEMBERSIZE);
   CHECK_THROWS_AS(OneBodyDensityMatrices(std::move(obdmi), lattice, species_set, spo_map, pset_target),
                   UniformCommunicateError);
-
-  outputManager.resume();
 }
 
 TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
@@ -249,7 +246,6 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
@@ -278,8 +274,6 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   samplingCaseRunner(valid_obdm_input);
   samplingCaseRunner(valid_obdm_input_scale);
   samplingCaseRunner(valid_obdm_input_grid);
-
-  outputManager.resume();
 }
 
 TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
@@ -291,7 +285,6 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
@@ -321,7 +314,6 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
 
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[valid_obdm_input]);
@@ -401,8 +393,6 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
 
   if constexpr (dump_obdm)
     obdmt.dumpData(obdm);
-
-  outputManager.resume();
 }
 
 TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
@@ -414,7 +404,6 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
 
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
 
   for (auto valid_integrator : std::vector<int>{valid_obdm_input, valid_obdm_input_scale, valid_obdm_input_grid})
   {
@@ -459,7 +448,6 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     if constexpr (dump_obdm)
       obdmt.dumpData(obdm);
   }
-  outputManager.resume();
 }
 
 namespace testing
