@@ -72,7 +72,7 @@ std::ostream& operator<<(std::ostream& out, const NativePrint<Vector<T>>& np_vec
   return out;
 }
 
-
+  
 } // namespace qmcplusplus
 
 #endif

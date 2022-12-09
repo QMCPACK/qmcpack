@@ -166,7 +166,8 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  RandomGenerator& rng,
+		  const int crowd_id) override;
 
   void startBlock(int steps) override;
 

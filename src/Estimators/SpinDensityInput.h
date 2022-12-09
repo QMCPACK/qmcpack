@@ -41,6 +41,10 @@ public:
 
 public:
   SpinDensityInput(xmlNodePtr node);
+  /** default copy constructor
+   *  This is required due to SDI being part of a variant used as a vector element.
+   */
+  SpinDensityInput(const SpinDensityInput&) = default;
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }

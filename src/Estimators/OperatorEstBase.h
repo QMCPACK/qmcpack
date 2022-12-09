@@ -19,6 +19,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
 #include "hdf/hdf_archive.h"
@@ -73,7 +74,7 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
-                          RandomGenerator& rng) = 0;
+                          RandomGenerator& rng, const int crowd_id_) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -117,6 +118,15 @@ public:
   QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
 
   const std::string& get_my_name() const { return my_name_; }
+
+  /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
+   *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
+   *  This must be called for each crowd scope estimator that listens to register listeners into
+   *  the crowd scope QMCHamiltonianMultiWalkerResource.
+   *
+   *  Many estimators don't need per particle values so the default implementation is no op.
+   */
+  virtual void registerListeners(QMCHamiltonian& ham_leader){};
 
   bool isListenerRequired() { return requires_listener_; }
 

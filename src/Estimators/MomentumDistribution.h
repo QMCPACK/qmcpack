@@ -98,7 +98,8 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override;
+                  RandomGenerator& rng,
+                  const int crowd_id) override;
 
   /** this allows the EstimatorManagerNew to reduce without needing to know the details
    *  of MomentumDistribution's data.

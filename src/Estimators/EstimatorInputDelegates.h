@@ -19,5 +19,6 @@
 #include "MomentumDistributionInput.h"
 #include "OneBodyDensityMatricesInput.h"
 #include "SpinDensityInput.h"
+#include "PerParticleHamiltonianLoggerInput.h"
 
 #endif
