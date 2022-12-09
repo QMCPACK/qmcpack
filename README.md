@@ -26,7 +26,7 @@ particular emphasis is placed on code quality and reproducibility.
  * CMake v3.17.0 or later, build utility, http://www.cmake.org
  * BLAS/LAPACK, numerical library. Use vendor and platform-optimized libraries.
  * LibXml2, XML parser, http://xmlsoft.org/
- * HDF5, portable I/O library, http://www.hdfgroup.org/HDF5/
+ * HDF5 v1.10.0 or later, portable I/O library, http://www.hdfgroup.org/HDF5/
  * BOOST v1.61.0 or newer, peer-reviewed portable C++ source libraries, http://www.boost.org
  * FFTW, FFT library, http://www.fftw.org/
  * MPI, parallel library. Optional, but a near requirement for production calculations.

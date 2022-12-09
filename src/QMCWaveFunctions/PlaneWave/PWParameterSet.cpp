@@ -76,7 +76,7 @@ bool PWParameterSet::getEigVectorType(hid_t h)
       oss << "/" << spinTag << 0;
     oss << "/eigenvector";
     hsize_t dimTot[4];
-    hid_t dataset   = H5Dopen(h, oss.str().c_str());
+    hid_t dataset   = H5Dopen(h, oss.str().c_str(), H5P_DEFAULT);
     hid_t dataspace = H5Dget_space(dataset);
     rank            = H5Sget_simple_extent_ndims(dataspace);
     int status_n    = H5Sget_simple_extent_dims(dataspace, dimTot, NULL);
@@ -184,7 +184,7 @@ void PWParameterSet::checkVersion(hdf_archive& h)
 {
   if (is_manager())
   {
-    hid_t dataset         = H5Dopen(h.getFileID(), "version");
+    hid_t dataset         = H5Dopen(h.getFileID(), "version", H5P_DEFAULT);
     hid_t datatype        = H5Dget_type(dataset);
     H5T_class_t classtype = H5Tget_class(datatype);
     H5Tclose(datatype);

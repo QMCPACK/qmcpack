@@ -317,7 +317,7 @@ public:
     if (Mode[NOIO])
       return;
     hid_t p       = group_id.empty() ? file_id : group_id.top();
-    herr_t status = H5Gunlink(p, aname.c_str());
+    herr_t status = H5Ldelete(p, aname.c_str(), H5P_DEFAULT);
   }
 };
 

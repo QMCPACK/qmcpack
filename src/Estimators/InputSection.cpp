@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2022 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -41,9 +41,25 @@ void InputSection::readXML(xmlNodePtr cur)
   while (element != NULL)
   {
     std::string ename{lowerCase(castXMLCharToChar(element->name))};
-    if (ename == "parameter")
+    std::string name(lowerCase(getXMLAttributeValue(element, "name")));
+    if (name.size() < 1)
+      name = ename;
+
+    if (isDelegate(ename))
     {
-      std::string name(lowerCase(getXMLAttributeValue(element, "name")));
+      assert(delegate_factories_.find(ename) != delegate_factories_.end());
+      std::string value_key;
+      std::any value     = delegate_factories_[ename](element, value_key);
+      if (has(value_key))
+	throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + ename + " node with duplicate name " + value_key + "!");
+      values_[value_key] = std::move(value);
+    }
+    else if (isCustom(ename)) {
+      std::istringstream stream(XMLNodeString{element});
+      setFromStreamCustom(ename, name, stream);
+    }
+    else if (ename == "parameter" || isParameter(ename) )
+    {
       if (!isParameter(name))
       {
         std::stringstream error;
@@ -51,9 +67,14 @@ void InputSection::readXML(xmlNodePtr cur)
         throw UniformCommunicateError(error.str());
       }
       std::istringstream stream(XMLNodeString{element});
-      setFromStream(name, stream);
+	setFromStream(name, stream);
     }
-    else if (isDelegate(ename)) {}
+    else if (ename != "text")
+    {
+      std::stringstream error;
+      error << "InputSection::readXML node name " << ename << " is not handled by " << section_name << "\n";
+      throw UniformCommunicateError(error.str());
+    }
     element = element->next;
   }
 
@@ -80,6 +101,11 @@ void InputSection::init(const std::unordered_map<std::string, std::any>& init_va
   //report();
 }
 
+void InputSection::registerDelegate(const std::string& tag,
+                                    std::function<std::any(xmlNodePtr cur, std::string& value_key)> factory)
+{
+  delegate_factories_[tag] = factory;
+}
 
 void InputSection::setDefaults()
 {
@@ -172,7 +198,6 @@ void InputSection::checkValid()
     }
   checkParticularValidity();
 };
-
 
 void InputSection::report() const
 {

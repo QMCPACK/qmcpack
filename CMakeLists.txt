@@ -653,7 +653,7 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-find_package(HDF5 COMPONENTS C)
+find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
@@ -694,7 +694,7 @@ if(HDF5_FOUND)
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
   target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
-  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_16_API")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_110_API")
   target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
     target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
