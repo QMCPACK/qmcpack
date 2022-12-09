@@ -608,10 +608,11 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
   }
   int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
 
-  using namespace std::string_literals;
+  hdf_path hdf_name{my_name_};
+  hdf_name /= "number_matrix";
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.push_back({{my_name_, "number_matrix"s, species_.speciesName[s]}});
+    h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
     oh.set_dimensions(my_indexes, 0);
   }
