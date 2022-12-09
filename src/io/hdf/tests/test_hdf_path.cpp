@@ -66,6 +66,10 @@ TEST_CASE("hdf_path_append", "[hdf]")
   result = path / "/c";
   REQUIRE(result.string() == "/c");
   REQUIRE(result == hdf_path("/c"));
+
+  result /= hdf_path{"d"};
+  REQUIRE(result.string() == "/c/d");
+  REQUIRE(result == hdf_path("/c/d"));
 }
 
 TEST_CASE("hdf_path_concat", "[hdf]")
@@ -81,6 +85,10 @@ TEST_CASE("hdf_path_concat", "[hdf]")
   path += "b";
   REQUIRE(path.string() == "ab");
   REQUIRE(path == hdf_path("ab"));
+
+  path += hdf_path{"c"};
+  REQUIRE(path.string() == "abc");
+  REQUIRE(path == hdf_path("abc"));
 }
 
 TEST_CASE("hdf_path_remove_path", "[hdf]")
