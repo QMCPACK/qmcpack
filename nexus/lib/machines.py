@@ -178,6 +178,7 @@ job_defaults_assign = obj(
     core_spec          = None, # slurm specific, Cori
     switches           = None, # slurm specific, SuperMUC-NG
     alloc_flags        = None, # lsf specific, Summit
+    filesystems        = None, # pbs specific
     qos                = None,
     group_list         = None,
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
@@ -571,6 +572,9 @@ class Job(NexusCore):
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
+        elif machine.special_bundling:
+            c+='\n'
+            c+=machine.specialized_bundle_commands(self,launcher,serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -720,6 +724,7 @@ class Machine(NexusCore):
     executable_subfile  = False
     redirect_output     = False
     query_with_username = False
+    special_bundling    = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -833,6 +838,9 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def submit_job
 
+    def specialized_bundle_commands(self,job,launcher,serial):
+        self.not_implemented()
+    #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
         self.name = name
@@ -3497,6 +3505,69 @@ class Tomcat3(Supercomputer):
 
 
 
+class Polaris(Supercomputer):
+    name = 'polaris'
+    requires_account = True
+    batch_capable    = True
+    special_bundling = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                ppn     = '--ppn {}'.format(job.processes_per_node),
+                depth   = '--depth={}'.format(job.threads),
+                cpubind = '--cpu-bind depth',
+                threads = '--env OMP_NUM_THREADS={}'.format(job.threads),
+                )
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'prod'
+        #end if
+        if job.filesystems is None:
+            job.filesystems = 'home:eagle:grand'
+        #end if
+        c= '#!/bin/sh\n'
+        c+='#PBS -l select={}:system=polaris\n'.format(job.nodes)
+        c+='#PBS -l place=scatter\n'
+        c+='#PBS -l filesystems={}\n'.format(job.filesystems)
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+
+        return c
+    #end def write_job_header
+
+    def specialized_bundle_commands(self,job,launcher,serial):
+        c = ''
+        j0 = job.bundled_jobs[0]
+        c+='split --lines={} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'.format(j0.nodes)
+        c+='\n'
+        lhfiles = ['local_hostfile.'+str(n+1).zfill(3) for n in range(len(job.bundled_jobs))]
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            c+='cp {} {}\n'.format(lh,j.abs_subdir)
+        #end for
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            j.run_options.add(hostfile='--hostfile '+lh)
+            c+='\ncd '+j.abs_subdir+'\n'
+            c+=j.run_command(launcher,redirect=True,serial=serial)+'\n'
+        #end for
+        c+='\nwait\n'
+        return c
+    #end def specialized_bundle_commands
+#end class Polaris
+
+
+
 
 #Known machines
 #  workstations
@@ -3539,6 +3610,7 @@ Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
 Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 

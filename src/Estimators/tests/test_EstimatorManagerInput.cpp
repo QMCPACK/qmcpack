@@ -12,10 +12,7 @@
 #include "catch.hpp"
 #include "EstimatorManagerInput.h"
 #include "EstimatorManagerInputTest.h"
-#include "ScalarEstimatorInputs.h"
-#include "SpinDensityInput.h"
-#include "MomentumDistributionInput.h"
-#include "OneBodyDensityMatricesInput.h"
+#include "EstimatorInputDelegates.h"
 #include "ValidOneBodyDensityMatricesInput.h"
 #include "ValidSpinDensityInput.h"
 
