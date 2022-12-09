@@ -13,6 +13,7 @@
 
 #include <typeinfo>
 #include <any>
+#include <functional>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -31,6 +32,9 @@ public:
   using Real     = QMCTraits::RealType;
   using Position = QMCTraits::PosType;
 
+  InputSection()                          = default;
+  InputSection(const InputSection& other) = default;
+
 protected:
   // Internal data below comprise the input specification.
   //   Most apply attributes to input variables.
@@ -44,8 +48,8 @@ protected:
 
   std::unordered_set<std::string> attributes; // list of attribute variables
   std::unordered_set<std::string> parameters; // list of parameter variables
-  std::unordered_set<std::string> delegates;
-  std::unordered_set<std::string> required; // list of required variables
+  std::unordered_set<std::string> delegates;  // input nodes delegate to next level of input parsing.
+  std::unordered_set<std::string> required;   // list of required variables
 
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
@@ -53,14 +57,14 @@ protected:
   std::unordered_set<std::string> integers;      // list of integer variables
   std::unordered_set<std::string> reals;         // list of real variables
   std::unordered_set<std::string> positions;     // list of position variables
+  std::unordered_set<std::string> custom;        // list of parameter variables that have custom types
   /** list of enum inputs which allow a finite set of strings to map to enum values
    *  The enum class types and values need only be known to IS subtypes
    */
   std::unordered_set<std::string> enums;
   std::unordered_map<std::string, std::any> default_values; // default values for optional variables
+  std::unordered_map<std::string, std::function<std::any(xmlNodePtr cur, std::string& value_key)>> delegate_factories_;
   // NOLINTEND(readability-indentifier-naming)
-
-private:
   // Storage for variable values read from XML, etc.
   std::unordered_map<std::string, std::any> values_;
 
@@ -133,6 +137,18 @@ public:
   }
 
 protected:
+  /** Function that returns Input class as std::any
+   *   \param[in]   cur                xml_node being delegated by the Input Class
+   *   \param[out]  value_name         string key value to store the delegate with
+   */
+  using DelegateHandler = std::function<std::any(xmlNodePtr cur, std::string& value_name)>;
+  /** register factory function for delegate input
+   *   \param[in]   tag                parmater name or node ename delgation is controlled by
+   *   \param[in]   delegate_handler   factory function for delegated input function.
+   */
+  void registerDelegate(const std::string& tag,
+                        DelegateHandler delegate_handler);
+
   /** Do validation for a particular subtype of InputSection
    *  Called by check_valid.
    *  Default implementation is noop
@@ -157,6 +173,14 @@ protected:
     throw std::runtime_error("derived class must provide assignAnyEnum method if enum parameters are used");
   }
 
+  /** Derived class can overrides this to do custom parsing of the element values for Custom elements
+   *  These can have a name attribute only.
+   */
+  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue)
+  {
+    throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
+  }
+
   /** Assign any enum helper for InputSection derived class
    *  assumes enum lookup table of this form:
    *    inline static const std::unordered_map<std::string, std::any>
@@ -173,8 +197,8 @@ protected:
 private:
   // Query functions
   bool isAttribute(const std::string& name) const { return attributes.find(name) != attributes.end(); }
-  bool isParameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
   bool isDelegate(const std::string& name) const { return delegates.find(name) != delegates.end(); }
+  bool isParameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
   bool isRequired(const std::string& name) const { return required.find(name) != required.end(); }
 
   bool isEnumString(const std::string& name) const { return enums.find(name) != enums.end(); }
@@ -184,6 +208,7 @@ private:
   bool isInteger(const std::string& name) const { return integers.find(name) != integers.end(); }
   bool isReal(const std::string& name) const { return reals.find(name) != reals.end(); }
   bool isPosition(const std::string& name) const { return positions.find(name) != positions.end(); }
+  bool isCustom(const std::string& name) const { return custom.find(name) != custom.end(); }
   bool has_default(const std::string& name) const { return default_values.find(name) != default_values.end(); }
 
   // Set default values for optional inputs.
