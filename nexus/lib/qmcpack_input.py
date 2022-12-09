@@ -5401,6 +5401,9 @@ def process_dm1b_estimator(dm,wfname):
                 rsponame = det.id
             #end if
             builders = QIcollections.get('sposet_builders')
+            if builders is None:
+                builders = [wf.sposet_builders.bspline]
+            #end if
             rspo = None
             for bld in builders:
                 if rsponame in bld.sposets:
