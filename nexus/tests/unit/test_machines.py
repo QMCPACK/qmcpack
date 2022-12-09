@@ -1705,7 +1705,7 @@ mpirun -np 64 test.x''',
         polaris = '''#!/bin/sh
 #PBS -l select=2:system=polaris
 #PBS -l place=scatter
-#PBS -l filesystems=home:eagle
+#PBS -l filesystems=home:eagle:grand
 #PBS -l walltime=06:30:00
 #PBS -A ABC123
 #PBS -q prod
