@@ -17,7 +17,6 @@ namespace qmcplusplus {
   {
     input_section_.readXML(cur);
     auto setIfInInput = LAMBDA_setIfInInput;
-    setIfInInput(validate_per_particle_sum_, "validate_per_particle_sum");
     setIfInInput(to_stdout_, "to_stdout");
     setIfInInput(name_, "name");
   }

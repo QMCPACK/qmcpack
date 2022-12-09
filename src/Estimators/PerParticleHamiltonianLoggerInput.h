@@ -40,7 +40,6 @@ public:
   PerParticleHamiltonianLoggerInput(const PerParticleHamiltonianLoggerInput& other) = default;
   PerParticleHamiltonianLoggerInput(xmlNodePtr cur);
 
-  bool get_validate_per_particle_sum() const { return validate_per_particle_sum_; }
   const std::string& get_name() const { return name_; }
   bool get_to_stdout() const { return to_stdout_; }
 
@@ -48,7 +47,6 @@ private:
   PerParticleHamiltonianLoggerInputSection input_section_;
   std::string name_               = "per_particle_log";
   bool to_stdout_                 = false;
-  bool validate_per_particle_sum_ = false;
 };
 } // namespace qmcplusplus
 #endif
