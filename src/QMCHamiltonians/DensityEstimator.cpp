@@ -124,7 +124,7 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
     ng[i] = NumGrids[i];
-  h5desc.push_back({{name_}});
+  h5desc.emplace_back(hdf_path{name_});
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, my_index_);
 }

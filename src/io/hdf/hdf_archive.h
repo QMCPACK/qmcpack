@@ -19,6 +19,7 @@
 #include "hdf_dataspace.h"
 #include "hdf_dataproxy.h"
 #include "hdf_error_suppression.h"
+#include "hdf_path.h"
 #include "hdf_pete.h"
 #include "hdf_stl.h"
 #include "hdf_hyperslab.h"
@@ -65,6 +66,8 @@ private:
   hid_t access_id;
   ///transfer property
   hid_t xfer_plist;
+  /// Link creation property list identifier
+  hid_t lcpl_id;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
 
@@ -84,14 +87,15 @@ public:
    *        if false, hdf_archive is in independent IO mode
    */
   template<class Comm = Communicate*>
-  hdf_archive(Comm c, bool request_pio = false) : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+  hdf_archive(Comm c, bool request_pio = false)
+      : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
     set_access_plist(c, request_pio);
   }
 
-  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT)
+  hdf_archive() : file_id(is_closed), access_id(H5P_DEFAULT), xfer_plist(H5P_DEFAULT), lcpl_id(H5P_DEFAULT)
   {
     if (!hdf_error_suppression::enabled)
       throw std::runtime_error("HDF5 library warnings and errors not suppressed from output.\n");
@@ -157,6 +161,8 @@ public:
    * @param createit if true, group is create when missing
    */
   hid_t push(const std::string& gname, bool createit = true);
+  hid_t push(const hdf_path& gname, bool createit = true);
+
 
   inline void pop()
   {
