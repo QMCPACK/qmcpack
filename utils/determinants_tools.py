@@ -161,8 +161,8 @@ if __name__ == '__main__':
         if beta_group not in f:
             beta_group = 'MultiDet/CI_1'
 
-        if f[alpha_group].dtype == 'uint64':
-            raise TypeError("This HDF5 file uses unsigned 64 bit integers (uint64) to represent the determinants. QMCPACK expects signed integers (int64) this can cause issues when used in qmcpack.")
+        if f[alpha_group].dtype == 'int64':
+            raise TypeError("This HDF5 file uses signed 64 bit integers (int64) to represent the determinants. QMCPACK expects unsigned integers (uint64) this can cause issues when used in qmcpack.")
 
         bit_kind_size = f[alpha_group].dtype.itemsize * 8
         print(f[alpha_group].dtype)
