@@ -21,6 +21,7 @@
 
 #include "Configuration.h"
 #include "hdf/hdf_archive.h"
+#include "hdf/hdf_path.h"
 
 namespace qmcplusplus
 {
@@ -39,7 +40,7 @@ public:
    * Favored constructor
    * \param[in] title         is the ordered hdf5 group path elements of the observable
    */
-  ObservableHelper(std::vector<std::string> title);
+  ObservableHelper(hdf_path title);
 
   /**
    * delete copy constructor as hdf5 handlers must have unique owners
@@ -73,11 +74,9 @@ public:
   template<typename T>
   inline void addProperty(T& p, const std::string& pname, hdf_archive& file)
   {
-    for (auto& name : group_name)
-      file.push(name, true);
+    file.push(group_name, true);
     file.write(p, pname);
-    for (size_t i{0}; i < group_name.size(); ++i)
-      file.pop();
+    file.pop();
   }
 
   void addProperty(float& p, const std::string& pname, hdf_archive& file);
@@ -96,8 +95,7 @@ private:
   /// "file pointer" for h5d_append
   hsize_t current = 0;
   /// Path of this observable
-  /// The HDF5 path may contain multiple groups. The full path is each individual group joined by `/`.
-  std::vector<std::string> group_name;
+  hdf_path group_name;
   ///my dimensions
   std::vector<hsize_t> mydims;
   ///offsets
