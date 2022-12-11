@@ -272,7 +272,7 @@ if(NOT QMC_CUDA)
     #  HEG14G - Slater-Jastrow-Backflow VMC
     #           Run 16x1, 4x4, 1x16 to test SJB cloning
     #
-    list(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.000251") # total energy
+    list(APPEND HEG14GSSJB_SCALARS "totenergy" "-1.084963  0.0004") # total energy
     list(APPEND HEG14GSSJB_SCALARS "variance" " 0.022667  0.000764") # energy variance
 
     qmc_run_and_check(

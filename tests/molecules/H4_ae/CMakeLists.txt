@@ -112,7 +112,7 @@ if(NOT QMC_CUDA)
       # H4 starting from converged wave function, doing a quick adaptive linear method run (using the same
       # spo set for both spin-up and spin-down determinants) and then doing a DMC calculation
       #
-      list(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.0048") # total energy
+      list(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.007") # total energy
 
       qmc_run_and_check(
         short-H4-orb-opt-dmc
@@ -239,7 +239,7 @@ if(NOT QMC_CUDA)
       H4_HYBRID_SCALARS
       TRUE)
 
-    list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.004")
+    list(APPEND H4_BATCHED_HYBRID_SCALARS "totenergy" "-2.10456 0.01")
 
     qmc_run_and_check(
       short-H4-batched-hybrid
