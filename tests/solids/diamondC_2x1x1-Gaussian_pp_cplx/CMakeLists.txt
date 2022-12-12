@@ -28,7 +28,7 @@ if(NOT QMC_CUDA)
     # Compare directly to Hartree Fock Energy of: E=-21.30438154915548
     #Data generated using utils/make_ref_data.sh  diamondC_2x1x1-Gaussian_pp_cplx_SHORT qmc_ref/qmc_short.s000.scalar.dat  qmc_ref/qmc_ref_long.s000.scalar.dat
     list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "totenergy" "-21.30438154915548 0.045341262663")
-    list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "variance" "4.388589388914 0.178785324601")
+    list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "variance" "4.388589388914 0.25")
     list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "kinetic" "19.545637226792 0.133872779266")
     list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "potential" "-40.850779026183 0.130602718601")
     list(APPEND diamondC_2x1x1-Gaussian_pp_cplx_SHORT_SCALARS "eeenergy" "-4.537323794961 0.058408305166")

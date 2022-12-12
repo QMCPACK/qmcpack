@@ -74,9 +74,9 @@ endif()
 
 if(QMC_MIXED_PRECISION)
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "kinetic" "134.10184342 0.003") # kinetic energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "eeenergy" "552.72060729 0.001") # e-e energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "eeenergy" "552.72060729 0.002") # e-e energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "totenergy" "-251.29185486 0.001") # total energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-385.39369691 0.001") # potential energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-385.39369691 0.002") # potential energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "ionion" "422.43052077 0.0001") # i-i energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "localecp" "-1391.12666390 0.003") # localECP
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "nonlocalecp" "30.58183893 0.002") # nonlocalECP

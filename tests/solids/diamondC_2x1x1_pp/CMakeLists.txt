@@ -1,4 +1,4 @@
-list(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.007")
+list(APPEND DIAMOND2_SCALARS "totenergy" "-21.668293 0.015")
 list(APPEND DIAMOND2_SCALARS "kinetic" "20.065151 0.044")
 list(APPEND DIAMOND2_SCALARS "potential" "-41.733377 0.045")
 list(APPEND DIAMOND2_SCALARS "eeenergy" "-5.428561 0.012")
@@ -96,7 +96,7 @@ qmc_run_and_check(
 )
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
-list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.02")
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-dmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -110,7 +110,7 @@ qmc_run_and_check(
 )
 
 # 1 rank 4 threads 16 walkers (4 crowds of 4 walkers)
-list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.02")
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-dmc_4r_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -164,7 +164,7 @@ if(NOT QMC_CUDA)
   )
 endif()
 
-list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.01")
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-dmc-reconf_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
