@@ -14,6 +14,7 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "RandomRotationState.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -81,7 +82,7 @@ public:
 
   void resize_warrays(int n, int m, int s);
 
-  void randomize_grid(RandomGenerator& myRNG);
+  void randomize_grid(const RandomRotationState& rs);
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
 
