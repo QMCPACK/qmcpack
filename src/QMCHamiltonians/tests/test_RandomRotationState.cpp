@@ -17,10 +17,6 @@
 namespace qmcplusplus
 {
 
-namespace testing
-{
-
-
 TEST_CASE("RandomRotationState", "[hamiltonian]")
 {
   RandomRotationState rs;
@@ -35,5 +31,4 @@ TEST_CASE("RandomRotationState", "[hamiltonian]")
         CHECK(rmat(i, j) == Approx(0.0));
 }
 
-} // namespace testing
 } // namespace qmcplusplus
