@@ -9,7 +9,7 @@
 #// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 #//////////////////////////////////////////////////////////////////////////////////////
 
-set(IO_HDF5_SRC hdf_archive.cpp)
+set(IO_HDF5_SRC hdf_archive.cpp hdf_path.cpp)
 
 add_library(qmcio_hdf ${IO_HDF5_SRC})
 

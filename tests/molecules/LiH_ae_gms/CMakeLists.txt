@@ -10,7 +10,7 @@ if(NOT QMC_CUDA)
     #   "samples" "79134720000 0.0") # samples
 
     list(APPEND LIH_SHORT "kinetic" "7.991319 0.012") # kinetic energy
-    list(APPEND LIH_SHORT "totenergy" "-7.9873131 0.0009") # total energy
+    list(APPEND LIH_SHORT "totenergy" "-7.9873131 0.0015") # total energy
     list(APPEND LIH_SHORT "eeenergy" "3.488823 0.00086") # e-e energy
     list(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
     qmc_run_and_check(

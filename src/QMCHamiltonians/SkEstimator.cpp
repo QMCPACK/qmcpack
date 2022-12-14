@@ -119,7 +119,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    h5desc.push_back({{name_}});
+    h5desc.emplace_back(hdf_path{name_});
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, my_index_);
 

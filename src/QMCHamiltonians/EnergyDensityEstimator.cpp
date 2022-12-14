@@ -479,9 +479,8 @@ void EnergyDensityEstimator::addObservables(PropertySetType& plist, BufferType& 
 
 void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  using namespace std::string_literals;
-
-  h5desc.push_back({{name_, "variables"s}});
+  hdf_path hdf_name{name_};
+  h5desc.emplace_back(hdf_name / "variables");
   auto& oh = h5desc.back();
   oh.addProperty(const_cast<int&>(nparticles), "nparticles", file);
   int nspacegrids = spacegrids.size();
@@ -494,8 +493,7 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
   }
 
   ref.save(h5desc, file);
-
-  h5desc.push_back({{name_, "outside"s}});
+  h5desc.emplace_back(hdf_name / "outside");
   auto& ohOutside = h5desc.back();
   std::vector<int> ng(1);
   ng[0] = (int)nEDValues;
@@ -511,7 +509,7 @@ void EnergyDensityEstimator::registerCollectables(std::vector<ObservableHelper>&
     ng2[0] = nions;
     ng2[1] = (int)nEDValues;
 
-    h5desc.push_back({{name_, "ions"s}});
+    h5desc.emplace_back(hdf_name / "ions");
     auto& ohIons = h5desc.back();
     ohIons.set_dimensions(ng2, ion_buffer_offset);
   }
