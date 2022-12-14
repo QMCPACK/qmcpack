@@ -192,9 +192,8 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   return pairpot;
 }
 
-void SOECPComponent::randomize_grid(const RandomRotationState& rs)
+void SOECPComponent::randomize_grid(const TensorType& rmat)
 {
-  TensorType rmat = rs.getRandomRotationMatrix();
   for (int i = 0; i < sgridxyz_m.size(); i++)
     rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
 }

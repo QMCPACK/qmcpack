@@ -19,8 +19,7 @@ namespace qmcplusplus
 
 TEST_CASE("RandomRotationState", "[hamiltonian]")
 {
-  RandomRotationState rs;
-  RandomRotationState::TensorType rmat = rs.getRandomRotationMatrix();
+  QMCTraits::TensorType rmat = getRotationMatrix(0.0, 0.0, 0.0);
 
   // Default rotation matrix should be the identity
   for (int i = 0; i < 3; i++)

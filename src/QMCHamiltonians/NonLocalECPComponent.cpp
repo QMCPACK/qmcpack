@@ -865,9 +865,8 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(const RandomRotationState& rs)
+void NonLocalECPComponent::randomize_grid(const TensorType& rmat)
 {
-  TensorType rmat = rs.getRandomRotationMatrix();
   for (int i = 0; i < sgridxyz_m.size(); i++)
     rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
 }

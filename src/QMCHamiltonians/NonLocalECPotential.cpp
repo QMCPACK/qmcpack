@@ -187,8 +187,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
     if (PPset[ipp])
       if (!keep_grid)
       {
-        RandomRotationState rs(*myRNG);
-        PPset[ipp]->randomize_grid(rs);
+        TensorType rmat = getRandomRotationMatrix(*myRNG);
+        PPset[ipp]->randomize_grid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -304,8 +304,8 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       for (int ipp = 0; ipp < O.PPset.size(); ipp++)
         if (O.PPset[ipp])
         {
-          RandomRotationState rs(*O.myRNG);
-          O.PPset[ipp]->randomize_grid(rs);
+          TensorType rmat = getRandomRotationMatrix(*O.myRNG);
+          O.PPset[ipp]->randomize_grid(rmat);
         }
 
     //loop over all the ions
@@ -479,8 +479,8 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
     for (int ipp = 0; ipp < PPset.size(); ipp++)
       if (PPset[ipp])
       {
-        RandomRotationState rs(*myRNG);
-        PPset[ipp]->randomize_grid(rs);
+        TensorType rmat = getRandomRotationMatrix(*myRNG);
+        PPset[ipp]->randomize_grid(rmat);
       }
   }
   //loop over all the ions
@@ -562,8 +562,8 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
     if (PPset[ipp])
       if (!keepGrid)
       {
-        RandomRotationState rs(*myRNG);
-        PPset[ipp]->randomize_grid(rs);
+        TensorType rmat = getRandomRotationMatrix(*myRNG);
+        PPset[ipp]->randomize_grid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -602,8 +602,8 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     if (PPset[ipp])
       if (!keepGrid)
       {
-        RandomRotationState rs(*myRNG);
-        PPset[ipp]->randomize_grid(rs);
+        TensorType rmat = getRandomRotationMatrix(*myRNG);
+        PPset[ipp]->randomize_grid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);

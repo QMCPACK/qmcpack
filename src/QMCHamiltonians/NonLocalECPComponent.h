@@ -141,7 +141,8 @@ public:
 
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(const RandomRotationState& rs);
+  //void randomize_grid(const RandomRotationState& rs);
+  void randomize_grid(const TensorType& rmat);
   template<typename T>
   void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
 
