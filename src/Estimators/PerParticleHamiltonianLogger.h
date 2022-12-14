@@ -38,7 +38,7 @@ public:
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng, const int crowd_id) override;
+                  RandomGenerator& rng) override;
   
   UPtr<OperatorEstBase> spawnCrowdClone() const override;
   void startBlock(int steps) override;
@@ -52,7 +52,7 @@ public:
 
   void collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators) override;
 
-  void write(CrowdLogValues& values, const int crowd_id);
+  void write(CrowdLogValues& values, const std::vector<long>& walkers_ids);
 
   int get_block() { return block_; }
 private:
@@ -61,6 +61,7 @@ private:
   PerParticleHamiltonianLoggerInput input_;
   int rank_;
   CrowdLogValues values_;
+  std::vector<long> walker_ids_;
   const std::string name_{"PerParticleHamiltonianLogger"};
   std::fstream rank_fstream_;
   std::mutex write_lock;

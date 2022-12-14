@@ -177,7 +177,7 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   {
     crowds_[i] =
         std::make_unique<Crowd>(*estimator_manager_, golden_resource_, population_.get_golden_electrons(),
-                                population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_, i);
+                                population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_);
   }
 
   //now give walkers references to their walkers

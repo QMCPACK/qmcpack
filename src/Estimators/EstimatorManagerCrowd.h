@@ -43,7 +43,7 @@ public:
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
    */
-  EstimatorManagerCrowd(EstimatorManagerNew& em, const int crowd_id);
+  EstimatorManagerCrowd(EstimatorManagerNew& em);
 
   ///destructor
   ~EstimatorManagerCrowd(){};
@@ -92,7 +92,6 @@ public:
   void registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
 private:
-  const int crowd_id_;
   ///number of samples accumulated in a block
   RealType block_num_samples_;
   ///total weight accumulated in a block

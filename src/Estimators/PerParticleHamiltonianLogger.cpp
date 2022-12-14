@@ -21,7 +21,7 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(PerParticleHamiltonia
 {
   requires_listener_ = true;
   my_name_           = "PerParticleHamiltonianLogger";
-  
+
   std::string filename("rank_" + std::to_string(rank_) + "_" + input_.get_name() + ".dat");
   rank_fstream_.open(filename, std::ios::out);
 }
@@ -33,26 +33,25 @@ PerParticleHamiltonianLogger::PerParticleHamiltonianLogger(const PerParticleHami
   my_name_           = pphl.name_;
   data_locality_     = dl;
 }
-  
-void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const int crowd_id)
+
+void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const std::vector<long>& walker_ids)
 {
   // fstream is not thread safe but it is buffered.  If the buffer isn't too small this
   // should mostly return quickly and the contention for the lock should be manageable.
   const std::lock_guard<std::mutex> lock(write_lock);
   for (auto& [component, values] : cl_values)
   {
-    rank_fstream_ << "operator: " << component << " crowd: " << crowd_id << '\n';
+    rank_fstream_ << "operator: " << component << '\n'; // " crowd: " << crowd_id <<
     for (int iw = 0; iw < values.size(); ++iw)
-      rank_fstream_ << " walker:" << iw << " " << NativePrint(values[iw]) << '\n';
+      rank_fstream_ << " walker:" << walker_ids[iw] << " " << NativePrint(values[iw]) << '\n';
   }
   if (input_.get_to_stdout())
   {
     for (auto& [component, values] : cl_values)
     {
-      std::cout << component << " for "
-                << "crowd: " << crowd_id << '\n';
+      std::cout << component << '\n';
       for (int iw = 0; iw < values.size(); ++iw)
-        std::cout << " walker: " << iw << "  " << NativePrint(values[iw]) << '\n';
+        std::cout << " walker: " << walker_ids[iw] << "  " << NativePrint(values[iw]) << '\n';
     }
   }
 }
@@ -60,10 +59,16 @@ void PerParticleHamiltonianLogger::write(CrowdLogValues& cl_values, const int cr
 void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walkers,
                                               const RefVector<ParticleSet>& psets,
                                               const RefVector<TrialWaveFunction>& wfns,
-                                              RandomGenerator& rng,
-                                              const int crowd_id)
+                                              RandomGenerator& rng)
+
 {
-  rank_estimator_->write(values_, crowd_id);
+  // The hamiltonian doesn't know the walker ID only its index in the walker elements of the crowd
+  // build mapping from that index to global walker id.
+  // This could change every call for DMC.
+  walker_ids_.clear();
+  for (MCPWalker& walker : walkers)
+    walker_ids_.push_back(walker.ID);
+  rank_estimator_->write(values_, walker_ids_);
 
   // \todo some per crowd reduction.
   //       clear log values

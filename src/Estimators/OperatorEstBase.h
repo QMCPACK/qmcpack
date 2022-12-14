@@ -74,7 +74,7 @@ public:
   virtual void accumulate(const RefVector<MCPWalker>& walkers,
                           const RefVector<ParticleSet>& psets,
                           const RefVector<TrialWaveFunction>& wfns,
-                          RandomGenerator& rng, const int crowd_id_) = 0;
+                          RandomGenerator& rng) = 0;
 
   /** Reduce estimator result data from crowds to rank
    *
@@ -131,6 +131,7 @@ public:
   bool isListenerRequired() { return requires_listener_; }
 
   DataLocality get_data_locality() const { return data_locality_; }
+
 protected:
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
