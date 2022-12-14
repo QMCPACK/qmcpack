@@ -13,6 +13,8 @@
 
 #include "PerParticleHamiltonianLogger.h"
 
+#include <filesystem>
+
 #include "Utilities/StdRandom.h"
 
 namespace qmcplusplus
@@ -60,67 +62,74 @@ TEST_CASE("PerParticleHamiltonianLogger_sum", "[estimators]")
 
   CHECK(!pphli.get_to_stdout());
 
-  int rank = 0;
-  PerParticleHamiltonianLogger rank_logger(std::move(pphli), rank);
+  if (std::filesystem::exists("rank_0_per_particle_log.dat"))
+    std::filesystem::remove("rank_0_per_particle_log.dat");
 
-  int ncrowds = 3;
-
-  UPtrVector<OperatorEstBase> crowd_loggers;
-  for (int ic = 0; ic < ncrowds; ++ic)
   {
-    crowd_loggers.emplace_back(rank_logger.spawnCrowdClone());
-  }
+    int rank = 0;
+    PerParticleHamiltonianLogger rank_logger(std::move(pphli), rank);
 
-  int nwalkers = 3;
+    int ncrowds = 3;
 
-  const SimulationCell simulation_cell;
-  std::vector<OperatorEstBase::MCPWalker> walkers;
-  for (int iw = 0; iw < nwalkers; ++iw)
-    walkers.emplace_back(2);
-
-  std::vector<ParticleSet> psets;
-  for (int iw = 0; iw < nwalkers; ++iw)
-  {
-    psets.emplace_back(simulation_cell);
-    ParticleSet& pset = psets.back();
-    pset.create({2});
-    pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
-    pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
-  }
-
-  std::vector<TrialWaveFunction> wfns;
-
-  auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
-  auto ref_psets   = makeRefVector<ParticleSet>(psets);
-  auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
-
-  std::vector<MultiWalkerTalker> multi_walker_talkers{{"Talker1", nwalkers},
-                                                      {"Talker2", nwalkers},
-                                                      {"Talker3", nwalkers}};
-  for (auto& crowd_oeb : crowd_loggers)
-    for (auto& mwt : multi_walker_talkers)
+    UPtrVector<OperatorEstBase> crowd_loggers;
+    for (int ic = 0; ic < ncrowds; ++ic)
     {
-      auto& crowd_logger = dynamic_cast<PerParticleHamiltonianLogger&>(*crowd_oeb);
-      ListenerVector<Real> listener("whatever", crowd_logger.getLogger());
-      mwt.registerVector(listener);
+      crowd_loggers.emplace_back(rank_logger.spawnCrowdClone());
     }
 
-  rank_logger.startBlock(100);
-  CHECK(rank_logger.get_block() == 1);
-  
-  for (auto& mwt : multi_walker_talkers)
-    mwt.reportVector();
+    int nwalkers = 3;
 
-  RandomGenerator rng;
+    const SimulationCell simulation_cell;
+    std::vector<OperatorEstBase::MCPWalker> walkers;
+    for (int iw = 0; iw < nwalkers; ++iw)
+      walkers.emplace_back(2);
 
-  int crowd_id = 0;
-  for (auto& crowd_oeb : crowd_loggers)
-  {
-    crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, rng, crowd_id++);
+    std::vector<ParticleSet> psets;
+    for (int iw = 0; iw < nwalkers; ++iw)
+    {
+      psets.emplace_back(simulation_cell);
+      ParticleSet& pset = psets.back();
+      pset.create({2});
+      pset.R[0] = ParticleSet::PosType(0.00000000, 0.00000000, 0.00000000);
+      pset.R[1] = ParticleSet::PosType(0.68658058, 0.68658058, 0.68658058);
+    }
+
+    std::vector<TrialWaveFunction> wfns;
+
+    auto ref_walkers = makeRefVector<OperatorEstBase::MCPWalker>(walkers);
+    auto ref_psets   = makeRefVector<ParticleSet>(psets);
+    auto ref_wfns    = makeRefVector<TrialWaveFunction>(wfns);
+
+    std::vector<MultiWalkerTalker> multi_walker_talkers{{"Talker1", nwalkers},
+                                                        {"Talker2", nwalkers},
+                                                        {"Talker3", nwalkers}};
+    for (auto& crowd_oeb : crowd_loggers)
+      for (auto& mwt : multi_walker_talkers)
+      {
+        auto& crowd_logger = dynamic_cast<PerParticleHamiltonianLogger&>(*crowd_oeb);
+        ListenerVector<Real> listener("whatever", crowd_logger.getLogger());
+        mwt.registerVector(listener);
+      }
+
+    rank_logger.startBlock(100);
+    CHECK(rank_logger.get_block() == 1);
+
+    for (auto& mwt : multi_walker_talkers)
+      mwt.reportVector();
+
+    RandomGenerator rng;
+
+    int crowd_id = 0;
+    for (auto& crowd_oeb : crowd_loggers)
+    {
+      crowd_oeb->accumulate(ref_walkers, ref_psets, ref_wfns, rng, crowd_id++);
+    }
+
+    RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector(crowd_loggers);
+    rank_logger.collect(crowd_loggers_refs);
   }
-  
-  RefVector<OperatorEstBase> crowd_loggers_refs = convertUPtrToRefVector(crowd_loggers);
-  rank_logger.collect(crowd_loggers_refs);
+  // Now that the rank_logger has be destroyed its file must be present
+  CHECK(std::filesystem::exists("rank_0_per_particle_log.dat"));
 }
 
 } // namespace qmcplusplus

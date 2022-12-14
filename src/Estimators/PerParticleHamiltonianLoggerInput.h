@@ -40,6 +40,10 @@ public:
   PerParticleHamiltonianLoggerInput(const PerParticleHamiltonianLoggerInput& other) = default;
   PerParticleHamiltonianLoggerInput(xmlNodePtr cur);
 
+  /** For this input class its valid with just its defaults
+   */
+  PerParticleHamiltonianLoggerInput() = default;
+  
   const std::string& get_name() const { return name_; }
   bool get_to_stdout() const { return to_stdout_; }
 

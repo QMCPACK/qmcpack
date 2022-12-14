@@ -110,5 +110,8 @@ void EstimatorManagerInput::readXML(xmlNodePtr cur)
   }
 }
 
+void EstimatorManagerInput::append(const EstimatorInput& ei) { estimator_inputs_.emplace_back(ei); }
+void EstimatorManagerInput::append(const ScalarEstimatorInput& sei) { scalar_estimator_inputs_.emplace_back(sei); }
+
 
 } // namespace qmcplusplus

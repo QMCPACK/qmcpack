@@ -64,6 +64,15 @@ public:
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
    *  \param[inout]  rng             crowd scope RandomGenerator
+   *
+   *  walkers is especially questionable since its really just hiding the full sweep hamiltonian values from
+   *  the most recent (maybe) QMCHamiltonian evaluate which are written into it by the QMCHamiltonians
+   *  previous to the accumulate.
+   *  walkers might additionally be useful because they hold another copy of the dynamic (electron) particle sets coords
+   *  that could be inconsistent with psets.
+   *
+   *  As soon as the legacy Estimators are dropped this API should be reviewed with an eye to disentangling
+   *  ParticleSet, Walker, and QMCHamiltonian.
    */
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,

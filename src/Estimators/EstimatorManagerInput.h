@@ -82,6 +82,11 @@ public:
    */
   void readXML(xmlNodePtr cur);
 
+  /** typed appending of already parsed inputs.
+   *  only used in testing.
+   */
+  void append(const EstimatorInput& ei);
+  void append(const ScalarEstimatorInput& sei);
 private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;
