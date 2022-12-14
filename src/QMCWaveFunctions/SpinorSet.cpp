@@ -188,7 +188,7 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
       mw_dspin(iw, iorb) = eye * (eis * (up_psi_v_list[iw].get())[iorb] - emis * (dn_psi_v_list[iw].get())[iorb]);
   }
-  //data was all on host, sync with device
+  //Data above is all on host, but since mw_dspin is DualMatrix we need to sync the host and device
   mw_dspin.updateTo();
 }
 

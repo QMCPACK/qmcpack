@@ -35,6 +35,7 @@ class MatrixUpdateOMPTarget
 public:
   using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
   using Value         = typename WFT::Value;
+  using Complex       = typename WFT::Complex;
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixUpdateOMPTarget<VALUE, VALUE_FP>;
@@ -56,6 +57,8 @@ public:
   using OffloadVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, OffloadPinnedAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
 
   struct MatrixUpdateOMPTargetMultiWalkerMem : public Resource
   {
@@ -65,8 +68,8 @@ public:
     UnpinnedOffloadVector<Value> czero_vec;
     // multi walker of grads for transfer needs.
     OffloadMatrix<Value> grads_value_v;
-    // multi walker of spingrads for transfer
-    UnpinnedOffloadVector<Value> spingrads_value_v;
+    // multi walker of spingrads for transfer needs.
+    OffloadVector<Complex> spingrads_value_v;
     // pointer buffer
     Vector<char, PinnedAllocator<char>> buffer_H2D;
     /// scratch space for rank-1 update
@@ -202,7 +205,7 @@ public:
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
                                   const std::vector<const Value*>& dpsiM_row_list,
-                                  const std::vector<const Value*>& dspin_row_list,
+                                  DualMatrix<Complex>& mw_dspin,
                                   int rowchanged,
                                   std::vector<GT>& grad_now,
                                   std::vector<Value>& spingrad_now)
@@ -212,16 +215,19 @@ public:
     auto& grads_value_v     = engine_leader.mw_mem_->grads_value_v;
     auto& spingrads_value_v = engine_leader.mw_mem_->spingrads_value_v;
 
+    //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
+    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd. 
+    //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_mem_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
+    //That is how mw_dspin is handled below
     const int norb                   = engine_leader.get_psiMinv().rows();
     const int nw                     = engines.size();
-    constexpr size_t num_ptrs_packed = 3; // it must match packing and unpacking
+    constexpr size_t num_ptrs_packed = 2; // it must match packing and unpacking
     buffer_H2D.resize(sizeof(Value*) * num_ptrs_packed * nw);
     Matrix<const Value*> ptr_buffer(reinterpret_cast<const Value**>(buffer_H2D.data()), num_ptrs_packed, nw);
     for (int iw = 0; iw < nw; iw++)
     {
       ptr_buffer[0][iw] = engines[iw].get_psiMinv().device_data() + rowchanged * engine_leader.get_psiMinv().cols();
       ptr_buffer[1][iw] = dpsiM_row_list[iw];
-      ptr_buffer[2][iw] = dspin_row_list[iw];
     }
 
     constexpr unsigned DIM = GT::Size;
@@ -230,16 +236,19 @@ public:
     auto* __restrict__ grads_value_v_ptr     = grads_value_v.data();
     auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
     auto* buffer_H2D_ptr                     = buffer_H2D.data();
+    auto* mw_dspin_ptr                       = mw_dspin.data();
 
+    //Note that mw_dspin should already be in sync between device and host...updateTo was called in
+    //SPOSet::mw_evaluateVGLWithSpin to sync
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
-                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
+                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()]) \
+                    use_device_ptr(mw_dspin_ptr)")
     for (int iw = 0; iw < nw; iw++)
     {
       const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
       const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
-      const Value* __restrict__ dspin_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[2 * nw + iw];
       Value grad_x(0), grad_y(0), grad_z(0), spingrad(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
       for (int iorb = 0; iorb < norb; iorb++)
@@ -247,7 +256,7 @@ public:
         grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];
         grad_y += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 1];
         grad_z += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM + 2];
-        spingrad += invRow_ptr[iorb] * dspin_row_ptr[iorb];
+        spingrad += invRow_ptr[iorb] * mw_dspin_ptr[iw * norb + iorb];
       }
       grads_value_v_ptr[iw * DIM]     = grad_x;
       grads_value_v_ptr[iw * DIM + 1] = grad_y;

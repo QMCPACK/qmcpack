@@ -215,6 +215,10 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
   const int num_orbitals = wfc_leader.Phi->size();
   mw_dspin.resize(nw, num_orbitals);
 
+  //Here, we are just always recomputing the spin gradients from the SPOSet for simplicity.
+  //If we stored and modified the accept/reject to include updating stored spin gradients, we could the 
+  //mw_evaluateVGLWithSpin call below and just use the stored spin gradients. 
+  //May revisit this in the future. 
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
   RefVector<SPOSet::GradVector> grad_v_list;
@@ -231,7 +235,6 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
   phi_leader.mw_evaluateVGLWithSpin(phi_list, p_list, iat, psi_v_list, grad_v_list, lap_v_list, mw_dspin);
 
   std::vector<const Value*> dpsiM_row_list(nw, nullptr);
-  std::vector<const Value*> dspin_row_list(nw, nullptr);
   RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
   engine_list.reserve(nw);
 
@@ -245,7 +248,7 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
     engine_list.push_back(det.det_engine_);
   }
 
-//  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, dspin_row_list, WorkingIndex, grad_now, spingrad_now);
+  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, mw_dspin, WorkingIndex, grad_now, spingrad_now);
 
 #ifndef NDEBUG
   for (int iw = 0; iw < nw; iw++)

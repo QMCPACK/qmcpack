@@ -494,12 +494,12 @@ public:
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
                                   const std::vector<const Value*>& dpsiM_row_list,
-                                  const std::vector<const Value*>& dspin_row_list,
+                                  DualMatrix<ComplexType>& mw_dspin,
                                   const int rowchanged,
                                   std::vector<GT>& grad_now,
                                   std::vector<Value>& spingrad_now)
   {
-    std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
   }
 
   /** Update the "local" psiMinv_ on the device.
