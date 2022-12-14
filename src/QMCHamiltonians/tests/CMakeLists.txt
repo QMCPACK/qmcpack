@@ -28,7 +28,7 @@ set(HAM_SRCS
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp
     test_Listener.cpp
-    test_RandomRotationState.cpp)
+    test_RandomRotationMatrix.cpp)
     
 
 if(QMC_CUDA)

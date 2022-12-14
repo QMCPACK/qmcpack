@@ -10,14 +10,14 @@
 
 #include "catch.hpp"
 
-#include "QMCHamiltonians/RandomRotationState.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <string>
 #include <vector>
 
 namespace qmcplusplus
 {
 
-TEST_CASE("RandomRotationState", "[hamiltonian]")
+TEST_CASE("RandomRotationMatrix", "[hamiltonian]")
 {
   QMCTraits::TensorType rmat = getRotationMatrix(0.0, 0.0, 0.0);
 

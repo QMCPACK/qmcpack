@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_RANDOM_ROTATION_STATE_H
-#define QMCPLUSPLUS_RANDOM_ROTATION_STATE_H
+#ifndef QMCPLUSPLUS_RANDOM_ROTATION_MATRIX_H
+#define QMCPLUSPLUS_RANDOM_ROTATION_MATRIX_H
 
 #include "Configuration.h"
 #include "Utilities/RandomGenerator.h"
