@@ -39,6 +39,18 @@ def pyscf_to_gms_order(l):
     #p2g = [(xp.index(''.join(sorted(xi))),i) for i,xi in enumerate(xg)]
     for i,xi in enumerate(xg):
         m[i,xp.index(''.join(sorted(xi)))] = 1
+    return m.T
+
+def debug_pyscf_to_gms_order(l):
+    xg = gms_cart_order(l)
+    xp = pyscf_cart_order(l)
+    print(xg)
+    print(xp)
+    m = np.zeros((len(xp),len(xg)))
+    #p2g = [(xp.index(''.join(sorted(xi))),i) for i,xi in enumerate(xg)]
+    for i,xi in enumerate(xg):
+        m[i,xp.index(''.join(sorted(xi)))] = 1
+    print(m)
     return m
 
 s2cdict = {
@@ -212,11 +224,25 @@ s2cdict = {
            ((12, 21), -28.875)]}
 
 
+def lm_cart_rescale(l):
+    '''
+    rescaling of certain functions
+    '''
+    b = np.eye(shsze(l,False))
+    if l==2:
+        for i in [0,1,2]:
+            b[i,i] *= np.sqrt(3.0) #t1
+    if l==3:
+        for i in [0,1,2]:
+            b[i,i] *= np.sqrt(15.0)
+        for i in [3,4,5,6,7,8]:
+            b[i,i] *= np.sqrt(3.0)
+    return b
 
 def transform_block_s2c(l):
     '''
     h5 mo coefs are stored as [mo,ao(s)]
-    we want [mo,ao(c)], so 
+    we want [mo,ao(c)], so multiply by [ao(s),ao(c)]
     '''
     ncart = shsze(l,False)
     nsph  = shsze(l,True)
@@ -228,7 +254,32 @@ def transform_block_s2c(l):
         for (i,j),v in s2cdict[l]:
             b[i,j] = v
         b = np.sign(b)*np.sqrt(np.abs(b)*lfac)
-        return b @ pyscf_to_gms_order(l)
+        return b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l)
+
+
+def debug_transform(l):
+    ncart = shsze(l,False)
+    nsph  = shsze(l,True)
+    lfac = np.sqrt((2*l+1)/(np.pi*2**(l+2)))
+    if l<=0:
+        return np.eye(nsph,dtype=np.float64)
+    else:
+        b = np.zeros((nsph,ncart),dtype=np.float64)
+        for (i,j),v in s2cdict[l]:
+            b[i,j] = v
+        b = np.sign(b)*np.sqrt(np.abs(b)*lfac)
+
+        print(b)
+        print(pyscf_to_gms_order(l))
+        print(lm_cart_rescale(l))
+
+        print(b @ pyscf_to_gms_order(l))
+        print(b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l))
+        print(b @ lm_cart_rescale(l) @ pyscf_to_gms_order(l))
+
+        return b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l) #t1 t2
+        #return b @ lm_cart_rescale(l) @ pyscf_to_gms_order(l) # t3 t4
+
 
 
 def shsze(l,is_sph):
@@ -441,5 +492,4 @@ if __name__ == '__main__':
 
     qh5 = qmch5(args.input_h5path)
     qh5.generate_h5(newpath=args.output)
-
 
