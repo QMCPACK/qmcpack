@@ -226,18 +226,25 @@ s2cdict = {
 
 def lm_cart_rescale(l):
     '''
-    rescaling of certain functions
+    rescaling of certain functions within shells
     '''
-    b = np.eye(shsze(l,False))
+    b = np.ones(shsze(l,False))
     if l==2:
-        for i in [0,1,2]:
-            b[i,i] *= np.sqrt(3.0) #t1
-    if l==3:
-        for i in [0,1,2]:
-            b[i,i] *= np.sqrt(15.0)
-        for i in [3,4,5,6,7,8]:
-            b[i,i] *= np.sqrt(3.0)
-    return b
+        b[:3]    *= np.sqrt(3.0) # xx
+    elif l==3:
+        b[:3]    *= np.sqrt(15.0) # xxx
+        b[3:9]   *= np.sqrt(3.0)  # xxy
+    elif l==4:
+        b[:3]    *= np.sqrt(35.0) # xxxx
+        b[3:9]   *= np.sqrt(5.0)  # xxxy
+        b[9:12]  *= np.sqrt(3.0)  # xxyy
+    elif l==5:
+        b[:3]    *= np.sqrt(105.0) # xxxxx
+        b[3:9]   *= np.sqrt(35.0/3.0)  # xxxxy
+        b[9:15]  *= np.sqrt(5.0)  # xxxyy
+        b[15:18] *= np.sqrt(5.0/3.0)  # xxxyz
+
+    return np.diag(b)
 
 def transform_block_s2c(l):
     '''
