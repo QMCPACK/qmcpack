@@ -10,7 +10,7 @@
 
 #include "catch.hpp"
 
-#include "QMCHamiltonians/RandomRotationMatrix.h"
+#include "Numerics/RandomRotationMatrix.h"
 #include <string>
 #include <vector>
 

@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
-#include "RandomRotationMatrix.h"
+#include "Numerics/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"

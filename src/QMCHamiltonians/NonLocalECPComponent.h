@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
-#include "RandomRotationMatrix.h"
+#include "Numerics/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
 #include <TrialWaveFunction.h>
 #include "Numerics/OneDimGridBase.h"
@@ -143,7 +143,7 @@ public:
 
   void randomize_grid(const TensorType& rmat);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
+  void randomize_grid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** contribute local non-local move data
    * @param iel reference electron id.

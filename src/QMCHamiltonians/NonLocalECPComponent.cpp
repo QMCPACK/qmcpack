@@ -872,13 +872,8 @@ void NonLocalECPComponent::randomize_grid(const TensorType& rmat)
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
+void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, const TensorType& rmat)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
-  RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
-      cps(std::cos(psi));
-  TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
-                  -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
   SpherGridType::iterator jt(rrotsgrid_m.begin());
@@ -909,8 +904,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, RandomGenerator& myRNG);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, RandomGenerator& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, const TensorType& rmat);
+template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, const TensorType& rmat);
 
 
 } // namespace qmcplusplus
