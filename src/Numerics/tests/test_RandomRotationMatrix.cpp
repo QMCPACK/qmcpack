@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 
-TEST_CASE("RandomRotationMatrix", "[hamiltonian]")
+TEST_CASE("RandomRotationMatrix", "[numerics]")
 {
   QMCTraits::TensorType rmat = getRotationMatrix(0.0, 0.0, 0.0);
 

@@ -23,7 +23,6 @@ namespace qmcplusplus
 template<typename T>
 inline Tensor<T, 3> getRotationMatrix(T rng1, T rng2, T rng3)
 {
-  using Tensor = QMCTraits::TensorType;
   // The angular values for a random rotation matrix
   // phi : 0 to 2*pi
   // psi : 0 to 2*pi
@@ -35,19 +34,19 @@ inline Tensor<T, 3> getRotationMatrix(T rng1, T rng2, T rng3)
   T sth(std::sqrt(1.0 - cth * cth));
   T sps(std::sin(psi)), cps(std::cos(psi));
   // clang-format off
-  return Tensor(cph * cth * cps - sph * sps,
-                sph * cth * cps + cph * sps,
-               -sth * cps,
-               -cph * cth * sps - sph * cps,
-               -sph * cth * sps + cph * cps,
-                sth * sps,
-                cph * sth,
-                sph * sth,
-                cth);
+  return Tensor<T,3>( cph * cth * cps - sph * sps,
+                      sph * cth * cps + cph * sps,
+                     -sth * cps,
+                     -cph * cth * sps - sph * cps,
+                     -sph * cth * sps + cph * cps,
+                      sth * sps,
+                      cph * sth,
+                      sph * sth,
+                      cth);
   // clang-format on
 }
 
-inline QMCTraits::TensorType getRandomRotationMatrix(RandomGenerator &rng)
+inline QMCTraits::TensorType getRandomRotationMatrix(RandomGenerator& rng)
 {
   return getRotationMatrix(rng(), rng(), rng());
 }
