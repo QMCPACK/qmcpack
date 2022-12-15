@@ -54,6 +54,10 @@ def debug_pyscf_to_gms_order(l):
     return m
 
 s2cdict = {
+         #0:[((0, 0), 1.0)],
+         #1:[((0, 0), 2.0), 
+         #   ((1, 1), 2.0), 
+         #   ((2, 2), 2.0)], 
          2:[((0,1),12),
             ((1,4),12),
             ((2,0),-1),
@@ -246,6 +250,18 @@ def lm_cart_rescale(l):
 
     return np.diag(b)
 
+def lscale(l):
+    if l<=1:
+        return 1
+    elif l==2:
+        return 1.0/(2*np.sqrt(3))
+    elif l==3:
+        return 1.0/(2*np.sqrt(30))
+    elif l==4:
+        return 1.0/(4*np.sqrt(35))
+    else:
+        return 1
+
 def transform_block_s2c(l):
     '''
     h5 mo coefs are stored as [mo,ao(s)]
@@ -253,40 +269,14 @@ def transform_block_s2c(l):
     '''
     ncart = shsze(l,False)
     nsph  = shsze(l,True)
-    lfac = np.sqrt((2*l+1)/(np.pi*2**(l+2)))
-    if l<=0:
+    if l<=1:
         return np.eye(nsph,dtype=np.float64)
     else:
         b = np.zeros((nsph,ncart),dtype=np.float64)
         for (i,j),v in s2cdict[l]:
             b[i,j] = v
-        b = np.sign(b)*np.sqrt(np.abs(b)*lfac)
-        return b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l)
-
-
-def debug_transform(l):
-    ncart = shsze(l,False)
-    nsph  = shsze(l,True)
-    lfac = np.sqrt((2*l+1)/(np.pi*2**(l+2)))
-    if l<=0:
-        return np.eye(nsph,dtype=np.float64)
-    else:
-        b = np.zeros((nsph,ncart),dtype=np.float64)
-        for (i,j),v in s2cdict[l]:
-            b[i,j] = v
-        b = np.sign(b)*np.sqrt(np.abs(b)*lfac)
-
-        print(b)
-        print(pyscf_to_gms_order(l))
-        print(lm_cart_rescale(l))
-
-        print(b @ pyscf_to_gms_order(l))
-        print(b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l))
-        print(b @ lm_cart_rescale(l) @ pyscf_to_gms_order(l))
-
-        return b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l) #t1 t2
-        #return b @ lm_cart_rescale(l) @ pyscf_to_gms_order(l) # t3 t4
-
+        b = np.sign(b)*np.sqrt(np.abs(b))*lscale(l)
+        return (b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l))
 
 
 def shsze(l,is_sph):
