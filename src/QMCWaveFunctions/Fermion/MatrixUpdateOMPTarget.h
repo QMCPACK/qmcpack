@@ -208,7 +208,7 @@ public:
                                   DualMatrix<Complex>& mw_dspin,
                                   int rowchanged,
                                   std::vector<GT>& grad_now,
-                                  std::vector<Value>& spingrad_now)
+                                  std::vector<Complex>& spingrad_now)
   {
     auto& engine_leader     = engines.getLeader();
     auto& buffer_H2D        = engine_leader.mw_mem_->buffer_H2D;
