@@ -74,6 +74,7 @@ public:
     std::vector<Grad> grad_new_local;
     // multi walker of spingrads
     std::vector<Value> spingrad_new_local;
+    // mw spin gradients of orbitals, matrix is [nw][norb]
     DualMatrix<ComplexType> mw_dspin;
   };
 

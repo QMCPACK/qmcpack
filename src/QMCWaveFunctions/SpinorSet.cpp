@@ -157,17 +157,19 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
   auto& up_spo_leader             = up_spo_list.getLeader();
   auto& dn_spo_leader             = dn_spo_list.getLeader();
 
-  ValueVector sized_val(OrbitalSetSize);
-  GradVector sized_grad(OrbitalSetSize);
-  std::vector<ValueVector> mw_up_psi_work(nw, sized_val), mw_dn_psi_work(nw, sized_val);
-  std::vector<GradVector> mw_up_dpsi_work(nw, sized_grad), mw_dn_dpsi_work(nw, sized_grad);
-  std::vector<ValueVector> mw_up_d2psi_work(nw, sized_val), mw_dn_d2psi_work(nw, sized_val);
-  auto up_psi_v_list   = makeRefVector<ValueVector>(mw_up_psi_work);
-  auto dn_psi_v_list   = makeRefVector<ValueVector>(mw_dn_psi_work);
-  auto up_dpsi_v_list  = makeRefVector<GradVector>(mw_up_dpsi_work);
-  auto dn_dpsi_v_list  = makeRefVector<GradVector>(mw_dn_dpsi_work);
-  auto up_d2psi_v_list = makeRefVector<ValueVector>(mw_up_d2psi_work);
-  auto dn_d2psi_v_list = makeRefVector<ValueVector>(mw_dn_d2psi_work);
+  RefVector<ValueVector> up_psi_v_list, dn_psi_v_list;
+  RefVector<GradVector> up_dpsi_v_list, dn_dpsi_v_list;
+  RefVector<ValueVector> up_d2psi_v_list, dn_d2psi_v_list;
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& spo = spo_list.getCastedElement<SpinorSet>(iw);
+    up_psi_v_list.push_back(spo.psi_work_up);
+    dn_psi_v_list.push_back(spo.psi_work_down);
+    up_dpsi_v_list.push_back(spo.dpsi_work_up);
+    dn_dpsi_v_list.push_back(spo.dpsi_work_down);
+    up_d2psi_v_list.push_back(spo.d2psi_work_up);
+    dn_d2psi_v_list.push_back(spo.d2psi_work_down);
+  }
 
   up_spo_leader.mw_evaluateVGL(up_spo_list, P_list, iat, up_psi_v_list, up_dpsi_v_list, up_d2psi_v_list);
   dn_spo_leader.mw_evaluateVGL(dn_spo_list, P_list, iat, dn_psi_v_list, dn_dpsi_v_list, dn_d2psi_v_list);

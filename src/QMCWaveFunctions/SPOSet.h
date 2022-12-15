@@ -276,7 +276,8 @@ public:
    * @param psi_v_list the list of value vector pointers in a walker batch
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
-   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   * @param mw_dspin is a dual matrix of spin gradients [nw][norb]
+   * Note that at the end of the function, the host and device data are synchronized
    */
   virtual void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
