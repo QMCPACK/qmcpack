@@ -817,12 +817,14 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
 {
+/* Uncomment when MatrixDelayedUpdateCUDA::mw_evalGradWithSpin is implemented
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
 #endif
+*/
   test_DiracDeterminantBatched_spinor_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
