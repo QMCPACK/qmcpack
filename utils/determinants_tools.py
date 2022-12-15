@@ -143,6 +143,9 @@ if __name__ == '__main__':
     parser.add_argument("-s", "--silent",
         help="Disable check", action="store_true")
 
+    parser.add_argument("--transform",
+        help="Transform a HDF5 that uses signed integers to unsigned integers.", action="store_true")
+
     args = parser.parse_args()
 
     # Run the unit test if needed
@@ -153,7 +156,9 @@ if __name__ == '__main__':
             import sys
             sys.exit(1)
 
-    open_mode = 'a'
+    open_mode = 'r'
+    if args.transform:
+        open_mode = 'a'
     with h5py.File(args.h5path, open_mode) as f:
         alpha_group = 'MultiDet/CI_Alpha'
         if alpha_group not in f:
@@ -163,13 +168,11 @@ if __name__ == '__main__':
             beta_group = 'MultiDet/CI_1'
 
         bit_kind_size = f[alpha_group].dtype.itemsize * 8
-        print(f[alpha_group].dtype)
 
         # We sanitize the determinants. Aka we transform any negative integers, into the proper unsigned one.
         i_alpha= (sanitize(d,bit_kind_size) for d in f[alpha_group])
         i_beta= (sanitize(d,bit_kind_size) for d in f[beta_group])
-        if f[alpha_group].dtype == 'int64':
-            print("This HDF5 file uses signed 64 bit integers (int64) to represent the determinants. QMCPACK expects unsigned integers (uint64) so we are transforming to unsigned integers.")
+        if args.transform:
             alpha_dets = np.array([i for i in i_alpha], dtype=np.uint64)
             del f[alpha_group]
             f.create_dataset(alpha_group, data=alpha_dets)
@@ -179,6 +182,9 @@ if __name__ == '__main__':
             # regenerate iterators
             i_alpha= (sanitize(d,bit_kind_size) for d in f[alpha_group])
             i_beta= (sanitize(d,bit_kind_size) for d in f[beta_group])
+
+        if f[alpha_group].dtype == 'int64':
+            raise TypeError("This HDF5 file uses signed 64 bit integers (int64) to represent the determinants. QMCPACK expects unsigned integers (uint64) this can cause issues when used in qmcpack.")
 
         i_det = zip(i_alpha, i_beta)
 
