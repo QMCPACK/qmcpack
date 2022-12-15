@@ -249,7 +249,8 @@ public:
     {
       const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
       const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
-      Value grad_x(0), grad_y(0), grad_z(0), spingrad(0);
+      Value grad_x(0), grad_y(0), grad_z(0);
+      Complex spingrad(0);
       PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
       for (int iorb = 0; iorb < norb; iorb++)
       {
