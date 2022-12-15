@@ -134,6 +134,25 @@ inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_p
 }
 
 template<typename T>
+inline bool h5d_check_type(hid_t grp, const std::string& aname)
+{
+  if (grp < 0)
+    return true;
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
+  if (h1 < 0)
+    return false;
+  T temp;
+  hid_t h5d_type_id     = get_h5_datatype(temp);
+  hid_t datatype        = H5Dget_type(h1);
+  htri_t equality_check = H5Tequal(datatype, h5d_type_id);
+  if (equality_check > 0)
+  {
+    return true;
+  }
+  return false;
+}
+
+template<typename T>
 inline bool h5d_write(hid_t grp,
                       const std::string& aname,
                       hsize_t ndims,
