@@ -56,20 +56,9 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
       number_of_particles_(num_ptcls),
       myComm(c),
       currentConfigNumber(0),
-      RootName(aroot),
-      RemoteData(2)
-//       , fw_out(myComm)
+      RootName(aroot)
 {
   block = -1;
-  //     //FileName=myComm->getName()+hdf::config_ext;
-  //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
-  //     std::string ConfigFileName=myComm->getName()+".storeConfig.h5";
-  //     HDFVersion cur_version;
-  //     int dim=OHMMS_DIM;
-  //     fw_out.create(ConfigFileName);
-  //     fw_out.write(cur_version.version,hdf::version);
-  //     fw_out.write(number_of_particles_,"NumberElectrons");
-  //     fw_out.write(dim,"DIM");
 }
 
 /** Destructor writes the state of random numbers and close the file */
@@ -120,14 +109,13 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
   if (nblock > block)
   {
     RemoteData[0].resize(wb * W.getActiveWalkers());
-    W.putConfigurations(RemoteData[0].data());
+    RemoteDataW[0].resize(W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0].data(), RemoteDataW[0].data());
     block = nblock;
   }
 
   number_of_walkers_ = W.WalkerOffsets[myComm->size()];
   hout.write(number_of_walkers_, hdf::num_walkers);
-
-  std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
 
   if (hout.is_parallel())
   {
@@ -152,10 +140,18 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       hout.write(slab, "walker_partition");
     }
     { // write walker configuration
+      std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()]), 0, 0};
       hyperslab_proxy<BufferType, 3> slab(RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);
+    }
+    {
+      std::array<size_t, 1> gcounts{number_of_walkers_};
+      std::array<size_t, 1> counts{W.getActiveWalkers()};
+      std::array<size_t, 1> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()])};
+      hyperslab_proxy<std::vector<QMCTraits::FullPrecRealType>, 1> slab(RemoteDataW[0], gcounts, counts, offsets);
+      hout.write(slab, hdf::walker_weights);
     }
   }
   else
@@ -172,106 +168,25 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       if (!myComm->rank())
         RemoteData[1].resize(wb * W.WalkerOffsets[myComm->size()]);
       mpi::gatherv(*myComm, RemoteData[0], RemoteData[1], counts, displ);
+      // update counts and displ for gathering walker weights
+      for (int i = 0; i < myComm->size(); ++i)
+      {
+        counts[i] = (W.WalkerOffsets[i + 1] - W.WalkerOffsets[i]);
+        displ[i]  = W.WalkerOffsets[i];
+      }
+      if (!myComm->rank())
+        RemoteDataW[1].resize(W.WalkerOffsets[myComm->size()]);
+      mpi::gatherv(*myComm, RemoteDataW[0], RemoteDataW[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
-    hout.writeSlabReshaped(RemoteData[buffer_id], gcounts, hdf::walkers);
+    {
+      std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
+      hout.writeSlabReshaped(RemoteData[buffer_id], gcounts, hdf::walkers);
+    }
+    {
+      std::array<size_t, 1> gcounts{number_of_walkers_};
+      hout.writeSlabReshaped(RemoteDataW[buffer_id], gcounts, hdf::walker_weights);
+    }
   }
 }
-
-/*
-bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
-{
-//     std::string ConfigFileName=myComm->getName()+".storeConfig.h5";
-//     fw_out.open(ConfigFileName);
-//
-//     if (myComm->size()==1)
-//     {
-//       for (int i=0; i<FWO.ForwardWalkingHistory.size(); i++ )
-//       {
-//         int fwdata_size=FWO.ForwardWalkingHistory[i]->size();
-//         std::stringstream sstr;
-//         sstr<<"Block_"<<currentConfigNumber;
-//         fw_out.push(sstr.str());//open the group
-//
-//         std::vector<float> posVecs;
-//         //reserve enough space
-//         std::vector<long> IDs(fwdata_size,0);
-//         std::vector<long> ParentIDs(fwdata_size,0);
-//         std::vector<float>::iterator tend(posVecs.begin());
-//         for (int j=0;j<fwdata_size;j++)
-//         {
-//           const ForwardWalkingData& fwdata(FWO(i,j));
-//           IDs[j]=fwdata.ID;
-//           ParentIDs[j]=fwdata.ParentID;
-//           fwdata.append(posVecs);
-//         }
-//         fw_out.write(posVecs,"Positions");
-//         fw_out.write(IDs,"WalkerID");
-//         fw_out.write(ParentIDs,"ParentID");
-//         fw_out.write(fwdata_size,hdf::num_walkers);
-//
-//         fw_out.pop();//close the group
-//         ++currentConfigNumber;
-//       }
-//     }
-// #if defined(HAVE_MPI)
-//     else
-//     {
-//       const int n3=number_of_particles_*OHMMS_DIM;
-//       for (int i=0; i<FWO.ForwardWalkingHistory.size(); i++ )
-//       {
-//         int fwdata_size=FWO.ForwardWalkingHistory[i]->size();
-//         std::stringstream sstr;
-//         sstr<<"Block_"<<currentConfigNumber;
-//         fw_out.push(sstr.str());//open the group
-//
-//         std::vector<int> counts(myComm->size());
-//         mpi::all_gather(*myComm,fwdata_size,counts);
-//
-//         std::vector<float> posVecs;
-//         //reserve space to minimize the allocation
-//         posVecs.reserve(FWO.number_of_walkers_*n3);
-//         std::vector<long> myIDs(fwdata_size),pIDs(fwdata_size);
-//         std::vector<float>::iterator tend(posVecs.begin());
-//         for (int j=0;j<fwdata_size;j++)
-//         {
-//           const ForwardWalkingData& fwdata(FWO(i,j));
-//           myIDs[j]=fwdata.ID;
-//           pIDs[j]=fwdata.ParentID;
-//           fwdata.append(posVecs);
-//         }
-//         std::vector<int> offsets(myComm->size()+1,0);
-//         for(int i=0; i<myComm->size();++i) offsets[i+1]=offsets[i]+counts[i];
-//         fwdata_size=offsets.back();
-//         fw_out.write(fwdata_size,hdf::num_walkers);
-//
-//         std::vector<long> globalIDs;
-//         if(myComm->rank()==0) globalIDs.resize(fwdata_size);
-//
-//         //collect WalkerID
-//         mpi::gatherv(*myComm, myIDs, globalIDs, counts, offsets);
-//         fw_out.write(globalIDs,"WalkerID");
-//         //collect ParentID
-//         mpi::gatherv(*myComm, pIDs, globalIDs, counts, offsets);
-//         fw_out.write(globalIDs,"ParentID");
-//
-//         for(int i=0; i<counts.size();++i) counts[i]*=n3;
-//         for(int i=0; i<offsets.size();++i) offsets[i]*=n3;
-//         std::vector<float> gpos;
-//         if(myComm->rank()==0) gpos.resize(offsets.back());
-//         mpi::gatherv(*myComm, posVecs, gpos, counts, offsets);
-//
-//         fw_out.write(gpos,"Positions");
-//
-//         fw_out.pop();//close the group
-//         ++currentConfigNumber;
-//       }
-//     }
-// #endif
-//     fw_out.close();
-//     FWO.clearConfigsForForwardWalking();
-//
-    return true;
-}*/
-
 } // namespace qmcplusplus

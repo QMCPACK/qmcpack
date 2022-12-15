@@ -61,14 +61,9 @@ private:
   ///PooledData<T> is used to define the shape of multi-dimensional array
   using BufferType = PooledData<OHMMS_PRECISION>;
   std::vector<Communicate::request> myRequest;
-  std::vector<BufferType> RemoteData;
+  std::array<BufferType, 2> RemoteData;
+  std::array<std::vector<QMCTraits::FullPrecRealType>, 2> RemoteDataW;
   int block;
-
-  //     //define some types for the FW collection
-  //     using FWBufferType = std::vector<ForwardWalkingData>;
-  //     std::vector<FWBufferType*> FWData;
-  //     std::vector<std::vector<int> > FWCountData;
-
   void write_configuration(const WalkerConfigurations& W, hdf_archive& hout, int block);
 };
 
