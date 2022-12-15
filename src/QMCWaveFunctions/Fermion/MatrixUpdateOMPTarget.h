@@ -236,7 +236,7 @@ public:
     auto* __restrict__ grads_value_v_ptr     = grads_value_v.data();
     auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
     auto* buffer_H2D_ptr                     = buffer_H2D.data();
-    auto* mw_dspin_ptr                       = mw_dspin.data();
+    auto* mw_dspin_ptr                       = mw_dspin.device_data();
 
     //Note that mw_dspin should already be in sync between device and host...updateTo was called in
     //SPOSet::mw_evaluateVGLWithSpin to sync
@@ -244,7 +244,7 @@ public:
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
                     map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()]) \
-                    use_device_ptr(mw_dspin_ptr)")
+                    is_device_ptr(mw_dspin_ptr)")
     for (int iw = 0; iw < nw; iw++)
     {
       const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
