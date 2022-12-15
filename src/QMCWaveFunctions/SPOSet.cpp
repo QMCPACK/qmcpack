@@ -111,7 +111,7 @@ void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<ValueVector>& d2psi_v_list,
                                     DualMatrix<ComplexType>& mw_dspin) const
 {
-  throw std::runtime_error(getClassName() + "::mw_evaluateVGLandDetRatioGradsWithSpin() is not supported. \n");
+  throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
 }
 
 void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
