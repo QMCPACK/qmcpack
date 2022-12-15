@@ -53,6 +53,10 @@ def debug_pyscf_to_gms_order(l):
     print(m)
     return m
 
+# this data was generated using pyscf.gto.cart2sph
+# for each ((i,j), v) in one of these lists, the corresponding matrix element of the cart2sph array is
+#     sign(v) * sqrt(|v|*(2*l+1)/(pi*2^(l+2)))
+
 s2cdict = {
          #0:[((0, 0), 1.0)],
          #1:[((0, 0), 2.0), 
@@ -231,6 +235,12 @@ s2cdict = {
 def lm_cart_rescale(l):
     '''
     rescaling of certain functions within shells
+    these arise due to different normalization factors for the different Cartesian functions
+    a Cartesian GTO:
+       x^(n_x) y^(n_y) z^(n_z) exp(-a r^2)
+    is relatively normalized (i.e. relative to other function with the same shell)
+    by a factor of:
+       product((2*n_k-1)!! for n_k in (n_x, n_y, n_z))
     '''
     b = np.ones(shsze(l,False))
     if l==2:
@@ -247,10 +257,24 @@ def lm_cart_rescale(l):
         b[3:9]   *= np.sqrt(35.0/3.0)  # xxxxy
         b[9:15]  *= np.sqrt(5.0)  # xxxyy
         b[15:18] *= np.sqrt(5.0/3.0)  # xxxyz
+    elif l==6:
+        b[:3]    *= np.sqrt(385.0)     # xxxxxx
+        b[3:9]   *= np.sqrt(35.0)      # xxxxxy
+        b[9:15]  *= np.sqrt(35.0/3.0)  # xxxxyy
+        b[15:18] *= np.sqrt(35.0/9.0)  # xxxxyz
+        b[18:21] *= np.sqrt(25.0/3.0)  # xxxyyy
+        b[21:27] *= np.sqrt(5.0/3.0)   # xxxyyz
+    else:
+        raise NotImplementedError('l>6 not currently supported')
 
     return np.diag(b)
 
 def lscale(l):
+    '''
+    overall scaling on shell
+
+
+    '''
     if l<=1:
         return 1
     elif l==2:
@@ -259,8 +283,12 @@ def lscale(l):
         return 1.0/(2*np.sqrt(30))
     elif l==4:
         return 1.0/(4*np.sqrt(35))
+    elif l==5:
+        return 1.0/(4*np.sqrt(210))
+    elif l==6:
+        return 1.0/(8*np.sqrt(385))
     else:
-        return 1
+        raise NotImplementedError('l>6 not currently supported')
 
 def transform_block_s2c(l):
     '''
@@ -484,9 +512,9 @@ if __name__ == '__main__':
 
     parser.add_argument('input_h5path', type=str, help='h5 file to convert')
     parser.add_argument('-o','--output', type=str, help='output h5 file')
+    #parser.add_argument('--debug', action='store_true', help='debug')
 
     args = parser.parse_args()
 
     qh5 = qmch5(args.input_h5path)
     qh5.generate_h5(newpath=args.output)
-
