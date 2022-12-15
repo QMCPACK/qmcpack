@@ -236,15 +236,17 @@ public:
     auto* __restrict__ grads_value_v_ptr     = grads_value_v.data();
     auto* __restrict__ spingrads_value_v_ptr = spingrads_value_v.data();
     auto* buffer_H2D_ptr                     = buffer_H2D.data();
-    auto* mw_dspin_ptr                       = mw_dspin.device_data();
+    auto* mw_dspin_ptr                       = mw_dspin.data();
 
     //Note that mw_dspin should already be in sync between device and host...updateTo was called in
     //SPOSet::mw_evaluateVGLWithSpin to sync
+    //Also note that since mw_dspin is Dual, I can just use mw_dpsin.data() above and then use directly inside
+    //then offload region. OMP will figure out the correct translation to the device address, i.e. no 
+    //need to include in the PRAGMA_OFFLOAD below
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
                     map(always, from: grads_value_v_ptr[:grads_value_v.size()]) \
-                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()]) \
-                    is_device_ptr(mw_dspin_ptr)")
+                    map(always, from: spingrads_value_v_ptr[:spingrads_value_v.size()])")
     for (int iw = 0; iw < nw; iw++)
     {
       const Value* __restrict__ invRow_ptr    = reinterpret_cast<const Value**>(buffer_H2D_ptr)[iw];
