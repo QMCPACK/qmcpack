@@ -272,10 +272,11 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if (ecp.pp_nonloc)
           {
-            hasNonLocalPot            = true;
             if (!do_randomize_grid)
-              app_warning() << "NLPP grid randomization is turned off.  This setting should only be used for testing." << std::endl;
+              app_warning() << "NLPP grid randomization is turned off.  This setting should only be used for testing."
+                            << std::endl;
             ecp.pp_nonloc->set_randomize_grid(do_randomize_grid);
+            hasNonLocalPot            = true;
             nonLocalPot[speciesIndex] = std::move(ecp.pp_nonloc);
           }
           if (ecp.pp_so)

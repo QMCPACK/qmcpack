@@ -22,7 +22,9 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true) {}
+NonLocalECPComponent::NonLocalECPComponent()
+    : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true)
+{}
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
@@ -43,10 +45,7 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete VP;
 }
 
-void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid)
-{
-  do_randomize_grid_ = do_randomize_grid;
-}
+void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid) { do_randomize_grid_ = do_randomize_grid; }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
@@ -807,7 +806,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
   for (int j = 0; j < nknot; j++)
   {
-
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 
@@ -878,11 +876,11 @@ void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
       cps(std::cos(psi));
   TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
                   -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
-    for (int i = 0; i < sgridxyz_m.size(); i++)
-      if (do_randomize_grid_)
-        rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
-      else
-        rrotsgrid_m[i] = sgridxyz_m[i];
+  for (int i = 0; i < sgridxyz_m.size(); i++)
+    if (do_randomize_grid_)
+      rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+    else
+      rrotsgrid_m[i] = sgridxyz_m[i];
 }
 
 template<typename T>
@@ -899,9 +897,9 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
   while (it != it_end)
   {
     if (do_randomize_grid_)
-     *jt = dot(rmat, *it);
+      *jt = dot(rmat, *it);
     else
-     *jt = *it;
+      *jt = *it;
     ++it;
     ++jt;
   }
