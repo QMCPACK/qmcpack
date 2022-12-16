@@ -93,7 +93,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   HDFVersion version(0, 4);
   HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, c, version);
-  bool okay = hinp.read_hdf5("walker_test");
+  bool okay = hinp.read_hdf5("walker_test.config.h5");
   REQUIRE(okay);
 
   REQUIRE(wc_list2.getActiveWalkers() == 2);
