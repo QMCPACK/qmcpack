@@ -28,33 +28,35 @@ using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
 using GridType       = LRCoulombSingleton::GridType;
 using RadFunctorType = LRCoulombSingleton::RadFunctorType;
 
+
 DensityEstimator::DensityEstimator(ParticleSet& elns)
 {
   update_mode_.set(COLLECTABLE, 1);
-  Periodic = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
+  periodic_ = (elns.getLattice().SuperCellEnum != SUPERCELL_OPEN);
   for (int dim = 0; dim < OHMMS_DIM; ++dim)
   {
-    density_max[dim] = elns.getLattice().Length[dim];
-    ScaleFactor[dim] = 1.0 / elns.getLattice().Length[dim];
+    density_max_[dim]  = elns.getLattice().Length[dim];
+    scale_factor_[dim] = 1.0 / elns.getLattice().Length[dim];
   }
 }
+
+std::string DensityEstimator::getClassName() const { return "DensityEstimator"; }
 
 void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
   RealType wgt = t_walker_->Weight;
-  if (Periodic)
+  if (periodic_)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)
     {
       PosType ru;
       ru    = P.getLattice().toUnit(P.R[iat]);
-      int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-      int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-      int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+      int i = static_cast<int>(delta_inv_[0] * (ru[0] - std::floor(ru[0])));
+      int j = static_cast<int>(delta_inv_[1] * (ru[1] - std::floor(ru[1])));
+      int k = static_cast<int>(delta_inv_[2] * (ru[2] - std::floor(ru[2])));
       P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
-      //	P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
     }
   }
   else
@@ -64,16 +66,14 @@ DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
       PosType ru;
       for (int dim = 0; dim < OHMMS_DIM; dim++)
       {
-        //ru[dim]=(P.R[iat][dim]-density_min[dim])/(density_max[dim]-density_min[dim]);
-        ru[dim] = (P.R[iat][dim] - density_min[dim]) * ScaleFactor[dim];
+        ru[dim] = (P.R[iat][dim] - density_min_[dim]) * scale_factor_[dim];
       }
       if (ru[0] > 0.0 && ru[1] > 0.0 && ru[2] > 0.0 && ru[0] < 1.0 && ru[1] < 1.0 && ru[2] < 1.0)
       {
-        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+        int i = static_cast<int>(delta_inv_[0] * (ru[0] - std::floor(ru[0])));
+        int j = static_cast<int>(delta_inv_[1] * (ru[1] - std::floor(ru[1])));
+        int k = static_cast<int>(delta_inv_[2] * (ru[2] - std::floor(ru[2])));
         P.Collectables[getGridIndex(i, j, k)] += wgt; //1.0;
-        //	  P.Collectables[getGridIndexPotential(i,j,k)]-=1.0;
       }
     }
   }
@@ -84,7 +84,7 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
 {
   int nw = W.WalkerList.size();
   int N  = W.getTotalNum();
-  if (Periodic)
+  if (periodic_)
   {
     for (int iw = 0; iw < nw; iw++)
     {
@@ -94,28 +94,24 @@ void DensityEstimator::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>
       {
         PosType ru;
         ru = W.getLattice().toUnit(w.R[iat]);
-        // for (int dim=0; dim<OHMMS_DIM; dim++)
-        // {
-        //   ru[dim]=(w.R[iat][dim]-density_min[dim])*ScaleFactor[dim];
-        // }
-        int i = static_cast<int>(DeltaInv[0] * (ru[0] - std::floor(ru[0])));
-        int j = static_cast<int>(DeltaInv[1] * (ru[1] - std::floor(ru[1])));
-        int k = static_cast<int>(DeltaInv[2] * (ru[2] - std::floor(ru[2])));
+
+        const int i = static_cast<int>(delta_inv_[0] * (ru[0] - std::floor(ru[0])));
+        const int j = static_cast<int>(delta_inv_[1] * (ru[1] - std::floor(ru[1])));
+        const int k = static_cast<int>(delta_inv_[2] * (ru[2] - std::floor(ru[2])));
         W.Collectables[getGridIndex(i, j, k)] += weight;
       }
     }
   }
 }
 
+void DensityEstimator::addObservables(PropertySetType& plist) {}
+
 void DensityEstimator::addObservables(PropertySetType& plist, BufferType& collectables)
 {
   //current index
   my_index_ = collectables.current();
-  std::vector<RealType> tmp(NumGrids[OHMMS_DIM]);
+  std::vector<RealType> tmp(num_grids_[OHMMS_DIM]);
   collectables.add(tmp.begin(), tmp.end());
-  //potentialIndex=collectables.current();
-  //vector<RealType> tmp2(NumGrids[OHMMS_DIM]);
-  //collectables.add(tmp2.begin(),tmp2.end());
 }
 
 void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
@@ -123,21 +119,15 @@ void DensityEstimator::registerCollectables(std::vector<ObservableHelper>& h5des
   int loc = h5desc.size();
   std::vector<int> ng(OHMMS_DIM);
   for (int i = 0; i < OHMMS_DIM; ++i)
-    ng[i] = NumGrids[i];
+    ng[i] = num_grids_[i];
   h5desc.emplace_back(hdf_path{name_});
   auto& h5o = h5desc.back();
   h5o.set_dimensions(ng, my_index_);
 }
 
-void DensityEstimator::setObservables(PropertySetType& plist)
-{
-  //std::copy(density.first_address(),density.last_address(),plist.begin()+myDebugIndex);
-}
+void DensityEstimator::setObservables(PropertySetType& plist) {}
 
-void DensityEstimator::setParticlePropertyList(PropertySetType& plist, int offset)
-{
-  //std::copy(density.first_address(),density.last_address(),plist.begin()+myDebugIndex+offset);
-}
+void DensityEstimator::setParticlePropertyList(PropertySetType& plist, int offset) {}
 
 /** check xml elements
  *
@@ -145,25 +135,25 @@ void DensityEstimator::setParticlePropertyList(PropertySetType& plist, int offse
  */
 bool DensityEstimator::put(xmlNodePtr cur)
 {
-  Delta = 0.1;
+  delta_ = 0.1;
   std::vector<double> delta;
   std::string debug("no");
   std::string potential("no");
   OhmmsAttributeSet attrib;
   attrib.add(debug, "debug");
   attrib.add(potential, "potential");
-  attrib.add(density_min[0], "x_min");
-  attrib.add(density_min[1], "y_min");
-  attrib.add(density_min[2], "z_min");
-  attrib.add(density_max[0], "x_max");
-  attrib.add(density_max[1], "y_max");
-  attrib.add(density_max[2], "z_max");
-  attrib.add(Delta, "delta");
+  attrib.add(density_min_[0], "x_min");
+  attrib.add(density_min_[1], "y_min");
+  attrib.add(density_min_[2], "z_min");
+  attrib.add(density_max_[0], "x_max");
+  attrib.add(density_max_[1], "y_max");
+  attrib.add(density_max_[2], "z_max");
+  attrib.add(delta_, "delta");
   attrib.put(cur);
-  if (!Periodic)
+  if (!periodic_)
   {
     for (int dim = 0; dim < OHMMS_DIM; ++dim)
-      ScaleFactor[dim] = 1.0 / (density_max[dim] - density_min[dim]);
+      scale_factor_[dim] = 1.0 / (density_max_[dim] - density_min_[dim]);
   }
   resize();
   return true;
@@ -171,7 +161,7 @@ bool DensityEstimator::put(xmlNodePtr cur)
 
 bool DensityEstimator::get(std::ostream& os) const
 {
-  os << name_ << " bin =" << Delta << " bohrs " << std::endl;
+  os << name_ << " bin =" << delta_ << " bohrs " << std::endl;
   return true;
 }
 
@@ -185,15 +175,20 @@ void DensityEstimator::resize()
 {
   for (int i = 0; i < OHMMS_DIM; ++i)
   {
-    DeltaInv[i] = 1.0 / Delta[i];
-    NumGrids[i] = static_cast<int>(DeltaInv[i]);
-    if (NumGrids[i] < 2)
+    delta_inv_[i] = 1.0 / delta_[i];
+    num_grids_[i] = static_cast<int>(delta_inv_[i]);
+    if (num_grids_[i] < 2)
     {
       APP_ABORT("DensityEstimator::resize invalid bin size");
     }
   }
-  app_log() << " DensityEstimator bin_size= " << NumGrids << " delta = " << Delta << std::endl;
-  NumGrids[OHMMS_DIM] = NumGrids[0] * NumGrids[1] * NumGrids[2];
+  app_log() << " DensityEstimator bin_size= " << num_grids_ << " delta = " << delta_ << std::endl;
+  num_grids_[OHMMS_DIM] = num_grids_[0] * num_grids_[1] * num_grids_[2];
+}
+
+int DensityEstimator::getGridIndex(int i, int j, int k) const noexcept
+{
+  return my_index_ + k + num_grids_[2] * (j + num_grids_[1] * i);
 }
 
 } // namespace qmcplusplus
