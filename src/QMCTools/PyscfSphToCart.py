@@ -73,6 +73,20 @@ def debug_pyscf_to_gms_order(l):
 # this data was generated using pyscf.gto.cart2sph
 # for each ((i,j), v) in one of these lists, the corresponding matrix element of the cart2sph array is
 #     sign(v) * sqrt(|v|*(2*l+1)/(4*pi*2^(l)))
+#
+# equivalent to:
+#     import pyscf
+#     import numpy as np
+#     
+#     def s2c_scaled_nonzero(l,tol=1E-12):
+#         coefs = pyscf.gto.cart2sph(l)
+#         scaled_coefs = coefs**2 *((4*np.pi)*2**l / (2*l+1)) * np.sign(coefs)
+#         return [((i,j),cij.round(8)) 
+#                  for i,row in enumerate(scaled_coefs.T) 
+#                    for j,cij in enumerate(row) 
+#                      if abs(cij)>tol]
+#     
+#     s2cdict = {l:s2c_scaled_nonzero(l) for l in range(2,7)}
 
 s2cdict = {
          #0:[((0, 0), 1.0)],
