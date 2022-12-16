@@ -84,6 +84,7 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emn2.getNumScalarEstimators() == 0);
   EstimatorManagerNewTestAccess emnta2(emn2);
   CHECK(emnta2.getMainEstimator().getName() == "RMCLocalEnergyEstimator");
+
 }
 
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
