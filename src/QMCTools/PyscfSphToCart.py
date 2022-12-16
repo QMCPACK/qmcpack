@@ -14,7 +14,24 @@ import h5py
 import numpy as np
 import itertools
 import shutil
+import functools
 
+
+@functools.lru_cache()
+def doublefactorial(n):
+    if n>=2:
+        return n * doublefactorial(n-2)
+    else:
+        return 1
+
+@functools.lru_cache()
+def cartnorm(nxyz):
+    return np.product([doublefactorial(2*i-1) for i in nxyz])
+
+def cartnorm_str(s):
+    return cartnorm(tuple(s.count(i) for i in 'xyz'))
+
+@functools.lru_cache()
 def gms_cart_order(l):
     def sort1(s):
         # return single xyz string in gamess order
@@ -242,53 +259,11 @@ def lm_cart_rescale(l):
     by a factor of:
        product((2*n_k-1)!! for n_k in (n_x, n_y, n_z))
     '''
-    b = np.ones(shsze(l,False))
-    if l==2:
-        b[:3]    *= np.sqrt(3.0) # xx
-    elif l==3:
-        b[:3]    *= np.sqrt(15.0) # xxx
-        b[3:9]   *= np.sqrt(3.0)  # xxy
-    elif l==4:
-        b[:3]    *= np.sqrt(35.0) # xxxx
-        b[3:9]   *= np.sqrt(5.0)  # xxxy
-        b[9:12]  *= np.sqrt(3.0)  # xxyy
-    elif l==5:
-        b[:3]    *= np.sqrt(105.0) # xxxxx
-        b[3:9]   *= np.sqrt(35.0/3.0)  # xxxxy
-        b[9:15]  *= np.sqrt(5.0)  # xxxyy
-        b[15:18] *= np.sqrt(5.0/3.0)  # xxxyz
-    elif l==6:
-        b[:3]    *= np.sqrt(385.0)     # xxxxxx
-        b[3:9]   *= np.sqrt(35.0)      # xxxxxy
-        b[9:15]  *= np.sqrt(35.0/3.0)  # xxxxyy
-        b[15:18] *= np.sqrt(35.0/9.0)  # xxxxyz
-        b[18:21] *= np.sqrt(25.0/3.0)  # xxxyyy
-        b[21:27] *= np.sqrt(5.0/3.0)   # xxxyyz
-    else:
-        raise NotImplementedError('l>6 not currently supported')
-
-    return np.diag(b)
-
-def lscale(l):
-    '''
-    overall scaling on shell
-
-
-    '''
     if l<=1:
-        return 1
-    elif l==2:
-        return 1.0/(2*np.sqrt(3))
-    elif l==3:
-        return 1.0/(2*np.sqrt(30))
-    elif l==4:
-        return 1.0/(4*np.sqrt(35))
-    elif l==5:
-        return 1.0/(4*np.sqrt(210))
-    elif l==6:
-        return 1.0/(8*np.sqrt(385))
+        return np.eye(shsze(l,False))
     else:
-        raise NotImplementedError('l>6 not currently supported')
+        n0 = cartnorm_str('x'*l)
+        return np.diag(np.sqrt([cartnorm_str(si)/n0 for si in gms_cart_order(l)])) * (2.0)**(-0.5*l)
 
 def transform_block_s2c(l):
     '''
@@ -303,7 +278,7 @@ def transform_block_s2c(l):
         b = np.zeros((nsph,ncart),dtype=np.float64)
         for (i,j),v in s2cdict[l]:
             b[i,j] = v
-        b = np.sign(b)*np.sqrt(np.abs(b))*lscale(l)
+        b = np.sign(b)*np.sqrt(np.abs(b))
         return (b @ pyscf_to_gms_order(l) @ lm_cart_rescale(l))
 
 
