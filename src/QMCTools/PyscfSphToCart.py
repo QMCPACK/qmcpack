@@ -72,7 +72,7 @@ def debug_pyscf_to_gms_order(l):
 
 # this data was generated using pyscf.gto.cart2sph
 # for each ((i,j), v) in one of these lists, the corresponding matrix element of the cart2sph array is
-#     sign(v) * sqrt(|v|*(2*l+1)/(pi*2^(l+2)))
+#     sign(v) * sqrt(|v|*(2*l+1)/(4*pi*2^(l)))
 
 s2cdict = {
          #0:[((0, 0), 1.0)],
