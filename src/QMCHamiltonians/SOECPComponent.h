@@ -69,6 +69,7 @@ private:
   std::vector<ValueType> vrad;
   std::vector<RealType> sgridweight_m;
 
+  VirtualParticleSet* VP;
 
 public:
   SOECPComponent();
@@ -116,7 +117,8 @@ public:
 
   void print(std::ostream& os);
 
-  //void initVirtualParticle(const ParticleSet& qp){};
+  void initVirtualParticle(const ParticleSet& qp);
+  void deleteVirtualParticle();
 
   inline void setRmax(int rmax) { Rmax = rmax; }
   inline RealType getRmax() const { return Rmax; }

@@ -17,15 +17,32 @@
 
 namespace qmcplusplus
 {
-SOECPComponent::SOECPComponent() : lmax(0), nchannel(0), nknot(0), sknot(0), Rmax(-1) {}
+SOECPComponent::SOECPComponent() : lmax(0), nchannel(0), nknot(0), sknot(0), Rmax(-1), VP(nullptr) {}
 
 SOECPComponent::~SOECPComponent()
 {
   for (int i = 0; i < sopp_m.size(); i++)
     delete sopp_m[i];
+  if (VP)
+    delete VP;
 }
 
 void SOECPComponent::print(std::ostream& os) {}
+
+void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
+{
+  assert(VP == nullptr);
+  outputManager.pause();
+  VP = new VirtualParticleSet(qp, nknot);
+  outputManager.resume();
+}
+
+void SOECPComponent::deleteVirtualParticle()
+{
+  if (VP)
+    delete VP;
+  VP = nullptr;
+}
 
 void SOECPComponent::add(int l, RadialPotentialType* pp)
 {
