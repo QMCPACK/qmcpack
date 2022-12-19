@@ -53,6 +53,8 @@ public:
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
@@ -74,6 +76,8 @@ public:
     std::vector<Grad> grad_new_local;
     // multi walker of spingrads
     std::vector<Value> spingrad_new_local;
+    // mw spin gradients of orbitals, matrix is [nw][norb]
+    OffloadMatrix<ComplexType> mw_dspin;
   };
 
   /** constructor
@@ -149,6 +153,12 @@ public:
                    std::vector<Grad>& grad_now) const override;
 
   Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<Grad>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.
