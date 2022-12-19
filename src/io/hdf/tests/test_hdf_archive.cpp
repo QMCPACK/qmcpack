@@ -416,4 +416,5 @@ TEST_CASE("hdf_archive_dataset_type_checking", "[hdf]")
   REQUIRE(is_correct_type);
   is_correct_type = hd2.is_dataset_of_type<int64_t>(ds_tag);
   REQUIRE(is_correct_type == false);
+  REQUIRE_THROWS_AS(hd2.is_dataset_of_type<uint64_t>("tag_doesnt_exist"), std::runtime_error);
 }
