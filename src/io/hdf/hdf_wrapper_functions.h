@@ -145,6 +145,7 @@ inline bool h5d_check_type(hid_t grp, const std::string& aname)
   hid_t h5d_type_id     = get_h5_datatype(temp);
   hid_t datatype        = H5Dget_type(h1);
   htri_t equality_check = H5Tequal(datatype, h5d_type_id);
+  H5Dclose(h1);
   if (equality_check > 0)
   {
     return true;
