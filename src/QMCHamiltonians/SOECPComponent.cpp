@@ -62,6 +62,7 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
 {
   psiratio.resize(n);
   deltaV.resize(n);
+  deltaS.resize(n);
   vrad.resize(m);
   rrotsgrid_m.resize(n);
   nchannel = sopp_m.size();
@@ -125,18 +126,31 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
                                                                TrialWaveFunction& Psi,
                                                                int iel,
                                                                RealType r,
-                                                               const PosType& dr)
+                                                               const PosType& dr,
+                                                               int iat)
 {
-  //quadrature sum for angular integral
-  constexpr RealType fourpi = 2.0 * TWOPI;
-  for (int j = 0; j < nknot; j++)
+  buildQuadraturePointDeltas(r, dr, deltaV, snew - sold, deltaS);
+
+  if (VP)
   {
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
-    W.makeMoveWithSpin(iel, deltaV[j], snew - sold);
-    psiratio[j] = Psi.calcRatio(W, iel) * sgridweight_m[j] * fourpi;
-    W.rejectMove(iel);
-    Psi.resetPhaseDiff();
+    VP->makeMovesWithSpin(iel, W.R[iel], deltaV, W.spins[iel], deltaS, true, iat);
+    Psi.evaluateRatios(*VP, psiratio);
   }
+  else
+  {
+    //quadrature sum for angular integral
+    for (int j = 0; j < nknot; j++)
+    {
+      W.makeMoveWithSpin(iel, deltaV[j], deltaS[j]);
+      psiratio[j] = Psi.calcRatio(W, iel);
+      W.rejectMove(iel);
+      Psi.resetPhaseDiff();
+    }
+  }
+
+  //Need to add appropriate weight to psiratio
+  std::transform(psiratio.begin(), psiratio.end(), sgridweight_m.begin(), psiratio.begin(),
+                 [](auto& psi, auto& weight) { return psi * weight * 2.0 * TWOPI; });
 
   ComplexType angint(0.0);
   for (int j = 0; j < nknot; j++)
@@ -193,20 +207,33 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   for (int is = 1; is <= sknot - 1; is += 2)
   {
     RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr);
+    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
     sint += RealType(4. / 3.) * dS * angint;
   }
   for (int is = 2; is <= sknot - 2; is += 2)
   {
     RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr);
+    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
     sint += RealType(2. / 3.) * dS * angint;
   }
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr);
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr);
+  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr, iat);
+  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr, iat);
 
   RealType pairpot = std::real(sint) / TWOPI;
   return pairpot;
+}
+
+void SOECPComponent::buildQuadraturePointDeltas(RealType r,
+                                                const PosType& dr,
+                                                std::vector<PosType>& deltaV,
+                                                RealType ds,
+                                                std::vector<RealType>& deltaS) const
+{
+  for (int j = 0; j < nknot; j++)
+  {
+    deltaV[j] = r * rrotsgrid_m[j] - dr;
+    deltaS[j] = ds;
+  }
 }
 
 void SOECPComponent::randomize_grid(RandomGenerator& myRNG)

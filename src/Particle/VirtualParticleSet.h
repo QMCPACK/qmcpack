@@ -86,6 +86,14 @@ public:
                  bool sphere = false,
                  int iat     = -1);
 
+  void makeMovesWithSpin(int jel,
+                         const PosType& ref_pos,
+                         const std::vector<PosType>& deltaV,
+                         const RealType& ref_spin,
+                         const std::vector<RealType>& deltaS,
+                         bool sphere = false,
+                         int iat     = -1);
+
   static void mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                            const RefVector<const std::vector<PosType>>& deltaV_list,
                            const RefVector<const NLPPJob<RealType>>& joblist,

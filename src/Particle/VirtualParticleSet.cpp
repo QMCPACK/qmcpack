@@ -116,6 +116,31 @@ void VirtualParticleSet::makeMoves(int jel,
   update();
 }
 
+/// move virtual particles to new postions and update distance tables
+void VirtualParticleSet::makeMovesWithSpin(int jel,
+                                           const PosType& ref_pos,
+                                           const std::vector<PosType>& deltaV,
+                                           const RealType& ref_spin,
+                                           const std::vector<RealType>& deltaS,
+                                           bool sphere,
+                                           int iat)
+{
+  if (sphere && iat < 0)
+    throw std::runtime_error(
+        "VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
+  onSphere      = sphere;
+  refPtcl       = jel;
+  refSourcePtcl = iat;
+  assert(R.size() == deltaV.size());
+  assert(spins.size() == deltaS.size());
+  for (size_t ivp = 0; ivp < R.size(); ivp++)
+  {
+    R[ivp]     = ref_pos + deltaV[ivp];
+    spins[ivp] = ref_spin + deltaS[ivp];
+  }
+  update();
+}
+
 void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                                       const RefVector<const std::vector<PosType>>& deltaV_list,
                                       const RefVector<const NLPPJob<RealType>>& joblist,
