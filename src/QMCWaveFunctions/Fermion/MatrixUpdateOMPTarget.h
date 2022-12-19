@@ -205,7 +205,7 @@ public:
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
                                   const std::vector<const Value*>& dpsiM_row_list,
-                                  DualMatrix<Complex>& mw_dspin,
+                                  OffloadMatrix<Complex>& mw_dspin,
                                   int rowchanged,
                                   std::vector<GT>& grad_now,
                                   std::vector<Complex>& spingrad_now)

@@ -109,7 +109,7 @@ void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<ValueVector>& psi_v_list,
                                     const RefVector<GradVector>& dpsi_v_list,
                                     const RefVector<ValueVector>& d2psi_v_list,
-                                    DualMatrix<ComplexType>& mw_dspin) const
+                                    OffloadMatrix<ComplexType>& mw_dspin) const
 {
   throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
 }

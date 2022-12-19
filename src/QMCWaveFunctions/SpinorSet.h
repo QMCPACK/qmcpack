@@ -87,7 +87,7 @@ public:
                               const RefVector<ValueVector>& psi_v_list,
                               const RefVector<GradVector>& dpsi_v_list,
                               const RefVector<ValueVector>& d2psi_v_list,
-                              DualMatrix<ComplexType>& mw_dspin) const override;
+                              OffloadMatrix<ComplexType>& mw_dspin) const override;
 
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio

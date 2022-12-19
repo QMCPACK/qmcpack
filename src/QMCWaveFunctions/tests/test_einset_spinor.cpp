@@ -561,7 +561,7 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  SPOSet::DualMatrix<SPOSet::ComplexType> mw_dspin;
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
   mw_dspin.resize(2, OrbitalSetSize);
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 3; iat++)

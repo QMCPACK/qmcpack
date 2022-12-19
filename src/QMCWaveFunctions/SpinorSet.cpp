@@ -146,7 +146,7 @@ void SpinorSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_li
                                        const RefVector<ValueVector>& psi_v_list,
                                        const RefVector<GradVector>& dpsi_v_list,
                                        const RefVector<ValueVector>& d2psi_v_list,
-                                       DualMatrix<ComplexType>& mw_dspin) const
+                                       OffloadMatrix<ComplexType>& mw_dspin) const
 {
   auto& spo_leader = spo_list.getCastedLeader<SpinorSet>();
   auto& P_leader   = P_list.getLeader();

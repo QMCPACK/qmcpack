@@ -61,7 +61,7 @@ public:
 
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
   template<typename DT>
-  using DualMatrix = Matrix<DT, PinnedDualAllocator<DT>>;
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   /** constructor */
   SPOSet(const std::string& my_name);
@@ -285,7 +285,7 @@ public:
                                       const RefVector<ValueVector>& psi_v_list,
                                       const RefVector<GradVector>& dpsi_v_list,
                                       const RefVector<ValueVector>& d2psi_v_list,
-                                      DualMatrix<ComplexType>& mw_dspin) const;
+                                      OffloadMatrix<ComplexType>& mw_dspin) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
    *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return

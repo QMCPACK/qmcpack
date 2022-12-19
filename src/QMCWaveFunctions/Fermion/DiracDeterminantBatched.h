@@ -53,6 +53,8 @@ public:
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
@@ -75,7 +77,7 @@ public:
     // multi walker of spingrads
     std::vector<Value> spingrad_new_local;
     // mw spin gradients of orbitals, matrix is [nw][norb]
-    DualMatrix<ComplexType> mw_dspin;
+    OffloadMatrix<ComplexType> mw_dspin;
   };
 
   /** constructor

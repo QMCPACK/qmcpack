@@ -63,6 +63,8 @@ public:
   using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>; 
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -495,7 +497,7 @@ public:
   template<typename GT>
   static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
                                   const std::vector<const Value*>& dpsiM_row_list,
-                                  DualMatrix<Complex>& mw_dspin,
+                                  OffloadMatrix<Complex>& mw_dspin,
                                   const int rowchanged,
                                   std::vector<GT>& grad_now,
                                   std::vector<Complex>& spingrad_now)
