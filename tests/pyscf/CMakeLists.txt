@@ -6,7 +6,9 @@ include("${qmcpack_SOURCE_DIR}/CMake/run_pyscf.cmake")
 set(LAST_TEST_NAME "NONE")
 set(PYSCF_TEST_NAME "NONE")
 
-run_pyscf_test(pyscf-diamond_1x1x1_pp_LCAO ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs diamondC_1x1x1_pp_LCAO
+################################################################################
+
+run_pyscf_test(pyscf-diamond_1x1x1_pp_LCAO ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs/diamondC_1x1x1_pp diamondC_1x1x1_pp_LCAO
                PYSCF_TEST_NAME)
 
 set_tests_properties(${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5")
@@ -44,7 +46,9 @@ if(${THIS_TEST_NAME})
     PROPERTY LABELS "converter")
 endif()
 
-run_pyscf_test(pyscf-diamond_1x1x1_pp_Bspline ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs
+################################################################################
+
+run_pyscf_test(pyscf-diamond_1x1x1_pp_Bspline ${qmcpack_SOURCE_DIR}/examples/solids/pyscf-inputs/diamondC_1x1x1_pp
                diamondC_1x1x1_pp_Bspline PYSCF_TEST_NAME)
 
 set_tests_properties(${PYSCF_TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "successfully saved to QMCPACK HDF5")
@@ -69,3 +73,5 @@ if(${THIS_TEST_NAME})
   set_tests_properties(${THIS_TEST_NAME}-1-16 PROPERTIES DEPENDS ${LAST_TEST_NAME})
   set_property(TEST ${THIS_TEST_NAME}-1-16 APPEND PROPERTY LABELS "converter")
 endif()
+
+################################################################################
