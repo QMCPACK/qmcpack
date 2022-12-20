@@ -75,21 +75,16 @@ public:
 
   /** move virtual particles to new postions and update distance tables
      * @param jel reference particle that all the VP moves from
-     * @param ref_pos reference particle position
+     * @param p reference particle set
      * @param deltaV Position delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMoves(int jel,
-                 const PosType& ref_pos,
-                 const std::vector<PosType>& deltaV,
-                 bool sphere = false,
-                 int iat     = -1);
+  void makeMoves(int jel, const ParticleSet& p, const std::vector<PosType>& deltaV, bool sphere = false, int iat = -1);
 
   void makeMovesWithSpin(int jel,
-                         const PosType& ref_pos,
+                         const ParticleSet& p,
                          const std::vector<PosType>& deltaV,
-                         const RealType& ref_spin,
                          const std::vector<RealType>& deltaS,
                          bool sphere = false,
                          int iat     = -1);

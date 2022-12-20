@@ -109,7 +109,7 @@ void test_DiracDeterminantBatched_first()
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
-  VP.makeMoves(1, elec.R[1], newpos2);
+  VP.makeMoves(1, elec, newpos2);
   ddb.evaluateRatios(VP, ratios2);
 
   CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
@@ -817,7 +817,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
 {
-/* Uncomment when MatrixDelayedUpdateCUDA::mw_evalGradWithSpin is implemented
+  /* Uncomment when MatrixDelayedUpdateCUDA::mw_evalGradWithSpin is implemented
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
