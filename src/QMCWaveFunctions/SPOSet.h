@@ -29,6 +29,7 @@
 #include "type_traits/CUDATypes.h"
 #endif
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {
@@ -59,6 +60,8 @@ public:
   using SPOPool_t   = std::map<std::string, SPOSet*>;
 
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   /** constructor */
   SPOSet(const std::string& my_name);
@@ -273,7 +276,8 @@ public:
    * @param psi_v_list the list of value vector pointers in a walker batch
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
-   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   * @param mw_dspin is a dual matrix of spin gradients [nw][norb]
+   * Note that the device side of mw_dspin is up to date
    */
   virtual void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -281,7 +285,7 @@ public:
                                       const RefVector<ValueVector>& psi_v_list,
                                       const RefVector<GradVector>& dpsi_v_list,
                                       const RefVector<ValueVector>& d2psi_v_list,
-                                      const RefVector<ValueVector>& dspin_v_list) const;
+                                      OffloadMatrix<ComplexType>& mw_dspin) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
    *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return

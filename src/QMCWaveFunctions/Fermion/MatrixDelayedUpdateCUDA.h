@@ -44,6 +44,7 @@ class MatrixDelayedUpdateCUDA
 public:
   using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
   using Value         = typename WFT::Value;
+  using Complex       = typename WFT::Complex;
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
@@ -62,6 +63,8 @@ public:
   using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>; 
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -489,6 +492,17 @@ public:
 
     for (int iw = 0; iw < nw; iw++)
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
+  }
+
+  template<typename GT>
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  const std::vector<const Value*>& dpsiM_row_list,
+                                  OffloadMatrix<Complex>& mw_dspin,
+                                  const int rowchanged,
+                                  std::vector<GT>& grad_now,
+                                  std::vector<Complex>& spingrad_now)
+  {
+    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
   }
 
   /** Update the "local" psiMinv_ on the device.

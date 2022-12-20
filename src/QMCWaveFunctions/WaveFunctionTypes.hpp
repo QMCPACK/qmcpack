@@ -38,6 +38,7 @@ struct WaveFunctionTypes final
   using FullPrecValue = FP_VALUE;
   using Real          = RealAlias<Value>;
   using FullPrecReal  = RealAlias<FullPrecValue>;
+  using Complex       = std::complex<Real>;
   // This is all that belongs here so far.
   using PsiValue = FP_VALUE;
   using Grad     = TinyVector<Value, OHMMS_DIM>;
