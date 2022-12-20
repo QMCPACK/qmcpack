@@ -409,7 +409,7 @@ TEST_CASE("hdf_archive_dataset_existence_checking", "[hdf]")
   hd.close();
 
   hdf_archive hd2;
-  okay = hd2.open("test_dataset_type_checking.hdf");
+  okay = hd2.open("test_dataset_existence_checking.hdf");
   REQUIRE(okay);
 
   REQUIRE(hd2.is_dataset(ds_tag));
