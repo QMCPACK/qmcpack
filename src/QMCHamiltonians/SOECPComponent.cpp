@@ -152,7 +152,10 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
 
   //Need to add appropriate weight to psiratio
   std::transform(psiratio.begin(), psiratio.end(), sgridweight_m.begin(), psiratio.begin(),
-                 [](auto& psi, auto& weight) { return psi * weight * 2.0 * TWOPI; });
+                 [](auto& psi, auto& weight) {
+                   RealType fourpi = 2.0 * TWOPI;
+                   return psi * weight * fourpi;
+                 });
 
   ComplexType angint(0.0);
   for (int j = 0; j < nknot; j++)
