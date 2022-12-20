@@ -135,7 +135,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   if (VP)
   {
     // Compute ratios with VP
-    VP->makeMoves(iel, W, deltaV, true, iat);
+    VP->makeMoves(iel, W.R[iel], W.spins[iel], deltaV, true, iat);
     if (use_DLA)
       psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
     else
@@ -310,7 +310,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W, deltaV, true, iat);
+    VP->makeMoves(iel, W.R[iel], W.spins[iel], deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -460,7 +460,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W, deltaV, true, iat);
+    VP->makeMoves(iel, W.R[iel], W.spins[iel], deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else

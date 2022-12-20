@@ -174,7 +174,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
     std::vector<ValueType> ratios2(2);
     newpos2[0] = newpos - elec_.R[1];
     newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
-    VP.makeMoves(1, elec_, newpos2);
+    VP.makeMoves(1, elec_.R[1], elec_.spins[1], newpos2);
     twf.evaluateRatios(VP, ratios2);
 
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));

@@ -544,12 +544,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       const auto& dist  = myTable.getDistRow(jel);
       const auto& displ = myTable.getDisplRow(jel);
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
-      {
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
-        {
           Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
-        }
-      }
     }
     REQUIRE(Value1 == Approx(-0.3214176962));
   };

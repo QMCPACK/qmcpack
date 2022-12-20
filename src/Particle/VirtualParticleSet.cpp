@@ -99,7 +99,8 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
 
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMoves(int jel,
-                                   const ParticleSet& p,
+                                   const PosType& ref_pos,
+                                   const RealType ref_spin,
                                    const std::vector<PosType>& deltaV,
                                    bool sphere,
                                    int iat)
@@ -113,15 +114,16 @@ void VirtualParticleSet::makeMoves(int jel,
   assert(R.size() == deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
-    R[ivp]     = p.R[jel] + deltaV[ivp];
-    spins[ivp] = p.spins[jel]; //no spin deltas in this API
+    R[ivp]     = ref_pos + deltaV[ivp];
+    spins[ivp] = ref_spin; //no spin deltas in this API
   }
   update();
 }
 
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMovesWithSpin(int jel,
-                                           const ParticleSet& p,
+                                           const PosType& ref_pos,
+                                           const RealType ref_spin,
                                            const std::vector<PosType>& deltaV,
                                            const std::vector<RealType>& deltaS,
                                            bool sphere,
@@ -137,8 +139,8 @@ void VirtualParticleSet::makeMovesWithSpin(int jel,
   assert(spins.size() == deltaS.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
-    R[ivp]     = p.R[jel] + deltaV[ivp];
-    spins[ivp] = p.spins[jel] + deltaS[ivp];
+    R[ivp]     = ref_pos + deltaV[ivp];
+    spins[ivp] = ref_spin + deltaS[ivp];
   }
   update();
 }
