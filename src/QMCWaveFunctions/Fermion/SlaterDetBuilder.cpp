@@ -1145,28 +1145,19 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
     temps.push_back(tmp);
     std::string ci_str;
 
-    bool is_correct_type = false;
-    std::string ds_tag   = "CI_" + std::to_string(grp);
-    is_correct_type      = hin.is_dataset_of_type<uint64_t>(ds_tag);
-    if (!is_correct_type)
+    std::string ds_tag = "CI_" + std::to_string(grp);
+    if (!hin.is_dataset(ds_tag))
     {
       //for backwards compatibility
       if (grp == 0)
-      {
-        ds_tag          = "CI_Alpha";
-        is_correct_type = hin.is_dataset_of_type<uint64_t>(ds_tag);
-      }
+        ds_tag = "CI_Alpha";
       else if (grp == 1)
-      {
-        ds_tag          = "CI_Beta";
-        is_correct_type = hin.is_dataset_of_type<uint64_t>(ds_tag);
-      }
+        ds_tag = "CI_Beta";
     }
 
-    if (!is_correct_type)
+    if (!hin.is_dataset_of_type<uint64_t>(ds_tag))
     {
-      bool is_signed_type = hin.is_dataset_of_type<int64_t>(ds_tag);
-      if (is_signed_type)
+      if (hin.is_dataset_of_type<int64_t>(ds_tag))
         APP_ABORT(
             "QMCPACK expects the HDF5 CI vectors to be stored as unsigned 64 bit integers. This HDF5 uses signed 64 "
             "bit integers. The determinants_tools.py script can transform this file using the 'transform' flag.");
