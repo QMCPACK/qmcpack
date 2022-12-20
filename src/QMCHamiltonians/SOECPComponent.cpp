@@ -55,6 +55,8 @@ SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
   SOECPComponent* myclone = new SOECPComponent(*this);
   for (int i = 0; i < sopp_m.size(); i++)
     myclone->sopp_m[i] = sopp_m[i]->makeClone();
+  if (VP)
+    myclone->VP = new VirtualParticleSet(qp, nknot);
   return myclone;
 }
 

@@ -176,8 +176,8 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, soPot[i]->getNknot());
         sknot_max = std::max(sknot_max, soPot[i]->getSknot());
-        //if (NLPP_algo == "batched")
-        //  soPot[i]->initVirtualParticle(targetPtcl);
+        if (NLPP_algo == "batched")
+          soPot[i]->initVirtualParticle(targetPtcl);
         apot->addComponent(i, std::move(soPot[i]));
       }
     }
