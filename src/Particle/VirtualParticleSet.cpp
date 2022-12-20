@@ -129,7 +129,7 @@ void VirtualParticleSet::makeMovesWithSpin(int jel,
 {
   if (sphere && iat < 0)
     throw std::runtime_error(
-        "VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
+        "VirtualParticleSet::makeMovesWithSpin is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
   refPtcl       = jel;
   refSourcePtcl = iat;
