@@ -133,6 +133,16 @@ inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_p
   return ret != -1;
 }
 
+inline bool h5d_check_existence(hid_t grp, const std::string& aname)
+{
+  if (grp < 0)
+    return true;
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
+  if (h1 < 0)
+    return false;
+  return true;
+}
+
 template<typename T>
 inline bool h5d_check_type(hid_t grp, const std::string& aname)
 {

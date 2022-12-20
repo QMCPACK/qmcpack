@@ -394,6 +394,28 @@ TEST_CASE("hdf_archive_string_vector", "[hdf]")
   REQUIRE(strings2[1] == "really long string");
 }
 
+TEST_CASE("hdf_archive_dataset_existence_checking", "[hdf]")
+{
+  hdf_archive hd;
+  hd.create("test_dataset_existence_checking.hdf");
+
+  std::vector<uint64_t> numbers;
+  numbers.push_back(123456);
+  std::string ds_tag = "numbers_vector";
+
+  bool okay = hd.writeEntry(numbers, ds_tag);
+  REQUIRE(okay);
+
+  hd.close();
+
+  hdf_archive hd2;
+  okay = hd2.open("test_dataset_type_checking.hdf");
+  REQUIRE(okay);
+
+  REQUIRE(hd2.is_dataset(ds_tag));
+  REQUIRE(!hd2.is_dataset("tag_doesnt_exist"));
+}
+
 TEST_CASE("hdf_archive_dataset_type_checking", "[hdf]")
 {
   hdf_archive hd;
