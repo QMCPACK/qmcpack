@@ -427,7 +427,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
   std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
 
-  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_ref_list, {deltaV1, deltaV2}, {job1, job2}, false);
 
   std::vector<std::vector<ValueType>> nlpp_ratios(2);
   nlpp_ratios[0].resize(nknot);

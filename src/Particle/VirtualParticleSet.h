@@ -41,6 +41,9 @@ private:
 
   Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
 
+  /// ParticleSet this object refers to after makeMoves
+  std::unique_ptr<std::reference_wrapper<const ParticleSet>> refPS;
+
 public:
   /// Reference particle
   int refPtcl;
@@ -48,7 +51,7 @@ public:
   int refSourcePtcl;
 
   /// ParticleSet this object refers to
-  const ParticleSet& refPS;
+  const ParticleSet& getRefPS() const { return *refPS; }
 
   inline bool isOnSphere() const { return onSphere; }
 
@@ -74,30 +77,31 @@ public:
   static void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<VirtualParticleSet>& vp_list);
 
   /** move virtual particles to new postions and update distance tables
+     * @param refp reference particle set
      * @param jel reference particle that all the VP moves from
      * @param deltaV Position delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMoves(int jel,
-                 const std::vector<PosType>& deltaV,
-                 bool sphere = false,
-                 int iat     = -1);
+  void makeMoves(const ParticleSet& refp, int jel, const std::vector<PosType>& deltaV, bool sphere = false, int iat = -1);
 
   /** move virtual particles to new postions and update distance tables
+     * @param refp reference particle set
      * @param jel reference particle that all the VP moves from
      * @param deltaV Position delta for virtual moves.
      * @param deltaS Spin delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMovesWithSpin(int jel,
+  void makeMovesWithSpin(const ParticleSet& refp,
+                         int jel,
                          const std::vector<PosType>& deltaV,
                          const std::vector<RealType>& deltaS,
                          bool sphere = false,
                          int iat     = -1);
 
   static void mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
                            const RefVector<const std::vector<PosType>>& deltaV_list,
                            const RefVector<const NLPPJob<RealType>>& joblist,
                            bool sphere);

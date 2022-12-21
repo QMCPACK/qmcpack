@@ -37,22 +37,23 @@ struct VPMultiWalkerMem : public Resource
   Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.getSimulationCell()), refPS(p)
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.getSimulationCell())
 {
   setName("virtual");
 
   //initialize local data structure
+  setSpinor(p.isSpinor());
   TotalNum = nptcl;
   R.resize(nptcl);
   spins.resize(nptcl);
   coordinates_->resize(nptcl);
 
   //create distancetables
-  for (int i = 0; i < refPS.getNumDistTables(); ++i)
-    if (refPS.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
-      addTable(refPS.getDistTable(i).get_origin());
+  for (int i = 0; i < p.getNumDistTables(); ++i)
+    if (p.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
+      addTable(p.getDistTable(i).get_origin());
     else
-      addTable(refPS.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
+      addTable(p.getDistTable(i).get_origin(), DTModes::MW_EVALUATE_RESULT_NO_TRANSFER_TO_HOST);
 }
 
 VirtualParticleSet::~VirtualParticleSet() = default;
@@ -72,7 +73,6 @@ const Vector<int, OffloadPinnedAllocator<int>>& VirtualParticleSet::getMultiWalk
 void VirtualParticleSet::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<VPMultiWalkerMem>());
-
   ParticleSet::createResource(collection);
 }
 
@@ -98,7 +98,8 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
 }
 
 /// move virtual particles to new postions and update distance tables
-void VirtualParticleSet::makeMoves(int jel,
+void VirtualParticleSet::makeMoves(const ParticleSet& refp,
+                                   int jel,
                                    const std::vector<PosType>& deltaV,
                                    bool sphere,
                                    int iat)
@@ -107,42 +108,46 @@ void VirtualParticleSet::makeMoves(int jel,
     throw std::runtime_error(
         "VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
+  refPS         = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp);
   refPtcl       = jel;
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
-    R[ivp]     = refPS.R[jel] + deltaV[ivp];
-  if (refPS.isSpinor())
+    R[ivp] = refp.R[jel] + deltaV[ivp];
+  if (refp.isSpinor())
     for (size_t ivp = 0; ivp < R.size(); ivp++)
-      spins[ivp] = refPS.spins[jel]; //no spin deltas in this API
+      spins[ivp] = refp.spins[jel]; //no spin deltas in this API
   update();
 }
 
 /// move virtual particles to new postions and update distance tables
-void VirtualParticleSet::makeMovesWithSpin(int jel,
+void VirtualParticleSet::makeMovesWithSpin(const ParticleSet& refp,
+                                           int jel,
                                            const std::vector<PosType>& deltaV,
                                            const std::vector<RealType>& deltaS,
                                            bool sphere,
                                            int iat)
 {
-  assert(refPS.isSpinor());
+  assert(refp.isSpinor());
   if (sphere && iat < 0)
     throw std::runtime_error(
         "VirtualParticleSet::makeMovesWithSpin is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
+  refPS         = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp);
   refPtcl       = jel;
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
   assert(spins.size() == deltaS.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
-    R[ivp]     = refPS.R[jel] + deltaV[ivp];
-    spins[ivp] = refPS.spins[jel] + deltaS[ivp];
+    R[ivp]     = refp.R[jel] + deltaV[ivp];
+    spins[ivp] = refp.spins[jel] + deltaS[ivp];
   }
   update();
 }
 
 void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                                      const RefVectorWithLeader<ParticleSet>& refp_list,
                                       const RefVector<const std::vector<PosType>>& deltaV_list,
                                       const RefVector<const NLPPJob<RealType>>& joblist,
                                       bool sphere)
@@ -161,6 +166,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
   for (int iw = 0; iw < vp_list.size(); iw++)
   {
     VirtualParticleSet& vp(vp_list[iw]);
+    vp.refPS = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp_list[iw]);
     const std::vector<PosType>& deltaV(deltaV_list[iw]);
     const NLPPJob<RealType>& job(joblist[iw]);
 
@@ -170,7 +176,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
     assert(vp.R.size() == deltaV.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
-      vp.R[k]          = job.elec_pos + deltaV[k];
+      vp.R[k] = job.elec_pos + deltaV[k];
       //FIXME need to hand spinor ref from job //no spin deltas in this API
       mw_refPctls[ivp] = vp.refPtcl;
     }

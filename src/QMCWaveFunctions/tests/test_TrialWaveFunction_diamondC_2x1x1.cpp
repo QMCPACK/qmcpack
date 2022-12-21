@@ -565,7 +565,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
   std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
 
-  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_ref_list, {deltaV1, deltaV2}, {job1, job2}, false);
 
   std::vector<ValueType> nlpp1_ratios(nknot), nlpp2_ratios(nknot);
   TrialWaveFunction::mw_evaluateRatios(wf_ref_list, RefVectorWithLeader<const VirtualParticleSet>(vp, {vp, vp_clone}),

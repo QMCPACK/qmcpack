@@ -135,7 +135,7 @@ SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
 
   if (VP)
   {
-    VP->makeMovesWithSpin(iel, deltaV, deltaS, true, iat);
+    VP->makeMovesWithSpin(W, iel, deltaV, deltaS, true, iat);
     Psi.evaluateRatios(*VP, psiratio);
   }
   else
