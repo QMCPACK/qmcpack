@@ -117,6 +117,12 @@ public:
                            const int& FirstIndex,
                            const int& LastIndex) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           Vector<ValueType>& dlogpsi,
+                           const int& FirstIndex,
+                           const int& LastIndex) override;
+
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            Vector<ValueType>& dlogpsi,

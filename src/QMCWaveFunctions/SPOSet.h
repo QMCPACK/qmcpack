@@ -129,6 +129,12 @@ public:
                                    const int& FirstIndex,
                                    const int& LastIndex);
 
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   Vector<ValueType>& dlogpsi,
+                                   const int& FirstIndex,
+                                   const int& LastIndex);
+
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */

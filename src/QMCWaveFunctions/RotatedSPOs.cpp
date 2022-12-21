@@ -694,6 +694,104 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
+                                      const opt_variables_type& optvars,
+                                      Vector<ValueType>& dlogpsi,
+                                      const int& FirstIndex,
+                                      const int& LastIndex)
+{
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi->getOrbitalSetSize();
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+  myG_temp.resize(nel);
+  myG_J.resize(nel);
+  myL_temp.resize(nel);
+  myL_J.resize(nel);
+
+  myG_temp = 0;
+  myG_J    = 0;
+  myL_temp = 0;
+  myL_J    = 0;
+
+  Bbar.resize(nel, nmo);
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  Bbar       = 0;
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  //current value of Gradient and Laplacian
+  // gradient components
+  for (int a = 0; a < nel; a++)
+    for (int i = 0; i < nel; i++)
+      for (int k = 0; k < 3; k++)
+        myG_temp[a][k] += psiM_inv(i, a) * dpsiM_all(a, i)[k];
+  // laplacian components
+  for (int a = 0; a < nel; a++)
+  {
+    for (int i = 0; i < nel; i++)
+      myL_temp[a] += psiM_inv(i, a) * d2psiM_all(a, i);
+  }
+
+  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}}
+  // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
+  for (int a = 0, iat = FirstIndex; a < nel; a++, iat++)
+  {
+    myG_J[a] = (P.G[iat] - myG_temp[a]);
+    myL_J[a] = (P.L[iat] + dot(P.G[iat], P.G[iat]) - myL_temp[a]);
+  }
+  //possibly replace wit BLAS calls
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nmo; j++)
+      Bbar(i, j) = d2psiM_all(i, j) + 2 * dot(myG_J[i], dpsiM_all(i, j)) + myL_J[i] * psiM_all(i, j);
+
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  const ValueType* const B(Bbar.data());
+  SPOSet::ValueMatrix T;
+  SPOSet::ValueMatrix Y1;
+  SPOSet::ValueMatrix Y2;
+  SPOSet::ValueMatrix Y3;
+  SPOSet::ValueMatrix Y4;
+  T.resize(nel, nmo);
+  Y1.resize(nel, nel);
+  Y2.resize(nel, nmo);
+  Y3.resize(nel, nmo);
+  Y4.resize(nel, nmo);
+
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int kk           = myVars.where(i);
+    const int p      = m_act_rot_inds.at(i).first;
+    const int q      = m_act_rot_inds.at(i).second;
+    dlogpsi[kk]      = T(p, q);
+  }
+}
+
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
                                       Vector<ValueType>& dlogpsi,

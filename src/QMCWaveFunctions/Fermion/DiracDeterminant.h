@@ -77,6 +77,11 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     Vector<ValueType>& dlogpsi) override;
+
+
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
   void updateAfterSweep(const ParticleSet& P, ParticleSet::ParticleGradient& G, ParticleSet::ParticleLaplacian& L);

@@ -266,6 +266,18 @@ void SPOSet::evaluateDerivatives(ParticleSet& P,
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
+void SPOSet::evaluateDerivativesWF(ParticleSet& P,
+                                 const opt_variables_type& optvars,
+                                 Vector<ValueType>& dlogpsi,
+                                 const int& FirstIndex,
+                                 const int& LastIndex)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivativesWF "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
 /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
