@@ -100,6 +100,7 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMoves(int jel,
                                    const PosType& ref_pos,
+                                   const RealType ref_spin,
                                    const std::vector<PosType>& deltaV,
                                    bool sphere,
                                    int iat)
@@ -112,7 +113,35 @@ void VirtualParticleSet::makeMoves(int jel,
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
-    R[ivp] = ref_pos + deltaV[ivp];
+  {
+    R[ivp]     = ref_pos + deltaV[ivp];
+    spins[ivp] = ref_spin; //no spin deltas in this API
+  }
+  update();
+}
+
+/// move virtual particles to new postions and update distance tables
+void VirtualParticleSet::makeMovesWithSpin(int jel,
+                                           const PosType& ref_pos,
+                                           const RealType ref_spin,
+                                           const std::vector<PosType>& deltaV,
+                                           const std::vector<RealType>& deltaS,
+                                           bool sphere,
+                                           int iat)
+{
+  if (sphere && iat < 0)
+    throw std::runtime_error(
+        "VirtualParticleSet::makeMovesWithSpin is invoked incorrectly, the flag sphere=true requires iat specified!");
+  onSphere      = sphere;
+  refPtcl       = jel;
+  refSourcePtcl = iat;
+  assert(R.size() == deltaV.size());
+  assert(spins.size() == deltaS.size());
+  for (size_t ivp = 0; ivp < R.size(); ivp++)
+  {
+    R[ivp]     = ref_pos + deltaV[ivp];
+    spins[ivp] = ref_spin + deltaS[ivp];
+  }
   update();
 }
 

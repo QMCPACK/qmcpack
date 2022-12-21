@@ -76,15 +76,34 @@ public:
   /** move virtual particles to new postions and update distance tables
      * @param jel reference particle that all the VP moves from
      * @param ref_pos reference particle position
+     * @param ref_spin reference particle spin
      * @param deltaV Position delta for virtual moves.
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
   void makeMoves(int jel,
                  const PosType& ref_pos,
+                 const RealType ref_spin,
                  const std::vector<PosType>& deltaV,
                  bool sphere = false,
                  int iat     = -1);
+
+  /** move virtual particles to new postions and update distance tables
+     * @param jel reference particle that all the VP moves from
+     * @param ref_pos reference particle position
+     * @param ref_spin reference particle spin
+     * @param deltaV Position delta for virtual moves.
+     * @param deltaS Spin delta for virtual moves.
+     * @param sphere set true if VP are on a sphere around the reference source particle
+     * @param iat reference source particle
+     */
+  void makeMovesWithSpin(int jel,
+                         const PosType& ref_pos,
+                         const RealType ref_spin,
+                         const std::vector<PosType>& deltaV,
+                         const std::vector<RealType>& deltaS,
+                         bool sphere = false,
+                         int iat     = -1);
 
   static void mw_makeMoves(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
                            const RefVector<const std::vector<PosType>>& deltaV_list,
