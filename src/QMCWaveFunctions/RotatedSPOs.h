@@ -107,7 +107,7 @@ public:
   void buildOptVariables(size_t nel) override;
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations) override;
 
 
   void evaluateDerivatives(ParticleSet& P,

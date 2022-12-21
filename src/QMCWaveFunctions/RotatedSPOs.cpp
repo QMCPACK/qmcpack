@@ -290,20 +290,22 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
 
     createRotationIndices(nel, nmo, created_m_act_rot_inds);
 
-    createRotationIndicesFull(nel, nmo, m_full_rot_inds);
+    RotationIndices created_full_rot_inds;
+    createRotationIndicesFull(nel, nmo, created_full_rot_inds);
 
-    buildOptVariables(created_m_act_rot_inds);
+    buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
   }
 #endif
 }
 
-void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
+void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
   m_act_rot_inds = rotations;
+  m_full_rot_inds = full_rotations;
 
   if (use_global_rot_)
   {
