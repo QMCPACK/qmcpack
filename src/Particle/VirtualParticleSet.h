@@ -29,8 +29,13 @@ template<typename T>
 struct NLPPJob;
 struct VPMultiWalkerMem;
 
-/** Introduced to handle virtual moves and ratio computations, e.g. for non-local PP evaluations.
-   */
+/** A ParticleSet that handles virtual moves of a selected particle of a given physical ParticleSet
+ * Virtual moves are defined as moves being proposed but will never be accepted.
+ * VirtualParticleSet is introduced to avoid changing any internal states of the physical ParticleSet.
+ * For this reason, the physical ParticleSet is always marked const.
+ * It is heavily used by non-local PP evaluations.
+ *
+ */
 class VirtualParticleSet : public ParticleSet
 {
 private:
@@ -42,7 +47,7 @@ private:
   Vector<int, OffloadPinnedAllocator<int>>& getMultiWalkerRefPctls();
 
   /// ParticleSet this object refers to after makeMoves
-  std::unique_ptr<std::reference_wrapper<const ParticleSet>> refPS;
+  std::optional<std::reference_wrapper<const ParticleSet>> refPS;
 
 public:
   /// Reference particle
@@ -51,7 +56,7 @@ public:
   int refSourcePtcl;
 
   /// ParticleSet this object refers to
-  const ParticleSet& getRefPS() const { return *refPS; }
+  const ParticleSet& getRefPS() const { return refPS.value(); }
 
   inline bool isOnSphere() const { return onSphere; }
 

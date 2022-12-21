@@ -108,7 +108,7 @@ void VirtualParticleSet::makeMoves(const ParticleSet& refp,
     throw std::runtime_error(
         "VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
-  refPS         = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp);
+  refPS         = refp;
   refPtcl       = jel;
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
@@ -133,7 +133,7 @@ void VirtualParticleSet::makeMovesWithSpin(const ParticleSet& refp,
     throw std::runtime_error(
         "VirtualParticleSet::makeMovesWithSpin is invoked incorrectly, the flag sphere=true requires iat specified!");
   onSphere      = sphere;
-  refPS         = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp);
+  refPS         = refp;
   refPtcl       = jel;
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
@@ -166,7 +166,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
   for (int iw = 0; iw < vp_list.size(); iw++)
   {
     VirtualParticleSet& vp(vp_list[iw]);
-    vp.refPS = std::make_unique<std::reference_wrapper<const ParticleSet>>(refp_list[iw]);
+    vp.refPS = refp_list[iw];
     const std::vector<PosType>& deltaV(deltaV_list[iw]);
     const NLPPJob<RealType>& job(joblist[iw]);
 
