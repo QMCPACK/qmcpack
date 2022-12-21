@@ -99,8 +99,6 @@ void VirtualParticleSet::releaseResource(ResourceCollection& collection,
 
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMoves(int jel,
-                                   const PosType& ref_pos,
-                                   const RealType ref_spin,
                                    const std::vector<PosType>& deltaV,
                                    bool sphere,
                                    int iat)
@@ -113,22 +111,21 @@ void VirtualParticleSet::makeMoves(int jel,
   refSourcePtcl = iat;
   assert(R.size() == deltaV.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
-  {
-    R[ivp]     = ref_pos + deltaV[ivp];
-    spins[ivp] = ref_spin; //no spin deltas in this API
-  }
+    R[ivp]     = refPS.R[jel] + deltaV[ivp];
+  if (refPS.isSpinor())
+    for (size_t ivp = 0; ivp < R.size(); ivp++)
+      spins[ivp] = refPS.spins[jel]; //no spin deltas in this API
   update();
 }
 
 /// move virtual particles to new postions and update distance tables
 void VirtualParticleSet::makeMovesWithSpin(int jel,
-                                           const PosType& ref_pos,
-                                           const RealType ref_spin,
                                            const std::vector<PosType>& deltaV,
                                            const std::vector<RealType>& deltaS,
                                            bool sphere,
                                            int iat)
 {
+  assert(refPS.isSpinor());
   if (sphere && iat < 0)
     throw std::runtime_error(
         "VirtualParticleSet::makeMovesWithSpin is invoked incorrectly, the flag sphere=true requires iat specified!");
@@ -139,8 +136,8 @@ void VirtualParticleSet::makeMovesWithSpin(int jel,
   assert(spins.size() == deltaS.size());
   for (size_t ivp = 0; ivp < R.size(); ivp++)
   {
-    R[ivp]     = ref_pos + deltaV[ivp];
-    spins[ivp] = ref_spin + deltaS[ivp];
+    R[ivp]     = refPS.R[jel] + deltaV[ivp];
+    spins[ivp] = refPS.spins[jel] + deltaS[ivp];
   }
   update();
 }
@@ -174,6 +171,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
       vp.R[k]          = job.elec_pos + deltaV[k];
+      //FIXME need to hand spinor ref from job //no spin deltas in this API
       mw_refPctls[ivp] = vp.refPtcl;
     }
     p_list.push_back(vp);
