@@ -472,6 +472,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   elec.setName("e");
+  elec.setSpinor(true);
   elec.create({1});
   elec.R[0][0]  = 0.138;
   elec.R[0][1]  = -0.24;
