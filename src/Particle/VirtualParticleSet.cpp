@@ -166,18 +166,19 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
   for (int iw = 0; iw < vp_list.size(); iw++)
   {
     VirtualParticleSet& vp(vp_list[iw]);
-    vp.refPS = refp_list[iw];
     const std::vector<PosType>& deltaV(deltaV_list[iw]);
     const NLPPJob<RealType>& job(joblist[iw]);
 
     vp.onSphere      = sphere;
+    vp.refPS         = refp_list[iw];
     vp.refPtcl       = job.electron_id;
     vp.refSourcePtcl = job.ion_id;
     assert(vp.R.size() == deltaV.size());
     for (size_t k = 0; k < vp.R.size(); k++, ivp++)
     {
-      vp.R[k] = job.elec_pos + deltaV[k];
-      //FIXME need to hand spinor ref from job //no spin deltas in this API
+      vp.R[k] = refp_list[iw].R[vp.refPtcl] + deltaV[k];
+      if (vp_leader.isSpinor())
+        vp.spins[k] = refp_list[iw].spins[vp.refPtcl]; //no spin deltas in this API
       mw_refPctls[ivp] = vp.refPtcl;
     }
     p_list.push_back(vp);

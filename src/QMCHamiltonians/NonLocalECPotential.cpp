@@ -325,7 +325,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
           {
             NeighborIons.push_back(iat);
             O.IonNeighborElecs.getNeighborList(iat).push_back(jel);
-            joblist.emplace_back(iat, jel, P.R[jel], dist[iat], -displ[iat]);
+            joblist.emplace_back(iat, jel, dist[iat], -displ[iat]);
           }
       }
     }
