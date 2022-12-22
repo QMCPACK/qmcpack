@@ -45,7 +45,8 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : Partic
   setSpinor(p.isSpinor());
   TotalNum = nptcl;
   R.resize(nptcl);
-  spins.resize(nptcl);
+  if (isSpinor())
+    spins.resize(nptcl);
   coordinates_->resize(nptcl);
 
   //create distancetables

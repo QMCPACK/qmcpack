@@ -34,7 +34,6 @@ struct VPMultiWalkerMem;
  * VirtualParticleSet is introduced to avoid changing any internal states of the physical ParticleSet.
  * For this reason, the physical ParticleSet is always marked const.
  * It is heavily used by non-local PP evaluations.
- *
  */
 class VirtualParticleSet : public ParticleSet
 {
