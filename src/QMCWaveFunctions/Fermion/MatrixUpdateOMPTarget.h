@@ -216,7 +216,7 @@ public:
     auto& spingrads_value_v = engine_leader.mw_mem_->spingrads_value_v;
 
     //Need to pack these into a transfer buffer since psiMinv and dpsiM_row_list are not multiwalker data
-    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd. 
+    //i.e. each engine has its own psiMinv which is an OffloadMatrix instead of the leader having the data for all the walkers in the crowd.
     //Wouldn't have to do this if dpsiM and psiMinv were part of the mw_mem_ with data across all walkers in the crowd and could just use use_device_ptr for the offload.
     //That is how mw_dspin is handled below
     const int norb                   = engine_leader.get_psiMinv().rows();
@@ -241,7 +241,7 @@ public:
     //Note that mw_dspin should already be in sync between device and host...updateTo was called in
     //SPOSet::mw_evaluateVGLWithSpin to sync
     //Also note that since mw_dspin is Dual, I can just use mw_dpsin.data() above and then use directly inside
-    //then offload region. OMP will figure out the correct translation to the device address, i.e. no 
+    //then offload region. OMP will figure out the correct translation to the device address, i.e. no
     //need to include in the PRAGMA_OFFLOAD below
     PRAGMA_OFFLOAD("omp target teams distribute num_teams(nw) \
                     map(always, to: buffer_H2D_ptr[:buffer_H2D.size()]) \
@@ -253,7 +253,14 @@ public:
       const Value* __restrict__ dpsiM_row_ptr = reinterpret_cast<const Value**>(buffer_H2D_ptr)[nw + iw];
       Value grad_x(0), grad_y(0), grad_z(0);
       Complex spingrad(0);
+#if defined(QMC_COMPLEX)
+      // COMPILER WORKAROUND
+      // This was causing a llvm-link error in icpx due to the lack of declare reduction on complex datatypes.
+      // Keep real builds free of any reduction on a complex datatype. Just serialize the reduction.
+      // Because mw_evalGradWithSpin is only being called in complex builds in simulations, the impact of this workaround is basically zero.
+      // It is still beneficial to keep it functional in real builds.
       PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
+#endif
       for (int iorb = 0; iorb < norb; iorb++)
       {
         grad_x += invRow_ptr[iorb] * dpsiM_row_ptr[iorb * DIM];

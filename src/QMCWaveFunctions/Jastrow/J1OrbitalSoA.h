@@ -588,7 +588,7 @@ public:
       const size_t ns = d_table.sources();
       const size_t nt = VP.getTotalNum();
 
-      const auto& dist_ref = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl);
+      const auto& dist_ref = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl);
 
       for (size_t i = 0; i < ns; ++i)
       {

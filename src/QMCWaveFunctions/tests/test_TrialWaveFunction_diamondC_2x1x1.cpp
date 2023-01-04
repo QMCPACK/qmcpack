@@ -557,15 +557,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
 
   const auto& ei_table1 = elec_.getDistTableAB(ei_table_index);
   // make virtual move of elec 0, reference ion 1
-  NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
+  NLPPJob<RealType> job1(1, 0, ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
   const auto& ei_table2 = elec_clone.getDistTableAB(ei_table_index);
   // make virtual move of elec 1, reference ion 3
-  NLPPJob<RealType> job2(3, 1, elec_clone.R[1], ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
+  NLPPJob<RealType> job2(3, 1, ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
 
   std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
   std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
 
-  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_ref_list, {deltaV1, deltaV2}, {job1, job2}, false);
 
   std::vector<ValueType> nlpp1_ratios(nknot), nlpp2_ratios(nknot);
   TrialWaveFunction::mw_evaluateRatios(wf_ref_list, RefVectorWithLeader<const VirtualParticleSet>(vp, {vp, vp_clone}),
