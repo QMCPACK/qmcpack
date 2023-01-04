@@ -157,9 +157,7 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
     // The design for "initialization" of walker elements is for the golden elements to go through all pre walking state changes
     // and then for the golden elements to be cloned for each walker.
     if (estimator_manager_->areThereListeners())
-    {
       population_.get_golden_hamiltonian().informOperatorsOfListener();
-    }
 
     app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons().createResource(golden_resource_.pset_res);
@@ -167,7 +165,7 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
     population_.get_golden_hamiltonian().createResource(golden_resource_.ham_res);
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
-  
+
   makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
 
   crowds_.resize(awc.walkers_per_crowd.size());
