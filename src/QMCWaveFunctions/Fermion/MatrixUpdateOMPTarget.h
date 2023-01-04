@@ -257,7 +257,7 @@ public:
       // This was causing a llvm-link error in icpx due to the lack of declare reduction on complex datatypes.
       // Keep real builds free of any reduction on a complex datatype. Just serialize the reduction.
       // Because mw_evalGradWithSpin is only being called in complex builds in simulations, the impact of this workaround is basically zero.
-      // It is still benefiical to keep it functional in real builds.
+      // It is still beneficial to keep it functional in real builds.
       PRAGMA_OFFLOAD("omp parallel for reduction(+: grad_x, grad_y, grad_z, spingrad)")
 #endif
       for (int iorb = 0; iorb < norb; iorb++)
