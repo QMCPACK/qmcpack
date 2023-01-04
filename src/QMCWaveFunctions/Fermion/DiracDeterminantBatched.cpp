@@ -216,9 +216,9 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
   mw_dspin.resize(nw, num_orbitals);
 
   //Here, we are just always recomputing the spin gradients from the SPOSet for simplicity.
-  //If we stored and modified the accept/reject to include updating stored spin gradients, we could the 
-  //mw_evaluateVGLWithSpin call below and just use the stored spin gradients. 
-  //May revisit this in the future. 
+  //If we stored and modified the accept/reject to include updating stored spin gradients, we could the
+  //mw_evaluateVGLWithSpin call below and just use the stored spin gradients.
+  //May revisit this in the future.
   RefVectorWithLeader<SPOSet> phi_list(*Phi);
   RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
   RefVector<SPOSet::GradVector> grad_v_list;
