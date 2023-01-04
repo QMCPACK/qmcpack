@@ -173,7 +173,7 @@ void TwoBodyJastrow<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vecto
 {
   for (int k = 0; k < ratios.size(); ++k)
     ratios[k] =
-        std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
+        std::exp(Uat[VP.refPtcl] - computeU(VP.getRefPS(), VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
@@ -201,7 +201,7 @@ void TwoBodyJastrow<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctio
 
   // need to access the spin group of refPtcl. vp_leader doesn't necessary be a member of the list.
   // for this reason, refPtcl must be access from [0].
-  const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
+  const int igt = vp_leader.getRefPS().getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTableAB(wfc_leader.my_table_ID_));
 
   FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
@@ -1019,11 +1019,11 @@ void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
     {
       if (i == VP.refPtcl)
         continue;
-      const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
+      const size_t ptype = VP.getRefPS().GroupID[i] * VP.getRefPS().groups() + VP.getRefPS().GroupID[VP.refPtcl];
       if (!RecalcSwitch[ptype])
         continue;
-      const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
-                                           : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
+      const auto dist_ref = i < VP.refPtcl ? VP.getRefPS().getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
+                                           : VP.getRefPS().getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
       //first calculate the old derivatives VP.refPtcl.
       std::fill(derivs_ref.begin(), derivs_ref.end(), 0.0);
       F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);

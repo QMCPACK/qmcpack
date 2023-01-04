@@ -109,7 +109,7 @@ void test_DiracDeterminantBatched_first()
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
-  VP.makeMoves(1, elec.R[1], newpos2);
+  VP.makeMoves(elec, 1, newpos2);
   ddb.evaluateRatios(VP, ratios2);
 
   CHECK(std::real(ratios2[0]) == Approx(0.4880285278));
@@ -781,7 +781,6 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
   }
 
-  /* uncomment when mw_evalGradWithSpin is implemented
   std::fill(grads.begin(), grads.end(), 0);
   std::fill(spingrads.begin(), spingrads.end(), 0);
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
@@ -792,7 +791,6 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(grads[iw][2] == ComplexApprox(G_list[iw].get()[1][2]));
     REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
   }
-  */
 
   //now make and accept move, checking new values
   elec_.mw_makeMove(p_ref_list, 1, displs);
@@ -812,21 +810,21 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
     REQUIRE(G_list[iw].get()[1][2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
   }
 
-  /* uncomment when mw_evalGradWithSpin is implemented
   dd.mw_evalGradWithSpin(dd_ref_list, p_ref_list, 1, grads, spingrads);
   for (int iw = 0; iw < grads.size(); iw++)
     REQUIRE(spingrads[iw] == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
-  */
 }
 
 TEST_CASE("DiracDeterminantBatched_spinor_update", "[wavefunction][fermion]")
 {
+  /* Uncomment when MatrixDelayedUpdateCUDA::mw_evalGradWithSpin is implemented
 #if defined(ENABLE_OFFLOAD) && defined(ENABLE_CUDA)
   test_DiracDeterminantBatched_spinor_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<
       MatrixDelayedUpdateCUDA<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::HOST);
 #endif
+*/
   test_DiracDeterminantBatched_spinor_update<
       MatrixUpdateOMPTarget<ValueType, QMCTraits::QTFull::ValueType>>(1, DetMatInvertor::ACCEL);
   test_DiracDeterminantBatched_spinor_update<

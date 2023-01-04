@@ -538,19 +538,22 @@ void DensityMatrices1B::registerCollectables(std::vector<ObservableHelper>& h5de
   ng[1]        = basis_size;
   int nentries = ng[0] * ng[1];
 #endif
-  using namespace std::string_literals;
+
+  hdf_path hdf_name{name_};
+  hdf_name /= "number_matrix";
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.push_back({{name_, "number_matrix"s, species_name[s]}});
+    h5desc.emplace_back(hdf_name / species_name[s]);
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, nindex + s * nentries);
   }
 
   if (energy_mat)
   {
+    hdf_name.replace_subgroup("energy_matrix");
     for (int s = 0; s < nspecies; ++s)
     {
-      h5desc.push_back({{name_, "energy_matrix"s, species_name[s]}});
+      h5desc.emplace_back(hdf_name / species_name[s]);
       auto& oh = h5desc.back();
       oh.set_dimensions(ng, eindex + s * nentries);
     }

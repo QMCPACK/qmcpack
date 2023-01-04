@@ -135,7 +135,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOne(ParticleSet& W,
   if (VP)
   {
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     if (use_DLA)
       psi.evaluateRatios(*VP, psiratio, TrialWaveFunction::ComputeType::FERMIONIC);
     else
@@ -232,7 +232,7 @@ void NonLocalECPComponent::mw_evaluateOne(const RefVectorWithLeader<NonLocalECPC
 
     ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
 
-    VirtualParticleSet::mw_makeMoves(vp_list, deltaV_list, joblist, true);
+    VirtualParticleSet::mw_makeMoves(vp_list, p_list, deltaV_list, joblist, true);
 
     if (use_DLA)
       TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list,
@@ -310,7 +310,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -460,7 +460,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateOneWithForces(Parti
   {
     APP_ABORT("NonLocalECPComponent::evaluateOneWithForces(...): Forces not implemented with virtual particle moves\n");
     // Compute ratios with VP
-    VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
+    VP->makeMoves(W, iel, deltaV, true, iat);
     psi.evaluateRatios(*VP, psiratio);
   }
   else
@@ -802,7 +802,6 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 
   for (int j = 0; j < nknot; j++)
   {
-
     RealType zz        = dot(dr, rrotsgrid_m[j]) * rinv;
     PosType uminusrvec = rrotsgrid_m[j] - zz * dr * rinv;
 

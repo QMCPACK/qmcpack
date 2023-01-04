@@ -1099,12 +1099,6 @@ def test_job_run_command():
         ('eclipse'        , 'n2_t2'         ) : 'srun test.x',
         ('eclipse'        , 'n2_t2_e'       ) : 'srun test.x',
         ('eclipse'        , 'n2_t2_p2'      ) : 'srun test.x',
-        ('edison'         , 'n1'            ) : 'srun test.x',
-        ('edison'         , 'n1_p1'         ) : 'srun test.x',
-        ('edison'         , 'n2'            ) : 'srun test.x',
-        ('edison'         , 'n2_t2'         ) : 'srun test.x',
-        ('edison'         , 'n2_t2_e'       ) : 'srun test.x',
-        ('edison'         , 'n2_t2_p2'      ) : 'srun test.x',
         ('eos'            , 'n1'            ) : 'aprun -n 16 test.x',
         ('eos'            , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('eos'            , 'n2'            ) : 'aprun -n 32 test.x',
@@ -1153,6 +1147,18 @@ def test_job_run_command():
         ('oic5'           , 'n2_t2'         ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_e'       ) : 'mpirun -np 32 test.x',
         ('oic5'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
+        ('perlmutter'     , 'n1'            ) : 'srun test.x',
+        ('perlmutter'     , 'n1_p1'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2'            ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2'         ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_e'       ) : 'srun test.x',
+        ('perlmutter'     , 'n2_t2_p2'      ) : 'srun test.x',
+        ('polaris'        , 'n1'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 32 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n1_p1'         ) : 'mpiexec --cpu-bind depth --depth=1 -n 1 --ppn 1 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2'            ) : 'mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x',
+        ('polaris'        , 'n2_t2'         ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_e'       ) : 'mpiexec --cpu-bind depth --depth=2 -n 32 --ppn 16 --env OMP_NUM_THREADS=2 test.x',
+        ('polaris'        , 'n2_t2_p2'      ) : 'mpiexec --cpu-bind depth --depth=2 -n 4 --ppn 2 --env OMP_NUM_THREADS=2 test.x',
         ('rhea'           , 'n1'            ) : 'srun -N 1 -n 16 test.x',
         ('rhea'           , 'n1_p1'         ) : 'srun -N 1 -n 1 test.x',
         ('rhea'           , 'n2'            ) : 'srun -N 2 -n 32 test.x',
@@ -1552,23 +1558,6 @@ srun test.x''',
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 srun test.x''',
-        edison = '''#!/bin/bash
-#SBATCH -p regular
-#SBATCH -J jobname
-#SBATCH -t 06:30:00
-#SBATCH -N 2
-#SBATCH --ntasks-per-node=24
-#SBATCH --cpus-per-task=1
-#SBATCH -o test.out
-#SBATCH -e test.err
-#SBATCH --export=ALL
-
-echo $SLURM_SUBMIT_DIR
-cd $SLURM_SUBMIT_DIR
-
-export OMP_NUM_THREADS=1
-export ENV_VAR=1
-srun test.x''',
         eos = '''#!/bin/bash
 #PBS -A ABC123
 #PBS -q batch
@@ -1696,6 +1685,41 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 export ENV_VAR=1
 mpirun -np 64 test.x''',
+        perlmutter = '''#!/bin/bash
+#SBATCH -C cpu
+#SBATCH -q regular
+#SBATCH -t 06:30:00
+#SBATCH -N 2
+#SBATCH --ntasks-per-node=128
+#SBATCH -c 2
+#SBATCH -J jobname
+#SBATCH -o test.out
+#SBATCH -e test.err
+#SBATCH --export=ALL
+
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=1
+export ENV_VAR=1
+srun test.x''',
+        polaris = '''#!/bin/sh
+#PBS -l select=2:system=polaris
+#PBS -l place=scatter
+#PBS -l filesystems=home:eagle:grand
+#PBS -l walltime=06:30:00
+#PBS -A ABC123
+#PBS -q prod
+#PBS -N jobname
+#PBS -k doe
+#PBS -o test.out
+#PBS -e test.err
+
+cd ${PBS_O_WORKDIR}
+
+export ENV_VAR=1
+export OMP_NUM_THREADS=1
+mpiexec --cpu-bind depth --depth=1 -n 64 --ppn 32 --env OMP_NUM_THREADS=1 test.x''',
         rhea = '''#!/bin/bash
 #SBATCH --job-name jobname
 #SBATCH --account=ABC123

@@ -9,7 +9,7 @@
 // File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "SYCLDeviceManager.h"
 #include "SYCLruntime.hpp"
 

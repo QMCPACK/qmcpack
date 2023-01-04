@@ -16,7 +16,7 @@ set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 # Directory where input file is copied to, and working directory for unit test
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-set(UTEST_SRC test_hdf_archive.cpp test_hdf_error_suppression.cpp test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
+set(UTEST_SRC test_hdf_archive.cpp test_hdf_error_suppression.cpp test_hdf_path.cpp test_hdf_parallel.cpp test_hdf_reshape.cpp test_hdf_hyperslab.cpp)
 
 add_executable(${UTEST_EXE} ${UTEST_SRC})
 target_link_libraries(${UTEST_EXE} catch_main qmcio)

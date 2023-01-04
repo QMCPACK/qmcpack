@@ -50,7 +50,7 @@ bool HDFWalkerInputManager::put(xmlNodePtr cur)
   {
     HDFWalkerInput_0_4 win(wc_list_, num_ptcls_, myComm, in_version);
     success = win.put(cur);
-    cfile   = win.FileName;
+    cfile   = win.FileName_noext;
   }
   else
     myComm->barrier_and_abort("Outdated restart file!");
