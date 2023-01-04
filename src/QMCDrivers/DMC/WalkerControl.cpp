@@ -141,7 +141,7 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
   if (debug_disable_branching_)
     do_not_branch = true;
   /* dynamic population
-    1. compute multiplicity. If iter 0, multiplicity = 1
+    1. compute multiplicity. if do_not_branch multiplicity = 1
     2. compute curData, collect multiplicity on every rank
 
      fix population
@@ -171,7 +171,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     }
     else
     {
-      // no branching at the first iteration to avoid large population change.
       if (do_not_branch)
         for (auto& walker : walkers)
           walker->Multiplicity = 1.0;
@@ -189,6 +188,9 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     pop.set_ensemble_property(ensemble_property_);
   }
 
+  std::vector<int> minus;
+  std::vector<int> plus;
+    
   auto untouched_walkers = walkers.size();
 #if defined(HAVE_MPI)
   {
@@ -243,9 +245,9 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
         }
       }
     }
-
+    determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
     // load balancing over MPI
-    swapWalkersSimple(pop);
+    swapWalkersSimple(pop, minus, plus);
   }
 #endif
 
@@ -348,11 +350,8 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 }
 
 #if defined(HAVE_MPI)
-void WalkerControl::swapWalkersSimple(MCPopulation& pop)
+  void WalkerControl::swapWalkersSimple(MCPopulation& pop, std::vector<int>& minus, std::vector<int>& plus)
 {
-  std::vector<int> minus, plus;
-  determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
-
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname, "test.%d", rank_num_);
@@ -382,7 +381,7 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   for (int iw = 0; iw < good_walkers.size(); iw++)
   {
     // Multiplicities of 0 should already be dead.
-    // Multiplicities > 1 should result in copies until Multiplicity == 1
+    // Multiplicities > 1 should have resulted in copies until Multiplicity == 1
     assert(static_cast<int>(good_walkers[iw]->Multiplicity) == 1);
     ncopy_pairs.push_back(std::make_pair(static_cast<int>(good_walkers[iw]->Multiplicity), iw));
   }
@@ -547,12 +546,13 @@ void WalkerControl::swapWalkersSimple(MCPopulation& pop)
   //save the number of walkers sent
   saved_num_walkers_sent_ = nsend;
 
-  // rebuild Multiplicity
+  // update Multiplicity
+  // fairly simple since we copy then send if it was sent ncopy_pairs[iw] will be 0
   for (int iw = 0; iw < ncopy_pairs.size(); iw++)
     good_walkers[ncopy_pairs[iw].second]->Multiplicity = ncopy_pairs[iw].first;
 
   for (int iw = 0; iw < newW.size(); iw++)
-    newW[iw].walker.Multiplicity = ncopy_newW[iw] + 1;
+    newW[iw].walker.Multiplicity = 1.0; // this should always be 1
 
 #ifndef NDEBUG
   FullPrecRealType TotalMultiplicity = 0;

@@ -120,7 +120,7 @@ private:
    * The blocking send/recv may become serialized and worsen load imbalance.
    * Non blocking send/recv algorithm avoids serialization completely.
    */
-  void swapWalkersSimple(MCPopulation& pop);
+  void swapWalkersSimple(MCPopulation& pop, std::vector<int>& minus, std::vector<int>& plus);
 #endif
 
   /** An enum to access curData for reduction
