@@ -254,6 +254,7 @@ public:
       Value grad_x(0), grad_y(0), grad_z(0);
       Complex spingrad(0);
 #if defined(QMC_COMPLEX)
+      // COMPILER WORKAROUND
       // This was causing a llvm-link error in icpx due to the lack of declare reduction on complex datatypes.
       // Keep real builds free of any reduction on a complex datatype. Just serialize the reduction.
       // Because mw_evalGradWithSpin is only being called in complex builds in simulations, the impact of this workaround is basically zero.

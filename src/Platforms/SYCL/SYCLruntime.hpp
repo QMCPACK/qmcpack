@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_SYCL_RUNTIME_H
 #define QMCPLUSPLUS_SYCL_RUNTIME_H
 
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace qmcplusplus
 {
