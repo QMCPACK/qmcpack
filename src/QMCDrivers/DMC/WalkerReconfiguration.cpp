@@ -117,8 +117,8 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   {
     int im = minus[i], ip = plus[i];
     W[im]->makeCopy(*(W[ip]));
-    W[im]->ParentID = W[ip]->ID;
-    W[im]->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
+    W[im]->setParentID(W[ip]->getWalkerID());
+    W[im]->setWalkerID((++NumWalkersCreated) * num_contexts_ + MyContext);
   }
   //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  std::endl;

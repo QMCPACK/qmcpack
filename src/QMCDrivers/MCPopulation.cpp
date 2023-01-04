@@ -64,19 +64,36 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
 
   outputManager.pause();
 
-  //this part is time consuming, it must be threaded and calls should be thread-safe.
-#pragma omp parallel for
+  // this part is time consuming, it must be threaded and calls should be thread-safe.
+  // It would make more sense if it was over crowd threads as the thread locality of the walkers
+  // memory would at least initially be "optimal" Depending on the number of OMP threads this may be
+  // equivalent.
+
+  // nextWalkerID is not thread safe so we need to get our walker id's here
+  // before we enter a parallel section.
+  std::vector<long> walker_ids(num_walkers_plus_reserve, -1);
+  for (size_t iw = 0; iw < num_walkers; iw++)
+    walker_ids[iw] = nextWalkerID();
+
+#pragma omp parallel for shared(walker_ids)
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
-    walkers_[iw]             = std::make_unique<MCPWalker>(elec_particle_set_->getTotalNum());
-    walkers_[iw]->R          = elec_particle_set_->R;
+    walkers_[iw]    = std::make_unique<MCPWalker>(walker_ids[iw], walker_ids[iw], elec_particle_set_->getTotalNum());
+    walkers_[iw]->R = elec_particle_set_->R;
     walkers_[iw]->spins      = elec_particle_set_->spins;
     walkers_[iw]->Properties = elec_particle_set_->Properties;
     walkers_[iw]->registerData();
     walkers_[iw]->DataSet.allocate();
 
     if (iw < walker_configs.WalkerList.size())
-      *walkers_[iw] = *walker_configs[iw];
+    {
+      // save this walkers ID as the assignment operator overwrites the walker.walker_id_
+      // \todo revisit Walker assignment operator after legacy drivers removed.
+      auto walker_id = walkers_[iw]->getWalkerID();
+      *walkers_[iw]  = *walker_configs[iw];
+      walkers_[iw]->setParentID(walker_id);
+      walkers_[iw]->setWalkerID(walker_id);
+    }
 
     walker_elec_particle_sets_[iw]  = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw] = trial_wf_->makeClone(*walker_elec_particle_sets_[iw]);
@@ -85,18 +102,6 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   };
 
   outputManager.resume();
-
-  int num_walkers_created = 0;
-  for (auto& walker_ptr : walkers_)
-  {
-    if (walker_ptr->ID == 0)
-    {
-      // And so walker ID's start at one because 0 is magic.
-      // \todo This is C++ all indexes start at 0, make uninitialized ID = -1
-      walker_ptr->ID       = (num_walkers_created++) * num_ranks_ + rank_ + 1;
-      walker_ptr->ParentID = walker_ptr->ID;
-    }
-  }
 
   // kill and spawn walkers update the state variable num_local_walkers_
   // so it must start at the number of reserved walkers
@@ -107,6 +112,8 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   for (int i = 0; i < extra_walkers; ++i)
     killLastWalker();
 }
+
+long MCPopulation::nextWalkerID() { return (num_walkers_created_++) * num_ranks_ + rank_; }
 
 WalkerElementsRef MCPopulation::getWalkerElementsRef(const size_t index)
 {
@@ -124,11 +131,14 @@ std::vector<WalkerElementsRef> MCPopulation::get_walker_elements()
 }
 
 /** creates a walker and returns a reference
- *
- *  Walkers are reused
- *  It would be better if this could be done just by
- *  reusing memory.
+ * 
  *  Not thread safe.
+ *
+ *  In most cases Walkers are reused that have either died during DMC
+ *  or were created dead as a reserve. This is due to the dynamic allocation of the Walker
+ *  and walker elements being expensive so this supposedly an essential optimization.
+ *  I think its entirely possible that the walker elements are bloated and if they only included
+ *  necessary per walker mutable elements that this entire complication could be removed.
  */
 WalkerElementsRef MCPopulation::spawnWalker()
 {
@@ -153,25 +163,31 @@ WalkerElementsRef MCPopulation::spawnWalker()
     walkers_.back()->ReleasedNodeAge    = 0;
     walkers_.back()->Multiplicity       = 1.0;
     walkers_.back()->Weight             = 1.0;
+    // this does count as a walker creation so it gets a new walker id
+    auto walker_id = nextWalkerID();
+    walkers_.back()->setWalkerID(walker_id);
+    walkers_.back()->setParentID(walker_id);
   }
   else
   {
-    app_warning() << "Spawning walker number " << walkers_.size() + 1
-                  << " outside of reserves, this ideally should never happened." << std::endl;
-    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back())));
+    auto walker_id = nextWalkerID();
+    app_warning() << "Spawning walker ID " << walker_id << " this is living walker number " << walkers_.size()
+                  << "which is beyond the allocated walker reserves, ideally this should never happened." << '\n';
+    walkers_.push_back(std::make_unique<MCPWalker>(*(walkers_.back()), walker_id, walker_id));
 
-    // There is no value in doing this here because its going to be wiped out
-    // When we load from the receive buffer. It also won't necessarily be correct
-    // Because the buffer is changed by Hamiltonians and wavefunctions that
-    // Add to the dataSet.
-
+    // Due to multicall initialization of these objects its perilous to do anything but construct these
+    // using the golden walker elements
     walker_elec_particle_sets_.emplace_back(std::make_unique<ParticleSet>(*elec_particle_set_));
     walker_trial_wavefunctions_.emplace_back(trial_wf_->makeClone(*walker_elec_particle_sets_.back()));
     walker_hamiltonians_.emplace_back(
         hamiltonian_->makeClone(*walker_elec_particle_sets_.back(), *walker_trial_wavefunctions_.back()));
+
+    // I think there is no value in doing this here because its going to be wiped out
+    // When we load from the receive buffer.
+    // The question is if spawnWalker is ever called and the walker produced does not get called with
+    // a copyFromBuffer.
     walkers_.back()->Multiplicity = 1.0;
     walkers_.back()->Weight       = 1.0;
-    walkers_.back()->ID           = (walkers_.size() + 1) * num_ranks_ + rank_ + 1;
   }
 
   outputManager.resume();

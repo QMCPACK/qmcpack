@@ -395,8 +395,8 @@ void QMCDriver::setWalkerOffsets()
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
   {
-    W[iw]->ID       = id;
-    W[iw]->ParentID = id;
+    W[iw]->setWalkerID(id);
+    W[iw]->setParentID(id);
   }
   app_log() << "  Total number of walkers: " << W.EnsembleProperty.NumSamples << std::endl;
   app_log() << "  Total weight: " << W.EnsembleProperty.Weight << std::endl;

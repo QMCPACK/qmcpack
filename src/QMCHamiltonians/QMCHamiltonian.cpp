@@ -481,8 +481,8 @@ void QMCHamiltonian::collect_walker_traces(Walker_t& walker, int step)
 {
   if (request.streaming_default_scalars)
   {
-    (*id_sample)(0)     = walker.ID;
-    (*pid_sample)(0)    = walker.ParentID;
+    (*id_sample)(0)     = walker.getWalkerID();
+    (*pid_sample)(0)    = walker.getParentID();
     (*step_sample)(0)   = step;
     (*gen_sample)(0)    = walker.Generation;
     (*age_sample)(0)    = walker.Age;

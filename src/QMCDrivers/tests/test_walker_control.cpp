@@ -257,8 +257,9 @@ struct WalkerControlMPITest
       wc.NumPerRank[i] = 1;
     }
     // One walker on every node, should be no swapping
-    wc.good_w.push_back(std::make_unique<Walker_t>());
-    wc.good_w[0]->ID = c->rank();
+    // we are violating the convention that MCPopulation generates walker ids
+    wc.good_w.push_back(std::make_unique<Walker_t>(c->rank(), c->rank()));
+
     wc.ncopy_w.push_back(0);
 
     wc.swapWalkersSimple(W);
@@ -273,12 +274,10 @@ struct WalkerControlMPITest
     {
       if (c->rank() == 0)
       {
-        wc.good_w.push_back(std::make_unique<Walker_t>());
-        wc.good_w.push_back(std::make_unique<Walker_t>());
+        wc.good_w.push_back(std::make_unique<Walker_t>(c->size(), c->size()));
+        wc.good_w.push_back(std::make_unique<Walker_t>(c->size() * 2, c->size() * 2));
 
         // Use the ID variable to check that the walker content was transmitted
-        wc.good_w[1]->ID = c->size();
-        wc.good_w[2]->ID = c->size() + 1;
 
         wc.ncopy_w.push_back(0);
         wc.ncopy_w.push_back(0);
@@ -291,25 +290,20 @@ struct WalkerControlMPITest
       //std::cout << " Rank = " << c->rank() << " good size = " << wc.good_w.size() <<
       //          " ID = " << wc.good_w[0]->ID << std::endl;
 
-      if (c->rank() == c->size() - 2)
+      if (c->rank() >= c->size() - 2)
       {
         REQUIRE(wc.good_w.size() == 2);
-        // This check is a bit too restrictive - no guarantee the last walker was the
-        //  one transmitted
-        bool okay1 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-        REQUIRE(okay1);
-      }
-      else if (c->rank() == c->size() - 1)
-      {
-        REQUIRE(wc.good_w.size() == 2);
-        bool okay2 = wc.good_w[1]->ID == c->size() || wc.good_w[1]->ID == c->size() + 1;
-        REQUIRE(okay2);
+        bool okay = wc.good_w[1]->getWalkerID() == c->size() || wc.good_w[1]->getWalkerID() == c->size() * 2;
+        REQUIRE(okay);
       }
       else
       {
         REQUIRE(wc.good_w.size() == 1);
-        REQUIRE(wc.good_w[0]->ID == c->rank());
+        REQUIRE(wc.good_w[0]->getWalkerID() == c->rank());
       }
+
+      // \todo this state change can't be in swap (even though it probably should be) so we can coexist with legacy.
+      //       after legacy is dropped consider update that in swapWalkersSimple
       wc.NumPerRank[0]             = 1;
       wc.NumPerRank[c->size() - 1] = 2;
       wc.NumPerRank[c->size() - 2] = 2;
@@ -326,9 +320,9 @@ struct WalkerControlMPITest
         wc.good_w.push_back(std::make_unique<Walker_t>());
         // wc.good_w.push_back(new Walker_t());
         // wc.good_w.push_back(new Walker_t());
-        int nwalkers_rank                = wc.good_w.size();
-        wc.good_w[nwalkers_rank - 1]->ID = c->size() + 5;
-        wc.good_w[nwalkers_rank - 2]->ID = c->size() + 4;
+        int nwalkers_rank = wc.good_w.size();
+        wc.good_w[nwalkers_rank - 1]->setWalkerID(c->size() + 5);
+        wc.good_w[nwalkers_rank - 2]->setWalkerID(c->size() + 4);
         // wc.good_w[nwalkers_rank - 3]->ID = c->size() + 3;
         // wc.good_w[nwalkers_rank - 4]->ID = c->size() + 2;
 
@@ -452,11 +446,11 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
 
   if (c->rank() == 0)
   {
-    W[0]->ID = 100;
+    W[0]->setWalkerID(100);;
   }
   else
   {
-    W[0]->ID = 1;
+    W[0]->setWalkerID(1);
   }
 
   std::vector<int> plus, minus;
@@ -472,7 +466,7 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
   {
     wr.sendWalkers(W, plus);
     REQUIRE(W.WalkerList.size() == 1);
-    REQUIRE(W[0]->ID == 100);
+    REQUIRE(W[0]->getWalkerID() == 100);
   }
 
   if (minus.size() > 0)
@@ -480,8 +474,8 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
     wr.recvWalkers(W, minus);
     REQUIRE(W.WalkerList.size() == 1);
     // Use ID and ParentID to check the walker was transmitted
-    REQUIRE(W[0]->ID == 1 + c->size());
-    REQUIRE(W[0]->ParentID == 100);
+    REQUIRE(W[0]->getWalkerID() == 1 + c->size());
+    REQUIRE(W[0]->getParentID() == 100);
   }
 }
 
