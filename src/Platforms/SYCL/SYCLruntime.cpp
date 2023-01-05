@@ -15,5 +15,5 @@
 
 namespace qmcplusplus
 {
-sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceQueue(); }
+sycl::queue getSYCLDefaultDeviceDefaultQueue() { return SYCLDeviceManager::getDefaultDeviceDefaultQueue(); }
 } // namespace qmcplusplus
