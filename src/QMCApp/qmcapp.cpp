@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   using namespace qmcplusplus;
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller = new Communicate(env.world());
 #endif
   try
   {

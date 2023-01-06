@@ -64,7 +64,7 @@ public:
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
   template<typename DT>
-  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>; 
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {

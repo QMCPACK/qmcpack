@@ -71,10 +71,7 @@ public:
   ///constructor
   Communicate();
 
-  ///constructor from mpi3 environment
 #ifdef HAVE_MPI
-  Communicate(const mpi3::environment& env);
-
   ///constructor with communicator
   Communicate(mpi3::communicator& in_comm);
   Communicate(mpi3::communicator&& in_comm);

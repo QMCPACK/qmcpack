@@ -21,6 +21,7 @@
 #include "DiracMatrix.h"
 #include "PrefetchedRange.h"
 #include "syclSolverInverter.hpp"
+#include "DeviceManager.h"
 
 //#define SYCL_BLOCKING
 
@@ -70,7 +71,7 @@ class DelayedUpdateSYCL
 
 public:
   /// default constructor
-  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = getSYCLDefaultDeviceDefaultQueue(); }
+  DelayedUpdateSYCL() : delay_count(0) { m_queue_ = DeviceManager::getGlobal().getSYCLDM().createQueueDefaultDevice(); }
 
   ~DelayedUpdateSYCL() {}
 
