@@ -443,7 +443,14 @@ class object_interface(object):
         try:
             tmp = pickle.load(fobj)
         except:
-            tmp = pickle.load(fobj,encoding='latin1')
+            try:
+                tmp = pickle.load(fobj,encoding='latin1')
+            except:
+                # fallback for files created with protocol 5
+                # in environments that only support up to protocol 4
+                import pickle5
+                tmp = pickle5.load(fobj)
+            #end try
         #end try
         fobj.close()
         d = self.__dict__
