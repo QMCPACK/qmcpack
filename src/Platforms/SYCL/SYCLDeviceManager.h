@@ -62,7 +62,8 @@ public:
    * Restrict the use of it to performance non-critical operations.
    * Note: CUDA has a default queue but all the SYCL queues are explicit.
    */
-  static sycl::queue& getDefaultDeviceQueue();
+  static sycl::queue& getDefaultDeviceDefaultQueue();
+  sycl::queue createQueueDefaultDevice() const;
 };
 } // namespace qmcplusplus
 

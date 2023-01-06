@@ -132,11 +132,16 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
   }
 }
 
-sycl::queue& SYCLDeviceManager::getDefaultDeviceQueue()
+sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
 {
   if (!default_device_queue)
     throw std::runtime_error("SYCLDeviceManager::getDefaultDeviceQueue() the global instance not initialized.");
   return *default_device_queue;
+}
+
+sycl::queue SYCLDeviceManager::createQueueDefaultDevice() const
+{
+  return sycl::queue(visible_devices[sycl_default_device_num].get_context(), visible_devices[sycl_default_device_num].get_device());
 }
 
 } // namespace qmcplusplus
