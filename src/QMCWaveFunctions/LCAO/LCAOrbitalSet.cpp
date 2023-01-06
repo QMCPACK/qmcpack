@@ -367,6 +367,35 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
 }
 
 void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              const RefVector<ValueVector>& psi_v_list,
+                              const RefVector<GradVector>& dpsi_v_list,
+                              const RefVector<ValueVector>& d2psi_v_list) const
+{
+  OffloadMWVGLArray phi_vgl_v;
+  phi_vgl_v.resize(5,spo_list.size(), BasisSetSize);
+  mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
+
+  const size_t output_size = phi_vgl_v.size(2);
+  const size_t nw          = phi_vgl_v.size(1);
+
+  //TODO: make this cleaner
+  for (int iw = 0; iw < nw; iw++)
+  {
+    std::copy_n(phi_vgl_v.data_at(0, iw, 0), output_size, psi_v_list[iw].get().data());
+    std::copy_n(phi_vgl_v.data_at(4, iw, 0), output_size, d2psi_v_list[iw].get().data());
+    for (size_t idim = 0; idim < DIM; idim++)
+    {
+      //TODO: check layout of xyz/orb dims; this is just a placeholder
+      std::copy_n(phi_vgl_v.data_at(idim + 1, iw, 0), output_size, &dpsi_v_list[iw].get().data()[0][idim]);
+      // for (size_t iorb = 0; iorb < output_size; iorb++)
+      //   dpsi_v_list[iw].get().data()[iorb][idim] = phi_vgl_v.data_at(idim + 1, iw, iorb);
+    }
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVectorWithLeader<ParticleSet>& P_list,
                                    int iat,
                                    OffloadMWVGLArray& phi_vgl_v) const
@@ -385,6 +414,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   }
   else
   {
+    std::cout << "\norbsize: " << OrbitalSetSize << "\nbassize: " << BasisSetSize << std::endl;
     ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
     // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
@@ -392,10 +422,12 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     {
       constexpr char transa = 't';
       constexpr char transb = 'n';
-      constexpr int zone(1);
-      constexpr int zero(0);
+      constexpr double zone(1);
+      constexpr double zero(0);
       // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
       //           C.capacity())
+      std::cout << "C.rows: " << C_partial_view.rows()
+                << "\nC.cols: " << C_partial_view.cols() << std::endl;
       BLAS::gemm(transa, transb,
                  C_partial_view.rows(), //NMOs
                  spo_list.size(),       // will need to be dimension of nwalkers

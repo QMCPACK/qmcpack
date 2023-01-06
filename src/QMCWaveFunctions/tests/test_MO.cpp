@@ -212,11 +212,27 @@ void test_He_mw(bool transform)
     ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
     elec.makeMove(0, newpos);
     // set up second walkers
-    auto elec2 = elec.makeClone();
+    // auto elec2 = elec.makeClone();
+
+    sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
+
+    RefVectorWithLeader<SPOSet> spo_list(*sposet);
+    RefVectorWithLeader<ParticleSet> P_list(elec);
+    RefVector<SPOSet::ValueVector> values2;
+    RefVector<SPOSet::GradVector> dpsi2;
+    RefVector<SPOSet::ValueVector> d2psi2;
+    //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
+    //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
+    sposet->mw_evaluateVGL(spo_list, P_list, 0, values2, dpsi2, d2psi2);
+    std::cout << "HELP" << std::endl;
+    //std::cout << values[0][0] << std::endl;
+    //std::cout << phi_vgl_v[0][0][0] << std::endl;
     // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
     // results should be the same as above, ideally 
     // but with a new data object to access (everything in offloadmwvglArray).
 }
+
+TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
 
 void test_Ne(bool transform)
 {
