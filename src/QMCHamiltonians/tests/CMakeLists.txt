@@ -19,6 +19,7 @@ set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
     test_bare_kinetic.cpp
+    test_density_estimator.cpp
     test_NonLocalTOperator.cpp
     test_ecp.cpp
     test_hamiltonian_pool.cpp
