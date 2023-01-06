@@ -84,37 +84,37 @@ if(NOT QMC_CUDA)
   else()
     if(QMC_COMPLEX)
       # VMC
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "totenergy" "-21.36456878 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "totenergy" "-21.36458168 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "kinetic" "18.75860076 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "potential" "-40.12316954 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "potential" "-40.12318244 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "eeenergy" "-4.77761896 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "localecp" "-10.90122054 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.10699716 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.10698394 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55132719 0.000001")
       #DMC
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.69556672 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.69562984 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "kinetic" "18.36514388 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "potential" "-40.06071060 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "potential" "-40.06077372 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "eeenergy" "-5.32649923 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "localecp" "-10.70569785 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.52281367 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.52275023 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55132719 0.000001")
     else()
       # VMC
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "totenergy" "-21.03869868 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "totenergy" "-21.03866915 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "kinetic" "20.61455762 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "potential" "-41.65325630 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "potential" "-41.65322677 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "eeenergy" "-4.40963853 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "localecp" "-13.17860152 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.48631094 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "nonlocalecp" "1.48634016 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_VMC_SCALARS "ionion" "-25.55132719 0.000001")
       #DMC
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.21832528 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "totenergy" "-21.21829172 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "kinetic" "18.98312444 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "potential" "-40.20144972 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "potential" "-40.20141616 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "eeenergy" "-4.75574225 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "localecp" "-10.90139086 0.000001")
-      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.00701057 0.000001")
+      list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "nonlocalecp" "1.00704382 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_SHORT_DMC_SCALARS "ionion" "-25.55132719 0.000001")
     endif()
   endif()
@@ -237,11 +237,11 @@ if(NOT QMC_CUDA)
     if(QMC_COMPLEX)
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy"
-           "-21.03266250 0.000001")
+           "-21.03263547 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "kinetic"
            "21.53043534 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "potential"
-           "-42.56309784 0.000001")
+           "-42.56307081 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "eeenergy"
            "-4.20408808 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "ionion"
@@ -249,15 +249,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "localecp"
            "-14.93105741 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "nonlocalecp"
-           "2.12337471 0.000001")
+           "2.12340158 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "samples" "144 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy"
-           "-21.79244251 0.000001")
+           "-21.79249332 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic"
            "20.34264322 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential"
-           "-42.13508573 0.000001")
+           "-42.13513654 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy"
            "-4.99765165 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion"
@@ -265,15 +265,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp"
            "-14.00168724 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp"
-           "2.41558022 0.000001")
+           "2.41552925 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples" "144 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy"
-           "-21.77438877 0.000001")
+           "-21.77441682 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic"
            "21.72916062 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential"
-           "-43.50354939 0.000001")
+           "-43.50357863 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy"
            "-4.47591187 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion"
@@ -281,7 +281,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp"
            "-15.03968077 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp"
-           "1.56337031 0.000001")
+           "1.56334141 0.000001")
     else()
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_1_SCALARS "totenergy"
@@ -302,11 +302,11 @@ if(NOT QMC_CUDA)
            "144.00000000 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "totenergy"
-           "-21.16496822 0.000001")
+           "-21.16501162 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "kinetic"
            "19.67417373 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "potential"
-           "-40.83914194 0.000001")
+           "-40.83918534 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "eeenergy"
            "-4.53265658 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "ionion"
@@ -314,16 +314,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "localecp"
            "-13.36631725 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "nonlocalecp"
-           "2.61115908 0.000001")
+           "2.61111536 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_2_SCALARS "samples"
            "144.00000000 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "totenergy"
-           "-20.79227061 0.000001")
+           "-20.79231965 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "kinetic"
            "21.05924365 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "potential"
-           "-41.85151426 0.000001")
+           "-41.85156470 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "eeenergy"
            "-3.83828756 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "ionion"
@@ -331,7 +331,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "localecp"
            "-16.19033691 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t4_3_SCALARS "nonlocalecp"
-           "3.72843740 0.000001")
+           "3.72838694 0.000001")
     endif()
   endif()
 
@@ -455,11 +455,11 @@ if(NOT QMC_CUDA)
     if(QMC_COMPLEX)
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy"
-           "-21.44267742 0.000001")
+           "-21.44265149 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic"
            "17.50276467 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential"
-           "-38.94544209 0.000001")
+           "-38.94541616 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy"
            "-5.08527024 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion"
@@ -467,15 +467,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp"
            "-9.83228352 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp"
-           "1.52343873 0.000001")
+           "1.52346451 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples" "144 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy"
-           "-21.28433581 0.000001")
+           "-21.28437886 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic"
            "21.27982716 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential"
-           "-42.56416297 0.000001")
+           "-42.56420602 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy"
            "-4.68529657 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion"
@@ -483,31 +483,31 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp"
            "-15.31087672 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp"
-           "2.98333738 0.000001")
+           "2.98329418 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples" "144 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy"
            "-22.02239785 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic"
-           "22.26956045 0.000001")
+           "22.26955740 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential"
-           "-44.29195830 0.000001")
+           "-44.29195355 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy"
            "-4.92804100 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion"
            "-25.55132706 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp"
-           "-17.22155131 0.000001")
+           "-17.22154714 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp"
            "3.40896107 0.000001")
     else()
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "totenergy"
-           "-21.30267144 0.000001")
+           "-21.30259555 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "kinetic"
            "19.93254641 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "potential"
-           "-41.23521784 0.000001")
+           "-41.23514196 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "eeenergy"
            "-5.06956602 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "ionion"
@@ -515,16 +515,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "localecp"
            "-12.19151812 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "nonlocalecp"
-           "1.57719350 0.000001")
+           "1.57726906 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_1_SCALARS "samples"
            "144.00000000 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "totenergy"
-           "-21.50423449 0.000001")
+           "-21.50421476 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "kinetic"
            "20.70369649 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "potential"
-           "-42.20793098 0.000001")
+           "-42.20791125 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "eeenergy"
            "-4.69046880 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "ionion"
@@ -532,16 +532,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "localecp"
            "-13.26890009 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "nonlocalecp"
-           "1.30276510 0.000001")
+           "1.30278451 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_2_SCALARS "samples"
            "144.00000000 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "totenergy"
-           "-21.64073241 0.000001")
+           "-21.64075612 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "kinetic"
            "20.93567485 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "potential"
-           "-42.57640726 0.000001")
+           "-42.57643174 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "eeenergy"
            "-4.90231612 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "ionion"
@@ -549,7 +549,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "localecp"
            "-13.86140151 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r1-t16_3_SCALARS "nonlocalecp"
-           "1.73863757 0.000001")
+           "1.73861336 0.000001")
     endif()
   endif()
 
@@ -673,11 +673,11 @@ if(NOT QMC_CUDA)
     if(QMC_COMPLEX)
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy"
-           "-21.03294400 0.000001")
+           "-21.03298214 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic"
            "20.65585352 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential"
-           "-41.68879752 0.000001")
+           "-41.68883566 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy"
            "-4.40762168 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion"
@@ -685,15 +685,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp"
            "-13.87483540 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp"
-           "2.14498663 0.000001")
+           "2.14494833 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples" "144 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy"
-           "-21.51006989 0.000001")
+           "-21.51010377 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic"
            "19.78926663 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential"
-           "-41.29933652 0.000001")
+           "-41.29937040 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy"
            "-4.87341474 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion"
@@ -701,15 +701,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp"
            "-13.00549989 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp"
-           "2.13090517 0.000001")
+           "2.13087113 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples" "144 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy"
-           "-21.60475684 0.000001")
+           "-21.60479759 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic"
            "21.43356346 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential"
-           "-43.03832030 0.000001")
+           "-43.03836124 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy"
            "-4.62212422 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
@@ -717,15 +717,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
            "-14.01496528 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
-           "1.15009626 0.000001")
+           "1.15005588 0.000001")
     else()
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "totenergy"
-           "-20.84292853 0.000001")
+           "-20.84291775 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "kinetic"
            "19.68818617 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "potential"
-           "-40.53111470 0.000001")
+           "-40.53110391 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "eeenergy"
            "-4.27768409 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "ionion"
@@ -733,16 +733,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "localecp"
            "-11.80294323 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "nonlocalecp"
-           "1.10083968 0.000001")
+           "1.10085031 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_1_SCALARS "samples"
            "144.00000000 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "totenergy"
-           "-20.97505088 0.000001")
+           "-20.97512384 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "kinetic"
            "19.90145613 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "potential"
-           "-40.87650700 0.000001")
+           "-40.87657996 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "eeenergy"
            "-4.46662861 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "ionion"
@@ -750,24 +750,24 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "localecp"
            "-13.57462590 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "nonlocalecp"
-           "2.71607457 0.000001")
+           "2.71600145 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_2_SCALARS "samples"
            "144.00000000 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "totenergy"
-           "-21.06954729 0.000001")
+           "-21.06958081 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "kinetic"
            "21.41422718 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "potential"
-           "-42.48377447 0.000001")
+           "-42.48381031 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "eeenergy"
            "-4.24343589 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "ionion"
            "-25.55132706 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "localecp"
-           "-16.56048685 0.000001")
+           "-16.56049089 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t2_3_SCALARS "nonlocalecp"
-           "3.87147533 0.000001")
+           "3.87144211 0.000001")
     endif()
   endif()
 
@@ -891,11 +891,11 @@ if(NOT QMC_CUDA)
     if(QMC_COMPLEX)
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy"
-           "-21.58289265 0.000001")
+           "-21.58292835 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic"
            "20.38781180 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential"
-           "-41.97070445 0.000001")
+           "-41.97074015 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy"
            "-4.79329398 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion"
@@ -903,15 +903,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp"
            "-13.37215305 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp"
-           "1.74606964 0.000001")
+           "1.74603379 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples" "144 0.0")
       # VMC with drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy"
-           "-21.76136769 0.000001")
+           "-21.76137624 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic"
            "21.68396377 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential"
-           "-43.44533145 0.000001")
+           "-43.44534001 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy"
            "-4.61354584 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion"
@@ -919,15 +919,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp"
            "-14.61321213 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp"
-           "1.33275358 0.000001")
+           "1.33274487 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples" "144 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy"
-           "-21.27076431 0.000001")
+           "-21.27077147 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic"
            "20.20677813 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential"
-           "-41.47754244 0.000001")
+           "-41.47755154 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy"
            "-4.42449658 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion"
@@ -935,15 +935,15 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp"
            "-12.46418943 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp"
-           "0.96247062 0.000001")
+           "0.96246237 0.000001")
     else()
       # VMC without drift
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "totenergy"
-           "-21.03372308 0.000001")
+           "-21.03367753 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "kinetic"
            "20.68179752 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "potential"
-           "-41.71552059 0.000001")
+           "-41.71547504 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "eeenergy"
            "-4.05542459 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "ionion"
@@ -951,16 +951,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "localecp"
            "-14.26281752 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "nonlocalecp"
-           "2.15404858 0.000001")
+           "2.15409398 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_1_SCALARS "samples"
            "144.00000000 0.0")
       # VMC with drif
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "totenergy"
-           "-21.54032047 0.000001")
+           "-21.54037156 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "kinetic"
            "19.92752205 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "potential"
-           "-41.46784252 0.000001")
+           "-41.46789361 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "eeenergy"
            "-4.99217592 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "ionion"
@@ -968,16 +968,16 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "localecp"
            "-12.74451933 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "nonlocalecp"
-           "1.82017979 0.000001")
+           "1.82012855 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_2_SCALARS "samples"
            "144.00000000 0.0")
       # DMC
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "totenergy"
-           "-21.61183432 0.000001")
+           "-21.61181965 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "kinetic"
            "20.63430258 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "potential"
-           "-42.24613689 0.000001")
+           "-42.24612241 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "eeenergy"
            "-5.37797272 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "ionion"
@@ -985,7 +985,7 @@ if(NOT QMC_CUDA)
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "localecp"
            "-12.33231856 0.000001")
       list(APPEND det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS "nonlocalecp"
-           "1.01548145 0.000001")
+           "1.01549582 0.000001")
     endif()
   endif()
 
