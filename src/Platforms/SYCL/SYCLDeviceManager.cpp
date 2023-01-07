@@ -32,7 +32,9 @@ syclDeviceInfo::syclDeviceInfo(const sycl::context& context, const sycl::device&
 
 syclDeviceInfo::~syclDeviceInfo()
 {
-  //#pragma omp interop destroy(interop_)
+#if defined(ENABLE_OFFLOAD)
+  #pragma omp interop destroy(interop_)
+#endif
 }
 
 std::unique_ptr<sycl::queue> SYCLDeviceManager::default_device_queue;
@@ -41,24 +43,43 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     : sycl_default_device_num(-1)
 {
 #if defined(ENABLE_OFFLOAD)
-  const int sycl_device_count = omp_get_num_devices();
-  sycl_default_device_num     = determineDefaultDeviceNum(sycl_device_count, local_rank, local_size);
-  if (default_device_num < 0)
-    default_device_num = sycl_default_device_num;
-
-  for (int id = 0; id < sycl_device_count; id++)
+  const size_t omp_num_devices = omp_get_num_devices();
+  visible_devices.reserve(omp_num_devices);
+  for (int id = 0; id < omp_num_devices; id++)
   {
     omp_interop_t interop;
-#pragma omp interop device(id) init(prefer_type("sycl"), targetsync : interop)
+#pragma omp interop device(id) init(prefer_type("level_zero"), targetsync : interop)
 
-    int result;
-    sycl::queue* omp_queue = static_cast<sycl::queue*>(omp_get_interop_ptr(interop, omp_ipr_targetsync, &result));
-    if (result != omp_irc_success)
-      throw std::runtime_error("SYCLDeviceManager::SYCLDeviceManager fail to obtain sycl::queue by interop");
+    int err = -1;
+    const std::string omp_backend_name(omp_get_interop_str(interop, omp_ipr_fr_name, &err));
+    if (err != omp_irc_success)
+      throw std::runtime_error("omp_get_interop_str(omp_ipr_fr_name) failed!");
 
-    visible_devices.emplace_back(omp_queue->get_context(), omp_queue->get_device(), interop);
-    if (id == sycl_default_device_num)
-      default_device_queue = std::make_unique<sycl::queue>(*omp_queue);
+    if (omp_backend_name.find("level_zero") != 0)
+      throw std::runtime_error("Interop between OpenMP and SYCL is only supported when both implementations are built "
+                               "on top of Level Zero API.");
+
+    auto hPlatform = omp_get_interop_ptr(interop, omp_ipr_platform, &err);
+    if (err != omp_irc_success)
+      throw std::runtime_error("omp_get_interop_ptr(omp_ipr_platform) failed!");
+    auto hContext = omp_get_interop_ptr(interop, omp_ipr_device_context, &err);
+    if (err != omp_irc_success)
+      throw std::runtime_error("omp_get_interop_ptr(omp_ipr_device_context) failed!");
+    auto hDevice = omp_get_interop_ptr(interop, omp_ipr_device, &err);
+    if (err != omp_irc_success)
+      throw std::runtime_error("omp_get_interop_ptr(omp_ipr_device) failed!");
+
+    const sycl::platform sycl_platform =
+        sycl::ext::oneapi::level_zero::make_platform(reinterpret_cast<pi_native_handle>(hPlatform));
+
+    const sycl::device sycl_device =
+        sycl::ext::oneapi::level_zero::make_device(sycl_platform, reinterpret_cast<pi_native_handle>(hDevice));
+
+    visible_devices
+        .emplace_back(sycl::ext::oneapi::level_zero::make_context({sycl_device},
+                                                                  reinterpret_cast<pi_native_handle>(hContext),
+                                                                  true /* keep the ownership, no transfer */),
+                      sycl_device, interop);
   }
 
 #else
@@ -88,6 +109,7 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
   visible_devices.reserve(devices.size());
   for (int id = 0; id < devices.size(); id++)
     visible_devices.emplace_back(sycl::context(devices[id]), devices[id]);
+#endif
 
   const size_t sycl_device_count = visible_devices.size();
   if (num_devices == 0)
@@ -108,14 +130,18 @@ SYCLDeviceManager::SYCLDeviceManager(int& default_device_num, int& num_devices, 
     default_device_queue = std::make_unique<sycl::queue>(visible_devices[sycl_default_device_num].get_context(),
                                                          visible_devices[sycl_default_device_num].get_device());
   }
-#endif
 }
 
-sycl::queue& SYCLDeviceManager::getDefaultDeviceQueue()
+sycl::queue& SYCLDeviceManager::getDefaultDeviceDefaultQueue()
 {
   if (!default_device_queue)
     throw std::runtime_error("SYCLDeviceManager::getDefaultDeviceQueue() the global instance not initialized.");
   return *default_device_queue;
+}
+
+sycl::queue SYCLDeviceManager::createQueueDefaultDevice() const
+{
+  return sycl::queue(visible_devices[sycl_default_device_num].get_context(), visible_devices[sycl_default_device_num].get_device());
 }
 
 } // namespace qmcplusplus

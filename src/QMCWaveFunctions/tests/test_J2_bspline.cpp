@@ -239,7 +239,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec_.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
-  VP.makeMoves(1, elec_.R[1], newpos2);
+  VP.makeMoves(elec_, 1, newpos2);
   j2->evaluateRatios(VP, ratios2);
 
   REQUIRE(std::real(ratios2[0]) == Approx(0.9871985577));

@@ -557,12 +557,12 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
   SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
+  mw_dspin.resize(2, OrbitalSetSize);
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 3; iat++)
   {
@@ -570,18 +570,16 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     psi_work     = 0.0;
     dpsi_work    = 0.0;
     d2psi_work   = 0.0;
-    dspsi_work   = 0.0;
     psi_work_2   = 0.0;
     dpsi_work_2  = 0.0;
     d2psi_work_2 = 0.0;
-    dspsi_work_2 = 0.0;
 
     MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
 
     elec_.mw_makeMove(p_list, iat, displs);
-    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(psiM_ref[iat][0]).epsilon(h));
     CHECK(psi_v_list[0].get()[1] == ComplexApprox(psiM_ref[iat][1]).epsilon(h));
@@ -603,9 +601,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(d2psi_v_list[0].get()[1] == ComplexApprox(d2psiM_ref[iat][1]).epsilon(h2));
     CHECK(d2psi_v_list[0].get()[2] == ComplexApprox(d2psiM_ref[iat][2]).epsilon(h2));
 
-    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
-    CHECK(dspsi_v_list[0].get()[1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
-    CHECK(dspsi_v_list[0].get()[2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
+    CHECK(mw_dspin[0][0] == ComplexApprox(dspsiM_ref[iat][0]).epsilon(h));
+    CHECK(mw_dspin[0][1] == ComplexApprox(dspsiM_ref[iat][1]).epsilon(h));
+    CHECK(mw_dspin[0][2] == ComplexApprox(dspsiM_ref[iat][2]).epsilon(h));
 
     //walker 1, permuted from reference
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(psiM_ref[(iat + 1) % 3][0]).epsilon(h));
@@ -628,9 +626,9 @@ TEST_CASE("Einspline SpinorSet from HDF", "[wavefunction]")
     CHECK(d2psi_v_list[1].get()[1] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][1]).epsilon(h2));
     CHECK(d2psi_v_list[1].get()[2] == ComplexApprox(d2psiM_ref[(iat + 1) % 3][2]).epsilon(h2));
 
-    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][0]).epsilon(h));
-    CHECK(dspsi_v_list[1].get()[1] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][1]).epsilon(h));
-    CHECK(dspsi_v_list[1].get()[2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
+    CHECK(mw_dspin[1][0] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][0]).epsilon(h));
+    CHECK(mw_dspin[1][1] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][1]).epsilon(h));
+    CHECK(mw_dspin[1][2] == ComplexApprox(dspsiM_ref[(iat + 1) % 3][2]).epsilon(h));
 
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);

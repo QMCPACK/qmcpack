@@ -232,7 +232,7 @@ struct J1Spin : public WaveFunctionComponent
   {
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] =
-          std::exp(Vat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(myTableID).getDistRow(k)));
+          std::exp(Vat[VP.refPtcl] - computeU(VP.getRefPS(), VP.refPtcl, VP.getDistTableAB(myTableID).getDistRow(k)));
   }
 
   void evaluateDerivatives(ParticleSet& P,

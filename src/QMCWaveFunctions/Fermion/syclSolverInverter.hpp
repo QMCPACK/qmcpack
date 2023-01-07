@@ -72,10 +72,10 @@ public:
                                        Ainv_gpu.cols(), {c_event});
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
-                        {t_event}).wait();
+      syclSolver::getrf(m_queue, norb, norb, Ainv_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws, {t_event})
+          .wait();
     }
-    catch (cl::sycl::exception const& ex)
+    catch (sycl::exception const& ex)
     {
       std::ostringstream err;
       err << "\t\tCaught synchronous SYCL exception during getrf:\n"
@@ -113,10 +113,10 @@ public:
     //getrf (LU) -> getri (inverse)
     try
     {
-      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws,
-                        {t_event}).wait();
+      syclSolver::getrf(m_queue, norb, norb, Mat1_gpu.data(), norb, ipiv.data(), workspace.data(), getrf_ws, {t_event})
+          .wait();
     }
-    catch (cl::sycl::exception const& ex)
+    catch (sycl::exception const& ex)
     {
       std::ostringstream err;
       err << "\t\tCaught synchronous SYCL exception during getrf:\n"
