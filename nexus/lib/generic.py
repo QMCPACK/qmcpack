@@ -453,7 +453,7 @@ class object_interface(object):
                     tmp = pickle5.load(fobj)
                 except ImportError:
                     have_pickle5 = False
-                    error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. \"pip install pickle5\" to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
+                    error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
                 #end try
             #end try
         #end try
