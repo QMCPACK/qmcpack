@@ -10,7 +10,7 @@
 
 #include "catch.hpp"
 
-#include "Numerics/RandomRotationMatrix.h"
+#include "Numerics/RotationMatrix3D.h"
 #include <string>
 #include <vector>
 

@@ -10,11 +10,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef QMCPLUSPLUS_RANDOM_ROTATION_MATRIX_H
-#define QMCPLUSPLUS_RANDOM_ROTATION_MATRIX_H
+#ifndef QMCPLUSPLUS_ROTATION_MATRIX_3D_H
+#define QMCPLUSPLUS_ROTATION_MATRIX_3D_H
 
 #include "Configuration.h"
-#include "Utilities/RandomGenerator.h"
 #include <array>
 
 namespace qmcplusplus
@@ -48,11 +47,6 @@ inline Tensor<T, 3> generateRotationMatrix(T rng1, T rng2, T rng3)
                       sph * sth,
                       cth);
   // clang-format on
-}
-
-inline QMCTraits::TensorType generateRandomRotationMatrix(RandomGenerator& rng)
-{
-  return generateRotationMatrix(rng(), rng(), rng());
 }
 
 } // namespace qmcplusplus
