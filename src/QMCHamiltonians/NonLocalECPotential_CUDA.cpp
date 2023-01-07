@@ -166,7 +166,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
     if (PPset[sp])
     {
       NonLocalECPComponent& pp = *PPset[sp];
-      TensorType rmat = getRandomRotationMatrix(*myRNG);
+      TensorType rmat = generateRandomRotationMatrix(*myRNG);
       PPset[sp]->randomize_grid(QuadPoints_host[sp], rmat);
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated

@@ -20,8 +20,12 @@
 namespace qmcplusplus
 {
 
+/// Create a random 3D rotation matrix from three random numbers.
+/// Each input random number should be in the range [0,1).
+/// See the script Numerics/tests/derive_random_rotation.py for more information about the algorithm.
+
 template<typename T>
-inline Tensor<T, 3> getRotationMatrix(T rng1, T rng2, T rng3)
+inline Tensor<T, 3> generateRotationMatrix(T rng1, T rng2, T rng3)
 {
   // The angular values for a random rotation matrix
   // phi : 0 to 2*pi
@@ -46,9 +50,9 @@ inline Tensor<T, 3> getRotationMatrix(T rng1, T rng2, T rng3)
   // clang-format on
 }
 
-inline QMCTraits::TensorType getRandomRotationMatrix(RandomGenerator& rng)
+inline QMCTraits::TensorType generateRandomRotationMatrix(RandomGenerator& rng)
 {
-  return getRotationMatrix(rng(), rng(), rng());
+  return generateRotationMatrix(rng(), rng(), rng());
 }
 
 } // namespace qmcplusplus

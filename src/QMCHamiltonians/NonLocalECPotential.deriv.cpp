@@ -28,7 +28,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
     {
-      TensorType rmat = getRandomRotationMatrix(*myRNG);
+      TensorType rmat = generateRandomRotationMatrix(*myRNG);
       PPset[ipp]->randomize_grid(rmat);
     }
 

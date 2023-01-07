@@ -22,7 +22,7 @@ TEMPLATE_TEST_CASE("RandomRotationMatrix", "[numerics]", float, double)
   // TestType is defined by Catch
   using TensorType = Tensor<TestType, 3>;
 
-  TensorType rmat = getRotationMatrix<TestType>(0.0, 0.0, 0.0);
+  TensorType rmat = generateRotationMatrix<TestType>(0.0, 0.0, 0.0);
 
   // Default rotation matrix should be the identity
   for (int i = 0; i < 3; i++)
@@ -33,7 +33,7 @@ TEMPLATE_TEST_CASE("RandomRotationMatrix", "[numerics]", float, double)
         CHECK(rmat(i, j) == Approx(0.0));
 
 
-  TensorType rmat2 = getRotationMatrix<TestType>(0.1, 0.2, 0.3);
+  TensorType rmat2 = generateRotationMatrix<TestType>(0.1, 0.2, 0.3);
 
   CHECK(rmat2(0, 0) == ValueApprox(-0.459016994374947));
   CHECK(rmat2(0, 1) == ValueApprox(0.842075137094350));
@@ -46,7 +46,7 @@ TEMPLATE_TEST_CASE("RandomRotationMatrix", "[numerics]", float, double)
   CHECK(rmat2(2, 2) == ValueApprox(0.400000000000000));
 
 
-  TensorType rmat3 = getRotationMatrix<TestType>(0.9, 0.5, 0.8);
+  TensorType rmat3 = generateRotationMatrix<TestType>(0.9, 0.5, 0.8);
 
   CHECK(rmat3(0, 0) == ValueApprox(0.485410196624969));
   CHECK(rmat3(0, 1) == ValueApprox(-0.352671151375484));
