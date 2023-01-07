@@ -9,7 +9,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
   endif()
 else()
   if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2021.1)
-    message(FATAL_ERROR "Requires Intel classic compiler 19.1.2 or higher!")
+    message(FATAL_ERROR "Requires Intel classic compiler 2021.1 or higher!")
   endif()
 endif()
 
