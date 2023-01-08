@@ -443,7 +443,19 @@ class object_interface(object):
         try:
             tmp = pickle.load(fobj)
         except:
-            tmp = pickle.load(fobj,encoding='latin1')
+            try:
+                tmp = pickle.load(fobj,encoding='latin1')
+            except:
+                # fallback for files created with protocol 5
+                # in environments that only support up to protocol 4
+                try:
+                    import pickle5
+                    tmp = pickle5.load(fobj)
+                except ImportError:
+                    have_pickle5 = False
+                    error("Highest pickle protocol in current python version is {}, but {} is written using a higher protocol. Install pickle5, e.g. via pip, to enable protocol 5 in python <= 3.7.x".format(pickle.HIGHEST_PROTOCOL, fpath))
+                #end try
+            #end try
         #end try
         fobj.close()
         d = self.__dict__

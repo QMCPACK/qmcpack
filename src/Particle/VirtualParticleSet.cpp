@@ -155,6 +155,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
 {
   auto& vp_leader    = vp_list.getLeader();
   vp_leader.onSphere = sphere;
+  vp_leader.refPS    = refp_list.getLeader();
 
   const size_t nVPs = countVPs(vp_list);
   auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();
