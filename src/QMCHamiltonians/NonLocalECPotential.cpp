@@ -187,8 +187,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
     if (PPset[ipp])
       if (!keep_grid)
       {
-        TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->rotateQuadratureGrid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -304,8 +303,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
       for (int ipp = 0; ipp < O.PPset.size(); ipp++)
         if (O.PPset[ipp])
         {
-          TensorType rmat = generateRandomRotationMatrix(*O.myRNG);
-          O.PPset[ipp]->rotateQuadratureGrid(rmat);
+          O.PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*O.myRNG));
         }
 
     //loop over all the ions
@@ -479,8 +477,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
     for (int ipp = 0; ipp < PPset.size(); ipp++)
       if (PPset[ipp])
       {
-        TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->rotateQuadratureGrid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
       }
   }
   //loop over all the ions
@@ -562,8 +559,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
     if (PPset[ipp])
       if (!keepGrid)
       {
-        TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->rotateQuadratureGrid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -602,8 +598,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
     if (PPset[ipp])
       if (!keepGrid)
       {
-        TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->rotateQuadratureGrid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);

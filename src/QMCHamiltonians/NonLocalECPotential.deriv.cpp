@@ -28,8 +28,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
     {
-      TensorType rmat = generateRandomRotationMatrix(*myRNG);
-      PPset[ipp]->rotateQuadratureGrid(rmat);
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
     }
 
   /* evaluating TWF ratio values requires calling prepareGroup
