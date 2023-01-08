@@ -40,7 +40,7 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
     if (PPset[ipp])
     {
       TensorType rmat = generateRandomRotationMatrix(*myRNG);
-      PPset[ipp]->randomize_grid(rmat);
+      PPset[ipp]->rotateQuadratureGrid(rmat);
     }
   const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int iat = 0; iat < NumIons; iat++)

@@ -865,14 +865,14 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(const TensorType& rmat)
+void NonLocalECPComponent::rotateQuadratureGrid(const TensorType& rmat)
 {
   for (int i = 0; i < sgridxyz_m.size(); i++)
     rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, const TensorType& rmat)
+void NonLocalECPComponent::rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat)
 {
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
@@ -904,8 +904,8 @@ void NonLocalECPComponent::contributeTxy(int iel, std::vector<NonLocalData>& Txy
 }
 
 /// \relates NonLocalEcpComponent
-template void NonLocalECPComponent::randomize_grid(std::vector<float>& sphere, const TensorType& rmat);
-template void NonLocalECPComponent::randomize_grid(std::vector<double>& sphere, const TensorType& rmat);
+template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<float>& sphere, const TensorType& rmat);
+template void NonLocalECPComponent::rotateQuadratureGrid(std::vector<double>& sphere, const TensorType& rmat);
 
 
 } // namespace qmcplusplus

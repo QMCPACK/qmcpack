@@ -188,7 +188,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
       if (!keep_grid)
       {
         TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->randomize_grid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -305,7 +305,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
         if (O.PPset[ipp])
         {
           TensorType rmat = generateRandomRotationMatrix(*O.myRNG);
-          O.PPset[ipp]->randomize_grid(rmat);
+          O.PPset[ipp]->rotateQuadratureGrid(rmat);
         }
 
     //loop over all the ions
@@ -480,7 +480,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
       if (PPset[ipp])
       {
         TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->randomize_grid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(rmat);
       }
   }
   //loop over all the ions
@@ -563,7 +563,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
       if (!keepGrid)
       {
         TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->randomize_grid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -603,7 +603,7 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       if (!keepGrid)
       {
         TensorType rmat = generateRandomRotationMatrix(*myRNG);
-        PPset[ipp]->randomize_grid(rmat);
+        PPset[ipp]->rotateQuadratureGrid(rmat);
       }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);

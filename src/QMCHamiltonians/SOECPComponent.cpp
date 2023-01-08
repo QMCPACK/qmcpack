@@ -241,7 +241,7 @@ void SOECPComponent::buildQuadraturePointDeltas(RealType r,
   }
 }
 
-void SOECPComponent::randomize_grid(const TensorType& rmat)
+void SOECPComponent::rotateQuadratureGrid(const TensorType& rmat)
 {
   for (int i = 0; i < sgridxyz_m.size(); i++)
     rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
