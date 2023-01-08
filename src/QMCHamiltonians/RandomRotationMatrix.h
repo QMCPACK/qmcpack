@@ -24,7 +24,13 @@ namespace qmcplusplus
 /// Create a random 3D rotation matrix using a random generator
 inline QMCTraits::TensorType generateRandomRotationMatrix(RandomGenerator& rng)
 {
-  return generateRotationMatrix(rng(), rng(), rng());
+  auto rng1 = rng();
+  auto rng2 = rng();
+  auto rng3 = rng();
+  return generateRotationMatrix<QMCTraits::RealType>(rng1, rng2, rng3);
+  // The order of evaluation of function arguments is unspecified by the standard.
+  // The following code will cause failures in the deterministic tests.
+  // return generateRotationMatrix<QMCTraits::RealType>(rng(), rng(), rng());
 }
 
 } // namespace qmcplusplus
