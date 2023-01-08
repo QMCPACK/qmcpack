@@ -186,9 +186,8 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       if (!keep_grid)
-      {
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
-      }
+
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -302,9 +301,7 @@ void NonLocalECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase
     if (!keep_grid)
       for (int ipp = 0; ipp < O.PPset.size(); ipp++)
         if (O.PPset[ipp])
-        {
           O.PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*O.myRNG));
-        }
 
     //loop over all the ions
     const auto& myTable = P.getDistTableAB(O.myTableIndex);
@@ -476,9 +473,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
   {
     for (int ipp = 0; ipp < PPset.size(); ipp++)
       if (PPset[ipp])
-      {
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
-      }
   }
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
@@ -558,9 +553,8 @@ void NonLocalECPotential::evaluateOneBodyOpMatrix(ParticleSet& P,
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       if (!keepGrid)
-      {
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
-      }
+
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
@@ -597,9 +591,8 @@ void NonLocalECPotential::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
       if (!keepGrid)
-      {
         PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
-      }
+
   //loop over all the ions
   const auto& myTable = P.getDistTableAB(myTableIndex);
   // clear all the electron and ion neighbor lists
