@@ -13,8 +13,8 @@
 #ifndef QMCPLUSPLUS_ROTATION_MATRIX_3D_H
 #define QMCPLUSPLUS_ROTATION_MATRIX_3D_H
 
-#include "Configuration.h"
-#include <array>
+#include "Containers/OhmmsPETE/Tensor.h"
+#include "config/stdlib/Constants.h" // For TWOPI
 
 namespace qmcplusplus
 {
