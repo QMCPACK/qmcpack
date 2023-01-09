@@ -153,8 +153,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
 #if OHMMS_DIM == 3
       else if (potType == "MPC" || potType == "mpc")
         addMPCPotential(element);
-      else if (potType == "pseudo")
-        addPseudoPotential(element);
 #endif
     }
     else if (cname == "constant")
@@ -387,6 +385,15 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       targetH->addOperatorType(potName, potType);
     }
   });
+
+  // Other Hamiltonian elements or estimators may add distance tables in particle sets.
+  // Virtual particle sets must have the same distance table count.
+  // Process pseudopotentials last to avoid size mismatch.
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "pairpot" && getXMLAttributeValue(element, "type") == "pseudo")
+      addPseudoPotential(element);
+  });
+
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
   //do correction
