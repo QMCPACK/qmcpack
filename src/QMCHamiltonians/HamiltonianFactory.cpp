@@ -68,7 +68,6 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       targetPtcl(qp),
       ptclPool(pset),
       psiPool(oset),
-      myNode(NULL),
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
@@ -91,7 +90,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
  *  </hamiltonian>
  * \endxmlonly
  */
-bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
+bool HamiltonianFactory::build(xmlNodePtr cur)
 {
   if (cur == NULL)
     return false;
@@ -109,25 +108,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   hAttrib.add(defaultKE, "default");
   hAttrib.put(cur);
   renameProperty(source);
-  bool attach2Node = false;
-  if (buildtree)
-  {
-    if (myNode == NULL)
-    {
-      //#if (LIBXMLD_VERSION < 20616)
-      //        app_warning() << "   Workaround of libxml2 bug prior to 2.6.x versions" << std::endl;
-      //        myNode = xmlCopyNode(cur,2);
-      //#else
-      //        app_warning() << "   using libxml2 2.6.x versions" << std::endl;
-      //        myNode = xmlCopyNode(cur,1);
-      //#endif
-      myNode = xmlCopyNode(cur, 1);
-    }
-    else
-    {
-      attach2Node = true;
-    }
-  }
   auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
@@ -161,9 +141,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     if (cname == "pairpot")
     {
       if (potType == "coulomb")
-      {
         addCoulombPotential(element);
-      }
 #if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
@@ -203,9 +181,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname == "estimator")
     {
       if (potType == "flux")
-      {
         targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
-      }
       else if (potType == "specieskinetic")
       {
         std::unique_ptr<SpeciesKineticEnergy> apot = std::make_unique<SpeciesKineticEnergy>(targetPtcl);
@@ -241,9 +217,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "Force")
-      {
         addForceHam(element);
-      }
       else if (potType == "gofr")
       {
         std::unique_ptr<PairCorrEstimator> apot = std::make_unique<PairCorrEstimator>(targetPtcl, sourceInp);
@@ -252,12 +226,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
       else if (potType == "density")
       {
-        //          if(PBCType)//only if perioidic
-        {
-          std::unique_ptr<DensityEstimator> apot = std::make_unique<DensityEstimator>(targetPtcl);
-          apot->put(element);
-          targetH->addOperator(std::move(apot), potName, false);
-        }
+        std::unique_ptr<DensityEstimator> apot = std::make_unique<DensityEstimator>(targetPtcl);
+        apot->put(element);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "spindensity")
       {
@@ -415,9 +386,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       //APP_ABORT("HamiltonianFactory::build\n  a name for operator of type "+cname+" "+potType+" must be provided in the xml input");
       targetH->addOperatorType(potName, potType);
     }
-
-    if (attach2Node)
-      xmlAddChild(myNode, xmlCopyNode(element, 1));
   });
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
@@ -457,7 +425,7 @@ void HamiltonianFactory::renameProperty(std::string& aname)
 
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
-  bool success = build(cur, false);
+  bool success = build(cur);
   return success;
 }
 
