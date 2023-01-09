@@ -17,7 +17,7 @@
 #include "NonLocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
-#include "Numerics/RandomRotationMatrix.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 
