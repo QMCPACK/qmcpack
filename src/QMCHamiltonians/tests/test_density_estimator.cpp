@@ -1,3 +1,13 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2023 QMCPACK developers.
+//
+// File developed by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
+// File created by: William F Godoy, godoywf@ornl.gov, Oak Ridge National Laboratory
+//////////////////////////////////////////////////////////////////////////////////////
+
 #include "catch.hpp"
 
 #include "OhmmsData/Libxml2Doc.h"
@@ -63,6 +73,7 @@ TEST_CASE("Density Estimator addEnergy", "[hamiltonian]")
 {
   const SimulationCell simulation_cell;
   MCWalkerConfiguration mc_walker_config(simulation_cell);
+  mc_walker_config.createWalkers(2);
   ParticleSet elec(simulation_cell);
   DensityEstimator density_estimator(elec);
 
