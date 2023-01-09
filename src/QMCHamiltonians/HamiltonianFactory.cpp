@@ -116,6 +116,14 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
   if (defaultKE != "no")
     targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl, *targetPsi), "Kinetic");
 
+  // Virtual particle sets only need to carry distance tables used by the wavefunction.
+  // Other Hamiltonian elements or estimators may add distance tables in particle sets.
+  // Process pseudopotentials first to minimize the needed distance tables in virtual particle sets.
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "pairpot" && getXMLAttributeValue(element, "type") == "pseudo")
+      addPseudoPotential(element);
+  });
+
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     std::string notype = "0";
     std::string noname = "any";
@@ -384,14 +392,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       //APP_ABORT("HamiltonianFactory::build\n  a name for operator of type "+cname+" "+potType+" must be provided in the xml input");
       targetH->addOperatorType(potName, potType);
     }
-  });
-
-  // Other Hamiltonian elements or estimators may add distance tables in particle sets.
-  // Virtual particle sets must have the same distance table count.
-  // Process pseudopotentials last to avoid size mismatch.
-  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
-    if (cname == "pairpot" && getXMLAttributeValue(element, "type") == "pseudo")
-      addPseudoPotential(element);
   });
 
   //add observables with physical and simple estimators
