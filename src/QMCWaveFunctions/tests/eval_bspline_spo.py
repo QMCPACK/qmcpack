@@ -240,15 +240,10 @@ class Wavefunction_hcpBe:
 
         # From ECPComponentBuilder.2.cpp doBreakUp
         # It appears the nonlocal part is the nonlocal input channels minus the local channel
-        # Not sure this is splining at exactly the same step (check division by r, Zeff, etc)
 
-        # Spline V*r
-        #self.pp_func = interp1d(grid, vals_loc, kind='cubic',bounds_error=False,fill_value=(0.0,0.0))
         # Spline V*r/Zeff
         self.pp_func = interp1d(grid, vals_loc/Zeff, kind='cubic',bounds_error=False,fill_value=(0.0,0.0))
 
-        # Spline V*r
-        #self.nlpp_func = interp1d(grid, vals-vals_loc, kind='cubic',bounds_error=False,fill_value=(0.0,0.0))
         # Spline V
         self.nlpp_func = interp1d(grid, (vals-vals_loc)/(grid+1e-20), kind='cubic',bounds_error=False,fill_value=(0.0,1.0))
 
@@ -258,9 +253,6 @@ class Wavefunction_hcpBe:
         r1p = apply_bc(r1, self.prim_vec, self.G)
         r = self.mag(r1p)
 
-        # Spline V*r
-        #en = self.pp_func(r)/r
-
         # Spline V*r/Zeff
         en = Zeff*self.pp_func(r)/r
         return en
@@ -269,9 +261,6 @@ class Wavefunction_hcpBe:
     def nlpp_pot(self, r1):
         r1p = apply_bc(r1, self.prim_vec, self.G)
         r = self.mag(r1p)
-
-        # Spline V*r
-        #en = self.nlpp_func(r)/r
 
         # Spline V
         en = self.nlpp_func(r)
