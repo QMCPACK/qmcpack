@@ -1,4 +1,9 @@
 
+# Generate a 3D rotation matrix used to test the code in RotationMatrix3D.h.
+# Output of the script is used in test_RotationMatrix3D.cpp.
+# The rotation matrix is used for random rotations of the spherical integration grid
+# for the non-local pseudopotential.
+
 from sympy import *
 from math import pi,acos
 
@@ -58,7 +63,7 @@ def get_rotation_matrix():
 def print_matrix_for_check(m, matrix_name):
     for i in range(m.rows):
         for j in range(m.cols):
-            print("  CHECK({matrix_name}({row}, {col}) == ValueApprox({val:15g}));".format(
+            print("  CHECK({matrix_name}({row}, {col}) == Approx({val:15g}));".format(
                 matrix_name=matrix_name, row=i, col=j, val=m[i,j]))
 
 # To get uniform covering of the sphere,
