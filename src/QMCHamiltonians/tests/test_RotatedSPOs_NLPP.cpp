@@ -133,14 +133,11 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
   REQUIRE(psi->getOrbitals().size() == 1);
 
 
+  // Note the pbc="no" setting to turn off long-range summation.
   const char* ham_input = R"(
         <hamiltonian name="h0" type="generic" target="e">
-<!--
-         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
-         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
--->
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml" algorithm="non-batched" pbc="no">
-            <pseudo elementType="Be" href="Be.BFD.xml" nrule="2" debug_randomize_grid="no"/>
+            <pseudo elementType="Be" href="Be.BFD.xml" nrule="2" disable_randomize_grid="yes"/>
          </pairpot>
       </hamiltonian>)";
 
