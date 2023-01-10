@@ -64,8 +64,9 @@ public:
   /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
      * @param nptcl number of virtual particles
+     * @param dt_count_limit distance tables corresepond to [0, dt_count_limit) of the reference particle set are created
      */
-  VirtualParticleSet(const ParticleSet& p, int nptcl);
+  VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit = 0);
 
   ~VirtualParticleSet();
 
