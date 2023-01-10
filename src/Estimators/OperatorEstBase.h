@@ -19,6 +19,7 @@
 #include "OhmmsData/RecordProperty.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCHamiltonians/ObservableHelper.h"
+#include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "type_traits/DataLocality.h"
 #include "hdf/hdf_archive.h"
@@ -118,9 +119,19 @@ public:
 
   const std::string& get_my_name() const { return my_name_; }
 
+  /** Register 0-many listeners with a leading QMCHamiltonian instance i.e. a QMCHamiltonian
+   *  that has acquired the crowd scope QMCHamiltonianMultiWalkerResource.
+   *  This must be called for each crowd scope estimator that listens to register listeners into
+   *  the crowd scope QMCHamiltonianMultiWalkerResource.
+   *
+   *  Many estimators don't need per particle values so the default implementation is no op.
+   */
+  virtual void registerListeners(QMCHamiltonian& ham_leader){};
+
   bool isListenerRequired() { return requires_listener_; }
 
   DataLocality get_data_locality() const { return data_locality_; }
+
 protected:
   /** locality for accumulation of estimator data.
    *  This designates the memory scheme used for the estimator
