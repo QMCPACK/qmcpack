@@ -4,6 +4,8 @@ Notable changes to QMCPACK are documented in this file.
 
 ## [Unreleased]
 
+* Minimum supported Intel classic compiler version is 2021.1. [\#4389](https://github.com/QMCPACK/qmcpack/pull/4389)
+
 # Known problems
 
 * When offload builds are compiled with CUDA toolkit versions above 11.2 (tested
