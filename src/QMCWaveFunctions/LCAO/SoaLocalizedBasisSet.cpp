@@ -152,7 +152,8 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<P
     const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
     PosType Tv;
-    vgl_type temp_vgl;
+    // TODO: verify that this is correct size
+    vgl_type temp_vgl(BasisSetSize);
     // TODO LOBasisSet->mw_evaluateVGL
     for (int c = 0; c < NumCenters; c++)
     {

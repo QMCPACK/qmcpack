@@ -215,21 +215,66 @@ void test_He_mw(bool transform)
     // auto elec2 = elec.makeClone();
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
+    REQUIRE(std::real(values[0]) == Approx(0.9996037001));
+    REQUIRE(std::real(dpsi[0][0]) == Approx(-0.000667803579));
+    REQUIRE(std::real(dpsi[0][1]) == Approx(0));
+    REQUIRE(std::real(dpsi[0][2]) == Approx(0));
+    REQUIRE(std::real(d2psi[0]) == Approx(-20.0342132));
 
+    
+ 
+    // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
     RefVectorWithLeader<SPOSet> spo_list(*sposet);
+    spo_list.push_back(*sposet);
+
     RefVectorWithLeader<ParticleSet> P_list(elec);
-    RefVector<SPOSet::ValueVector> values2;
-    RefVector<SPOSet::GradVector> dpsi2;
-    RefVector<SPOSet::ValueVector> d2psi2;
+    P_list.push_back(elec);
+
+    RefVector<SPOSet::ValueVector> psi_list;
+    RefVector<SPOSet::GradVector> dpsi_list;
+    RefVector<SPOSet::ValueVector> d2psi_list;
+
+    // create V,G,L arrays for walker 1
+    SPOSet::ValueVector psi_1(sposet->getOrbitalSetSize());
+    SPOSet::GradVector dpsi_1(sposet->getOrbitalSetSize());
+    SPOSet::ValueVector d2psi_1(sposet->getOrbitalSetSize());
+
+    psi_list.push_back(psi_1);
+    dpsi_list.push_back(dpsi_1);
+    d2psi_list.push_back(d2psi_1);
+
+    /*
+    // TODO: add second walker?
+    std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
+    SPOSet::ValueVector psi_2(sposet->getOrbitalSetSize());
+    SPOSet::GradVector dpsi_2(sposet->getOrbitalSetSize());
+    SPOSet::ValueVector d2psi_2(sposet->getOrbitalSetSize());
+    spo_list.push_back(*sposet_2);
+    P_list.push_back(elec_2);
+    psi_list.push_back(psi_2);
+    dpsi_list.push_back(dpsi_2);
+    d2psi_list.push_back(d2psi_2);
+    ParticleSet elec_2(elec);
+    // interchange positions
+    elec_2.R[0] = elec.R[1];
+    elec_2.R[1] = elec.R[0];
+    elec_2.update();
+    */
+
     //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
     //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
-    sposet->mw_evaluateVGL(spo_list, P_list, 0, values2, dpsi2, d2psi2);
+    sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
     std::cout << "HELP" << std::endl;
     //std::cout << values[0][0] << std::endl;
     //std::cout << phi_vgl_v[0][0][0] << std::endl;
     // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
     // results should be the same as above, ideally 
     // but with a new data object to access (everything in offloadmwvglArray).
+    REQUIRE(std::real(psi_list[0].get()[0]) == Approx(0.9996037001));
+    REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(-0.000667803579));
+    REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0));
+    REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(0));
+    REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(-20.0342132));
 }
 
 TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
