@@ -37,7 +37,7 @@ struct VPMultiWalkerMem : public Resource
   Resource* makeClone() const override { return new VPMultiWalkerMem(*this); }
 };
 
-VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : ParticleSet(p.getSimulationCell())
+VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl, size_t dt_count_limit) : ParticleSet(p.getSimulationCell())
 {
   setName("virtual");
 
@@ -50,7 +50,10 @@ VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl) : Partic
   coordinates_->resize(nptcl);
 
   //create distancetables
-  for (int i = 0; i < p.getNumDistTables(); ++i)
+  assert(dt_count_limit <= p.getNumDistTables());
+  if (dt_count_limit == 0)
+    dt_count_limit = p.getNumDistTables();
+  for (int i = 0; i < dt_count_limit; ++i)
     if (p.getDistTable(i).getModes() & DTModes::NEED_VP_FULL_TABLE_ON_HOST)
       addTable(p.getDistTable(i).get_origin());
     else
@@ -155,6 +158,7 @@ void VirtualParticleSet::mw_makeMoves(const RefVectorWithLeader<VirtualParticleS
 {
   auto& vp_leader    = vp_list.getLeader();
   vp_leader.onSphere = sphere;
+  vp_leader.refPS    = refp_list.getLeader();
 
   const size_t nVPs = countVPs(vp_list);
   auto& mw_refPctls = vp_leader.getMultiWalkerRefPctls();

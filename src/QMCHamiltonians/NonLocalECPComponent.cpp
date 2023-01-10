@@ -32,7 +32,7 @@ NonLocalECPComponent::NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, 
   for (int i = 0; i < nl_ecpc.nlpp_m.size(); ++i)
     nlpp_m[i] = nl_ecpc.nlpp_m[i]->makeClone();
   if (nl_ecpc.VP)
-    VP = new VirtualParticleSet(pset, nknot);
+    VP = new VirtualParticleSet(pset, nknot, nl_ecpc.VP->getNumDistTables());
 }
 
 NonLocalECPComponent::~NonLocalECPComponent()
@@ -867,7 +867,7 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(1.0 - 2*myRNG());
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
       cps(std::cos(psi));
   TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
@@ -879,7 +879,7 @@ void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 template<typename T>
 void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(1.0 - 2*myRNG());
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
       cps(std::cos(psi));
   TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
