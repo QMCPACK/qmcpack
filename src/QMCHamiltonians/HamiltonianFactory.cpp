@@ -47,7 +47,6 @@
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #endif
-// #include "QMCHamiltonians/ZeroVarObs.h"
 #if !defined(QMC_CUDA)
 #include "QMCHamiltonians/SkPot.h"
 #endif
