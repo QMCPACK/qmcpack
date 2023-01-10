@@ -243,8 +243,15 @@ void test_He_mw(bool transform)
     dpsi_list.push_back(dpsi_1);
     d2psi_list.push_back(d2psi_1);
 
-    /*
-    // TODO: add second walker?
+    //second walker
+    // interchange positions and shift y instead of x
+    ParticleSet::SingleParticlePos dy(0.0, 0.0001, 0.0);
+    ParticleSet elec_2(elec);
+    elec_2.R[0] = elec.R[1];
+    elec_2.R[1] = elec.R[0];
+    elec_2.update();
+    elec_2.makeMove(0, dy);
+
     std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
     SPOSet::ValueVector psi_2(sposet->getOrbitalSetSize());
     SPOSet::GradVector dpsi_2(sposet->getOrbitalSetSize());
@@ -254,12 +261,6 @@ void test_He_mw(bool transform)
     psi_list.push_back(psi_2);
     dpsi_list.push_back(dpsi_2);
     d2psi_list.push_back(d2psi_2);
-    ParticleSet elec_2(elec);
-    // interchange positions
-    elec_2.R[0] = elec.R[1];
-    elec_2.R[1] = elec.R[0];
-    elec_2.update();
-    */
 
     //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
     //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
@@ -275,6 +276,12 @@ void test_He_mw(bool transform)
     REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0));
     REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(0));
     REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(-20.0342132));
+
+    REQUIRE(std::real(psi_list[1].get()[0]) == Approx(0.9996037001));
+    REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(0));
+    REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(-0.000667803579));
+    REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(0));
+    REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(-20.0342132));
 }
 
 TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
