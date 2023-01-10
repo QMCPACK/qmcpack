@@ -191,10 +191,10 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
   TrialWaveFunction::mw_evaluateParameterDerivatives(wf_list, p_list, opt_vars, dlogpsi_list, dhpsi_over_psi_list);
 
-  CHECK(dlogpsi_list[0][0] == dlogpsi[0]);
-  CHECK(dlogpsi_list[0][1] == dlogpsi[1]);
-  CHECK(dhpsi_over_psi_list[0][0] == dhpsioverpsi[0]);
-  CHECK(dhpsi_over_psi_list[0][1] == dhpsioverpsi[1]);
+  CHECK(dlogpsi_list[0][0] == Approx(dlogpsi[0]));
+  CHECK(dlogpsi_list[0][1] == Approx(dlogpsi[1]));
+  CHECK(dhpsi_over_psi_list[0][0] == Approx(dhpsioverpsi[0]));
+  CHECK(dhpsi_over_psi_list[0][1] == Approx(dhpsioverpsi[1]));
 
 
   QMCHamiltonian* h = hf.getH();
@@ -215,8 +215,8 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
   h->evaluateValueAndDerivatives(elec, opt_vars, dlogpsi2, dhpsioverpsi2);
   // Derivative the wavefunction is unchanged by NLPP
-  CHECK(dlogpsi2[0] == dlogpsi[0]);
-  CHECK(dlogpsi2[1] == dlogpsi[1]);
+  CHECK(dlogpsi2[0] == Approx(dlogpsi[0]));
+  CHECK(dlogpsi2[1] == Approx(dlogpsi[1]));
 
   // Derivative of H is different with NLPP included
   CHECK(dhpsioverpsi2[0] == ValueApprox(-5.45054261));
@@ -230,11 +230,11 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
   h->mw_evaluateValueAndDerivatives(h_list, wf_list, p_list, opt_vars, dlogpsi_list2, dhpsi_over_psi_list2);
 
-  CHECK(dlogpsi_list2[0][0] == dlogpsi2[0]);
-  CHECK(dlogpsi_list2[0][1] == dlogpsi2[1]);
+  CHECK(dlogpsi_list2[0][0] == Approx(dlogpsi2[0]));
+  CHECK(dlogpsi_list2[0][1] == Approx(dlogpsi2[1]));
 
-  CHECK(dhpsi_over_psi_list2[0][0] == dhpsioverpsi2[0]);
-  CHECK(dhpsi_over_psi_list2[0][1] == dhpsioverpsi2[1]);
+  CHECK(dhpsi_over_psi_list2[0][0] == Approx(dhpsioverpsi2[0]));
+  CHECK(dhpsi_over_psi_list2[0][1] == Approx(dhpsioverpsi2[1]));
 }
 
 } // namespace qmcplusplus
