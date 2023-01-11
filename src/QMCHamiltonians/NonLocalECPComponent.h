@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
 #include <TrialWaveFunction.h>
 #include "Numerics/OneDimGridBase.h"
@@ -140,9 +141,9 @@ public:
 
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(RandomGenerator& myRNG);
+  void rotateQuadratureGrid(const TensorType& rmat);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
+  void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** contribute local non-local move data
    * @param iel reference electron id.

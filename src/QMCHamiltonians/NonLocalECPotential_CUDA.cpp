@@ -17,6 +17,7 @@
 #include "NonLocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 
@@ -165,7 +166,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
     if (PPset[sp])
     {
       NonLocalECPComponent& pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
+      PPset[sp]->rotateQuadratureGrid(QuadPoints_host[sp], generateRandomRotationMatrix(*myRNG));
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
@@ -350,7 +351,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
     if (PPset[sp])
     {
       NonLocalECPComponent& pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
+      PPset[sp]->rotateQuadratureGrid(QuadPoints_host[sp], generateRandomRotationMatrix(*myRNG));
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
