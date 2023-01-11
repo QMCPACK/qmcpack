@@ -1,0 +1,3 @@
+$2mpicc $1 -g -o $1.x -Wall -Wno-unused-parameter `#-Wfatal-errors`; $2mpirun -np 1 $1.x; 
+#rm $1.x
+
