@@ -38,6 +38,12 @@ void EstimatorManagerCrowd::accumulate(const RefVector<MCPWalker>& walkers,
     operator_ests_[i]->accumulate(walkers, psets, wfns, rng);
 }
 
+void EstimatorManagerCrowd::registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list)
+{
+  for (auto& estimator : operator_ests_)
+    if (estimator->isListenerRequired())
+      estimator->registerListeners(ham_list.getLeader());
+}
 
 void EstimatorManagerCrowd::startBlock(int steps)
 {

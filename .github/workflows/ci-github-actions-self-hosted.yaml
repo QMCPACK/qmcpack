@@ -123,9 +123,9 @@ jobs:
             Clang15-MPI-CUDA-AFQMC-Offload-Real,
             Clang15-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
             Clang15-MPI-CUDA-AFQMC-Offload-Complex,
-            Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
-            Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
-            Intel19-MPI-CUDA-AFQMC-Real,
+            Intel21-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
+            Intel21-MPI-CUDA-AFQMC-Complex-Mixed,
+            Intel21-MPI-CUDA-AFQMC-Real,
           ]
 
     steps:

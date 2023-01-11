@@ -72,7 +72,8 @@ public:
       scalars[target](ePtr[source], wwght);
   }
 
-  /*@{*/
+  /** legacy accumulation function
+   */
   inline void accumulate(const MCWalkerConfiguration& W,
                          WalkerIterator first,
                          WalkerIterator last,
@@ -81,11 +82,16 @@ public:
     for (; first != last; ++first)
       accumulate(**first, wgt);
   }
+
+  std::string getName() const override { return "LocalEnergyEstimator"; }
+
   void add2Record(RecordListType& record) override;
   void registerObservables(std::vector<ObservableHelper>& h5dec, hdf_archive& file) override;
   LocalEnergyEstimator* clone() override;
-  /*@}*/
 
+  /** Accumulate the hamiltonian operator values for system
+   *  This is the batched version
+   */
   inline void accumulate(const RefVector<MCPWalker>& walkers) override
   {
     for (MCPWalker& walker : walkers)

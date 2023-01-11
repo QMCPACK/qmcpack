@@ -65,6 +65,14 @@ private:
   std::vector<RefVector<ScalarEstimatorBase>> scalar_estimators_;
 };
 
+class EstimatorManagerNewTestAccess {
+public:
+  EstimatorManagerNewTestAccess(EstimatorManagerNew& emn) : emn_(emn) {}
+  const ScalarEstimatorBase& getMainEstimator() { return *(emn_.main_estimator_.get()); }
+private:
+  EstimatorManagerNew& emn_;
+};
+
 }
 }
 

@@ -42,6 +42,7 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 
   le_est.accumulate(W, W.begin(), W.end(), 1.0);
 
+  CHECK(le_est.getName() == "LocalEnergyOnlyEstimator");
   REQUIRE(le_est.scalars[0].mean() == Approx(1.1));
 }
 
@@ -49,6 +50,8 @@ TEST_CASE("LocalEnergy", "[estimators]")
 {
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
+
+  CHECK(le_est.getName() == "LocalEnergyEstimator");
 
   std::unique_ptr<LocalEnergyEstimator> le_est2{le_est.clone()};
   REQUIRE(le_est2 != nullptr);
