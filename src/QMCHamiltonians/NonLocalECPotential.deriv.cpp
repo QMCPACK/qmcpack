@@ -82,7 +82,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   {
     // Compute ratios with VP
     VP->makeMoves(iel, W.R[iel], deltaV, true, iat);
-    psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+    psi.evaluateDerivRatios(*VP, W, iel, optvars, psiratio, dratio);
   }
   else
   {
@@ -97,8 +97,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
       //use existing methods
       std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
       psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
-      for (int v = 0; v < dlogpsi_vp.size(); ++v)
+      for (int v = 0; v < dlogpsi_vp.size(); ++v) {
         dratio(j, v) = dlogpsi_vp[v] - dlogpsi[v];
+      }
 
       W.makeMove(iel, -deltaV[j]);
       psi.calcRatio(W, iel);

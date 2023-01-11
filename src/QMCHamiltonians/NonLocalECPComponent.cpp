@@ -22,7 +22,7 @@
 
 namespace qmcplusplus
 {
-NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr) {}
+NonLocalECPComponent::NonLocalECPComponent() : lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(nullptr), do_randomize_grid_(true) {}
 
 // unfortunately we continue the sloppy use of the default copy constructor followed by reassigning pointers.
 // This prevents use of smart pointers and concievably sets us up for trouble with double frees and the destructor.
@@ -41,6 +41,11 @@ NonLocalECPComponent::~NonLocalECPComponent()
     delete nlpp_m[ip];
   if (VP)
     delete VP;
+}
+
+void NonLocalECPComponent::set_randomize_grid(bool do_randomize_grid)
+{
+  do_randomize_grid_ = do_randomize_grid;
 }
 
 void NonLocalECPComponent::initVirtualParticle(const ParticleSet& qp)
@@ -165,8 +170,9 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
     psiratio[j] *= sgridweight_m[j];
 
   // Compute radial potential, multiplied by (2l+1) factor.
-  for (int ip = 0; ip < nchannel; ip++)
+  for (int ip = 0; ip < nchannel; ip++) {
     vrad[ip] = nlpp_m[ip]->splint(r) * wgt_angpp_m[ip];
+  }
 
   constexpr RealType czero(0);
   constexpr RealType cone(1);
@@ -186,9 +192,11 @@ NonLocalECPComponent::RealType NonLocalECPComponent::calculateProjector(RealType
       lpolprev    = lpol[l];
     }
 
+
     RealType lsum = 0.0;
-    for (int l = 0; l < nchannel; l++)
+    for (int l = 0; l < nchannel; l++) {
       lsum += vrad[l] * lpol[angpp_m[l]];
+    }
     knot_pots[j] = lsum * std::real(psiratio[j]);
     pairpot += knot_pots[j];
   }
@@ -873,19 +881,26 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid(RandomGenerator& myRNG)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType rng1 = myRNG();
+  RealType rng2 = myRNG();
+  RealType rng3 = myRNG();
+  RealType phi(TWOPI * rng1), psi(TWOPI * rng2), cth(1.0-2*rng3);
+  //RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(1.0-2*myRNG());
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
       cps(std::cos(psi));
   TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
                   -sph * cth * sps + cph * cps, sth * sps, cph * sth, sph * sth, cth);
-  for (int i = 0; i < sgridxyz_m.size(); i++)
-    rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+    for (int i = 0; i < sgridxyz_m.size(); i++)
+      if (do_randomize_grid_)
+        rrotsgrid_m[i] = dot(rmat, sgridxyz_m[i]);
+      else
+        rrotsgrid_m[i] = sgridxyz_m[i];
 }
 
 template<typename T>
 void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG)
 {
-  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(myRNG() - 0.5);
+  RealType phi(TWOPI * myRNG()), psi(TWOPI * myRNG()), cth(1.0-2*myRNG());
   RealType sph(std::sin(phi)), cph(std::cos(phi)), sth(std::sqrt(1.0 - cth * cth)), sps(std::sin(psi)),
       cps(std::cos(psi));
   TensorType rmat(cph * cth * cps - sph * sps, sph * cth * cps + cph * sps, -sth * cps, -cph * cth * sps - sph * cps,
@@ -895,7 +910,10 @@ void NonLocalECPComponent::randomize_grid(std::vector<T>& sphere, RandomGenerato
   SpherGridType::iterator jt(rrotsgrid_m.begin());
   while (it != it_end)
   {
-    *jt = dot(rmat, *it);
+    if (do_randomize_grid_)
+     *jt = dot(rmat, *it);
+    else
+     *jt = *it;
     ++it;
     ++jt;
   }

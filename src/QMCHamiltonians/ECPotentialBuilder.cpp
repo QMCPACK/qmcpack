@@ -220,6 +220,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string format("xml");
       int nrule = -1;
       int llocal = -1;
+      bool disable_randomize_grid;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
@@ -228,6 +229,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.add(format, "format");
       hAttrib.add(nrule, "nrule");
       hAttrib.add(llocal, "l-local");
+      hAttrib.add(disable_randomize_grid, "disable_randomize_grid", {false, true});
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -271,6 +273,9 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           if (ecp.pp_nonloc)
           {
             hasNonLocalPot            = true;
+            if (disable_randomize_grid)
+              app_warning() << "NLPP grid randomization is turned off.  This setting should only be used for testing." << std::endl;
+            ecp.pp_nonloc->set_randomize_grid(!disable_randomize_grid);
             nonLocalPot[speciesIndex] = std::move(ecp.pp_nonloc);
           }
           if (ecp.pp_so)
