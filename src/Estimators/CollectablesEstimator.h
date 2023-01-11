@@ -51,6 +51,8 @@ public:
       scalars[i](data[i], wgt);
   }
 
+  std::string getName() const override { return "CollectiblesEstimator"; }
+
   const std::string type_str = "ColletiblesEstimatorNotSupportedInBatchedVersion";
   const std::string& getSubTypeStr() const override { return type_str; }
 };
