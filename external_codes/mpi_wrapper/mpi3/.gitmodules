@@ -1,3 +1,0 @@
-[submodule "containers/multi"]
-	path = include/mpi3/containers/multi
-	url = https://gitlab.com/correaa/boost-multi.git
