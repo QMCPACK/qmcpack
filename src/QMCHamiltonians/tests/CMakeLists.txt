@@ -27,6 +27,7 @@ set(HAM_SRCS
     test_SkAllEstimator.cpp
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp
+    test_RotatedSPOs_NLPP.cpp
     test_Listener.cpp)
     
 
@@ -50,6 +51,9 @@ endforeach()
 foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
+
+maybe_symlink(${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/Be.BFD.xml ${UTEST_DIR}/Be.BFD.xml)
+maybe_symlink(${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5 ${UTEST_DIR}/hcpBe.pwscf.h5)
 
 foreach(CATEGORY coulomb force ham ewald2d)
   set(UTEST_EXE test_${SRC_DIR}_${CATEGORY})
