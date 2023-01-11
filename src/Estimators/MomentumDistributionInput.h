@@ -44,6 +44,10 @@ public:
   };
 
   MomentumDistributionInput(xmlNodePtr cur);
+  /** default copy constructor
+   *  This is required due to MDI being part of a variant used as a vector element.
+   */
+  MomentumDistributionInput(const MomentumDistributionInput&) = default;
 private:
   MomentumDistributionInputSection input_section_;
 

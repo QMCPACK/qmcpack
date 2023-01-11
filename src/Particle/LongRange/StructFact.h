@@ -48,6 +48,9 @@ public:
   /** Constructor - copy ParticleSet and init. k-shells
    * @param lattice long range box
    * @param kc cutoff for k
+   *
+   * At least in the batched version Structure factor is _NOT_ valid
+   * after construction.
    */
   StructFact(const ParticleLayout& lattice, const KContainer& k_lists);
   /// desructor
@@ -57,6 +60,11 @@ public:
    */
   void updateAllPart(const ParticleSet& P);
 
+  /** Update RhoK for all particles for multiple walkers particles.
+   *
+   *  In batched context until this is called StructFact is invalid and will cause a crash if any Hamiltonian using StructFact
+   *  indirectly through ParticleSet is evaluated.
+   */
   static void mw_updateAllPart(const RefVectorWithLeader<StructFact>& sk_list,
                                const RefVectorWithLeader<ParticleSet>& p_list,
                                SKMultiWalkerMem& mw_mem);

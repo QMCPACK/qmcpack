@@ -35,10 +35,10 @@ set(SRCS
     test_ScalarEstimatorInputs.cpp
     )
 
-# OneBodyDensityMatrices are not tested with legacy CUDA
+# Tests incompatible with DiracDeterminantCUDA
 # DiracDeterminantsCUDA cannot be copied
 if(NOT QMC_CUDA)
-  set(SRCS ${SRCS} test_MomentumDistribution.cpp test_OneBodyDensityMatricesInput.cpp test_OneBodyDensityMatrices.cpp)
+  set(SRCS ${SRCS} test_MomentumDistribution.cpp test_OneBodyDensityMatricesInput.cpp test_OneBodyDensityMatrices.cpp test_PerParticleHamiltonianLogger.cpp test_EstimatorManagerCrowd.cpp)
 endif()
 
 add_executable(${UTEST_EXE} ${SRCS})
