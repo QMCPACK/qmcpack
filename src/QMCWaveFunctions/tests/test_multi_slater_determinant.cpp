@@ -182,7 +182,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
 
     std::fill(ratios2.begin(), ratios2.end(), 0);
     Matrix<ValueType> dratio(2, nparam);
-    twf.evaluateDerivRatios(VP, active, ratios2, dratio);
+    twf.evaluateDerivRatios(VP, elec_, 1, active, ratios2, dratio);
 
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
     CHECK(std::real(ratios2[1]) == Approx(-1.0830708458));

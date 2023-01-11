@@ -184,11 +184,11 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
-                             Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           ParticleSet& P,
+                           int iel,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override;
@@ -265,9 +265,7 @@ private:
    * @param dlogpsi saved derivatives
    * @param det_id provide this argument to affect determinant group id for virtual moves
    */
-  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref,
-                              Vector<ValueType>& dlogpsi,
-                              int det_id = -1) const;
+  void evaluateDerivativesMSD(const PsiValueType& multi_det_to_ref, Vector<ValueType>& dlogpsi, int det_id = -1) const;
 
   /// determinant collection
   std::vector<std::unique_ptr<MultiDiracDeterminant>> Dets;

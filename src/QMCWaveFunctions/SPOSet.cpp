@@ -266,11 +266,29 @@ void SPOSet::evaluateDerivatives(ParticleSet& P,
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
-void SPOSet::evaluateDerivativesWF(ParticleSet& P,
+void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                 ParticleSet& P,
+                                 int iel,
                                  const opt_variables_type& optvars,
-                                 Vector<ValueType>& dlogpsi,
-                                 const int& FirstIndex,
-                                 const int& LastIndex)
+                                 ValueVector& psi,
+                                 const ValueVector& psiinv,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios,
+                                 int FirstIndex,
+                                 int LastIndex)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+
+void SPOSet::evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   Vector<ValueType>& dlogpsi,
+                                   const int& FirstIndex,
+                                   const int& LastIndex)
 {
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +

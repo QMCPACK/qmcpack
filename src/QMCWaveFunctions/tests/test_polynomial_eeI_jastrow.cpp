@@ -196,7 +196,7 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
 
   std::fill(ratios2.begin(), ratios2.end(), 0);
   Matrix<ValueType> dratio(2, NumOptimizables);
-  j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
+  j3->evaluateDerivRatios(VP, elec_, 0, optvars, ratios2, dratio);
 
   REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
   REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));

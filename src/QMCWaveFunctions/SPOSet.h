@@ -114,7 +114,9 @@ public:
   // Single Slater creation
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations, const std::vector<std::pair<int, int>>& full_rotations) {}
+  virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations,
+                                 const std::vector<std::pair<int, int>>& full_rotations)
+  {}
   /// return true if this SPOSet can be wrappered by RotatedSPO
   virtual bool isRotationSupported() const { return false; }
   /// store parameters before getting destroyed by rotation.
@@ -130,10 +132,10 @@ public:
                                    const int& LastIndex);
 
   virtual void evaluateDerivativesWF(ParticleSet& P,
-                                   const opt_variables_type& optvars,
-                                   Vector<ValueType>& dlogpsi,
-                                   const int& FirstIndex,
-                                   const int& LastIndex);
+                                     const opt_variables_type& optvars,
+                                     Vector<ValueType>& dlogpsi,
+                                     const int& FirstIndex,
+                                     const int& LastIndex);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
@@ -221,6 +223,18 @@ public:
                                     const RefVector<ValueVector>& psi_list,
                                     const std::vector<const ValueType*>& invRow_ptr_list,
                                     std::vector<std::vector<ValueType>>& ratios_list) const;
+
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
+                                   ParticleSet& P,
+                                   int iel,
+                                   const opt_variables_type& optvars,
+                                   ValueVector& psi,
+                                   const ValueVector& psiinv,
+                                   std::vector<ValueType>& ratios,
+                                   Matrix<ValueType>& dratios,
+                                   int FirstIndex,
+                                   int LastIndex);
+
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
