@@ -304,7 +304,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
-  m_act_rot_inds = rotations;
+  m_act_rot_inds  = rotations;
   m_full_rot_inds = full_rotations;
 
   if (use_global_rot_)
@@ -593,6 +593,134 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
     }
 }
 
+void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                      ParticleSet& P,
+                                      int iel,
+                                      const opt_variables_type& optvars,
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
+                                      std::vector<ValueType>& ratios,
+                                      Matrix<ValueType>& dratios,
+                                      int FirstIndex,
+                                      int LastIndex)
+{
+  Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi->getOrbitalSetSize();
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T_orig;
+  T_orig.resize(nel, nmo);
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T_orig.data(), nmo);
+
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+  ValueVector tmp_psi;
+  tmp_psi.resize(nmo);
+
+
+  for (int iat = 0; iat < VP.getTotalNum(); iat++)
+  {
+    Phi->evaluateValue(VP, iat, tmp_psi);
+
+    for (int j = 0; j < nmo; j++)
+      psiM_all(iel - FirstIndex, j) = tmp_psi[j];
+
+    for (int i = 0; i < nel; i++)
+      for (int j = 0; j < nel; j++)
+        psiM_inv(i, j) = psiM_all(i, j);
+
+    Invert(psiM_inv.data(), nel, nel);
+
+    const ValueType* const A(psiM_all.data());
+    const ValueType* const Ainv(psiM_inv.data());
+
+
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
+    {
+      int kk      = myVars.where(i);
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      //app_log() << "kk = " << kk << " iat = " << iat << " T_orig = " << T_orig(p,q) << " T = " << T(p,q) << std::endl;
+      dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+      //dratios(iat, kk)      = T(p, q); // dratio size is (nknot, num_vars)
+    }
+  }
+}
+
+void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        Vector<ValueType>& dlogpsi,
+                                        const int& FirstIndex,
+                                        const int& LastIndex)
+{
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi->getOrbitalSetSize();
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int kk      = myVars.where(i);
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi[kk] = T(p, q);
+  }
+}
+
+
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
                                       Vector<ValueType>& dlogpsi,
@@ -696,103 +824,6 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
-                                      const opt_variables_type& optvars,
-                                      Vector<ValueType>& dlogpsi,
-                                      const int& FirstIndex,
-                                      const int& LastIndex)
-{
-  const size_t nel = LastIndex - FirstIndex;
-  const size_t nmo = Phi->getOrbitalSetSize();
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
-  myG_temp.resize(nel);
-  myG_J.resize(nel);
-  myL_temp.resize(nel);
-  myL_J.resize(nel);
-
-  myG_temp = 0;
-  myG_J    = 0;
-  myL_temp = 0;
-  myL_J    = 0;
-
-  Bbar.resize(nel, nmo);
-  psiM_inv.resize(nel, nel);
-  psiM_all.resize(nel, nmo);
-  dpsiM_all.resize(nel, nmo);
-  d2psiM_all.resize(nel, nmo);
-
-  Bbar       = 0;
-  psiM_inv   = 0;
-  psiM_all   = 0;
-  dpsiM_all  = 0;
-  d2psiM_all = 0;
-
-
-  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
-
-  for (int i = 0; i < nel; i++)
-    for (int j = 0; j < nel; j++)
-      psiM_inv(i, j) = psiM_all(i, j);
-
-  Invert(psiM_inv.data(), nel, nel);
-
-  //current value of Gradient and Laplacian
-  // gradient components
-  for (int a = 0; a < nel; a++)
-    for (int i = 0; i < nel; i++)
-      for (int k = 0; k < 3; k++)
-        myG_temp[a][k] += psiM_inv(i, a) * dpsiM_all(a, i)[k];
-  // laplacian components
-  for (int a = 0; a < nel; a++)
-  {
-    for (int i = 0; i < nel; i++)
-      myL_temp[a] += psiM_inv(i, a) * d2psiM_all(a, i);
-  }
-
-  // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}}
-  // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
-  // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold
-  for (int a = 0, iat = FirstIndex; a < nel; a++, iat++)
-  {
-    myG_J[a] = (P.G[iat] - myG_temp[a]);
-    myL_J[a] = (P.L[iat] + dot(P.G[iat], P.G[iat]) - myL_temp[a]);
-  }
-  //possibly replace wit BLAS calls
-  for (int i = 0; i < nel; i++)
-    for (int j = 0; j < nmo; j++)
-      Bbar(i, j) = d2psiM_all(i, j) + 2 * dot(myG_J[i], dpsiM_all(i, j)) + myL_J[i] * psiM_all(i, j);
-
-
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
-  const ValueType* const A(psiM_all.data());
-  const ValueType* const Ainv(psiM_inv.data());
-  const ValueType* const B(Bbar.data());
-  SPOSet::ValueMatrix T;
-  SPOSet::ValueMatrix Y1;
-  SPOSet::ValueMatrix Y2;
-  SPOSet::ValueMatrix Y3;
-  SPOSet::ValueMatrix Y4;
-  T.resize(nel, nmo);
-  Y1.resize(nel, nel);
-  Y2.resize(nel, nmo);
-  Y3.resize(nel, nmo);
-  Y4.resize(nel, nmo);
-
-
-  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
-
-  //possibly replace with BLAS call
-  Y4 = Y3 - Y2;
-
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-  {
-    int kk           = myVars.where(i);
-    const int p      = m_act_rot_inds.at(i).first;
-    const int q      = m_act_rot_inds.at(i).second;
-    dlogpsi[kk]      = T(p, q);
-  }
-}
 
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
@@ -1528,7 +1559,7 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->myVars          = this->myVars;
   myclone->history_params_ = this->history_params_;
   myclone->myVarsFull      = this->myVarsFull;
-  myclone->use_global_rot_      = this->use_global_rot_;
+  myclone->use_global_rot_ = this->use_global_rot_;
 
   // use_this_copy_to_apply_rotation_ is not copied
 

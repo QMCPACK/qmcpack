@@ -118,10 +118,10 @@ public:
                            const int& LastIndex) override;
 
   void evaluateDerivativesWF(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           Vector<ValueType>& dlogpsi,
-                           const int& FirstIndex,
-                           const int& LastIndex) override;
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi,
+                             const int& FirstIndex,
+                             const int& LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
@@ -256,6 +256,18 @@ public:
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
   }
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           ParticleSet& P,
+                           int iel,
+                           const opt_variables_type& optvars,
+                           ValueVector& psi,
+                           const ValueVector& psiinv,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios,
+                           int FirstIndex,
+                           int LastIndex) override;
+
+
   void evaluateVGH(const ParticleSet& P,
                    int iat,
                    ValueVector& psi,
@@ -334,9 +346,7 @@ public:
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
   //
-  void set_use_global_rotation() {
-    use_global_rot_ = true;
-  }
+  void set_use_global_rotation() { use_global_rot_ = true; }
 
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
