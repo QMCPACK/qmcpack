@@ -418,11 +418,6 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
     // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
-    for (int irow=0; irow<C_partial_view.rows(); irow++){
-      for (int icol=0; icol<C_partial_view.cols(); icol++){
-        std::cout << "ir: " << irow << " ic: " << icol << " val: " << *C_partial_view[irow,icol] << std::endl;
-      }
-    }
     for (int idim = 0; idim < DIM_VGL; idim++)
     {
       constexpr char transa = 't';
@@ -433,15 +428,15 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
       //           C.capacity())
       std::cout << "C.rows: " << C_partial_view.rows()
                 << "\nC.cols: " << C_partial_view.cols() << std::endl;
-      BLAS::gemm(transa, transb,
-                 C_partial_view.rows(), //NMOs
-                 spo_list.size(),       // will need to be dimension of nwalkers
-                 C_partial_view.cols(), //NAOs
-                 zone, C_partial_view.data(), C_partial_view.cols(),
-                 Temp_mw.data_at(idim, 0, 0),       //not mwvgl function data_at
-                 spo_list.size(),                    //not mwvgl function maybe
-                 zero, Tempv_mw.data_at(idim, 0, 0), //not mwvgl function data_at
-                 spo_list.size());                   //not mwvgl function maybe
+      BLAS::gemm(transa,transb,
+                 C_partial_view.rows(), // MOs
+                 spo_list.size(),       // walkers
+                 C_partial_view.cols(), // AOs
+                 zone,
+                 C_partial_view.data(), C_partial_view.cols(),
+                 Temp_mw.data_at(idim, 0, 0), C_partial_view.cols(),
+                 zero,
+                 Tempv_mw.data_at(idim, 0, 0), C_partial_view.rows());
     }
     std::cout << "Tempv_mw[0,0,0]" << std::endl;
     std::cout << *Tempv_mw.data_at(0,0,0) << std::endl;

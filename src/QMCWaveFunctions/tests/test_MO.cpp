@@ -286,6 +286,212 @@ void test_He_mw(bool transform)
 
 TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
 
+void test_EtOH_mw(bool transform)
+{
+  // set up ion particle set as normal
+  Communicate* c = OHMMS::Controller;
+
+  Libxml2Document doc;
+  bool okay = doc.parse("ethanol.structure.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+
+  const SimulationCell simulation_cell;
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
+  XMLParticleParser parse_ions(ions);
+  OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
+  REQUIRE(particleset_ion.size() == 1);
+  parse_ions.readXML(particleset_ion[0]);
+
+  REQUIRE(ions.groups() == 3);
+  REQUIRE(ions.R.size() == 9);
+  ions.update();
+
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
+  XMLParticleParser parse_elec(elec);
+  OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
+  REQUIRE(particleset_elec.size() == 1);
+  parse_elec.readXML(particleset_elec[0]);
+
+  REQUIRE(elec.groups() == 2);
+  REQUIRE(elec.R.size() == 26);
+
+  elec.R = 0.0;
+
+  elec.addTable(ions);
+  elec.update();
+
+  Libxml2Document doc2;
+  okay = doc2.parse("ethanol.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
+
+  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+
+  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"no");
+
+  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto& bb(*bb_ptr);
+
+  OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
+  auto sposet = bb.createSPOSet(slater_base[0]);
+
+
+  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  size_t n_mo = sposet->getOrbitalSetSize();
+  SPOSet::ValueVector psiref_0(n_mo);
+  SPOSet::GradVector dpsiref_0(n_mo);
+  SPOSet::ValueVector d2psiref_0(n_mo);
+  // Call makeMove to compute the distances
+  //ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
+  std::cout << elec.R[0] << std::endl;
+  //elec.makeMove(0, newpos);
+  //elec.update();
+  elec.R[0][0] = 0.0001;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+  elec.update();
+  std::cout << elec.R[0] << std::endl;
+  // set up second walkers
+  // auto elec2 = elec.makeClone();
+  sposet->evaluateVGL(elec, 0, psiref_0, dpsiref_0, d2psiref_0);
+  /*
+  for (size_t i=0; i<2; i++){
+    std::cout << i << " " << psiref_0[i] << std::endl;
+    std::cout << i << " 0 " << dpsiref_0[i][0] << std::endl;
+    std::cout << i << " 1 " << dpsiref_0[i][1] << std::endl;
+    std::cout << i << " 2 " << dpsiref_0[i][2] << std::endl;
+    std::cout << i << " " << d2psiref_0[i] << std::endl;
+  }*/
+  REQUIRE(std::real(psiref_0[0]) == Approx(-0.001664403313));
+  REQUIRE(std::real(psiref_0[1]) == Approx(0.01579976715));
+  REQUIRE(std::real(dpsiref_0[0][0]) == Approx(-0.0001961749098));
+  REQUIRE(std::real(dpsiref_0[0][1]) == Approx(0.003340392074));
+  REQUIRE(std::real(dpsiref_0[0][2]) == Approx(9.461877818e-05));
+  REQUIRE(std::real(dpsiref_0[1][0]) == Approx(-0.005476152264));
+  REQUIRE(std::real(dpsiref_0[1][1]) == Approx(-0.06648077046));
+  REQUIRE(std::real(dpsiref_0[1][2]) == Approx(2.086541402e-05));
+  REQUIRE(std::real(d2psiref_0[0]) == Approx(0.01071299243));
+  REQUIRE(std::real(d2psiref_0[1]) == Approx(0.4121970776));
+
+  //ParticleSet::SingleParticlePos newpos2(0.0, 0.04, 0.02);
+  //elec.makeMove(1, newpos2);
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 0.04;
+  elec.R[1][2] = 0.02;
+  elec.update();
+  SPOSet::ValueVector psiref_1(n_mo);
+  SPOSet::GradVector dpsiref_1(n_mo);
+  SPOSet::ValueVector d2psiref_1(n_mo);
+  sposet->evaluateVGL(elec, 1, psiref_1, dpsiref_1, d2psiref_1);
+
+  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
+  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
+  REQUIRE(std::real(psiref_1[1]) == Approx( 0.01351541907));
+  REQUIRE(std::real(d2psiref_1[0]) == Approx( 0.01001796854));
+  REQUIRE(std::real(d2psiref_1[1]) == Approx( 0.2912963205));
+  REQUIRE(std::real(dpsiref_1[0][0]) == Approx(-0.0004235196101));
+  REQUIRE(std::real(dpsiref_1[0][1]) == Approx( 0.003351193375));
+  REQUIRE(std::real(dpsiref_1[0][2]) == Approx( 0.0001374796409));
+  REQUIRE(std::real(dpsiref_1[1][0]) == Approx(-0.003873067027));
+  REQUIRE(std::real(dpsiref_1[1][1]) == Approx(-0.0483167767));
+  REQUIRE(std::real(dpsiref_1[1][2]) == Approx(-0.0008320732335));
+
+  // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
+  RefVectorWithLeader<SPOSet> spo_list(*sposet);
+  std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
+  spo_list.push_back(*sposet_2);
+  spo_list.push_back(*sposet);
+  // second walker
+  // exchange positions
+  ParticleSet elec_2(elec);
+  elec_2.R[0] = elec.R[1];
+  elec_2.R[1] = elec.R[0];
+  elec_2.update();
+  RefVectorWithLeader<ParticleSet> P_list(elec);
+  P_list.push_back(elec);
+  P_list.push_back(elec_2);
+  // create V,G,L arrays for walker 1
+  SPOSet::ValueVector psi_1(n_mo);
+  SPOSet::GradVector dpsi_1(n_mo);
+  SPOSet::ValueVector d2psi_1(n_mo);
+  SPOSet::ValueVector psi_2(n_mo);
+  SPOSet::GradVector dpsi_2(n_mo);
+  SPOSet::ValueVector d2psi_2(n_mo);
+  RefVector<SPOSet::ValueVector> psi_list = {psi_1, psi_2};
+  RefVector<SPOSet::GradVector> dpsi_list = {dpsi_1, dpsi_2};
+  RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
+
+  //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
+  //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
+  sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
+  std::cout << "HELP" << std::endl;
+  //std::cout << values[0][0] << std::endl;
+  //std::cout << phi_vgl_v[0][0][0] << std::endl;
+  // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
+  // results should be the same as above, ideally
+  // but with a new data object to access (everything in offloadmwvglArray).
+  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
+  REQUIRE(std::real(psiref_1[1]) == Approx( 0.01351541907));
+  REQUIRE(std::real(psiref_0[0]) == Approx(-0.001664403313));
+  REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psiref_0[0]));
+  REQUIRE(std::real(psi_list[0].get()[1]) == Approx(psiref_0[1]));
+  REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psiref_1[0]));
+  REQUIRE(std::real(psi_list[1].get()[1]) == Approx(psiref_1[1]));
+  /*
+  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(-0.0001961749098));
+  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0.003340392074));
+  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(9.461877818e-05));
+  REQUIRE(std::real(dpsi_list[0].get()[1][0]) == Approx(-0.005476152264));
+  REQUIRE(std::real(dpsi_list[0].get()[1][1]) == Approx(-0.06648077046));
+  REQUIRE(std::real(dpsi_list[0].get()[1][2]) == Approx(2.086541402e-05));
+  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(-0.0004235196101));
+  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx( 0.003351193375));
+  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx( 0.0001374796409));
+  REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(-0.003873067027));
+  REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(-0.0483167767));
+  REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(-0.0008320732335));
+  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(0.01071299243));
+  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(0.4121970776));
+  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx( 0.01001796854));
+  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx( 0.2912963205));
+  */
+  /*
+  REQUIRE(std::real(psi_list[0].get()[0]) == Approx(-0.001664403313));
+  REQUIRE(std::real(psi_list[0].get()[1]) == Approx(0.01579976715));
+  REQUIRE(std::real(psi_list[1].get()[0]) == Approx(-0.001528135727));
+  REQUIRE(std::real(psi_list[1].get()[1]) == Approx( 0.01351541907));
+  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(-0.0001961749098));
+  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0.003340392074));
+  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(9.461877818e-05));
+  REQUIRE(std::real(dpsi_list[0].get()[1][0]) == Approx(-0.005476152264));
+  REQUIRE(std::real(dpsi_list[0].get()[1][1]) == Approx(-0.06648077046));
+  REQUIRE(std::real(dpsi_list[0].get()[1][2]) == Approx(2.086541402e-05));
+  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(-0.0004235196101));
+  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx( 0.003351193375));
+  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx( 0.0001374796409));
+  REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(-0.003873067027));
+  REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(-0.0483167767));
+  REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(-0.0008320732335));
+  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(0.01071299243));
+  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(0.4121970776));
+  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx( 0.01001796854));
+  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx( 0.2912963205));
+  */
+  std::cout << "DONE" << std::endl;
+}
+
+TEST_CASE("mw_evaluate Numerical EtOH", "[wavefunction]") { test_EtOH_mw(true); }
+
 void test_Ne(bool transform)
 {
   std::ostringstream section_name;
