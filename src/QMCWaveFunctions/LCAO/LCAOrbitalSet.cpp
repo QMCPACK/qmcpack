@@ -374,7 +374,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVector<ValueVector>& d2psi_v_list) const
 {
   OffloadMWVGLArray phi_vgl_v;
-  phi_vgl_v.resize(5,spo_list.size(), BasisSetSize);
+  phi_vgl_v.resize(5,spo_list.size(), OrbitalSetSize);
   mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
 
   const size_t output_size = phi_vgl_v.size(2);

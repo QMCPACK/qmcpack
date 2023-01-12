@@ -440,36 +440,41 @@ void test_EtOH_mw(bool transform)
   // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
   // results should be the same as above, ideally
   // but with a new data object to access (everything in offloadmwvglArray).
-  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
-  REQUIRE(std::real(psiref_1[1]) == Approx( 0.01351541907));
-  REQUIRE(std::real(psiref_0[0]) == Approx(-0.001664403313));
   REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psiref_0[0]));
   REQUIRE(std::real(psi_list[0].get()[1]) == Approx(psiref_0[1]));
   REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psiref_1[0]));
   REQUIRE(std::real(psi_list[1].get()[1]) == Approx(psiref_1[1]));
-  /*
-  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(-0.0001961749098));
-  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0.003340392074));
-  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(9.461877818e-05));
-  REQUIRE(std::real(dpsi_list[0].get()[1][0]) == Approx(-0.005476152264));
-  REQUIRE(std::real(dpsi_list[0].get()[1][1]) == Approx(-0.06648077046));
-  REQUIRE(std::real(dpsi_list[0].get()[1][2]) == Approx(2.086541402e-05));
-  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(-0.0004235196101));
-  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx( 0.003351193375));
-  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx( 0.0001374796409));
-  REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(-0.003873067027));
-  REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(-0.0483167767));
-  REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(-0.0008320732335));
-  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(0.01071299243));
-  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(0.4121970776));
-  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx( 0.01001796854));
-  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx( 0.2912963205));
-  */
+
+  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(d2psiref_0[0]));
+  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(d2psiref_0[1]));
+  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(d2psiref_1[0]));
+  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx(d2psiref_1[1]));
+
+  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsiref_0[0][0]));
+  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsiref_0[0][1]));
+  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsiref_0[0][2]));
+  REQUIRE(std::real(dpsi_list[0].get()[1][0]) == Approx(dpsiref_0[1][0]));
+  REQUIRE(std::real(dpsi_list[0].get()[1][1]) == Approx(dpsiref_0[1][1]));
+  REQUIRE(std::real(dpsi_list[0].get()[1][2]) == Approx(dpsiref_0[1][2]));
+
+  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsiref_1[0][0]));
+  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsiref_1[0][1]));
+  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsiref_1[0][2]));
+  REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(dpsiref_1[1][0]));
+  REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(dpsiref_1[1][1]));
+  REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(dpsiref_1[1][2]));
+
   /*
   REQUIRE(std::real(psi_list[0].get()[0]) == Approx(-0.001664403313));
   REQUIRE(std::real(psi_list[0].get()[1]) == Approx(0.01579976715));
   REQUIRE(std::real(psi_list[1].get()[0]) == Approx(-0.001528135727));
   REQUIRE(std::real(psi_list[1].get()[1]) == Approx( 0.01351541907));
+
+  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(0.01071299243));
+  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(0.4121970776));
+  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx( 0.01001796854));
+  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx( 0.2912963205));
+
   REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(-0.0001961749098));
   REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(0.003340392074));
   REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(9.461877818e-05));
@@ -482,10 +487,6 @@ void test_EtOH_mw(bool transform)
   REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(-0.003873067027));
   REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(-0.0483167767));
   REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(-0.0008320732335));
-  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(0.01071299243));
-  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(0.4121970776));
-  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx( 0.01001796854));
-  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx( 0.2912963205));
   */
   std::cout << "DONE" << std::endl;
 }
