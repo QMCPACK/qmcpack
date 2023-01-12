@@ -380,17 +380,18 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   const size_t output_size = phi_vgl_v.size(2);
   const size_t nw          = phi_vgl_v.size(1);
 
-  //TODO: make this cleaner
+  //TODO: make this cleaner?
   for (int iw = 0; iw < nw; iw++)
   {
     std::copy_n(phi_vgl_v.data_at(0, iw, 0), output_size, psi_v_list[iw].get().data());
     std::copy_n(phi_vgl_v.data_at(4, iw, 0), output_size, d2psi_v_list[iw].get().data());
+    // grads are [dim, walker, orb] in phi_vgl_v
+    //           [walker][orb, dim] in dpsi_v_list
     for (size_t idim = 0; idim < DIM; idim++)
     {
-      //TODO: check layout of xyz/orb dims; this is just a placeholder
-      std::copy_n(phi_vgl_v.data_at(idim + 1, iw, 0), output_size, &dpsi_v_list[iw].get().data()[0][idim]);
-      // for (size_t iorb = 0; iorb < output_size; iorb++)
-      //   dpsi_v_list[iw].get().data()[iorb][idim] = phi_vgl_v.data_at(idim + 1, iw, iorb);
+      BLAS::copy(output_size,
+      phi_vgl_v.data_at(idim + 1, iw, 0), 1,
+      &dpsi_v_list[iw].get().data()[0][idim], DIM);
     }
   }
 }
@@ -414,7 +415,6 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   }
   else
   {
-    std::cout << "\norbsize: " << OrbitalSetSize << "\nbassize: " << BasisSetSize << std::endl;
     ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
     // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
@@ -426,8 +426,6 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
       constexpr double zero(0);
       // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
       //           C.capacity())
-      std::cout << "C.rows: " << C_partial_view.rows()
-                << "\nC.cols: " << C_partial_view.cols() << std::endl;
       BLAS::gemm(transa,transb,
                  C_partial_view.rows(), // MOs
                  spo_list.size(),       // walkers
@@ -438,11 +436,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                  zero,
                  Tempv_mw.data_at(idim, 0, 0), C_partial_view.rows());
     }
-    std::cout << "Tempv_mw[0,0,0]" << std::endl;
-    std::cout << *Tempv_mw.data_at(0,0,0) << std::endl;
     evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
-    std::cout << "phi_vgl_v[0,0,0]" << std::endl;
-    std::cout << *phi_vgl_v.data_at(0,0,0) << std::endl;
   }
 }
 

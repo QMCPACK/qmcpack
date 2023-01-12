@@ -265,7 +265,6 @@ void test_He_mw(bool transform)
     //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
     //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
     sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
-    std::cout << "HELP" << std::endl;
     //std::cout << values[0][0] << std::endl;
     //std::cout << phi_vgl_v[0][0][0] << std::endl;
     // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
@@ -353,7 +352,7 @@ void test_EtOH_mw(bool transform)
   SPOSet::ValueVector d2psiref_0(n_mo);
   // Call makeMove to compute the distances
   //ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
-  std::cout << elec.R[0] << std::endl;
+  //std::cout << elec.R[0] << std::endl;
   //elec.makeMove(0, newpos);
   //elec.update();
   elec.R[0][0] = 0.0001;
@@ -434,35 +433,17 @@ void test_EtOH_mw(bool transform)
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
   //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
-  std::cout << "HELP" << std::endl;
-  //std::cout << values[0][0] << std::endl;
-  //std::cout << phi_vgl_v[0][0][0] << std::endl;
-  // since LCAO is built upon an sposet, we likely need to construct an sposet (lcao flavor of it) in order to keep track of multiple walkers.
-  // results should be the same as above, ideally
-  // but with a new data object to access (everything in offloadmwvglArray).
-  REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psiref_0[0]));
-  REQUIRE(std::real(psi_list[0].get()[1]) == Approx(psiref_0[1]));
-  REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psiref_1[0]));
-  REQUIRE(std::real(psi_list[1].get()[1]) == Approx(psiref_1[1]));
 
-  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(d2psiref_0[0]));
-  REQUIRE(std::real(d2psi_list[0].get()[1]) == Approx(d2psiref_0[1]));
-  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(d2psiref_1[0]));
-  REQUIRE(std::real(d2psi_list[1].get()[1]) == Approx(d2psiref_1[1]));
-
-  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsiref_0[0][0]));
-  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsiref_0[0][1]));
-  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsiref_0[0][2]));
-  REQUIRE(std::real(dpsi_list[0].get()[1][0]) == Approx(dpsiref_0[1][0]));
-  REQUIRE(std::real(dpsi_list[0].get()[1][1]) == Approx(dpsiref_0[1][1]));
-  REQUIRE(std::real(dpsi_list[0].get()[1][2]) == Approx(dpsiref_0[1][2]));
-
-  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsiref_1[0][0]));
-  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsiref_1[0][1]));
-  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsiref_1[0][2]));
-  REQUIRE(std::real(dpsi_list[1].get()[1][0]) == Approx(dpsiref_1[1][0]));
-  REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(dpsiref_1[1][1]));
-  REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(dpsiref_1[1][2]));
+  for (size_t iorb = 0; iorb < n_mo; iorb++){
+    REQUIRE(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
+    REQUIRE(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
+    REQUIRE(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
+    REQUIRE(std::real(d2psi_list[1].get()[iorb]) == Approx(d2psiref_1[iorb]));
+    for (size_t idim = 0; idim < SPOSet::DIM; idim++){
+      REQUIRE(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(dpsiref_0[iorb][idim]));
+      REQUIRE(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(dpsiref_1[iorb][idim]));
+    }
+  }
 
   /*
   REQUIRE(std::real(psi_list[0].get()[0]) == Approx(-0.001664403313));
@@ -488,7 +469,6 @@ void test_EtOH_mw(bool transform)
   REQUIRE(std::real(dpsi_list[1].get()[1][1]) == Approx(-0.0483167767));
   REQUIRE(std::real(dpsi_list[1].get()[1][2]) == Approx(-0.0008320732335));
   */
-  std::cout << "DONE" << std::endl;
 }
 
 TEST_CASE("mw_evaluate Numerical EtOH", "[wavefunction]") { test_EtOH_mw(true); }
