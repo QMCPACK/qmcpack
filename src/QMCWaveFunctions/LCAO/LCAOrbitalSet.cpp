@@ -375,7 +375,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
 {
   OffloadMWVGLArray phi_vgl_v;
   phi_vgl_v.resize(5,spo_list.size(), OrbitalSetSize);
-  mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
   const size_t output_size = phi_vgl_v.size(2);
   const size_t nw          = phi_vgl_v.size(1);
@@ -396,7 +396,7 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
   }
 }
 
-void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
                                    const RefVectorWithLeader<ParticleSet>& P_list,
                                    int iat,
                                    OffloadMWVGLArray& phi_vgl_v) const
@@ -475,7 +475,7 @@ void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPO
   // object to hold gradient
 
   GradVector dphi_v(norb_requested);
-  mw_evaluateVGL(spo_list, P_list, iat, phi_vgl_v);
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
   for (int iw = 0; iw < nw; iw++)
   {
     // create data objects to hold values of wave function and second derivative

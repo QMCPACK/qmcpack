@@ -264,6 +264,7 @@ void test_He_mw(bool transform)
 
     //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
     //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
+    // FIXME: add resource management
     sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
     REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
@@ -421,6 +422,7 @@ void test_EtOH_mw(bool transform)
 
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
   //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
+  // FIXME: add resource management
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
   for (size_t iorb = 0; iorb < n_mo; iorb++){
