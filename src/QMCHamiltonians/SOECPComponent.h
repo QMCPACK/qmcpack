@@ -14,6 +14,7 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -90,9 +91,7 @@ public:
 
   void resize_warrays(int n, int m, int s);
 
-  void randomize_grid(RandomGenerator& myRNG);
-  template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
+  void rotateQuadratureGrid(const TensorType& rmat);
 
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);
