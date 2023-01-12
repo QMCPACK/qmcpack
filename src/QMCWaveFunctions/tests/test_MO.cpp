@@ -140,144 +140,143 @@ void test_He_mw(bool transform)
   // set up ion particle set as normal
   Communicate* c = OHMMS::Controller;
 
-    const SimulationCell simulation_cell;
-    auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
-    auto& elec(*elec_ptr);
-    std::vector<int> agroup(2);
-    agroup[0] = 1;
-    agroup[1] = 1;
-    elec.setName("e");
-    elec.create(agroup);
-    elec.R[0] = 0.0;
+  const SimulationCell simulation_cell;
+  auto elec_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& elec(*elec_ptr);
+  std::vector<int> agroup(2);
+  agroup[0] = 1;
+  agroup[1] = 1;
+  elec.setName("e");
+  elec.create(agroup);
+  elec.R[0] = 0.0;
 
-    SpeciesSet& tspecies       = elec.getSpeciesSet();
-    int upIdx                  = tspecies.addSpecies("u");
-    int downIdx                = tspecies.addSpecies("d");
-    int massIdx                = tspecies.addAttribute("mass");
-    tspecies(massIdx, upIdx)   = 1.0;
-    tspecies(massIdx, downIdx) = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int downIdx                = tspecies.addSpecies("d");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(massIdx, upIdx)   = 1.0;
+  tspecies(massIdx, downIdx) = 1.0;
 
-    auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
-    auto& ions(*ions_ptr);
-    ions.setName("ion0");
-    ions.create({1});
-    ions.R[0]            = 0.0;
-    SpeciesSet& ispecies = ions.getSpeciesSet();
-    int heIdx            = ispecies.addSpecies("He");
-    ions.update();
+  auto ions_ptr = std::make_unique<ParticleSet>(simulation_cell);
+  auto& ions(*ions_ptr);
+  ions.setName("ion0");
+  ions.create({1});
+  ions.R[0]            = 0.0;
+  SpeciesSet& ispecies = ions.getSpeciesSet();
+  int heIdx            = ispecies.addSpecies("He");
+  ions.update();
 
-    elec.addTable(ions);
-    elec.update();
+  elec.addTable(ions);
+  elec.update();
 
-    Libxml2Document doc;
-    bool okay = doc.parse("he_sto3g.wfj.xml");
-    REQUIRE(okay);
-    xmlNodePtr root = doc.getRoot();
+  Libxml2Document doc;
+  bool okay = doc.parse("he_sto3g.wfj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
 
-    WaveFunctionComponentBuilder::PSetMap particle_set_map;
-    particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
-    particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
+  WaveFunctionComponentBuilder::PSetMap particle_set_map;
+  particle_set_map.emplace(elec_ptr->getName(), std::move(elec_ptr));
+  particle_set_map.emplace(ions_ptr->getName(), std::move(ions_ptr));
 
-    SPOSetBuilderFactory bf(c, elec, particle_set_map);
+  SPOSetBuilderFactory bf(c, elec, particle_set_map);
 
-    OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
-    REQUIRE(MO_base.size() == 1);
-    if (transform)
-    {
-      // input file is set to transform GTO's to numerical orbitals by default
-    }
-    else
-    {
-      // use direct evaluation of GTO's
-      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
-    }
+  OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+  if (transform)
+  {
+    // input file is set to transform GTO's to numerical orbitals by default
+  }
+  else
+  {
+    // use direct evaluation of GTO's
+    xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
+    xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+  }
 
-    const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
-    auto& bb(*bb_ptr);
+  const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
+  auto& bb(*bb_ptr);
 
-    OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
-    auto sposet = bb.createSPOSet(slater_base[0]);
+  OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
+  auto sposet = bb.createSPOSet(slater_base[0]);
 
-    //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
+  //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSet::ValueVector psi;
-    SPOSet::GradVector dpsi;
-    SPOSet::ValueVector d2psi;
-    psi.resize(1);
-    dpsi.resize(1);
-    d2psi.resize(1);
+  SPOSet::ValueVector psi;
+  SPOSet::GradVector dpsi;
+  SPOSet::ValueVector d2psi;
+  psi.resize(1);
+  dpsi.resize(1);
+  d2psi.resize(1);
 
-    // Call makeMove to compute the distances
-    ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
-    elec.makeMove(0, newpos);
-    // set up second walkers
-    // auto elec2 = elec.makeClone();
+  // Call makeMove to compute the distances
+  ParticleSet::SingleParticlePos newpos(0.0001, 0.0, 0.0);
+  elec.makeMove(0, newpos);
+  // set up second walkers
+  // auto elec2 = elec.makeClone();
 
-    sposet->evaluateVGL(elec, 0, psi, dpsi, d2psi);
-    REQUIRE(std::real(psi[0]) == Approx(0.9996037001));
-    REQUIRE(std::real(dpsi[0][0]) == Approx(-0.000667803579));
-    REQUIRE(std::real(dpsi[0][1]) == Approx(0));
-    REQUIRE(std::real(dpsi[0][2]) == Approx(0));
-    REQUIRE(std::real(d2psi[0]) == Approx(-20.0342132));
+  sposet->evaluateVGL(elec, 0, psi, dpsi, d2psi);
+  REQUIRE(std::real(psi[0]) == Approx(0.9996037001));
+  REQUIRE(std::real(dpsi[0][0]) == Approx(-0.000667803579));
+  REQUIRE(std::real(dpsi[0][1]) == Approx(0));
+  REQUIRE(std::real(dpsi[0][2]) == Approx(0));
+  REQUIRE(std::real(d2psi[0]) == Approx(-20.0342132));
 
-    
- 
-    // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
-    RefVectorWithLeader<SPOSet> spo_list(*sposet);
-    spo_list.push_back(*sposet);
 
-    RefVectorWithLeader<ParticleSet> P_list(elec);
-    P_list.push_back(elec);
+  // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
+  RefVectorWithLeader<SPOSet> spo_list(*sposet);
+  spo_list.push_back(*sposet);
 
-    RefVector<SPOSet::ValueVector> psi_list;
-    RefVector<SPOSet::GradVector> dpsi_list;
-    RefVector<SPOSet::ValueVector> d2psi_list;
+  RefVectorWithLeader<ParticleSet> P_list(elec);
+  P_list.push_back(elec);
 
-    // create V,G,L arrays for walker 1
-    SPOSet::ValueVector psi_1(sposet->getOrbitalSetSize());
-    SPOSet::GradVector dpsi_1(sposet->getOrbitalSetSize());
-    SPOSet::ValueVector d2psi_1(sposet->getOrbitalSetSize());
+  RefVector<SPOSet::ValueVector> psi_list;
+  RefVector<SPOSet::GradVector> dpsi_list;
+  RefVector<SPOSet::ValueVector> d2psi_list;
 
-    psi_list.push_back(psi_1);
-    dpsi_list.push_back(dpsi_1);
-    d2psi_list.push_back(d2psi_1);
+  // create V,G,L arrays for walker 1
+  SPOSet::ValueVector psi_1(sposet->getOrbitalSetSize());
+  SPOSet::GradVector dpsi_1(sposet->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi_1(sposet->getOrbitalSetSize());
 
-    //second walker
-    // interchange positions and shift y instead of x
-    ParticleSet::SingleParticlePos dy(0.0, 0.0001, 0.0);
-    ParticleSet elec_2(elec);
-    elec_2.R[0] = elec.R[1];
-    elec_2.R[1] = elec.R[0];
-    elec_2.update();
-    elec_2.makeMove(0, dy);
+  psi_list.push_back(psi_1);
+  dpsi_list.push_back(dpsi_1);
+  d2psi_list.push_back(d2psi_1);
 
-    std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
-    SPOSet::ValueVector psi_2(sposet->getOrbitalSetSize());
-    SPOSet::GradVector dpsi_2(sposet->getOrbitalSetSize());
-    SPOSet::ValueVector d2psi_2(sposet->getOrbitalSetSize());
-    spo_list.push_back(*sposet_2);
-    P_list.push_back(elec_2);
-    psi_list.push_back(psi_2);
-    dpsi_list.push_back(dpsi_2);
-    d2psi_list.push_back(d2psi_2);
+  //second walker
+  // interchange positions and shift y instead of x
+  ParticleSet::SingleParticlePos dy(0.0, 0.0001, 0.0);
+  ParticleSet elec_2(elec);
+  elec_2.R[0] = elec.R[1];
+  elec_2.R[1] = elec.R[0];
+  elec_2.update();
+  elec_2.makeMove(0, dy);
 
-    //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
-    //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
-    // FIXME: add resource management
-    sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
+  std::unique_ptr<SPOSet> sposet_2(sposet->makeClone());
+  SPOSet::ValueVector psi_2(sposet->getOrbitalSetSize());
+  SPOSet::GradVector dpsi_2(sposet->getOrbitalSetSize());
+  SPOSet::ValueVector d2psi_2(sposet->getOrbitalSetSize());
+  spo_list.push_back(*sposet_2);
+  P_list.push_back(elec_2);
+  psi_list.push_back(psi_2);
+  dpsi_list.push_back(dpsi_2);
+  d2psi_list.push_back(d2psi_2);
 
-    REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
-    REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsi[0][0]));
-    REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsi[0][1]));
-    REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsi[0][2]));
-    REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(d2psi[0]));
+  //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
+  //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
+  // FIXME: add resource management
+  sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
-    REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psi[0]));
-    REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x, y switched here
-    REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsi[0][0]));
-    REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsi[0][2]));
-    REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(d2psi[0]));
+  REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
+  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsi[0][0]));
+  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsi[0][1]));
+  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsi[0][2]));
+  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(d2psi[0]));
+
+  REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psi[0]));
+  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x, y switched here
+  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsi[0][0]));
+  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsi[0][2]));
+  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(d2psi[0]));
 }
 
 TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
@@ -385,12 +384,12 @@ void test_EtOH_mw(bool transform)
 
   REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
   REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
-  REQUIRE(std::real(psiref_1[1]) == Approx( 0.01351541907));
-  REQUIRE(std::real(d2psiref_1[0]) == Approx( 0.01001796854));
-  REQUIRE(std::real(d2psiref_1[1]) == Approx( 0.2912963205));
+  REQUIRE(std::real(psiref_1[1]) == Approx(0.01351541907));
+  REQUIRE(std::real(d2psiref_1[0]) == Approx(0.01001796854));
+  REQUIRE(std::real(d2psiref_1[1]) == Approx(0.2912963205));
   REQUIRE(std::real(dpsiref_1[0][0]) == Approx(-0.0004235196101));
-  REQUIRE(std::real(dpsiref_1[0][1]) == Approx( 0.003351193375));
-  REQUIRE(std::real(dpsiref_1[0][2]) == Approx( 0.0001374796409));
+  REQUIRE(std::real(dpsiref_1[0][1]) == Approx(0.003351193375));
+  REQUIRE(std::real(dpsiref_1[0][2]) == Approx(0.0001374796409));
   REQUIRE(std::real(dpsiref_1[1][0]) == Approx(-0.003873067027));
   REQUIRE(std::real(dpsiref_1[1][1]) == Approx(-0.0483167767));
   REQUIRE(std::real(dpsiref_1[1][2]) == Approx(-0.0008320732335));
@@ -416,8 +415,8 @@ void test_EtOH_mw(bool transform)
   SPOSet::ValueVector psi_2(n_mo);
   SPOSet::GradVector dpsi_2(n_mo);
   SPOSet::ValueVector d2psi_2(n_mo);
-  RefVector<SPOSet::ValueVector> psi_list = {psi_1, psi_2};
-  RefVector<SPOSet::GradVector> dpsi_list = {dpsi_1, dpsi_2};
+  RefVector<SPOSet::ValueVector> psi_list   = {psi_1, psi_2};
+  RefVector<SPOSet::GradVector> dpsi_list   = {dpsi_1, dpsi_2};
   RefVector<SPOSet::ValueVector> d2psi_list = {d2psi_1, d2psi_2};
 
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
@@ -425,12 +424,14 @@ void test_EtOH_mw(bool transform)
   // FIXME: add resource management
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
-  for (size_t iorb = 0; iorb < n_mo; iorb++){
+  for (size_t iorb = 0; iorb < n_mo; iorb++)
+  {
     REQUIRE(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
     REQUIRE(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
     REQUIRE(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
     REQUIRE(std::real(d2psi_list[1].get()[iorb]) == Approx(d2psiref_1[iorb]));
-    for (size_t idim = 0; idim < SPOSet::DIM; idim++){
+    for (size_t idim = 0; idim < SPOSet::DIM; idim++)
+    {
       REQUIRE(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(dpsiref_0[iorb][idim]));
       REQUIRE(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(dpsiref_1[iorb][idim]));
     }

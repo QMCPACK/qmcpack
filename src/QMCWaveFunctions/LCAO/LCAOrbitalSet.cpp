@@ -367,14 +367,14 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
 }
 
 void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
-                              int iat,
-                              const RefVector<ValueVector>& psi_v_list,
-                              const RefVector<GradVector>& dpsi_v_list,
-                              const RefVector<ValueVector>& d2psi_v_list) const
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list,
+                                   const RefVector<GradVector>& dpsi_v_list,
+                                   const RefVector<ValueVector>& d2psi_v_list) const
 {
   OffloadMWVGLArray phi_vgl_v;
-  phi_vgl_v.resize(5,spo_list.size(), OrbitalSetSize);
+  phi_vgl_v.resize(5, spo_list.size(), OrbitalSetSize);
   mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
 
   const size_t output_size = phi_vgl_v.size(2);
@@ -389,17 +389,15 @@ void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
     //           [walker][orb, dim] in dpsi_v_list
     for (size_t idim = 0; idim < DIM; idim++)
     {
-      BLAS::copy(output_size,
-      phi_vgl_v.data_at(idim + 1, iw, 0), 1,
-      &dpsi_v_list[iw].get().data()[0][idim], DIM);
+      BLAS::copy(output_size, phi_vgl_v.data_at(idim + 1, iw, 0), 1, &dpsi_v_list[iw].get().data()[0][idim], DIM);
     }
   }
 }
 
 void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
-                                   const RefVectorWithLeader<ParticleSet>& P_list,
-                                   int iat,
-                                   OffloadMWVGLArray& phi_vgl_v) const
+                                           const RefVectorWithLeader<ParticleSet>& P_list,
+                                           int iat,
+                                           OffloadMWVGLArray& phi_vgl_v) const
 {
   // [5][NW * NumAO]
   // [5][NW][NumAO]
@@ -426,15 +424,12 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
       constexpr double zero(0);
       // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
       //           C.capacity())
-      BLAS::gemm(transa,transb,
+      BLAS::gemm(transa, transb,
                  C_partial_view.rows(), // MOs
                  spo_list.size(),       // walkers
                  C_partial_view.cols(), // AOs
-                 zone,
-                 C_partial_view.data(), C_partial_view.cols(),
-                 Temp_mw.data_at(idim, 0, 0), C_partial_view.cols(),
-                 zero,
-                 Tempv_mw.data_at(idim, 0, 0), C_partial_view.rows());
+                 zone, C_partial_view.data(), C_partial_view.cols(), Temp_mw.data_at(idim, 0, 0), C_partial_view.cols(),
+                 zero, Tempv_mw.data_at(idim, 0, 0), C_partial_view.rows());
     }
     evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
   }
