@@ -559,6 +559,62 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     //test without VPs
     test_evaluateOne();
   }
+
+  //Check evaluateValueAndDerivatives
+  opt_variables_type optvars;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+  auto test_evaluateValueAndDerivatives = [&]() {
+    dlogpsi.resize(NumOptimizables, ValueType(0));
+    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+    /*
+    REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+    REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
+    REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+    REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
+
+    REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+    REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+    REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
+    REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+    */
+
+    double Value1 = 0.0;
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (sopp != nullptr && dist[iat] < sopp->getRmax())
+          Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                      dhpsioverpsi);
+    }
+    REQUIRE(Value1 == Approx(-0.3214176962));
+
+    /*
+    CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
+    CHECK(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
+    CHECK(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
+    CHECK(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    CHECK(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
+    */
+  };
+
+  {
+    sopp->initVirtualParticle(elec);
+    test_evaluateValueAndDerivatives();
+    sopp->deleteVirtualParticle();
+    test_evaluateValueAndDerivatives();
+  }
 }
 #endif
 

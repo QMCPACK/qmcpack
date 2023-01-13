@@ -109,18 +109,15 @@ public:
    */
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
-  // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
-  inline RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                              int iat,
-                                              TrialWaveFunction& psi,
-                                              const opt_variables_type& optvars,
-                                              const std::vector<RealType>& dlogpsi,
-                                              std::vector<RealType>& dhpsioverpsi,
-                                              const int myTableIndex)
-  {
-    APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
-    return 0.0;
-  };
+  RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       int iat,
+                                       TrialWaveFunction& psi,
+                                       int iel,
+                                       RealType r,
+                                       const PosType& dr,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 
