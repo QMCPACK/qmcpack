@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_SYCL_BLAS_H
 
 #include <complex>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace qmcplusplus
 {

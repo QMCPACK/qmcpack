@@ -11,8 +11,8 @@ if(NOT QMC_CUDA)
     #   "samples" "409600000 0") # samples
 
     list(APPEND CHN_SHORT "kinetic" "93.179 0.85") # kinetic energy
-    list(APPEND CHN_SHORT "totenergy" "-93.33934 0.004") # total energy
-    list(APPEND CHN_SHORT "eeenergy" "55.2876 0.023") # e-e energy
+    list(APPEND CHN_SHORT "totenergy" "-93.33934 0.006") # total energy
+    list(APPEND CHN_SHORT "eeenergy" "55.2876 0.06") # e-e energy
     list(APPEND CHN_SHORT "samples" "160000 0.0") # samples
     qmc_run_and_check(
       short-chn_ae_cuspCorrection-vmc

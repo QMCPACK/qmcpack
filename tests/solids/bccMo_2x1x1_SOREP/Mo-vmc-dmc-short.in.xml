@@ -58,7 +58,7 @@
     </jastrow>    
   </wavefunction>
   <hamiltonian name="h0" type="generic" target="e">
-    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml" physicalSO="yes" algorithm="non-batched">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml" physicalSO="yes">
       <pseudo elementType="Mo" href="Mo.ccECP.xml"/>
     </pairpot>
     <constant name="IonIon" type="coulomb" source="i" target="i"/>

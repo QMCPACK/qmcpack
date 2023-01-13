@@ -27,7 +27,7 @@ NonLocalECPotential::Return_t NonLocalECPotential::evaluateValueAndDerivatives(P
   value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
 
   /* evaluating TWF ratio values requires calling prepareGroup
    * In evaluate() we first loop over species and call prepareGroup before looping over all the electrons of a species

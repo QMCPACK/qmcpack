@@ -253,6 +253,9 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
+    // Populate local to global index mapping into psiClone internal component 'myVars',
+    // because psiClones persist between different sections and need update.
+    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -375,6 +378,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
+    // Populate local to global index mapping into psiClone internal component 'myVars',
+    // because psiClones persist between different sections and need update.
+    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);

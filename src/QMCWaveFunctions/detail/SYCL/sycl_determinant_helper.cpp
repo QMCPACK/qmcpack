@@ -17,7 +17,7 @@ namespace qmcplusplus
 {
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                               const std::vector<cl::sycl::event>& dependencies,
+                               const std::vector<sycl::event>& dependencies,
                                const int* restrict delay_list_gpu,
                                const int delay_count,
                                T* restrict temp_gpu,
@@ -48,7 +48,7 @@ sycl::event applyW_stageV_sycl(sycl::queue& aq,
 }
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<cl::sycl::event>& dependencies,
+                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         float* restrict temp_gpu,
@@ -58,7 +58,7 @@ template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                         const float* restrict Ainv);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<cl::sycl::event>& dependencies,
+                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         double* restrict temp_gpu,
@@ -68,7 +68,7 @@ template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                         const double* restrict Ainv);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<cl::sycl::event>& dependencies,
+                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         std::complex<float>* restrict temp_gpu,
@@ -78,7 +78,7 @@ template sycl::event applyW_stageV_sycl(sycl::queue& aq,
                                         const std::complex<float>* restrict Ainv);
 
 template sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                                        const std::vector<cl::sycl::event>& dependencies,
+                                        const std::vector<sycl::event>& dependencies,
                                         const int* restrict delay_list_gpu,
                                         const int delay_count,
                                         std::complex<double>* restrict temp_gpu,
@@ -94,7 +94,7 @@ std::complex<T> computeLogDet_sycl(sycl::queue& aq,
                                    int lda,
                                    const TMAT* restrict a,
                                    const INDEX* restrict pivot,
-                                   const std::vector<cl::sycl::event>& dependencies)
+                                   const std::vector<sycl::event>& dependencies)
 {
   constexpr size_t COLBS = 128;
 
@@ -125,12 +125,12 @@ template std::complex<double> computeLogDet_sycl(sycl::queue& aq,
                                                  int lda,
                                                  const double* restrict a,
                                                  const std::int64_t* restrict pivot,
-                                                 const std::vector<cl::sycl::event>& dependencies);
+                                                 const std::vector<sycl::event>& dependencies);
 
 template std::complex<double> computeLogDet_sycl(sycl::queue& aq,
                                                  int n,
                                                  int lda,
                                                  const std::complex<double>* restrict a,
                                                  const std::int64_t* restrict pivot,
-                                                 const std::vector<cl::sycl::event>& dependencies);
+                                                 const std::vector<sycl::event>& dependencies);
 } // namespace qmcplusplus

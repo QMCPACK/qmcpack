@@ -29,6 +29,8 @@ struct LocalEnergyOnlyEstimator : public ScalarEstimatorBase
     scalars_saved.resize(2);
   }
 
+  std::string getName() const override { return "LocalEnergyOnlyEstimator"; }
+  
   inline void accumulate(const MCWalkerConfiguration& W,
                          WalkerIterator first,
                          WalkerIterator last,

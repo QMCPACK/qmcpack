@@ -313,6 +313,39 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
 } // TEST_CASE distance_open_species_deviation
 
+SimulationCell parse_pbc_fcc_lattice()
+{
+  const char* particles = R"(<tmp>
+  <simulationcell>
+     <parameter name="lattice" units="bohr">
+              6.00000000        6.00000000        0.00000000
+              0.00000000        6.00000000        6.00000000
+              6.00000000        0.00000000        6.00000000
+     </parameter>
+     <parameter name="bconds">
+        p p p
+     </parameter>
+     <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+  </simulationcell>
+</tmp>
+)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root  = doc.getRoot();
+  xmlNodePtr part1 = xmlFirstElementChild(root);
+
+  // read lattice
+  ParticleSet::ParticleLayout lattice;
+  LatticeParser lp(lattice);
+  lp.put(part1);
+  lattice.print(app_log(), 0);
+
+  return SimulationCell(lattice);
+}
+
 SimulationCell parse_pbc_lattice()
 {
   const char* particles = R"(<tmp>
@@ -576,10 +609,58 @@ void test_distance_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
   CHECK(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
 } // test_distance_pbc_z_batched_APIs
 
+void test_distance_fcc_pbc_z_batched_APIs(DynamicCoordinateKind test_kind)
+{
+  // test that particle distances are properly calculated under periodic boundary condition
+  // There are many details in this example, but the main idea is simple: When a particle is moved by a full lattice vector, no distance should change.
+
+  const SimulationCell simulation_cell(parse_pbc_fcc_lattice());
+  ParticleSet ions(simulation_cell), electrons(simulation_cell, test_kind);
+  parse_electron_ion_pbc_z(ions, electrons);
+
+  // calculate particle distances
+  ions.update();
+  const int ee_tid = electrons.addTable(electrons, DTModes::NEED_FULL_TABLE_ON_HOST_AFTER_DONEPBYP);
+  // get target particle set's distance table data
+  const auto& ee_dtable = electrons.getDistTableAA(ee_tid);
+  CHECK(ee_dtable.getName() == "e_e");
+  electrons.update();
+
+  // shift electron 0 a bit to avoid box edges.
+  ParticleSet::SingleParticlePos shift(0.1, 0.2, -0.1);
+  electrons.makeMove(0, shift);
+  electrons.accept_rejectMove(0, true, false);
+  electrons.donePbyP();
+
+  ParticleSet electrons_clone(electrons);
+  RefVectorWithLeader<ParticleSet> p_list(electrons);
+  p_list.push_back(electrons);
+  p_list.push_back(electrons_clone);
+
+  ResourceCollection pset_res("test_pset_res");
+  electrons.createResource(pset_res);
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+
+  std::vector<ParticleSet::SingleParticlePos> disp{{0.2, 0.1, 0.3}, {0.2, 0.1, 0.3}};
+
+  ParticleSet::mw_makeMove(p_list, 0, disp);
+  ParticleSet::mw_accept_rejectMove(p_list, 0, {true, true}, true);
+  ParticleSet::mw_makeMove(p_list, 1, disp);
+  ParticleSet::mw_accept_rejectMove(p_list, 1, {false, false}, true);
+
+  ParticleSet::mw_donePbyP(p_list);
+  CHECK(ee_dtable.getDistRow(1)[0] == Approx(2.7239676944));
+  CHECK(ee_dtable.getDisplRow(1)[0][0] == Approx(-2.7));
+  CHECK(ee_dtable.getDisplRow(1)[0][1] == Approx(0.3));
+  CHECK(ee_dtable.getDisplRow(1)[0][2] == Approx(0.2));
+} // test_distance_pbc_z_batched_APIs
+
 TEST_CASE("distance_pbc_z batched APIs", "[distance_table][xml]")
 {
   test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS);
   test_distance_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS_OFFLOAD);
+  test_distance_fcc_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS);
+  test_distance_fcc_pbc_z_batched_APIs(DynamicCoordinateKind::DC_POS_OFFLOAD);
 }
 
 void test_distance_pbc_z_batched_APIs_ee_NEED_TEMP_DATA_ON_HOST(DynamicCoordinateKind test_kind)

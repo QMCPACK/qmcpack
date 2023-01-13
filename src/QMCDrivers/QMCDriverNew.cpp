@@ -143,8 +143,6 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   // set num_global_walkers explicitly and then make local walkers.
   population_.set_num_global_walkers(awc.global_walkers);
 
-  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
-
   if (qmcdriver_input_.areWalkersSerialized())
   {
     if (estimator_manager_->areThereListeners())
@@ -153,6 +151,14 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
   }
   else
   {
+    // This needs to happen before walkers are made. i.e. this allows hamiltonian operators to update state
+    // the based on the presence of per particle listeners. In the case immediately encountered the operator CoulombPBCAA will
+    // call its associated particle set and turnOnPerParticleSK.
+    // The design for "initialization" of walker elements is for the golden elements to go through all pre walking state changes
+    // and then for the golden elements to be cloned for each walker.
+    if (estimator_manager_->areThereListeners())
+      population_.get_golden_hamiltonian().informOperatorsOfListener();
+
     app_debug() << "Creating multi walker shared resources" << std::endl;
     population_.get_golden_electrons().createResource(golden_resource_.pset_res);
     population_.get_golden_twf().createResource(golden_resource_.twf_res);
@@ -160,12 +166,16 @@ void QMCDriverNew::initializeQMC(const AdjustedWalkerCounts& awc)
     app_debug() << "Multi walker shared resources creation completed" << std::endl;
   }
 
+  makeLocalWalkers(awc.walkers_per_rank[myComm->rank()], awc.reserve_walkers);
+
   crowds_.resize(awc.walkers_per_crowd.size());
 
   // at this point we can finally construct the Crowd objects.
   for (int i = 0; i < crowds_.size(); ++i)
   {
-    crowds_[i] = std::make_unique<Crowd>(*estimator_manager_, golden_resource_, dispatchers_);
+    crowds_[i] =
+        std::make_unique<Crowd>(*estimator_manager_, golden_resource_, population_.get_golden_electrons(),
+                                population_.get_golden_twf(), population_.get_golden_hamiltonian(), dispatchers_);
   }
 
   //now give walkers references to their walkers

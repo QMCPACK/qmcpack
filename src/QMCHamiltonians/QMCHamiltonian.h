@@ -471,6 +471,8 @@ private:
   NewTimer& ham_timer_;
   /// Total timer for H evaluation
   NewTimer& eval_vals_derivs_timer_;
+  /// Total timer for H ion deriv evaluation;
+  NewTimer& eval_ion_derivs_fast_timer_;
   /// timers for H components
   TimerList_t my_timers_;
   ///types of component operators

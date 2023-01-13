@@ -34,6 +34,7 @@ class hdf_archive;
 namespace testing
 {
 class EstimatorManagerNewTest;
+class EstimatorManagerNewTestAccess;
 } // namespace testing
 
 
@@ -274,6 +275,7 @@ private:
 
   friend class EstimatorManagerCrowd;
   friend class qmcplusplus::testing::EstimatorManagerNewTest;
+  friend class qmcplusplus::testing::EstimatorManagerNewTestAccess;
 };
 } // namespace qmcplusplus
 #endif

@@ -178,6 +178,7 @@ job_defaults_assign = obj(
     core_spec          = None, # slurm specific, Cori
     switches           = None, # slurm specific, SuperMUC-NG
     alloc_flags        = None, # lsf specific, Summit
+    filesystems        = None, # pbs specific
     qos                = None,
     group_list         = None,
     default_cpus_per_task = False, # optionally bypass typical nexus processing for supermucng
@@ -571,6 +572,9 @@ class Job(NexusCore):
                     c+=' >'+self.outfile+' 2>'+self.errfile
                 #end if
             #end if
+        elif machine.special_bundling:
+            c+='\n'
+            c+=machine.specialized_bundle_commands(self,launcher,serial)
         elif self.relative:
             cdir = self.abs_subdir
             c+='\n'
@@ -720,6 +724,7 @@ class Machine(NexusCore):
     executable_subfile  = False
     redirect_output     = False
     query_with_username = False
+    special_bundling    = False
 
     prefixed_output    = False
     outfile_extension  = None
@@ -833,6 +838,9 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def submit_job
 
+    def specialized_bundle_commands(self,job,launcher,serial):
+        self.not_implemented()
+    #end def specialized_bundle_commands
 
     def __init__(self,name,queue_size=0):
         self.name = name
@@ -2113,11 +2121,6 @@ cd $SLURM_SUBMIT_DIR
 #end class NerscMachine
 
 
-class Edison(NerscMachine):
-    name = 'edison'
-#end class Edison
-
-
 class Cori(NerscMachine):
     name = 'cori'
 
@@ -2195,6 +2198,137 @@ export OMP_PLACES=threads
         return c
     #end def write_job_header
 #end class Cori
+
+
+
+
+class Perlmutter(NerscMachine):
+    name = 'perlmutter'
+
+    def pre_process_job(self,job):
+        # Set default queue and node type
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        if job.constraint is None:
+            job.constraint = 'cpu'
+        #end if
+        # Account for dual nature of Perlmutter
+        if 'cpu' in job.constraint:
+            self.nodes          = 3072
+            self.procs_per_node = 2
+            self.cores_per_node = 128
+            self.ram_per_node   = 512
+        elif 'gpu' in job.constraint:
+            self.nodes          = 1536
+            self.procs_per_node = 1
+            self.cores_per_node = 64
+            self.ram_per_node   = 256
+            self.gpus_per_node  = 4
+        else:
+            self.error('SLURM input "constraint" must contain either "cpu" or "gpu" on Perlmutter\nyou provided: {0}'.format(job.constraint))
+        #end if
+    #end def pre_process_job
+
+    def write_job_header(self,job):
+        self.pre_process_job(job) # sync machine view with job
+
+        # Check if the user gave reasonable processes_per_node
+        if 'cpu' in job.constraint:
+            if job.processes_per_node > self.cores_per_node:
+                self.error('processes_per_node can not be greater than logical CPUs per node (256)\nyou provided: {0}'.format(job.processes_per_node))
+            #end if
+        elif 'gpu' in job.constraint:
+            if job.processes_per_node > self.gpus_per_node:
+                self.error('processes_per_node can not be greater than GPUs per node (4)\nyou provided: {0}'.format(job.processes_per_node))
+            #end if
+            # Also check if the user forgot to include '_g' in the account name for GPU jobs
+            if ('_g' in job.account) == False:
+                job.account = job.account + '_g'
+            #end if
+        #end if
+
+        # Check if the user gave reasonable queue inputs
+        if job.queue == 'debug':
+            base_partition = 1
+            max_partition = 8
+            max_time = 0.5
+        elif job.queue == 'regular':
+            base_partition = 1
+            max_partition = self.nodes
+            max_time = 12
+        elif job.queue == 'preempt':
+            base_partition = 1
+            max_partition = 128
+            max_time = 24
+        elif job.queue == 'overrun':
+            base_partition = 1
+            max_partition = self.nodes
+            max_time = 12
+        else:
+            self.error('The requested queue is not implemented.')
+        #end if
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:
+            self.error('The maximum runtime on {0} queue should not be more than {1} hours\n  you requested: {2} hours'.format(job.queue,max_time,job.total_hours))
+        #end if
+        if job.nodes<base_partition:
+            self.error('The number of nodes on {0} queue should not be less than {1}\n  you requested: {2}'.format(job.queue,base_partition,job.nodes))
+        elif job.nodes>max_partition:
+            self.error('The number of nodes on {0} queue should not be more than {1}\n  you requested: {2}'.format(job.queue,max_partition,job.nodes))
+        #end if
+
+        # Use the user cpus_per_task if specified. If not specified, then use available cpus for each process
+        if job.cpus_per_task is not None:
+            cpus_per_task = job.cpus_per_task
+        else:
+            hyperthreads = 2 # Both CPU and GPU nodes use the same AMD EPYC 7763 (Milan) CPUs
+            cpus_per_task = int(floor(float(self.cores_per_node)/job.processes_per_node))*hyperthreads
+        #end if
+
+        c='#!/bin/bash\n'
+        if job.account is not None:
+            c+= '#SBATCH -A '+job.account+'\n'
+        #end if
+        c+='#SBATCH -C '+str(job.constraint)+'\n'
+        c+='#SBATCH -q '+job.queue+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH -c '+str(cpus_per_task)+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+
+        if 'gpu' in job.constraint:
+            gpus_per_task = int(floor(float(self.gpus_per_node)/job.processes_per_node))
+            c+='#SBATCH --gpus-per-task={0}\n'.format(gpus_per_task)
+        #end if
+
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        if job.threads>1:
+            c+='''
+export OMP_PROC_BIND=true
+export OMP_PLACES=threads
+'''
+        #end if
+        if 'gpu' in job.constraint:
+            c+='''
+export SLURM_CPU_BIND="cores"
+'''
+        #end if
+        return c
+    #end def write_job_header
+#end class Perlmutter
+
 
 
 
@@ -3371,6 +3505,69 @@ class Tomcat3(Supercomputer):
 
 
 
+class Polaris(Supercomputer):
+    name = 'polaris'
+    requires_account = True
+    batch_capable    = True
+    special_bundling = True
+
+    def post_process_job(self,job):
+        if len(job.run_options)==0: 
+            opt = obj(
+                ppn     = '--ppn {}'.format(job.processes_per_node),
+                depth   = '--depth={}'.format(job.threads),
+                cpubind = '--cpu-bind depth',
+                threads = '--env OMP_NUM_THREADS={}'.format(job.threads),
+                )
+            job.run_options.add(**opt)
+        #end if
+    #end def post_process_job
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'prod'
+        #end if
+        if job.filesystems is None:
+            job.filesystems = 'home:eagle:grand'
+        #end if
+        c= '#!/bin/sh\n'
+        c+='#PBS -l select={}:system=polaris\n'.format(job.nodes)
+        c+='#PBS -l place=scatter\n'
+        c+='#PBS -l filesystems={}\n'.format(job.filesystems)
+        c+='#PBS -l walltime={}\n'.format(job.pbs_walltime())
+        c+='#PBS -A {}\n'.format(job.account)
+        c+='#PBS -q {}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -k doe\n'
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='cd ${PBS_O_WORKDIR}\n'
+
+        return c
+    #end def write_job_header
+
+    def specialized_bundle_commands(self,job,launcher,serial):
+        c = ''
+        j0 = job.bundled_jobs[0]
+        c+='split --lines={} --numeric-suffixes=1 --suffix-length=3 $PBS_NODEFILE local_hostfile.\n'.format(j0.nodes)
+        c+='\n'
+        lhfiles = ['local_hostfile.'+str(n+1).zfill(3) for n in range(len(job.bundled_jobs))]
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            c+='cp {} {}\n'.format(lh,j.abs_subdir)
+        #end for
+        for j,lh in zip(job.bundled_jobs,lhfiles):
+            j.run_options.add(hostfile='--hostfile '+lh)
+            c+='\ncd '+j.abs_subdir+'\n'
+            c+=j.run_command(launcher,redirect=True,serial=serial)+'\n'
+        #end for
+        c+='\nwait\n'
+        return c
+    #end def specialized_bundle_commands
+#end class Polaris
+
+
+
 
 #Known machines
 #  workstations
@@ -3383,7 +3580,6 @@ Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    
 Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 Golub(          512,  2,     6,   32, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
 OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
-Edison(        664,   2,    12,   64,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')
 BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
 BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',     'qsub',   'qstat',    'qdel')
@@ -3414,6 +3610,8 @@ Andes(         704,   2,    16,  256, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Tomcat3(         8,   1,    64,  192, 1000, 'mpirun',   'sbatch',   'sacct', 'scancel')
 SuperMUC_NG(  6336,   1,    48,   96, 1000,'mpiexec',   'sbatch',   'sacct', 'scancel')
 Archer2(      5860,   2,    64,  512, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Polaris(       560,   1,    32,  512,    8,'mpiexec',     'qsub',   'qstat',    'qdel')
+Perlmutter(   3072,   2,   128,  512, 5000,   'srun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions

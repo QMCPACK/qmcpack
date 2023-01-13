@@ -393,7 +393,7 @@ if [[ $sys == *"legacycu2hip"* ]]; then
     export ROCM_PATH=/opt/rocm
     export PATH=${PATH}:${ROCM_PATH}/bin:${ROCM_PATH}/opencl/bin
     QMCPACK_TEST_SUBMIT_NAME=${QMCPACK_TEST_SUBMIT_NAME}-Legacy-CUDA2HIP
-    QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_CUDA=ON;-DQMC_CUDA2HIP=ON;-DHIP_ARCH=${amdgpuarch}"
+    QMC_OPTIONS="${QMC_OPTIONS};-DENABLE_CUDA=ON;-DQMC_CUDA2HIP=ON;-DCMAKE_HIP_ARCHITECTURES=${amdgpuarch}"
 fi
 
 # MKL

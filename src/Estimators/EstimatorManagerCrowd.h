@@ -38,12 +38,10 @@ class QMCHamiltonian;
 class EstimatorManagerCrowd
 {
 public:
-  using MCPWalker     = Walker<QMCTraits, PtclOnLatticeTraits>;
-  using RealType      = EstimatorManagerNew::RealType;
+  using MCPWalker = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using RealType  = EstimatorManagerNew::RealType;
 
   /** EstimatorManagerCrowd are always spawn of an EstimatorManagerNew
-   *
-   *  This coupling should be removed.
    */
   EstimatorManagerCrowd(EstimatorManagerNew& em);
 
@@ -66,7 +64,16 @@ public:
    *  \param[in]     psets           walker particle sets
    *  \param[in]     wfns            walker wavefunctions
    *  \param[inout]  rng             crowd scope RandomGenerator
-   */ 
+   *
+   *  walkers is especially questionable since its really just hiding the full sweep hamiltonian values from
+   *  the most recent (maybe) QMCHamiltonian evaluate which are written into it by the QMCHamiltonians
+   *  previous to the accumulate.
+   *  walkers might additionally be useful because they hold another copy of the dynamic (electron) particle sets coords
+   *  that could be inconsistent with psets.
+   *
+   *  As soon as the legacy Estimators are dropped this API should be reviewed with an eye to disentangling
+   *  ParticleSet, Walker, and QMCHamiltonian.
+   */
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
@@ -78,6 +85,11 @@ public:
 
   RealType get_block_num_samples() const { return block_num_samples_; }
   RealType get_block_weight() const { return block_weight_; }
+
+  /** This registers the crowd lever estimators that require listeners into the QMCHamiltonianMultiWalkerResources
+   *  We really only need a QMCHamiltonian leader but resource acquisition and release works better this way.
+   */
+  void registerListeners(const RefVectorWithLeader<QMCHamiltonian>& ham_list);
 
 private:
   ///number of samples accumulated in a block

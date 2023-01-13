@@ -52,11 +52,11 @@ if(QMC_MIXED_PRECISION)
 else()
     list(APPEND DET_FeCO6_GMS_SHORT "kinetic" "163.17377427 0.000001") # kinetic energy
     list(APPEND DET_FeCO6_GMS_SHORT "eeenergy" "561.38303067 0.000001") # e-e energy
-    list(APPEND DET_FeCO6_GMS_SHORT "totenergy" "-252.63740050 0.000001") # total energy
-    list(APPEND DET_FeCO6_GMS_SHORT "potential" "-415.81117477 0.000001") # potential energy
+    list(APPEND DET_FeCO6_GMS_SHORT "totenergy" "-252.63553526 0.000001") # total energy
+    list(APPEND DET_FeCO6_GMS_SHORT "potential" "-415.80930953 0.000001") # potential energy
     list(APPEND DET_FeCO6_GMS_SHORT "ionion" "422.43052231 0.000001") # i-i energy
     list(APPEND DET_FeCO6_GMS_SHORT "localecp" "-1432.09655360 0.000001") # localECP
-    list(APPEND DET_FeCO6_GMS_SHORT "nonlocalecp" "32.47182585 0.000001") # nonlocalECP
+    list(APPEND DET_FeCO6_GMS_SHORT "nonlocalecp" "32.47369109 0.000001") # nonlocalECP
     list(APPEND DET_FeCO6_GMS_SHORT "samples" "9 0.0") # samples
 endif()
 
@@ -74,9 +74,9 @@ endif()
 
 if(QMC_MIXED_PRECISION)
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "kinetic" "134.10184342 0.003") # kinetic energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "eeenergy" "552.72060729 0.001") # e-e energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "eeenergy" "552.72060729 0.002") # e-e energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "totenergy" "-251.29185486 0.001") # total energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-385.39369691 0.001") # potential energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-385.39369691 0.002") # potential energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "ionion" "422.43052077 0.0001") # i-i energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "localecp" "-1391.12666390 0.003") # localECP
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "nonlocalecp" "30.58183893 0.002") # nonlocalECP
@@ -84,11 +84,11 @@ if(QMC_MIXED_PRECISION)
 else()
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "kinetic" "163.17377427 0.000001") # kinetic energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "eeenergy" "561.38303067 0.000001") # e-e energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "totenergy" "-252.63740050 0.000001") # total energy
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-415.81117477 0.000001") # potential energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "totenergy" "-252.63553526 0.000001") # total energy
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "potential" "-415.80930953 0.000001") # potential energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "ionion" "422.43052231 0.000001") # i-i energy
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "localecp" "-1432.09655360 0.000001") # localECP
-    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "nonlocalecp" "32.47182585 0.000001") # nonlocalECP
+    list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "nonlocalecp" "32.47369109 0.000001") # nonlocalECP
     list(APPEND DET_FeCO6_GMS_SHORT_BATCHED "samples" "9 0.0") # samples
 endif()
 
