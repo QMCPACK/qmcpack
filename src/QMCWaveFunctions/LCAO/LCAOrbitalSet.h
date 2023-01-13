@@ -79,17 +79,13 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+
   void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
                       const RefVectorWithLeader<ParticleSet>& P_list,
                       int iat,
-                      OffloadMWVGLArray& phi_vgl_v) const;
-
-  void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
-                              const RefVectorWithLeader<ParticleSet>& P_list,
-                              int iat,
-                              const RefVector<ValueVector>& psi_v_list,
-                              const RefVector<GradVector>& dpsi_v_list,
-                              const RefVector<ValueVector>& d2psi_v_list) const override;
+                      const RefVector<ValueVector>& psi_v_list,
+                      const RefVector<GradVector>& dpsi_v_list,
+                      const RefVector<ValueVector>& d2psi_v_list) const override;
 
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
@@ -291,6 +287,11 @@ private:
 
   ///Unpacks data in vgl object and calculates/places ionic gradient of a single row (phi_j(r)) into dlogdet.
   void evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector& dlogdet) const;
+
+  void mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              OffloadMWVGLArray& phi_vgl_v) const;
 };
 } // namespace qmcplusplus
 #endif
