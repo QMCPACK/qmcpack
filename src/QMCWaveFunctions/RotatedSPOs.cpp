@@ -120,19 +120,12 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   {
     int loc        = myVars.where(i);
     delta_param[i] = active[loc] - myVars[i];
-    if (use_global_rot_)
-    {
-      old_param[i] = myVars[i];
-    }
-    else
-    {
-      myVars[i] = active[loc];
-    }
+    myVars[i] = active[loc];
   }
 
   if (use_global_rot_)
   {
-    for (int i = m_act_rot_inds.size(); i < m_full_rot_inds.size(); i++)
+    for (int i = 0; i < m_full_rot_inds.size(); i++)
     {
       old_param[i] = myVarsFull[i];
     }
@@ -142,15 +135,8 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
       apply_delta_rotation(delta_param, old_param, new_param);
     }
 
-    // Save the active params
-    for (int i = 0; i < m_act_rot_inds.size(); i++)
-    {
-      myVars[i]     = new_param[i];
-      myVarsFull[i] = new_param[i];
-    }
-
-    // Save the rest of the params
-    for (int i = m_act_rot_inds.size(); i < m_full_rot_inds.size(); i++)
+    // Save the the params
+    for (int i = 0; i < m_full_rot_inds.size(); i++)
     {
       myVarsFull[i] = new_param[i];
     }
@@ -359,8 +345,14 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
       sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
            << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
-      // No user input parameters for now
-      myVarsFull.insert(sstr.str(), 0.0);
+      if (params_supplied && i < m_act_rot_inds.size())
+      {
+        myVarsFull.insert(sstr.str(), params[i]);
+      }
+      else
+      {
+        myVarsFull.insert(sstr.str(), 0.0);
+      }
     }
   }
 
