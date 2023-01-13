@@ -331,6 +331,16 @@ void test_EtOH_mw(bool transform)
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
+  if (transform)
+  {
+    // input file is set to transform GTO's to numerical orbitals by default
+  }
+  else
+  {
+    // use direct evaluation of GTO's
+    xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
+    xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+  }
 
   xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"no");
 
@@ -439,6 +449,7 @@ void test_EtOH_mw(bool transform)
 }
 
 TEST_CASE("mw_evaluate Numerical EtOH", "[wavefunction]") { test_EtOH_mw(true); }
+TEST_CASE("mw_evaluate GTO EtOH", "[wavefunction]") { test_EtOH_mw(false); }
 
 void test_Ne(bool transform)
 {
