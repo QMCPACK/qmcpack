@@ -95,7 +95,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, gx, gy, gz, lx, ly, lz, vals : QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
       {
@@ -128,7 +128,7 @@ inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(gx, gy, gz, lx: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(gx, gy, gz, lx : QMC_SIMD_ALIGNMENT)
 #endif
   for (int n = 0; n < num_splines; n++)
   {
@@ -212,7 +212,8 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals, gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals, gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz \
+                         : QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
       {
@@ -251,7 +252,7 @@ inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T, 3>::
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(gx, gy, gz, hxx, hyy, hzz, hxy, hxz, hyz : QMC_SIMD_ALIGNMENT)
 #endif
   for (int n = 0; n < num_splines; n++)
   {
@@ -272,6 +273,7 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
                                  int ix,
                                  int iy,
                                  int iz,
+                                 const int first,
                                  const T a[4],
                                  const T b[4],
                                  const T c[4],
@@ -285,7 +287,6 @@ inline void evaluate_vgh_impl_v2(const typename qmcplusplus::bspline_traits<T, 3
                                  T* restrict grads,
                                  T* restrict hess,
                                  const size_t out_offset,
-                                 const int first,
                                  const int index)
 {
   const intptr_t xs = spline_m->x_stride;

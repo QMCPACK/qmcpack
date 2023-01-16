@@ -60,7 +60,7 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals : QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
         vals[n] += pre00 * (c[0] * coefs[n] + c[1] * coefszs[n] + c[2] * coefs2zs[n] + c[3] * coefs3zs[n]);
@@ -72,11 +72,11 @@ inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>:
                                int ix,
                                int iy,
                                int iz,
+                               const int first,
                                const T a[4],
                                const T b[4],
                                const T c[4],
                                T* restrict vals,
-                               const int first,
                                const int index)
 {
   const intptr_t xs = spline_m->x_stride;
