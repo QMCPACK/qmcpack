@@ -121,6 +121,9 @@ private:
    */
   RealType calculateProjector(RealType r, const PosType& dr);
 
+  /// Can disable grid randomization for testing
+  bool do_randomize_grid_;
+
 public:
   NonLocalECPComponent();
 
@@ -138,6 +141,8 @@ public:
     sgridxyz_m.push_back(xyz);
     sgridweight_m.push_back(weight);
   }
+
+  void set_randomize_grid(bool do_randomize_grid_);
 
   void resize_warrays(int n, int m, int l);
 
