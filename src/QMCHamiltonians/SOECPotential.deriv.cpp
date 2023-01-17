@@ -42,7 +42,7 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
                                                                      int iat,
-                                                                     TrialWaveFunction& psi,
+                                                                     TrialWaveFunction& Psi,
                                                                      int iel,
                                                                      RealType r,
                                                                      const PosType& dr,
@@ -50,7 +50,41 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
                                                                      const Vector<ValueType>& dlogpsi,
                                                                      Vector<ValueType>& dhpsioverpsi)
 {
-  return 0.0;
+  if (sknot < 2)
+    APP_ABORT("Spin knots must be greater than 2\n");
+
+  if (sknot % 2 != 0)
+    APP_ABORT("Spin knots uses Simpson's rule. Must have even number of knots");
+
+  for (int ip = 0; ip < nchannel; ip++)
+  {
+    vrad[ip] = sopp_m[ip]->splint(r);
+  }
+
+  RealType smin(0.0);
+  RealType smax(TWOPI);
+  RealType dS = (smax - smin) / sknot; //step size for spin
+
+  RealType sold = W.spins[iel];
+  ComplexType sint(0.0);
+
+  for (int is = 1; is <= sknot - 1; is += 2)
+  {
+    RealType snew      = smin + is * dS;
+    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
+    sint += RealType(4. / 3.) * dS * angint;
+  }
+  for (int is = 2; is <= sknot - 2; is += 2)
+  {
+    RealType snew      = smin + is * dS;
+    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
+    sint += RealType(2. / 3.) * dS * angint;
+  }
+  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr, iat);
+  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr, iat);
+
+  RealType pairpot = std::real(sint) / TWOPI;
+  return pairpot;
 }
 
 } // namespace qmcplusplus
