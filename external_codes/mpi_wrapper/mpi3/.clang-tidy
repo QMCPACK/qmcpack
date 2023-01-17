@@ -1,0 +1,32 @@
+# -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:2;autowrap:nil;-*-
+---
+Checks: '*,
+  -altera-struct-pack-align,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -fuchsia-default-arguments-declarations,
+  -fuchsia-default-arguments-calls,
+  -fuchsia-overloaded-operator,
+  -fuchsia-trailing-return,
+  -google-runtime-references,
+  -hicpp-no-array-decay,
+  -llvmlibc-callee-namespace,
+  -llvm-header-guard,
+  -llvmlibc-implementation-in-namespace,
+  -llvmlibc-restrict-system-libc-headers,
+  -modernize-use-trailing-return-type,
+  -modernize-concat-nested-namespaces,
+  -modernize-use-nodiscard,
+  -readability-identifier-length,
+  -readability-magic-numbers
+'
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,         value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,             value: lower_case }
+  - { key: readability-identifier-naming.PrivateMemberSufix,    value: _          }
+  - { key: readability-identifier-naming.StructCase,            value: lower_case }
+  - { key: readability-identifier-naming.FunctionCase,          value: lower_case }
+  - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase  }
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.'
+FormatStyle: file
