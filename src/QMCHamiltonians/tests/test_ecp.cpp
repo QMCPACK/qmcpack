@@ -591,13 +591,11 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     CHECK(std::real(dlogpsi[2]) == Approx(-0.012469150));
     CHECK(std::real(dlogpsi[3]) == Approx(0.000000000));
     CHECK(std::real(dlogpsi[4]) == Approx(0.000000000));
-    /*
-    REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
-    REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
-    REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
-    REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-    REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
-    */
+    CHECK(std::real(dhpsioverpsi[0]) == Approx(-2.493278111));
+    CHECK(std::real(dhpsioverpsi[1]) == Approx(1.887493237));
+    CHECK(std::real(dhpsioverpsi[2]) == Approx(0.605784873));
+    CHECK(std::real(dhpsioverpsi[3]) == Approx(0.000000000));
+    CHECK(std::real(dhpsioverpsi[4]) == Approx(0.000000000));
 
     double Value1 = 0.0;
     //Using SoA distance tables, hence the guard.
