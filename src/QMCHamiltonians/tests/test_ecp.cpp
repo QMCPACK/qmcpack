@@ -457,9 +457,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
 
   SpeciesSet& ion_species       = ions.getSpeciesSet();
@@ -474,9 +472,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   elec.setName("e");
   elec.setSpinor(true);
   elec.create({1});
-  elec.R[0][0]  = 0.138;
-  elec.R[0][1]  = -0.24;
-  elec.R[0][2]  = 0.216;
+  elec.R[0]     = {0.138, -0.24, 0.216};
   elec.spins[0] = 0.0;
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
@@ -516,11 +512,28 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   psi.addComponent(std::move(dd));
 
+  //Add the one body jastrow.
+  Libxml2Document doc;
+  const char* particles1 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="H" rcut="5" size="5" cusp="0">
+          <coefficients id="eH" type="Array">   0.0 0.0 0.0 0.0 0.0  </coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
+  bool okay1             = doc.parseFromString(particles1);
+  REQUIRE(okay1);
+  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr jas1 = xmlFirstElementChild(root);
+  RadialJastrowBuilder jastrow1bdy(c, elec, ions);
+  psi.addComponent(jastrow1bdy.buildComponent(jas1));
+
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);
 
-  bool okay3 = ecp.read_pp_file("so_ecp_test.xml");
-  REQUIRE(okay3);
+  bool okay2 = ecp.read_pp_file("so_ecp_test.xml");
+  REQUIRE(okay2);
 
   SOECPComponent* sopp = ecp.pp_so.get();
   REQUIRE(sopp != nullptr);
@@ -535,7 +548,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   elec.update();
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
-  double logpsi = psi.evaluateLog(elec);
+  auto logpsi = psi.evaluateLog(elec);
 
 
   auto test_evaluateOne = [&]() {
@@ -573,13 +586,12 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+    CHECK(std::real(dlogpsi[0]) == Approx(-0.526522174));
+    CHECK(std::real(dlogpsi[1]) == Approx(-0.461008716));
+    CHECK(std::real(dlogpsi[2]) == Approx(-0.012469150));
+    CHECK(std::real(dlogpsi[3]) == Approx(0.000000000));
+    CHECK(std::real(dlogpsi[4]) == Approx(0.000000000));
     /*
-    REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
-    REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
-    REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
-    REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
-    REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
-
     REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
     REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
     REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
