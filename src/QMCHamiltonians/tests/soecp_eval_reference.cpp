@@ -1,8 +1,9 @@
 #include <iostream>
-#include <iomanip>
+#include <iomanip> 
 #include <cmath>
 #include <vector>
 #include <complex>
+#include <cassert>
 
 double PI   = 4. * std::atan(1);
 using dcomp = std::complex<double>;
@@ -25,8 +26,60 @@ std::vector<vec> quad = {{1, 0, 0},
 vec wt = {0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582,
           0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582, 0.08333333582};
 
-dcomp I = dcomp(0, 1);
+//add simple Bspline Jastrow to compare against
+double B(double x, int k, int i, const std::vector<double>& t)
+{
+  double c1, c2;
+  if (k == 0)
+    return (x >= t[i] && x < t[i + 1]) ? 1.0 : 0.0;
+  if (t[i + k] == t[i])
+    c1 = 0.0;
+  else
+    c1 = (x - t[i]) / (t[i + k] - t[i]) * B(x, k - 1, i, t);
+  if (t[i + k + 1] == t[i + 1])
+    c2 = 0.0;
+  else
+    c2 = (t[i + k + 1] - x) / (t[i + k + 1] - t[i + 1]) * B(x, k - 1, i + 1, t);
+  return c1 + c2;
+}
 
+double bspline(double x, const std::vector<double>& t, const std::vector<double>& c, int k)
+{
+  int n = t.size() - k - 1;
+  assert(n >= k + 1);
+  assert(n <= c.size());
+  double val = 0.0;
+  for (int i = 0; i < n; i++)
+    val += c[i] * B(x, k, i, t);
+  return val;
+}
+
+class cubicBSpline
+{
+public:
+  cubicBSpline(double rcut, double cusp_val, const std::vector<double>& coeffs)
+  {
+    int numknots = coeffs.size();
+    coeffs_.resize(numknots + 6);
+    knots_.resize(numknots + 6);
+
+    double delta = rcut / (numknots + 1);
+    coeffs_[0]   = -2 * cusp_val * delta + coeffs[1];
+    coeffs_[1]   = coeffs[0];
+    coeffs_[2]   = coeffs[1];
+    std::copy(coeffs.begin() + 2, coeffs.end(), coeffs_.begin() + 3);
+    for (int i = 0; i < knots_.size(); i++)
+      knots_[i] = (i - 3) * delta;
+  }
+  double getVal(double x) const { return bspline(x, knots_, coeffs_, degree); }
+
+private:
+  std::vector<double> coeffs_;
+  std::vector<double> knots_;
+  const int degree = 3;
+};
+
+dcomp I = dcomp(0, 1);
 
 dcomp Ylm(int l, int m, const vec& sph)
 {
@@ -272,8 +325,40 @@ void calcVal(int npts)
   std::cout << npts << " " << std::setprecision(10) << std::real(sint) << " " << std::imag(sint) << std::endl;
 }
 
+void testJastrow()
+{
+  //testing against gen_bspline_jastrow
+  const int knots   = 8;
+  const double rcut = 10;
+  const double cusp = 2.0;
+
+  std::vector<double> coeffs = {-0.2032153051,  -0.1625595974,  -0.143124599,   -0.1216434956,
+                                -0.09919771951, -0.07111729038, -0.04445345869, -0.02135082917};
+
+  cubicBSpline spl(rcut, cusp, coeffs);
+
+  //from gen_bspline_jastrow.py
+  std::vector<double> refVals = {-0.9304041433,   -0.252599792,   -0.1637586749,  -0.1506226948,  -0.1394848415,
+                                 -0.128023472,    -0.1161729491,  -0.1036884223,  -0.08992443283, -0.07519614609,
+                                 -0.06054074137,  -0.04654631918, -0.03347994129, -0.0211986378,  -0.01004416026,
+                                 -0.002594125744, -0.000166024047};
+
+  std::vector<double> rvals(refVals.size());
+  for (int i = 0; i < refVals.size(); i++)
+    rvals[i] = i * 0.60;
+
+  bool good = false;
+  for (int i = 0; i < refVals.size(); i++)
+    if (std::abs(refVals[i] - spl.getVal(rvals[i])) < 1E-6)
+      good = true;
+    else
+      good = false;
+  std::cout << "jastrow correct: " << good << std::endl;
+}
+
 int main()
 {
   for (int n = 2; n <= 100; n += 2)
     calcVal(n);
+  testJastrow();
 }
