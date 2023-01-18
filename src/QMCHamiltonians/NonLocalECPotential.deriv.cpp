@@ -82,7 +82,7 @@ NonLocalECPComponent::RealType NonLocalECPComponent::evaluateValueAndDerivatives
   {
     // Compute ratios with VP
     VP->makeMoves(W, iel, deltaV, true, iat);
-    psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+    psi.evaluateDerivRatios(*VP, W, iel, optvars, psiratio, dratio);
   }
   else
   {

@@ -312,7 +312,9 @@ public:
                                 ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(const VirtualParticleSet& P,
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           ParticleSet& P,
+                           int iel,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);

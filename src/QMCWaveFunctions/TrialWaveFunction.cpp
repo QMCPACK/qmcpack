@@ -1037,6 +1037,8 @@ void TrialWaveFunction::mw_evaluateRatios(const RefVectorWithLeader<TrialWaveFun
 }
 
 void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                            ParticleSet& P,
+                                            int iel,
                                             const opt_variables_type& optvars,
                                             std::vector<ValueType>& ratios,
                                             Matrix<ValueType>& dratio)
@@ -1047,7 +1049,7 @@ void TrialWaveFunction::evaluateDerivRatios(const VirtualParticleSet& VP,
   for (int i = 0; i < Z.size(); ++i)
   {
     ScopedTimer z_timer(WFC_timers_[DERIVS_TIMER + TIMER_SKIP * i]);
-    Z[i]->evaluateDerivRatios(VP, optvars, t, dratio);
+    Z[i]->evaluateDerivRatios(VP, P, iel, optvars, t, dratio);
     for (int j = 0; j < ratios.size(); ++j)
       ratios[j] *= t[j];
   }
