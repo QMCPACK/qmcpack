@@ -190,9 +190,8 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
   std::vector<int> minus;
   std::vector<int> plus;
-    
+
   auto untouched_walkers = walkers.size();
-#if defined(HAVE_MPI)
   {
     ScopedTimer loadbalance_timer(my_timers_[WC_loadbalance]);
     // kill walkers, actually put them in deadlist for be recycled for receiving walkers
@@ -245,15 +244,14 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
         }
       }
     }
+#if defined(HAVE_MPI)
     determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
     // load balancing over MPI
     swapWalkersSimple(pop, minus, plus);
+    #endif
   }
-#endif
 
-  // kill dead walker to be recycled by the following copy
-  killDeadWalkersOnRank(pop);
-  // ranks sending walkers from other ranks have the lowest walker count now.
+  // Ranks sending walkers from other ranks have the lowest walker count now.
   untouched_walkers = std::min(untouched_walkers, walkers.size());
 
   const int current_num_global_walkers = std::accumulate(num_per_rank_.begin(), num_per_rank_.end(), 0);
@@ -350,7 +348,7 @@ void WalkerControl::determineNewWalkerPopulation(const std::vector<int>& num_per
 }
 
 #if defined(HAVE_MPI)
-  void WalkerControl::swapWalkersSimple(MCPopulation& pop, std::vector<int>& minus, std::vector<int>& plus)
+void WalkerControl::swapWalkersSimple(MCPopulation& pop, std::vector<int>& minus, std::vector<int>& plus)
 {
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
