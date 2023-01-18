@@ -535,7 +535,12 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluate(ParticleSet& P)
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluate(P);
     if (std::isnan(LocalEnergyComponent))
-      APP_ABORT("QMCHamiltonian::evaluate component " + H[i]->getName() + " returns NaN\n");
+    {
+      std::ostringstream msg;
+      msg << "QMCHamiltonian::evaluate component " <<  H[i]->getName() << " returns NaN." << std::endl;
+      P.print(msg);
+      throw std::runtime_error(msg.str());
+    }
     LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -559,7 +564,12 @@ QMCHamiltonian::FullPrecRealType QMCHamiltonian::evaluateDeterministic(ParticleS
     ScopedTimer h_timer(my_timers_[i]);
     const auto LocalEnergyComponent = H[i]->evaluateDeterministic(P);
     if (std::isnan(LocalEnergyComponent))
-      APP_ABORT("QMCHamiltonian::evaluateDeterministic component " + H[i]->getName() + " returns NaN\n");
+    {
+      std::ostringstream msg;
+      msg << "QMCHamiltonian::evaluateDeterministic component " <<  H[i]->getName() << " returns NaN." << std::endl;
+      P.print(msg);
+      throw std::runtime_error(msg.str());
+    }
     LocalEnergy += LocalEnergyComponent;
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -577,7 +587,12 @@ void QMCHamiltonian::updateNonKinetic(OperatorBase& op, QMCHamiltonian& ham, Par
 {
   // It's much better to be able to see where this is coming from.  It is caught just fine.
   if (std::isnan(op.getValue()))
-    throw std::runtime_error("QMCHamiltonian::updateNonKinetic component " + op.getName() + " returns NaN\n");
+  {
+    std::ostringstream msg;
+    msg << "QMCHamiltonian::updateNonKinetic component " <<  op.getName() << " returns NaN." << std::endl;
+    pset.print(msg);
+    throw std::runtime_error(msg.str());
+  }
   // The following is a ridiculous breach of encapsulation.
   ham.LocalEnergy += op.getValue();
   op.setObservables(ham.Observables);
