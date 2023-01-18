@@ -424,6 +424,18 @@ else()
        1
        DET_NIO_BATCHED_A4_E48_SCALARS # VMC
        )
+
+     qmc_run_and_check(
+       deterministic-NiO_a4_e48_pp-vmc_sd_splitJ1_batched
+       "${qmcpack_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+       det_NiO-batched-fcc-S1-vmc
+       det_NiO-batched-vmc-splitJ1.in.xml
+       1
+       1
+       TRUE
+       1
+       DET_NIO_BATCHED_A4_E48_SCALARS # VMC
+       )
      endif()
 
   else()
