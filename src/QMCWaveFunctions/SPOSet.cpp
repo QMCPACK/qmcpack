@@ -275,6 +275,9 @@ void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
                                  int FirstIndex,
                                  int LastIndex)
 {
+  // Match the fallback in WaveFunctionComponent that evaluates just the ratios
+  evaluateDetRatios(VP, psi, psiinv, ratios);
+
   if (isOptimizable())
     throw std::logic_error("Bug!! " + getClassName() +
                            "::evaluateDerivRatios "
