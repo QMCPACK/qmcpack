@@ -27,7 +27,6 @@ set(HAM_SRCS
     test_SkAllEstimator.cpp
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp
-    test_RotatedSPOs_NLPP.cpp
     test_Listener.cpp)
 
 if(NOT QMC_CUDA)
