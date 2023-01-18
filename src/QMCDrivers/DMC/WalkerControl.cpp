@@ -248,7 +248,9 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
     determineNewWalkerPopulation(num_per_rank_, fair_offset_, minus, plus);
     // load balancing over MPI
     swapWalkersSimple(pop, minus, plus);
-    #endif
+    // walkers sent over mpi in the swap are walking dead still.
+    killDeadWalkersOnRank(pop);
+#endif
   }
 
   // Ranks sending walkers from other ranks have the lowest walker count now.
