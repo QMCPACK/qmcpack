@@ -125,12 +125,20 @@ public:
   /// apply rotation to all the orbitals
   virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false);
 
+  /// Parameter derivatives of the wavefunction and the Laplacian of the wavefunction
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
                                    const int& LastIndex);
+
+  /// Parameter derivatives of the wavefunction
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     Vector<ValueType>& dlogpsi,
+                                     int FirstIndex,
+                                     int LastIndex);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
@@ -205,6 +213,20 @@ public:
                                  ValueVector& psi,
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
+
+
+  /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
+                                   ParticleSet& P,
+                                   int iel,
+                                   const opt_variables_type& optvars,
+                                   ValueVector& psi,
+                                   const ValueVector& psiinv,
+                                   std::vector<ValueType>& ratios,
+                                   Matrix<ValueType>& dratios,
+                                   int FirstIndex,
+                                   int LastIndex);
+
 
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
