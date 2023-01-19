@@ -271,7 +271,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   CHECK(dhpsi_over_psi_list2[0][1] == Approx(dhpsioverpsi2[1]));
 }
 
-TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
+TEST_CASE("RotatedSPOs SplineR2R hcpBe values", "[wavefunction]")
 {
   SECTION("nlpp non-batched")
   {
