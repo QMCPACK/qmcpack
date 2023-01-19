@@ -280,7 +280,7 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
     test_hcpBe_rotation(use_single_det, use_nlpp_batched);
   }
 
-  SECTION("nlpp non-batched")
+  SECTION("nlpp batched")
   {
     bool use_single_det   = true;
     bool use_nlpp_batched = true;
