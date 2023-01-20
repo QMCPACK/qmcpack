@@ -103,6 +103,20 @@ case "$1" in
       echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH" >> $GITHUB_ENV
     fi
     
+    if [[ "$CONTAINER" =~ (centos)]]
+    then
+      # use spack
+      export PATH=/opt/spack/bin:$PATH
+      # use gcc-9
+      export PATH=/opt/rh/gcc-toolset-9/root/usr/bin:$PATH
+      export LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib64:/opt/rh/gcc-toolset-9/root/usr/lib:/opt/rh/gcc-toolset-9/root/usr/lib64/dyninst:/opt/rh/gcc-toolset-9/root/usr/lib/dyninst:/opt/rh/gcc-toolset-9/root/usr/lib64:/opt/rh/gcc-toolset-9/root/usr/lib:$LD_LIBRARY_PATH
+      
+      # Make current environment variables available to subsequent steps
+      echo "PATH=/opt/spack/bin:$PATH" >> $GITHUB_ENV
+      echo "PATH=/opt/rh/gcc-toolset-9/root/usr/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib64:/opt/rh/gcc-toolset-9/root/usr/lib:/opt/rh/gcc-toolset-9/root/usr/lib64/dyninst:/opt/rh/gcc-toolset-9/root/usr/lib/dyninst:/opt/rh/gcc-toolset-9/root/usr/lib64:/opt/rh/gcc-toolset-9/root/usr/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+    fi
+    
     case "${GH_JOBNAME}" in
       *"GCC9-NoMPI-Debug-"*)
         echo 'Configure for debug mode to capture asserts with gcc'
