@@ -172,7 +172,7 @@ jobs:
         run: tests/test_automation/github-actions/ci/run_step.sh install
 
   spack-centos-stream:
-    runs-on: quay.io/centos/centos:stream
+    runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
