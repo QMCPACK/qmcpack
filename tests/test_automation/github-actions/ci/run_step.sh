@@ -103,7 +103,7 @@ case "$1" in
       echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH" >> $GITHUB_ENV
     fi
     
-    if [[ "$CONTAINER" =~ (centos)]]
+    if [[ "$CONTAINER" =~ (centos) ]]
     then
       # use spack
       export PATH=/opt/spack/bin:$PATH
