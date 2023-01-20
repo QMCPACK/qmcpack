@@ -164,8 +164,11 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
   CHECK(elec.G[0][0] == ValueApprox(0.54752651));
   CHECK(elec.L[0] == ValueApprox(11.066512459947848));
+#if defined(MIXED_PRECISION)  
+  CHECK(elec.L[1] == ValueApprox(-0.4830868071).epsilon(1e-3));
+#else
   CHECK(elec.L[1] == ValueApprox(-0.4831061477045371));
-
+#endif
 
   // Parameter derivatives of just the wavefunction
   // Values come from QMCWaveFunctions/tests/eval_bspline_spo.py
