@@ -156,6 +156,8 @@ public:
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
 
+  void checkSanity() const override;
+
   void createResource(ResourceCollection& collection) const override;
 
   void acquireResource(ResourceCollection& collection,
