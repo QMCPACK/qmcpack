@@ -262,7 +262,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   if (targetPtcl.getLattice().SuperCellEnum)
     computeJ2uk(J2->getPairFunctions());
 
-  // sanity check before returning the constructed J1
+  // sanity check before returning the constructed J2
   J2->checkSanity();
 
   return J2;
