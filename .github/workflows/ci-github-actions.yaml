@@ -208,6 +208,11 @@ jobs:
     steps:
       - name: Checkout Action
         uses: actions/checkout@v3
+      
+      - name: Echo Debug
+        run: |
+          echo $PATH
+          echo $LD_LIBRARY_PATH
 
       - name: Configure
         run: tests/test_automation/github-actions/ci/run_step.sh configure
