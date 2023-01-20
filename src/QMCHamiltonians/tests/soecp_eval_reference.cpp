@@ -69,6 +69,8 @@ public:
       knots_[i] = (i - 3) * delta;
   }
   double getVal(double x) const { return bspline(x, knots_, coeffs_, degree); }
+  void setCoeff(int i, double newcoeff) { coeffs_[i] = newcoeff; }
+  double getCoeff(int i) const { return coeffs_[i]; }
 
 private:
   std::vector<double> coeffs_;
@@ -338,7 +340,9 @@ std::complex<double> lMatrixElement(int l, int m1, int m2, int d)
 //used in so_ecp_test.xml for each spin channel
 double Wso(int l, double r) { return exp(-l * r * r); }
 
-std::complex<double> TWF(std::vector<std::vector<double>>& positions, std::vector<double>& spins, cubicBSpline& J2)
+std::complex<double> TWF(std::vector<std::vector<double>>& positions,
+                         std::vector<double>& spins,
+                         const cubicBSpline& J2)
 {
   std::vector<double> cart0 = sph2cart(positions[0]);
   std::vector<double> cart1 = sph2cart(positions[1]);
@@ -355,7 +359,7 @@ std::complex<double> calcAngInt(int iel,
                                 double s2,
                                 std::vector<std::vector<double>>& positions,
                                 std::vector<double>& spins,
-                                cubicBSpline& J2)
+                                const cubicBSpline& J2)
 {
   std::complex<double> angint(0.0, 0.0);
   for (int i = 0; i < quad.size(); i++)
@@ -397,7 +401,7 @@ std::complex<double> calcVal(int npts,
                              int iel,
                              std::vector<std::vector<double>>& positions,
                              std::vector<double>& spins,
-                             cubicBSpline& J2)
+                             const cubicBSpline& J2)
 {
   std::complex<double> sint(0.0, 0.0);
   double smin = 0.0;
@@ -432,10 +436,9 @@ void calcSOECP(int npts)
   double spin_e2                             = 0.51;
   std::vector<double> spins                  = {spin_e1, spin_e2};
 
-  double rcut                = 10.0;
+  double rcut                = 5.0;
   double cusp                = -0.25;
-  std::vector<double> coeffs = {0.02904699284, -0.1004179,    -0.1752703883, -0.2232576505, -0.2728029201,
-                                -0.3253286875, -0.3624525145, -0.3958223107, -0.4268582166, -0.4394531176};
+  std::vector<double> coeffs = {0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201};
   cubicBSpline J2(rcut, cusp, coeffs);
 
   std::complex<double> val;
@@ -444,10 +447,51 @@ void calcSOECP(int npts)
   std::cout << npts << " " << std::setprecision(10) << std::real(val) << " " << std::imag(val) << std::endl;
 }
 
+void print_dlogpsi()
+{
+  //2el system, atom at origin, 2body jastrow only
+  std::vector<double> pos_e1                 = {0.138, -0.24, 0.216};
+  std::vector<double> pos_e2                 = {-0.216, 0.24, -0.138};
+  std::vector<std::vector<double>> positions = {cart2sph(pos_e1), cart2sph(pos_e2)};
+  double spin_e1                             = 0.0;
+  double spin_e2                             = 0.51;
+  std::vector<double> spins                  = {spin_e1, spin_e2};
+
+  double rcut                = 5.0;
+  double cusp                = -0.25;
+  std::vector<double> coeffs = {0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201};
+  cubicBSpline J2(rcut, cusp, coeffs);
+
+  //calc $\frac{\partial_\alpha} \Psi}{\Psi}$
+  //Note that I need to change the ic+1 parameter, since
+  //in the spline coefficients the first element is related to the cusp which doesn't change
+  for (int ic = 0; ic < coeffs.size(); ic++)
+  {
+    double delta = 0.001;
+    std::vector<double> finite_diff_coeffs = {-1./60, 3./20, -3./4, 0, 3./4, -3./20, 1./60};
+    std::vector<std::complex<double>> values(finite_diff_coeffs.size());
+    double inital_value = J2.getCoeff(ic+1);   
+    int offset = (finite_diff_coeffs.size() - 1)/2;
+    for (int id = 0; id < finite_diff_coeffs.size(); id++)
+    {
+      double newval = inital_value + (id - offset)*delta;
+      J2.setCoeff(ic+1, newval);
+      values[id] = TWF(positions, spins, J2);
+    }
+    J2.setCoeff(ic+1, inital_value);
+
+    std::complex<double> deriv = 0.0;
+    for (int id = 0; id < finite_diff_coeffs.size(); id++)
+        deriv += finite_diff_coeffs[id] * values[id] / delta;
+    std::cout << "dlogpsi[" << ic << "]: " << deriv / values[offset] << std::endl;
+  }
+}
 
 int main()
 {
+  //used to validate bspline jastrow implementation
   testJastrow();
   for (int n = 2; n <= 100; n += 2)
     calcSOECP(n);
+  print_dlogpsi();
 }

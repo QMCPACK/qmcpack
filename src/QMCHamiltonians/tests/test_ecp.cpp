@@ -520,8 +520,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //support that
   const char* particles = R"(<tmp>
   <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
-      <correlation speciesA="u" speciesB="u" rcut="10" size="10">
-      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients>
+      <correlation speciesA="u" speciesB="u" rcut="5" size="5">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201</coefficients>
         </correlation>
   </jastrow>
   </tmp>
@@ -566,7 +566,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
-    REQUIRE(Value1 == Approx(-4.992302613));
+    REQUIRE(Value1 == Approx(-4.992197981));
   };
 
   {
@@ -587,22 +587,22 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   optvars.resetIndex();
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
-  auto test_evaluateValueAndDerivatives = [&]() {
+
+  //Ref Values from soecp_eval_ref.cpp in the print_dlogpsi using finite differences
+  std::vector<RealType> dlogpsi_refs = {-0.2622341567, -0.6408949596, -0.09608452334, 0, 0};
+  //These weren't independently validated in soecp_eval_ref.cpp
+  //trusting current values from evaluateDerivatives...which should be correct if the
+  //dlogpsi comes out correct
+  std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
+  auto test_evaluateValueAndDerivatives     = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-    /*
-    CHECK(std::real(dlogpsi[0]) == Approx(-0.526522174));
-    CHECK(std::real(dlogpsi[1]) == Approx(-0.461008716));
-    CHECK(std::real(dlogpsi[2]) == Approx(-0.012469150));
-    CHECK(std::real(dlogpsi[3]) == Approx(0.000000000));
-    CHECK(std::real(dlogpsi[4]) == Approx(0.000000000));
-    CHECK(std::real(dhpsioverpsi[0]) == Approx(-2.493278111));
-    CHECK(std::real(dhpsioverpsi[1]) == Approx(1.887493237));
-    CHECK(std::real(dhpsioverpsi[2]) == Approx(0.605784873));
-    CHECK(std::real(dhpsioverpsi[3]) == Approx(0.000000000));
-    CHECK(std::real(dhpsioverpsi[4]) == Approx(0.000000000));
-    */
+    for (int ip = 0; ip < NumOptimizables; ip++)
+    {
+      CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]).epsilon(0.001));
+      CHECK(std::real(dhpsioverpsi[ip]) == Approx(dkinpsioverpsi_refs[ip]));
+    }
 
     double Value1 = 0.0;
     //Using SoA distance tables, hence the guard.
@@ -613,9 +613,9 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                      dhpsioverpsi);
+                                                          dhpsioverpsi);
     }
-    REQUIRE(Value1 == Approx(-4.992302613));
+    REQUIRE(Value1 == Approx(-4.992197981));
 
     /*
     CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
