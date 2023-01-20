@@ -1,6 +1,3 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ $0 -c -o $0.o;exit
-#endif
 // Test for separate compilation / library usage.
 
 #include "../communicator.hpp"
@@ -8,7 +5,7 @@ mpic++ $0 -c -o $0.o;exit
 
 namespace mpi3 = boost::mpi3;
 
-void do_broadcast(mpi3::communicator &c){
+void do_broadcast(mpi3::communicator &c) {  // cppcheck-suppress unusedFunction
 	int a = 2;
 	c.broadcast_value(a);
 }
