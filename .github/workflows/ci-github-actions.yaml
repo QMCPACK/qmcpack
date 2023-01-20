@@ -177,7 +177,7 @@ jobs:
     env:
       GH_JOBNAME: ${{ matrix.jobname }}
       GH_OS: Linux
-      CONTAINER: ${{ matrix.container }}
+      CONTAINER_OS: spack-centos-stream
     strategy:
       fail-fast: false
       matrix:
