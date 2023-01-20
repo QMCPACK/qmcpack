@@ -245,7 +245,7 @@ private:
                          GradMatrix& dlogdet,
                          ValueMatrix& d2logdet) const;
   // function to unpack vgl_type when working with batched code.
-  inline void evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const;
+  inline void evaluate_vgl_mw_impl(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const;
   ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
 
 

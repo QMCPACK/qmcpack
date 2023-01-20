@@ -133,7 +133,7 @@ inline void LCAOrbitalSet::evaluate_vgl_impl(const vgl_type& temp,
   std::copy_n(temp.data(4), output_size, d2psi.data());
 }
 
-inline void LCAOrbitalSet::evaluate_vgl_impl2(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const
+inline void LCAOrbitalSet::evaluate_vgl_mw_impl(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const
 {
   const size_t output_size = phi_vgl_v.size(2);
   const size_t nw          = phi_vgl_v.size(1);
@@ -145,8 +145,6 @@ inline void LCAOrbitalSet::evaluate_vgl_impl2(const OffloadMWVGLArray& temp, Off
     {
       ValueType* phi_g = phi_vgl_v.data_at(idim + 1, iw, 0);
       std::copy_n(temp.data_at(idim + 1, iw, 0), output_size, phi_vgl_v.data_at(idim + 1, iw, 0));
-      // for (size_t iorb = 0; iorb < output_size; iorb++)
-      //   phi_g[iorb] = temp.data_at(idim + 1, iw, iorb;
     }
     std::copy_n(temp.data_at(4, iw, 0), output_size, phi_vgl_v.data_at(4, iw, 0));
   }
@@ -399,7 +397,6 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                                            int iat,
                                            OffloadMWVGLArray& phi_vgl_v) const
 {
-  // [5][NW * NumAO]
   // [5][NW][NumAO]
   OffloadMWVGLArray Temp_mw;
   Temp_mw.resize(5, spo_list.size(), BasisSetSize);
@@ -409,21 +406,18 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
   if (Identity)
   {
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
-    evaluate_vgl_impl2(Temp_mw, phi_vgl_v);
+    evaluate_vgl_mw_impl(Temp_mw, phi_vgl_v);
   }
   else
   {
     ValueMatrix C_partial_view(C->data(), OrbitalSetSize, BasisSetSize);
     myBasisSet->mw_evaluateVGL(P_list, iat, Temp_mw);
-    // ask Ye now: Blas on OffloadMWVGLArray.. its multidimensional?
     for (int idim = 0; idim < DIM_VGL; idim++)
     {
       constexpr char transa = 't';
       constexpr char transb = 'n';
       constexpr double zone(1);
       constexpr double zero(0);
-      // BLAS::gemm(transa, transb, B.rows(), D, B.cols(), zone, B.data(), B.cols(), A.data(), A.capacity(), zero, C.data(),
-      //           C.capacity())
       BLAS::gemm(transa, transb,
                  C_partial_view.rows(), // MOs
                  spo_list.size(),       // walkers
@@ -431,7 +425,7 @@ void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& sp
                  zone, C_partial_view.data(), C_partial_view.cols(), Temp_mw.data_at(idim, 0, 0), C_partial_view.cols(),
                  zero, Tempv_mw.data_at(idim, 0, 0), C_partial_view.rows());
     }
-    evaluate_vgl_impl2(Tempv_mw, phi_vgl_v);
+    evaluate_vgl_mw_impl(Tempv_mw, phi_vgl_v);
   }
 }
 
