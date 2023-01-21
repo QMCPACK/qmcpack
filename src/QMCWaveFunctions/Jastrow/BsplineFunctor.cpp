@@ -29,7 +29,7 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
                                           const int n_src,
                                           const int* grp_ids,
                                           const int nw,
-                                          REAL* mw_vgl, // [nw][DIM+2]
+                                          REAL* mw_vgl,        // [nw][DIM+2]
                                           const int n_padded,
                                           const REAL* mw_dist, // [nw][DIM+1][n_padded]
                                           REAL* mw_cur_allu,   // [nw][3][n_padded]
@@ -48,11 +48,18 @@ void BsplineFunctor<REAL>::mw_evaluateVGL(const int iat,
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
   for (int ig = 0; ig < num_groups; ig++)
-  {
-    mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
-    mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
-    mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
-  }
+    if (functors[ig])
+    {
+      mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
+      mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+    }
+    else
+    {
+      mw_coefs_ptr[ig]         = nullptr;
+      mw_DeltaRInv_ptr[ig]     = 0.0;
+      mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+    }
 
   auto* transfer_buffer_ptr = transfer_buffer.data();
 
@@ -140,11 +147,18 @@ void BsplineFunctor<REAL>::mw_evaluateV(const int num_groups,
   REAL* mw_DeltaRInv_ptr     = reinterpret_cast<REAL*>(transfer_buffer.data() + sizeof(REAL*) * num_groups);
   REAL* mw_cutoff_radius_ptr = mw_DeltaRInv_ptr + num_groups;
   for (int ig = 0; ig < num_groups; ig++)
-  {
-    mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
-    mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
-    mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
-  }
+    if (functors[ig])
+    {
+      mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
+      mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+    }
+    else
+    {
+      mw_coefs_ptr[ig]         = nullptr;
+      mw_DeltaRInv_ptr[ig]     = 0.0;
+      mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+    }
 
   auto* transfer_buffer_ptr = transfer_buffer.data();
 
@@ -191,7 +205,7 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
                                         const int n_src,
                                         const int* grp_ids,
                                         const int nw,
-                                        REAL* mw_vgl, // [nw][DIM+2]
+                                        REAL* mw_vgl,        // [nw][DIM+2]
                                         const int n_padded,
                                         const REAL* mw_dist, // [nw][DIM+1][n_padded]
                                         REAL* mw_allUat,     // [nw][DIM+2][n_padded]
@@ -215,11 +229,18 @@ void BsplineFunctor<REAL>::mw_updateVGL(const int iat,
       reinterpret_cast<int*>(transfer_buffer.data() + (sizeof(REAL*) + sizeof(REAL) * 2) * num_groups);
 
   for (int ig = 0; ig < num_groups; ig++)
-  {
-    mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
-    mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
-    mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
-  }
+    if (functors[ig])
+    {
+      mw_coefs_ptr[ig]         = functors[ig]->spline_coefs_->device_data();
+      mw_DeltaRInv_ptr[ig]     = functors[ig]->DeltaRInv;
+      mw_cutoff_radius_ptr[ig] = functors[ig]->cutoff_radius;
+    }
+    else
+    {
+      mw_coefs_ptr[ig]         = nullptr;
+      mw_DeltaRInv_ptr[ig]     = 0.0;
+      mw_cutoff_radius_ptr[ig] = 0.0; // important! Prevent spline evaluation to access nullptr.
+    }
 
   int nw_accepted = 0;
   for (int iw = 0; iw < nw; iw++)

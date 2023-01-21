@@ -264,12 +264,13 @@ typename TwoBodyJastrow<FT>::valT TwoBodyJastrow<FT>::computeU(const ParticleSet
   valT curUat(0);
   const int igt = P.GroupID[iat] * NumGroups;
   for (int jg = 0; jg < NumGroups; ++jg)
-  {
-    const FuncType& f2(*F[igt + jg]);
-    int iStart = P.first(jg);
-    int iEnd   = P.last(jg);
-    curUat += f2.evaluateV(iat, iStart, iEnd, dist.data(), DistCompressed.data());
-  }
+    if (F[igt + jg])
+    {
+      const FuncType& f2(*F[igt + jg]);
+      int iStart = P.first(jg);
+      int iEnd   = P.last(jg);
+      curUat += f2.evaluateV(iat, iStart, iEnd, dist.data(), DistCompressed.data());
+    }
   return curUat;
 }
 
@@ -323,6 +324,15 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
 
 template<typename FT>
 TwoBodyJastrow<FT>::~TwoBodyJastrow() = default;
+
+template<typename FT>
+void TwoBodyJastrow<FT>::checkSanity() const
+{
+  if (std::any_of(F.begin(), F.end(), [](auto* ptr) { return ptr == nullptr; }))
+    app_warning() << "Two-body Jastrow \"" << my_name_ << "\" doesn't cover all the particle pairs. "
+                  << "Consider fusing multiple entries if they are of the same type for optimal code performance."
+                  << std::endl;
+}
 
 template<typename FT>
 void TwoBodyJastrow<FT>::resizeInternalStorage()
@@ -428,12 +438,13 @@ void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
 
   const int igt = P.GroupID[iat] * NumGroups;
   for (int jg = 0; jg < NumGroups; ++jg)
-  {
-    const FuncType& f2(*F[igt + jg]);
-    int iStart = P.first(jg);
-    int iEnd   = std::min(jelmax, P.last(jg));
-    f2.evaluateVGL(iat, iStart, iEnd, dist.data(), u, du, d2u, DistCompressed.data(), DistIndice.data());
-  }
+    if (F[igt + jg])
+    {
+      const FuncType& f2(*F[igt + jg]);
+      int iStart = P.first(jg);
+      int iEnd   = std::min(jelmax, P.last(jg));
+      f2.evaluateVGL(iat, iStart, iEnd, dist.data(), u, du, d2u, DistCompressed.data(), DistIndice.data());
+    }
   //u[iat]=czero;
   //du[iat]=czero;
   //d2u[iat]=czero;
@@ -497,12 +508,13 @@ void TwoBodyJastrow<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Valu
     const int igt = ig * NumGroups;
     valT sumU(0);
     for (int jg = 0; jg < NumGroups; ++jg)
-    {
-      const FuncType& f2(*F[igt + jg]);
-      int iStart = P.first(jg);
-      int iEnd   = P.last(jg);
-      sumU += f2.evaluateV(-1, iStart, iEnd, dist.data(), DistCompressed.data());
-    }
+      if (F[igt + jg])
+      {
+        const FuncType& f2(*F[igt + jg]);
+        int iStart = P.first(jg);
+        int iEnd   = P.last(jg);
+        sumU += f2.evaluateV(-1, iStart, iEnd, dist.data(), DistCompressed.data());
+      }
 
     for (int i = P.first(ig); i < P.last(ig); ++i)
     {
@@ -583,8 +595,8 @@ void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   }
 
   valT cur_d2Uat(0);
-  const auto& new_dr    = d_table.getTempDispls();
-  const auto& old_dr    = d_table.getOldDispls();
+  const auto& new_dr = d_table.getTempDispls();
+  const auto& old_dr = d_table.getOldDispls();
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
   {
@@ -938,7 +950,8 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
             continue;
           RealType rinv(cone / dist[j]);
           PosType dr(displ[j]);
-          if (ndim < 3) dr[2] = 0;
+          if (ndim < 3)
+            dr[2] = 0;
           for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
           {
             RealType dudr(rinv * derivs[ip][1]);
