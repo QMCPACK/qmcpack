@@ -125,6 +125,9 @@ public:
   ///default destructor
   virtual ~WaveFunctionComponent();
 
+  /// Validate the internal consistency of the object
+  virtual void checkSanity() const {}
+
   /// return object name
   const std::string& getName() const { return my_name_; }
 
@@ -490,9 +493,7 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
-                                     Vector<ValueType>& dlogpsi);
+  virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then

@@ -224,6 +224,8 @@ public:
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
 
+  void checkSanity() const override;
+
   const auto& getFunctors() const { return J1Functors; }
 
   void createResource(ResourceCollection& collection) const override;

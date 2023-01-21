@@ -1,13 +1,10 @@
-#if COMPILATION_INSTRUCTIONS
-mpicxx.mpich -g -std=c++14 -O3 -Wall -Wextra -Wpedantic $0 -o $0x -lboost_serialization&&mpirun.mpich -n 4 valgrind --error-exitcode=1345 $0x&&rm $0x;exit
-#endif
+// © Alfredo Correa 2018-2021
 
 #include "../../mpi3/main.hpp"
 
 namespace mpi3 = boost::mpi3;
-using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try {
 	using T = double;
 	assert( world.size() > 2 );
 
@@ -28,5 +25,5 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 // check communication /////////////////////////////////////////////////////////
 	assert((v==std::vector<T>{0., 0., 0., 1., 1., 1., 1., 2., 2., 2., 2., 2.}));
 	return 0;
-}
+}catch(...) {return 1;}
 
