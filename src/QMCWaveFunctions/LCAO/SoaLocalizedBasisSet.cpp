@@ -143,7 +143,7 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<P
                                                      int iat,
                                                      OffloadMWVGLArray& vgl_v)
 {
-  for (int iw = 0; iw < P_list.size(); iw++)
+  for (size_t iw = 0; iw < P_list.size(); iw++)
   {
     const auto& IonID(ions_.GroupID);
     const auto& coordR  = P_list[iw].activeR(iat);
@@ -152,23 +152,19 @@ void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<P
     const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
 
     PosType Tv;
-    // TODO: verify that this is correct size
-    vgl_type temp_vgl(BasisSetSize);
-    // TODO LOBasisSet->mw_evaluateVGL
+
+    // number of walkers * BasisSetSize
+    auto stride = vgl_v.size(1) * BasisSetSize;
+    assert(BasisSetSize == vgl_v.size(2));
+    vgl_type vgl_iw(vgl_v.data_at(0, iw, 0), BasisSetSize, stride);
+
     for (int c = 0; c < NumCenters; c++)
     {
       Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
       Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
       Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
-      LOBasisSet[IonID[c]]->evaluateVGL(P_list[iw].getLattice(), dist[c], displ[c], BasisOffset[c], temp_vgl, Tv);
+      LOBasisSet[IonID[c]]->evaluateVGL(P_list[iw].getLattice(), dist[c], displ[c], BasisOffset[c], vgl_iw, Tv);
     }
-    //TODO fill temp_vgl into vgl
-    const size_t output_size = vgl_v.size(2);
-    std::copy_n(temp_vgl.data(0), output_size, vgl_v.data_at(0, iw, 0));
-    std::copy_n(temp_vgl.data(1), output_size, vgl_v.data_at(1, iw, 0));
-    std::copy_n(temp_vgl.data(2), output_size, vgl_v.data_at(2, iw, 0));
-    std::copy_n(temp_vgl.data(3), output_size, vgl_v.data_at(3, iw, 0));
-    std::copy_n(temp_vgl.data(4), output_size, vgl_v.data_at(4, iw, 0));
   }
 }
 
