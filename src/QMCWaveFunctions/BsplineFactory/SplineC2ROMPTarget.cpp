@@ -248,24 +248,27 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
     const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
     const auto spline_padded_size = myV.size();
+    const auto sposet_padded_size = getAlignedSize<TT>(OrbitalSetSize);
     offload_scratch.resize(spline_padded_size);
+    results_scratch.resize(sposet_padded_size);
 
     // Ye: need to extract sizes and pointers before entering target region
-    const auto requested_orb_size = psi.size();
-    const auto* spline_ptr        = SplineInst->getSplinePtr();
-    auto* offload_scratch_ptr     = offload_scratch.data();
-    auto* psi_ptr                 = psi.data();
+    const auto* spline_ptr    = SplineInst->getSplinePtr();
+    auto* offload_scratch_ptr = offload_scratch.data();
+    auto* results_scratch_ptr = results_scratch.data();
+    auto* psi_ptr             = psi.data();
     const auto x = r[0], y = r[1], z = r[2];
     const auto rux = ru[0], ruy = ru[1], ruz = ru[2];
     const auto myKcart_padded_size   = myKcart->capacity();
     auto* myKcart_ptr                = myKcart->data();
     const size_t first_spo_local     = first_spo;
     const size_t nComplexBands_local = nComplexBands;
+    const auto requested_orb_size    = psi.size();
 
     {
       ScopedTimer offload(offload_timer_);
       PRAGMA_OFFLOAD("omp target teams distribute num_teams(NumTeams) \
-                  map(always, from: psi_ptr[0:requested_orb_size])")
+                      map(always, from: results_scratch_ptr[0:sposet_padded_size])")
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
         const size_t first = ChunkSizePerTeam * team_id;
@@ -283,10 +286,12 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
         const size_t last_cplx  = last / 2;
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
-          C2R::assign_v(x, y, z, psi_ptr, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                        nComplexBands_local, index);
-        //FIXME psi should be assigned in a separate stage with requested_orb_size
+          C2R::assign_v(x, y, z, results_scratch_ptr, offload_scratch_ptr, myKcart_ptr, myKcart_padded_size,
+                        first_spo_local, nComplexBands_local, index);
       }
+
+      for (size_t i = 0; i < requested_orb_size; i++)
+        psi[i] = results_scratch[i];
     }
   }
 }
