@@ -236,7 +236,7 @@ protected:
   vghgh_type Tempghv;
 
 private:
-  ///helper functions to handl Identity
+  ///helper functions to handle Identity
   void evaluate_vgl_impl(const vgl_type& temp, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) const;
 
   void evaluate_vgl_impl(const vgl_type& temp,
@@ -244,8 +244,6 @@ private:
                          ValueMatrix& logdet,
                          GradMatrix& dlogdet,
                          ValueMatrix& d2logdet) const;
-  // function to unpack vgl_type when working with batched code.
-  inline void evaluate_vgl_mw_impl(const OffloadMWVGLArray& temp, OffloadMWVGLArray& phi_vgl_v) const;
   ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
 
 
