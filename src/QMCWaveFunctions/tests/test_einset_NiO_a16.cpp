@@ -89,7 +89,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
 
   //diamondC_2x1x1
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="97"/>
+<determinantset type="einspline" href="NiO-fcc-supertwist111-supershift000-S4.h5" tilematrix="1 0 0 0 1 1 0 2 -2" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="97" gpu="omptarget"/>
 </tmp>
 )";
 
@@ -126,8 +126,8 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::real(dpsiM[1][1][1]) == Approx(7.6229834557));
   CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.0002339484));
   // lapl
-  CHECK(std::real(d2psiM[1][0]) == Approx(-2.6130394936));
-  CHECK(std::real(d2psiM[1][1]) == Approx(-2.6067698002));
+  CHECK(std::real(d2psiM[1][0]) == Approx(-2.6130394936).epsilon(0.0001));
+  CHECK(std::real(d2psiM[1][1]) == Approx(-2.6067698002).epsilon(0.0001));
 #endif
 
 #if defined(QMC_COMPLEX)
@@ -196,8 +196,8 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::real(dpsi_v_list[1].get()[1][1]) == Approx(7.6229834557));
   CHECK(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.0002339484));
   // lapl
-  CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-2.6130394936));
-  CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.6067698002));
+  CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-2.6130394936).epsilon(0.0001));
+  CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.6067698002).epsilon(0.0001));
 #endif
 
 #if defined(QMC_COMPLEX)
