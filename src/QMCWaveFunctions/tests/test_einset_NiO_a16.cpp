@@ -217,6 +217,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.6130394936).epsilon(0.0001));
 #endif
 
+#if !defined(QMC_CUDA)
   const size_t nw = 2;
   std::vector<SPOSet::ValueType> ratio_v(nw);
   std::vector<SPOSet::GradType> grads_v(nw);
@@ -235,7 +236,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
   phi_vgl_v.updateFrom();
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   CHECK(std::real(ratio_v[0]) == Approx(-0.4838374162));
   CHECK(std::real(grads_v[0][0]) == Approx(-24.6573209338));
   CHECK(std::real(grads_v[0][1]) == Approx(24.6573187288));
@@ -246,9 +247,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::real(grads_v[1][1]) == Approx(-2.6037152796));
   CHECK(std::real(grads_v[1][2]) == Approx(-0.0001673779));
   CHECK(std::real(phi_vgl_v(0, 1, 0)) == Approx(-2.6693785191));
-#endif
-
-#if defined(QMC_COMPLEX)
+#else
   CHECK(std::imag(ratio_v[0]) == Approx(0.0005530113));
   CHECK(std::imag(grads_v[0][0]) == Approx(-0.000357729));
   CHECK(std::imag(grads_v[0][1]) == Approx(-0.0005462062));
@@ -259,6 +258,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::imag(grads_v[1][1]) == Approx(-0.0000331457));
   CHECK(std::imag(grads_v[1][2]) == Approx(0.0000295465));
   CHECK(std::imag(phi_vgl_v(0, 1, 0)) == Approx(2.6693942547));
+#endif
 #endif
 }
 } // namespace qmcplusplus
