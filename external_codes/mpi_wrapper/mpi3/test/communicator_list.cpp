@@ -1,40 +1,37 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ $0 -o $0x&&mpirun --oversubscribe -n 8 $0x&&rm $0x;exit
-#endif
+// Copyright 2018-2022 Alfredo A. Correa
 
-#include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
+#include "../../mpi3/main.hpp"
 
 #include<list>
 #include<vector>
 
 namespace mpi3 = boost::mpi3;
 
-struct projector{
-	projector(mpi3::communicator& comm) : comm_{comm}{}
-	projector(projector const&) = default;
-private:
+struct projector {
+	explicit projector(mpi3::communicator& comm) : comm_{comm} {}
+ private:
 	mutable mpi3::communicator comm_;
 };
 
-int mpi3::main(int, char*[], mpi3::communicator world){
-
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try {
 	{
 		std::list<mpi3::communicator> v;
 		v.emplace_back(world);
 		v.emplace_back(world);
 	}
-//	{ // doesn't compile, communicator is not copiable
-//		std::vector<mpi3::communicator> v = {world, world};
-//		v.emplace_back(world);
-//		v.emplace_back(world);
-//	}
+#if 0
+	{ // doesn't compile, communicator is not copiable
+		std::vector<mpi3::communicator> v = {world, world};
+		v.emplace_back(world);
+		v.emplace_back(world);
+	}
+#endif
 	{
-		std::vector<projector> v = {world, world};
+		std::vector<projector> v = {projector{world}, projector{world}};
 		v.emplace_back(world);
 		v.emplace_back(world);
 	}
 
 	return 0;
-}
-
+} catch(...) {return 1;}

@@ -125,6 +125,9 @@ public:
   ///default destructor
   virtual ~WaveFunctionComponent();
 
+  /// Validate the internal consistency of the object
+  virtual void checkSanity() const {}
+
   /// return object name
   const std::string& getName() const { return my_name_; }
 

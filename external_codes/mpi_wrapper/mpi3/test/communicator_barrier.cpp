@@ -1,17 +1,13 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wfatal-errors $0 -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.x; exit
-#endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// Copyright 2018-2021 Alfredo A. Correa
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
 
 namespace mpi3 = boost::mpi3;
 using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char** /*argv*/, mpi3::communicator world) -> int try {
 	cout <<"Before barrier, I am "<< world.rank() <<" of "<< world.size() << std::endl;
 	world.barrier();
 	cout <<"After barrier, I am "<< world.rank() <<" of "<< world.size() << std::endl;
 	return 0;
-}
-
+} catch(...) {return 1;}

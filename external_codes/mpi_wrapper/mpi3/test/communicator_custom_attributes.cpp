@@ -2,10 +2,10 @@
 mpic++ -O3 -std=c++17 -Wall -Wextra `#-Wfatal-errors` $0 -o $0x.x && time mpirun -n 1 $0x.x $@ && rm -f $0x.x; exit
 #endif
 
-//#include "../../mpi3/main.hpp"
 #include "../../mpi3/environment.hpp"
 #include "../../mpi3/communicator.hpp"
-#include<boost/any.hpp>
+
+#include<any>
 
 namespace mpi3 = boost::mpi3;
 using std::cout;
@@ -43,17 +43,15 @@ int main(){
 
 //	assert(mpi3::any_cast<bool>(world.named_attributes()["leader"]));
 
-	std::map<std::string, boost::any> m = {{"node", 555}};
+	std::map<std::string, std::any> m = {{"node", 555}};
 	m["color"] = 11;
 //	int n = 
-	boost::any_cast<int&>(m["color"]) = 99;
-	int n = boost::any_cast<int>(m["color"]);
+	std::any_cast<int&>(m["color"]) = 99;
+	int n = std::any_cast<int>(m["color"]);
 	assert( n == 99 );
 
-	assert( boost::any_cast<int>(m["node"]) == 555 );
-
+	assert( std::any_cast<int>(m["node"]) == 555 );
 
 	return 0;
-
 }
 

@@ -1844,9 +1844,9 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing']
     elements    = ['sposet']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno,gpusharing=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
@@ -1892,10 +1892,10 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages','gpusharing']
     elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
     h5tags     = ['twistindex','twistangle','rcut']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno,gpusharing=yesno)
 #end class determinantset
 
 class spline(QIxml):
@@ -4598,6 +4598,7 @@ def generate_bspline_builder(type           = 'bspline',
                              sposets        = None,
                              system         = None,
                              orbitals_cpu   = None,
+                             gpusharing     = None,
                              ):
     tilematrix = identity(3,dtype=int)
     if system!=None:
@@ -4641,6 +4642,9 @@ def generate_bspline_builder(type           = 'bspline',
     #end if
     if orbitals_cpu is not None and orbitals_cpu:
         bsb.gpu = False
+    #end if
+    if gpusharing is not None:
+        bsb.gpusharing = gpusharing
     #end if
     return bsb
 #end def generate_bspline_builder
@@ -4899,6 +4903,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 href           = 'MISSING.h5',
                                 excitation     = None,
                                 delay_rank     = None,
+                                gpusharing     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4953,6 +4958,9 @@ def generate_determinantset_old(type           = 'bspline',
     #end if
     if delay_rank is not None:
         dset.slaterdeterminant.delay_rank = delay_rank
+    #end if
+    if gpusharing is not None:
+        dset.gpusharing = gpusharing
     #end if
     if excitation is not None:
 
@@ -7214,8 +7222,11 @@ gen_basic_input_defaults = obj(
     J1_rcut_open   = 5.0,              
     J2_rcut_open   = 10.0,
     driver         = 'legacy', # legacy,batched
+    # batched driver inputs
     orbitals_cpu   = None,     # place/evaluate orbitals on cpu if on gpu
     matrix_inv_cpu = None,     # evaluate matrix inverse on cpu if on gpu
+    # legacy cuda inputs
+    gpusharing     = None,
     qmc            = None,     # opt,vmc,vmc_test,dmc,dmc_test
     )
 
@@ -7377,6 +7388,7 @@ def generate_basic_input(**kwargs):
                 spin_polarized = kw.spin_polarized,
                 system         = kw.system,
                 orbitals_cpu   = kw.orbitals_cpu,
+                gpusharing     = kw.gpusharing,
                 )
         #end if
         if kw.partition is None:
@@ -7410,6 +7422,7 @@ def generate_basic_input(**kwargs):
             spin_polarized = kw.spin_polarized,
             excitation     = kw.excitation,
             delay_rank     = kw.delay_rank,
+            gpusharing     = kw.gpusharing,
             system         = kw.system,
             )
     else:
