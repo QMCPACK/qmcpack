@@ -775,18 +775,25 @@ public:
     delay_count = 0;
   }
 
+/*
   inline void print_Ainv(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
     {
-      std::cout << "debug Ainv host  " << engine.get_psiMinv()[0][0] << " " << engine.get_psiMinv()[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
-      auto* temp_ptr = engine.psiMinv.data();
+      std::cout << "debug Ainv host  " << engine.get_psiMinv()[0][0] << " " << engine.get_psiMinv()[0][32] << " "
+                << engine.get_psiMinv()[1][0] << " " << engine.get_psiMinv()[1][32] << std::endl;
+      auto* temp_ptr = engine.get_psiMinv().data();
       PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv_.size()])")
-      std::cout << "debug Ainv devi  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+      std::cout << "debug Ainv devi";
+      for (size_t row = 0; row < psiMinv_.rows(); row++)
+      {
+        for (size_t col = 0; col < psiMinv_.cols(); col++)
+          std::cout << " " << row << " " << col << " " << engine.get_psiMinv()[row][col];
+        std::cout << std::endl;
+      }
     }
   }
+*/
 
   /** return invRow host or device pointers based on on_host request
    * prepare invRow if not already.
