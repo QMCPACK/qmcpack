@@ -474,7 +474,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   elec.create({2});
   elec.R[0]  = {0.138, -0.24, 0.216};
   elec.R[1]  = {-0.216, 0.24, -0.138};
-  elec.spins = {0.0, 0.51};
+  elec.spins = {0.2, 0.51};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -566,7 +566,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
-    REQUIRE(Value1 == Approx(-4.992197981));
+    REQUIRE(Value1 == Approx(-3.530511241));
   };
 
   {
@@ -615,7 +615,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
           Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
                                                           dhpsioverpsi);
     }
-    REQUIRE(Value1 == Approx(-4.992197981));
+    REQUIRE(Value1 == Approx(-3.530511241));
 
     /*
     CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));

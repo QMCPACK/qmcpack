@@ -432,7 +432,7 @@ void calcSOECP(int npts)
   std::vector<double> pos_e1                 = {0.138, -0.24, 0.216};
   std::vector<double> pos_e2                 = {-0.216, 0.24, -0.138};
   std::vector<std::vector<double>> positions = {cart2sph(pos_e1), cart2sph(pos_e2)};
-  double spin_e1                             = 0.0;
+  double spin_e1                             = 0.2;
   double spin_e2                             = 0.51;
   std::vector<double> spins                  = {spin_e1, spin_e2};
 
@@ -453,7 +453,7 @@ void print_dlogpsi()
   std::vector<double> pos_e1                 = {0.138, -0.24, 0.216};
   std::vector<double> pos_e2                 = {-0.216, 0.24, -0.138};
   std::vector<std::vector<double>> positions = {cart2sph(pos_e1), cart2sph(pos_e2)};
-  double spin_e1                             = 0.0;
+  double spin_e1                             = 0.2;
   double spin_e2                             = 0.51;
   std::vector<double> spins                  = {spin_e1, spin_e2};
 
