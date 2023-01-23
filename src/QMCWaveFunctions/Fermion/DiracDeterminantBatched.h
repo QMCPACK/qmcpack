@@ -103,6 +103,10 @@ public:
                            Vector<Value>& dlogpsi,
                            Vector<Value>& dhpsioverpsi) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi) override;
+
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
   LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;

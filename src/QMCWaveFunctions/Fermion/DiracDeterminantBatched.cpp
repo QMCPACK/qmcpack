@@ -1109,6 +1109,14 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivativesWF(ParticleSet& P,
+                                                             const opt_variables_type& active,
+                                                             Vector<ValueType>& dlogpsi)
+{
+  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::registerTWFFastDerivWrapper(const ParticleSet& P,
                                                                       TWFFastDerivWrapper& twf) const
 {
