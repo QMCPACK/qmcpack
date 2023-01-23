@@ -217,8 +217,6 @@ public:
 
   /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves
   virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
-                                   ParticleSet& P,
-                                   int iel,
                                    const opt_variables_type& optvars,
                                    ValueVector& psi,
                                    const ValueVector& psiinv,

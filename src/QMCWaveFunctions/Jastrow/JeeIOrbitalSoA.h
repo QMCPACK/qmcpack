@@ -948,8 +948,6 @@ public:
   }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           ParticleSet& P,
-                           int iel,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratios) override

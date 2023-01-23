@@ -254,8 +254,6 @@ public:
   }
 
   void evaluateDerivRatios(const VirtualParticleSet& VP,
-                           ParticleSet& P,
-                           int iel,
                            const opt_variables_type& optvars,
                            ValueVector& psi,
                            const ValueVector& psiinv,

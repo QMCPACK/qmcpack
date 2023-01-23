@@ -307,8 +307,6 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
 }
 
 void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                      ParticleSet& P,
-                                      int iel,
                                       const opt_variables_type& optvars,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
@@ -331,6 +329,9 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
   psiM_all   = 0;
   dpsiM_all  = 0;
   d2psiM_all = 0;
+
+  const ParticleSet& P = VP.getRefPS();
+  int iel = VP.refPtcl;
 
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
 

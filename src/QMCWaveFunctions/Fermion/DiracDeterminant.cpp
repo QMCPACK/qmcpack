@@ -458,8 +458,6 @@ void DiracDeterminant<DU_TYPE>::mw_evaluateRatios(const RefVectorWithLeader<Wave
 
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                                    ParticleSet& P,
-                                                    int iel,
                                                     const opt_variables_type& optvars,
                                                     std::vector<ValueType>& ratios,
                                                     Matrix<ValueType>& dratios)
@@ -467,7 +465,7 @@ void DiracDeterminant<DU_TYPE>::evaluateDerivRatios(const VirtualParticleSet& VP
   const int WorkingIndex = VP.refPtcl - FirstIndex;
   assert(WorkingIndex >= 0);
   std::copy_n(psiM[WorkingIndex], invRow.size(), invRow.data());
-  Phi->evaluateDerivRatios(VP, P, iel, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
+  Phi->evaluateDerivRatios(VP, optvars, psiV, invRow, ratios, dratios, FirstIndex, LastIndex);
 }
 
 template<typename DU_TYPE>

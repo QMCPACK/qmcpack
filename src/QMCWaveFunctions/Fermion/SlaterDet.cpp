@@ -89,13 +89,11 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
 }
 
 void SlaterDet::evaluateDerivRatios(const VirtualParticleSet& VP,
-                                    ParticleSet& P,
-                                    int iel,
                                     const opt_variables_type& optvars,
                                     std::vector<ValueType>& ratios,
                                     Matrix<ValueType>& dratios)
 {
-  return Dets[getDetID(VP.refPtcl)]->evaluateDerivRatios(VP, P, iel, optvars, ratios, dratios);
+  return Dets[getDetID(VP.refPtcl)]->evaluateDerivRatios(VP, optvars, ratios, dratios);
 }
 
 SlaterDet::LogValueType SlaterDet::evaluateLog(const ParticleSet& P,
