@@ -149,6 +149,12 @@ QMCMain::QMCMain(Communicate* c)
 #endif
 #endif // GPU case end
 
+#ifdef QMC_COMPLEX
+  app_summary() << "  Complex build. QMC_COMPLEX=ON" << std::endl;
+#else
+  app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
+#endif
+
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
                 << timer_manager.get_timer_threshold_string() << std::endl;
