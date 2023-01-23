@@ -132,6 +132,11 @@ public:
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   PsiValue ratioGrad(ParticleSet& P, int iat, Grad& grad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
