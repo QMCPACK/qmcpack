@@ -594,6 +594,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //trusting current values from evaluateDerivatives...which should be correct if the
   //dlogpsi comes out correct
   std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
+  //These were independently validated in soecp_eval_ref.cpp, includes the contribution
+  //from dkinpsioverpsi_refs
+  std::vector<RealType> dhpsioverpsi_refs = {-3.85573, 0.25082, 3.65311, 0.0, 0.0};
+
   auto test_evaluateValueAndDerivatives     = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
@@ -617,13 +621,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     }
     REQUIRE(Value1 == Approx(-3.530511241));
 
-    /*
-    CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6379341942));
-    CHECK(std::real(dhpsioverpsi[2]) == Approx(1.5269279991));
-    CHECK(std::real(dhpsioverpsi[3]) == Approx(-0.0355730676));
-    CHECK(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-    CHECK(std::real(dhpsioverpsi[10]) == Approx(-0.3968763604));
-    */
+    for (int ip = 0; ip < NumOptimizables; ip++)
+      CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
   };
 
   {

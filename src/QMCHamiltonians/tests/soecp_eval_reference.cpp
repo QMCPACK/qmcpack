@@ -467,31 +467,185 @@ void print_dlogpsi()
   //in the spline coefficients the first element is related to the cusp which doesn't change
   for (int ic = 0; ic < coeffs.size(); ic++)
   {
-    double delta = 0.001;
-    std::vector<double> finite_diff_coeffs = {-1./60, 3./20, -3./4, 0, 3./4, -3./20, 1./60};
+    double delta                           = 0.001;
+    std::vector<double> finite_diff_coeffs = {-1. / 60, 3. / 20, -3. / 4, 0, 3. / 4, -3. / 20, 1. / 60};
     std::vector<std::complex<double>> values(finite_diff_coeffs.size());
-    double inital_value = J2.getCoeff(ic+1);   
-    int offset = (finite_diff_coeffs.size() - 1)/2;
+    double inital_value = J2.getCoeff(ic + 1);
+    int offset          = (finite_diff_coeffs.size() - 1) / 2;
     for (int id = 0; id < finite_diff_coeffs.size(); id++)
     {
-      double newval = inital_value + (id - offset)*delta;
-      J2.setCoeff(ic+1, newval);
+      double newval = inital_value + (id - offset) * delta;
+      J2.setCoeff(ic + 1, newval);
       values[id] = TWF(positions, spins, J2);
     }
-    J2.setCoeff(ic+1, inital_value);
+    J2.setCoeff(ic + 1, inital_value);
 
     std::complex<double> deriv = 0.0;
     for (int id = 0; id < finite_diff_coeffs.size(); id++)
-        deriv += finite_diff_coeffs[id] * values[id] / delta;
+      deriv += finite_diff_coeffs[id] * values[id] / delta;
     std::cout << "dlogpsi[" << ic << "]: " << deriv / values[offset] << std::endl;
   }
+}
+
+void print_dhpsioverpsi()
+{
+  const int npts = 8; //number of spin integral pts
+  //2el system, atom at origin, 2body jastrow only
+  std::vector<double> pos_e1                 = {0.138, -0.24, 0.216};
+  std::vector<double> pos_e2                 = {-0.216, 0.24, -0.138};
+  std::vector<std::vector<double>> positions = {cart2sph(pos_e1), cart2sph(pos_e2)};
+  double spin_e1                             = 0.2;
+  double spin_e2                             = 0.51;
+  std::vector<double> spins                  = {spin_e1, spin_e2};
+
+  double rcut                = 5.0;
+  double cusp                = -0.25;
+  std::vector<double> coeffs = {0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201};
+  cubicBSpline spl(rcut, cusp, coeffs);
+
+  //these are the reference values from evaluateDerivatives, which gets dhpsioverpsi for the
+  //kinetic energy component only. Going to print the accumulated value for the SOECP component
+  //and the kinetic energy and print to add to unit test in test_ecp
+  std::vector<double> dhpsioverpsi = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
+
+  std::complex<double> soecp_value;
+  //loop over each particle
+  for (int iel = 0; iel < 2; iel++)
+  {
+    //set positions, spins, and weights for all integral points for particle iel
+    std::vector<std::vector<std::vector<double>>> positions_vp;
+    std::vector<std::vector<double>> spins_vp;
+    std::vector<double> spin_quad_wts;
+
+    auto add_quad_points = [&](const double spinval, const double spin_wt) {
+      for (int i = 0; i < quad.size(); i++)
+      {
+        std::vector<double> sph2 = cart2sph(quad[i]);
+        sph2[0] *= positions[iel][0]; //now scaled to appropriate distance
+        positions_vp.push_back(positions);
+        spins_vp.push_back(spins);
+        positions_vp.back()[iel] = sph2;
+        spins_vp.back()[iel]     = spinval;
+        double spin_norm         = 1.0 / (2.0 * PI);
+        double spatial_norm      = 4.0 * PI;
+        double norm              = spin_norm * spatial_norm;
+        spin_quad_wts.push_back(spin_wt * wt[i] * norm);
+      }
+    };
+    double smin = 0.0;
+    double smax = 2 * PI;
+    double h    = (smax - smin) / npts;
+    for (int k = 1; k <= npts - 1; k += 2)
+    {
+      double newspin = smin + k * h;
+      double spinwt  = 4. * h / 3.;
+      add_quad_points(newspin, spinwt);
+    }
+    for (int k = 2; k <= npts - 2; k += 2)
+    {
+      double newspin = smin + k * h;
+      double spinwt  = 2. * h / 3.;
+      add_quad_points(newspin, spinwt);
+    }
+    add_quad_points(smin, h / 3.);
+    add_quad_points(smax, h / 3.);
+    assert(positions_vp.size() == spins_vp.size());
+    assert(spins_vp.size() == spin_quad_wts.size());
+    assert(spin_quad_wts.size() == (npts + 1) * quad.size());
+
+    //Now we need dlogpsi_vp for each of these new positions, and the original dlogpsi
+    auto get_dlogpsi = [&](std::vector<std::vector<double>>& pos, std::vector<double>& sp, cubicBSpline& J2) {
+      std::vector<std::complex<double>> dlogpsi;
+      for (int ic = 0; ic < coeffs.size(); ic++)
+      {
+        double delta                           = 0.001;
+        std::vector<double> finite_diff_coeffs = {-1. / 60, 3. / 20, -3. / 4, 0, 3. / 4, -3. / 20, 1. / 60};
+        std::vector<std::complex<double>> values(finite_diff_coeffs.size());
+        double inital_value = J2.getCoeff(ic + 1);
+        int offset          = (finite_diff_coeffs.size() - 1) / 2;
+        for (int id = 0; id < finite_diff_coeffs.size(); id++)
+        {
+          double newval = inital_value + (id - offset) * delta;
+          J2.setCoeff(ic + 1, newval);
+          values[id] = TWF(pos, sp, J2);
+        }
+        J2.setCoeff(ic + 1, inital_value);
+
+        std::complex<double> deriv;
+        for (int id = 0; id < finite_diff_coeffs.size(); id++)
+          deriv += finite_diff_coeffs[id] * values[id] / delta;
+        dlogpsi.push_back(deriv / values[offset]); //dpsi / psi at pos, sp
+      }
+      return dlogpsi;
+    };
+
+    std::vector<std::complex<double>> dlogpsi = get_dlogpsi(positions, spins, spl);
+    for (int ip = 0; ip < dlogpsi.size(); ip++)
+      std::cout << "dlogpsi[" << ip << "]: " << dlogpsi[ip] << std::endl;
+
+    std::vector<std::vector<std::complex<double>>> dratio;
+    for (int iq = 0; iq < spin_quad_wts.size(); iq++)
+    {
+      std::vector<std::complex<double>> dlogpsi_vp = get_dlogpsi(positions_vp[iq], spins_vp[iq], spl);
+      for (int ip = 0; ip < dlogpsi_vp.size(); ip++)
+        dlogpsi_vp[ip] -= dlogpsi[ip];
+      dratio.push_back(dlogpsi_vp);
+    }
+
+    //Now we can evaluate the contribution to the potential from each quadrature/spin point
+    auto SOECP_spin_quad = [&](std::vector<std::vector<double>>& newpos, std::vector<std::vector<double>>& oldpos,
+                               std::vector<double>& newspin, std::vector<double>& oldspin, const cubicBSpline& J2) {
+      std::complex<double> integrand;
+      for (int l = 1; l <= 3; l++)
+      {
+        std::complex<double> msum;
+        for (int m1 = -l; m1 <= l; m1++)
+        {
+          for (int m2 = -l; m2 <= l; m2++)
+          {
+            std::complex<double> ldots;
+            for (int id = 0; id < 3; id++)
+              ldots += lMatrixElement(l, m1, m2, id) * sMatrixElement(oldspin[iel], newspin[iel], id);
+            msum += Ylm(l, m1, oldpos[iel]) * std::conj(Ylm(l, m2, newpos[iel])) * ldots;
+          }
+        }
+        integrand += Wso(l, oldpos[iel][0]) * msum;
+      }
+      std::complex<double> psinew = TWF(newpos, newspin, J2);
+      std::complex<double> psiold = TWF(oldpos, oldspin, J2);
+      integrand *= psinew / psiold;
+      return integrand;
+    };
+
+    std::vector<std::complex<double>> wvec(spin_quad_wts.size());
+    for (int iq = 0; iq < spin_quad_wts.size(); iq++)
+    {
+      wvec[iq] = spin_quad_wts[iq] * SOECP_spin_quad(positions_vp[iq], positions, spins_vp[iq], spins, spl);
+      soecp_value += wvec[iq];
+    }
+
+    //Now do final evaluation of dhpsioverpsi, using a gemv
+    for (int ip = 0; ip < dhpsioverpsi.size(); ip++)
+    {
+      std::complex<double> sum;
+      for (int iq = 0; iq < wvec.size(); iq++)
+        sum += wvec[iq] * dratio[iq][ip];
+      dhpsioverpsi[ip] += std::real(sum);
+    }
+  } // loop over each particle
+  std::cout << "SOECP Value: " << soecp_value << std::endl;
+  for (int ip = 0; ip < dhpsioverpsi.size(); ip++)
+    std::cout << "dhpsioverpsi[" << ip << "]: " << dhpsioverpsi[ip] << std::endl;
 }
 
 int main()
 {
   //used to validate bspline jastrow implementation
-  testJastrow();
-  for (int n = 2; n <= 100; n += 2)
-    calcSOECP(n);
-  print_dlogpsi();
+  //testJastrow();
+  //for (int n = 2; n <= 100; n += 2)
+  //  calcSOECP(n);
+  //can check with loop above, but converged by 8, which is default in QMC
+  //calcSOECP(8);
+  //print_dlogpsi();
+  print_dhpsioverpsi();
 }
