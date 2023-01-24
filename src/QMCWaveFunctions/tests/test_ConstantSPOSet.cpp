@@ -20,7 +20,6 @@ namespace qmcplusplus
 //Ray:  Figure out how to template me on value type.
 TEST_CASE("ConstantSPOSet", "[wavefunction]")
 {
-  app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   //For now, do a small square case.
   const int nelec = 2;
   const int norb  = 2;
