@@ -2,38 +2,32 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2023 Raymond Clay and QMCPACK developers.
 //
-// File developed by:
+// File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories 
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories 
 //////////////////////////////////////////////////////////////////////////////////////
 
 
 #ifndef QMCPLUSPLUS_CONSTANTSPOSET_H
 #define QMCPLUSPLUS_CONSTANTSPOSET_H
 
-#include <memory>
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/BasisSetBase.h"
-
-#include "Numerics/MatrixOperators.h"
-#include "Numerics/DeterminantOperators.h"
+//#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
-/** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
+/** Constant SPOSet for testing purposes.  Fixed N_elec x N_orb matrices storing value, gradients, and laplacians.
    *
-   * SoA verson of LCOrtbitalSet
-   * Localized basis set is always real 
    */
 struct ConstantSPOSet : public SPOSet
 {
 public:
-  ConstantSPOSet(const std::string& my_name): SPOSet(my_name)
-  {
+  ConstantSPOSet(const std::string& my_name) = delete; //: SPOSet(my_name)
+  //{
   
-  };
+//  };
   
   ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals): SPOSet(my_name)
   {
@@ -125,8 +119,6 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {
-  //  using value_type = ValueMatrix::value_type;
-  //  using grad_type  = GradMatrix::value_type;
     for (int iat = first, i = 0; iat < last; ++iat, ++i)
     {
       ValueVector v(logdet[i], logdet.cols());
@@ -136,10 +128,8 @@ public:
     }
   }
 
-  //We'll let evaluate_notranspose be handled by base class
 
 protected:
-  ///number of Single-particle orbitals
 
 
 private:
