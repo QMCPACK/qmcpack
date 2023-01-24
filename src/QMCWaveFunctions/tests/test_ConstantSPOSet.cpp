@@ -31,8 +31,8 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
   using GradVector = OrbitalSetTraits<ValueType>::GradVector;
 
-  ValueVector row0{ValueType(0.92387953, 0), ValueType(0.92387953, 0.)};
-  ValueVector row1{ValueType(0.29131988, 0.87674747), ValueType(0.81078057, 0.44293144)};
+  ValueVector row0{ValueType(0.92387953), ValueType(0.92387953)};
+  ValueVector row1{ValueType(0.29131988), ValueType(0.81078057)};
  
   using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
   ValueMatrix spomat;
