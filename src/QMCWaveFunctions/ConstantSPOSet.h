@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2023 Raymond Clay and QMCPACK developers.
 //
-// File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories 
+// File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //
-// File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories 
+// File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -14,7 +14,6 @@
 #define QMCPLUSPLUS_CONSTANTSPOSET_H
 
 #include "QMCWaveFunctions/SPOSet.h"
-//#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
@@ -24,63 +23,60 @@ namespace qmcplusplus
 struct ConstantSPOSet : public SPOSet
 {
 public:
-  ConstantSPOSet(const std::string& my_name) = delete; //: SPOSet(my_name)
-  //{
-  
-//  };
-  
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals): SPOSet(my_name)
+  ConstantSPOSet(const std::string& my_name) = delete;
+
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals) : SPOSet(my_name)
   {
     const int nrows = vals.rows();
     const int ncols = vals.cols();
-    OrbitalSetSize = ncols;
-   
-    grad_.resize(nrows,ncols);
-    lapl_.resize(nrows,ncols);
-   
-    psi_           = vals;
-    grad_          =  0.0;
-    lapl_          =  0.0;
+    OrbitalSetSize  = ncols;
+
+    grad_.resize(nrows, ncols);
+    lapl_.resize(nrows, ncols);
+
+    psi_  = vals;
+    grad_ = 0.0;
+    lapl_ = 0.0;
   };
 
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads): SPOSet(my_name)
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads) : SPOSet(my_name)
   {
     const int nrows = vals.rows();
     const int ncols = vals.cols();
-    OrbitalSetSize = ncols;
-    
-    assert(grads.rows()==nrows);
-    assert(grads.cols()==ncols);
-    
-    lapl_.resize(nrows,ncols);
-    
-    psi_           = vals;
-    grad_          = grads;
-    lapl_          =  0.0;
+    OrbitalSetSize  = ncols;
+
+    assert(grads.rows() == nrows);
+    assert(grads.cols() == ncols);
+
+    lapl_.resize(nrows, ncols);
+
+    psi_  = vals;
+    grad_ = grads;
+    lapl_ = 0.0;
   }
 
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads, const ValueMatrix& lapls): SPOSet(my_name)
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads, const ValueMatrix& lapls)
+      : SPOSet(my_name)
   {
     const int nrows = vals.rows();
     const int ncols = vals.cols();
-    OrbitalSetSize = ncols;
-    
-    assert(grads.rows()==nrows);
-    assert(grads.cols()==ncols);
-    assert(lapls.rows()==nrows);
-    assert(lapls.cols()==ncols);
-    
-    psi_           = vals;
-    grad_          = grads;
-    lapl_          = lapls;
+    OrbitalSetSize  = ncols;
+
+    assert(grads.rows() == nrows);
+    assert(grads.cols() == ncols);
+    assert(lapls.rows() == nrows);
+    assert(lapls.cols() == ncols);
+
+    psi_  = vals;
+    grad_ = grads;
+    lapl_ = lapls;
   }
 
-  
 
-  std::unique_ptr<SPOSet> makeClone() const override 
-  { 
-    auto myclone = std::make_unique<ConstantSPOSet>(my_name_,psi_,grad_,lapl_);
-    return myclone; 
+  std::unique_ptr<SPOSet> makeClone() const override
+  {
+    auto myclone = std::make_unique<ConstantSPOSet>(my_name_, psi_, grad_, lapl_);
+    return myclone;
   };
 
   std::string getClassName() const override { return "ConstantSPOSet"; }
@@ -90,8 +86,6 @@ public:
     APP_ABORT("ConstantSPOSet should not call checkOutVariables");
   }
 
-  /** set the OrbitalSetSize and Identity=false and initialize internal storages
-    */
   void setOrbitalSetSize(int norbs) override { APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
 
 
@@ -106,9 +100,9 @@ public:
   {
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
     {
-      psi[iorb] = psi_(iat, iorb);
-      dpsi[iorb] = grad_(iat,iorb);
-      d2psi[iorb] = lapl_(iat,iorb);
+      psi[iorb]   = psi_(iat, iorb);
+      dpsi[iorb]  = grad_(iat, iorb);
+      d2psi[iorb] = lapl_(iat, iorb);
     }
   };
 
@@ -130,11 +124,9 @@ public:
 
 
 protected:
-
-
 private:
   ValueMatrix psi_;
-  GradMatrix  grad_;
+  GradMatrix grad_;
   ValueMatrix lapl_;
 };
 } // namespace qmcplusplus
