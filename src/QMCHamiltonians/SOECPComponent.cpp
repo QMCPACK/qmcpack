@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-SOECPComponent::SOECPComponent() : lmax(0), nchannel(0), nknot(0), sknot(0), Rmax(-1), VP(nullptr) {}
+SOECPComponent::SOECPComponent() : lmax(0), nchannel(0), nknot(0), sknot(0), total_knots(0), Rmax(-1), VP(nullptr) {}
 
 SOECPComponent::~SOECPComponent()
 {
@@ -33,7 +33,7 @@ void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
   assert(VP == nullptr);
   outputManager.pause();
-  VP = new VirtualParticleSet(qp, nknot);
+  VP = new VirtualParticleSet(qp, total_knots);
   outputManager.resume();
 }
 
@@ -62,14 +62,18 @@ SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
 
 void SOECPComponent::resize_warrays(int n, int m, int s)
 {
-  psiratio.resize(n);
-  deltaV.resize(n);
-  deltaS.resize(n);
   vrad.resize(m);
   rrotsgrid_m.resize(n);
   nchannel = sopp_m.size();
   nknot    = sgridxyz_m.size();
   sknot    = s;
+  //Need +1 for Simpsons rule to include both end points.
+  //sknot here refers to the number of subintervals for integration
+  total_knots = nknot * (sknot + 1);
+  psiratio.resize(total_knots);
+  deltaV.resize(total_knots);
+  deltaS.resize(total_knots);
+  spin_quad_weights.resize(total_knots);
   if (m != nchannel)
   {
     APP_ABORT("SOECPComponent::resize_warrays has incorrect number of radial channels\n");
@@ -122,68 +126,6 @@ SOECPComponent::ComplexType SOECPComponent::lmMatrixElements(int l, int m1, int 
   }
 }
 
-SOECPComponent::ComplexType SOECPComponent::getAngularIntegral(RealType sold,
-                                                               RealType snew,
-                                                               ParticleSet& W,
-                                                               TrialWaveFunction& Psi,
-                                                               int iel,
-                                                               RealType r,
-                                                               const PosType& dr,
-                                                               int iat)
-{
-  buildQuadraturePointDeltas(r, dr, deltaV, snew - sold, deltaS);
-
-  if (VP)
-  {
-    VP->makeMovesWithSpin(W, iel, deltaV, deltaS, true, iat);
-    Psi.evaluateRatios(*VP, psiratio);
-  }
-  else
-  {
-    //quadrature sum for angular integral
-    for (int j = 0; j < nknot; j++)
-    {
-      W.makeMoveWithSpin(iel, deltaV[j], deltaS[j]);
-      psiratio[j] = Psi.calcRatio(W, iel);
-      W.rejectMove(iel);
-      Psi.resetPhaseDiff();
-    }
-  }
-
-  //Need to add appropriate weight to psiratio
-  std::transform(psiratio.begin(), psiratio.end(), sgridweight_m.begin(), psiratio.begin(),
-                 [](auto& psi, auto& weight) {
-                   RealType fourpi = 2.0 * TWOPI;
-                   return psi * weight * fourpi;
-                 });
-
-  ComplexType angint(0.0);
-  for (int j = 0; j < nknot; j++)
-  {
-    ComplexType lsum(0.0);
-    for (int il = 0; il < nchannel; il++)
-    {
-      int l = il + 1; //nchannels starts at l=1, so 0th element is p not s
-      ComplexType msums(0.0);
-      for (int m1 = -l; m1 <= l; m1++)
-      {
-        for (int m2 = -l; m2 <= l; m2++)
-        {
-          ComplexType ldots(0.0);
-          for (int d = 0; d < 3; d++)
-            ldots += lmMatrixElements(l, m1, m2, d) * sMatrixElements(sold, snew, d);
-          ComplexType Y  = sphericalHarmonic(l, m1, dr);
-          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m[j]));
-          msums += Y * cY * ldots;
-        }
-      }
-      lsum += vrad[il] * msums;
-    }
-    angint += psiratio[j] * lsum;
-  }
-  return angint;
-}
-
 SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      int iat,
                                                      TrialWaveFunction& Psi,
@@ -202,43 +144,94 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
     vrad[ip] = sopp_m[ip]->splint(r);
   }
 
+  RealType sold = W.spins[iel];
+  buildTotalQuadrature(r, dr, sold);
+
+  if (VP)
+  {
+    VP->makeMovesWithSpin(W, iel, deltaV, deltaS, true, iat);
+    Psi.evaluateRatios(*VP, psiratio);
+  }
+  else
+  {
+    for (int iq = 0; iq < total_knots; iq++)
+    {
+      W.makeMoveWithSpin(iel, deltaV[iq], deltaS[iq]);
+      psiratio[iq] = Psi.calcRatio(W, iel);
+      W.rejectMove(iel);
+      Psi.resetPhaseDiff();
+    }
+  }
+
+  ComplexType pairpot;
+  for (int iq = 0; iq < total_knots; iq++)
+  {
+    RealType snew = sold + deltaS[iq];
+    ComplexType lsum;
+    for (int il = 0; il < nchannel; il++)
+    {
+      int l = il + 1; //nchannels starts at l=1, so 0th element is p not s
+      ComplexType msums;
+      for (int m1 = -l; m1 <= l; m1++)
+      {
+        ComplexType Y = sphericalHarmonic(l, m1, dr);
+        for (int m2 = -l; m2 <= l; m2++)
+        {
+          ComplexType ldots;
+          for (int id = 0; id < 3; id++)
+            ldots += lmMatrixElements(l, m1, m2, id) * sMatrixElements(sold, snew, id);
+          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m[iq % nknot]));
+          msums += Y * cY * ldots;
+        }
+      }
+      lsum += vrad[il] * msums;
+    }
+    pairpot += psiratio[iq] * lsum * spin_quad_weights[iq];
+  }
+  return std::real(pairpot);
+}
+
+void SOECPComponent::buildTotalQuadrature(const RealType r, const PosType& dr, const RealType sold)
+{
+  int count = 0;
   RealType smin(0.0);
   RealType smax(TWOPI);
   RealType dS = (smax - smin) / sknot; //step size for spin
 
-  RealType sold = W.spins[iel];
-  ComplexType sint(0.0);
+  auto addSpatialQuadrature = [&](const int is, const RealType r, const PosType& dr, const RealType ds,
+                                  const RealType spin_weight) {
+    for (int iq = 0; iq < nknot; iq++)
+    {
+      int offset     = is * nknot + iq;
+      deltaV[offset] = r * rrotsgrid_m[iq] - dr;
+      deltaS[offset] = ds;
+      //spin integral norm is 1/(2.0 * pi), spatial integral has 4.0 * pi, so overall weight is 2
+      spin_quad_weights[offset] = 2.0 * spin_weight * sgridweight_m[iq];
+      count++;
+    }
+  };
 
+  //simpsons 1/3 rule for spin integral
+
+  //odd points
   for (int is = 1; is <= sknot - 1; is += 2)
   {
-    RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
-    sint += RealType(4. / 3.) * dS * angint;
+    RealType snew = smin + is * dS;
+    addSpatialQuadrature(is, r, dr, snew - sold, RealType(4. / 3.) * dS);
   }
+
+  //even points
   for (int is = 2; is <= sknot - 2; is += 2)
   {
-    RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
-    sint += RealType(2. / 3.) * dS * angint;
+    RealType snew = smin + is * dS;
+    addSpatialQuadrature(is, r, dr, snew - sold, RealType(2. / 3.) * dS);
   }
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr, iat);
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr, iat);
 
-  RealType pairpot = std::real(sint) / TWOPI;
-  return pairpot;
-}
+  //end points
+  addSpatialQuadrature(0, r, dr, smin - sold, RealType(1. / 3.) * dS);
+  addSpatialQuadrature(sknot, r, dr, smax - sold, RealType(1. / 3.) * dS);
 
-void SOECPComponent::buildQuadraturePointDeltas(RealType r,
-                                                const PosType& dr,
-                                                std::vector<PosType>& deltaV,
-                                                RealType ds,
-                                                std::vector<RealType>& deltaS) const
-{
-  for (int j = 0; j < nknot; j++)
-  {
-    deltaV[j] = r * rrotsgrid_m[j] - dr;
-    deltaS[j] = ds;
-  }
+  assert(count == total_knots);
 }
 
 void SOECPComponent::rotateQuadratureGrid(const TensorType& rmat)

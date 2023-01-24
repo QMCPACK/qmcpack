@@ -44,6 +44,7 @@ private:
   int nchannel;
   int nknot;
   int sknot;
+  int total_knots; //spin + spatial knots
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
   ///Angular momentum map
@@ -55,15 +56,6 @@ private:
   ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
   int kroneckerDelta(int x, int y);
 
-  ComplexType getAngularIntegral(RealType sold,
-                                 RealType snew,
-                                 ParticleSet& W,
-                                 TrialWaveFunction& Psi,
-                                 int iel,
-                                 RealType r,
-                                 const PosType& dr,
-                                 int iat);
-
   std::vector<PosType> deltaV;
   std::vector<RealType> deltaS;
   SpherGridType sgridxyz_m;
@@ -71,14 +63,12 @@ private:
   std::vector<ValueType> psiratio;
   std::vector<ValueType> vrad;
   std::vector<RealType> sgridweight_m;
+  //total spin and quadrature weights
+  std::vector<RealType> spin_quad_weights;
 
   VirtualParticleSet* VP;
 
-  void buildQuadraturePointDeltas(RealType r,
-                                  const PosType& dr,
-                                  std::vector<PosType>& deltaV,
-                                  RealType ds,
-                                  std::vector<RealType>& deltaS) const;
+  void buildTotalQuadrature(const RealType r, const PosType& dr, const RealType sold);
 
 public:
   SOECPComponent();
