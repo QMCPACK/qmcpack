@@ -71,6 +71,13 @@ private:
   std::vector<ValueType> psiratio;
   std::vector<ValueType> vrad;
   std::vector<RealType> sgridweight_m;
+  //to store collective spin and quarature weight
+  std::vector<RealType> spin_quad_weights;
+  //work array
+  std::vector<ValueType> wvec;
+  //scratch spaces used by evaluateValueAndDerivative
+  Matrix<ValueType> dratio;
+  Vector<ValueType> dlogpsi_vp;
 
   VirtualParticleSet* VP;
 

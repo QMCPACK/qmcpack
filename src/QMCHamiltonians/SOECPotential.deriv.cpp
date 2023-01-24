@@ -12,6 +12,7 @@
 #include "QMCHamiltonians/SOECPComponent.h"
 #include "QMCHamiltonians/SOECPotential.h"
 #include "DistanceTable.h"
+#include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
 
 namespace qmcplusplus
@@ -56,35 +57,103 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
   if (sknot % 2 != 0)
     APP_ABORT("Spin knots uses Simpson's rule. Must have even number of knots");
 
-  for (int ip = 0; ip < nchannel; ip++)
-  {
-    vrad[ip] = sopp_m[ip]->splint(r);
-  }
+  int total_knots = nknot * (sknot + 1);
+  deltaV.resize(total_knots);
+  deltaS.resize(total_knots);
+  wvec.resize(total_knots);
+  spin_quad_weights.resize(total_knots);
+  psiratio.resize(total_knots);
+  const size_t num_vars = optvars.num_active_vars;
+  dratio.resize(total_knots, num_vars);
+  dlogpsi_vp.resize(dlogpsi.size());
+
+  auto addAngularQuadraturePoints = [&](const int is, const RealType r, const PosType& dr, RealType ds, RealType swt) {
+    for (int iq = 0; iq < nknot; iq++)
+    {
+      int offset     = is * nknot + iq;
+      deltaV[offset] = r * rrotsgrid_m[iq] - dr;
+      deltaS[offset] = ds;
+      //spin_norm is 1/(2pi), angular_norm is 4pi, so total norm is 2
+      spin_quad_weights[offset] = 2.0 * swt * sgridweight_m[iq];
+    }
+  };
 
   RealType smin(0.0);
   RealType smax(TWOPI);
   RealType dS = (smax - smin) / sknot; //step size for spin
 
   RealType sold = W.spins[iel];
-  ComplexType sint(0.0);
-
+  ComplexType pairpot;
   for (int is = 1; is <= sknot - 1; is += 2)
   {
-    RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
-    sint += RealType(4. / 3.) * dS * angint;
+    RealType snew = smin + is * dS;
+    addAngularQuadraturePoints(is, r, dr, snew - sold, RealType(4. / 3.) * dS);
   }
   for (int is = 2; is <= sknot - 2; is += 2)
   {
-    RealType snew      = smin + is * dS;
-    ComplexType angint = getAngularIntegral(sold, snew, W, Psi, iel, r, dr, iat);
-    sint += RealType(2. / 3.) * dS * angint;
+    RealType snew = smin + is * dS;
+    addAngularQuadraturePoints(is, r, dr, snew - sold, RealType(2. / 3.) * dS);
   }
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smin, W, Psi, iel, r, dr, iat);
-  sint += RealType(1. / 3.) * dS * getAngularIntegral(sold, smax, W, Psi, iel, r, dr, iat);
+  addAngularQuadraturePoints(0, r, dr, smin - sold, RealType(1. / 3.) * dS);
+  addAngularQuadraturePoints(sknot, r, dr, smax - sold, RealType(1. / 3.) * dS);
 
-  RealType pairpot = std::real(sint) / TWOPI;
-  return pairpot;
+  //Now we have all the spin and spatial quadrature points acculated to use in evaluation
+  //Now we need to obtain dlogpsi and dlogpsi_vp
+  if (VP)
+  {
+    // Compute ratios with VP
+    VP->makeMovesWithSpin(W, iel, deltaV, deltaS, true, iat);
+    Psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+  }
+  else
+  {
+    for (int iq = 0; iq < total_knots; iq++)
+    {
+      PosType pos_now   = W.R[iel];
+      RealType spin_now = W.spins[iel];
+      W.makeMoveWithSpin(iel, deltaV[iq], deltaS[iq]);
+      psiratio[iq] = Psi.calcRatio(W, iel);
+      Psi.acceptMove(W, iel);
+      W.acceptMove(iel);
+
+      //use existing methods
+      std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
+      Psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
+      for (int v = 0; v < dlogpsi_vp.size(); ++v)
+        dratio(iq, v) = dlogpsi_vp[v] - dlogpsi[v];
+
+      W.makeMoveWithSpin(iel, -deltaV[iq], -deltaS[iq]);
+      Psi.calcRatio(W, iel);
+      Psi.acceptMove(W, iel);
+      W.acceptMove(iel);
+    }
+  }
+
+  for (int iq = 0; iq < total_knots; iq++)
+  {
+    ComplexType lsum;
+    for (int il = 0; il < nchannel; il++)
+    {
+      int l = il + 1;
+      ComplexType msums;
+      for (int m1 = -l; m1 <= l; m1++)
+      {
+        ComplexType Y = sphericalHarmonic(l, m1, dr);
+        for (int m2 = -l; m2 <= l; m2++)
+        {
+          ComplexType ldots;
+          for (int id = 0; id < 3; id++)
+            ldots += lmMatrixElements(l, m1, m2, id) * sMatrixElements(W.spins[iel], W.spins[iel] + deltaS[iq], id);
+          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m[iq % (sknot + 1)]));
+          msums += Y * cY * ldots;
+        }
+      }
+      lsum += sopp_m[il]->splint(r) * msums;
+    }
+    pairpot += psiratio[iq] * spin_quad_weights[iq];
+  }
+
+  return std::real(pairpot);
 }
 
 } // namespace qmcplusplus
