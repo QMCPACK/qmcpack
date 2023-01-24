@@ -11,6 +11,9 @@
 
 
 #include "catch.hpp"
+#include <vector>
+#include <algorithm>
+
 #include "Configuration.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "QMCDrivers/MCPopulation.h"
@@ -39,6 +42,59 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   CHECK(population.get_dead_walkers().size() == 8);
   CHECK(population.get_num_local_walkers() == 8);
 }
+
+
+TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
+{
+  using namespace testing;
+  Communicate* comm;
+  comm = OHMMS::Controller;
+
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  TrialWaveFunction twf;
+  WalkerConfigurations walker_confs;
+
+  std::vector<MCPopulation> pops;
+
+  int num_ranks = 3;
+  for (int i = 0; i < num_ranks; ++i)
+    pops.emplace_back(num_ranks, i, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
+
+  std::vector<long> walker_ids;
+  for (int i = 0; i < num_ranks; ++i)
+  {
+    pops[i].createWalkers(8, walker_confs, 2.0);
+    CHECK(pops[i].get_walkers().size() == 8);
+    CHECK(pops[i].get_dead_walkers().size() == 8);
+    CHECK(pops[i].get_num_local_walkers() == 8);
+    auto walker_elems = pops[i].get_walker_elements();
+    for (WalkerElementsRef& wer : walker_elems)
+    {
+      walker_ids.push_back(wer.walker.ID);
+    }
+  }
+  std::sort(walker_ids.begin(), walker_ids.end());
+  // Walker IDs cannot collide
+  for(int i = 1; i < walker_ids.size(); ++i)
+    CHECK(walker_ids[i-1] != walker_ids[i]);
+
+  int new_walkers = 3;
+  
+  for(int i = 0; i < num_ranks; ++i)
+    for(int iw = 0;  iw < new_walkers; ++iw) {
+      auto wer = pops[i].spawnWalker();
+      walker_ids.push_back(wer.walker.ID);
+    }
+
+  std::sort(walker_ids.begin(), walker_ids.end());
+  // Walker IDs cannot collide
+  for(int i = 1; i < walker_ids.size(); ++i)
+    CHECK(walker_ids[i-1] != walker_ids[i]);
+
+}
+
 
 // TEST_CASE("MCPopulation::createWalkers first touch", "[particle][population]")
 // {

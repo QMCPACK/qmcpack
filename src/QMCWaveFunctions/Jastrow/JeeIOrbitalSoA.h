@@ -399,7 +399,7 @@ public:
     assert(VP.getTotalNum() == ratios.size());
     for (int k = 0; k < ratios.size(); ++k)
       ratios[k] = std::exp(Uat[VP.refPtcl] -
-                           computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
+                           computeU(VP.getRefPS(), VP.refPtcl, VP.getRefPS().GroupID[VP.refPtcl],
                                     VP.getDistTableAB(ei_Table_ID_).getDistRow(k),
                                     VP.getDistTableAB(ee_Table_ID_).getDistRow(k), ions_nearby_old));
   }
@@ -969,7 +969,7 @@ public:
     {
       constexpr valT czero(0);
 
-      const auto& refPS    = VP.refPS;
+      const auto& refPS    = VP.getRefPS();
       const auto& ee_dists = refPS.getDistTableAA(ee_Table_ID_).getDistances();
       const auto& ei_dists = refPS.getDistTableAB(ei_Table_ID_).getDistances();
 

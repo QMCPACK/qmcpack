@@ -123,7 +123,7 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   std::vector<ValueType> ratios2(2);
   newpos2[0] = newpos - elec.R[1];
   newpos2[1] = PosType(0.2, 0.5, 0.3) - elec.R[1];
-  VP.makeMoves(1, elec.R[1], newpos2);
+  VP.makeMoves(elec, 1, newpos2);
   ddb.evaluateRatios(VP, ratios2);
 
   CHECK(std::real(ratios2[0]) == Approx(0.4880285278));

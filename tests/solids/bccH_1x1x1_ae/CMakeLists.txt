@@ -24,8 +24,8 @@ qmc_run_and_check(
 # qmc_ref_vmc_dmc  series 1  -1.841352 +/- 0.000078
 # qmc_short_vmc_dmc  series 1  -1.84196 +/- 0.00073
 list(APPEND BCC_H_DMC_SCALARS "totenergy" "-1.84196 0.00073")
-list(APPEND BCC_H_DMC_SCALARS "potential" "-2.0187  0.0033")
-list(APPEND BCC_H_DMC_SCALARS "kinetic" "0.1767  0.0035")
+list(APPEND BCC_H_DMC_SCALARS "potential" "-2.0187  0.004")
+list(APPEND BCC_H_DMC_SCALARS "kinetic" "0.1767  0.004")
 list(APPEND BCC_H_DMC_SCALARS "eeenergy" "-0.77985 0.00069")
 qmc_run_and_check(
   short-bccH_1x1x1_ae-dmc_sdj

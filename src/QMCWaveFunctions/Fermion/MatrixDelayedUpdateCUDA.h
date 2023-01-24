@@ -44,6 +44,7 @@ class MatrixDelayedUpdateCUDA
 public:
   using WFT           = WaveFunctionTypes<VALUE, VALUE_FP>;
   using Value         = typename WFT::Value;
+  using Complex       = typename WFT::Complex;
   using FullPrecValue = typename WFT::FullPrecValue;
   using LogValue      = typename WFT::LogValue;
   using This_t        = MatrixDelayedUpdateCUDA<VALUE, VALUE_FP>;
@@ -62,6 +63,8 @@ public:
   using DualVGLVector = VectorSoaContainer<DT, QMCTraits::DIM + 2, PinnedDualAllocator<DT>>;
   template<typename DT>
   using OffloadMWVGLArray = Array<DT, 3, OffloadPinnedAllocator<DT>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   struct MatrixDelayedUpdateCUDAMultiWalkerMem : public Resource
   {
@@ -491,6 +494,17 @@ public:
       grad_now[iw] = {grads_value_v[iw][0], grads_value_v[iw][1], grads_value_v[iw][2]};
   }
 
+  template<typename GT>
+  static void mw_evalGradWithSpin(const RefVectorWithLeader<This_t>& engines,
+                                  const std::vector<const Value*>& dpsiM_row_list,
+                                  OffloadMatrix<Complex>& mw_dspin,
+                                  const int rowchanged,
+                                  std::vector<GT>& grad_now,
+                                  std::vector<Complex>& spingrad_now)
+  {
+    throw std::runtime_error("MatrixDelayedUpdateCUDA needs implementation of mw_evalGradWithSpin");
+  }
+
   /** Update the "local" psiMinv_ on the device.
    *  Side Effect Transfers:
    *  * phiV is left on host side in the single methods so it must be transferred to device
@@ -761,18 +775,25 @@ public:
     delay_count = 0;
   }
 
+/*
   inline void print_Ainv(const RefVector<This_t>& engines)
   {
     for (This_t& engine : engines)
     {
-      std::cout << "debug Ainv host  " << engine.get_psiMinv()[0][0] << " " << engine.get_psiMinv()[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
-      auto* temp_ptr = engine.psiMinv.data();
+      std::cout << "debug Ainv host  " << engine.get_psiMinv()[0][0] << " " << engine.get_psiMinv()[0][32] << " "
+                << engine.get_psiMinv()[1][0] << " " << engine.get_psiMinv()[1][32] << std::endl;
+      auto* temp_ptr = engine.get_psiMinv().data();
       PRAGMA_OFFLOAD("omp target update from(temp_ptr[:psiMinv_.size()])")
-      std::cout << "debug Ainv devi  " << engine.psiMinv[0][0] << " " << engine.psiMinv[0][1] << " "
-                << engine.psiMinv[1][0] << " " << engine.psiMinv[1][1] << std::endl;
+      std::cout << "debug Ainv devi";
+      for (size_t row = 0; row < psiMinv_.rows(); row++)
+      {
+        for (size_t col = 0; col < psiMinv_.cols(); col++)
+          std::cout << " " << row << " " << col << " " << engine.get_psiMinv()[row][col];
+        std::cout << std::endl;
+      }
     }
   }
+*/
 
   /** return invRow host or device pointers based on on_host request
    * prepare invRow if not already.

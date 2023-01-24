@@ -50,6 +50,9 @@ public:
     CHECK(md2.twist[2] == Approx(md.twist[2]));
     CHECK(md2.kPoints.size() == md.kPoints.size());
     CHECK(md.data_ != md2.data_);
+
+    MomentumDistribution md3(md, DataLocality::crowd);
+    CHECK(md3.get_data_locality() == DataLocality::crowd);
   }
 };
 } // namespace testing
@@ -74,7 +77,7 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   auto lattice = testing::makeTestLattice();
   Communicate* comm;
   comm = OHMMS::Controller;
-  outputManager.pause();
+
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
   auto& pset             = *(particle_pool.getParticleSet("e"));
@@ -95,8 +98,6 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
 
   MomentumDistributionTests mdt;
   mdt.testCopyConstructor(md);
-
-  outputManager.resume();
 }
 
 
@@ -207,5 +208,47 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   outputManager.resume();
 }
 
+TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
+{
+  // clang-format: off
+  const char* xml = R"(
+<estimator type="MomentumDistribution" name="nofk" samples="5" kmax="3"/>
+)";
+  // clang-format: on
+
+  // Read xml into input object
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(xml);
+  if (!okay)
+    throw std::runtime_error("cannot parse MomentumDistributionInput section");
+  xmlNodePtr node = doc.getRoot();
+  MomentumDistributionInput mdi(node);
+
+  // Instantiate other dependencies (internal QMCPACK objects)
+  auto lattice = testing::makeTestLattice();
+  Communicate* comm;
+  comm = OHMMS::Controller;
+
+  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto& pset             = *(particle_pool.getParticleSet("e"));
+  DataLocality dl        = DataLocality::crowd;
+
+  // Build from input
+  MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  
+  auto clone = md.spawnCrowdClone();
+  REQUIRE(clone != nullptr);
+  REQUIRE(clone.get() != &md);
+  REQUIRE(dynamic_cast<decltype(&md)>(clone.get()) != nullptr);
+  
+  // This check can be removed once a rank locality memory scheme is implemented
+  // for MomentumDistribution.  Then checks relevant to that should be added.
+  MomentumDistributionInput fail_mdi(node);
+  dl = DataLocality::rank;
+  MomentumDistribution fail_md(std::move(fail_mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
+  CHECK_THROWS_AS(clone = fail_md.spawnCrowdClone(), std::runtime_error);
+  
+}
 
 } // namespace qmcplusplus

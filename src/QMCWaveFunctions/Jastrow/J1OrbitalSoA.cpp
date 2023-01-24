@@ -76,6 +76,15 @@ template<typename FT>
 J1OrbitalSoA<FT>::~J1OrbitalSoA() = default;
 
 template<typename FT>
+void J1OrbitalSoA<FT>::checkSanity() const
+{
+  if (std::any_of(J1Functors.begin(), J1Functors.end(), [](auto* ptr) { return ptr == nullptr; }))
+    app_warning() << "One-body Jastrow \"" << my_name_ << "\" doesn't cover all the particle pairs. "
+                  << "Consider fusing multiple entries if they are of the same type for optimal code performance."
+                  << std::endl;
+}
+
+template<typename FT>
 void J1OrbitalSoA<FT>::createResource(ResourceCollection& collection) const
 {
   collection.addResource(std::make_unique<J1OrbitalSoAMultiWalkerMem<RealType>>());

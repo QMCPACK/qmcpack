@@ -119,7 +119,7 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
   if (hdf5_out)
   {
     std::vector<int> ndim(1, NumK);
-    h5desc.push_back({{name_}});
+    h5desc.emplace_back(hdf_path{name_});
     auto& h5o = h5desc.back();
     h5o.set_dimensions(ndim, my_index_);
 
@@ -128,7 +128,8 @@ void SkEstimator::registerCollectables(std::vector<ObservableHelper>& h5desc, hd
     kdims[1]          = OHMMS_DIM;
     std::string kpath = name_ + "/kpoints";
     hid_t k_space     = H5Screate_simple(2, kdims, NULL);
-    hid_t k_set       = H5Dcreate(file.getFileID(), kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT);
+    hid_t k_set =
+        H5Dcreate(file.getFileID(), kpath.c_str(), H5T_NATIVE_DOUBLE, k_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     hid_t mem_space   = H5Screate_simple(2, kdims, NULL);
     auto* ptr         = &(sourcePtcl->getSimulationCell().getKLists().kpts_cart[0][0]);
     herr_t ret        = H5Dwrite(k_set, H5T_NATIVE_DOUBLE, mem_space, k_space, H5P_DEFAULT, ptr);

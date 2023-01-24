@@ -207,12 +207,11 @@ bool ParticleSetPool::get(std::ostream& os) const
   os << "ParticleSetPool has: " << std::endl << std::endl;
   os.setf(std::ios::scientific, std::ios::floatfield);
   os.precision(14);
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while (it != it_end)
-  {
-    (*it).second->get(os);
-    ++it;
-  }
+  for (const auto& [name, pset] : myPool)
+    if (outputManager.isDebugActive())
+      pset->print(os, 0);
+    else
+      pset->print(os, 10 /* maxParticlesToPrint */);
   return true;
 }
 

@@ -165,10 +165,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.6170527168e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
@@ -333,10 +333,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.77926812569e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
@@ -500,10 +500,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.59769057565e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
@@ -639,10 +639,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.75211124679e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
@@ -779,10 +779,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
@@ -1038,10 +1038,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
@@ -1314,10 +1314,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.77926812569e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
@@ -1499,10 +1499,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.59769057565e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
@@ -1655,10 +1655,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
   REQUIRE(eloc == Approx(-1.75211124679e+01));
   REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));

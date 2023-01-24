@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-ObservableHelper::ObservableHelper(std::vector<std::string> title) : group_name(std::move(title)) {}
+ObservableHelper::ObservableHelper(hdf_path title) : group_name(std::move(title)) {}
 
 ObservableHelper::~ObservableHelper() = default;
 
@@ -37,8 +37,7 @@ void ObservableHelper::set_dimensions(const std::vector<int>& dims, int first)
 void ObservableHelper::addProperty(float& p, const std::string& pname, hdf_archive& file)
 {
   double p_DP(p);
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
   file.pop();
 }
@@ -46,43 +45,35 @@ void ObservableHelper::addProperty(float& p, const std::string& pname, hdf_archi
 void ObservableHelper::addProperty(Tensor<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file)
 {
   Tensor<double, OHMMS_DIM> p_DP(p);
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
-  for (size_t i{0}; i < group_name.size(); ++i)
-    file.pop();
+  file.pop();
 }
 
 void ObservableHelper::addProperty(Matrix<float>& p, const std::string& pname, hdf_archive& file)
 {
   Matrix<double> p_DP;
   p_DP = p;
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
-  for (size_t i{0}; i < group_name.size(); ++i)
-    file.pop();
+  file.pop();
 }
 
 void ObservableHelper::addProperty(TinyVector<float, OHMMS_DIM>& p, const std::string& pname, hdf_archive& file)
 {
   TinyVector<double, OHMMS_DIM> p_DP(p);
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
-  for (size_t i{0}; i < group_name.size(); ++i)
-    file.pop();
+  file.pop();
 }
 
 void ObservableHelper::addProperty(std::vector<float>& p, const std::string& pname, hdf_archive& file)
 {
   std::vector<double> p_DP;
   p_DP.assign(p.begin(), p.end());
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
-  for (size_t i{0}; i < group_name.size(); ++i)
-    file.pop();
+  file.pop();
 }
 
 void ObservableHelper::addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p,
@@ -91,11 +82,9 @@ void ObservableHelper::addProperty(std::vector<TinyVector<float, OHMMS_DIM>>& p,
 {
   std::vector<TinyVector<double, OHMMS_DIM>> p_DP;
   p_DP.assign(p.begin(), p.end());
-  for (auto& name : group_name)
-    file.push(name, true);
+  file.push(group_name, true);
   file.write(p_DP, pname);
-  for (size_t i{0}; i < group_name.size(); ++i)
-    file.pop();
+  file.pop();
 }
 
 void ObservableHelper::write(const value_type* const first_v, hdf_archive& file)
@@ -103,12 +92,9 @@ void ObservableHelper::write(const value_type* const first_v, hdf_archive& file)
   hsize_t rank = mydims.size();
   if (rank)
   {
-    hid_t g_id = -1;
-    for (auto& name : group_name)
-      g_id = file.push(name, true);
+    hid_t g_id = file.push(group_name, true);
     h5d_append(g_id, "value", current, rank, mydims.data(), first_v + lower_bound);
-    for (size_t i{0}; i < group_name.size(); ++i)
-      file.pop();
+    file.pop();
   }
 }
 

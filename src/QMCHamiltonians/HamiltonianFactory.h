@@ -60,7 +60,7 @@ public:
 private:
   /** process xmlNode to populate targetPsi
    */
-  bool build(xmlNodePtr cur, bool buildtree);
+  bool build(xmlNodePtr cur);
 
   void addCoulombPotential(xmlNodePtr cur);
   void addForceHam(xmlNodePtr cur);
@@ -77,8 +77,6 @@ private:
   const PSetMap& ptclPool;
   ///reference to the TrialWaveFunction Pool
   const PsiPoolType& psiPool;
-  ///input node for a many-body wavefunction
-  xmlNodePtr myNode;
 
   ///name of the TrialWaveFunction
   std::string psiName;

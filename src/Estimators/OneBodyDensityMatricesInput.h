@@ -97,6 +97,9 @@ public:
   using Position = QMCTraits::PosType;
   using Real     = QMCTraits::RealType;
 
+  /** default copy constructor
+   *  This is required due to OBDMI being part of a variant used as a vector element.
+   */
   OneBodyDensityMatricesInput(const OneBodyDensityMatricesInput&) = default;
   OneBodyDensityMatricesInput(xmlNodePtr cur);
 
