@@ -89,6 +89,7 @@ set(SPOSET_SRC
     test_CompositeSPOSet.cpp
     test_hybridrep.cpp
     test_pw.cpp
+    test_ConstantSPOSet.cpp
     ${MO_SRCS})
 set(JASTROW_SRC
     test_counting_jastrow.cpp

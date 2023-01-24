@@ -30,29 +30,70 @@ namespace qmcplusplus
 struct ConstantSPOSet : public SPOSet
 {
 public:
-  ConstantSPOSet(){};
-  ConstantSPOSet(ValueMatrix& vals)
+  ConstantSPOSet(const std::string& my_name): SPOSet(my_name)
   {
+  
+  };
+  
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals): SPOSet(my_name)
+  {
+    const int nrows = vals.rows();
+    const int ncols = vals.cols();
+    OrbitalSetSize = ncols;
+   
+    grad_.resize(nrows,ncols);
+    lapl_.resize(nrows,ncols);
+   
     psi_           = vals;
-    OrbitalSetSize = psi_.cols();
-  }
-  std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<ConstantSPOSet>(); };
+    grad_          =  0.0;
+    lapl_          =  0.0;
+  };
 
-
-  void checkInVariables(opt_variables_type& active) override
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads): SPOSet(my_name)
   {
-    APP_ABORT("ConstantSPOSet should not call checkInVariables");
+    const int nrows = vals.rows();
+    const int ncols = vals.cols();
+    OrbitalSetSize = ncols;
+    
+    assert(grads.rows()==nrows);
+    assert(grads.cols()==ncols);
+    
+    lapl_.resize(nrows,ncols);
+    
+    psi_           = vals;
+    grad_          = grads;
+    lapl_          =  0.0;
   }
+
+  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads, const ValueMatrix& lapls): SPOSet(my_name)
+  {
+    const int nrows = vals.rows();
+    const int ncols = vals.cols();
+    OrbitalSetSize = ncols;
+    
+    assert(grads.rows()==nrows);
+    assert(grads.cols()==ncols);
+    assert(lapls.rows()==nrows);
+    assert(lapls.cols()==ncols);
+    
+    psi_           = vals;
+    grad_          = grads;
+    lapl_          = lapls;
+  }
+
+  
+
+  std::unique_ptr<SPOSet> makeClone() const override 
+  { 
+    auto myclone = std::make_unique<ConstantSPOSet>(my_name_,psi_,grad_,lapl_);
+    return myclone; 
+  };
+
+  std::string getClassName() const override { return "ConstantSPOSet"; }
 
   void checkOutVariables(const opt_variables_type& active) override
   {
     APP_ABORT("ConstantSPOSet should not call checkOutVariables");
-  }
-
-  ///reset
-  void resetParameters(const opt_variables_type& active) override
-  {
-    APP_ABORT("ConstantSPOSet should not call resetParameters");
   }
 
   /** set the OrbitalSetSize and Identity=false and initialize internal storages
@@ -62,8 +103,7 @@ public:
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
-    if (psi.size() != OrbitalSetSize)
-      APP_ABORT("Borked");
+    assert(psi.size() == OrbitalSetSize);
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
       psi[iorb] = psi_(iat, iorb);
   };
@@ -71,10 +111,13 @@ public:
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    {
       psi[iorb] = psi_(iat, iorb);
-    dpsi  = 0.0;
-    d2psi = 0.0;
+      dpsi[iorb] = grad_(iat,iorb);
+      d2psi[iorb] = lapl_(iat,iorb);
+    }
   };
+
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,
@@ -82,9 +125,18 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override
   {
-    logdet = psi_;
-  };
+  //  using value_type = ValueMatrix::value_type;
+  //  using grad_type  = GradMatrix::value_type;
+    for (int iat = first, i = 0; iat < last; ++iat, ++i)
+    {
+      ValueVector v(logdet[i], logdet.cols());
+      GradVector g(dlogdet[i], dlogdet.cols());
+      ValueVector l(d2logdet[i], d2logdet.cols());
+      evaluateVGL(P, iat, v, g, l);
+    }
+  }
 
+  //We'll let evaluate_notranspose be handled by base class
 
 protected:
   ///number of Single-particle orbitals
@@ -92,6 +144,8 @@ protected:
 
 private:
   ValueMatrix psi_;
+  GradMatrix  grad_;
+  ValueMatrix lapl_;
 };
 } // namespace qmcplusplus
 #endif
