@@ -70,15 +70,15 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   CHECK(psiV[0] == row1[0]);
   CHECK(psiV[1] == row1[1]);
 
-  CHECK(psiG[0][0] == 0.0);
-  CHECK(psiG[0][1] == 0.0);
-  CHECK(psiG[0][2] == 0.0);
+  CHECK(psiG[0][0] == ValueType(0.0));
+  CHECK(psiG[0][1] == ValueType(0.0));
+  CHECK(psiG[0][2] == ValueType(0.0));
 
-  CHECK(psiG[1][0] == 0.0);
-  CHECK(psiG[1][1] == 0.0);
-  CHECK(psiG[1][2] == 0.0);
+  CHECK(psiG[1][0] == ValueType(0.0));
+  CHECK(psiG[1][1] == ValueType(0.0));
+  CHECK(psiG[1][2] == ValueType(0.0));
 
-  CHECK(psiL[0] == 0.0);
-  CHECK(psiL[1] == 0.0);
+  CHECK(psiL[0] == ValueType(0.0));
+  CHECK(psiL[1] == ValueType(0.0));
 }
 } // namespace qmcplusplus
