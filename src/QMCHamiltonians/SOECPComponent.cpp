@@ -33,7 +33,7 @@ void SOECPComponent::print(std::ostream& os) {}
 
 void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
-  assert(VP == nullptr);
+  assert(VP_ == nullptr);
   outputManager.pause();
   VP_ = new VirtualParticleSet(qp, total_knots_);
   outputManager.resume();
