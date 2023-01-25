@@ -66,7 +66,7 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   const SimulationCell simulation_cell;
   ParticleSet elec(simulation_cell);
 
-  elec.create({3});
+  elec.create({nelec});
 
   ValueVector psiV = {0.0, 0.0};
   ValueVector psiL = {0.0, 0.0};
@@ -74,7 +74,11 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   psiG.resize(norb);
 
   //Test of value only constructor.
-  auto sposet = std::make_unique<ConstantSPOSet>("constant_spo", spomat);
+  auto sposet = std::make_unique<ConstantSPOSet>("constant_spo", nelec, norb);
+  sposet->setRefVals(spomat);
+  sposet->setRefEGrads(gradspomat);
+  sposet->setRefELapls(laplspomat);
+
   sposet->evaluateValue(elec, 0, psiV);
 
   CHECK(psiV[0] == row0[0]);
@@ -89,48 +93,7 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
 
   psiV = 0.0;
 
-  sposet->evaluateVGL(elec, 1, psiV, psiG, psiL);
-  CHECK(psiV[0] == row1[0]);
-  CHECK(psiV[1] == row1[1]);
-
-  CHECK(psiG[0][0] == ValueType(0.0));
-  CHECK(psiG[0][1] == ValueType(0.0));
-  CHECK(psiG[0][2] == ValueType(0.0));
-
-  CHECK(psiG[1][0] == ValueType(0.0));
-  CHECK(psiG[1][1] == ValueType(0.0));
-  CHECK(psiG[1][2] == ValueType(0.0));
-
-  CHECK(psiL[0] == ValueType(0.0));
-  CHECK(psiL[1] == ValueType(0.0));
-
-  //Test of value and gradient constructor.
-  auto sposet_vg = std::make_unique<ConstantSPOSet>("constant_spo", spomat, gradspomat);
-  psiV=0;
-  psiG=0;
-  psiL=0;
-  sposet_vg->evaluateVGL(elec,1,psiV,psiG,psiL);
-   
-  CHECK(psiV[0] == row1[0]);
-  CHECK(psiV[1] == row1[1]);
-  
-  CHECK(psiG[0][0] == grow1[0][0]); 
-  CHECK(psiG[0][1] == grow1[0][1]); 
-  CHECK(psiG[0][2] == grow1[0][2]); 
-
-  CHECK(psiG[1][0] == grow1[1][0]); 
-  CHECK(psiG[1][1] == grow1[1][1]); 
-  CHECK(psiG[1][2] == grow1[1][2]); 
-
-  CHECK(psiL[0] == ValueType(0.0));
-  CHECK(psiL[1] == ValueType(0.0));
-
-  //Test of value, gradient, and laplacian constructor.
-  auto sposet_vgl = std::make_unique<ConstantSPOSet>("constant_spo", spomat, gradspomat,laplspomat);
-  psiV=0;
-  psiG=0;
-  psiL=0;
-  sposet_vgl->evaluateVGL(elec,1,psiV,psiG,psiL);
+  sposet->evaluateVGL(elec,1,psiV,psiG,psiL);
    
   CHECK(psiV[0] == row1[0]);
   CHECK(psiV[1] == row1[1]);
@@ -155,7 +118,7 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
 
   const int first_index=0; //Only 2 electrons in this case.  
   const int last_index=2; 
-  sposet_vgl->evaluate_notranspose(elec,first_index,last_index,phimat,gphimat,lphimat);
+  sposet->evaluate_notranspose(elec,first_index,last_index,phimat,gphimat,lphimat);
  
   CHECK(phimat[0][0] == row0[0]);
   CHECK(phimat[0][1] == row0[1]);
@@ -168,7 +131,7 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   CHECK(lphimat[1][1] == lrow1[1]);
 
   //Test of makeClone()
-  auto sposet_vgl2 = sposet_vgl->makeClone();
+  auto sposet_vgl2 = sposet->makeClone();
   phimat=0.0;
   gphimat=0.0;
   lphimat=0.0;

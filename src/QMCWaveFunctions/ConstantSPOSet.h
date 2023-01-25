@@ -24,58 +24,29 @@ struct ConstantSPOSet : public SPOSet
 {
 public:
   ConstantSPOSet(const std::string& my_name) = delete;
-
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals) : SPOSet(my_name)
+  
+  //Constructor needs number of particles and number of orbitals.  This is the minimum
+  //amount of information needed to sanely construct all data members and perform size
+  //checks later.  
+  ConstantSPOSet(const std::string& my_name, const int nparticles, const int norbitals): SPOSet(my_name), numparticles_(nparticles)
   {
-    const int nrows = vals.rows();
-    const int ncols = vals.cols();
-    OrbitalSetSize  = ncols;
-
-    grad_.resize(nrows, ncols);
-    lapl_.resize(nrows, ncols);
-
-    psi_  = vals;
-    grad_ = 0.0;
-    lapl_ = 0.0;
-  };
-
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads) : SPOSet(my_name)
-  {
-    const int nrows = vals.rows();
-    const int ncols = vals.cols();
-    OrbitalSetSize  = ncols;
-
-    assert(grads.rows() == nrows);
-    assert(grads.cols() == ncols);
-
-    lapl_.resize(nrows, ncols);
-
-    psi_  = vals;
-    grad_ = grads;
-    lapl_ = 0.0;
+    OrbitalSetSize = norbitals; 
+    ref_psi_.resize(numparticles_,OrbitalSetSize);
+    ref_egrad_.resize(numparticles_,OrbitalSetSize);
+    ref_elapl_.resize(numparticles_,OrbitalSetSize);
+    
+    ref_psi_ = 0.0;
+    ref_egrad_ = 0.0;
+    ref_elapl_ = 0.0;
+    
   }
-
-  ConstantSPOSet(const std::string& my_name, const ValueMatrix& vals, const GradMatrix& grads, const ValueMatrix& lapls)
-      : SPOSet(my_name)
-  {
-    const int nrows = vals.rows();
-    const int ncols = vals.cols();
-    OrbitalSetSize  = ncols;
-
-    assert(grads.rows() == nrows);
-    assert(grads.cols() == ncols);
-    assert(lapls.rows() == nrows);
-    assert(lapls.cols() == ncols);
-
-    psi_  = vals;
-    grad_ = grads;
-    lapl_ = lapls;
-  }
-
 
   std::unique_ptr<SPOSet> makeClone() const override
   {
-    auto myclone = std::make_unique<ConstantSPOSet>(my_name_, psi_, grad_, lapl_);
+    auto myclone = std::make_unique<ConstantSPOSet>(my_name_, numparticles_, OrbitalSetSize);
+    myclone->setRefVals(ref_psi_);
+    myclone->setRefEGrads(ref_egrad_);
+    myclone->setRefELapls(ref_elapl_);
     return myclone;
   };
 
@@ -88,21 +59,39 @@ public:
 
   void setOrbitalSetSize(int norbs) override { APP_ABORT("ConstantSPOSet should not call setOrbitalSetSize()"); }
 
+  void setRefVals(const ValueMatrix& vals)
+  { 
+    assert(vals.cols()==OrbitalSetSize);
+    assert(vals.rows()==numparticles_);
+    ref_psi_ = vals; 
+  };
+  void setRefEGrads(const GradMatrix& grads)
+  { 
+    assert(grads.cols()==OrbitalSetSize);
+    assert(grads.rows()==numparticles_);
+    ref_egrad_ = grads; 
+  };
+  void setRefELapls(const ValueMatrix& lapls)
+  { 
+    assert(lapls.cols()==OrbitalSetSize);
+    assert(lapls.rows()==numparticles_);
+    ref_elapl_ = lapls; 
+  };
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override
   {
     assert(psi.size() == OrbitalSetSize);
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
-      psi[iorb] = psi_(iat, iorb);
+      psi[iorb] = ref_psi_(iat, iorb);
   };
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
     {
-      psi[iorb]   = psi_(iat, iorb);
-      dpsi[iorb]  = grad_(iat, iorb);
-      d2psi[iorb] = lapl_(iat, iorb);
+      psi[iorb]   = ref_psi_(iat, iorb);
+      dpsi[iorb]  = ref_egrad_(iat, iorb);
+      d2psi[iorb] = ref_elapl_(iat, iorb);
     }
   };
 
@@ -125,9 +114,14 @@ public:
 
 protected:
 private:
-  ValueMatrix psi_;
-  GradMatrix grad_;
-  ValueMatrix lapl_;
+  int numparticles_;
+  
+  //Value, electron gradient, and electron laplacian at "reference configuration".  
+  //i.e. before any attempted moves.
+  
+  ValueMatrix ref_psi_;
+  GradMatrix ref_egrad_;
+  ValueMatrix ref_elapl_;
 };
 } // namespace qmcplusplus
 #endif
