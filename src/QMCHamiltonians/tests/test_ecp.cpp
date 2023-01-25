@@ -40,7 +40,7 @@
 
 namespace qmcplusplus
 {
-QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m_[l]->splint(r); }
 
 TEST_CASE("ReadFileBuffer_no_file", "[hamiltonian]")
 {
@@ -150,7 +150,7 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 }
 
 void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
-void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m = sopp.sgridxyz_m; }
+void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m_ = sopp.sgridxyz_m_; }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "========================================================================================"
 echo "First run : qmc_short_batch.s001.scalar.dat"

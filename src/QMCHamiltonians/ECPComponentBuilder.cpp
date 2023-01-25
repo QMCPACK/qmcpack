@@ -271,8 +271,8 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   pp_nonloc->resize_warrays(myRule.nk, NumNonLocal, Lmax);
   if (pp_so)
   { //added here bc must have nonlocal terms to have SO contributions
-    pp_so->sgridxyz_m    = myRule.xyz_m;
-    pp_so->sgridweight_m = myRule.weight_m;
+    pp_so->sgridxyz_m_    = myRule.xyz_m;
+    pp_so->sgridweight_m_ = myRule.weight_m;
     pp_so->resize_warrays(myRule.nk, NumSO, Srule);
   }
 }

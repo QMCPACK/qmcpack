@@ -51,88 +51,53 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
                                                                      const Vector<ValueType>& dlogpsi,
                                                                      Vector<ValueType>& dhpsioverpsi)
 {
-  if (sknot < 2)
+  if (sknot_ < 2)
     APP_ABORT("Spin knots must be greater than 2\n");
 
-  if (sknot % 2 != 0)
+  if (sknot_ % 2 != 0)
     APP_ABORT("Spin knots uses Simpson's rule. Must have even number of knots");
 
-  int total_knots = nknot * (sknot + 1);
-  deltaV.resize(total_knots);
-  deltaS.resize(total_knots);
-  wvec.resize(total_knots);
-  spin_quad_weights.resize(total_knots);
-  psiratio.resize(total_knots);
   const size_t num_vars = optvars.num_active_vars;
-  dratio.resize(total_knots, num_vars);
-  dlogpsi_vp.resize(dlogpsi.size());
-
-  auto addAngularQuadraturePoints = [&](const int is, const RealType r, const PosType& dr, RealType ds, RealType swt) {
-    for (int iq = 0; iq < nknot; iq++)
-    {
-      int offset     = is * nknot + iq;
-      deltaV[offset] = r * rrotsgrid_m[iq] - dr;
-      deltaS[offset] = ds;
-      //spin_norm is 1/(2pi), angular_norm is 4pi, so total norm is 2
-      spin_quad_weights[offset] = 2.0 * swt * sgridweight_m[iq];
-    }
-  };
-
-  RealType smin(0.0);
-  RealType smax(TWOPI);
-  RealType dS = (smax - smin) / sknot; //step size for spin
+  dratio_.resize(total_knots_, num_vars);
+  dlogpsi_vp_.resize(dlogpsi.size());
+  wvec_.resize(total_knots_);
 
   RealType sold = W.spins[iel];
-  ComplexType pairpot;
-  for (int is = 1; is <= sknot - 1; is += 2)
-  {
-    RealType snew = smin + is * dS;
-    addAngularQuadraturePoints(is, r, dr, snew - sold, RealType(4. / 3.) * dS);
-  }
-  for (int is = 2; is <= sknot - 2; is += 2)
-  {
-    RealType snew = smin + is * dS;
-    addAngularQuadraturePoints(is, r, dr, snew - sold, RealType(2. / 3.) * dS);
-  }
-  addAngularQuadraturePoints(0, r, dr, smin - sold, RealType(1. / 3.) * dS);
-  addAngularQuadraturePoints(sknot, r, dr, smax - sold, RealType(1. / 3.) * dS);
+  buildTotalQuadrature(r, dr, sold);
 
   //Now we have all the spin and spatial quadrature points acculated to use in evaluation
   //Now we need to obtain dlogpsi and dlogpsi_vp
-  if (VP)
+  if (VP_)
   {
     // Compute ratios with VP
-    VP->makeMovesWithSpin(W, iel, deltaV, deltaS, true, iat);
-    Psi.evaluateDerivRatios(*VP, optvars, psiratio, dratio);
+    VP_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
+    Psi.evaluateDerivRatios(*VP_, optvars, psiratio_, dratio_);
   }
   else
-  {
-    for (int iq = 0; iq < total_knots; iq++)
+    for (int iq = 0; iq < total_knots_; iq++)
     {
-      PosType pos_now   = W.R[iel];
-      RealType spin_now = W.spins[iel];
-      W.makeMoveWithSpin(iel, deltaV[iq], deltaS[iq]);
-      psiratio[iq] = Psi.calcRatio(W, iel);
+      PosType posold = W.R[iel];
+      W.makeMoveWithSpin(iel, deltaV_[iq], deltaS_[iq]);
+      psiratio_[iq] = Psi.calcRatio(W, iel);
       Psi.acceptMove(W, iel);
       W.acceptMove(iel);
 
-      //use existing methods
-      std::fill(dlogpsi_vp.begin(), dlogpsi_vp.end(), 0.0);
-      Psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp);
-      for (int v = 0; v < dlogpsi_vp.size(); ++v)
-        dratio(iq, v) = dlogpsi_vp[v] - dlogpsi[v];
+      std::fill(dlogpsi_vp_.begin(), dlogpsi_vp_.end(), 0.0);
+      Psi.evaluateDerivativesWF(W, optvars, dlogpsi_vp_);
+      for (int v = 0; v < dlogpsi_vp_.size(); ++v)
+        dratio_(iq, v) = dlogpsi_vp_[v] - dlogpsi[v];
 
-      W.makeMoveWithSpin(iel, -deltaV[iq], -deltaS[iq]);
+      W.makeMoveWithSpin(iel, -deltaV_[iq], -deltaS_[iq]);
       Psi.calcRatio(W, iel);
       Psi.acceptMove(W, iel);
       W.acceptMove(iel);
     }
-  }
 
-  for (int iq = 0; iq < total_knots; iq++)
+  ComplexType pairpot;
+  for (int iq = 0; iq < total_knots_; iq++)
   {
     ComplexType lsum;
-    for (int il = 0; il < nchannel; il++)
+    for (int il = 0; il < nchannel_; il++)
     {
       int l = il + 1;
       ComplexType msums;
@@ -143,15 +108,18 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
         {
           ComplexType ldots;
           for (int id = 0; id < 3; id++)
-            ldots += lmMatrixElements(l, m1, m2, id) * sMatrixElements(W.spins[iel], W.spins[iel] + deltaS[iq], id);
-          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m[iq % (sknot + 1)]));
+            ldots += lmMatrixElements(l, m1, m2, id) * sMatrixElements(W.spins[iel], W.spins[iel] + deltaS_[iq], id);
+          ComplexType cY = std::conj(sphericalHarmonic(l, m2, rrotsgrid_m_[iq % nknot_]));
           msums += Y * cY * ldots;
         }
       }
-      lsum += sopp_m[il]->splint(r) * msums;
+      lsum += sopp_m_[il]->splint(r) * msums;
     }
-    pairpot += psiratio[iq] * spin_quad_weights[iq];
+    wvec_[iq] = lsum * psiratio_[iq] * spin_quad_weights_[iq];
+    pairpot += wvec_[iq];
   }
+
+  BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, wvec_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
 
   return std::real(pairpot);
 }
