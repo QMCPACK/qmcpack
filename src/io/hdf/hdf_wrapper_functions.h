@@ -47,7 +47,7 @@ inline bool getDataShape(hid_t grp, const std::string& aname, std::vector<IT>& s
   using TSpaceType = h5_space_type<T, 0>;
   TSpaceType TSpace;
 
-  hid_t h1        = H5Dopen(grp, aname.c_str());
+  hid_t h1        = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   hid_t dataspace = H5Dget_space(h1);
   int rank        = H5Sget_simple_extent_ndims(dataspace);
 
@@ -124,7 +124,7 @@ inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_p
 {
   if (grp < 0)
     return true;
-  hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   if (h1 < 0)
     return false;
   hid_t h5d_type_id = get_h5_datatype(*first);
@@ -144,12 +144,12 @@ inline bool h5d_write(hid_t grp,
   if (grp < 0)
     return true;
   hid_t h5d_type_id = get_h5_datatype(*first);
-  hid_t h1          = H5Dopen(grp, aname.c_str());
+  hid_t h1          = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   herr_t ret        = -1;
   if (h1 < 0) //missing create one
   {
     hid_t dataspace = H5Screate_simple(ndims, dims, NULL);
-    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ret             = H5Dwrite(dataset, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
     H5Sclose(dataspace);
     H5Dclose(dataset);
@@ -180,7 +180,7 @@ bool h5d_read(hid_t grp,
 {
   if (grp < 0)
     return true;
-  hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   if (h1 < 0)
     return false;
   //herr_t ret = H5Dread(h1, h5d_type_id, H5S_ALL, H5S_ALL, xfer_plist, first);
@@ -223,7 +223,7 @@ inline bool h5d_write(hid_t grp,
   if (grp < 0)
     return true;
   hid_t h5d_type_id = get_h5_datatype(*first);
-  hid_t h1          = H5Dopen(grp, aname.c_str());
+  hid_t h1          = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   hid_t filespace, memspace;
   herr_t ret = -1;
 
@@ -231,7 +231,7 @@ inline bool h5d_write(hid_t grp,
   if (h1 < 0) //missing create one
   {
     hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
-    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     hid_t filespace = H5Dget_space(dataset);
     ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
@@ -276,7 +276,7 @@ bool h5d_read(hid_t grp,
 {
   if (grp < 0)
     return true;
-  hid_t h1 = H5Dopen(grp, aname.c_str());
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   if (h1 < 0)
     return false;
 
@@ -320,14 +320,14 @@ inline bool h5d_write(hid_t grp,
             << *(mem_gcounts + 2) << " " << *mem_counts << " " << *(mem_counts + 1) << " " << *(mem_counts + 2) << " "
             << *mem_offsets << " " << *(mem_offsets + 1) << " " << *(mem_offsets + 2) << " " << std::endl;
   hid_t h5d_type_id = get_h5_datatype(*first);
-  hid_t h1          = H5Dopen(grp, aname.c_str());
+  hid_t h1          = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   herr_t ret        = -1;
 
   const std::vector<hsize_t> ones(std::max(ndims, mem_ndims), 1);
   if (h1 < 0) //missing create one
   {
     hid_t dataspace = H5Screate_simple(ndims, gcounts, NULL);
-    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT);
+    hid_t dataset   = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
     hid_t filespace = H5Dget_space(dataset);
     ret             = H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offsets, NULL, ones.data(), counts);
@@ -373,7 +373,7 @@ inline bool h5d_append(hid_t grp,
   hid_t h5d_type_id = get_h5_datatype(*first);
   hid_t dataspace;
   hid_t memspace;
-  hid_t dataset = H5Dopen(grp, aname.c_str());
+  hid_t dataset = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   std::vector<hsize_t> max_dims(ndims);
   max_dims[0] = H5S_UNLIMITED;
   for (int d = 1; d < ndims; ++d)
@@ -397,7 +397,7 @@ inline bool h5d_append(hid_t grp,
     // set chunk size
     hid_t cs = H5Pset_chunk(p, ndims, chunk_dims.data());
     // create the dataset
-    dataset = H5Dcreate2(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, p, H5P_DEFAULT);
+    dataset = H5Dcreate(grp, aname.c_str(), h5d_type_id, dataspace, H5P_DEFAULT, p, H5P_DEFAULT);
     // create memory dataspace, size of current buffer
     memspace = H5Screate_simple(ndims, dims, NULL);
     // write the data for the first time
@@ -438,7 +438,7 @@ inline bool h5d_append(hid_t grp,
     start[0] = current;
     end[0]   = start[0] + dims[0];
     //extend the dataset (file)
-    herr_t he = H5Dextend(dataset, end.data());
+    herr_t he = H5Dset_extent(dataset, end.data());
     //get the corresponding dataspace (filespace)
     dataspace = H5Dget_space(dataset);
     //set the extent

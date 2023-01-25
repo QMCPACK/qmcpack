@@ -224,6 +224,8 @@ public:
     J1UniqueFunctors[source_type] = std::move(afunc);
   }
 
+  void checkSanity() const override;
+
   const auto& getFunctors() const { return J1Functors; }
 
   void createResource(ResourceCollection& collection) const override;
@@ -588,7 +590,7 @@ public:
       const size_t ns = d_table.sources();
       const size_t nt = VP.getTotalNum();
 
-      const auto& dist_ref = VP.refPS.getDistTableAB(myTableID).getDistRow(VP.refPtcl);
+      const auto& dist_ref = VP.getRefPS().getDistTableAB(myTableID).getDistRow(VP.refPtcl);
 
       for (size_t i = 0; i < ns; ++i)
       {

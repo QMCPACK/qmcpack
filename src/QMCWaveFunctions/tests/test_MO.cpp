@@ -263,7 +263,7 @@ void test_Ne(bool transform)
     std::vector<SPOSet::ValueType> ratios2(2);
     newpos2[0] = disp;
     newpos2[1] = -disp;
-    VP.makeMoves(0, elec.R[0], newpos2);
+    VP.makeMoves(elec, 0, newpos2);
     sposet->evaluateDetRatios(VP, phi, phiinv, ratios2);
     CHECK(ratios2[0] == Approx(-0.504163137)); // values[0] * phiinv[0]
     CHECK(ratios2[1] == Approx(-0.504163137)); // symmetric move

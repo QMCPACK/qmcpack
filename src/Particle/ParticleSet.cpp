@@ -272,8 +272,7 @@ void ParticleSet::randomizeFromSource(ParticleSet& src)
   }
 }
 
-///write to a std::ostream
-bool ParticleSet::get(std::ostream& os) const
+void ParticleSet::print(std::ostream& os, const size_t maxParticlesToPrint) const
 {
   os << "  ParticleSet '" << getName() << "' contains " << TotalNum << " particles : ";
   if (auto& group_offsets(*group_offsets_); group_offsets.size() > 0)
@@ -281,8 +280,7 @@ bool ParticleSet::get(std::ostream& os) const
       os << " " << my_species_.speciesName[i] << "(" << group_offsets[i + 1] - group_offsets[i] << ")";
   os << std::endl << std::endl;
 
-  const size_t maxParticlesToPrint = 10;
-  size_t numToPrint                = std::min(TotalNum, maxParticlesToPrint);
+  const size_t numToPrint = maxParticlesToPrint == 0 ? TotalNum : std::min(TotalNum, maxParticlesToPrint);
 
   for (int i = 0; i < numToPrint; i++)
   {
@@ -297,13 +295,10 @@ bool ParticleSet::get(std::ostream& os) const
   for (const std::string& description : distTableDescriptions)
     os << description;
   os << std::endl;
-  return true;
 }
 
-///read from std::istream
+bool ParticleSet::get(std::ostream& is) const { return true; }
 bool ParticleSet::put(std::istream& is) { return true; }
-
-///reset member data
 void ParticleSet::reset() { app_log() << "<<<< going to set properties >>>> " << std::endl; }
 
 ///read the particleset

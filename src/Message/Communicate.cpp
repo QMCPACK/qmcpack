@@ -37,10 +37,6 @@ Communicate* OHMMS::Controller = new Communicate;
 //default constructor: ready for a serial execution
 Communicate::Communicate() : myMPI(MPI_COMM_NULL), d_mycontext(0), d_ncontexts(1), d_groupid(0), d_ngroups(1) {}
 
-#ifdef HAVE_MPI
-Communicate::Communicate(const mpi3::environment& env) { initialize(env); }
-#endif
-
 Communicate::~Communicate() = default;
 
 //exclusive:  MPI or Serial
@@ -81,17 +77,6 @@ Communicate::Communicate(const Communicate& in_comm, int nparts)
     GroupLeaderComm = std::make_unique<Communicate>(leader_comm);
   else
     GroupLeaderComm.reset();
-}
-
-
-void Communicate::initialize(const mpi3::environment& env)
-{
-  comm        = env.get_world_instance();
-  myMPI       = comm.get();
-  d_mycontext = comm.rank();
-  d_ncontexts = comm.size();
-  d_groupid   = 0;
-  d_ngroups   = 1;
 }
 
 // For unit tests until they can be changed and this will be removed.

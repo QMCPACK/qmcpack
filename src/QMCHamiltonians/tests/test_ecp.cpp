@@ -40,7 +40,7 @@
 
 namespace qmcplusplus
 {
-QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m[l]->splint(r); }
+QMCTraits::RealType getSplinedSOPot(SOECPComponent* so_comp, int l, double r) { return so_comp->sopp_m_[l]->splint(r); }
 
 TEST_CASE("ReadFileBuffer_no_file", "[hamiltonian]")
 {
@@ -150,7 +150,7 @@ TEST_CASE("ReadFileBuffer_reopen", "[hamiltonian]")
 }
 
 void copyGridUnrotatedForTest(NonLocalECPComponent& nlpp) { nlpp.rrotsgrid_m = nlpp.sgridxyz_m; }
-void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m = sopp.sgridxyz_m; }
+void copyGridUnrotatedForTest(SOECPComponent& sopp) { sopp.rrotsgrid_m_ = sopp.sgridxyz_m_; }
 
 TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 {
@@ -472,6 +472,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   elec.setName("e");
+  elec.setSpinor(true);
   elec.create({1});
   elec.R[0][0]  = 0.138;
   elec.R[0][1]  = -0.24;
@@ -536,21 +537,28 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
 
-  RealType Value1(0.0);
 
-  for (int jel = 0; jel < elec.getTotalNum(); jel++)
-  {
-    const auto& dist  = myTable.getDistRow(jel);
-    const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < ions.getTotalNum(); iat++)
+  auto test_evaluateOne = [&]() {
+    RealType Value1(0.0);
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
     {
-      if (sopp != nullptr && dist[iat] < sopp->getRmax())
-      {
-        Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
-      }
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (sopp != nullptr && dist[iat] < sopp->getRmax())
+          Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
+    REQUIRE(Value1 == Approx(-0.3214176962));
+  };
+
+  {
+    //test with VPs
+    sopp->initVirtualParticle(elec);
+    test_evaluateOne();
+    sopp->deleteVirtualParticle();
+    //test without VPs
+    test_evaluateOne();
   }
-  REQUIRE(Value1 == Approx(-0.3214176962));
 }
 #endif
 

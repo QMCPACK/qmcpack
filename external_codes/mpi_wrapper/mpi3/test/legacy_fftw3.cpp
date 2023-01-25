@@ -1,7 +1,7 @@
-#ifdef COMPILATION_INSTRUCTIONS
-(echo '#include"'$0'"'>$0.cpp)&&mpic++ $0 -o $0x -lfftw3_mpi -lfftw3 -lboost_unit_test_framework&&mpirun -n 4 $0x&&rm $0x $0.cpp;exit
-#endif
-// © Alfredo A. Correa 2020
+//#ifdef COMPILATION_INSTRUCTIONS
+//(echo '#include"'$0'"'>$0.cpp)&&mpic++ $0 -o $0x -lfftw3_mpi -lfftw3 -lboost_unit_test_framework&&mpirun -n 4 $0x&&rm $0x $0.cpp;exit
+//#endif
+// Copyright 2018-2021 Alfredo A. Correa
 
 #include<fftw3-mpi.h>
 
@@ -20,7 +20,7 @@ std::complex<double> myf_y(ptrdiff_t i, ptrdiff_t j){
 
 namespace mpi3 = boost::mpi3;
 
-int mpi3::main(int argc, char **argv, mpi3::communicator world){
+int mpi3::main(int argc, char **argv, mpi3::communicator world) {
 	fftw_mpi_init();
 
 	/* get local data size and allocate */
@@ -60,6 +60,6 @@ int mpi3::main(int argc, char **argv, mpi3::communicator world){
 	}
 	fftw_destroy_plan(plan);
 
+	fftw_mpi_cleanup();
 	return 0;
 }
-

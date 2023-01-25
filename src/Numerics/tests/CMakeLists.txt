@@ -25,7 +25,8 @@ set(UTEST_SRCS
     test_min_oned.cpp
     test_OneDimCubicSplineLinearGrid.cpp
     test_one_dim_cubic_spline.cpp
-    test_Quadrature.cpp)
+    test_Quadrature.cpp
+    test_RotationMatrix3D.cpp)
 
 # Run gen_gto.py to create these files.  They may take a long time to compile.
 #SET(UTEST_SRCS ${UTEST_SRCS} test_full_cartesian_tensor.cpp test_full_soa_cartesian_tensor.cpp)

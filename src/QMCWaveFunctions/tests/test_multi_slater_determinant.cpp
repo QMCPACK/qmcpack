@@ -98,7 +98,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   twf.evaluateLog(elec_);
 
   app_log() << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
-             << std::endl;
+            << std::endl;
   CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
         LogComplexApprox(std::complex<double>(-7.646027846242066, 3.141592653589793)));
   CHECK(elec_.G[0][0] == ValueApprox(-2.181896934));
@@ -174,7 +174,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
     std::vector<ValueType> ratios2(2);
     newpos2[0] = newpos - elec_.R[1];
     newpos2[1] = PosType(0.2, 0.5, 0.3) - elec_.R[1];
-    VP.makeMoves(1, elec_.R[1], newpos2);
+    VP.makeMoves(elec_, 1, newpos2);
     twf.evaluateRatios(VP, ratios2);
 
     CHECK(std::real(ratios2[0]) == Approx(-0.8544310407));
@@ -205,7 +205,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
     twf.evaluateLog(elec_);
 
     app_log() << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
-               << std::endl;
+              << std::endl;
     CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
           LogComplexApprox(std::complex<double>(-7.803347327300154, 0.0)));
     CHECK(elec_.G[0][0] == ValueApprox(1.63020975849953));
@@ -244,9 +244,9 @@ void test_LiH_msd(const std::string& spo_xml_string,
     ParticleSet::mw_update(p_ref_list);
     TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
     app_log() << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi() << " "
-               << wf_ref_list[0].getPhase() << std::endl;
+              << wf_ref_list[0].getPhase() << std::endl;
     app_log() << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi() << " "
-               << wf_ref_list[1].getPhase() << std::endl;
+              << wf_ref_list[1].getPhase() << std::endl;
     CHECK(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-7.803347327300153, 0.0)));
     CHECK(std::complex<RealType>(wf_ref_list[1].getLogPsi(), wf_ref_list[1].getPhase()) ==
@@ -450,7 +450,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   //Reference values from QWalk with SOC
 
   app_log() << "twf.evaluateLog logpsi " << std::setprecision(16) << twf.getLogPsi() << " " << twf.getPhase()
-             << std::endl;
+            << std::endl;
   CHECK(std::complex<double>(twf.getLogPsi(), twf.getPhase()) ==
         LogComplexApprox(std::complex<double>(-9.653087, 3.311467)));
 

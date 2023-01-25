@@ -199,9 +199,7 @@ sycl::event transpose(sycl::queue& q,
 
   return q.submit([&](sycl::handler& cgh) {
     cgh.depends_on(events);
-    sycl::accessor<T2, 2, sycl::access::mode::write, sycl::access::target::local> tile(sycl::range<2>(tile_size,
-                                                                                                      tile_size + 1),
-                                                                                       cgh);
+    sycl::local_accessor<T2, 2> tile(sycl::range<2>(tile_size, tile_size + 1), cgh);
 
     cgh.parallel_for(sycl::nd_range<2>{{m_max, n_max}, {tile_size, tile_size}}, [=](sycl::nd_item<2> item) {
       unsigned x   = item.get_global_id(1);

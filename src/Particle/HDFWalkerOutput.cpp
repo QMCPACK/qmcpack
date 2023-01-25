@@ -56,12 +56,10 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
       number_of_particles_(num_ptcls),
       myComm(c),
       currentConfigNumber(0),
-      RootName(aroot)
+      RootName(aroot),
+      RemoteData(2)
 //       , fw_out(myComm)
 {
-  RemoteData.reserve(4);
-  RemoteData.push_back(new BufferType);
-  RemoteData.push_back(new BufferType);
   block = -1;
   //     //FileName=myComm->getName()+hdf::config_ext;
   //     //ConfigFileName=myComm->getName()+".storeConfig.h5";
@@ -75,11 +73,7 @@ HDFWalkerOutput::HDFWalkerOutput(size_t num_ptcls, const std::string& aroot, Com
 }
 
 /** Destructor writes the state of random numbers and close the file */
-HDFWalkerOutput::~HDFWalkerOutput()
-{
-  //     fw_out.close();
-  delete_iter(RemoteData.begin(), RemoteData.end());
-}
+HDFWalkerOutput::~HDFWalkerOutput() = default;
 
 /** Write the set of walker configurations to the HDF5 file.
  * @param W set of walker configurations
@@ -125,8 +119,8 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
   const int wb = OHMMS_DIM * number_of_particles_;
   if (nblock > block)
   {
-    RemoteData[0]->resize(wb * W.getActiveWalkers());
-    W.putConfigurations(RemoteData[0]->data());
+    RemoteData[0].resize(wb * W.getActiveWalkers());
+    W.putConfigurations(RemoteData[0].data());
     block = nblock;
   }
 
@@ -160,7 +154,7 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
     { // write walker configuration
       std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()]), 0, 0};
-      hyperslab_proxy<BufferType, 3> slab(*RemoteData[0], gcounts, counts, offsets);
+      hyperslab_proxy<BufferType, 3> slab(RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);
     }
   }
@@ -176,11 +170,11 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
         displ[i]  = wb * W.WalkerOffsets[i];
       }
       if (!myComm->rank())
-        RemoteData[1]->resize(wb * W.WalkerOffsets[myComm->size()]);
-      mpi::gatherv(*myComm, *RemoteData[0], *RemoteData[1], counts, displ);
+        RemoteData[1].resize(wb * W.WalkerOffsets[myComm->size()]);
+      mpi::gatherv(*myComm, RemoteData[0], RemoteData[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
-    hout.writeSlabReshaped(*RemoteData[buffer_id], gcounts, hdf::walkers);
+    hout.writeSlabReshaped(RemoteData[buffer_id], gcounts, hdf::walkers);
   }
 }
 

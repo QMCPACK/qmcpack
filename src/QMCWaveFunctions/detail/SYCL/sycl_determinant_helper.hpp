@@ -16,13 +16,13 @@
 
 #include <complex>
 #include <vector>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 
 namespace qmcplusplus
 {
 template<typename T>
 sycl::event applyW_stageV_sycl(sycl::queue& aq,
-                               const std::vector<cl::sycl::event>& dependencies,
+                               const std::vector<sycl::event>& dependencies,
                                const int* delay_list_gpu,
                                const int delay_count,
                                T* temp_gpu,
@@ -37,7 +37,7 @@ std::complex<T> computeLogDet_sycl(sycl::queue& aq,
                                    int lda,
                                    const TMAT* a,
                                    const INDEX* pivot,
-                                   const std::vector<cl::sycl::event>& dependencies = {});
+                                   const std::vector<sycl::event>& dependencies = {});
 
 } // namespace qmcplusplus
 #endif

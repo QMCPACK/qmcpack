@@ -108,17 +108,7 @@ struct VariableSet
    *
    * If vname is not found in this variables, return -1;
    */
-  inline int getIndex(const std::string& vname) const
-  {
-    int loc = 0;
-    while (loc != NameAndValue.size())
-    {
-      if (NameAndValue[loc].first == vname)
-        return Index[loc];
-      ++loc;
-    }
-    return -1;
-  }
+  int getIndex(const std::string& vname) const;
 
   /* return the NameAndValue index for the named parameter
    * @ param vname name of the variable

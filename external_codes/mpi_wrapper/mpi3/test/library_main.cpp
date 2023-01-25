@@ -1,10 +1,10 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ library_check.cpp library_main.cpp
-#mpic++ -c library_check.cpp
-#ar rcs liblibrary_check.a library_check.o
-#mpic++ library_main.cpp -o library_main.x -L. -llibrary_check
-mpirun -n 4 ./library_main.x;exit
-#endif
+//#if COMPILATION_INSTRUCTIONS
+//mpic++ library_check.cpp library_main.cpp
+//#mpic++ -c library_check.cpp
+//#ar rcs liblibrary_check.a library_check.o
+//#mpic++ library_main.cpp -o library_main.x -L. -llibrary_check
+//mpirun -n 4 ./library_main.x;exit
+//#endif
 // Compile-time test that all functions are appropriately declared 'inline' and
 // will not give multiple definition errors
 
@@ -24,11 +24,12 @@ namespace mpi3 = boost::mpi3;
 // defined in library_check.cpp
 void do_broadcast(mpi3::communicator& c);
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int try{
 	int b = 1;
 	world.broadcast_value(b);
 	do_broadcast(world);
 
 	return 0;
+}catch(...){
+	return 1;
 }
-

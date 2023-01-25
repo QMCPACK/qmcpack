@@ -38,7 +38,8 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+
   const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();

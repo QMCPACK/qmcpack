@@ -25,7 +25,7 @@
 #include <stdexcept>
 #include <atomic>
 #include <limits>
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #include "config.h"
 #include "allocator_traits.hpp"
 #include "SYCLruntime.hpp"

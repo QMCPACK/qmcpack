@@ -1,7 +1,3 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors $0 -o $0x.x && time mpirun -n 4 $0x.x $@ && rm -f $0x.x; exit
-#endif
-
 #include "../../mpi3/main.hpp"
 #include "../../mpi3/communicator.hpp"
 #include "../../mpi3/error_handler.hpp"
@@ -9,12 +5,12 @@ mpic++ -O3 -std=c++14 -Wall -Wextra -Wfatal-errors $0 -o $0x.x && time mpirun -n
 namespace mpi3 = boost::mpi3;
 using std::cout;
 
-int mpi3::main(int, char*[], mpi3::communicator world){
+auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world)->int try{
 
 	world.set_error_handler(mpi3::error_handler::code); // default, internal function returns codes
 	double d = 5.;
 	try{
-		world.send(&d, &d + 1, 100);
+		world.send_n(&d, 1, 100);
 	}catch(...){
 		cout << "catched exception" << std::endl;
 		return 0;
@@ -24,5 +20,4 @@ int mpi3::main(int, char*[], mpi3::communicator world){
 //	world.send(&d, &d + 1, 100);
 
 	return 1;
-}
-
+} catch(...) {return 911;}
