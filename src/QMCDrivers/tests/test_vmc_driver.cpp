@@ -105,19 +105,19 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = vmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec[0]->R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
-  REQUIRE(elec.R[1][2] == Approx(1.0));
+  CHECK(elec.R[1][0] == Approx(0.0));
+  CHECK(elec.R[1][1] == Approx(-0.372329741105903));
+  CHECK(elec.R[1][2] == Approx(1.0));
 }
 
 TEST_CASE("SOVMC", "[drivers][vmc]")
@@ -188,23 +188,23 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = vmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec.R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec.R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+  CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 
   //Now we're going to test that the step updated the walker variables.
-  REQUIRE(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
-  REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
-  REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
-  REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+  CHECK(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
+  CHECK(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
+  CHECK(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
+  CHECK(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
 }
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
@@ -276,22 +276,22 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = vmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec.R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec.R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+  CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 
   //Now we're going to test that the step updated the walker variables.
-  REQUIRE(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
-  REQUIRE(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
-  REQUIRE(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
-  REQUIRE(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+  CHECK(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
+  CHECK(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
+  CHECK(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
+  CHECK(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
 }
 } // namespace qmcplusplus

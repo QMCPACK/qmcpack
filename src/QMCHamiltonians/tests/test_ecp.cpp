@@ -119,9 +119,9 @@ TEST_CASE("ReadFileBuffer_sorep", "[hamiltonian]")
     double so_d_val = getSplinedSOPot(ecp.pp_so.get(), 1, r);
     double so_f_val = getSplinedSOPot(ecp.pp_so.get(), 2, r);
 
-    REQUIRE(so_p_val == Approx(so_p_ref));
-    REQUIRE(so_d_val == Approx(so_d_ref));
-    REQUIRE(so_f_val == Approx(so_f_ref));
+    CHECK(so_p_val == Approx(so_p_ref));
+    CHECK(so_d_val == Approx(so_d_ref));
+    CHECK(so_f_val == Approx(so_f_ref));
   }
 
   // TODO: add more checks that pseudopotential file was read correctly
@@ -285,7 +285,7 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
   double logpsi = psi.evaluateLog(elec);
-  REQUIRE(logpsi == Approx(5.1497823982));
+  CHECK(logpsi == Approx(5.1497823982));
 
   auto test_evaluateOne = [&]() {
     double Value1(0.0);
@@ -321,17 +321,17 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
-    REQUIRE(std::real(dlogpsi[0]) == Approx(-0.2211666667));
-    REQUIRE(std::real(dlogpsi[2]) == Approx(-0.1215));
-    REQUIRE(std::real(dlogpsi[3]) == Approx(0.0));
-    REQUIRE(std::real(dlogpsi[9]) == Approx(-0.0853333333));
-    REQUIRE(std::real(dlogpsi[10]) == Approx(-0.745));
+    CHECK(std::real(dlogpsi[0]) == Approx(-0.2211666667));
+    CHECK(std::real(dlogpsi[2]) == Approx(-0.1215));
+    CHECK(std::real(dlogpsi[3]) == Approx(0.0));
+    CHECK(std::real(dlogpsi[9]) == Approx(-0.0853333333));
+    CHECK(std::real(dlogpsi[10]) == Approx(-0.745));
 
-    REQUIRE(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
-    REQUIRE(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
-    REQUIRE(std::real(dhpsioverpsi[3]) == Approx(0.0));
-    REQUIRE(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
-    REQUIRE(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
+    CHECK(std::real(dhpsioverpsi[0]) == Approx(-0.6463306581));
+    CHECK(std::real(dhpsioverpsi[2]) == Approx(1.5689981479));
+    CHECK(std::real(dhpsioverpsi[3]) == Approx(0.0));
+    CHECK(std::real(dhpsioverpsi[9]) == Approx(0.279561213));
+    CHECK(std::real(dhpsioverpsi[10]) == Approx(-0.3968828778));
 
     double Value1 = 0.0;
     //Using SoA distance tables, hence the guard.
@@ -387,8 +387,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   //  These numbers assume the Hellman Feynmann implementation is correct, and dump the values
   //  when a one body term is added in.
 
-  REQUIRE(Value2 == Approx(6.9015710211e-02));
-  REQUIRE(Value3 == Approx(6.9015710211e-02));
+  CHECK(Value2 == Approx(6.9015710211e-02));
+  CHECK(Value3 == Approx(6.9015710211e-02));
 
   //The total force (HFTerm+PulayTerm) is validated against finite difference of nonlocal PP w.r.t
   //ion coordinates. delta=1e-6.  Should be good up to 7th or 8th sig fig. These are:
@@ -399,26 +399,26 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   // F[1][1]= 0
   // F[1][2]= 0
 
-  REQUIRE(HFTerm[0][0] == Approx(-0.3557369031));
-  REQUIRE(HFTerm[0][1] == Approx(0.0));
-  REQUIRE(HFTerm[0][2] == Approx(0.0));
-  REQUIRE(HFTerm[1][0] == Approx(0.001068673105));
-  REQUIRE(HFTerm[1][1] == Approx(0.0));
-  REQUIRE(HFTerm[1][2] == Approx(0.0));
+  CHECK(HFTerm[0][0] == Approx(-0.3557369031));
+  CHECK(HFTerm[0][1] == Approx(0.0));
+  CHECK(HFTerm[0][2] == Approx(0.0));
+  CHECK(HFTerm[1][0] == Approx(0.001068673105));
+  CHECK(HFTerm[1][1] == Approx(0.0));
+  CHECK(HFTerm[1][2] == Approx(0.0));
 
-  REQUIRE(HFTerm2[0][0] == Approx(-0.3557369031));
-  REQUIRE(HFTerm2[0][1] == Approx(0.0));
-  REQUIRE(HFTerm2[0][2] == Approx(0.0));
-  REQUIRE(HFTerm2[1][0] == Approx(0.001068673105));
-  REQUIRE(HFTerm2[1][1] == Approx(0.0));
-  REQUIRE(HFTerm2[1][2] == Approx(0.0));
+  CHECK(HFTerm2[0][0] == Approx(-0.3557369031));
+  CHECK(HFTerm2[0][1] == Approx(0.0));
+  CHECK(HFTerm2[0][2] == Approx(0.0));
+  CHECK(HFTerm2[1][0] == Approx(0.001068673105));
+  CHECK(HFTerm2[1][1] == Approx(0.0));
+  CHECK(HFTerm2[1][2] == Approx(0.0));
 
-  REQUIRE(PulayTerm[0][0] == Approx(0.008300993315));
-  REQUIRE(PulayTerm[0][1] == Approx(0.0));
-  REQUIRE(PulayTerm[0][2] == Approx(0.0));
-  REQUIRE(PulayTerm[1][0] == Approx(0.001665391103));
-  REQUIRE(PulayTerm[1][1] == Approx(0.0));
-  REQUIRE(PulayTerm[1][2] == Approx(0.0));
+  CHECK(PulayTerm[0][0] == Approx(0.008300993315));
+  CHECK(PulayTerm[0][1] == Approx(0.0));
+  CHECK(PulayTerm[0][2] == Approx(0.0));
+  CHECK(PulayTerm[1][0] == Approx(0.001665391103));
+  CHECK(PulayTerm[1][1] == Approx(0.0));
+  CHECK(PulayTerm[1][2] == Approx(0.0));
 
   //Comparing against finite difference results above, here's what we get.
   //HFTerm[0][0]+PulayTerm[0][0] = −0.34743591
@@ -548,7 +548,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
-    REQUIRE(Value1 == Approx(-0.3214176962));
+    CHECK(Value1 == Approx(-0.3214176962));
   };
 
   {

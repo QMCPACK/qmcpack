@@ -111,19 +111,19 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = dmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec[0]->R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
-  REQUIRE(elec.R[1][2] == Approx(1.0));
+  CHECK(elec.R[1][0] == Approx(0.0));
+  CHECK(elec.R[1][1] == Approx(-0.372329741105903));
+  CHECK(elec.R[1][2] == Approx(1.0));
 }
 
 TEST_CASE("SODMC", "[drivers][dmc]")
@@ -198,16 +198,16 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   // With the constant wavefunction, no moves should be rejected
   double ar = dmc_omp.acceptRatio();
-  REQUIRE(ar == Approx(1.0));
+  CHECK(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
   //  Values from diffuse.py for moving one step
 
-  REQUIRE(elec[0]->R[0][0] == Approx(0.627670258894097));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  CHECK(elec[0]->R[0][0] == Approx(0.627670258894097));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.372329741105903));
 
-  REQUIRE(elec.spins[0] == Approx(-0.74465948215809097));
+  CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 }
 } // namespace qmcplusplus

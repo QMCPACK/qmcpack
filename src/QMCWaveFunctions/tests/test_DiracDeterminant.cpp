@@ -43,7 +43,7 @@ void check_matrix(Matrix<T1>& a, Matrix<T2>& b)
   {
     for (int j = 0; j < a.cols(); j++)
     {
-      REQUIRE(a(i, j) == ValueApprox(b(i, j)));
+      CHECK(a(i, j) == ValueApprox(b(i, j)));
     }
   }
 }
@@ -85,7 +85,7 @@ void test_DiracDeterminant_first(const DetMatInvertor inverter_kind)
   ParticleSet::GradType grad;
   PsiValueType det_ratio  = ddb.ratioGrad(elec, 0, grad);
   PsiValueType det_ratio1 = 0.178276269185;
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
 
@@ -233,7 +233,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
 #endif
   //double det_ratio1 = 0.178276269185;
 
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
 
@@ -249,7 +249,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   app_log() << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
+  CHECK(det_ratio2 == ValueApprox(det_ratio2_val));
 
   ddb.acceptMove(elec, 1);
 
@@ -264,7 +264,7 @@ void test_DiracDeterminant_second(const DetMatInvertor inverter_kind)
   app_log() << "det 3 = " << std::exp(det_update3) << std::endl;
   app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
-  REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+  CHECK(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
   ddb.acceptMove(elec, 2);
@@ -376,7 +376,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 #endif
   //double det_ratio1 = 0.178276269185;
 
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 0, true);
@@ -400,7 +400,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
 #endif
   // check ratio computed directly and the one computed by ddc with no delay
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(det_ratio2 == ValueApprox(det_ratio2_val));
+  CHECK(det_ratio2 == ValueApprox(det_ratio2_val));
 
   // update of Ainv in ddc is delayed
   ddc.acceptMove(elec, 1, true);
@@ -419,7 +419,7 @@ void test_DiracDeterminant_delayed_update(const DetMatInvertor inverter_kind)
   app_log() << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
   // check ratio computed directly and the one computed by ddc with 1 delay
-  REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
+  CHECK(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
   // maximal delay reached and Ainv is updated fully
@@ -573,35 +573,35 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 
   LogValueType logref = dd.evaluateLog(elec_, G, L);
 
-  REQUIRE(logref == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
-  REQUIRE(G[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
-  REQUIRE(G[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
-  REQUIRE(G[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
-  REQUIRE(G[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
-  REQUIRE(G[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
-  REQUIRE(G[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
-  REQUIRE(G[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
-  REQUIRE(G[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
-  REQUIRE(G[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
-  REQUIRE(L[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
-  REQUIRE(L[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
-  REQUIRE(L[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
+  CHECK(logref == ComplexApprox(ValueType(-1.1619939279564413, 0.8794794652468605)));
+  CHECK(G[0][0] == ComplexApprox(ValueType(0.13416635, 0.2468612)));
+  CHECK(G[0][1] == ComplexApprox(ValueType(-1.1165475, 0.71497753)));
+  CHECK(G[0][2] == ComplexApprox(ValueType(0.0178403, 0.08212244)));
+  CHECK(G[1][0] == ComplexApprox(ValueType(1.00240841, 0.12371593)));
+  CHECK(G[1][1] == ComplexApprox(ValueType(1.62679698, -0.41080777)));
+  CHECK(G[1][2] == ComplexApprox(ValueType(1.81324632, 0.78589013)));
+  CHECK(G[2][0] == ComplexApprox(ValueType(-1.10994555, 0.15525902)));
+  CHECK(G[2][1] == ComplexApprox(ValueType(-0.46335602, -0.50809713)));
+  CHECK(G[2][2] == ComplexApprox(ValueType(-1.751199, 0.10949589)));
+  CHECK(L[0] == ComplexApprox(ValueType(-2.06554158, 1.18145239)));
+  CHECK(L[1] == ComplexApprox(ValueType(-5.06340536, 0.82126749)));
+  CHECK(L[2] == ComplexApprox(ValueType(-4.82375261, -1.97943258)));
 
   //This is a workaround for the fact that I haven't implemented
   // evaluateLogWithSpin().  Shouldn't be needed unless we do drifted all-electron moves...
   for (int iat = 0; iat < nelec; iat++)
     dd.evalGradWithSpin(elec_, iat, SG[iat]);
 
-  REQUIRE(SG[0] == ComplexApprox(ValueType(-1.05686704, -2.01802154)));
-  REQUIRE(SG[1] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
-  REQUIRE(SG[2] == ComplexApprox(ValueType(-0.62617675, -0.51093984)));
+  CHECK(SG[0] == ComplexApprox(ValueType(-1.05686704, -2.01802154)));
+  CHECK(SG[1] == ComplexApprox(ValueType(1.18922259, 2.80414598)));
+  CHECK(SG[2] == ComplexApprox(ValueType(-0.62617675, -0.51093984)));
 
   GradType g_singleeval(0.0);
   g_singleeval = dd.evalGrad(elec_, 1);
 
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
 
   //And now we're going to propose a trial spin+particle move and check the ratio and gradients at the
@@ -615,22 +615,22 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
   ratio_new = dd.ratio(elec_, 1);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
 
   ratio_new = dd.ratioGrad(elec_, 1, grad_new);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  REQUIRE(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  REQUIRE(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  REQUIRE(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
 
   grad_new     = 0;
   spingrad_new = 0;
   ratio_new    = dd.ratioGradWithSpin(elec_, 1, grad_new, spingrad_new);
-  REQUIRE(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
-  REQUIRE(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
-  REQUIRE(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
-  REQUIRE(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
-  REQUIRE(spingrad_new == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
+  CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
+  CHECK(grad_new[0] == ComplexApprox(ValueType(0.5496675534224996, -0.07968022499097227)));
+  CHECK(grad_new[1] == ComplexApprox(ValueType(0.4927399293808675, -0.29971549854643653)));
+  CHECK(grad_new[2] == ComplexApprox(ValueType(1.2792642963632226, 0.12110307514989149)));
+  CHECK(spingrad_new == ComplexApprox(ValueType(1.164708841479661, 0.9576425115390172)));
 
 
   //Cool.  Now we test the transition between rejecting a move and accepting a move.
@@ -639,17 +639,17 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   elec_.rejectMove(1);
   //Going to check evalGrad and evalGradWithSpin for simplicity.
   g_singleeval = dd.evalGrad(elec_, 1);
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
   ValueType spingrad_old_test;
   g_singleeval = dd.evalGradWithSpin(elec_, 1, spingrad_old_test);
 
-  REQUIRE(spingrad_old_test == ComplexApprox(SG[1]));
-  REQUIRE(g_singleeval[0] == ComplexApprox(G[1][0]));
-  REQUIRE(g_singleeval[1] == ComplexApprox(G[1][1]));
-  REQUIRE(g_singleeval[2] == ComplexApprox(G[1][2]));
+  CHECK(spingrad_old_test == ComplexApprox(SG[1]));
+  CHECK(g_singleeval[0] == ComplexApprox(G[1][0]));
+  CHECK(g_singleeval[1] == ComplexApprox(G[1][1]));
+  CHECK(g_singleeval[2] == ComplexApprox(G[1][2]));
 
   //Now we test what happens if we accept a move...
   elec_.makeMoveAndCheckWithSpin(1, dr, ds);
@@ -666,11 +666,11 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
   //logval for the new configuration has been computed with python.
   //The others reference values are computed earlier in this section.  New values equal the previous
   // "new values" associated with the previous trial moves.
-  REQUIRE(lognew == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
-  REQUIRE(G[1][0] == ComplexApprox(grad_new[0]));
-  REQUIRE(G[1][1] == ComplexApprox(grad_new[1]));
-  REQUIRE(G[1][2] == ComplexApprox(grad_new[2]));
-  REQUIRE(SG[1] == ComplexApprox(spingrad_new));
+  CHECK(lognew == ComplexApprox(ValueType(-0.41337396772929913, 1.4774106123071726)));
+  CHECK(G[1][0] == ComplexApprox(grad_new[0]));
+  CHECK(G[1][1] == ComplexApprox(grad_new[1]));
+  CHECK(G[1][2] == ComplexApprox(grad_new[2]));
+  CHECK(SG[1] == ComplexApprox(spingrad_new));
 }
 
 TEST_CASE("DiracDeterminant_spinor_update", "[wavefunction][fermion]")

@@ -114,6 +114,6 @@ TEST_CASE("RPA Jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.3327837613)); // note: number not validated
+  CHECK(logpsi_real == Approx(-1.3327837613)); // note: number not validated
 }
 } // namespace qmcplusplus

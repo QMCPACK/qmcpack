@@ -136,7 +136,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   elec_.update();
 
   double logpsi_real = std::real(j1->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(0.3160552244)); // note: number not validated
+  CHECK(logpsi_real == Approx(0.3160552244)); // note: number not validated
 
   //Ionic Derivative Test.
   QMCTraits::GradType gsource(0.0);
@@ -161,33 +161,33 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   gsource = j1->evalGradSource(elec_, ions_, 0);
 
   //Gradient comparison
-  REQUIRE(std::real(gsource[0]) == Approx(-0.04695203659));
-  REQUIRE(std::real(gsource[1]) == Approx(0.00000000000));
-  REQUIRE(std::real(gsource[2]) == Approx(0.00000000000));
+  CHECK(std::real(gsource[0]) == Approx(-0.04695203659));
+  CHECK(std::real(gsource[1]) == Approx(0.00000000000));
+  CHECK(std::real(gsource[2]) == Approx(0.00000000000));
 
   //Now we test evalGradSource that returns higher order derivatives.
   gsource = j1->evalGradSource(elec_, ions_, 0, grad_grad_source, lapl_grad_source);
 
   //Gradient comparison
-  REQUIRE(std::real(gsource[0]) == Approx(-0.04695203659));
-  REQUIRE(std::real(gsource[1]) == Approx(0.00000000000));
-  REQUIRE(std::real(gsource[2]) == Approx(0.00000000000));
+  CHECK(std::real(gsource[0]) == Approx(-0.04695203659));
+  CHECK(std::real(gsource[1]) == Approx(0.00000000000));
+  CHECK(std::real(gsource[2]) == Approx(0.00000000000));
 
   //Ion gradient of electron gradient comparison.
-  REQUIRE(std::real(grad_grad_source[0][0][0]) == Approx(-0.008883672));
-  REQUIRE(std::real(grad_grad_source[0][1][0]) == Approx(-0.002111879));
-  REQUIRE(std::real(grad_grad_source[1][0][1]) == Approx(0.028489287));
-  REQUIRE(std::real(grad_grad_source[1][1][1]) == Approx(0.009231375));
-  REQUIRE(std::real(grad_grad_source[2][0][2]) == Approx(0.028489287));
-  REQUIRE(std::real(grad_grad_source[2][1][2]) == Approx(0.009231375));
+  CHECK(std::real(grad_grad_source[0][0][0]) == Approx(-0.008883672));
+  CHECK(std::real(grad_grad_source[0][1][0]) == Approx(-0.002111879));
+  CHECK(std::real(grad_grad_source[1][0][1]) == Approx(0.028489287));
+  CHECK(std::real(grad_grad_source[1][1][1]) == Approx(0.009231375));
+  CHECK(std::real(grad_grad_source[2][0][2]) == Approx(0.028489287));
+  CHECK(std::real(grad_grad_source[2][1][2]) == Approx(0.009231375));
 
   //Ion gradient of electron laplacians.
-  REQUIRE(std::real(lapl_grad_source[0][0]) == Approx(0.1494918378));
-  REQUIRE(std::real(lapl_grad_source[0][1]) == Approx(-0.0056182539));
-  REQUIRE(std::real(lapl_grad_source[1][0]) == Approx(0.0000000000));
-  REQUIRE(std::real(lapl_grad_source[1][1]) == Approx(0.0000000000));
-  REQUIRE(std::real(lapl_grad_source[2][0]) == Approx(0.0000000000));
-  REQUIRE(std::real(lapl_grad_source[2][1]) == Approx(0.0000000000));
+  CHECK(std::real(lapl_grad_source[0][0]) == Approx(0.1494918378));
+  CHECK(std::real(lapl_grad_source[0][1]) == Approx(-0.0056182539));
+  CHECK(std::real(lapl_grad_source[1][0]) == Approx(0.0000000000));
+  CHECK(std::real(lapl_grad_source[1][1]) == Approx(0.0000000000));
+  CHECK(std::real(lapl_grad_source[2][0]) == Approx(0.0000000000));
+  CHECK(std::real(lapl_grad_source[2][1]) == Approx(0.0000000000));
 
 
   // now test evaluateHessian
@@ -206,7 +206,7 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
     for (int i = 0; i < OHMMS_DIM; i++)
       for (int j = 0; j < OHMMS_DIM; j++, m++)
       {
-        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+        CHECK(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
       }
 
   j1->evaluateLog(elec_, elec_.G, elec_.L); // evaluateHessian has side effects
@@ -250,9 +250,9 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
     RealType dv  = 0.0;
     RealType ddv = 0.0;
     RealType val = bf->evaluate(Vals[i].r, dv, ddv);
-    REQUIRE(Vals[i].u == Approx(val));
-    REQUIRE(Vals[i].du == Approx(dv));
-    REQUIRE(Vals[i].ddu == Approx(ddv));
+    CHECK(Vals[i].u == Approx(val));
+    CHECK(Vals[i].du == Approx(dv));
+    CHECK(Vals[i].ddu == Approx(ddv));
   }
 
 #ifdef PRINT_SPLINE_DATA
@@ -292,14 +292,14 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j1->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(std::real(ratios[0]) == Approx(0.9819208747));
-  REQUIRE(std::real(ratios[1]) == Approx(1.0040884258));
+  CHECK(std::real(ratios[0]) == Approx(0.9819208747));
+  CHECK(std::real(ratios[1]) == Approx(1.0040884258));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
   PsiValueType ratio_0 = j1->ratio(elec_, 0);
   elec_.rejectMove(0);
 
-  REQUIRE(std::real(ratio_0) == Approx(0.9819208747));
+  CHECK(std::real(ratio_0) == Approx(0.9819208747));
 
   // test acceptMove results
   elec_.makeMove(1, newpos - elec_.R[1]);
@@ -307,8 +307,8 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
   j1->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
-  REQUIRE(std::real(ratio_1) == Approx(1.0040884258));
-  REQUIRE(std::real(j1->get_log_value()) == Approx(0.32013531536));
+  CHECK(std::real(ratio_1) == Approx(1.0040884258));
+  CHECK(std::real(j1->get_log_value()) == Approx(0.32013531536));
 
   // test to make sure that setting cusp for J1 works properly
   const char* j1_xml_char_2 = R"XML(<tmp>
@@ -377,9 +377,9 @@ void test_J1_spline(const DynamicCoordinateKind kind_selected)
     RealType dv  = 0.0;
     RealType ddv = 0.0;
     RealType val = bf2->evaluate(Vals2[i].r, dv, ddv);
-    REQUIRE(Vals2[i].du == Approx(dv));
-    REQUIRE(Vals2[i].u == Approx(val));
-    REQUIRE(Vals2[i].ddu == Approx(ddv));
+    CHECK(Vals2[i].du == Approx(dv));
+    CHECK(Vals2[i].u == Approx(val));
+    CHECK(Vals2[i].ddu == Approx(ddv));
   }
 
   UniqueOptObjRefs opt_obj_refs;

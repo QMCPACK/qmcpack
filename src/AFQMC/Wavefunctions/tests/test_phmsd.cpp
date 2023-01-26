@@ -292,15 +292,15 @@ void test_phmsd(boost::mpi3::communicator& world)
     // coefficients as using factory setup.
     for (auto it = wset.begin(); it != wset.end(); ++it)
     {
-      REQUIRE(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
-      REQUIRE(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
+      CHECK(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
+      CHECK(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
     }
     // It's not straightforward to calculate energy directly in unit test due to half
     // rotation.
     //wfn.Energy(wset);
     //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-    //REQUIRE(real(*it->energy()) == Approx(real(energy)));
-    //REQUIRE(imag(*it->energy()) == Approx(imag(energy)));
+    //CHECK(real(*it->energy()) == Approx(real(energy)));
+    //CHECK(imag(*it->energy()) == Approx(imag(energy)));
     //}
     //auto nCV = wfn.local_number_of_cholesky_vectors();
     //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});
