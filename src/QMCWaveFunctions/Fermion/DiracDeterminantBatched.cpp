@@ -816,6 +816,18 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                                              const opt_variables_type& optvars,
+                                                              std::vector<ValueType>& ratios,
+                                                              Matrix<ValueType>& dratios)
+{
+  const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
+  std::copy_n(det_engine_.get_psiMinv()[WorkingIndex], d2psiV.size(), d2psiV.data());
+  Phi->evaluateDerivRatios(VP, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios)
 {
   {
@@ -826,7 +838,6 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P,
   for (int i = 0; i < psiMinv.rows(); i++)
     ratios[FirstIndex + i] = simd::dot(psiMinv[i], psiV.data(), NumOrbitals);
 }
-
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::resizeScratchObjectsForIonDerivs()
@@ -1106,6 +1117,14 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               Vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivativesWF(ParticleSet& P,
+                                                                const opt_variables_type& active,
+                                                                Vector<ValueType>& dlogpsi)
+{
+  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
 template<typename DET_ENGINE>
