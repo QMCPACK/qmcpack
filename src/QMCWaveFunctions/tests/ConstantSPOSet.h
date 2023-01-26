@@ -24,11 +24,11 @@ struct ConstantSPOSet : public SPOSet
 {
 public:
   ConstantSPOSet(const std::string& my_name) = delete;
-  
+
   //Constructor needs number of particles and number of orbitals.  This is the minimum
   //amount of information needed to sanely construct all data members and perform size
-  //checks later.  
-  ConstantSPOSet(const std::string& my_name, const int nparticles, const int norbitals); 
+  //checks later.
+  ConstantSPOSet(const std::string& my_name, const int nparticles, const int norbitals);
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
@@ -56,10 +56,10 @@ public:
 protected:
 private:
   int numparticles_;
-  
-  //Value, electron gradient, and electron laplacian at "reference configuration".  
+
+  //Value, electron gradient, and electron laplacian at "reference configuration".
   //i.e. before any attempted moves.
-  
+
   ValueMatrix ref_psi_;
   GradMatrix ref_egrad_;
   ValueMatrix ref_elapl_;
