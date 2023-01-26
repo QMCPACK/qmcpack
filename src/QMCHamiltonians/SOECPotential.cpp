@@ -63,6 +63,29 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   return value_;
 }
 
+SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
+                                                                   const opt_variables_type& optvars,
+                                                                   const Vector<ValueType>& dlogpsi,
+                                                                   Vector<ValueType>& dhpsioverpsi)
+{
+  value_ = 0.0;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < NumIons; iat++)
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                       dhpsioverpsi);
+  }
+  return value_;
+}
+
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(IonConfig, qp, psi);
