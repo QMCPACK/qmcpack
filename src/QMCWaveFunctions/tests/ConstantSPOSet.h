@@ -17,7 +17,9 @@
 
 namespace qmcplusplus
 {
-/** Constant SPOSet for testing purposes.  Fixed N_elec x N_orb matrices storing value, gradients, and laplacians.
+/** Constant SPOSet for testing purposes.  Fixed N_elec x N_orb matrices storing value, gradients, and laplacians, etc.,
+   *  These values are accessed through standard SPOSet calls like evaluateValue, evaluateVGL, etc.
+   *  Exists to provide deterministic and known output to objects requiring SPOSet evaluations.      
    *
    */
 struct ConstantSPOSet : public SPOSet
@@ -38,8 +40,23 @@ public:
 
   void setOrbitalSetSize(int norbs) override;
 
+  /**
+  * @brief Setter method to set \phi_j(r_i). Stores input matrix in ref_psi_.
+  * @param Nelec x Nion ValueType matrix of \phi_j(r_i)
+  * @return void
+  */ 
   void setRefVals(const ValueMatrix& vals);
+  /**
+  * @brief Setter method to set \nabla_i \phi_j(r_i). Stores input matrix in ref_egrad_.
+  * @param Nelec x Nion GradType matrix of \grad_i \phi_j(r_i)
+  * @return void
+  */ 
   void setRefEGrads(const GradMatrix& grads);
+  /**
+  * @brief Setter method to set \nabla^2_i \phi_j(r_i). Stores input matrix in ref_elapl_.
+  * @param Nelec x Nion GradType matrix of \grad^2_i \phi_j(r_i)
+  * @return void
+  */ 
   void setRefELapls(const ValueMatrix& lapls);
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
