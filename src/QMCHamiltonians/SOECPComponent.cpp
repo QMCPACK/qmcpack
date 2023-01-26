@@ -200,6 +200,9 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
                                                                      const Vector<ValueType>& dlogpsi,
                                                                      Vector<ValueType>& dhpsioverpsi)
 {
+#ifndef QMC_COMPLEX
+  throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
+#else
   if (sknot_ < 2)
     APP_ABORT("Spin knots must be greater than 2\n");
 
@@ -271,6 +274,7 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
   BLAS::gemv('N', num_vars, total_knots_, 1.0, dratio_.data(), num_vars, wvec_.data(), 1, 1.0, dhpsioverpsi.data(), 1);
 
   return std::real(pairpot);
+#endif
 }
 
 void SOECPComponent::buildTotalQuadrature(const RealType r, const PosType& dr, const RealType sold)
