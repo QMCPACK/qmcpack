@@ -9,7 +9,7 @@
 // File created by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratories
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/ConstantSPOSet.h"
+#include "QMCWaveFunctions/tests/ConstantSPOSet.h"
 
 namespace qmcplusplus
 {

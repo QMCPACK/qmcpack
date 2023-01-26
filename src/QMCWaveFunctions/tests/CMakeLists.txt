@@ -100,6 +100,7 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
+    ConstantSPOSet.cpp
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
     test_spo_collection_input_MSD_LCAO_h5.cpp

@@ -13,8 +13,8 @@
 #include "catch.hpp"
 #include "Configuration.h"
 #include "QMCWaveFunctions/WaveFunctionTypes.hpp"
-#include "QMCWaveFunctions/ConstantSPOSet.h"
-
+#include "QMCWaveFunctions/tests/ConstantSPOSet.h"
+#include "Utilities/for_testing/checkMatrix.hpp"
 namespace qmcplusplus
 {
 //Ray:  Figure out how to template me on value type.
@@ -94,21 +94,15 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   psiV = 0.0;
 
   sposet->evaluateVGL(elec,1,psiV,psiG,psiL);
-   
-  CHECK(psiV[0] == row1[0]);
-  CHECK(psiV[1] == row1[1]);
-  
-  CHECK(psiG[0][0] == grow1[0][0]); 
-  CHECK(psiG[0][1] == grow1[0][1]); 
-  CHECK(psiG[0][2] == grow1[0][2]); 
 
-  CHECK(psiG[1][0] == grow1[1][0]); 
-  CHECK(psiG[1][1] == grow1[1][1]); 
-  CHECK(psiG[1][2] == grow1[1][2]); 
-
-  CHECK(psiL[0] == lrow1[0]);
-  CHECK(psiL[1] == lrow1[1]);
-
+  for(int iorb=0; iorb<norb; iorb++)
+  {   
+    CHECK(psiV[iorb] == row1[iorb]);
+    CHECK(psiL[iorb] == lrow1[iorb]);
+    
+    for(int idim=0; idim<OHMMS_DIM; idim++)
+      CHECK(psiG[iorb][idim] == grow1[iorb][idim]); 
+  }
   //Test of evaluate_notranspose.
   ValueMatrix phimat,lphimat;
   GradMatrix gphimat;
@@ -119,17 +113,10 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   const int first_index=0; //Only 2 electrons in this case.  
   const int last_index=2; 
   sposet->evaluate_notranspose(elec,first_index,last_index,phimat,gphimat,lphimat);
- 
-  CHECK(phimat[0][0] == row0[0]);
-  CHECK(phimat[0][1] == row0[1]);
-  CHECK(phimat[1][0] == row1[0]);
-  CHECK(phimat[1][1] == row1[1]);
 
-  CHECK(lphimat[0][0] == lrow0[0]);
-  CHECK(lphimat[0][1] == lrow0[1]);
-  CHECK(lphimat[1][0] == lrow1[0]);
-  CHECK(lphimat[1][1] == lrow1[1]);
-
+  checkMatrix(phimat,spomat); 
+  checkMatrix(lphimat,laplspomat);
+  
   //Test of makeClone()
   auto sposet_vgl2 = sposet->makeClone();
   phimat=0.0;
@@ -137,15 +124,9 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   lphimat=0.0;
 
   sposet_vgl2->evaluate_notranspose(elec,first_index,last_index,phimat,gphimat,lphimat);
-  CHECK(phimat[0][0] == row0[0]);
-  CHECK(phimat[0][1] == row0[1]);
-  CHECK(phimat[1][0] == row1[0]);
-  CHECK(phimat[1][1] == row1[1]);
-
-  CHECK(lphimat[0][0] == lrow0[0]);
-  CHECK(lphimat[0][1] == lrow0[1]);
-  CHECK(lphimat[1][0] == lrow1[0]);
-  CHECK(lphimat[1][1] == lrow1[1]);
+  
+  checkMatrix(phimat,spomat); 
+  checkMatrix(lphimat,laplspomat);
 
   //Lastly, check if name is correct.
   std::string myname=sposet_vgl2->getClassName();
