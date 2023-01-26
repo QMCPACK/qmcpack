@@ -282,7 +282,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
 
-  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+  xmlSetProp(MO_base[0], castCharToXMLChar("cuspCorrection"), castCharToXMLChar("yes"));
 
   const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
   auto& bb(*bb_ptr);
@@ -457,7 +457,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
 
-  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+  xmlSetProp(MO_base[0], castCharToXMLChar("cuspCorrection"), castCharToXMLChar("yes"));
 
   const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
   auto& bb(*bb_ptr);

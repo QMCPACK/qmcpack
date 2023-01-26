@@ -346,6 +346,67 @@ void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi,
   }
 }
 
+void LCAOrbitalSet::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                   int iat,
+                                   const RefVector<ValueVector>& psi_v_list,
+                                   const RefVector<GradVector>& dpsi_v_list,
+                                   const RefVector<ValueVector>& d2psi_v_list) const
+{
+  OffloadMWVGLArray phi_vgl_v;
+  phi_vgl_v.resize(DIM_VGL, spo_list.size(), OrbitalSetSize);
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
+
+  const size_t output_size = phi_vgl_v.size(2);
+  const size_t nw          = phi_vgl_v.size(1);
+
+  //TODO: make this cleaner?
+  for (int iw = 0; iw < nw; iw++)
+  {
+    std::copy_n(phi_vgl_v.data_at(0, iw, 0), output_size, psi_v_list[iw].get().data());
+    std::copy_n(phi_vgl_v.data_at(4, iw, 0), output_size, d2psi_v_list[iw].get().data());
+    // grads are [dim, walker, orb] in phi_vgl_v
+    //           [walker][orb, dim] in dpsi_v_list
+    for (size_t idim = 0; idim < DIM; idim++)
+      BLAS::copy(output_size, phi_vgl_v.data_at(idim + 1, iw, 0), 1, &dpsi_v_list[iw].get().data()[0][idim], DIM);
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                                           const RefVectorWithLeader<ParticleSet>& P_list,
+                                           int iat,
+                                           OffloadMWVGLArray& phi_vgl_v) const
+{
+  // [5][NW][NumAO]
+  OffloadMWVGLArray basis_mw;
+  basis_mw.resize(DIM_VGL, spo_list.size(), BasisSetSize);
+
+  if (Identity)
+  {
+    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+    // output_size can be smaller than BasisSetSize
+    const size_t output_size = phi_vgl_v.size(2);
+    const size_t nw          = phi_vgl_v.size(1);
+
+    for (size_t idim = 0; idim < DIM_VGL; idim++)
+      for (int iw = 0; iw < nw; iw++)
+        std::copy_n(basis_mw.data_at(idim, iw, 0), output_size, phi_vgl_v.data_at(idim, iw, 0));
+  }
+  else
+  {
+    const size_t requested_orb_size = phi_vgl_v.size(2);
+    assert(requested_orb_size <= OrbitalSetSize);
+    ValueMatrix C_partial_view(C->data(), requested_orb_size, BasisSetSize);
+    myBasisSet->mw_evaluateVGL(P_list, iat, basis_mw);
+    BLAS::gemm('T', 'N',
+               requested_orb_size,        // MOs
+               spo_list.size() * DIM_VGL, // walkers * DIM_VGL
+               BasisSetSize,              // AOs
+               1, C_partial_view.data(), BasisSetSize, basis_mw.data(), BasisSetSize, 0, phi_vgl_v.data(),
+               requested_orb_size);
+  }
+}
+
 void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
                                       ValueVector& psi,
                                       const ValueVector& psiinv,
@@ -362,6 +423,34 @@ void LCAOrbitalSet::evaluateDetRatios(const VirtualParticleSet& VP,
   {
     myBasisSet->evaluateV(VP, j, vTemp.data());
     ratios[j] = simd::dot(vTemp.data(), invTemp.data(), BasisSetSize);
+  }
+}
+
+void LCAOrbitalSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                                   const RefVectorWithLeader<ParticleSet>& P_list,
+                                                   int iat,
+                                                   const std::vector<const ValueType*>& invRow_ptr_list,
+                                                   OffloadMWVGLArray& phi_vgl_v,
+                                                   std::vector<ValueType>& ratios,
+                                                   std::vector<GradType>& grads) const
+{
+  assert(this == &spo_list.getLeader());
+  assert(phi_vgl_v.size(0) == DIM_VGL);
+  assert(phi_vgl_v.size(1) == spo_list.size());
+
+  mw_evaluateVGLImplGEMM(spo_list, P_list, iat, phi_vgl_v);
+  // Device data of phi_vgl_v must be up-to-date upon return
+  phi_vgl_v.updateTo();
+
+  const size_t nw             = spo_list.size();
+  const size_t norb_requested = phi_vgl_v.size(2);
+  for (int iw = 0; iw < nw; iw++)
+  {
+    ratios[iw] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(0, iw, 0), norb_requested);
+    GradType dphi;
+    for (size_t idim = 0; idim < DIM; idim++)
+      dphi[idim] = simd::dot(invRow_ptr_list[iw], phi_vgl_v.data_at(idim + 1, iw, 0), norb_requested) / ratios[iw];
+    grads[iw] = dphi;
   }
 }
 
