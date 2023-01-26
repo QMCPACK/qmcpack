@@ -67,9 +67,9 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 
   REQUIRE(ions.groups() == 1);
   REQUIRE(ions.R.size() == 1);
-  REQUIRE(ions.R[0][0] == Approx(0.1));
-  REQUIRE(ions.R[0][1] == Approx(0.2));
-  REQUIRE(ions.R[0][2] == Approx(0.3));
+  CHECK(ions.R[0][0] == Approx(0.1));
+  CHECK(ions.R[0][1] == Approx(0.2));
+  CHECK(ions.R[0][2] == Approx(0.3));
   REQUIRE(ions.getName() == "ion0");
 
   XMLParticleParser parse_electrons(electrons);
@@ -78,13 +78,13 @@ TEST_CASE("read_particleset_xml", "[particle_io][xml]")
 
   REQUIRE(electrons.groups() == 2);
   REQUIRE(electrons.R.size() == 2);
-  REQUIRE(electrons.R[0][0] == Approx(-0.28));
-  REQUIRE(electrons.R[0][1] == Approx(0.0225));
-  REQUIRE(electrons.R[0][2] == Approx(-2.709));
+  CHECK(electrons.R[0][0] == Approx(-0.28));
+  CHECK(electrons.R[0][1] == Approx(0.0225));
+  CHECK(electrons.R[0][2] == Approx(-2.709));
 
-  REQUIRE(electrons.R[1][0] == Approx(-1.08389));
-  REQUIRE(electrons.R[1][1] == Approx(1.9679));
-  REQUIRE(electrons.R[1][2] == Approx(-0.0128914));
+  CHECK(electrons.R[1][0] == Approx(-1.08389));
+  CHECK(electrons.R[1][1] == Approx(1.9679));
+  CHECK(electrons.R[1][2] == Approx(-0.0128914));
   REQUIRE(electrons.getName() == "e");
 }
 
@@ -177,21 +177,21 @@ TEST_CASE("read_dynamic_spin_eset_xml", "[particle_io][xml]")
 
   REQUIRE(electrons.R.size() == 3);
 
-  REQUIRE(electrons.R[0][0] == Approx(-0.28));
-  REQUIRE(electrons.R[0][1] == Approx(0.0225));
-  REQUIRE(electrons.R[0][2] == Approx(-2.709));
+  CHECK(electrons.R[0][0] == Approx(-0.28));
+  CHECK(electrons.R[0][1] == Approx(0.0225));
+  CHECK(electrons.R[0][2] == Approx(-2.709));
 
-  REQUIRE(electrons.R[1][0] == Approx(-1.28));
-  REQUIRE(electrons.R[1][1] == Approx(1.0225));
-  REQUIRE(electrons.R[1][2] == Approx(-1.709));
+  CHECK(electrons.R[1][0] == Approx(-1.28));
+  CHECK(electrons.R[1][1] == Approx(1.0225));
+  CHECK(electrons.R[1][2] == Approx(-1.709));
 
-  REQUIRE(electrons.R[2][0] == Approx(-2.28));
-  REQUIRE(electrons.R[2][1] == Approx(2.0225));
-  REQUIRE(electrons.R[2][2] == Approx(-0.709));
+  CHECK(electrons.R[2][0] == Approx(-2.28));
+  CHECK(electrons.R[2][1] == Approx(2.0225));
+  CHECK(electrons.R[2][2] == Approx(-0.709));
 
-  REQUIRE(electrons.spins[0] == Approx(1.0));
-  REQUIRE(electrons.spins[1] == Approx(0.2));
-  REQUIRE(electrons.spins[2] == Approx(3.0));
+  CHECK(electrons.spins[0] == Approx(1.0));
+  CHECK(electrons.spins[1] == Approx(0.2));
+  CHECK(electrons.spins[2] == Approx(3.0));
 
   REQUIRE(electrons.getName() == "e");
 }

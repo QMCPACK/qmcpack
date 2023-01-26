@@ -102,13 +102,13 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
   embt.fakeMainScalarSamples();
   embt.collectMainEstimators();
   double correct_value = 5.0;
-  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
   correct_value = 8.0;
-  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[1] == Approx(correct_value));
   correct_value = 11.0;
-  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[2] == Approx(correct_value));
   correct_value = 14.0;
-  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[3] == Approx(correct_value));
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")

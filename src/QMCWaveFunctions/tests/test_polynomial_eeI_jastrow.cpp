@@ -117,10 +117,10 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   elec_.update();
 
   double logpsi_real = std::real(j3->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.193457749)); // note: number not validated
+  CHECK(logpsi_real == Approx(-1.193457749)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
-  REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
+  CHECK(KE == Approx(-0.058051245)); // note: number not validated
 
   using ValueType = QMCTraits::ValueType;
   using PosType   = QMCTraits::PosType;
@@ -132,10 +132,10 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j3->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(std::real(ratios[0]) == Approx(0.8744938582));
-  REQUIRE(std::real(ratios[1]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios[2]) == Approx(0.8302245609));
-  REQUIRE(std::real(ratios[3]) == Approx(0.7987703724));
+  CHECK(std::real(ratios[0]) == Approx(0.8744938582));
+  CHECK(std::real(ratios[1]) == Approx(1.0357541137));
+  CHECK(std::real(ratios[2]) == Approx(0.8302245609));
+  CHECK(std::real(ratios[3]) == Approx(0.7987703724));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
   PsiValueType ratio_0 = j3->ratio(elec_, 0);
@@ -153,10 +153,10 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   PsiValueType ratio_3 = j3->ratio(elec_, 3);
   elec_.rejectMove(3);
 
-  REQUIRE(std::real(ratio_0) == Approx(0.8744938582));
-  REQUIRE(std::real(ratio_1) == Approx(1.0357541137));
-  REQUIRE(std::real(ratio_2) == Approx(0.8302245609));
-  REQUIRE(std::real(ratio_3) == Approx(0.7987703724));
+  CHECK(std::real(ratio_0) == Approx(0.8744938582));
+  CHECK(std::real(ratio_1) == Approx(1.0357541137));
+  CHECK(std::real(ratio_2) == Approx(0.8302245609));
+  CHECK(std::real(ratio_3) == Approx(0.7987703724));
 
   UniqueOptObjRefs opt_obj_refs;
   j3->extractOptimizableObjectRefs(opt_obj_refs);
@@ -180,8 +180,8 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
     app_log() << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
   app_log() << std::endl;
 
-  REQUIRE(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
-  REQUIRE(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
+  CHECK(std::real(dlogpsi[43]) == Approx(1.3358726814e+05));
+  CHECK(std::real(dhpsioverpsi[43]) == Approx(-2.3246270644e+05));
 
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);
@@ -191,15 +191,15 @@ void test_J3_polynomial3D(const DynamicCoordinateKind kind_selected)
   VP.makeMoves(elec_, 1, newpos2);
   j3->evaluateRatios(VP, ratios2);
 
-  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
+  CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
 
   std::fill(ratios2.begin(), ratios2.end(), 0);
   Matrix<ValueType> dratio(2, NumOptimizables);
   j3->evaluateDerivRatios(VP, optvars, ratios2, dratio);
 
-  REQUIRE(std::real(ratios2[0]) == Approx(1.0357541137));
-  REQUIRE(std::real(ratios2[1]) == Approx(1.0257141422));
+  CHECK(std::real(ratios2[0]) == Approx(1.0357541137));
+  CHECK(std::real(ratios2[1]) == Approx(1.0257141422));
   CHECK(std::real(dratio[0][43]) == Approx(-1.4282569e+03));
 
   // testing batched interfaces

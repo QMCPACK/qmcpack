@@ -93,10 +93,10 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(j2->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(0.1012632641)); // note: number not validated
+  CHECK(logpsi_real == Approx(0.1012632641)); // note: number not validated
 
   double KE = -0.5 * (Dot(elec_.G, elec_.G) + Sum(elec_.L));
-  REQUIRE(KE == Approx(-0.1616624771)); // note: number not validated
+  CHECK(KE == Approx(-0.1616624771)); // note: number not validated
 
   UniqueOptObjRefs opt_obj_refs;
   j2->extractOptimizableObjectRefs(opt_obj_refs);
@@ -140,7 +140,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
     for (int i = 0; i < OHMMS_DIM; i++)
       for (int j = 0; j < OHMMS_DIM; j++, m++)
       {
-        REQUIRE(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
+        CHECK(std::real(grad_grad_psi[n](i, j)) == Approx(hess_values[m]));
       }
 
 
@@ -183,9 +183,9 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
     RealType dv  = 0.0;
     RealType ddv = 0.0;
     RealType val = bf->evaluate(Vals[i].r, dv, ddv);
-    REQUIRE(Vals[i].u == Approx(val));
-    REQUIRE(Vals[i].du == Approx(dv));
-    REQUIRE(Vals[i].ddu == Approx(ddv));
+    CHECK(Vals[i].u == Approx(val));
+    CHECK(Vals[i].du == Approx(dv));
+    CHECK(Vals[i].ddu == Approx(ddv));
   }
 
 #ifdef PRINT_SPLINE_DATA
@@ -225,14 +225,14 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   std::vector<ValueType> ratios(elec_.getTotalNum());
   j2->evaluateRatiosAlltoOne(elec_, ratios);
 
-  REQUIRE(std::real(ratios[0]) == Approx(0.9522052017));
-  REQUIRE(std::real(ratios[1]) == Approx(0.9871985577));
+  CHECK(std::real(ratios[0]) == Approx(0.9522052017));
+  CHECK(std::real(ratios[1]) == Approx(0.9871985577));
 
   elec_.makeMove(0, newpos - elec_.R[0]);
   PsiValueType ratio_0 = j2->ratio(elec_, 0);
   elec_.rejectMove(0);
 
-  REQUIRE(std::real(ratio_0) == Approx(0.9522052017));
+  CHECK(std::real(ratio_0) == Approx(0.9522052017));
 
   VirtualParticleSet VP(elec_, 2);
   std::vector<PosType> newpos2(2);
@@ -242,8 +242,8 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   VP.makeMoves(elec_, 1, newpos2);
   j2->evaluateRatios(VP, ratios2);
 
-  REQUIRE(std::real(ratios2[0]) == Approx(0.9871985577));
-  REQUIRE(std::real(ratios2[1]) == Approx(0.9989268241));
+  CHECK(std::real(ratios2[0]) == Approx(0.9871985577));
+  CHECK(std::real(ratios2[1]) == Approx(0.9989268241));
 
   //test acceptMove
   elec_.makeMove(1, newpos - elec_.R[1]);
@@ -251,7 +251,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   j2->acceptMove(elec_, 1);
   elec_.acceptMove(1);
 
-  REQUIRE(std::real(ratio_1) == Approx(0.9871985577));
-  REQUIRE(std::real(j2->get_log_value()) == Approx(0.0883791773));
+  CHECK(std::real(ratio_1) == Approx(0.9871985577));
+  CHECK(std::real(j2->get_log_value()) == Approx(0.0883791773));
 }
 } // namespace qmcplusplus

@@ -28,24 +28,24 @@ void test_spline_bounds()
   int ind;
   int ng = 10;
   spline2::getSplineBound(x, dx, ind, ng);
-  REQUIRE(dx == Approx(0.2));
+  CHECK(dx == Approx(0.2));
   REQUIRE(ind == 2);
 
   // check clamping to a maximum index value
   x = 10.5;
   spline2::getSplineBound(x, dx, ind, ng);
-  REQUIRE(dx == Approx(0.5));
+  CHECK(dx == Approx(0.5));
   REQUIRE(ind == 10);
 
   x = 11.5;
   spline2::getSplineBound(x, dx, ind, ng);
-  REQUIRE(dx == Approx(1.0));
+  CHECK(dx == Approx(1.0));
   REQUIRE(ind == 10);
 
   // check clamping to a zero index value
   x = -1.3;
   spline2::getSplineBound(x, dx, ind, ng);
-  REQUIRE(dx == Approx(0.0));
+  CHECK(dx == Approx(0.0));
   REQUIRE(ind == 0);
 }
 
@@ -69,7 +69,7 @@ TEST_CASE("SymTrace", "[spline2]")
   double gg[6] = {0.1, 1.6, 1.2, 2.3, 9.4, 2.3};
 
   double tr = SymTrace(h00, h01, h02, h11, h12, h22, gg);
-  REQUIRE(tr == Approx(29.43));
+  CHECK(tr == Approx(29.43));
 }
 
 
@@ -85,25 +85,25 @@ void test_prefactors()
 
   tx = 0.1;
   spline2::MultiBsplineData<T>::compute_prefactors(a, tx);
-  REQUIRE(a[0] == Approx(0.1215));
-  REQUIRE(a[1] == Approx(0.657167));
-  REQUIRE(a[2] == Approx(0.221167));
-  REQUIRE(a[3] == Approx(0.000166667));
+  CHECK(a[0] == Approx(0.1215));
+  CHECK(a[1] == Approx(0.657167));
+  CHECK(a[2] == Approx(0.221167));
+  CHECK(a[3] == Approx(0.000166667));
 
   tx = 0.8;
   spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-  REQUIRE(a[0] == Approx(0.00133333));
-  REQUIRE(da[0] == Approx(-0.02));
-  REQUIRE(d2a[0] == Approx(0.2));
-  REQUIRE(a[1] == Approx(0.282667));
-  REQUIRE(da[1] == Approx(-0.64));
-  REQUIRE(d2a[1] == Approx(0.4));
-  REQUIRE(a[2] == Approx(0.630667));
-  REQUIRE(da[2] == Approx(0.34));
-  REQUIRE(d2a[2] == Approx(-1.4));
-  REQUIRE(a[3] == Approx(0.0853333));
-  REQUIRE(da[3] == Approx(0.32));
-  REQUIRE(d2a[3] == Approx(0.8));
+  CHECK(a[0] == Approx(0.00133333));
+  CHECK(da[0] == Approx(-0.02));
+  CHECK(d2a[0] == Approx(0.2));
+  CHECK(a[1] == Approx(0.282667));
+  CHECK(da[1] == Approx(-0.64));
+  CHECK(d2a[1] == Approx(0.4));
+  CHECK(a[2] == Approx(0.630667));
+  CHECK(da[2] == Approx(0.34));
+  CHECK(d2a[2] == Approx(-1.4));
+  CHECK(a[3] == Approx(0.0853333));
+  CHECK(da[3] == Approx(0.32));
+  CHECK(d2a[3] == Approx(0.8));
 }
 
 TEST_CASE("double prefactors", "[spline2]") { test_prefactors<double>(); }
@@ -269,87 +269,87 @@ struct test_splines<T, 5, 1> : public test_splines_base<T, 5, 1>
 
     aligned_vector<T> v(npad);
     spline2::evaluate3d(bs.getSplinePtr(), pos, v);
-    REQUIRE(v[0] == Approx(-3.529930688e-12));
+    CHECK(v[0] == Approx(-3.529930688e-12));
 
     VectorSoaContainer<T, 3> dv(npad);
     VectorSoaContainer<T, 6> hess(npad);
     spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
     // Gradient
-    REQUIRE(dv[0][0] == Approx(6.178320809));
-    REQUIRE(dv[0][1] == Approx(-7.402942564));
-    REQUIRE(dv[0][2] == Approx(-6.178320809));
+    CHECK(dv[0][0] == Approx(6.178320809));
+    CHECK(dv[0][1] == Approx(-7.402942564));
+    CHECK(dv[0][2] == Approx(-6.178320809));
 
     // Hessian
     for (int i = 0; i < 6; i++)
     {
-      REQUIRE(hess[0][i] == Approx(0.0));
+      CHECK(hess[0][i] == Approx(0.0));
     }
 
     pos = {0.1, 0.2, 0.3};
     spline2::evaluate3d(bs.getSplinePtr(), pos, v);
 
     // Value
-    REQUIRE(v[0] == Approx(-0.9476393279));
+    CHECK(v[0] == Approx(-0.9476393279));
 
     spline2::evaluate3d_vgh(bs.getSplinePtr(), pos, v, dv, hess);
     // Value
-    REQUIRE(v[0] == Approx(-0.9476393279));
+    CHECK(v[0] == Approx(-0.9476393279));
     // Gradient
-    REQUIRE(dv[0][0] == Approx(5.111042137));
-    REQUIRE(dv[0][1] == Approx(5.989106342));
-    REQUIRE(dv[0][2] == Approx(1.952244379));
+    CHECK(dv[0][0] == Approx(5.111042137));
+    CHECK(dv[0][1] == Approx(5.989106342));
+    CHECK(dv[0][2] == Approx(1.952244379));
     // Hessian
-    REQUIRE(hess[0][0] == Approx(-21.34557341));
-    REQUIRE(hess[0][1] == Approx(1.174505743e-09));
-    REQUIRE(hess[0][2] == Approx(-1.1483271e-09));
-    REQUIRE(hess[0][3] == Approx(133.9204891));
-    REQUIRE(hess[0][4] == Approx(-2.15319293e-09));
-    REQUIRE(hess[0][5] == Approx(34.53786329));
+    CHECK(hess[0][0] == Approx(-21.34557341));
+    CHECK(hess[0][1] == Approx(1.174505743e-09));
+    CHECK(hess[0][2] == Approx(-1.1483271e-09));
+    CHECK(hess[0][3] == Approx(133.9204891));
+    CHECK(hess[0][4] == Approx(-2.15319293e-09));
+    CHECK(hess[0][5] == Approx(34.53786329));
 
 
     VectorSoaContainer<T, 3> lap(npad);
     spline2::evaluate3d_vgl(bs.getSplinePtr(), pos, v, dv, lap);
     // Value
-    REQUIRE(v[0] == Approx(-0.9476393279));
+    CHECK(v[0] == Approx(-0.9476393279));
     // Gradient
-    REQUIRE(dv[0][0] == Approx(5.111042137));
-    REQUIRE(dv[0][1] == Approx(5.989106342));
-    REQUIRE(dv[0][2] == Approx(1.952244379));
+    CHECK(dv[0][0] == Approx(5.111042137));
+    CHECK(dv[0][1] == Approx(5.989106342));
+    CHECK(dv[0][2] == Approx(1.952244379));
     // Laplacian
-    REQUIRE(lap[0][0] == Approx(147.1127789));
+    CHECK(lap[0][0] == Approx(147.1127789));
 
     VectorSoaContainer<T, 10> ghess(npad);
     spline2::evaluate3d_vghgh(bs.getSplinePtr(), pos, v, dv, hess, ghess);
     // Value
-    REQUIRE(v[0] == Approx(-0.9476393279));
+    CHECK(v[0] == Approx(-0.9476393279));
     // Gradient
-    REQUIRE(dv[0][0] == Approx(5.111042137));
-    REQUIRE(dv[0][1] == Approx(5.989106342));
-    REQUIRE(dv[0][2] == Approx(1.952244379));
+    CHECK(dv[0][0] == Approx(5.111042137));
+    CHECK(dv[0][1] == Approx(5.989106342));
+    CHECK(dv[0][2] == Approx(1.952244379));
     // Hessian
-    REQUIRE(hess[0][0] == Approx(-21.34557341));
-    REQUIRE(hess[0][1] == Approx(1.174505743e-09));
-    REQUIRE(hess[0][2] == Approx(-1.1483271e-09));
-    REQUIRE(hess[0][3] == Approx(133.9204891));
+    CHECK(hess[0][0] == Approx(-21.34557341));
+    CHECK(hess[0][1] == Approx(1.174505743e-09));
+    CHECK(hess[0][2] == Approx(-1.1483271e-09));
+    CHECK(hess[0][3] == Approx(133.9204891));
 
-    REQUIRE(hess[0][4] == Approx(-2.15319293e-09));
-    REQUIRE(hess[0][5] == Approx(34.53786329));
+    CHECK(hess[0][4] == Approx(-2.15319293e-09));
+    CHECK(hess[0][5] == Approx(34.53786329));
 
 
     // Catch default is 100*(float epsilson)
     double eps = 2000 * std::numeric_limits<float>::epsilon();
 
     // Gradient of Hessian
-    REQUIRE(ghess[0][0] == Approx(-213.455734));
-    REQUIRE(ghess[0][1] == Approx(2.311193459e-09).epsilon(eps));
-    REQUIRE(ghess[0][2] == Approx(3.468205279e-09).epsilon(eps));
-    REQUIRE(ghess[0][3] == Approx(1.58092329e-07).epsilon(eps));
-    REQUIRE(ghess[0][4] == Approx(1.255694171e-08).epsilon(eps));
-    REQUIRE(ghess[0][5] == Approx(4.78981157e-08).epsilon(eps));
-    REQUIRE(ghess[0][6] == Approx(-1753.041961));
-    REQUIRE(ghess[0][7] == Approx(-2.575826885e-09).epsilon(eps));
-    REQUIRE(ghess[0][8] == Approx(-4.683496702e-09).epsilon(eps));
-    REQUIRE(ghess[0][9] == Approx(-81.53283531));
+    CHECK(ghess[0][0] == Approx(-213.455734));
+    CHECK(ghess[0][1] == Approx(2.311193459e-09).epsilon(eps));
+    CHECK(ghess[0][2] == Approx(3.468205279e-09).epsilon(eps));
+    CHECK(ghess[0][3] == Approx(1.58092329e-07).epsilon(eps));
+    CHECK(ghess[0][4] == Approx(1.255694171e-08).epsilon(eps));
+    CHECK(ghess[0][5] == Approx(4.78981157e-08).epsilon(eps));
+    CHECK(ghess[0][6] == Approx(-1753.041961));
+    CHECK(ghess[0][7] == Approx(-2.575826885e-09).epsilon(eps));
+    CHECK(ghess[0][8] == Approx(-4.683496702e-09).epsilon(eps));
+    CHECK(ghess[0][9] == Approx(-81.53283531));
   }
 };
 

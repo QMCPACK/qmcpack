@@ -42,9 +42,9 @@ TEST_CASE("vector", "[OhmmsPETE]")
   // *= operator in OhmmVectorOperators.h
   B *= 3.1;
 
-  REQUIRE(B[0] == Approx(3.1));
-  REQUIRE(B[1] == Approx(3.1));
-  REQUIRE(B[2] == Approx(3.1));
+  CHECK(B[0] == Approx(3.1));
+  CHECK(B[1] == Approx(3.1));
+  CHECK(B[2] == Approx(3.1));
   REQUIRE(B == B);
   REQUIRE(!(B == A));
 

@@ -38,20 +38,20 @@ TEST_CASE("vector", "[OhmmsSoA]")
   RSoA.copyIn(R);
 
   //check in value
-  REQUIRE(R[1][0] == Approx(1.68658058));
-  REQUIRE(R[1][1] == Approx(1.68658058));
-  REQUIRE(R[1][2] == Approx(1.68658058));
+  CHECK(R[1][0] == Approx(1.68658058));
+  CHECK(R[1][1] == Approx(1.68658058));
+  CHECK(R[1][2] == Approx(1.68658058));
 
   //check out value
-  REQUIRE(RSoA[1][0] == Approx(1.68658058));
-  REQUIRE(RSoA[1][1] == Approx(1.68658058));
-  REQUIRE(RSoA[1][2] == Approx(1.68658058));
+  CHECK(RSoA[1][0] == Approx(1.68658058));
+  CHECK(RSoA[1][1] == Approx(1.68658058));
+  CHECK(RSoA[1][2] == Approx(1.68658058));
 
   //check view value
   vec_soa_t RSoA_view(RSoA.data(), RSoA.size(), RSoA.capacity());
-  REQUIRE(RSoA_view[1][0] == Approx(1.68658058));
-  REQUIRE(RSoA_view[1][1] == Approx(1.68658058));
-  REQUIRE(RSoA_view[1][2] == Approx(1.68658058));
+  CHECK(RSoA_view[1][0] == Approx(1.68658058));
+  CHECK(RSoA_view[1][1] == Approx(1.68658058));
+  CHECK(RSoA_view[1][2] == Approx(1.68658058));
 }
 
 TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")
@@ -71,9 +71,9 @@ TEST_CASE("VectorSoaContainer copy constructor", "[OhmmsSoA]")
   // more importantly this test shall not leak memory
 
   //check out value
-  REQUIRE(rsoa_copy[1][0] == Approx(1.68658058));
-  REQUIRE(rsoa_copy[1][1] == Approx(1.68658058));
-  REQUIRE(rsoa_copy[1][2] == Approx(1.68658058));
+  CHECK(rsoa_copy[1][0] == Approx(1.68658058));
+  CHECK(rsoa_copy[1][1] == Approx(1.68658058));
+  CHECK(rsoa_copy[1][2] == Approx(1.68658058));
 }
 
 TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
@@ -93,9 +93,9 @@ TEST_CASE("VectorSoaContainer move constructor", "[OhmmsSoA]")
   // more importantly this test shall not leak memory
 
   //check out value
-  REQUIRE(rsoa_move[1][0] == Approx(1.68658058));
-  REQUIRE(rsoa_move[1][1] == Approx(1.68658058));
-  REQUIRE(rsoa_move[1][2] == Approx(1.68658058));
+  CHECK(rsoa_move[1][0] == Approx(1.68658058));
+  CHECK(rsoa_move[1][1] == Approx(1.68658058));
+  CHECK(rsoa_move[1][2] == Approx(1.68658058));
 }
 
 TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
@@ -111,9 +111,9 @@ TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
 
   VectorSoaContainer<double, 3> rsoa_assign;
   rsoa_assign = RSoA;
-  REQUIRE(rsoa_assign[3][0] == Approx(5.05974172));
-  REQUIRE(rsoa_assign[3][1] == Approx(5.05974172));
-  REQUIRE(rsoa_assign[3][2] == Approx(1.68658058));
+  CHECK(rsoa_assign[3][0] == Approx(5.05974172));
+  CHECK(rsoa_assign[3][1] == Approx(5.05974172));
+  CHECK(rsoa_assign[3][2] == Approx(1.68658058));
 
   Vector<TinyVector<double, 3>> r_big(5);
   VectorSoaContainer<double, 3> r_soa_big(5);
@@ -127,8 +127,8 @@ TEST_CASE("VectorSoaContainer assignment", "[OhmmsSoA]")
   r_soa_big.copyIn(r_big);
 
   rsoa_assign = r_soa_big;
-  REQUIRE(rsoa_assign[4][0] == Approx(3.37316115));
-  REQUIRE(rsoa_assign[4][2] == Approx(0.00000000));
+  CHECK(rsoa_assign[4][0] == Approx(3.37316115));
+  CHECK(rsoa_assign[4][2] == Approx(0.00000000));
 }
 
 } // namespace qmcplusplus

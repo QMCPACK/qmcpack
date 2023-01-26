@@ -84,16 +84,16 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
   sposet->evaluateValue(elec, 0, values);
 
   // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-  REQUIRE(values[0] == ValueApprox(0.9996037001));
+  CHECK(values[0] == ValueApprox(0.9996037001));
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
   // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-  REQUIRE(values[0] == ValueApprox(0.9996037001));
-  REQUIRE(dpsi[0][0] == ValueApprox(-0.0006678035459));
-  REQUIRE(dpsi[0][1] == ValueApprox(0.0));
-  REQUIRE(dpsi[0][2] == ValueApprox(0.0));
-  REQUIRE(d2psi[0] == ValueApprox(-20.03410564));
+  CHECK(values[0] == ValueApprox(0.9996037001));
+  CHECK(dpsi[0][0] == ValueApprox(-0.0006678035459));
+  CHECK(dpsi[0][1] == ValueApprox(0.0));
+  CHECK(dpsi[0][2] == ValueApprox(0.0));
+  CHECK(d2psi[0] == ValueApprox(-20.03410564));
 
 
   ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
@@ -101,11 +101,11 @@ void test_He_sto3g_xml_input(const std::string& spo_xml_string)
 
   sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
   // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
-  REQUIRE(values[0] == ValueApprox(0.2315567641));
-  REQUIRE(dpsi[0][0] == ValueApprox(-0.3805431885));
-  REQUIRE(dpsi[0][1] == ValueApprox(0.0));
-  REQUIRE(dpsi[0][2] == ValueApprox(0.0));
-  REQUIRE(d2psi[0] == ValueApprox(-0.2618497452));
+  CHECK(values[0] == ValueApprox(0.2315567641));
+  CHECK(dpsi[0][0] == ValueApprox(-0.3805431885));
+  CHECK(dpsi[0][1] == ValueApprox(0.0));
+  CHECK(dpsi[0][2] == ValueApprox(0.0));
+  CHECK(d2psi[0] == ValueApprox(-0.2618497452));
 }
 
 TEST_CASE("SPO input spline from xml He_sto3g", "[wavefunction]")

@@ -31,8 +31,8 @@ TEST_CASE("RecordArray basics", "[containers]")
   REQUIRE(records.getNumOfParams() == 2);
   REQUIRE(records.getNumOfEntries() == 1);
 
-  REQUIRE(records[0][0] == Approx(1.1));
-  REQUIRE(records[0][1] == Approx(1.2));
+  CHECK(records[0][0] == Approx(1.1));
+  CHECK(records[0][1] == Approx(1.2));
 }
 
 } // namespace qmcplusplus

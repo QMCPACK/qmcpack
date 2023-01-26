@@ -118,7 +118,7 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // check initialization. Nope, cannot access Psi.Z
   for (int i = 0; i < 2; i++)
   {
-    REQUIRE(LGP->ParticleAlpha[i] == Approx(alpha));
+    CHECK(LGP->ParticleAlpha[i] == Approx(alpha));
   }
 
   // update all distance tables
@@ -129,6 +129,6 @@ TEST_CASE("lattice gaussian", "[wavefunction]")
   // check answer
   RealType r2  = Dot(elec.R, elec.R);
   double wfval = std::exp(-alpha * r2);
-  REQUIRE(logpsi == ComplexApprox(std::log(wfval)));
+  CHECK(logpsi == ComplexApprox(std::log(wfval)));
 }
 } // namespace qmcplusplus

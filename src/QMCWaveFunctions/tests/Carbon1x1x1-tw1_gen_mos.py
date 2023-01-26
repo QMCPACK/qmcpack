@@ -63,8 +63,8 @@ for i in range(7):
     for spo_idx in range(len(mf.mo_coeff[0])):
 
         print('    // Verifying values of SPO %s'%(str(spo_idx)))
-        print('    REQUIRE(std::real(values[%d]) == Approx(%s));'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].real)))
-        print('    REQUIRE(std::imag(values[%d]) == Approx(%s));\n'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].imag)))
+        print('    CHECK(std::real(values[%d]) == Approx(%s));'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].real)))
+        print('    CHECK(std::imag(values[%d]) == Approx(%s));\n'%(spo_idx,str(numpy.dot(numpy.array(mf.mo_coeff)[0].T,ao[0].T)[spo_idx].imag)))
 
 print('    // END generated C++ input from %s (pyscf version %s) on %s'%(__file__,__version__,datetime.datetime.now()))
 

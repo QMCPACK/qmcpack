@@ -103,16 +103,16 @@ void test_He(bool transform)
     sposet->evaluateValue(elec, 0, values);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(0.9996037001));
+    CHECK(values[0] == Approx(0.9996037001));
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
     // Generated from gen_mo.py for position [0.0001, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(0.9996037001));
-    REQUIRE(dpsi[0][0] == Approx(-0.0006678035459));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
-    REQUIRE(d2psi[0] == Approx(-20.03410564));
+    CHECK(values[0] == Approx(0.9996037001));
+    CHECK(dpsi[0][0] == Approx(-0.0006678035459));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
+    CHECK(d2psi[0] == Approx(-20.03410564));
 
 
     ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
@@ -120,11 +120,11 @@ void test_He(bool transform)
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(0.2315567641));
-    REQUIRE(dpsi[0][0] == Approx(-0.3805431885));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
-    REQUIRE(d2psi[0] == Approx(-0.2618497452));
+    CHECK(values[0] == Approx(0.2315567641));
+    CHECK(dpsi[0][0] == Approx(-0.3805431885));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
+    CHECK(d2psi[0] == Approx(-0.2618497452));
   }
 }
 
@@ -209,11 +209,11 @@ void test_He_mw(bool transform)
   // auto elec2 = elec.makeClone();
 
   sposet->evaluateVGL(elec, 0, psi, dpsi, d2psi);
-  REQUIRE(std::real(psi[0]) == Approx(0.9996037001));
-  REQUIRE(std::real(dpsi[0][0]) == Approx(-0.000667803579));
-  REQUIRE(std::real(dpsi[0][1]) == Approx(0));
-  REQUIRE(std::real(dpsi[0][2]) == Approx(0));
-  REQUIRE(std::real(d2psi[0]) == Approx(-20.0342132));
+  CHECK(std::real(psi[0]) == Approx(0.9996037001));
+  CHECK(std::real(dpsi[0][0]) == Approx(-0.000667803579));
+  CHECK(std::real(dpsi[0][1]) == Approx(0));
+  CHECK(std::real(dpsi[0][2]) == Approx(0));
+  CHECK(std::real(d2psi[0]) == Approx(-20.0342132));
 
 
   // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
@@ -260,17 +260,17 @@ void test_He_mw(bool transform)
   // FIXME: add resource management
   sposet->mw_evaluateVGL(spo_list, P_list, 0, psi_list, dpsi_list, d2psi_list);
 
-  REQUIRE(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
-  REQUIRE(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsi[0][0]));
-  REQUIRE(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsi[0][1]));
-  REQUIRE(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsi[0][2]));
-  REQUIRE(std::real(d2psi_list[0].get()[0]) == Approx(d2psi[0]));
+  CHECK(std::real(psi_list[0].get()[0]) == Approx(psi[0]));
+  CHECK(std::real(dpsi_list[0].get()[0][0]) == Approx(dpsi[0][0]));
+  CHECK(std::real(dpsi_list[0].get()[0][1]) == Approx(dpsi[0][1]));
+  CHECK(std::real(dpsi_list[0].get()[0][2]) == Approx(dpsi[0][2]));
+  CHECK(std::real(d2psi_list[0].get()[0]) == Approx(d2psi[0]));
 
-  REQUIRE(std::real(psi_list[1].get()[0]) == Approx(psi[0]));
-  REQUIRE(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x, y switched here
-  REQUIRE(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsi[0][0]));
-  REQUIRE(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsi[0][2]));
-  REQUIRE(std::real(d2psi_list[1].get()[0]) == Approx(d2psi[0]));
+  CHECK(std::real(psi_list[1].get()[0]) == Approx(psi[0]));
+  CHECK(std::real(dpsi_list[1].get()[0][0]) == Approx(dpsi[0][1])); // x, y switched here
+  CHECK(std::real(dpsi_list[1].get()[0][1]) == Approx(dpsi[0][0]));
+  CHECK(std::real(dpsi_list[1].get()[0][2]) == Approx(dpsi[0][2]));
+  CHECK(std::real(d2psi_list[1].get()[0]) == Approx(d2psi[0]));
 }
 
 TEST_CASE("mw_evaluate Numerical He", "[wavefunction]") { test_He_mw(true); }
@@ -361,16 +361,16 @@ void test_EtOH_mw(bool transform)
   // auto elec2 = elec.makeClone();
   sposet->evaluateVGL(elec, 0, psiref_0, dpsiref_0, d2psiref_0);
 
-  REQUIRE(std::real(psiref_0[0]) == Approx(-0.001664403313));
-  REQUIRE(std::real(psiref_0[1]) == Approx(0.01579976715));
-  REQUIRE(std::real(dpsiref_0[0][0]) == Approx(-0.0001961749098));
-  REQUIRE(std::real(dpsiref_0[0][1]) == Approx(0.003340392074));
-  REQUIRE(std::real(dpsiref_0[0][2]) == Approx(9.461877818e-05));
-  REQUIRE(std::real(dpsiref_0[1][0]) == Approx(-0.005476152264));
-  REQUIRE(std::real(dpsiref_0[1][1]) == Approx(-0.06648077046));
-  REQUIRE(std::real(dpsiref_0[1][2]) == Approx(2.086541402e-05));
-  REQUIRE(std::real(d2psiref_0[0]) == Approx(0.01071299243));
-  REQUIRE(std::real(d2psiref_0[1]) == Approx(0.4121970776));
+  CHECK(std::real(psiref_0[0]) == Approx(-0.001664403313));
+  CHECK(std::real(psiref_0[1]) == Approx(0.01579976715));
+  CHECK(std::real(dpsiref_0[0][0]) == Approx(-0.0001961749098));
+  CHECK(std::real(dpsiref_0[0][1]) == Approx(0.003340392074));
+  CHECK(std::real(dpsiref_0[0][2]) == Approx(9.461877818e-05));
+  CHECK(std::real(dpsiref_0[1][0]) == Approx(-0.005476152264));
+  CHECK(std::real(dpsiref_0[1][1]) == Approx(-0.06648077046));
+  CHECK(std::real(dpsiref_0[1][2]) == Approx(2.086541402e-05));
+  CHECK(std::real(d2psiref_0[0]) == Approx(0.01071299243));
+  CHECK(std::real(d2psiref_0[1]) == Approx(0.4121970776));
 
   //ParticleSet::SingleParticlePos newpos2(0.0, 0.04, 0.02);
   //elec.makeMove(1, newpos2);
@@ -383,17 +383,17 @@ void test_EtOH_mw(bool transform)
   SPOSet::ValueVector d2psiref_1(n_mo);
   sposet->evaluateVGL(elec, 1, psiref_1, dpsiref_1, d2psiref_1);
 
-  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
-  REQUIRE(std::real(psiref_1[0]) == Approx(-0.001528135727));
-  REQUIRE(std::real(psiref_1[1]) == Approx(0.01351541907));
-  REQUIRE(std::real(d2psiref_1[0]) == Approx(0.01001796854));
-  REQUIRE(std::real(d2psiref_1[1]) == Approx(0.2912963205));
-  REQUIRE(std::real(dpsiref_1[0][0]) == Approx(-0.0004235196101));
-  REQUIRE(std::real(dpsiref_1[0][1]) == Approx(0.003351193375));
-  REQUIRE(std::real(dpsiref_1[0][2]) == Approx(0.0001374796409));
-  REQUIRE(std::real(dpsiref_1[1][0]) == Approx(-0.003873067027));
-  REQUIRE(std::real(dpsiref_1[1][1]) == Approx(-0.0483167767));
-  REQUIRE(std::real(dpsiref_1[1][2]) == Approx(-0.0008320732335));
+  CHECK(std::real(psiref_1[0]) == Approx(-0.001528135727));
+  CHECK(std::real(psiref_1[0]) == Approx(-0.001528135727));
+  CHECK(std::real(psiref_1[1]) == Approx(0.01351541907));
+  CHECK(std::real(d2psiref_1[0]) == Approx(0.01001796854));
+  CHECK(std::real(d2psiref_1[1]) == Approx(0.2912963205));
+  CHECK(std::real(dpsiref_1[0][0]) == Approx(-0.0004235196101));
+  CHECK(std::real(dpsiref_1[0][1]) == Approx(0.003351193375));
+  CHECK(std::real(dpsiref_1[0][2]) == Approx(0.0001374796409));
+  CHECK(std::real(dpsiref_1[1][0]) == Approx(-0.003873067027));
+  CHECK(std::real(dpsiref_1[1][1]) == Approx(-0.0483167767));
+  CHECK(std::real(dpsiref_1[1][2]) == Approx(-0.0008320732335));
 
   // vectors of SPOSets, ParticleSets, V/G/L (leading dim of each == nwalkers)
   RefVectorWithLeader<SPOSet> spo_list(*sposet);
@@ -427,14 +427,14 @@ void test_EtOH_mw(bool transform)
 
   for (size_t iorb = 0; iorb < n_mo; iorb++)
   {
-    REQUIRE(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
-    REQUIRE(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
-    REQUIRE(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
-    REQUIRE(std::real(d2psi_list[1].get()[iorb]) == Approx(d2psiref_1[iorb]));
+    CHECK(std::real(psi_list[0].get()[iorb]) == Approx(psiref_0[iorb]));
+    CHECK(std::real(psi_list[1].get()[iorb]) == Approx(psiref_1[iorb]));
+    CHECK(std::real(d2psi_list[0].get()[iorb]) == Approx(d2psiref_0[iorb]));
+    CHECK(std::real(d2psi_list[1].get()[iorb]) == Approx(d2psiref_1[iorb]));
     for (size_t idim = 0; idim < SPOSet::DIM; idim++)
     {
-      REQUIRE(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(dpsiref_0[iorb][idim]));
-      REQUIRE(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(dpsiref_1[iorb][idim]));
+      CHECK(std::real(dpsi_list[0].get()[iorb][idim]) == Approx(dpsiref_0[iorb][idim]));
+      CHECK(std::real(dpsi_list[1].get()[iorb][idim]) == Approx(dpsiref_1[iorb][idim]));
     }
   }
 }
@@ -530,33 +530,33 @@ void test_Ne(bool transform)
     std::cout << "values = " << values << std::endl;
 
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(-16.11819042));
+    CHECK(values[0] == Approx(-16.11819042));
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     std::cout << "values = " << values << std::endl;
     std::cout << "dpsi = " << dpsi << std::endl;
     std::cout << "d2psi = " << d2psi << std::endl;
     // Generated from gen_mo.py for position [1e-05, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(-16.11819042));
-    REQUIRE(dpsi[0][0] == Approx(0.1747261458));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
+    CHECK(values[0] == Approx(-16.11819042));
+    CHECK(dpsi[0][0] == Approx(0.1747261458));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
 
 
     ParticleSet::SingleParticlePos disp(1.0, 0.0, 0.0);
     elec.makeMove(0, disp);
     sposet->evaluateValue(elec, 0, values);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(-0.005041631374));
+    CHECK(values[0] == Approx(-0.005041631374));
 
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
     // Generated from gen_mo.py for position [1.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(-0.005041631374));
-    REQUIRE(dpsi[0][0] == Approx(0.01862216578));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
-    REQUIRE(d2psi[0] == Approx(-0.01551755818));
+    CHECK(values[0] == Approx(-0.005041631374));
+    CHECK(dpsi[0][0] == Approx(0.01862216578));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
+    CHECK(d2psi[0] == Approx(-0.01551755818));
 
     // when a determinant only contains a single particle.
     SPOSet::ValueVector phi(1), phiinv(1);
@@ -661,59 +661,59 @@ void test_HCN(bool transform)
 
     sposet->evaluateValue(elec, 0, values);
 
-    REQUIRE(values[0] == Approx(0.009452265234));
-    REQUIRE(values[1] == Approx(0.02008357407));
-    REQUIRE(values[2] == Approx(0.4163749594));
-    REQUIRE(values[3] == Approx(-0.08854428343));
-    REQUIRE(values[4] == Approx(0.273158705));
-    REQUIRE(values[5] == Approx(0));
-    REQUIRE(values[6] == Approx(0));
+    CHECK(values[0] == Approx(0.009452265234));
+    CHECK(values[1] == Approx(0.02008357407));
+    CHECK(values[2] == Approx(0.4163749594));
+    CHECK(values[3] == Approx(-0.08854428343));
+    CHECK(values[4] == Approx(0.273158705));
+    CHECK(values[5] == Approx(0));
+    CHECK(values[6] == Approx(0));
 
     sposet->evaluateVGL(elec, 0, values, dpsi, d2psi);
 
 
     // Generated form gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(0.009452265234));
-    REQUIRE(dpsi[0][0] == Approx(-0.05400764372));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
-    REQUIRE(d2psi[0] == Approx(0.2532157143));
+    CHECK(values[0] == Approx(0.009452265234));
+    CHECK(dpsi[0][0] == Approx(-0.05400764372));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
+    CHECK(d2psi[0] == Approx(0.2532157143));
 
-    REQUIRE(values[1] == Approx(0.02008357407));
-    REQUIRE(dpsi[1][0] == Approx(0.1009262252));
-    REQUIRE(dpsi[1][1] == Approx(0));
-    REQUIRE(dpsi[1][2] == Approx(0));
-    REQUIRE(d2psi[1] == Approx(0.3423520138));
+    CHECK(values[1] == Approx(0.02008357407));
+    CHECK(dpsi[1][0] == Approx(0.1009262252));
+    CHECK(dpsi[1][1] == Approx(0));
+    CHECK(dpsi[1][2] == Approx(0));
+    CHECK(d2psi[1] == Approx(0.3423520138));
 
-    REQUIRE(values[2] == Approx(0.4163749594));
-    REQUIRE(dpsi[2][0] == Approx(-0.1202256419));
-    REQUIRE(dpsi[2][1] == Approx(0));
-    REQUIRE(dpsi[2][2] == Approx(0));
-    REQUIRE(d2psi[2] == Approx(-1.178149899));
+    CHECK(values[2] == Approx(0.4163749594));
+    CHECK(dpsi[2][0] == Approx(-0.1202256419));
+    CHECK(dpsi[2][1] == Approx(0));
+    CHECK(dpsi[2][2] == Approx(0));
+    CHECK(d2psi[2] == Approx(-1.178149899));
 
-    REQUIRE(values[3] == Approx(-0.08854428343));
-    REQUIRE(dpsi[3][0] == Approx(-0.004505552544));
-    REQUIRE(dpsi[3][1] == Approx(0));
-    REQUIRE(dpsi[3][2] == Approx(0));
-    REQUIRE(d2psi[3] == Approx(0.2838238091));
+    CHECK(values[3] == Approx(-0.08854428343));
+    CHECK(dpsi[3][0] == Approx(-0.004505552544));
+    CHECK(dpsi[3][1] == Approx(0));
+    CHECK(dpsi[3][2] == Approx(0));
+    CHECK(d2psi[3] == Approx(0.2838238091));
 
-    REQUIRE(values[4] == Approx(0.273158705));
-    REQUIRE(dpsi[4][0] == Approx(-0.01125044248));
-    REQUIRE(dpsi[4][1] == Approx(0));
-    REQUIRE(dpsi[4][2] == Approx(0));
-    REQUIRE(d2psi[4] == Approx(-0.9173261582));
+    CHECK(values[4] == Approx(0.273158705));
+    CHECK(dpsi[4][0] == Approx(-0.01125044248));
+    CHECK(dpsi[4][1] == Approx(0));
+    CHECK(dpsi[4][2] == Approx(0));
+    CHECK(d2psi[4] == Approx(-0.9173261582));
 
-    REQUIRE(values[5] == Approx(0));
-    REQUIRE(dpsi[5][0] == Approx(0));
-    REQUIRE(dpsi[5][1] == Approx(0.4221165864));
-    REQUIRE(dpsi[5][2] == Approx(-0.08191634629));
-    REQUIRE(d2psi[5] == Approx(0));
+    CHECK(values[5] == Approx(0));
+    CHECK(dpsi[5][0] == Approx(0));
+    CHECK(dpsi[5][1] == Approx(0.4221165864));
+    CHECK(dpsi[5][2] == Approx(-0.08191634629));
+    CHECK(d2psi[5] == Approx(0));
 
-    REQUIRE(values[6] == Approx(0));
-    REQUIRE(dpsi[6][0] == Approx(0));
-    REQUIRE(dpsi[6][1] == Approx(0.08191634629));
-    REQUIRE(dpsi[6][2] == Approx(0.4221165864));
-    REQUIRE(d2psi[6] == Approx(0));
+    CHECK(values[6] == Approx(0));
+    CHECK(dpsi[6][0] == Approx(0));
+    CHECK(dpsi[6][1] == Approx(0.08191634629));
+    CHECK(dpsi[6][2] == Approx(0.4221165864));
+    CHECK(d2psi[6] == Approx(0));
 
     //==========Hessian and Grad Hessian Test==========
     SPOSet::HessVector dhpsi;
@@ -722,17 +722,17 @@ void test_HCN(bool transform)
     sposet->evaluateVGH(elec, 0, values, dpsi, dhpsi);
 
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(values[0] == Approx(0.009452265234));
-    REQUIRE(dpsi[0][0] == Approx(-0.05400764372));
-    REQUIRE(dpsi[0][1] == Approx(0));
-    REQUIRE(dpsi[0][2] == Approx(0));
+    CHECK(values[0] == Approx(0.009452265234));
+    CHECK(dpsi[0][0] == Approx(-0.05400764372));
+    CHECK(dpsi[0][1] == Approx(0));
+    CHECK(dpsi[0][2] == Approx(0));
     //Hessian (xx,xy,xz,yy,yz,zz)
-    REQUIRE(dhpsi[0](0, 0) == Approx(0.3523924743));
-    REQUIRE(dhpsi[0](0, 1) == Approx(0));
-    REQUIRE(dhpsi[0](0, 2) == Approx(0));
-    REQUIRE(dhpsi[0](1, 1) == Approx(-0.04958838002));
-    REQUIRE(dhpsi[0](1, 2) == Approx(0));
-    REQUIRE(dhpsi[0](2, 2) == Approx(-0.04958838002));
+    CHECK(dhpsi[0](0, 0) == Approx(0.3523924743));
+    CHECK(dhpsi[0](0, 1) == Approx(0));
+    CHECK(dhpsi[0](0, 2) == Approx(0));
+    CHECK(dhpsi[0](1, 1) == Approx(-0.04958838002));
+    CHECK(dhpsi[0](1, 2) == Approx(0));
+    CHECK(dhpsi[0](2, 2) == Approx(-0.04958838002));
 
     /////////////////////////////////////////////////////////////////////////////
     //Now we're going to test the API's called by SPOSet for higher derivatives//
@@ -746,77 +746,77 @@ void test_HCN(bool transform)
 
 
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(psiM[0][0] == Approx(0.009452265234));
-    REQUIRE(dpsiM[0][0][0] == Approx(-0.05400764372));
-    REQUIRE(dpsiM[0][0][1] == Approx(0));
-    REQUIRE(dpsiM[0][0][2] == Approx(0));
+    CHECK(psiM[0][0] == Approx(0.009452265234));
+    CHECK(dpsiM[0][0][0] == Approx(-0.05400764372));
+    CHECK(dpsiM[0][0][1] == Approx(0));
+    CHECK(dpsiM[0][0][2] == Approx(0));
     //Hessian (xx,xy,xz,yy,yz,zz)
-    REQUIRE(hesspsiV[0][0](0, 0) == Approx(0.3523924743));
-    REQUIRE(hesspsiV[0][0](0, 1) == Approx(0));
-    REQUIRE(hesspsiV[0][0](0, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][0](1, 1) == Approx(-0.04958838002));
-    REQUIRE(hesspsiV[0][0](1, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][0](2, 2) == Approx(-0.04958838002));
+    CHECK(hesspsiV[0][0](0, 0) == Approx(0.3523924743));
+    CHECK(hesspsiV[0][0](0, 1) == Approx(0));
+    CHECK(hesspsiV[0][0](0, 2) == Approx(0));
+    CHECK(hesspsiV[0][0](1, 1) == Approx(-0.04958838002));
+    CHECK(hesspsiV[0][0](1, 2) == Approx(0));
+    CHECK(hesspsiV[0][0](2, 2) == Approx(-0.04958838002));
 
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz)
-    REQUIRE(d3psiV[0][0][0](0, 0) == Approx(-2.241965465));
-    REQUIRE(d3psiV[0][0][0](0, 1) == Approx(0));
-    REQUIRE(d3psiV[0][0][0](0, 2) == Approx(0));
-    REQUIRE(d3psiV[0][0][0](1, 1) == Approx(0.3714481861));
-    REQUIRE(d3psiV[0][0][0](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][0][0](2, 2) == Approx(0.3714481861));
-    REQUIRE(d3psiV[0][0][1](1, 1) == Approx(0));
-    REQUIRE(d3psiV[0][0][1](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][0][1](2, 2) == Approx(0));
-    REQUIRE(d3psiV[0][0][2](2, 2) == Approx(0));
+    CHECK(d3psiV[0][0][0](0, 0) == Approx(-2.241965465));
+    CHECK(d3psiV[0][0][0](0, 1) == Approx(0));
+    CHECK(d3psiV[0][0][0](0, 2) == Approx(0));
+    CHECK(d3psiV[0][0][0](1, 1) == Approx(0.3714481861));
+    CHECK(d3psiV[0][0][0](1, 2) == Approx(0));
+    CHECK(d3psiV[0][0][0](2, 2) == Approx(0.3714481861));
+    CHECK(d3psiV[0][0][1](1, 1) == Approx(0));
+    CHECK(d3psiV[0][0][1](1, 2) == Approx(0));
+    CHECK(d3psiV[0][0][1](2, 2) == Approx(0));
+    CHECK(d3psiV[0][0][2](2, 2) == Approx(0));
 
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(psiM[0][1] == Approx(0.02008357407));
-    REQUIRE(dpsiM[0][1][0] == Approx(0.1009262252));
-    REQUIRE(dpsiM[0][1][1] == Approx(0));
-    REQUIRE(dpsiM[0][1][2] == Approx(0));
+    CHECK(psiM[0][1] == Approx(0.02008357407));
+    CHECK(dpsiM[0][1][0] == Approx(0.1009262252));
+    CHECK(dpsiM[0][1][1] == Approx(0));
+    CHECK(dpsiM[0][1][2] == Approx(0));
     //Hessian (xx,xy,xz,yy,yz,zz)
-    REQUIRE(hesspsiV[0][1](0, 0) == Approx(0.5298289497));
-    REQUIRE(hesspsiV[0][1](0, 1) == Approx(0));
-    REQUIRE(hesspsiV[0][1](0, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][1](1, 1) == Approx(-0.09373846794));
-    REQUIRE(hesspsiV[0][1](1, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][1](2, 2) == Approx(-0.09373846794));
+    CHECK(hesspsiV[0][1](0, 0) == Approx(0.5298289497));
+    CHECK(hesspsiV[0][1](0, 1) == Approx(0));
+    CHECK(hesspsiV[0][1](0, 2) == Approx(0));
+    CHECK(hesspsiV[0][1](1, 1) == Approx(-0.09373846794));
+    CHECK(hesspsiV[0][1](1, 2) == Approx(0));
+    CHECK(hesspsiV[0][1](2, 2) == Approx(-0.09373846794));
 
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz)
-    REQUIRE(d3psiV[0][1][0](0, 0) == Approx(2.594787656));
-    REQUIRE(d3psiV[0][1][0](0, 1) == Approx(0));
-    REQUIRE(d3psiV[0][1][0](0, 2) == Approx(0));
-    REQUIRE(d3psiV[0][1][0](1, 1) == Approx(-0.5720485625));
-    REQUIRE(d3psiV[0][1][0](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][1][0](2, 2) == Approx(-0.5720485625));
-    REQUIRE(d3psiV[0][1][1](1, 1) == Approx(0));
-    REQUIRE(d3psiV[0][1][1](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][1][1](2, 2) == Approx(0));
-    REQUIRE(d3psiV[0][1][2](2, 2) == Approx(0));
+    CHECK(d3psiV[0][1][0](0, 0) == Approx(2.594787656));
+    CHECK(d3psiV[0][1][0](0, 1) == Approx(0));
+    CHECK(d3psiV[0][1][0](0, 2) == Approx(0));
+    CHECK(d3psiV[0][1][0](1, 1) == Approx(-0.5720485625));
+    CHECK(d3psiV[0][1][0](1, 2) == Approx(0));
+    CHECK(d3psiV[0][1][0](2, 2) == Approx(-0.5720485625));
+    CHECK(d3psiV[0][1][1](1, 1) == Approx(0));
+    CHECK(d3psiV[0][1][1](1, 2) == Approx(0));
+    CHECK(d3psiV[0][1][1](2, 2) == Approx(0));
+    CHECK(d3psiV[0][1][2](2, 2) == Approx(0));
     // Generated from gen_mo.py for position [0.0, 0.0, 0.0]
-    REQUIRE(psiM[0][2] == Approx(0.4163749594));
-    REQUIRE(dpsiM[0][2][0] == Approx(-0.1202256419));
-    REQUIRE(dpsiM[0][2][1] == Approx(0));
-    REQUIRE(dpsiM[0][2][2] == Approx(0));
+    CHECK(psiM[0][2] == Approx(0.4163749594));
+    CHECK(dpsiM[0][2][0] == Approx(-0.1202256419));
+    CHECK(dpsiM[0][2][1] == Approx(0));
+    CHECK(dpsiM[0][2][2] == Approx(0));
     //Hessian (xx,xy,xz,yy,yz,zz)
-    REQUIRE(hesspsiV[0][2](0, 0) == Approx(-0.02607695984));
-    REQUIRE(hesspsiV[0][2](0, 1) == Approx(0));
-    REQUIRE(hesspsiV[0][2](0, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][2](1, 1) == Approx(-0.5760364698));
-    REQUIRE(hesspsiV[0][2](1, 2) == Approx(0));
-    REQUIRE(hesspsiV[0][2](2, 2) == Approx(-0.5760364698));
+    CHECK(hesspsiV[0][2](0, 0) == Approx(-0.02607695984));
+    CHECK(hesspsiV[0][2](0, 1) == Approx(0));
+    CHECK(hesspsiV[0][2](0, 2) == Approx(0));
+    CHECK(hesspsiV[0][2](1, 1) == Approx(-0.5760364698));
+    CHECK(hesspsiV[0][2](1, 2) == Approx(0));
+    CHECK(hesspsiV[0][2](2, 2) == Approx(-0.5760364698));
     //GradHessian (xxx,xxy,xxz,xyy,xyz,xzz,yyy,yyz,yzz,zzz)
-    REQUIRE(d3psiV[0][2][0](0, 0) == Approx(-0.227147312));
-    REQUIRE(d3psiV[0][2][0](0, 1) == Approx(0));
-    REQUIRE(d3psiV[0][2][0](0, 2) == Approx(0));
-    REQUIRE(d3psiV[0][2][0](1, 1) == Approx(0.2992015499));
-    REQUIRE(d3psiV[0][2][0](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][2][0](2, 2) == Approx(0.2992015499));
-    REQUIRE(d3psiV[0][2][1](1, 1) == Approx(0));
-    REQUIRE(d3psiV[0][2][1](1, 2) == Approx(0));
-    REQUIRE(d3psiV[0][2][1](2, 2) == Approx(0));
-    REQUIRE(d3psiV[0][2][2](2, 2) == Approx(0));
+    CHECK(d3psiV[0][2][0](0, 0) == Approx(-0.227147312));
+    CHECK(d3psiV[0][2][0](0, 1) == Approx(0));
+    CHECK(d3psiV[0][2][0](0, 2) == Approx(0));
+    CHECK(d3psiV[0][2][0](1, 1) == Approx(0.2992015499));
+    CHECK(d3psiV[0][2][0](1, 2) == Approx(0));
+    CHECK(d3psiV[0][2][0](2, 2) == Approx(0.2992015499));
+    CHECK(d3psiV[0][2][1](1, 1) == Approx(0));
+    CHECK(d3psiV[0][2][1](1, 2) == Approx(0));
+    CHECK(d3psiV[0][2][1](2, 2) == Approx(0));
+    CHECK(d3psiV[0][2][2](2, 2) == Approx(0));
 
 
     //Move electron 0 to some nontrivial position:
@@ -831,152 +831,152 @@ void test_HCN(bool transform)
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi, diongradpsi, dionlaplpsi);
 
     //============== Ion  0  Component  0 ===================
-    REQUIRE(dionpsi[0][0][0] == Approx(0.0453112082));
-    REQUIRE(diongradpsi[0][0](0, 0) == Approx(-0.2943513994));
-    REQUIRE(diongradpsi[0][0](0, 1) == Approx(0.030468047));
-    REQUIRE(diongradpsi[0][0](0, 2) == Approx(-0.0152340235));
-    REQUIRE(dionlaplpsi[0][0][0] == Approx(1.333755581));
-    REQUIRE(dionpsi[0][1][0] == Approx(-0.0006473819623));
-    REQUIRE(diongradpsi[0][1](0, 0) == Approx(0.0004713407512));
-    REQUIRE(diongradpsi[0][1](0, 1) == Approx(-0.0001254975603));
-    REQUIRE(diongradpsi[0][1](0, 2) == Approx(6.274878013e-05));
-    REQUIRE(dionlaplpsi[0][1][0] == Approx(0.001057940846));
-    REQUIRE(dionpsi[0][2][0] == Approx(0.265578336));
-    REQUIRE(diongradpsi[0][2](0, 0) == Approx(-0.08685804115));
-    REQUIRE(diongradpsi[0][2](0, 1) == Approx(0.05438178417));
-    REQUIRE(diongradpsi[0][2](0, 2) == Approx(-0.02719089209));
-    REQUIRE(dionlaplpsi[0][2][0] == Approx(-1.882489819));
-    REQUIRE(dionpsi[0][3][0] == Approx(-0.06444305979));
-    REQUIRE(diongradpsi[0][3](0, 0) == Approx(-0.002013151923));
-    REQUIRE(diongradpsi[0][3](0, 1) == Approx(-0.002535923431));
-    REQUIRE(diongradpsi[0][3](0, 2) == Approx(0.001267961716));
-    REQUIRE(dionlaplpsi[0][3][0] == Approx(0.4547401581));
-    REQUIRE(dionpsi[0][4][0] == Approx(0.1454357726));
-    REQUIRE(diongradpsi[0][4](0, 0) == Approx(-0.2330499431));
-    REQUIRE(diongradpsi[0][4](0, 1) == Approx(0.09667641762));
-    REQUIRE(diongradpsi[0][4](0, 2) == Approx(-0.04833820881));
-    REQUIRE(dionlaplpsi[0][4][0] == Approx(-0.9197558839));
-    REQUIRE(dionpsi[0][5][0] == Approx(-0.04329985085));
-    REQUIRE(diongradpsi[0][5](0, 0) == Approx(0.09051993304));
-    REQUIRE(diongradpsi[0][5](0, 1) == Approx(0.382375474));
-    REQUIRE(diongradpsi[0][5](0, 2) == Approx(-0.07043361927));
-    REQUIRE(dionlaplpsi[0][5][0] == Approx(0.2201672051));
-    REQUIRE(dionpsi[0][6][0] == Approx(0.01207541177));
-    REQUIRE(diongradpsi[0][6](0, 0) == Approx(-0.02524405435));
-    REQUIRE(diongradpsi[0][6](0, 1) == Approx(0.0800332842));
-    REQUIRE(diongradpsi[0][6](0, 2) == Approx(0.3929818664));
-    REQUIRE(dionlaplpsi[0][6][0] == Approx(-0.0614000824));
+    CHECK(dionpsi[0][0][0] == Approx(0.0453112082));
+    CHECK(diongradpsi[0][0](0, 0) == Approx(-0.2943513994));
+    CHECK(diongradpsi[0][0](0, 1) == Approx(0.030468047));
+    CHECK(diongradpsi[0][0](0, 2) == Approx(-0.0152340235));
+    CHECK(dionlaplpsi[0][0][0] == Approx(1.333755581));
+    CHECK(dionpsi[0][1][0] == Approx(-0.0006473819623));
+    CHECK(diongradpsi[0][1](0, 0) == Approx(0.0004713407512));
+    CHECK(diongradpsi[0][1](0, 1) == Approx(-0.0001254975603));
+    CHECK(diongradpsi[0][1](0, 2) == Approx(6.274878013e-05));
+    CHECK(dionlaplpsi[0][1][0] == Approx(0.001057940846));
+    CHECK(dionpsi[0][2][0] == Approx(0.265578336));
+    CHECK(diongradpsi[0][2](0, 0) == Approx(-0.08685804115));
+    CHECK(diongradpsi[0][2](0, 1) == Approx(0.05438178417));
+    CHECK(diongradpsi[0][2](0, 2) == Approx(-0.02719089209));
+    CHECK(dionlaplpsi[0][2][0] == Approx(-1.882489819));
+    CHECK(dionpsi[0][3][0] == Approx(-0.06444305979));
+    CHECK(diongradpsi[0][3](0, 0) == Approx(-0.002013151923));
+    CHECK(diongradpsi[0][3](0, 1) == Approx(-0.002535923431));
+    CHECK(diongradpsi[0][3](0, 2) == Approx(0.001267961716));
+    CHECK(dionlaplpsi[0][3][0] == Approx(0.4547401581));
+    CHECK(dionpsi[0][4][0] == Approx(0.1454357726));
+    CHECK(diongradpsi[0][4](0, 0) == Approx(-0.2330499431));
+    CHECK(diongradpsi[0][4](0, 1) == Approx(0.09667641762));
+    CHECK(diongradpsi[0][4](0, 2) == Approx(-0.04833820881));
+    CHECK(dionlaplpsi[0][4][0] == Approx(-0.9197558839));
+    CHECK(dionpsi[0][5][0] == Approx(-0.04329985085));
+    CHECK(diongradpsi[0][5](0, 0) == Approx(0.09051993304));
+    CHECK(diongradpsi[0][5](0, 1) == Approx(0.382375474));
+    CHECK(diongradpsi[0][5](0, 2) == Approx(-0.07043361927));
+    CHECK(dionlaplpsi[0][5][0] == Approx(0.2201672051));
+    CHECK(dionpsi[0][6][0] == Approx(0.01207541177));
+    CHECK(diongradpsi[0][6](0, 0) == Approx(-0.02524405435));
+    CHECK(diongradpsi[0][6](0, 1) == Approx(0.0800332842));
+    CHECK(diongradpsi[0][6](0, 2) == Approx(0.3929818664));
+    CHECK(dionlaplpsi[0][6][0] == Approx(-0.0614000824));
 
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 1, dionpsi, diongradpsi, dionlaplpsi);
 
     //============== Ion  1  Component  1 ===================
-    REQUIRE(dionpsi[0][0][1] == Approx(0.0001412373768));
-    REQUIRE(diongradpsi[0][0](1, 0) == Approx(0.0001124265646));
-    REQUIRE(diongradpsi[0][0](1, 1) == Approx(-0.001383378615));
-    REQUIRE(diongradpsi[0][0](1, 2) == Approx(-1.449757545e-05));
-    REQUIRE(dionlaplpsi[0][0][1] == Approx(-0.001252043663));
-    REQUIRE(dionpsi[0][1][1] == Approx(-0.01029290716));
-    REQUIRE(diongradpsi[0][1](1, 0) == Approx(-0.06178485148));
-    REQUIRE(diongradpsi[0][1](1, 1) == Approx(0.0971577216));
-    REQUIRE(diongradpsi[0][1](1, 2) == Approx(0.002885675005));
-    REQUIRE(dionlaplpsi[0][1][1] == Approx(-0.1403103458));
-    REQUIRE(dionpsi[0][2][1] == Approx(-0.0230872583));
-    REQUIRE(diongradpsi[0][2](1, 0) == Approx(-0.02537847709));
-    REQUIRE(diongradpsi[0][2](1, 1) == Approx(0.2268946564));
-    REQUIRE(diongradpsi[0][2](1, 2) == Approx(0.001988963201));
-    REQUIRE(dionlaplpsi[0][2][1] == Approx(0.2028851421));
-    REQUIRE(dionpsi[0][3][1] == Approx(0.01850231814));
-    REQUIRE(diongradpsi[0][3](1, 0) == Approx(0.05709948475));
-    REQUIRE(diongradpsi[0][3](1, 1) == Approx(-0.1776515965));
-    REQUIRE(diongradpsi[0][3](1, 2) == Approx(-0.003685792479));
-    REQUIRE(dionlaplpsi[0][3][1] == Approx(-0.1280699725));
-    REQUIRE(dionpsi[0][4][1] == Approx(-0.02136209962));
-    REQUIRE(diongradpsi[0][4](1, 0) == Approx(-0.03836586276));
-    REQUIRE(diongradpsi[0][4](1, 1) == Approx(0.2084578148));
-    REQUIRE(diongradpsi[0][4](1, 2) == Approx(0.002581590766));
-    REQUIRE(dionlaplpsi[0][4][1] == Approx(0.1792683544));
-    REQUIRE(dionpsi[0][5][1] == Approx(-0.1942343714));
-    REQUIRE(diongradpsi[0][5](1, 0) == Approx(-0.3037357197));
-    REQUIRE(diongradpsi[0][5](1, 1) == Approx(-0.09561978734));
-    REQUIRE(diongradpsi[0][5](1, 2) == Approx(0.02118492506));
-    REQUIRE(dionlaplpsi[0][5][1] == Approx(0.6410434658));
-    REQUIRE(dionpsi[0][6][1] == Approx(-0.03930992259));
-    REQUIRE(diongradpsi[0][6](1, 0) == Approx(-0.06331544695));
-    REQUIRE(diongradpsi[0][6](1, 1) == Approx(-0.002807368817));
-    REQUIRE(diongradpsi[0][6](1, 2) == Approx(-0.02801340823));
-    REQUIRE(dionlaplpsi[0][6][1] == Approx(0.1369061053));
+    CHECK(dionpsi[0][0][1] == Approx(0.0001412373768));
+    CHECK(diongradpsi[0][0](1, 0) == Approx(0.0001124265646));
+    CHECK(diongradpsi[0][0](1, 1) == Approx(-0.001383378615));
+    CHECK(diongradpsi[0][0](1, 2) == Approx(-1.449757545e-05));
+    CHECK(dionlaplpsi[0][0][1] == Approx(-0.001252043663));
+    CHECK(dionpsi[0][1][1] == Approx(-0.01029290716));
+    CHECK(diongradpsi[0][1](1, 0) == Approx(-0.06178485148));
+    CHECK(diongradpsi[0][1](1, 1) == Approx(0.0971577216));
+    CHECK(diongradpsi[0][1](1, 2) == Approx(0.002885675005));
+    CHECK(dionlaplpsi[0][1][1] == Approx(-0.1403103458));
+    CHECK(dionpsi[0][2][1] == Approx(-0.0230872583));
+    CHECK(diongradpsi[0][2](1, 0) == Approx(-0.02537847709));
+    CHECK(diongradpsi[0][2](1, 1) == Approx(0.2268946564));
+    CHECK(diongradpsi[0][2](1, 2) == Approx(0.001988963201));
+    CHECK(dionlaplpsi[0][2][1] == Approx(0.2028851421));
+    CHECK(dionpsi[0][3][1] == Approx(0.01850231814));
+    CHECK(diongradpsi[0][3](1, 0) == Approx(0.05709948475));
+    CHECK(diongradpsi[0][3](1, 1) == Approx(-0.1776515965));
+    CHECK(diongradpsi[0][3](1, 2) == Approx(-0.003685792479));
+    CHECK(dionlaplpsi[0][3][1] == Approx(-0.1280699725));
+    CHECK(dionpsi[0][4][1] == Approx(-0.02136209962));
+    CHECK(diongradpsi[0][4](1, 0) == Approx(-0.03836586276));
+    CHECK(diongradpsi[0][4](1, 1) == Approx(0.2084578148));
+    CHECK(diongradpsi[0][4](1, 2) == Approx(0.002581590766));
+    CHECK(dionlaplpsi[0][4][1] == Approx(0.1792683544));
+    CHECK(dionpsi[0][5][1] == Approx(-0.1942343714));
+    CHECK(diongradpsi[0][5](1, 0) == Approx(-0.3037357197));
+    CHECK(diongradpsi[0][5](1, 1) == Approx(-0.09561978734));
+    CHECK(diongradpsi[0][5](1, 2) == Approx(0.02118492506));
+    CHECK(dionlaplpsi[0][5][1] == Approx(0.6410434658));
+    CHECK(dionpsi[0][6][1] == Approx(-0.03930992259));
+    CHECK(diongradpsi[0][6](1, 0) == Approx(-0.06331544695));
+    CHECK(diongradpsi[0][6](1, 1) == Approx(-0.002807368817));
+    CHECK(diongradpsi[0][6](1, 2) == Approx(-0.02801340823));
+    CHECK(dionlaplpsi[0][6][1] == Approx(0.1369061053));
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 2, dionpsi, diongradpsi, dionlaplpsi);
 
     //============== Ion  2  Component  2 ===================
-    REQUIRE(dionpsi[0][0][2] == Approx(1.302648961e-06));
-    REQUIRE(diongradpsi[0][0](2, 0) == Approx(1.865129579e-06));
-    REQUIRE(diongradpsi[0][0](2, 1) == Approx(6.142092043e-08));
-    REQUIRE(diongradpsi[0][0](2, 2) == Approx(2.602225618e-05));
-    REQUIRE(dionlaplpsi[0][0][2] == Approx(1.234692903e-06));
-    REQUIRE(dionpsi[0][1][2] == Approx(3.248738084e-07));
-    REQUIRE(diongradpsi[0][1](2, 0) == Approx(-2.044420189e-06));
-    REQUIRE(diongradpsi[0][1](2, 1) == Approx(-7.011145137e-08));
-    REQUIRE(diongradpsi[0][1](2, 2) == Approx(6.532522353e-06));
-    REQUIRE(dionlaplpsi[0][1][2] == Approx(-6.10958506e-06));
-    REQUIRE(dionpsi[0][2][2] == Approx(3.264249981e-06));
-    REQUIRE(diongradpsi[0][2](2, 0) == Approx(2.820971234e-05));
-    REQUIRE(diongradpsi[0][2](2, 1) == Approx(9.405184964e-07));
-    REQUIRE(diongradpsi[0][2](2, 2) == Approx(6.481420782e-05));
-    REQUIRE(dionlaplpsi[0][2][2] == Approx(5.73961989e-05));
-    REQUIRE(dionpsi[0][3][2] == Approx(0.0001288974413));
-    REQUIRE(diongradpsi[0][3](2, 0) == Approx(0.0002840756879));
-    REQUIRE(diongradpsi[0][3](2, 1) == Approx(9.281700408e-06));
-    REQUIRE(diongradpsi[0][3](2, 2) == Approx(0.002573308008));
-    REQUIRE(dionlaplpsi[0][3][2] == Approx(0.0003025314443));
-    REQUIRE(dionpsi[0][4][2] == Approx(-7.300043903e-05));
-    REQUIRE(diongradpsi[0][4](2, 0) == Approx(-0.0001000016834));
-    REQUIRE(diongradpsi[0][4](2, 1) == Approx(-3.233243534e-06));
-    REQUIRE(diongradpsi[0][4](2, 2) == Approx(-0.001458391774));
-    REQUIRE(dionlaplpsi[0][4][2] == Approx(-3.546690719e-05));
-    REQUIRE(dionpsi[0][5][2] == Approx(2.910525987e-06));
-    REQUIRE(diongradpsi[0][5](2, 0) == Approx(1.307065133e-05));
-    REQUIRE(diongradpsi[0][5](2, 1) == Approx(1.560390706e-06));
-    REQUIRE(diongradpsi[0][5](2, 2) == Approx(-2.92731811e-06));
-    REQUIRE(dionlaplpsi[0][5][2] == Approx(3.797816228e-05));
-    REQUIRE(dionpsi[0][6][2] == Approx(-1.56074936e-05));
-    REQUIRE(diongradpsi[0][6](2, 0) == Approx(-7.009049656e-05));
-    REQUIRE(diongradpsi[0][6](2, 1) == Approx(-2.048666792e-06));
-    REQUIRE(diongradpsi[0][6](2, 2) == Approx(2.967709412e-06));
-    REQUIRE(dionlaplpsi[0][6][2] == Approx(-0.0002018111858));
+    CHECK(dionpsi[0][0][2] == Approx(1.302648961e-06));
+    CHECK(diongradpsi[0][0](2, 0) == Approx(1.865129579e-06));
+    CHECK(diongradpsi[0][0](2, 1) == Approx(6.142092043e-08));
+    CHECK(diongradpsi[0][0](2, 2) == Approx(2.602225618e-05));
+    CHECK(dionlaplpsi[0][0][2] == Approx(1.234692903e-06));
+    CHECK(dionpsi[0][1][2] == Approx(3.248738084e-07));
+    CHECK(diongradpsi[0][1](2, 0) == Approx(-2.044420189e-06));
+    CHECK(diongradpsi[0][1](2, 1) == Approx(-7.011145137e-08));
+    CHECK(diongradpsi[0][1](2, 2) == Approx(6.532522353e-06));
+    CHECK(dionlaplpsi[0][1][2] == Approx(-6.10958506e-06));
+    CHECK(dionpsi[0][2][2] == Approx(3.264249981e-06));
+    CHECK(diongradpsi[0][2](2, 0) == Approx(2.820971234e-05));
+    CHECK(diongradpsi[0][2](2, 1) == Approx(9.405184964e-07));
+    CHECK(diongradpsi[0][2](2, 2) == Approx(6.481420782e-05));
+    CHECK(dionlaplpsi[0][2][2] == Approx(5.73961989e-05));
+    CHECK(dionpsi[0][3][2] == Approx(0.0001288974413));
+    CHECK(diongradpsi[0][3](2, 0) == Approx(0.0002840756879));
+    CHECK(diongradpsi[0][3](2, 1) == Approx(9.281700408e-06));
+    CHECK(diongradpsi[0][3](2, 2) == Approx(0.002573308008));
+    CHECK(dionlaplpsi[0][3][2] == Approx(0.0003025314443));
+    CHECK(dionpsi[0][4][2] == Approx(-7.300043903e-05));
+    CHECK(diongradpsi[0][4](2, 0) == Approx(-0.0001000016834));
+    CHECK(diongradpsi[0][4](2, 1) == Approx(-3.233243534e-06));
+    CHECK(diongradpsi[0][4](2, 2) == Approx(-0.001458391774));
+    CHECK(dionlaplpsi[0][4][2] == Approx(-3.546690719e-05));
+    CHECK(dionpsi[0][5][2] == Approx(2.910525987e-06));
+    CHECK(diongradpsi[0][5](2, 0) == Approx(1.307065133e-05));
+    CHECK(diongradpsi[0][5](2, 1) == Approx(1.560390706e-06));
+    CHECK(diongradpsi[0][5](2, 2) == Approx(-2.92731811e-06));
+    CHECK(dionlaplpsi[0][5][2] == Approx(3.797816228e-05));
+    CHECK(dionpsi[0][6][2] == Approx(-1.56074936e-05));
+    CHECK(diongradpsi[0][6](2, 0) == Approx(-7.009049656e-05));
+    CHECK(diongradpsi[0][6](2, 1) == Approx(-2.048666792e-06));
+    CHECK(diongradpsi[0][6](2, 2) == Approx(2.967709412e-06));
+    CHECK(dionlaplpsi[0][6][2] == Approx(-0.0002018111858));
 
     //Same tests as before, but for the gradient only.
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 0, dionpsi);
     //============== Ion  0  Component  0 ===================
-    REQUIRE(dionpsi[0][0][0] == Approx(0.0453112082));
-    REQUIRE(dionpsi[0][1][0] == Approx(-0.0006473819623));
-    REQUIRE(dionpsi[0][2][0] == Approx(0.265578336));
-    REQUIRE(dionpsi[0][3][0] == Approx(-0.06444305979));
-    REQUIRE(dionpsi[0][4][0] == Approx(0.1454357726));
-    REQUIRE(dionpsi[0][5][0] == Approx(-0.04329985085));
-    REQUIRE(dionpsi[0][6][0] == Approx(0.01207541177));
+    CHECK(dionpsi[0][0][0] == Approx(0.0453112082));
+    CHECK(dionpsi[0][1][0] == Approx(-0.0006473819623));
+    CHECK(dionpsi[0][2][0] == Approx(0.265578336));
+    CHECK(dionpsi[0][3][0] == Approx(-0.06444305979));
+    CHECK(dionpsi[0][4][0] == Approx(0.1454357726));
+    CHECK(dionpsi[0][5][0] == Approx(-0.04329985085));
+    CHECK(dionpsi[0][6][0] == Approx(0.01207541177));
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 1, dionpsi);
     //============== Ion  1  Component  1 ===================
-    REQUIRE(dionpsi[0][0][1] == Approx(0.0001412373768));
-    REQUIRE(dionpsi[0][1][1] == Approx(-0.01029290716));
-    REQUIRE(dionpsi[0][2][1] == Approx(-0.0230872583));
-    REQUIRE(dionpsi[0][3][1] == Approx(0.01850231814));
-    REQUIRE(dionpsi[0][4][1] == Approx(-0.02136209962));
-    REQUIRE(dionpsi[0][5][1] == Approx(-0.1942343714));
-    REQUIRE(dionpsi[0][6][1] == Approx(-0.03930992259));
+    CHECK(dionpsi[0][0][1] == Approx(0.0001412373768));
+    CHECK(dionpsi[0][1][1] == Approx(-0.01029290716));
+    CHECK(dionpsi[0][2][1] == Approx(-0.0230872583));
+    CHECK(dionpsi[0][3][1] == Approx(0.01850231814));
+    CHECK(dionpsi[0][4][1] == Approx(-0.02136209962));
+    CHECK(dionpsi[0][5][1] == Approx(-0.1942343714));
+    CHECK(dionpsi[0][6][1] == Approx(-0.03930992259));
 
     sposet->evaluateGradSource(elec, 0, elec.R.size(), ions, 2, dionpsi);
     //============== Ion  2  Component  2 ===================
-    REQUIRE(dionpsi[0][0][2] == Approx(1.302648961e-06));
-    REQUIRE(dionpsi[0][1][2] == Approx(3.248738084e-07));
-    REQUIRE(dionpsi[0][2][2] == Approx(3.264249981e-06));
-    REQUIRE(dionpsi[0][3][2] == Approx(0.0001288974413));
-    REQUIRE(dionpsi[0][4][2] == Approx(-7.300043903e-05));
-    REQUIRE(dionpsi[0][5][2] == Approx(2.910525987e-06));
-    REQUIRE(dionpsi[0][6][2] == Approx(-1.56074936e-05));
+    CHECK(dionpsi[0][0][2] == Approx(1.302648961e-06));
+    CHECK(dionpsi[0][1][2] == Approx(3.248738084e-07));
+    CHECK(dionpsi[0][2][2] == Approx(3.264249981e-06));
+    CHECK(dionpsi[0][3][2] == Approx(0.0001288974413));
+    CHECK(dionpsi[0][4][2] == Approx(-7.300043903e-05));
+    CHECK(dionpsi[0][5][2] == Approx(2.910525987e-06));
+    CHECK(dionpsi[0][6][2] == Approx(-1.56074936e-05));
 
 
     //Finally, going to test evaluateGradSourceRow.  Same template and reference
