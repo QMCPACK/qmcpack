@@ -80,8 +80,8 @@ void test_He(bool transform)
     else
     {
       // use direct evaluation of GTO's
-      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+      xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
+      xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
     }
 
     const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
@@ -189,8 +189,8 @@ void test_He_mw(bool transform)
   else
   {
     // use direct evaluation of GTO's
-    xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-    xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+    xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
+    xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
   }
 
   const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
@@ -338,11 +338,11 @@ void test_EtOH_mw(bool transform)
   else
   {
     // use direct evaluation of GTO's
-    xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-    xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+    xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
+    xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
   }
 
-  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"no");
+  xmlSetProp(MO_base[0], castCharToXMLChar("cuspCorrection"), castCharToXMLChar("no"));
 
   const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
   auto& bb(*bb_ptr);
@@ -514,8 +514,8 @@ void test_Ne(bool transform)
     else
     {
       // use direct evaluation of GTO's
-      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+      xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
+      xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
     }
 
     const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
@@ -653,8 +653,8 @@ void test_HCN(bool transform)
     else
     {
       // use direct evaluation of GTO's
-      xmlSetProp(MO_base[0], (const xmlChar*)"transform", (const xmlChar*)"no");
-      xmlSetProp(MO_base[0], (const xmlChar*)"key", (const xmlChar*)"GTO");
+      xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
+      xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
     }
 
     const auto bb_ptr = bf.createSPOSetBuilder(MO_base[0]);
