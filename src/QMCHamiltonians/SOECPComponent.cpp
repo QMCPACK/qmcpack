@@ -70,6 +70,11 @@ void SOECPComponent::resize_warrays(int n, int m, int s)
   nchannel_ = sopp_m_.size();
   nknot_    = sgridxyz_m_.size();
   sknot_    = s;
+  if (sknot_ < 2)
+    throw std::runtime_error("Spin knots must be >= 2\n");
+  if (sknot_ % 2 != 0)
+    throw std::runtime_error("Spin knots uses Simpson's rule. Must have even number of knots");
+
   //Need +1 for Simpsons rule to include both end points.
   //sknot here refers to the number of subintervals for integration
   total_knots_ = nknot_ * (sknot_ + 1);
@@ -136,11 +141,6 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      RealType r,
                                                      const PosType& dr)
 {
-  if (sknot_ < 2)
-    APP_ABORT("Spin knots must be greater than 2\n");
-
-  if (sknot_ % 2 != 0)
-    APP_ABORT("Spin knots uses Simpson's rule. Must have even number of knots");
 
   for (int ip = 0; ip < nchannel_; ip++)
     vrad_[ip] = sopp_m_[ip]->splint(r);
@@ -203,11 +203,6 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
 #ifndef QMC_COMPLEX
   throw std::runtime_error("SOECPComponent::evaluateValueAndDerivatives should not be called in real build\n");
 #else
-  if (sknot_ < 2)
-    APP_ABORT("Spin knots must be greater than 2\n");
-
-  if (sknot_ % 2 != 0)
-    APP_ABORT("Spin knots uses Simpson's rule. Must have even number of knots");
 
   const size_t num_vars = optvars.num_active_vars;
   dratio_.resize(total_knots_, num_vars);
