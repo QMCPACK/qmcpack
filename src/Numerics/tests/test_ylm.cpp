@@ -25,15 +25,15 @@ TEST_CASE("Legendre", "[numerics]")
 {
   // l=0 should be 1.0 for all values
   double v = LegendrePll(0, 0.5);
-  REQUIRE(v == Approx(1.0));
+  CHECK(v == Approx(1.0));
 
   // check endpoints
   for (int i = 0; i < 10; i++)
   {
     double vp1 = LegendrePll(0, 2.0);
-    REQUIRE(vp1 == Approx(1.0));
+    CHECK(vp1 == Approx(1.0));
     double vm1 = LegendrePll(0, 2.0);
-    REQUIRE(std::abs(vm1) == Approx(1.0));
+    CHECK(std::abs(vm1) == Approx(1.0));
   }
 }
 
@@ -46,7 +46,7 @@ TEST_CASE("Spherical Harmonics", "[numerics]")
   v[1]                     = 0.0;
   v[2]                     = 0.0;
   std::complex<double> out = Ylm(0, 0, v);
-  REQUIRE(out.real() == Approx(0.28209479177387814)); // Y00 = 1/2 1/sqrt(pi)
+  CHECK(out.real() == Approx(0.28209479177387814)); // Y00 = 1/2 1/sqrt(pi)
 }
 
 TEST_CASE("Spherical Harmonics Many", "[numerics]")
@@ -99,8 +99,8 @@ TEST_CASE("Spherical Harmonics Many", "[numerics]")
 
     std::complex<double> out = Ylm(v.l, v.m, w);
     //printf("%d %d  expected %g %g   actual %g %g\n",v.l,v.m,v.y_re,v.y_im, out.real(), out.imag());
-    REQUIRE(v.y_re == Approx(out.real()));
-    REQUIRE(v.y_im == Approx(out.imag()));
+    CHECK(v.y_re == Approx(out.real()));
+    CHECK(v.y_im == Approx(out.imag()));
   }
 }
 
@@ -152,10 +152,10 @@ TEST_CASE("Derivatives of Spherical Harmonics", "[numerics]")
     std::complex<double> theta, phi;
     derivYlmSpherical(v.l, v.m, w, theta, phi, false);
     //printf("%d %d  expected %g %g %g %g  actual %g %g %g %g\n",v.l,v.m,v.th_re,v.th_im, v.ph_re, v.ph_im, theta.real(), theta.imag(), phi.real(), phi.imag());
-    REQUIRE(std::real(theta) == Approx(v.th_re));
-    REQUIRE(std::imag(theta) == Approx(v.th_im));
-    REQUIRE(std::real(phi) == Approx(v.ph_re));
-    REQUIRE(std::imag(phi) == Approx(v.ph_im));
+    CHECK(std::real(theta) == Approx(v.th_re));
+    CHECK(std::imag(theta) == Approx(v.th_im));
+    CHECK(std::real(phi) == Approx(v.ph_re));
+    CHECK(std::imag(phi) == Approx(v.ph_im));
   }
 }
 
@@ -204,8 +204,8 @@ TEST_CASE("Spherical Harmonics Wrapper", "[numerics]")
 
     std::complex<double> out = sphericalHarmonic(v.l, v.m, w);
     //printf("%d %d  expected %g %g   actual %g %g\n",v.l,v.m,v.y_re,v.y_im, out.real(), out.imag());
-    REQUIRE(v.y_re == Approx(out.real()));
-    REQUIRE(v.y_im == Approx(out.imag()));
+    CHECK(v.y_re == Approx(out.real()));
+    CHECK(v.y_im == Approx(out.imag()));
   }
 }
 

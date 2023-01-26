@@ -129,7 +129,7 @@ TEST_CASE("batched_Tab_to_Klr", "[batched_operations]")
                      Kl.origin(), Kr.origin());
   copy_n(Kr.origin(), Kr.num_elements(), buffer.data());
   //std::cout << std::setprecision(16) << Kl[2][3] << " " << Kl[1][4] << " " << Kr[1][3] << " " << Kr[0][1] << std::endl;
-  REQUIRE(real(buffer[2 * nchol + 3]) == Approx(2262));
+  CHECK(real(buffer[2 * nchol + 3]) == Approx(2262));
 }
 
 TEST_CASE("Tanb_to_Kl", "[batched_operations]")
@@ -441,9 +441,9 @@ TEST_CASE("vbias_from_v1", "[Numerics][batched_operations]")
   array<ComplexType, 2> vbias_host({2 * nchol_tot, nwalk}, 0.0);
   copy_n(vbias.origin(), vbias.num_elements(), vbias_host.origin());
   // Captured from stdout
-  REQUIRE(real(vbias_host[0][0]) == Approx(0.1));
-  REQUIRE(imag(vbias_host[10][0]) == Approx(-0.0007));
-  REQUIRE(imag(vbias_host[100][2]) == Approx(0));
+  CHECK(real(vbias_host[0][0]) == Approx(0.1));
+  CHECK(imag(vbias_host[10][0]) == Approx(-0.0007));
+  CHECK(imag(vbias_host[100][2]) == Approx(0));
 }
 
 } // namespace qmcplusplus

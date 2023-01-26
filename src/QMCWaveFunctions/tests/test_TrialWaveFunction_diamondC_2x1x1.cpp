@@ -195,23 +195,23 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   app_log() << "debug before YYY logpsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
              << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi == Approx(-4.546410485374186));
+  CHECK(logpsi == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi == Approx(-5.932711221043984));
+  CHECK(logpsi == Approx(-5.932711221043984));
 #endif
 
   auto logpsi_cplx = psi.evaluateGL(elec_, false);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   logpsi_cplx = psi.evaluateGL(elec_, true);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   // make a TrialWaveFunction Clone
@@ -220,9 +220,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi_clone == Approx(-4.546410485374186));
+  CHECK(logpsi_clone == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi_clone == Approx(-5.932711221043984));
+  CHECK(logpsi_clone == Approx(-5.932711221043984));
 #endif
 
   const int moved_elec_id = 0;
@@ -255,17 +255,17 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   app_log() << "before YYY getLogPsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
              << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   elec_.update(true);
   psi.evaluateLog(elec_);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   // testing batched interfaces
@@ -545,7 +545,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
+    CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
   // test NLPP related APIs
   const int nknot = 3;

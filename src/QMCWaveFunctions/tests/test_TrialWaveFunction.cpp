@@ -147,9 +147,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   //app_log() << "debug before YYY " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()<< std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi == Approx(-0.1201465271523596));
+  CHECK(logpsi == Approx(-0.1201465271523596));
 #else
-  REQUIRE(logpsi == Approx(-1.471840358291562));
+  CHECK(logpsi == Approx(-1.471840358291562));
 #endif
 
   // make a TrialWaveFunction Clone
@@ -158,9 +158,9 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi_clone == Approx(-0.1201465271523596));
+  CHECK(logpsi_clone == Approx(-0.1201465271523596));
 #else
-  REQUIRE(logpsi_clone == Approx(-1.471840358291562));
+  CHECK(logpsi_clone == Approx(-1.471840358291562));
 #endif
 
   const int moved_elec_id = 0;
@@ -191,17 +191,17 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   psi.acceptMove(elec_, moved_elec_id);
   elec_.acceptMove(moved_elec_id);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(0.4351202455204972));
+  CHECK(psi.getLogPsi() == Approx(0.4351202455204972));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
+  CHECK(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
 
   elec_.update(true);
   psi.evaluateLog(elec_);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(0.4351202455204972));
+  CHECK(psi.getLogPsi() == Approx(0.4351202455204972));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-0.63650297977845492));
+  CHECK(psi.getLogPsi() == Approx(-0.63650297977845492));
 #endif
 
   const auto opt_obj_refs = psi.extractOptimizableObjectRefs();

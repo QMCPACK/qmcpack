@@ -47,9 +47,9 @@ TEST_CASE("transform2gridfunctor", "[numerics]")
   double rmax = 10;
   int npts    = 10;
   transform.generate(rmin, rmax, npts);
-  REQUIRE(output.splint(0.1) == Approx(0.01));
-  REQUIRE(output.splint(0.15) == Approx(0.0225));
-  REQUIRE(output.splint(7.0) == Approx(49.0));
-  REQUIRE(output.splint(10) == Approx(100.0));
+  CHECK(output.splint(0.1) == Approx(0.01));
+  CHECK(output.splint(0.15) == Approx(0.0225));
+  CHECK(output.splint(7.0) == Approx(49.0));
+  CHECK(output.splint(10) == Approx(100.0));
 }
 } // namespace qmcplusplus

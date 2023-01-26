@@ -103,9 +103,9 @@ TEST_CASE("KaKjw_to_KKwaj", "[Numerics][tensor_operations]")
   KaKjw_to_KKwaj(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
                  nel_pk0.origin(), KaKjw.origin(), KKwaj.origin());
   // Reference values from python
-  REQUIRE(KKwaj[1][2][3][4][4] == Approx(1473.0));
-  REQUIRE(KKwaj[2][1][3][4][4] == Approx(2173.0));
-  REQUIRE(KKwaj[2][1][4][3][4] == Approx(2024.0));
+  CHECK(KKwaj[1][2][3][4][4] == Approx(1473.0));
+  CHECK(KKwaj[2][1][3][4][4] == Approx(2173.0));
+  CHECK(KKwaj[2][1][4][3][4] == Approx(2024.0));
 }
 
 TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
@@ -130,9 +130,9 @@ TEST_CASE("KaKjw_to_QKwaj", "[Numerics][tensor_operations]")
   KaKjw_to_QKajw(nwalk, nk, 1, nmo_k, nk * nmo_k, occ_k, nmo_pk.origin(), nmo_pk0.origin(), nel_pk.origin(),
                  nel_pk0.origin(), qk_to_k2.origin(), KaKjw.origin(), QKajw.origin());
   // Just captured from output.
-  REQUIRE(QKajw[1][2][3][4][4] == Approx(1904.0));
-  REQUIRE(QKajw[2][1][3][4][4] == Approx(1264.0));
-  REQUIRE(QKajw[2][1][1][3][4] == Approx(939.0));
+  CHECK(QKajw[1][2][3][4][4] == Approx(1904.0));
+  CHECK(QKajw[2][1][3][4][4] == Approx(1264.0));
+  CHECK(QKajw[2][1][1][3][4] == Approx(939.0));
   // Check structure consistency.
   for (int iq = 0; iq < nk; iq++)
   {
@@ -248,9 +248,9 @@ TEST_CASE("vKKwij_tovwKiKj", "[Numerics][tensor_operations]")
                    vKiKj.origin());
   copy_n(vKiKj.origin(), vKiKj.num_elements(), buffer.data());
   // Just captured from output.
-  REQUIRE(real(buffer[17]) == Approx(507.0));
-  REQUIRE(real(buffer[0]) == Approx(0.0));
-  REQUIRE(real(buffer[33]) == Approx(13.0));
+  CHECK(real(buffer[17]) == Approx(507.0));
+  CHECK(real(buffer[0]) == Approx(0.0));
+  CHECK(real(buffer[33]) == Approx(13.0));
 }
 
 } // namespace qmcplusplus

@@ -43,8 +43,8 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   uf.put(root);
 
   // Adjust these
-  REQUIRE(uf.A == Approx(1.0));
-  REQUIRE(uf.B == Approx(2.0));
+  CHECK(uf.A == Approx(1.0));
+  CHECK(uf.B == Approx(2.0));
 
   RealType r   = 1.0;
   RealType val = uf.evaluate(r);
@@ -53,7 +53,7 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   RealType d2udr2;
   RealType val_2 = uf.evaluate(r, dudr, d2udr2);
 
-  REQUIRE(val == Approx(val_2));
+  CHECK(val == Approx(val_2));
 
   // Finite difference to verify the spatial derivatives
 
@@ -64,10 +64,10 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   RealType val_minus_h = uf.evaluate(r_minus_h);
 
   RealType approx_dudr = (val_plus_h - val_minus_h) / (2 * h);
-  REQUIRE(dudr == Approx(approx_dudr).epsilon(h));
+  CHECK(dudr == Approx(approx_dudr).epsilon(h));
 
   RealType approx_d2udr2 = (val_plus_h + val_minus_h - 2 * val) / (h * h);
-  REQUIRE(d2udr2 == Approx(approx_d2udr2).epsilon(h));
+  CHECK(d2udr2 == Approx(approx_d2udr2).epsilon(h));
 
 
   RealType dudr_3;
@@ -75,9 +75,9 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
   RealType d3udr3_3;
   RealType val_3 = uf.evaluate(r, dudr_3, d2udr2_3, d3udr3_3);
 
-  REQUIRE(val == Approx(val_3));
-  REQUIRE(dudr == Approx(dudr_3));
-  REQUIRE(d2udr2 == Approx(d2udr2_3));
+  CHECK(val == Approx(val_3));
+  CHECK(dudr == Approx(dudr_3));
+  CHECK(d2udr2 == Approx(d2udr2_3));
 
 
   // Adjust this based on the number of variational parameters
@@ -108,13 +108,13 @@ TEST_CASE("UserJastrowFunctor", "[wavefunction]")
     RealType val_h = uf.evaluate(r, dudr_h, d2udr2_h);
 
     RealType val_dp = (val_h - val) / h;
-    REQUIRE(val_dp == Approx(param_derivs[i][0]).epsilon(h));
+    CHECK(val_dp == Approx(param_derivs[i][0]).epsilon(h));
 
     RealType dudr_dp = (dudr_h - dudr) / h;
-    REQUIRE(dudr_dp == Approx(param_derivs[i][1]).epsilon(h));
+    CHECK(dudr_dp == Approx(param_derivs[i][1]).epsilon(h));
 
     RealType d2udr2_dp = (d2udr2_h - d2udr2) / h;
-    REQUIRE(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(h));
+    CHECK(d2udr2_dp == Approx(param_derivs[i][2]).epsilon(h));
 
     var_param[var_name] = old_param;
     uf.resetParametersExclusive(var_param);
