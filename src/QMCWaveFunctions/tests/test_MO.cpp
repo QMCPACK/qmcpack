@@ -73,12 +73,9 @@ void test_He(bool transform)
 
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
-    if (transform)
+    if (!transform)
     {
       // input file is set to transform GTO's to numerical orbitals by default
-    }
-    else
-    {
       // use direct evaluation of GTO's
       xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
       xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
@@ -182,12 +179,9 @@ void test_He_mw(bool transform)
 
   OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
   REQUIRE(MO_base.size() == 1);
-  if (transform)
+  if (!transform)
   {
     // input file is set to transform GTO's to numerical orbitals by default
-  }
-  else
-  {
     // use direct evaluation of GTO's
     xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
     xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
@@ -331,12 +325,9 @@ void test_EtOH_mw(bool transform)
 
   OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
   REQUIRE(MO_base.size() == 1);
-  if (transform)
+  if (!transform)
   {
     // input file is set to transform GTO's to numerical orbitals by default
-  }
-  else
-  {
     // use direct evaluation of GTO's
     xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
     xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
@@ -507,12 +498,9 @@ void test_Ne(bool transform)
     OhmmsXPathObject MO_base("//determinantset", doc.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    if (transform)
+    if (!transform)
     {
       // input file is set to transform GTO's to numerical orbitals by default
-    }
-    else
-    {
       // use direct evaluation of GTO's
       xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
       xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
@@ -646,12 +634,9 @@ void test_HCN(bool transform)
     OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
     REQUIRE(MO_base.size() == 1);
 
-    if (transform)
+    if (!transform)
     {
       // input file is set to transform GTO's to numerical orbitals by default
-    }
-    else
-    {
       // use direct evaluation of GTO's
       xmlSetProp(MO_base[0], castCharToXMLChar("transform"), castCharToXMLChar("no"));
       xmlSetProp(MO_base[0], castCharToXMLChar("key"), castCharToXMLChar("GTO"));
