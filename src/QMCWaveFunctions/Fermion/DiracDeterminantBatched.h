@@ -103,6 +103,10 @@ public:
                            Vector<Value>& dlogpsi,
                            Vector<Value>& dhpsioverpsi) override;
 
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi) override;
+
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
   LogValue updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) override;
@@ -127,6 +131,11 @@ public:
   void mw_evaluateRatios(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
 
   PsiValue ratioGrad(ParticleSet& P, int iat, Grad& grad_iat) override;
 

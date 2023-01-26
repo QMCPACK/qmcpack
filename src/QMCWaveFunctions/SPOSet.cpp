@@ -264,6 +264,37 @@ void SPOSet::evaluateDerivatives(ParticleSet& P,
                            "must be overloaded when the SPOSet is optimizable.");
 }
 
+void SPOSet::evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   Vector<ValueType>& dlogpsi,
+                                   int FirstIndex,
+                                   int LastIndex)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivativesWF "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                 const opt_variables_type& optvars,
+                                 ValueVector& psi,
+                                 const ValueVector& psiinv,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios,
+                                 int FirstIndex,
+                                 int LastIndex)
+{
+  // Match the fallback in WaveFunctionComponent that evaluates just the ratios
+  evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+
 /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
    */
