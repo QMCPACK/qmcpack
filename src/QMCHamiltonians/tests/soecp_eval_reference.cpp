@@ -59,23 +59,55 @@ public:
     int numknots = coeffs.size();
     coeffs_.resize(numknots + 6);
     knots_.resize(numknots + 6);
+    cusp_val_ = cusp_val;
 
-    double delta = rcut / (numknots + 1);
-    coeffs_[0]   = -2 * cusp_val * delta + coeffs[1];
-    coeffs_[1]   = coeffs[0];
-    coeffs_[2]   = coeffs[1];
+    delta_     = rcut / (numknots + 1);
+    coeffs_[0] = -2 * cusp_val_ * delta_ + coeffs[1];
+    coeffs_[1] = coeffs[0];
+    coeffs_[2] = coeffs[1];
     std::copy(coeffs.begin() + 2, coeffs.end(), coeffs_.begin() + 3);
     for (int i = 0; i < knots_.size(); i++)
-      knots_[i] = (i - 3) * delta;
+      knots_[i] = (i - 3) * delta_;
   }
-  double getVal(double x) const { return bspline(x, knots_, coeffs_, degree); }
-  void setCoeff(int i, double newcoeff) { coeffs_[i] = newcoeff; }
+
+  double getVal(double x) const { return bspline(x, knots_, coeffs_, degree_); }
+
+  double parmDeriv(const int ip, double x)
+  {
+    //changing parameter 0 means changing coefficient 1, and so on
+    const int ic                           = ip + 1;
+    double dp                              = 0.0001;
+    std::vector<double> finite_diff_coeffs = {-1. / 60, 3. / 20, -3. / 4, 0, 3. / 4, -3. / 20, 1. / 60};
+    std::vector<double> values(finite_diff_coeffs.size());
+    double inital_value = getCoeff(ic);
+    int offset          = (finite_diff_coeffs.size() - 1) / 2;
+    for (int id = 0; id < finite_diff_coeffs.size(); id++)
+    {
+      double newval = inital_value + (id - offset) * dp;
+      setCoeff(ic, newval);
+      values[id] = getVal(x);
+    }
+    setCoeff(ic, inital_value);
+
+    double deriv = 0.0;
+    for (int id = 0; id < finite_diff_coeffs.size(); id++)
+      deriv += finite_diff_coeffs[id] * values[id] / dp;
+    return deriv;
+  }
+  void setCoeff(int i, double newcoeff)
+  {
+    coeffs_[i] = newcoeff;
+    if (i == 2)
+      coeffs_[0] = -2 * cusp_val_ * delta_ + newcoeff;
+  }
   double getCoeff(int i) const { return coeffs_[i]; }
 
 private:
   std::vector<double> coeffs_;
   std::vector<double> knots_;
-  const int degree = 3;
+  const int degree_ = 3;
+  double delta_;
+  double cusp_val_;
 };
 
 void testJastrow()
@@ -355,6 +387,21 @@ std::complex<double> TWF(std::vector<std::vector<double>>& positions,
   return det * exp(-J2.getVal(r12));
 }
 
+std::complex<double> dratioTWF(const int ip,
+                               std::vector<std::vector<double>>& positions,
+                               std::vector<double>& spins,
+                               cubicBSpline& J2)
+{
+  std::vector<double> cart0 = sph2cart(positions[0]);
+  std::vector<double> cart1 = sph2cart(positions[1]);
+  double dx                 = (cart1[0] - cart0[0]);
+  double dy                 = (cart1[1] - cart0[1]);
+  double dz                 = (cart1[2] - cart0[2]);
+  double r12                = std::sqrt(dx * dx + dy * dy + dz * dz);
+  //Since the det doesn't have any parameters to optimize, the dratioTWF is only -dJ
+  return -J2.parmDeriv(ip, r12);
+}
+
 std::complex<double> calcAngInt(int iel,
                                 double s2,
                                 std::vector<std::vector<double>>& positions,
@@ -447,47 +494,7 @@ void calcSOECP(int npts)
   std::cout << npts << " " << std::setprecision(10) << std::real(val) << " " << std::imag(val) << std::endl;
 }
 
-void print_dlogpsi()
-{
-  //2el system, atom at origin, 2body jastrow only
-  std::vector<double> pos_e1                 = {0.138, -0.24, 0.216};
-  std::vector<double> pos_e2                 = {-0.216, 0.24, -0.138};
-  std::vector<std::vector<double>> positions = {cart2sph(pos_e1), cart2sph(pos_e2)};
-  double spin_e1                             = 0.2;
-  double spin_e2                             = 0.51;
-  std::vector<double> spins                  = {spin_e1, spin_e2};
-
-  double rcut                = 5.0;
-  double cusp                = -0.25;
-  std::vector<double> coeffs = {0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201};
-  cubicBSpline J2(rcut, cusp, coeffs);
-
-  //calc $\frac{\partial_\alpha} \Psi}{\Psi}$
-  //Note that I need to change the ic+1 parameter, since
-  //in the spline coefficients the first element is related to the cusp which doesn't change
-  for (int ic = 0; ic < coeffs.size(); ic++)
-  {
-    double delta                           = 0.001;
-    std::vector<double> finite_diff_coeffs = {-1. / 60, 3. / 20, -3. / 4, 0, 3. / 4, -3. / 20, 1. / 60};
-    std::vector<std::complex<double>> values(finite_diff_coeffs.size());
-    double inital_value = J2.getCoeff(ic + 1);
-    int offset          = (finite_diff_coeffs.size() - 1) / 2;
-    for (int id = 0; id < finite_diff_coeffs.size(); id++)
-    {
-      double newval = inital_value + (id - offset) * delta;
-      J2.setCoeff(ic + 1, newval);
-      values[id] = TWF(positions, spins, J2);
-    }
-    J2.setCoeff(ic + 1, inital_value);
-
-    std::complex<double> deriv = 0.0;
-    for (int id = 0; id < finite_diff_coeffs.size(); id++)
-      deriv += finite_diff_coeffs[id] * values[id] / delta;
-    std::cout << "dlogpsi[" << ic << "]: " << deriv / values[offset] << std::endl;
-  }
-}
-
-void print_dhpsioverpsi()
+void evaluateValueAndDerivative()
 {
   const int npts = 8; //number of spin integral pts
   //2el system, atom at origin, 2body jastrow only
@@ -553,43 +560,27 @@ void print_dhpsioverpsi()
     assert(spins_vp.size() == spin_quad_wts.size());
     assert(spin_quad_wts.size() == (npts + 1) * quad.size());
 
-    //Now we need dlogpsi_vp for each of these new positions, and the original dlogpsi
-    auto get_dlogpsi = [&](std::vector<std::vector<double>>& pos, std::vector<double>& sp, cubicBSpline& J2) {
-      std::vector<std::complex<double>> dlogpsi;
-      for (int ic = 0; ic < coeffs.size(); ic++)
-      {
-        double delta                           = 0.001;
-        std::vector<double> finite_diff_coeffs = {-1. / 60, 3. / 20, -3. / 4, 0, 3. / 4, -3. / 20, 1. / 60};
-        std::vector<std::complex<double>> values(finite_diff_coeffs.size());
-        double inital_value = J2.getCoeff(ic + 1);
-        int offset          = (finite_diff_coeffs.size() - 1) / 2;
-        for (int id = 0; id < finite_diff_coeffs.size(); id++)
-        {
-          double newval = inital_value + (id - offset) * delta;
-          J2.setCoeff(ic + 1, newval);
-          values[id] = TWF(pos, sp, J2);
-        }
-        J2.setCoeff(ic + 1, inital_value);
-
-        std::complex<double> deriv;
-        for (int id = 0; id < finite_diff_coeffs.size(); id++)
-          deriv += finite_diff_coeffs[id] * values[id] / delta;
-        dlogpsi.push_back(deriv / values[offset]); //dpsi / psi at pos, sp
-      }
-      return dlogpsi;
-    };
-
-    std::vector<std::complex<double>> dlogpsi = get_dlogpsi(positions, spins, spl);
+    std::vector<std::complex<double>> dlogpsi(coeffs.size());
     for (int ip = 0; ip < dlogpsi.size(); ip++)
-      std::cout << "dlogpsi[" << ip << "]: " << dlogpsi[ip] << std::endl;
+      dlogpsi[ip] = dratioTWF(ip, positions, spins, spl);
+    if (iel == 0) //only print for first electron
+    {
+      std::cout << "std::vector<RealType> dlogpsi_refs = { ";
+      for (int ip = 0; ip < dlogpsi.size(); ip++)
+      {
+        double real = std::real(dlogpsi[ip]);
+        (ip != dlogpsi.size() - 1) ? std::cout << std::setprecision(10) << real << ", "
+                                   : std::cout << std::setprecision(10) << real << "};" << std::endl;
+      }
+    }
 
     std::vector<std::vector<std::complex<double>>> dratio;
     for (int iq = 0; iq < spin_quad_wts.size(); iq++)
     {
-      std::vector<std::complex<double>> dlogpsi_vp = get_dlogpsi(positions_vp[iq], spins_vp[iq], spl);
-      for (int ip = 0; ip < dlogpsi_vp.size(); ip++)
-        dlogpsi_vp[ip] -= dlogpsi[ip];
-      dratio.push_back(dlogpsi_vp);
+      std::vector<std::complex<double>> dratio_row(coeffs.size());
+      for (int ip = 0; ip < dratio_row.size(); ip++)
+        dratio_row[ip] = dratioTWF(ip, positions_vp[iq], spins_vp[iq], spl) - dlogpsi[ip];
+      dratio.push_back(dratio_row);
     }
 
     //Now we can evaluate the contribution to the potential from each quadrature/spin point
@@ -633,9 +624,11 @@ void print_dhpsioverpsi()
       dhpsioverpsi[ip] += std::real(sum);
     }
   } // loop over each particle
-  std::cout << "SOECP Value: " << soecp_value << std::endl;
+  std::cout << std::setprecision(10) << "SOECP Value: " << soecp_value << std::endl;
+  std::cout << "std::vector<RealType> dhpsioverpsi_refs = { ";
   for (int ip = 0; ip < dhpsioverpsi.size(); ip++)
-    std::cout << "dhpsioverpsi[" << ip << "]: " << dhpsioverpsi[ip] << std::endl;
+    (ip != dhpsioverpsi.size() - 1) ? std::cout << std::setprecision(10) << dhpsioverpsi[ip] << ", "
+                                    : std::cout << std::setprecision(10) << dhpsioverpsi[ip] << "};" << std::endl;
 }
 
 int main()
@@ -644,8 +637,6 @@ int main()
   //testJastrow();
   //for (int n = 2; n <= 100; n += 2)
   //  calcSOECP(n);
-  //can check with loop above, but converged by 8, which is default in QMC
-  //calcSOECP(8);
-  //print_dlogpsi();
-  print_dhpsioverpsi();
+  //looks converged by n=8 if you uncomment above,, used in evaluateValueAndDerivative
+  evaluateValueAndDerivative();
 }

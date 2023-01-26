@@ -588,15 +588,17 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   const int NumOptimizables(optvars.size());
   psi.checkOutVariables(optvars);
 
+
   //Ref Values from soecp_eval_ref.cpp in the print_dlogpsi using finite differences
-  std::vector<RealType> dlogpsi_refs = {-0.2622341567, -0.6408949596, -0.09608452334, 0, 0};
+  std::vector<RealType> dlogpsi_refs = { -0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
   //These weren't independently validated in soecp_eval_ref.cpp
   //trusting current values from evaluateDerivatives...which should be correct if the
   //dlogpsi comes out correct
   std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
   //These were independently validated in soecp_eval_ref.cpp, includes the contribution
   //from dkinpsioverpsi_refs
-  std::vector<RealType> dhpsioverpsi_refs = {-3.85573, 0.25082, 3.65311, 0.0, 0.0};
+  std::vector<RealType> dhpsioverpsi_refs = { -3.855727438, 0.202618546, 3.653108892, -8.169955304e-14, -8.169955304e-14};
+
 
   auto test_evaluateValueAndDerivatives     = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
@@ -604,7 +606,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
     for (int ip = 0; ip < NumOptimizables; ip++)
     {
-      CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]).epsilon(0.001));
+      CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]));
       CHECK(std::real(dhpsioverpsi[ip]) == Approx(dkinpsioverpsi_refs[ip]));
     }
 
