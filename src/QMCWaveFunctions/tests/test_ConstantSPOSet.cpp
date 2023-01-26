@@ -12,7 +12,7 @@
 
 #include "catch.hpp"
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "QMCWaveFunctions/WaveFunctionTypes.hpp"
 #include "QMCWaveFunctions/ConstantSPOSet.h"
 
 namespace qmcplusplus
@@ -23,23 +23,23 @@ TEST_CASE("ConstantSPOSet", "[wavefunction]")
   //For now, do a small square case.
   const int nelec = 2;
   const int norb  = 2;
+  using WF      = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
+  using Real    = WF::Real;
+  using Value   = WF::Value;
+  using Grad   =  WF::Grad;
+  using ValueVector = Vector<Value>;
+  using GradVector  = Vector<Grad>;
+  using ValueMatrix = Matrix<Value>;
+  using GradMatrix = Matrix<Grad>;
 
-  using RealType    = QMCTraits::RealType;
-  using ValueType   = QMCTraits::ValueType;
-  using GradType   =  QMCTraits::GradType;
-  using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
-  using GradVector  = OrbitalSetTraits<ValueType>::GradVector;
-  using ValueMatrix = OrbitalSetTraits<ValueType>::ValueMatrix;
-  using GradMatrix = OrbitalSetTraits<ValueType>::GradMatrix;
+  ValueVector row0{Value(0.92387953), Value(0.92387953)};
+  ValueVector row1{Value(0.29131988), Value(0.81078057)};
 
-  ValueVector row0{ValueType(0.92387953), ValueType(0.92387953)};
-  ValueVector row1{ValueType(0.29131988), ValueType(0.81078057)};
+  GradVector  grow0{Grad({ -2.22222, -1.11111, 0.33333}), Grad({8.795388,-0.816057,-0.9238793})};
+  GradVector  grow1{Grad({  2.22222,  1.11111, -0.33333}), Grad({-8.795388,0.816057,0.9238793})};
 
-  GradVector  grow0{GradType({ -2.22222, -1.11111, 0.33333}), GradType({8.795388,-0.816057,-0.9238793})};
-  GradVector  grow1{GradType({  2.22222,  1.11111, -0.33333}), GradType({-8.795388,0.816057,0.9238793})};
-
-  ValueVector lrow0{ValueType(-0.2234545), ValueType(0.72340234)};
-  ValueVector lrow1{ValueType(-12.291810), ValueType(6.879057)};
+  ValueVector lrow0{Value(-0.2234545), Value(0.72340234)};
+  ValueVector lrow1{Value(-12.291810), Value(6.879057)};
 
   
   ValueMatrix spomat;
