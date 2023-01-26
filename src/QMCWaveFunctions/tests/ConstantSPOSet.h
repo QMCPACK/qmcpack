@@ -22,7 +22,7 @@ namespace qmcplusplus
    *  Exists to provide deterministic and known output to objects requiring SPOSet evaluations.      
    *
    */
-struct ConstantSPOSet : public SPOSet
+class ConstantSPOSet : public SPOSet
 {
 public:
   ConstantSPOSet(const std::string& my_name) = delete;
