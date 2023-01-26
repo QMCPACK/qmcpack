@@ -78,10 +78,26 @@ public:
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
+
+  void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& spo_list,
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      const RefVector<ValueVector>& psi_v_list,
+                      const RefVector<GradVector>& dpsi_v_list,
+                      const RefVector<ValueVector>& d2psi_v_list) const override;
+
   void evaluateDetRatios(const VirtualParticleSet& VP,
                          ValueVector& psi,
                          const ValueVector& psiinv,
                          std::vector<ValueType>& ratios) override;
+
+  void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                      int iat,
+                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                      OffloadMWVGLArray& phi_vgl_v,
+                                      std::vector<ValueType>& ratios,
+                                      std::vector<GradType>& grads) const override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,
@@ -219,7 +235,7 @@ protected:
   vghgh_type Tempghv;
 
 private:
-  ///helper functions to handl Identity
+  ///helper functions to handle Identity
   void evaluate_vgl_impl(const vgl_type& temp, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) const;
 
   void evaluate_vgl_impl(const vgl_type& temp,
@@ -228,6 +244,8 @@ private:
                          GradMatrix& dlogdet,
                          ValueMatrix& d2logdet) const;
   ///These two functions unpack the data in vgh_type temp object into wavefunction friendly data structures.
+
+
   ///This unpacks temp into vectors psi, dpsi, and d2psi.
   void evaluate_vgh_impl(const vgh_type& temp, ValueVector& psi, GradVector& dpsi, HessVector& d2psi) const;
 
@@ -266,6 +284,11 @@ private:
 
   ///Unpacks data in vgl object and calculates/places ionic gradient of a single row (phi_j(r)) into dlogdet.
   void evaluate_ionderiv_v_row_impl(const vgl_type& temp, GradVector& dlogdet) const;
+
+  void mw_evaluateVGLImplGEMM(const RefVectorWithLeader<SPOSet>& spo_list,
+                              const RefVectorWithLeader<ParticleSet>& P_list,
+                              int iat,
+                              OffloadMWVGLArray& phi_vgl_v) const;
 };
 } // namespace qmcplusplus
 #endif

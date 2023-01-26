@@ -220,7 +220,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RealType keval = bare_ke.evaluate(elec);
 
   //This is validated against an alternate code path (waveefunction tester for local energy).
-  REQUIRE(keval == Approx(-0.147507745));
+  CHECK(keval == Approx(-0.147507745));
 
   ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
@@ -228,14 +228,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   RealType keval2 = bare_ke.evaluateWithIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
 
-  REQUIRE(keval2 == Approx(-0.147507745));
+  CHECK(keval2 == Approx(-0.147507745));
   //These are validated against finite differences (delta=1e-6).
-  REQUIRE(PulayTerm[0][0] == Approx(-0.13166));
-  REQUIRE(PulayTerm[0][1] == Approx(0.0));
-  REQUIRE(PulayTerm[0][2] == Approx(0.0));
-  REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
-  REQUIRE(PulayTerm[1][1] == Approx(0.0));
-  REQUIRE(PulayTerm[1][2] == Approx(0.0));
+  CHECK(PulayTerm[0][0] == Approx(-0.13166));
+  CHECK(PulayTerm[0][1] == Approx(0.0));
+  CHECK(PulayTerm[0][2] == Approx(0.0));
+  CHECK(PulayTerm[1][0] == Approx(-0.12145));
+  CHECK(PulayTerm[1][1] == Approx(0.0));
+  CHECK(PulayTerm[1][2] == Approx(0.0));
 }
 
 /** Provide a test scope parameterized on electron species mass that then can run a set of tests using

@@ -100,20 +100,20 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   force.evaluate(elec);
 
   //Ion-Ion forces are validated against Quantum Espresso's ewald method:
-  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.0228366));
-  REQUIRE(force.forces_IonIon[0][1] == Approx(-0.0228366));
-  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0000000));
-  REQUIRE(force.forces_IonIon[1][0] == Approx(0.0228366));
-  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0228366));
-  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0000000));
+  CHECK(force.forces_IonIon[0][0] == Approx(-0.0228366));
+  CHECK(force.forces_IonIon[0][1] == Approx(-0.0228366));
+  CHECK(force.forces_IonIon[0][2] == Approx(0.0000000));
+  CHECK(force.forces_IonIon[1][0] == Approx(0.0228366));
+  CHECK(force.forces_IonIon[1][1] == Approx(0.0228366));
+  CHECK(force.forces_IonIon[1][2] == Approx(0.0000000));
 
   //Electron-Ion forces are unvalidated externally:
-  REQUIRE(force.forces[0][0] == Approx(3.959178977));
-  REQUIRE(force.forces[0][1] == Approx(3.959178977));
-  REQUIRE(force.forces[0][2] == Approx(0.000000000));
-  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+  CHECK(force.forces[0][0] == Approx(3.959178977));
+  CHECK(force.forces[0][1] == Approx(3.959178977));
+  CHECK(force.forces[0][2] == Approx(0.000000000));
+  CHECK(force.forces[1][0] == Approx(-0.078308730));
+  CHECK(force.forces[1][1] == Approx(-0.078308730));
+  CHECK(force.forces[1][2] == Approx(0.000000000));
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
   LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
@@ -182,21 +182,21 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   elec.update();
   // test SR part
   force.evaluateSR(elec);
-  REQUIRE(force.forces[0][0] == Approx(1.6938118975));
-  REQUIRE(force.forces[0][1] == Approx(1.6938118975));
-  REQUIRE(force.forces[0][2] == Approx(0.000000000));
-  REQUIRE(force.forces[1][0] == Approx(0.000000000));
-  REQUIRE(force.forces[1][1] == Approx(0.000000000));
-  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+  CHECK(force.forces[0][0] == Approx(1.6938118975));
+  CHECK(force.forces[0][1] == Approx(1.6938118975));
+  CHECK(force.forces[0][2] == Approx(0.000000000));
+  CHECK(force.forces[1][0] == Approx(0.000000000));
+  CHECK(force.forces[1][1] == Approx(0.000000000));
+  CHECK(force.forces[1][2] == Approx(0.000000000));
   // test LR part
   force.forces = 0;
   force.evaluateLR(elec);
-  REQUIRE(force.forces[0][0] == Approx(2.2653670795));
-  REQUIRE(force.forces[0][1] == Approx(2.2653670795));
-  REQUIRE(force.forces[0][2] == Approx(0.000000000));
-  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][2] == Approx(0.000000000));
+  CHECK(force.forces[0][0] == Approx(2.2653670795));
+  CHECK(force.forces[0][1] == Approx(2.2653670795));
+  CHECK(force.forces[0][2] == Approx(0.000000000));
+  CHECK(force.forces[1][0] == Approx(-0.078308730));
+  CHECK(force.forces[1][1] == Approx(-0.078308730));
+  CHECK(force.forces[1][2] == Approx(0.000000000));
 
   // test cloning !!!! makeClone is not testable
   // example call path:
@@ -207,12 +207,12 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi).release()));
   clone->evaluate(elec);
   REQUIRE(clone->addionion == force.addionion);
-  REQUIRE(clone->forces_IonIon[0][0] == Approx(-0.0228366));
-  REQUIRE(clone->forces_IonIon[0][1] == Approx(-0.0228366));
-  REQUIRE(clone->forces_IonIon[0][2] == Approx(0.0000000));
-  REQUIRE(clone->forces_IonIon[1][0] == Approx(0.0228366));
-  REQUIRE(clone->forces_IonIon[1][1] == Approx(0.0228366));
-  REQUIRE(clone->forces_IonIon[1][2] == Approx(0.0000000));
+  CHECK(clone->forces_IonIon[0][0] == Approx(-0.0228366));
+  CHECK(clone->forces_IonIon[0][1] == Approx(-0.0228366));
+  CHECK(clone->forces_IonIon[0][2] == Approx(0.0000000));
+  CHECK(clone->forces_IonIon[1][0] == Approx(0.0228366));
+  CHECK(clone->forces_IonIon[1][1] == Approx(0.0228366));
+  CHECK(clone->forces_IonIon[1][2] == Approx(0.0000000));
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
   LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
@@ -280,29 +280,29 @@ TEST_CASE("fccz h3", "[hamiltonian]")
   force.addionion = false;
 
   //Ion-Ion forces are validated against Quantum Espresso's ewald method:
-  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.37660901));
-  REQUIRE(force.forces_IonIon[0][1] == Approx(-0.02283659));
-  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0000000));
-  REQUIRE(force.forces_IonIon[1][0] == Approx(0.04012282));
-  REQUIRE(force.forces_IonIon[1][1] == Approx(0.066670175));
-  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0000000));
-  REQUIRE(force.forces_IonIon[2][0] == Approx(0.336486185));
-  REQUIRE(force.forces_IonIon[2][1] == Approx(-0.04383358));
-  REQUIRE(force.forces_IonIon[2][2] == Approx(0.0000000));
+  CHECK(force.forces_IonIon[0][0] == Approx(-0.37660901));
+  CHECK(force.forces_IonIon[0][1] == Approx(-0.02283659));
+  CHECK(force.forces_IonIon[0][2] == Approx(0.0000000));
+  CHECK(force.forces_IonIon[1][0] == Approx(0.04012282));
+  CHECK(force.forces_IonIon[1][1] == Approx(0.066670175));
+  CHECK(force.forces_IonIon[1][2] == Approx(0.0000000));
+  CHECK(force.forces_IonIon[2][0] == Approx(0.336486185));
+  CHECK(force.forces_IonIon[2][1] == Approx(-0.04383358));
+  CHECK(force.forces_IonIon[2][2] == Approx(0.0000000));
 
   elec.update();
   force.InitMatrix();
   force.evaluate(elec);
   //Electron-Ion forces are unvalidated externally:
-  REQUIRE(force.forces[0][0] == Approx(3.959178977));
-  REQUIRE(force.forces[0][1] == Approx(3.959178977));
-  REQUIRE(force.forces[0][2] == Approx(0.000000000));
-  REQUIRE(force.forces[1][0] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][1] == Approx(-0.078308730));
-  REQUIRE(force.forces[1][2] == Approx(0.000000000));
-  REQUIRE(force.forces[2][0] == Approx(-1.4341388802));
-  REQUIRE(force.forces[2][1] == Approx(0.1379375923));
-  REQUIRE(force.forces[2][2] == Approx(0.000000000));
+  CHECK(force.forces[0][0] == Approx(3.959178977));
+  CHECK(force.forces[0][1] == Approx(3.959178977));
+  CHECK(force.forces[0][2] == Approx(0.000000000));
+  CHECK(force.forces[1][0] == Approx(-0.078308730));
+  CHECK(force.forces[1][1] == Approx(-0.078308730));
+  CHECK(force.forces[1][2] == Approx(0.000000000));
+  CHECK(force.forces[2][0] == Approx(-1.4341388802));
+  CHECK(force.forces[2][1] == Approx(0.1379375923));
+  CHECK(force.forces[2][2] == Approx(0.000000000));
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
   LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);

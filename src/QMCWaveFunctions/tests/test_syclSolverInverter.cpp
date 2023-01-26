@@ -43,7 +43,7 @@ void test_inverse(const std::int64_t N)
   DiracMatrix<T_FP> dmat;
   dmat.invert_transpose(m, m_invT_CPU, log_value_cpu);
 
-  REQUIRE(log_value == ComplexApprox(log_value_cpu));
+  CHECK(log_value == ComplexApprox(log_value_cpu));
 
   auto check_matrix_result = checkMatrix(m_invT, m_invT_CPU);
   CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }

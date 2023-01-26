@@ -181,8 +181,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
       Ovlp *= SDet.MixedDensityMatrix(devPsiT[1], devOrbMat[1](devOrbMat.extension(1), {0, NAEB}),
                                       G.sliced(NAEA, NAEA + NAEB), 0.0, true);
     }
-    REQUIRE(real(Ovlp) == Approx(1.0));
-    REQUIRE(imag(Ovlp) == Approx(0.0));
+    CHECK(real(Ovlp) == Approx(1.0));
+    CHECK(imag(Ovlp) == Approx(0.0));
 
     boost::multi::array<ComplexType, 2, Alloc> Eloc({1, 3}, alloc_);
     {
@@ -200,8 +200,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     Eloc[0][2] = (TG.Node() += ComplexType(Eloc[0][2]));
     if (std::abs(file_data.E0 + file_data.E1) > 1e-8)
     {
-      REQUIRE(real(Eloc[0][0]) == Approx(real(file_data.E0 + file_data.E1)));
-      REQUIRE(imag(Eloc[0][0]) == Approx(imag(file_data.E0 + file_data.E1)));
+      CHECK(real(Eloc[0][0]) == Approx(real(file_data.E0 + file_data.E1)));
+      CHECK(imag(Eloc[0][0]) == Approx(imag(file_data.E0 + file_data.E1)));
     }
     else
     {
@@ -209,8 +209,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     if (std::abs(file_data.E2) > 1e-8)
     {
-      REQUIRE(real(Eloc[0][1] + Eloc[0][2]) == Approx(real(file_data.E2)));
-      REQUIRE(imag(Eloc[0][1] + Eloc[0][2]) == Approx(imag(file_data.E2)));
+      CHECK(real(Eloc[0][1] + Eloc[0][2]) == Approx(real(file_data.E2)));
+      CHECK(imag(Eloc[0][1] + Eloc[0][2]) == Approx(imag(file_data.E2)));
     }
     else
     {
@@ -242,8 +242,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     if (std::abs(file_data.Xsum) > 1e-8)
     {
-      REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-      REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+      CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+      CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
     }
     else
     {
@@ -270,8 +270,8 @@ void ham_ops_basic_serial(boost::mpi3::communicator& world)
     }
     if (std::abs(file_data.Vsum) > 1e-8)
     {
-      REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-      REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+      CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+      CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
     }
     else
     {

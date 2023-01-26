@@ -309,7 +309,7 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
       break;
     }
   }
-  REQUIRE(latdev2 / ions.getTotalNum() == Approx(1.245));
+  CHECK(latdev2 / ions.getTotalNum() == Approx(1.245));
 
 } // TEST_CASE distance_open_species_deviation
 

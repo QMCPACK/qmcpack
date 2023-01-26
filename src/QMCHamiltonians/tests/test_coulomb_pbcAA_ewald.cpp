@@ -54,10 +54,10 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   CoulombPBCAA caa(ions, false, false, false);
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.142553)); // not validated
+  CHECK(consts == Approx(-3.142553)); // not validated
 
   double val = caa.evaluate(ions);
-  REQUIRE(val == Approx(-1.418927)); // not validated
+  CHECK(val == Approx(-1.418927)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
@@ -95,10 +95,10 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
   // Background charge term
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.690675)); // not validated
+  CHECK(consts == Approx(-1.690675)); // not validated
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-0.963074)); // not validated
+  CHECK(val == Approx(-0.963074)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }
@@ -136,10 +136,10 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.142553));
+  CHECK(consts == Approx(-3.142553));
 
   double val = caa.evaluate(elec);
-  REQUIRE(val == Approx(-1.418927)); // not validated
+  CHECK(val == Approx(-1.418927)); // not validated
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 }

@@ -110,6 +110,6 @@ TEST_CASE("kspace jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
+  CHECK(logpsi_real == Approx(-4.4088303951)); // !!!! value not checked
 }
 } // namespace qmcplusplus

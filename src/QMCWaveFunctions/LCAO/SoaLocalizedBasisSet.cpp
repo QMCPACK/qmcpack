@@ -139,6 +139,37 @@ void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGL(const ParticleSet& P, int iat,
 }
 
 template<class COT, typename ORBT>
+void SoaLocalizedBasisSet<COT, ORBT>::mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list,
+                                                     int iat,
+                                                     OffloadMWVGLArray& vgl_v)
+{
+  for (size_t iw = 0; iw < P_list.size(); iw++)
+  {
+    const auto& IonID(ions_.GroupID);
+    const auto& coordR  = P_list[iw].activeR(iat);
+    const auto& d_table = P_list[iw].getDistTableAB(myTableIndex);
+    const auto& dist    = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDists() : d_table.getDistRow(iat);
+    const auto& displ   = (P_list[iw].getActivePtcl() == iat) ? d_table.getTempDispls() : d_table.getDisplRow(iat);
+
+    PosType Tv;
+
+    // number of walkers * BasisSetSize
+    auto stride = vgl_v.size(1) * BasisSetSize;
+    assert(BasisSetSize == vgl_v.size(2));
+    vgl_type vgl_iw(vgl_v.data_at(0, iw, 0), BasisSetSize, stride);
+
+    for (int c = 0; c < NumCenters; c++)
+    {
+      Tv[0] = (ions_.R[c][0] - coordR[0]) - displ[c][0];
+      Tv[1] = (ions_.R[c][1] - coordR[1]) - displ[c][1];
+      Tv[2] = (ions_.R[c][2] - coordR[2]) - displ[c][2];
+      LOBasisSet[IonID[c]]->evaluateVGL(P_list[iw].getLattice(), dist[c], displ[c], BasisOffset[c], vgl_iw, Tv);
+    }
+  }
+}
+
+
+template<class COT, typename ORBT>
 void SoaLocalizedBasisSet<COT, ORBT>::evaluateVGH(const ParticleSet& P, int iat, vgh_type& vgh)
 {
   const auto& IonID(ions_.GroupID);

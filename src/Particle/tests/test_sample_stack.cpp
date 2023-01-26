@@ -58,7 +58,7 @@ TEST_CASE("SampleStack", "[particle]")
 
   Walker_t w1;
   samples.getSample(0).convertToWalker(w1);
-  REQUIRE(w1.R[0][0] == Approx(1.1));
+  CHECK(w1.R[0][0] == Approx(1.1));
 
   // Should test that more members of the Walker are saved correctly
 

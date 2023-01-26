@@ -76,53 +76,53 @@ TEST_CASE("Gaussian Functor","[wavefunction]")
   // value tests for ADK input
   gf_adk.evaluate(r1, fval, fgrad, flap);
   gf_adk.evaluateLog(r1, lval, lgrad, llap);
-  REQUIRE( fval     == Approx(1) );
-  REQUIRE( fgrad[0] == Approx(0) );
-  REQUIRE( fgrad[1] == Approx(0) );
-  REQUIRE( fgrad[2] == Approx(0) );
-  REQUIRE( flap     == Approx(-12) );
-  REQUIRE( lval     == Approx(0) );
-  REQUIRE( lgrad[0] == Approx(0) );
-  REQUIRE( lgrad[1] == Approx(0) );
-  REQUIRE( lgrad[2] == Approx(0) );
-  REQUIRE( llap     == Approx(-12) );
+  CHECK( fval     == Approx(1) );
+  CHECK( fgrad[0] == Approx(0) );
+  CHECK( fgrad[1] == Approx(0) );
+  CHECK( fgrad[2] == Approx(0) );
+  CHECK( flap     == Approx(-12) );
+  CHECK( lval     == Approx(0) );
+  CHECK( lgrad[0] == Approx(0) );
+  CHECK( lgrad[1] == Approx(0) );
+  CHECK( lgrad[2] == Approx(0) );
+  CHECK( llap     == Approx(-12) );
   // value tests for ABC input
   gf_abc.evaluate(r1, fval, fgrad, flap);
   gf_abc.evaluateLog(r1, lval, lgrad, llap);
-  REQUIRE( fval     == Approx(1) );
-  REQUIRE( fgrad[0] == Approx(0) );
-  REQUIRE( fgrad[1] == Approx(0) );
-  REQUIRE( fgrad[2] == Approx(0) );
-  REQUIRE( flap     == Approx(-12) );
-  REQUIRE( lval     == Approx(0) );
-  REQUIRE( lgrad[0] == Approx(0) );
-  REQUIRE( lgrad[1] == Approx(0) );
-  REQUIRE( lgrad[2] == Approx(0) );
-  REQUIRE( llap     == Approx(-12) );
+  CHECK( fval     == Approx(1) );
+  CHECK( fgrad[0] == Approx(0) );
+  CHECK( fgrad[1] == Approx(0) );
+  CHECK( fgrad[2] == Approx(0) );
+  CHECK( flap     == Approx(-12) );
+  CHECK( lval     == Approx(0) );
+  CHECK( lgrad[0] == Approx(0) );
+  CHECK( lgrad[1] == Approx(0) );
+  CHECK( lgrad[2] == Approx(0) );
+  CHECK( llap     == Approx(-12) );
   // evaluateDerivatives
   gf_abc.evaluateDerivatives(r3, dfval, dfgrad, dflap);
-  REQUIRE( dfval[0] == Approx(0.113120472934));
-  REQUIRE( dfval[1] == Approx(0.071952529875));
-  REQUIRE( dfval[2] == Approx(0.140708490047));
-  REQUIRE( dfval[3] == Approx(0.011441709933));
-  REQUIRE( dfval[4] == Approx(0.044750218821));
-  REQUIRE( dfval[5] == Approx(0.043756180154));
-  REQUIRE( dfval[6] == Approx(-0.47987130010));
-  REQUIRE( dfval[7] == Approx(-0.15261584911));
-  REQUIRE( dfval[8] == Approx(-0.29845157248));
-  REQUIRE( dfval[9] == Approx(0.508918630484));
+  CHECK( dfval[0] == Approx(0.113120472934));
+  CHECK( dfval[1] == Approx(0.071952529875));
+  CHECK( dfval[2] == Approx(0.140708490047));
+  CHECK( dfval[3] == Approx(0.011441709933));
+  CHECK( dfval[4] == Approx(0.044750218821));
+  CHECK( dfval[5] == Approx(0.043756180154));
+  CHECK( dfval[6] == Approx(-0.47987130010));
+  CHECK( dfval[7] == Approx(-0.15261584911));
+  CHECK( dfval[8] == Approx(-0.29845157248));
+  CHECK( dfval[9] == Approx(0.508918630484));
   // evaluateLogDerivatives
   gf_abc.evaluateLogDerivatives(r3, dfval, dfgrad, dflap);
-  REQUIRE( dfval[0] == Approx(0.222276148205));
-  REQUIRE( dfval[1] == Approx(0.141383171229));
-  REQUIRE( dfval[2] == Approx(0.276485240702));
-  REQUIRE( dfval[3] == Approx(0.022482395511));
-  REQUIRE( dfval[4] == Approx(0.087931972108));
-  REQUIRE( dfval[5] == Approx(0.085978735172));
-  REQUIRE( dfval[6] == Approx(-0.94292342892));
-  REQUIRE( dfval[7] == Approx(-0.29988261377));
-  REQUIRE( dfval[8] == Approx(-0.58644261500));
-  REQUIRE( dfval[9] == Approx(1));
+  CHECK( dfval[0] == Approx(0.222276148205));
+  CHECK( dfval[1] == Approx(0.141383171229));
+  CHECK( dfval[2] == Approx(0.276485240702));
+  CHECK( dfval[3] == Approx(0.022482395511));
+  CHECK( dfval[4] == Approx(0.087931972108));
+  CHECK( dfval[5] == Approx(0.085978735172));
+  CHECK( dfval[6] == Approx(-0.94292342892));
+  CHECK( dfval[7] == Approx(-0.29988261377));
+  CHECK( dfval[8] == Approx(-0.58644261500));
+  CHECK( dfval[9] == Approx(1));
 }
 
 TEST_CASE("CountingJastrow","[wavefunction]")
@@ -222,10 +222,10 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
-    REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
+      CHECK( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
+    CHECK( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( ComplexApprox(Jval_exact) == logval );
+  CHECK( ComplexApprox(Jval_exact) == logval );
   
   // test automatic/minimal voronoi generator
   const char* cj_voronoi_xml = R"(<jastrow name="ncjf_voronoi" type="Counting" source="ion0">
@@ -262,17 +262,17 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   for(int i = 0; i < num_els; ++i)
   {
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
-    REQUIRE( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
+      CHECK( Jgrad_exact[i][k] == Approx( std::real(elec.G[i][k])) );
+    CHECK( Jlap_exact[i] == Approx( std::real(elec.L[i])) );
   }
-  REQUIRE( ComplexApprox(Jval_exact) == logval );
+  CHECK( ComplexApprox(Jval_exact) == logval );
   
   // test evalGrad
   for(int iat = 0; iat < num_els; ++iat)
   {
     GradType Jgrad_iat = cj->evalGrad(elec, iat);
     for(int k = 0; k < 3; ++k)
-      REQUIRE( Jgrad_exact[iat][k] == Approx( std::real(Jgrad_iat[k]) ));
+      CHECK( Jgrad_exact[iat][k] == Approx( std::real(Jgrad_iat[k]) ));
   }
 
   // reference for ratio, ratioGrad, acceptMove
@@ -294,13 +294,13 @@ TEST_CASE("CountingJastrow","[wavefunction]")
     elec.makeMoveAndCheck(iat,dr[iat]);
   
     RealType ratioval = std::real( cj->ratio(elec, iat) );
-    REQUIRE( ratioval_exact[iat] == Approx(std::real(ratioval)) );
+    CHECK( ratioval_exact[iat] == Approx(std::real(ratioval)) );
 
     GradType grad_iat(0, 0, 0);
     RealType gradratioval = std::real( cj->ratioGrad(elec, iat, grad_iat) );
-    REQUIRE( ratioval_exact[iat] == Approx(gradratioval));
+    CHECK( ratioval_exact[iat] == Approx(gradratioval));
     for(int k = 0; k < 3; ++k)
-      REQUIRE(Jgrad_t_exact[iat][k] == Approx(std::real(grad_iat[k])));
+      CHECK(Jgrad_t_exact[iat][k] == Approx(std::real(grad_iat[k])));
 
     cj->acceptMove(elec, iat);
   }
@@ -386,8 +386,8 @@ TEST_CASE("CountingJastrow","[wavefunction]")
   cj2->evaluateDerivatives(elec, optVars2, dlogpsi, dhpsioverpsi);
   for(int p = 0; p < num_derivs; ++p)
   {
-    REQUIRE ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])).epsilon(1e-3) );
-    REQUIRE ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])).epsilon(1e-3) );
+    CHECK ( dlogpsi_exact[p] == Approx(std::real(dlogpsi[p])).epsilon(1e-3) );
+    CHECK ( dhpsioverpsi_exact[p] == Approx(std::real(dhpsioverpsi[p])).epsilon(1e-3) );
   }
 
   // test resetParameters, recompute

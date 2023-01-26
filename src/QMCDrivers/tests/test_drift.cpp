@@ -48,7 +48,7 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
     double dval = drift[0][0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
-    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
+    CHECK(dval == Approx(scale_factor * gradx * tau / mass));
 
     //app_log() << gradx << " " << dval << std::endl;
     gradx += dx;
@@ -87,7 +87,7 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
     double dval = drift[0][0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
-    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
+    CHECK(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
@@ -123,7 +123,7 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
-    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
+    CHECK(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
@@ -162,7 +162,7 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
     double dval = drift[0];
 
     double scale_factor = (-1. + std::sqrt(1. + 2. * gradx * gradx * tau / mass)) / (gradx * gradx * tau / mass);
-    REQUIRE(dval == Approx(scale_factor * gradx * tau / mass));
+    CHECK(dval == Approx(scale_factor * gradx * tau / mass));
 
     gradx += dx;
   }
