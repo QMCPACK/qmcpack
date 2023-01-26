@@ -708,7 +708,7 @@ void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
     int kk      = myVars.where(i);
     const int p = m_act_rot_inds.at(i).first;
     const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] = T(p, q);
+    dlogpsi[kk] += T(p, q);
   }
 }
 
@@ -811,8 +811,8 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
     int kk           = myVars.where(i);
     const int p      = m_act_rot_inds.at(i).first;
     const int q      = m_act_rot_inds.at(i).second;
-    dlogpsi[kk]      = T(p, q);
-    dhpsioverpsi[kk] = ValueType(-0.5) * Y4(p, q);
+    dlogpsi[kk]      += T(p, q);
+    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
   }
 }
 
