@@ -37,10 +37,16 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
+  // Full set of rotation values for global rotation
+  RotationIndicies m_full_rot_inds;
+
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
+
+  // Construct a list for all the matrix indices, including core->active, core->core and active->active
+  static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
 
   // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
@@ -57,6 +63,13 @@ public:
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+
+  // For global rotation, inputs are the old parameters and the delta parameters.
+  // The corresponding rotation matrices are constructed, multiplied together,
+  // and the new parameters extracted.
+  void apply_delta_rotation(const std::vector<RealType>& delta_param,
+                            const std::vector<RealType>& old_param,
+                            std::vector<RealType>& new_param);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
@@ -94,7 +107,7 @@ public:
   void buildOptVariables(size_t nel) override;
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations) override;
 
 
   void evaluateDerivatives(ParticleSet& P,
@@ -211,16 +224,7 @@ public:
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override
-  {
-    std::vector<RealType> param(m_act_rot_inds.size());
-    for (int i = 0; i < m_act_rot_inds.size(); i++)
-    {
-      int loc  = myVars.where(i);
-      param[i] = myVars[i] = active[loc];
-    }
-    apply_rotation(param, true);
-  }
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
