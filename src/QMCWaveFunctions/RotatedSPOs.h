@@ -203,13 +203,9 @@ public:
 
   void checkInVariablesExclusive(opt_variables_type& active) override
   {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
-
+    use_this_copy_to_apply_rotation_ = true;
     if (myVars.size())
       active.insertFrom(myVars);
-    Phi->storeParamsBeforeRotation();
   }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
@@ -340,11 +336,26 @@ public:
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
 
+  /// Use history list (false) or global rotation (true)
+  void set_use_global_rotation(bool use_global_rotation) { use_global_rot_ = use_global_rotation; }
+
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  /// Flag to ensure rotation is applied to shared coefficients only on one thread
+  bool use_this_copy_to_apply_rotation_;
+
+  /// List of previously applied parameters
+  std::vector<std::vector<RealType>> history_params_;
+
+  /// Full set of rotation matrix parameters for use in global rotation method
+  opt_variables_type myVarsFull;
+
+  /// Use global rotation or history list
+  bool use_global_rot_;
 };
 
 } //namespace qmcplusplus

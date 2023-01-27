@@ -19,7 +19,13 @@
 namespace qmcplusplus
 {
 RotatedSPOs::RotatedSPOs(const std::string& my_name, std::unique_ptr<SPOSet>&& spos)
-    : SPOSet(my_name), OptimizableObject(my_name), Phi(std::move(spos)), nel_major_(0), params_supplied(false)
+    : SPOSet(my_name),
+      OptimizableObject(my_name),
+      Phi(std::move(spos)),
+      nel_major_(0),
+      params_supplied(false),
+      use_this_copy_to_apply_rotation_(false),
+      use_global_rot_(true)
 {
   OrbitalSetSize = Phi->getOrbitalSetSize();
 }
@@ -1265,6 +1271,9 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
+
+  // use_this_copy_to_apply_rotation_ is deliberately not copied
+
   return myclone;
 }
 
