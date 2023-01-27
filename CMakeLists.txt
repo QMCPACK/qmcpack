@@ -632,13 +632,9 @@ find_package(LibXml2 REQUIRED)
 #  set up HDF5 library
 #-------------------------------------------------------------------
 if(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      TRUE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" ON)
 else(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      FALSE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" OFF)
   if(HDF5_PREFER_PARALLEL)
     message(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
                         "Please set HDF5_PREFER_PARALLEL=0.")
@@ -657,8 +653,13 @@ find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
-    message(STATUS "Parallel HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    if(HAVE_MPI)
+      message(STATUS "Parallel HDF5 library found")
+      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    else(HAVE_MPI)
+      message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
+                          "Please provide serial HDF5 library.")
+    endif(HAVE_MPI)
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
