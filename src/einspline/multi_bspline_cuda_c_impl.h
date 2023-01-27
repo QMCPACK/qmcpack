@@ -453,7 +453,7 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   __shared__ float ab[96];
   __shared__ float a[12], b[12], c[12];
   __shared__ float G[3][3], GGt[3][3];
-  int ir = blockIdx.y;
+  int ir = blockIdx.x;
   float rx = pos[3*ir+0];
   float ry = pos[3*ir+1];
   float rz = pos[3*ir+2];
@@ -512,7 +512,7 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   float h00 = 0.0f, h01 = 0.0f, h02 = 0.0f;
   float h11 = 0.0f, h12 = 0.0f, h22 = 0.0f;
   float v = 0.0f;
-  int off = blockIdx.x * blockDim.x + threadIdx.x;
+  int off = blockIdx.y * blockDim.x + threadIdx.x;
   if (off < 2*N)
   {
     int stride_x = strides.x;
@@ -687,7 +687,7 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda (multi_UBspline_3d_c_cuda *spline,
   int num_splines=spline->num_splines;
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
-  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  dim3 dimGrid(num, (2 * num_splines + dimBlock.x - 1) / dimBlock.x);
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,
    (float**)grad_lapl_d, spline->gridInv, spline->dim,
@@ -712,7 +712,7 @@ eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
   int num_splines=spline->num_split_splines;
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
-  dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
+  dim3 dimGrid(num, (2 * num_splines + dimBlock.x - 1) / dimBlock.x);
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock,0,s>>>
     (pos_d, coefs, Linv_d, (float**)vals_d,
     (float**)grad_lapl_d, spline->gridInv, spline->dim,
