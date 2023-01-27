@@ -51,6 +51,16 @@ bool SplineR2R<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
+template<typename ST>
+void SplineR2R<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr     = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_);
+}
+
 /*
   ~~ Notes for rotation ~~
   spl_coefs      = Raw pointer of spline coefficients
@@ -87,6 +97,13 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
   assert(OrbitalSetSize >= TrueNOrbs);
 
+  if (!use_stored_copy)
+  {
+    if (!coef_copy_)
+      coef_copy_ = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_);
+  }
+
   // Fill top left corner of tmpU with rot_mat
   ValueMatrix tmpU;
   tmpU.resize(Nsplines, Nsplines);
@@ -110,14 +127,11 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
       for (auto k = 0; k < Nsplines; k++)
       {
         const auto index = i * Nsplines + k;
-        newval += *(spl_coefs + index) * tmpU[k][j];
+        newval += *(coef_copy_->data() + index) * tmpU[k][j];
       }
-      new_coefs[cur_elem] = newval;
+      spl_coefs[cur_elem] = newval;
     }
   }
-
-  // Update the coefs
-  std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
 
   /*
     // Here is my attempt to use gemm but it doesn't work...
