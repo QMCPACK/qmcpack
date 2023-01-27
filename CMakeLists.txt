@@ -658,7 +658,7 @@ if(HDF5_FOUND)
       option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
     else(HAVE_MPI)
       message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
-                          "Please provide serial HDF5 library.")
+                          "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
     endif(HAVE_MPI)
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
