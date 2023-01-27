@@ -89,19 +89,23 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   if (!sposet)
     myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
 
-  if (optimize == "rotation" || optimize == "yes")
+  if (optimize == "rotation" || optimize == "yes" || optimize == "history")
   {
 #ifdef QMC_COMPLEX
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
+    sposet->storeParamsBeforeRotation();
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
     if (!sposet_ref.isRotationSupported())
       myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet_ref.getName() + "' of type '" +
                                 sposet_ref.getClassName() + "'.");
-    auto rot_spo    = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
+    auto rot_spo = std::make_unique<RotatedSPOs>(sposet_ref.getName(), std::move(sposet));
+    if (optimize == "history")
+      rot_spo->set_use_global_rotation(false);
+
     xmlNodePtr tcur = cur->xmlChildrenNode;
     while (tcur != NULL)
     {
