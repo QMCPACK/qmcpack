@@ -358,6 +358,17 @@ endif()
 message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 
 #---------------------------------------------------------
+# Check for OpenMP compiler support if requested
+#---------------------------------------------------------
+if(QMC_OMP)
+  find_package(OpenMP)
+  if(NOT OpenMP_FOUND)
+      message(FATAL_ERROR "No compiler support for OpenMP..."
+                          "need to use -DQMC_OMP=OFF")
+  endif()
+endif(QMC_OMP)
+
+#---------------------------------------------------------
 # Determine if OpenMP taskloop works with the CXX compiler
 #---------------------------------------------------------
 include(TestOpenMPtaskloop)
