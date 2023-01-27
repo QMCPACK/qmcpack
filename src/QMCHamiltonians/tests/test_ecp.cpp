@@ -457,9 +457,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   ions.setName("ion0");
   ions.create({1});
-  ions.R[0][0] = 0.0;
-  ions.R[0][1] = 0.0;
-  ions.R[0][2] = 0.0;
+  ions.R[0] = {0.0, 0.0, 0.0};
 
 
   SpeciesSet& ion_species       = ions.getSpeciesSet();
@@ -473,11 +471,10 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
   elec.setName("e");
   elec.setSpinor(true);
-  elec.create({1});
-  elec.R[0][0]  = 0.138;
-  elec.R[0][1]  = -0.24;
-  elec.R[0][2]  = 0.216;
-  elec.spins[0] = 0.0;
+  elec.create({2});
+  elec.R[0]  = {0.138, -0.24, 0.216};
+  elec.R[1]  = {-0.216, 0.24, -0.138};
+  elec.spins = {0.2, 0.51};
 
   SpeciesSet& tspecies       = elec.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -496,31 +493,53 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
   QMCTraits::IndexType nelec = elec.getTotalNum();
-  REQUIRE(nelec == 1);
+  REQUIRE(nelec == 2);
 
   kup.resize(nelec);
   kup[0] = PosType(1, 1, 1);
+  kup[1] = PosType(2, 2, 2);
 
   kdn.resize(nelec);
   kdn[0] = PosType(2, 2, 2);
+  kdn[1] = PosType(1, 1, 1);
 
   auto spo_up = std::make_unique<FreeOrbital>("free_orb_up", kup);
-  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_up", kdn);
+  auto spo_dn = std::make_unique<FreeOrbital>("free_orb_dn", kdn);
 
   auto spinor_set = std::make_unique<SpinorSet>("free_orb_spinor");
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
   QMCTraits::IndexType norb = spinor_set->getOrbitalSetSize();
-  REQUIRE(norb == 1);
+  REQUIRE(norb == 2);
 
   auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
 
   psi.addComponent(std::move(dd));
 
+  //Add the two body jastrow, parameters from test_J2_bspline
+  //adding jastrow will allow for adding WF parameter derivatives since FreeOrbital doesn't
+  //support that
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="u" rcut="5" size="5">
+      <coefficients id="uu" type="Array"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+  xmlNodePtr jas2 = xmlFirstElementChild(root);
+  RadialJastrowBuilder jastrow(c, elec);
+  psi.addComponent(jastrow.buildComponent(jas2));
+  // Done with two body jastrow.
+
   //Now we set up the SO ECP component.
   ECPComponentBuilder ecp("test_read_soecp", c);
 
-  bool okay3 = ecp.read_pp_file("so_ecp_test.xml");
-  REQUIRE(okay3);
+  bool okay2 = ecp.read_pp_file("so_ecp_test.xml");
+  REQUIRE(okay2);
 
   SOECPComponent* sopp = ecp.pp_so.get();
   REQUIRE(sopp != nullptr);
@@ -535,8 +554,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   elec.update();
 
   //Need to set up temporary data for this configuration in trial wavefunction.  Needed for ratios.
-  double logpsi = psi.evaluateLog(elec);
-
+  auto logpsi = psi.evaluateLog(elec);
 
   auto test_evaluateOne = [&]() {
     RealType Value1(0.0);
@@ -548,7 +566,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateOne(elec, iat, psi, jel, dist[iat], RealType(-1) * displ[iat]);
     }
-    CHECK(Value1 == Approx(-0.3214176962));
+    REQUIRE(Value1 == Approx(-3.530511241));
   };
 
   {
@@ -558,6 +576,62 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
     sopp->deleteVirtualParticle();
     //test without VPs
     test_evaluateOne();
+  }
+
+  //Check evaluateValueAndDerivatives
+  opt_variables_type optvars;
+  Vector<ValueType> dlogpsi;
+  Vector<ValueType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+
+
+  //Ref Values from soecp_eval_ref.cpp in the print_dlogpsi using finite differences
+  std::vector<RealType> dlogpsi_refs = { -0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
+  //These weren't independently validated in soecp_eval_ref.cpp
+  //trusting current values from evaluateDerivatives...which should be correct if the
+  //dlogpsi comes out correct
+  std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
+  //These were independently validated in soecp_eval_ref.cpp, includes the contribution
+  //from dkinpsioverpsi_refs
+  std::vector<RealType> dhpsioverpsi_refs = { -3.855727438, 0.202618546, 3.653108892, -8.169955304e-14, -8.169955304e-14};
+
+
+  auto test_evaluateValueAndDerivatives     = [&]() {
+    dlogpsi.resize(NumOptimizables, ValueType(0));
+    dhpsioverpsi.resize(NumOptimizables, ValueType(0));
+    psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
+    for (int ip = 0; ip < NumOptimizables; ip++)
+    {
+      CHECK(std::real(dlogpsi[ip]) == Approx(dlogpsi_refs[ip]));
+      CHECK(std::real(dhpsioverpsi[ip]) == Approx(dkinpsioverpsi_refs[ip]));
+    }
+
+    double Value1 = 0.0;
+    //Using SoA distance tables, hence the guard.
+    for (int jel = 0; jel < elec.getTotalNum(); jel++)
+    {
+      const auto& dist  = myTable.getDistRow(jel);
+      const auto& displ = myTable.getDisplRow(jel);
+      for (int iat = 0; iat < ions.getTotalNum(); iat++)
+        if (sopp != nullptr && dist[iat] < sopp->getRmax())
+          Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                          dhpsioverpsi);
+    }
+    REQUIRE(Value1 == Approx(-3.530511241));
+
+    for (int ip = 0; ip < NumOptimizables; ip++)
+      CHECK(std::real(dhpsioverpsi[ip]) == Approx(dhpsioverpsi_refs[ip]));
+  };
+
+  {
+    sopp->initVirtualParticle(elec);
+    test_evaluateValueAndDerivatives();
+    sopp->deleteVirtualParticle();
+    test_evaluateValueAndDerivatives();
   }
 }
 #endif

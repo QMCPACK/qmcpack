@@ -28,6 +28,11 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
 
+  Return_t evaluateValueAndDerivatives(ParticleSet& P,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi) override;
+
   bool put(xmlNodePtr cur) override { return true; }
 
   bool get(std::ostream& os) const override
