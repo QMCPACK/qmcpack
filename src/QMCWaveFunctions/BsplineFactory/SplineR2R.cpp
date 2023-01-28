@@ -58,7 +58,7 @@ void SplineR2R<ST>::storeParamsBeforeRotation()
   const auto coefs_tot_size = spline_ptr->coefs_size;
   coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
 
-  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_);
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
 }
 
 /*
@@ -101,7 +101,7 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   {
     if (!coef_copy_)
       coef_copy_ = std::make_shared<std::vector<RealType>>(coefs_tot_size);
-    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
 
   // Fill top left corner of tmpU with rot_mat
