@@ -539,6 +539,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
+  spo->storeParamsBeforeRotation();
+
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 1 electron, 2 orbitals
@@ -587,6 +589,13 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   rot_spo->evaluateDerivatives(elec, opt_vars, dlogpsi, dhpsioverpsi, 0, 1);
   CHECK(dlogpsi[0] == ValueApprox(-0.10034901119468914));
   CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
+
+  std::vector<ValueType> new_params(1);
+  std::vector<ValueType> old_params   = {0.2};
+  std::vector<ValueType> delta_params = {0.3};
+  rot_spo->apply_delta_rotation(delta_params, old_params, new_params);
+  // 2x2 rotation matrix so the angles can be added
+  CHECK(new_params[0] == Approx(0.5));
 }
 
 
