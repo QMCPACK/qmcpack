@@ -38,7 +38,7 @@ public:
   RotationIndices m_act_rot_inds;
 
   // Full set of rotation values for global rotation
-  RotationIndicies m_full_rot_inds;
+  RotationIndices m_full_rot_inds;
 
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
