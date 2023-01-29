@@ -231,8 +231,26 @@ if(INSTALL_NEXUS)
 endif()
 
 ######################################################################
-# Set the compiler specific options/flags
+# Set compiler specific options/flags
 ######################################################################
+#-------------------------------------------------------------------------------
+# Check for OpenMP compiler support
+#
+# The CMake OpenMP package is *only* used to to verify compiler support.
+# No feature of the package is used and we customize OpenMP options directly
+# on a per vendor/compiler basis.
+#-------------------------------------------------------------------------------
+if(QMC_OMP)
+  find_package(OpenMP)
+  if(NOT OpenMP_FOUND)
+      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
+  endif()
+endif(QMC_OMP)
+
+#-------------------------------------------------------------------------------
+# Set vendor specific compiler options
+#-------------------------------------------------------------------------------
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
