@@ -357,14 +357,18 @@ if(alignment_remainder)
 endif()
 message(STATUS "QMC_SIMD_ALIGNMENT is set to ${QMC_SIMD_ALIGNMENT}")
 
-#---------------------------------------------------------
-# Check for OpenMP compiler support if requested
-#---------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Check for OpenMP compiler support
+# 
+# The CMake OpenMP package is *only* used to to verify compiler support.
+# No feature of the package is used and we customize OpenMP options directly
+# on a per vendor/compiler basis.
+#-------------------------------------------------------------------------------
 if(QMC_OMP)
   find_package(OpenMP)
   if(NOT OpenMP_FOUND)
-      message(FATAL_ERROR "No compiler support for OpenMP found. You will need to run CMake configure with -DQMC_OMP=OFF"
-                          "Switching to a compiler with OpenMP support is recommended.")
+      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
   endif()
 endif(QMC_OMP)
 
