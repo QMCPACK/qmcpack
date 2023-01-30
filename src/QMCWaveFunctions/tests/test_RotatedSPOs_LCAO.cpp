@@ -17,6 +17,10 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "checkMatrix.hpp"
 
 
 #include <stdio.h>
@@ -514,5 +518,147 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   CHECK(dlogpsi[1] == ValueApprox(2.58896036829191));
   CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
   CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
+}
+
+// Test series of applied rotations vs. history list
+TEST_CASE("Rotated LCAO global rotation consistency", "[qmcapp]")
+{
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+
+  REQUIRE(wp.empty() == true);
+
+
+  // Only care that this wavefunction has 3 SPOs and a 3x3 coefficient matrix
+  const char* wf_input = R"(<wavefunction target='e'>
+
+     <sposet_collection type="MolecularOrbital">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
+          <basisGroup rid="R0" l="0" m="0" type="Slater">
+             <radfunc n="1" exponent="2.0"/>
+          </basisGroup>
+          <basisGroup rid="R1" l="0" m="0" type="Slater">
+             <radfunc n="2" exponent="1.0"/>
+          </basisGroup>
+          <basisGroup rid="R2" l="0" m="0" type="Slater">
+             <radfunc n="3" exponent="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <sposet basisset="LCAOBSet" name="spo-up" size="3" optimize="yes">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-down" size="3" optimize="yes">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+      </sposet>
+    </sposet_collection>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <slaterdeterminant>
+        <determinant id="spo-up" spin="1" size="2"/>
+        <determinant id="spo-down" spin="-1" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+   </wavefunction>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  // Type should be pointer to SlaterDet
+  auto orb1       = psi->getOrbitals()[0].get();
+  SlaterDet* sdet = dynamic_cast<SlaterDet*>(orb1);
+  REQUIRE(sdet != nullptr);
+
+  // Use the SPOs from different spins to separately track sequentially applied rotations vs global rotation.
+  // The coefficient matrices should match after the same rotations are applied to each.
+  SPOSetPtr spoptr     = sdet->getPhi(0);
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(spoptr);
+  REQUIRE(rot_spo != nullptr);
+
+  SPOSetPtr spoptr1           = sdet->getPhi(1);
+  RotatedSPOs* global_rot_spo = dynamic_cast<RotatedSPOs*>(spoptr1);
+  REQUIRE(global_rot_spo != nullptr);
+
+  std::vector<RealType> params1 = {0.1, 0.2};
+
+  rot_spo->apply_rotation(params1, false);
+
+  // Value after first rotation, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data0 =
+        {  0.975103993210479,   0.0991687475215628,  0.198337495043126,
+          -0.0991687475215628,  0.995020798642096,  -0.00995840271580824,
+          -0.198337495043126,  -0.00995840271580824, 0.980083194568384 };
+  // clang-format on
+
+  ValueMatrix new_rot_m0(rot_data0.data(), 3, 3);
+
+  std::vector<RealType> old_params = {0.0, 0.0, 0.0};
+  std::vector<RealType> new_params(3);
+  global_rot_spo->applyDeltaRotation(params1, old_params, new_params);
+
+  LCAOrbitalSet* lcao1       = dynamic_cast<LCAOrbitalSet*>(rot_spo->Phi.get());
+  LCAOrbitalSet* lcao_global = dynamic_cast<LCAOrbitalSet*>(global_rot_spo->Phi.get());
+
+  CheckMatrixResult check_matrix_result = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  CheckMatrixResult check_matrix_result0 = checkMatrix(*lcao_global->C, new_rot_m0, true);
+  CHECKED_ELSE(check_matrix_result0.result) { FAIL(check_matrix_result0.result_message); }
+
+  std::vector<RealType> params2 = {0.3, 0.15};
+  rot_spo->apply_rotation(params2, false);
+
+  std::vector<RealType> new_params2(3);
+  global_rot_spo->applyDeltaRotation(params2, new_params, new_params2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+  // Value after two rotations, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data3 =
+    {  0.862374825309137,  0.38511734273482,   0.328624851461217,
+      -0.377403929117215,  0.921689108007811, -0.0897522281988318,
+      -0.337455085840952, -0.046624248032951,  0.940186281826872 };
+  // clang-format on
+
+  ValueMatrix new_rot_m3(rot_data3.data(), 3, 3);
+
+  CheckMatrixResult check_matrix_result3 = checkMatrix(*lcao1->C, new_rot_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+
+  // Need to flip the sign on the first two entries to match the output from gen_matrix_ops.py
+  std::vector<ValueType> expected_param = {0.3998099017676912, 0.34924318065960236, -0.02261313113492491};
+  for (int i = 0; i < expected_param.size(); i++)
+  {
+    CHECK(new_params2[i] == Approx(expected_param[i]));
+  }
 }
 } // namespace qmcplusplus
