@@ -115,7 +115,7 @@ case "$1" in
     fi
     
     case "${GH_JOBNAME}" in
-      *"GCC9-NoMPI-Debug-"*)
+      *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
         echo 'Configure for debug mode to capture asserts with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -124,7 +124,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=Debug \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-NoOMP-"*)
+      *"GCC9-NoMPI-NoOMP-"*|*"GCC11-NoMPI-NoOMP-"*)
         echo 'Configure for disabling OpenMP with QMC_OMP=0'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -135,7 +135,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-Sandbox-"*)
+      *"GCC9-NoMPI-Sandbox-"*|*"GCC11-NoMPI-Sandbox-"*)
         echo 'Configure for enabling sandbox (minimal) only option with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
