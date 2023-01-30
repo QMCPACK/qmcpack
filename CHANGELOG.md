@@ -53,7 +53,7 @@ Notable changes to QMCPACK are documented in this file.
 * Updated bmpi3 MPI "wrapper"
 * Various other small bug fixes and quality of life improvements. See the full list of merged PRs on GitHub for details.
 
-## Known problems
+### Known problems
 
 * When offload builds are compiled with CUDA toolkit versions above 11.2 (tested 11.3-11.8) using LLVM15, multideterminant tests and
   functionality will fail, seemingly due to an issue with the toolkit. This is discussed in
@@ -74,6 +74,11 @@ Notable changes to QMCPACK are documented in this file.
 * Nexus: Jastrow factors can be read from existing files [\#4339](https://github.com/QMCPACK/qmcpack/pull/4339)
 * Nexus: Fix VASP POSCAR write [\#4331](https://github.com/QMCPACK/qmcpack/pull/4331)
 * Nexus: Better handling of VASP pseudopotentials [\#4330](https://github.com/QMCPACK/qmcpack/pull/4330)
+
+### Known problems
+
+* The new QE7.1 DFT+U input style is not yet supported [\#4100](https://github.com/QMCPACK/qmcpack/issues/4100)
+
 ##  [3.15.0] - 2022-09-29
 
 This is a recommended release for all users. There are many quality of life
