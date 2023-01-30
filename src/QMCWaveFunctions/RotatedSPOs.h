@@ -67,9 +67,19 @@ public:
   // For global rotation, inputs are the old parameters and the delta parameters.
   // The corresponding rotation matrices are constructed, multiplied together,
   // and the new parameters extracted.
-  void apply_delta_rotation(const std::vector<RealType>& delta_param,
-                            const std::vector<RealType>& old_param,
-                            std::vector<RealType>& new_param);
+  // The new rotation is applied to the underlying SPO coefficients
+  void applyDeltaRotation(const std::vector<RealType>& delta_param,
+                          const std::vector<RealType>& old_param,
+                          std::vector<RealType>& new_param);
+
+  // Perform the construction of matrices and extraction of parameters in apply_delta_rotation.
+  // Split out and made static for testing.
+  static void constructDeltaRotation(const std::vector<RealType>& delta_param,
+                                     const std::vector<RealType>& old_param,
+                                     const RotationIndices& act_rot_inds,
+                                     const RotationIndices& full_rot_inds,
+                                     std::vector<RealType>& new_param,
+                                     ValueMatrix& new_rot_mat);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);

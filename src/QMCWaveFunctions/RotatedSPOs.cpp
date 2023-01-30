@@ -88,7 +88,7 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
                                                        std::vector<ValueType>& param)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size upon entry
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
@@ -126,7 +126,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
       old_param[i] = myVarsFull[i];
 
     if (use_this_copy_to_apply_rotation_)
-      apply_delta_rotation(delta_param, old_param, new_param);
+      applyDeltaRotation(delta_param, old_param, new_param);
 
     // Save the the params
     for (int i = 0; i < m_full_rot_inds.size(); i++)
@@ -178,7 +178,7 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
-  m_act_rot_inds  = rotations;
+  m_act_rot_inds = rotations;
 
   if (use_global_rot_)
     m_full_rot_inds = full_rotations;
@@ -283,38 +283,52 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
-void RotatedSPOs::apply_delta_rotation(const std::vector<RealType>& delta_param,
-                                       const std::vector<RealType>& old_param,
-                                       std::vector<RealType>& new_param)
+void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
+                                     const std::vector<RealType>& old_param,
+                                     std::vector<RealType>& new_param)
 {
-  assert(delta_param.size() == m_act_rot_inds.size());
-  assert(old_param.size() == m_full_rot_inds.size());
-  assert(new_param.size() == m_full_rot_inds.size());
-
   const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix new_rot_mat(nmo, nmo);
+  constructDeltaRotation(delta_param, old_param, m_act_rot_inds, m_full_rot_inds, new_param, new_rot_mat);
+
+  Phi->applyRotation(new_rot_mat, true);
+}
+
+void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_param,
+                                         const std::vector<RealType>& old_param,
+                                         const RotationIndices& act_rot_inds,
+                                         const RotationIndices& full_rot_inds,
+                                         std::vector<RealType>& new_param,
+                                         ValueMatrix& new_rot_mat)
+{
+  assert(delta_param.size() == act_rot_inds.size());
+  assert(old_param.size() == full_rot_inds.size());
+  assert(new_param.size() == full_rot_inds.size());
+
+  const size_t nmo = new_rot_mat.rows();
+  assert(new_rot_mat.rows() == new_rot_mat.cols());
+
   ValueMatrix old_rot_mat(nmo, nmo);
   old_rot_mat = ValueType(0);
 
-  constructAntiSymmetricMatrix(m_full_rot_inds, old_param, old_rot_mat);
+  constructAntiSymmetricMatrix(full_rot_inds, old_param, old_rot_mat);
   exponentiate_antisym_matrix(old_rot_mat);
 
   ValueMatrix delta_rot_mat(nmo, nmo);
   delta_rot_mat = ValueType(0);
 
-  constructAntiSymmetricMatrix(m_act_rot_inds, delta_param, delta_rot_mat);
+  constructAntiSymmetricMatrix(act_rot_inds, delta_param, delta_rot_mat);
   exponentiate_antisym_matrix(delta_rot_mat);
 
   // Apply delta rotation to old rotation.
-  ValueMatrix new_rot_mat(nmo, nmo);
   BLAS::gemm('N', 'N', nmo, nmo, nmo, 1.0, delta_rot_mat.data(), nmo, old_rot_mat.data(), nmo, 0.0, new_rot_mat.data(),
              nmo);
 
-  Phi->applyRotation(new_rot_mat, true);
-
-  log_antisym_matrix(new_rot_mat);
-  extractParamsFromAntiSymmetricMatrix(m_full_rot_inds, new_rot_mat, new_param);
+  ValueMatrix log_rot_mat(nmo, nmo);
+  log_rot_mat = new_rot_mat;
+  log_antisym_matrix(log_rot_mat);
+  extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
 }
-
 
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
