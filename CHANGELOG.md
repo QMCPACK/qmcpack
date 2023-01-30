@@ -15,8 +15,7 @@ Notable changes to QMCPACK are documented in this file.
 * NLPP grid randomization can be disabled for debugging and greater reproducibility [\#4394](https://github.com/QMCPACK/qmcpack/pull/4394)
 * Two-body Jastrow support for true 2D calculations [\#4289](https://github.com/QMCPACK/qmcpack/pull/4289) (contributed by @Paul-St-Young)
 * Fix for very large calculations requesting too large grids in CUDA spline implementation [\#4421](https://github.com/QMCPACK/qmcpack/pull/4421) (contributed by @pwang234)
-* Several bug fixes in the batched OpenMP offload implementation including potential sources of hangs
-  [\#4388](https://github.com/QMCPACK/qmcpack/pull/4388) and memory errors [\#4408](https://github.com/QMCPACK/qmcpack/pull/4408)
+* Bugfix in the batched OpenMP offload implementation memory errors [\#4408](https://github.com/QMCPACK/qmcpack/pull/4408) when the number of splines is not a perfectly aligned size (multiple of 8 single precision or 4 double precision).
 * Updates to test tolerances for many build types and platforms to improve reliability of deterministic tests. Goal: `ctest -L
   deterministic` should pass on all platforms.
 * Improved CMake configuration including detecting use of parallel HDF5 in non-MPI builds
@@ -50,6 +49,9 @@ Notable changes to QMCPACK are documented in this file.
   [\#4275](https://github.com/QMCPACK/qmcpack/pull/4275),[\#4273](https://github.com/QMCPACK/qmcpack/pull/4273)
 * Updated bmpi3 MPI "wrapper"
 * Various other small bug fixes and quality of life improvements. See the full list of merged PRs on GitHub for details.
+* Enabled HIP as language in CMake (requires >= 3.21) [\#3646](https://github.com/QMCPACK/qmcpack/pull/3646). When using HIP targeting AMD GPUs,
+  replace HIP_ARCH with CMAKE_HIP_ARCHITECTURES if HIP_ARCH was used to specify the GPU
+  architectures.
 
 ## Known problems
 
@@ -59,10 +61,7 @@ Notable changes to QMCPACK are documented in this file.
   https://github.com/llvm/llvm-project/issues/54633 . All other functionality
   appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be
   used. The actual NVIDIA drivers can be more recent.
-
-* Enabled HIP as language in CMake (requires >= 3.21). When using HIP targeting AMD GPUs,
-  replace HIP_ARCH with CMAKE_HIP_ARCHITECTURES if HIP_ARCH was used to specify the GPU
-  architectures.
+* CUDA toolkit 12.0 is not compatible with LLVM OpenMP offload https://github.com/llvm/llvm-project/issues/60296.
 
 ### Nexus
 
