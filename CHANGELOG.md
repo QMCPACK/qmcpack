@@ -40,7 +40,7 @@ Notable changes to QMCPACK are documented in this file.
   conditions in distance tables [\#4374](https://github.com/QMCPACK/qmcpack/pull/4374), for reptation Monte Carlo observables
   \#4327](https://github.com/QMCPACK/qmcpack/pull/4327), and orbital rotations
   [\#4304](https://github.com/QMCPACK/qmcpack/pull/4304)
-* Many updates to HDF5 usage including adopting of HDF5 1.10 API [\#4352](https://github.com/QMCPACK/qmcpack/pull/4352) and
+* Many updates to HDF5 usage including adoption of HDF5 1.10 API [\#4352](https://github.com/QMCPACK/qmcpack/pull/4352) and
   related cleanup, e.g. [\#4300](https://github.com/QMCPACK/qmcpack/pull/4300)
 * Initial Perlmutter CPU build recipe [\#4398](https://github.com/QMCPACK/qmcpack/pull/4398)
 * Initial ALCF Sunspot build recipe including offloading to Intel Ponte Vecchio/Xe HPC GPU
