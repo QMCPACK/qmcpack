@@ -9,15 +9,16 @@ Notable changes to QMCPACK are documented in this file.
   @markdewing, this bug has existed since the earliest days of QMCPACK. The stochastic rotations used to randomly reorient the
   integration grids for the non-local pseudopoptentials would not cover the full sphere unless they had many points and sufficient
   symmetry, as was the case for the QMCPACK default. However, calculations with custom integration grids with only a few points
-  could show error or excess statistical noise in the non-local part of the pseudopotential energy. Standard calculations and tests
-  on carbon diamond, lithium hydride, and hydrocarbon molecules were not affected due to QMCPACK's conservative defaults. Tests
-  updated in [\#4383](https://github.com/QMCPACK/qmcpack/pull/4383).
+  (small `nrule`) could show error or excess statistical noise in the non-local part of the pseudopotential energy. Standard
+  calculations and tests on carbon diamond, lithium hydride, and hydrocarbon molecules were not affected due to QMCPACK's
+  conservative defaults. Tests updated in [\#4383](https://github.com/QMCPACK/qmcpack/pull/4383)
 * NLPP grid randomization can be disabled for debugging and greater reproducibility [\#4394](https://github.com/QMCPACK/qmcpack/pull/4394)
 * Two-body Jastrow support for true 2D calculations [\#4289](https://github.com/QMCPACK/qmcpack/pull/4289) (contributed by @Paul-St-Young)
 * Fix for very large calculations requesting too large grids in CUDA spline implementation [\#4421](https://github.com/QMCPACK/qmcpack/pull/4421) (contributed by @pwang234)
-* Bugfix in the batched OpenMP offload implementation memory errors [\#4408](https://github.com/QMCPACK/qmcpack/pull/4408) when the number of splines is not a perfectly aligned size (multiple of 8 single precision or 4 double precision).
+* Bugfix in the batched OpenMP offload implementation memory errors [\#4408](https://github.com/QMCPACK/qmcpack/pull/4408) when the
+  number of splines is not a perfectly aligned size (multiple of 8 single precision or 4 double precision).
 * Updates to test tolerances for many build types and platforms to improve reliability of deterministic tests. Goal: `ctest -L
-  deterministic` should pass on all platforms.
+  deterministic` should pass on all platforms. Please report any failures.
 * Improved CMake configuration including detecting use of parallel HDF5 in non-MPI builds
   [\#4420](https://github.com/QMCPACK/qmcpack/pull/4420) and detection of missing OpenMP support
   [\#4422](https://github.com/QMCPACK/qmcpack/pull/4422)
@@ -31,6 +32,8 @@ Notable changes to QMCPACK are documented in this file.
 * Electron coordinates are printed in case a NaN is detected [\#4401](https://github.com/QMCPACK/qmcpack/pull/4401)
 * To evade support problems for complex reductions in OpenMP offload compilers, real builds no longer reference any complex
   reductions [\#4379](https://github.com/QMCPACK/qmcpack/pull/4379)
+* Enabled HIP as language in CMake (requires >= 3.21) [\#3646](https://github.com/QMCPACK/qmcpack/pull/3646). When using HIP
+  targeting AMD GPUs, replace HIP_ARCH with CMAKE_HIP_ARCHITECTURES if HIP_ARCH was used to specify the GPU architectures.
 * Refinements to SYCL usage, e.g., [\#4384](https://github.com/QMCPACK/qmcpack/pull/4384),
   [\#4382](https://github.com/QMCPACK/qmcpack/pull/4382), [\#4380](https://github.com/QMCPACK/qmcpack/pull/4380) 
 * Many expanded tests including for NLPP parameter derivatives [\#4394](https://github.com/QMCPACK/qmcpack/pull/4394), more boundary
@@ -46,27 +49,23 @@ Notable changes to QMCPACK are documented in this file.
 * Minimum supported Intel classic compiler version is 2021.1. [\#4389](https://github.com/QMCPACK/qmcpack/pull/4389)
 * Ongoing improvement to orbital optimization and rotation, e.g. [\#4288](https://github.com/QMCPACK/qmcpack/pull/4288), [\#4402](https://github.com/QMCPACK/qmcpack/pull/4402)
 * Ongoing code cleanup, e.g. [\#4276](https://github.com/QMCPACK/qmcpack/pull/4276),
-  [\#4275](https://github.com/QMCPACK/qmcpack/pull/4275),[\#4273](https://github.com/QMCPACK/qmcpack/pull/4273)
+  [\#4275](https://github.com/QMCPACK/qmcpack/pull/4275), [\#4273](https://github.com/QMCPACK/qmcpack/pull/4273)
 * Updated bmpi3 MPI "wrapper"
 * Various other small bug fixes and quality of life improvements. See the full list of merged PRs on GitHub for details.
-* Enabled HIP as language in CMake (requires >= 3.21) [\#3646](https://github.com/QMCPACK/qmcpack/pull/3646). When using HIP targeting AMD GPUs,
-  replace HIP_ARCH with CMAKE_HIP_ARCHITECTURES if HIP_ARCH was used to specify the GPU
-  architectures.
 
 ## Known problems
 
-* When offload builds are compiled with CUDA toolkit versions above 11.2 (tested
-  11.3-11.8) using LLVM15, multideterminant tests and functionality will fail,
-  seemingly due to an issue with the toolkit. This is discussed in
-  https://github.com/llvm/llvm-project/issues/54633 . All other functionality
-  appears to work as expected. As a workaround, the CUDA toolkit 11.2 can be
-  used. The actual NVIDIA drivers can be more recent.
-* CUDA toolkit 12.0 is not compatible with LLVM OpenMP offload https://github.com/llvm/llvm-project/issues/60296.
+* When offload builds are compiled with CUDA toolkit versions above 11.2 (tested 11.3-11.8) using LLVM15, multideterminant tests and
+  functionality will fail, seemingly due to an issue with the toolkit. This is discussed in
+  https://github.com/llvm/llvm-project/issues/54633 . All other functionality appears to work as expected. As a workaround, the CUDA
+  toolkit 11.2 can be used. The actual NVIDIA drivers can be more recent.
+* CUDA toolkit version 12.0 is not compatible with LLVM OpenMP offload https://github.com/llvm/llvm-project/issues/60296
 
-### Nexus
+### NEXUS
 
 * Nexus: Support for use of templates for job submission scripts [\#4344](https://github.com/QMCPACK/qmcpack/pull/4344)
-* Nexus: twist_info.dat files now added to results directory for easier analysis of twist average quantities [\#4302](https://github.com/QMCPACK/qmcpack/pull/4302)
+* Nexus: twist_info.dat files now added to results directory for easier analysis of twist average quantities
+  [\#4302](https://github.com/QMCPACK/qmcpack/pull/4302)
 * Nexus: Initial support for Polaris at ALCF [\#4354](https://github.com/QMCPACK/qmcpack/pull/4354)
 * Nexus: Initial support for Perlmutter at NERSC [\#4356](https://github.com/QMCPACK/qmcpack/pull/4356)
 * Nexus: Support for gpusharing keyword for legacy CUDA [\#4403](https://github.com/QMCPACK/qmcpack/pull/4403)
@@ -138,7 +137,7 @@ be required, we recommend trying these drivers now and reporting any issues.
 * Minimum CUDA version is 11.0 [\#3957](https://github.com/QMCPACK/qmcpack/pull/3957)
 * Minimum version of GCC is now v9.
 
-### Nexus
+### NEXUS
 
 * Nexus: support to current batched driver style. Example inputs for batched
   runs using trial wavefunctions from QE are included in
