@@ -183,10 +183,10 @@ jobs:
       matrix:
         jobname:
           [
-            GCC9-NoMPI-Debug-Real,
-            GCC9-NoMPI-NoOMP-Real,
-            GCC9-NoMPI-NoOMP-Complex,
-            GCC9-NoMPI-Sandbox-Real,
+            GCC11-NoMPI-Debug-Real,
+            GCC11-NoMPI-NoOMP-Real,
+            GCC11-NoMPI-NoOMP-Complex,
+            GCC11-NoMPI-Sandbox-Real,
           ]
         include:
           - jobname: GCC9-NoMPI-Debug-Real
