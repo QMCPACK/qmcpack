@@ -38,7 +38,7 @@ Notable changes to QMCPACK are documented in this file.
   [\#4382](https://github.com/QMCPACK/qmcpack/pull/4382), [\#4380](https://github.com/QMCPACK/qmcpack/pull/4380) 
 * Many expanded tests including for NLPP parameter derivatives [\#4394](https://github.com/QMCPACK/qmcpack/pull/4394), more boundary
   conditions in distance tables [\#4374](https://github.com/QMCPACK/qmcpack/pull/4374), for reptation Monte Carlo observables
-  \#4327](https://github.com/QMCPACK/qmcpack/pull/4327), and orbital rotations
+  [\#4327](https://github.com/QMCPACK/qmcpack/pull/4327), and orbital rotations
   [\#4304](https://github.com/QMCPACK/qmcpack/pull/4304)
 * Many updates to HDF5 usage including adoption of HDF5 1.10 API [\#4352](https://github.com/QMCPACK/qmcpack/pull/4352) and
   related cleanup, e.g. [\#4300](https://github.com/QMCPACK/qmcpack/pull/4300)
