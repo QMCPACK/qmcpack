@@ -8,12 +8,15 @@ FROM spack/centos-stream as builder
 RUN which tar
 RUN tar -cf tarfilename.tar -T /dev/null
 
+RUN spack install gcc@11.3.0
+RUN spack load gcc@11.3.0
+RUN spack compiler add $(spack location -i gcc@11.3.0)
 RUN spack compilers
 
 RUN yum install texinfo -y
 
 RUN mkdir /opt/spack-environment \
-&& export gcc_vnew=8.5.0 \
+&& export gcc_vnew=11.3.0\
 && export cmake_vnew=3.24.2 \
 && export libxml2_v=2.9.13 \
 && export boost_vnew=1.79.0 \
@@ -71,9 +74,10 @@ COPY --from=builder /opt/._view /opt/._view
 COPY --from=builder /opt/view /opt/view
 COPY --from=builder /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
 
-# gcc-toolset-9 is needed for compilation, as gcc made from source doesnt include as or ld (assembly and linker)
-RUN yum install -y gcc-toolset-9
-RUN echo 'source scl_source enable gcc-toolset-9' >> /etc/profile
+# building from source is missing ld (the linker)
+RUN yum install -y binutils
+RUN yum install -y libgcc.i686 glibc-devel.i686 libstdc++-devel.i686
+RUN ranlib /opt/view/lib/gcc/x86_64-pc-linux-gnu/11.3.0/libgcc.a
 
 ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l", "-c", "$*", "--" ]
 CMD [ "/bin/bash" ]

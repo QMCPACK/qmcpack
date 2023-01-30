@@ -191,19 +191,19 @@ jobs:
         include:
           - jobname: GCC9-NoMPI-Debug-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc9
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
               options: -u 1001
           - jobname: GCC9-NoMPI-NoOMP-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc9
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
               options: -u 1001
           - jobname: GCC9-NoMPI-NoOMP-Complex
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc9
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
               options: -u 1001
           - jobname: GCC9-NoMPI-Sandbox-Real
             container:
-              image: walshmm/qmcpack-ci:centos-stream-gcc9
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
               options: -u 1001
         
     steps:
