@@ -139,7 +139,11 @@ inline bool h5d_check_existence(hid_t grp, const std::string& aname)
     return true;
   hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
   if (h1 < 0)
+  {
+    H5Dclose(h1);
     return false;
+  }
+  H5Dclose(h1);
   return true;
 }
 
