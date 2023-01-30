@@ -89,7 +89,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   if (!sposet)
     myComm->barrier_and_abort("SPOSetBuilder::createSPOSet sposet creation failed");
 
-  if (optimize == "rotation" || optimize == "yes" || optimize == "history")
+  if (optimize == "rotation" || optimize == "yes" || optimize == "history" || optimize == "global")
   {
 #ifdef QMC_COMPLEX
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
