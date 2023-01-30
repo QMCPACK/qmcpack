@@ -184,13 +184,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
     m_full_rot_inds = full_rotations;
 
   if (use_global_rot_)
-  {
     app_log() << "Orbital rotation using global rotation" << std::endl;
-  }
   else
-  {
     app_log() << "Orbital rotation using history" << std::endl;
-  }
 
 
   // This will add the orbital rotation parameters to myVars
@@ -216,13 +212,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
 
     // If the user input parameters, use those. Otherwise, initialize the parameters to zero
     if (params_supplied)
-    {
       myVars.insert(sstr.str(), params[i]);
-    }
     else
-    {
       myVars.insert(sstr.str(), 0.0);
-    }
   }
 
   if (use_global_rot_)
@@ -237,13 +229,9 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const Rota
            << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
 
       if (params_supplied && i < m_act_rot_inds.size())
-      {
         myVarsFull.insert(sstr.str(), params[i]);
-      }
       else
-      {
         myVarsFull.insert(sstr.str(), 0.0);
-      }
     }
   }
 

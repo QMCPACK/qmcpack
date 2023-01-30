@@ -523,9 +523,8 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
 
   // Reminder: Ordering!
   std::vector<ValueType> expected_new_param = {1.6813965019790489, 0.3623564254653294, -0.05486544454559908, -0.20574472941408453, -0.9542513302873077, 0.27497788909911774};
-  for (int i = 0; i < new_params.size(); i++) {
+  for (int i = 0; i < new_params.size(); i++)
     CHECK(new_params[i] == Approx(expected_new_param[i]));
-  }
 
 
   // Rotated back to original position
@@ -533,9 +532,8 @@ TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
   std::vector<ValueType> new_params2(6);
   std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
   RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
-  for (int i = 0; i < new_params2.size(); i++) {
+  for (int i = 0; i < new_params2.size(); i++)
     CHECK(new_params2[i] == Approx(old_params[i]));
-  }
 }
 
 TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")

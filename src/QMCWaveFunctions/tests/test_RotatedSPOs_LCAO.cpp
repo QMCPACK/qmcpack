@@ -657,8 +657,6 @@ TEST_CASE("Rotated LCAO global rotation consistency", "[qmcapp]")
   // Need to flip the sign on the first two entries to match the output from gen_matrix_ops.py
   std::vector<ValueType> expected_param = {0.3998099017676912, 0.34924318065960236, -0.02261313113492491};
   for (int i = 0; i < expected_param.size(); i++)
-  {
     CHECK(new_params2[i] == Approx(expected_param[i]));
-  }
 }
 } // namespace qmcplusplus
