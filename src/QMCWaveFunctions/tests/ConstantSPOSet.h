@@ -70,9 +70,8 @@ public:
                             GradMatrix& dlogdet,
                             ValueMatrix& d2logdet) override;
 
-protected:
 private:
-  int numparticles_;
+  const int numparticles_;
 
   //Value, electron gradient, and electron laplacian at "reference configuration".
   //i.e. before any attempted moves.
