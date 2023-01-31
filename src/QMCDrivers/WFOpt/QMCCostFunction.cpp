@@ -26,7 +26,9 @@
 namespace qmcplusplus
 {
 QMCCostFunction::QMCCostFunction(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm)
-    : QMCCostFunctionBase(w, psi, h, comm)
+    : QMCCostFunctionBase(w, psi, h, comm),
+      fill_timer_(
+          *timer_manager.createTimer("QMCCostFunction::fillOverlapHamiltonianMatrices", timer_level_medium))
 {
   CSWeight = 1.0;
   app_log() << " Using QMCCostFunction::QMCCostFunction" << std::endl;
@@ -251,6 +253,9 @@ void QMCCostFunction::checkConfigurations(EngineHandle& handle)
         HDerivRecords[ip]->resize(wRef.numSamples(), NumOptimizables);
       }
     }
+    // Populate local to global index mapping into psiClone internal component 'myVars',
+    // because psiClones persist between different sections and need update.
+    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -373,6 +378,9 @@ void QMCCostFunction::engine_checkConfigurations(cqmc::engine::LMYEngine<Return_
         //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
+    // Populate local to global index mapping into psiClone internal component 'myVars',
+    // because psiClones persist between different sections and need update.
+    psiClones[ip]->checkOutVariables(OptVariablesForPsi);
     //    synchronize the random number generator with the node
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
@@ -635,6 +643,8 @@ QMCCostFunction::EffectiveWeight QMCCostFunction::correlatedSampling(bool needGr
 QMCCostFunction::Return_rt QMCCostFunction::fillOverlapHamiltonianMatrices(Matrix<Return_rt>& Left,
                                                                            Matrix<Return_rt>& Right)
 {
+  ScopedTimer tmp_timer(fill_timer_);
+
   RealType b1, b2;
   if (GEVType == "H2")
   {

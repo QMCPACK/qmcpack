@@ -55,7 +55,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   int nup   = 0;
   int nso   = 0;
   OhmmsAttributeSet aAttrib;
-  int quad_rule = -1;
+  int quad_rule     = -1;
   int local_channel = -1;
   aAttrib.add(eunits, "units");
   aAttrib.add(format, "format");
@@ -373,8 +373,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     app->spline();
     pp_so->add(angList[l], app);
   }
-  NumSO       = angList.size();
-  pp_so->Rmax = rmax;
+  NumSO        = angList.size();
+  pp_so->Rmax_ = rmax;
 }
 
 bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)

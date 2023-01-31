@@ -1,11 +1,10 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-//  © Alfredo A. Correa 2018-2021
+// Copyright 2018-2022 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi member cast"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 namespace multi = boost::multi;
 
@@ -18,7 +17,7 @@ struct particle{
 	v3d position alignas(2*sizeof(double));  //  __attribute__((aligned(2*sizeof(double))))
 };
 
-class particles_soa{
+class particles_soa {
 	multi::array<double, 2> masses_;
 	multi::array<v3d, 2> positions_;
 
@@ -28,22 +27,22 @@ class particles_soa{
 	: masses_   {AoS.member_cast<double>(&particle::mass    )}
 	, positions_{AoS.member_cast<v3d   >(&particle::position)} {}
 
-	struct reference {
+	struct reference {  // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 		double& mass;   // NOLINT(misc-non-private-member-variables-in-classes): exposed by design
 		v3d& position;  // NOLINT(misc-non-private-member-variables-in-classes): exposed by design
 		operator particle() const {return {mass, position};} // NOLINT(google-explicit-constructor, hicpp-explicit-conversions): allow equal assignment
 		auto operator+() const {return operator particle();}
 
-		reference(double& m, v3d& p) : mass{m}, position{p} {} // NOLINT(google-runtime-references)
-//	#if __cplusplus <= 201402L
+		reference(double& mss, v3d& pos) : mass{mss}, position{pos} {}  // NOLINT(google-runtime-references)
+
 	 private: // NOLINT(whitespace/indent) : bug in cpplint 1.5.5
 		friend class particles_soa;
 		reference(reference const&) = default;
-		reference(reference&&) = default;
+	//  reference(reference&&) = default;
 
-	 public: // NOLINT(whitespace/indent) : bug in cpplint 1.5.5
-		~reference() noexcept = default;  // lints cppcoreguidelines-special-member-functions,hicpp-special-member-functions
-//	#endif
+	 public:  // NOLINT(whitespace/indent) : bug in cpplint 1.5.5
+	//  ~reference() noexcept = default;  // lints cppcoreguidelines-special-member-functions,hicpp-special-member-functions
+	//  #endif
 
 		// NOLINTNEXTLINE(cert-oop54-cpp, fuchsia-trailing-return): simulate reference
 		auto operator=(reference const& other) -> reference& {
@@ -53,17 +52,15 @@ class particles_soa{
 		// NOLINTNEXTLINE(fuchsia-trailing-return): simulate reference
 		auto operator=(reference&& other) noexcept -> reference& {operator=(other); return *this;}
 
-		auto operator==(reference const& other) {return std::tie(mass, position) == std::tie(other.mass, other.position);}
-		auto operator!=(reference const& other) {return std::tie(mass, position) != std::tie(other.mass, other.position);}
+		auto operator==(reference const& other) const {return std::tie(mass, position) == std::tie(other.mass, other.position);}
+		auto operator!=(reference const& other) const {return std::tie(mass, position) != std::tie(other.mass, other.position);}
 	};
 
-	auto operator()(int i, int j){
-		return reference{masses_[i][j], positions_[i][j]};
-	}
+	auto operator()(int eye, int jay){return reference{masses_[eye][jay], positions_[eye][jay]};}
 };
 
 	multi::array<particle, 2> AoS({2, 2}, particle{});
-	AoS[1][1] = particle{99., v3d{1., 2.}};
+	AoS[1][1] = particle{99., v3d{{1., 2.}} };
 
 	auto&& masses = AoS.member_cast<double>(&particle::mass);
 	BOOST_REQUIRE( size(masses) == 2 );
@@ -88,9 +85,10 @@ class particles_soa{
 	SoA(1, 1) = SoA(0, 0);
 	BOOST_REQUIRE(SoA(1, 1).mass == SoA(0, 0).mass );
 	BOOST_REQUIRE(SoA(1, 1) == SoA(0, 0) );
+	BOOST_REQUIRE(not (SoA(1, 1) != SoA(0, 0)) );
 }
 
-struct alignas(32) employee{
+struct alignas(32) employee {
 	std::string name;
 	int16_t salary;
 	std::size_t age;

@@ -63,14 +63,14 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   ions_.get(app_log());
   elec_.get(app_log());
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\"> \
-    <correlation elementType=\"H\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1H\" type=\"Array\"> 0.5 0.1 </coefficients> \
-    </correlation> \
-  </jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+    <correlation elementType="H" cusp="0.0" size="2" rcut="5.0">
+      <coefficients id="J1H" type="Array"> 0.5 0.1 </coefficients>
+    </correlation>
+  </jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -160,17 +160,17 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
   ions_.get(app_log());
   elec_.get(app_log());
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\"> \
-    <correlation elementType=\"H\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1H\" type=\"Array\"> 0.5 0.1 </coefficients> \
-    </correlation> \
-    <correlation elementType=\"O\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1O\" type=\"Array\"> 0.2 0.1 </coefficients> \
-    </correlation> \
-  </jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+    <correlation elementType="H" cusp="0.0" size="2" rcut="5.0">
+      <coefficients id="J1H" type="Array"> 0.5 0.1 </coefficients>
+    </correlation>
+    <correlation elementType="O" cusp="0.0" size="2" rcut="5.0">
+      <coefficients id="J1O" type="Array"> 0.2 0.1 </coefficients>
+    </correlation>
+  </jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);
@@ -260,14 +260,14 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
   ions_.get(app_log());
   elec_.get(app_log());
 
-  const char* jasxml = "<wavefunction name=\"psi0\" target=\"e\"> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" print=\"yes\" source=\"ion0\"> \
-    <correlation elementType=\"H\" cusp=\"0.0\" size=\"2\" rcut=\"5.0\"> \
-      <coefficients id=\"J1H\" type=\"Array\"> 0.5 0.1 </coefficients> \
-    </correlation> \
-  </jastrow> \
-</wavefunction> \
-";
+  const char* jasxml = R"(<wavefunction name="psi0" target="e">
+  <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="ion0">
+    <correlation elementType="H" cusp="0.0" size="2" rcut="5.0">
+      <coefficients id="J1H" type="Array"> 0.5 0.1 </coefficients>
+    </correlation>
+  </jastrow>
+</wavefunction>
+)";
   Libxml2Document doc;
   bool okay = doc.parseFromString(jasxml);
   REQUIRE(okay);

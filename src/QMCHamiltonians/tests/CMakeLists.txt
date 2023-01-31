@@ -14,7 +14,7 @@ set(SRC_DIR hamiltonian)
 set(UTEST_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 set(COULOMB_SRCS test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
-                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp)
+                 test_coulomb_pbcAA_ewald.cpp test_EwaldRef.cpp test_NonLocalECPotential.cpp)
 set(EWALD2D_SRCS test_ewald2d.cpp test_ewald_quasi2d.cpp)
 set(FORCE_SRCS test_force.cpp test_force_ewald.cpp test_stress.cpp test_spacewarp.cpp)
 set(HAM_SRCS
@@ -28,6 +28,13 @@ set(HAM_SRCS
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp
     test_Listener.cpp)
+
+if(NOT QMC_CUDA)
+  if(NOT QMC_COMPLEX)
+    set(HAM_SRCS ${HAM_SRCS} test_RotatedSPOs_NLPP.cpp)
+  endif()
+endif()
+
     
 
 if(QMC_CUDA)
@@ -39,6 +46,9 @@ endif()
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 
+set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/hcpBe.pwscf.h5)
+
 foreach(fname Na2.structure.xml simple.txt)
   maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
 endforeach()
@@ -47,7 +57,7 @@ foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-wfj.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 
-foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml)
+foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml Be.BFD.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 

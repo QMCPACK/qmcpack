@@ -80,10 +80,10 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
 
   // Self energy plus Background charge term
   double consts = cab.evalConsts(elec);
-  REQUIRE(consts == Approx(0.0523598776 * 2)); //not validated
+  CHECK(consts == Approx(0.0523598776 * 2)); //not validated
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-0.008302 + 0.0523598776 * 2)); //Not validated
+  CHECK(val_ei == Approx(-0.008302 + 0.0523598776 * 2)); //Not validated
 
   CoulombPBCAA caa_elec(elec, true, false, false);
   CoulombPBCAA caa_ion(ions, false, false, false);
@@ -91,9 +91,9 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;
 
-  REQUIRE(val_ee == Approx(-1.418927));
-  REQUIRE(val_ii == Approx(-1.418927));
-  REQUIRE(sum == Approx(-2.741436)); // Can be validated via Ewald summation elsewhere
+  CHECK(val_ee == Approx(-1.418927));
+  CHECK(val_ii == Approx(-1.418927));
+  CHECK(sum == Approx(-2.741436)); // Can be validated via Ewald summation elsewhere
                                      // -2.74136517454081
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
@@ -158,11 +158,11 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
 
   // Background charge term
   double consts = cab.evalConsts(elec);
-  REQUIRE(consts == Approx(0.0277076538 * 4)); //not validated
+  CHECK(consts == Approx(0.0277076538 * 4)); //not validated
 
 
   double val_ei = cab.evaluate(elec);
-  REQUIRE(val_ei == Approx(-2.223413 + 0.0277076538 * 4)); //Not validated
+  CHECK(val_ei == Approx(-2.223413 + 0.0277076538 * 4)); //Not validated
 
 
   CoulombPBCAA caa_elec(elec, false, false, false);
@@ -171,9 +171,9 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   double val_ii         = caa_ion.evaluate(ions);
   double sum            = val_ee + val_ii + val_ei;
 
-  REQUIRE(val_ee == Approx(-0.012808 - 0.0277076538 * 2));
-  REQUIRE(val_ii == Approx(-0.907659 - 0.0277076538 * 2));
-  REQUIRE(sum == Approx(-3.143880)); // Can be validated via Ewald summation elsewhere
+  CHECK(val_ee == Approx(-0.012808 - 0.0277076538 * 2));
+  CHECK(val_ii == Approx(-0.907659 - 0.0277076538 * 2));
+  CHECK(sum == Approx(-3.143880)); // Can be validated via Ewald summation elsewhere
                                      // -3.14349127313640
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);

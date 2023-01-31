@@ -141,6 +141,45 @@ def read_cusp_correction_file(fname):
   tree = ET.parse(fname)
   return parse_cusp_correction(tree)
 
+# -----------------  PP files -----------------
+
+def get_grid(grid_node):
+    ri = grid_node.attrib['ri']
+    rf = grid_node.attrib['rf']
+    npts = grid_node.attrib['npts']
+    grid = np.linspace(float(ri), float(rf), int(npts))
+    return grid
+
+def get_data(data_node):
+    data_text = data_node.text.split()
+    data = [float(t) for t in data_text]
+    return np.array(data)
+
+def parse_pp(tree):
+    semilocal = tree.find("./semilocal")
+    vps_nodes = semilocal.findall("vps")
+    pp_data = dict()
+    for vps_node in vps_nodes:
+        principal_n = vps_node.attrib['principal-n']
+        lval = vps_node.attrib['l']
+        print('vps = ',principal_n, lval)
+
+        radfunc = vps_node.find('radfunc')
+
+        grid_node = radfunc.find('./grid')
+        data_node = radfunc.find('./data')
+        data = get_data(data_node)
+
+        grid = get_grid(grid_node)
+
+        pp_data[(principal_n,lval)] = (grid,data)
+
+    return pp_data
+
+def read_pp_file(fname):
+  tree = ET.parse(fname)
+  return parse_pp(tree)
+
 
 if __name__ == '__main__':
     # For He

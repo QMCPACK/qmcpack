@@ -2,9 +2,9 @@ if(NOT QMC_CUDA)
   if(NOT QMC_MIXED_PRECISION)
 
 
-  list(APPEND HE_BSPLINE_PARAM jud_0 -0.121914 0.0014) # scalar name, value, error
-  list(APPEND HE_BSPLINE_PARAM jud_1 0.069689 0.0015)
-  list(APPEND HE_BSPLINE_PARAM jud_2 0.051412 0.00031)
+  list(APPEND HE_BSPLINE_PARAM jud_0 -0.121914 0.002) # scalar name, value, error
+  list(APPEND HE_BSPLINE_PARAM jud_1 0.069689 0.002)
+  list(APPEND HE_BSPLINE_PARAM jud_2 0.051412 0.0005)
   list(APPEND HE_BSPLINE_PARAM jud_3 0.000812 0.000038)
 
   qmc_run_and_check_custom_scalar(
@@ -60,10 +60,10 @@ if(NOT QMC_CUDA)
     file(MAKE_DIRECTORY ${TDIR})
     execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/molecules/He_param/convert_vp_format.py ${SDIR}/he_vp_opt.txt ${complex_flag} -o ${TDIR}/he_vp_opt.h5)
 
-    list(APPEND HE_BSPLINE_OPT_PARAM jud_0  0.00000124  0.0014) # scalar name, value, error
-    list(APPEND HE_BSPLINE_OPT_PARAM jud_1 -0.000273    0.00097)
+    list(APPEND HE_BSPLINE_OPT_PARAM jud_0  0.00000124  0.002) # scalar name, value, error
+    list(APPEND HE_BSPLINE_OPT_PARAM jud_1 -0.000273    0.0012)
     list(APPEND HE_BSPLINE_OPT_PARAM jud_2 -0.000181    0.00082)
-    list(APPEND HE_BSPLINE_OPT_PARAM jud_3  0.0004463   0.000058)
+    list(APPEND HE_BSPLINE_OPT_PARAM jud_3  0.0004463   0.00008)
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME He_param_grad_load

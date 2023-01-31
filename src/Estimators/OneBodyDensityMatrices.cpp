@@ -11,7 +11,6 @@
 // File refactored from: QMCHamiltonians/DensityMatrices1B.cpp
 //////////////////////////////////////////////////////////////////////////////////////
 
-
 #include "OneBodyDensityMatrices.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -19,6 +18,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/string_utils.h"
 #include "type_traits/complex_help.hpp"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -599,9 +599,8 @@ inline void OneBodyDensityMatrices::normalizeBasis(ParticleSet& pset_target)
     basis_norms_[i] = 1.0 / std::sqrt(real(bnorms[i]));
 }
 
-void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
+void OneBodyDensityMatrices::registerOperatorEstimator(hdf_archive& file)
 {
-  hid_t sgid = H5Gcreate2(gid, my_name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   std::vector<int> my_indexes(2, basis_size_);
   if constexpr (IsComplex_t<Value>::value)
   {
@@ -609,14 +608,13 @@ void OneBodyDensityMatrices::registerOperatorEstimator(hid_t gid)
   }
   int nentries = std::accumulate(my_indexes.begin(), my_indexes.end(), 1);
 
-  std::string nname = "number_matrix";
-  hid_t ngid        = H5Gcreate2(sgid, nname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hdf_path hdf_name{my_name_};
+  hdf_name /= "number_matrix";
   for (int s = 0; s < species_.size(); ++s)
   {
-    h5desc_.emplace_back(std::make_unique<ObservableHelper>(species_.speciesName[s]));
+    h5desc_.emplace_back(hdf_name / species_.speciesName[s]);
     auto& oh = h5desc_.back();
-    oh->set_dimensions(my_indexes, 0);
-    oh->open(ngid);
+    oh.set_dimensions(my_indexes, 0);
   }
 }
 

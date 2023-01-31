@@ -1,11 +1,12 @@
 codecov:
+  token: 999feb5b-a599-4d02-b9c5-46d977247f3a
   notify:
     require_ci_to_pass: yes
 
 coverage:
   precision: 2
   round: down
-  range: "99...100"
+  range: 99..100
 
   status:
     project: yes

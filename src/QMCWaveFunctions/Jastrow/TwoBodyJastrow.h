@@ -73,6 +73,10 @@ protected:
   const size_t N;
   ///number of groups of the target particleset
   const size_t NumGroups;
+  ///number of spatial dimensions
+  const size_t ndim;
+  ///laplacian prefactor
+  const valT lapfac;
 
 private:
   /// if true use offload
@@ -151,6 +155,8 @@ public:
 
   /** add functor for (ia,ib) pair */
   void addFunc(int ia, int ib, std::unique_ptr<FT> j);
+
+  void checkSanity() const override;
 
   void createResource(ResourceCollection& collection) const override;
 

@@ -16,6 +16,8 @@
 #include <vector>
 #include "Utilities/TimerManager.h"
 
+using namespace std::chrono_literals;
+
 namespace qmcplusplus
 {
 using FakeTimerManager = TimerManager<FakeTimer>;
@@ -32,6 +34,19 @@ void set_num_calls(TimerType<CLOCK>* timer, long num_calls_input)
   timer->num_calls = num_calls_input;
 }
 
+// Convert duration input type to nanosecond duration
+template<typename T>
+FakeChronoClock::duration convert_to_ns(T in)
+{
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(in);
+}
+
+// Convert duration input type to seconds as double precision type
+template<typename T>
+double convert_to_s(T in)
+{
+  return std::chrono::duration_cast<std::chrono::duration<double>>(in).count();
+}
 
 TEST_CASE("test_timer_stack", "[utilities]")
 {
@@ -57,7 +72,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
     ScopedFakeTimer st(*t1);
   }
 #if defined(ENABLE_TIMERS)
-  REQUIRE(t1->get_total() == Approx(1.0));
+  CHECK(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
 
@@ -68,7 +83,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
     ScopedFakeTimer st(t2);
   }
 #if defined(ENABLE_TIMERS)
-  REQUIRE(t1->get_total() == Approx(1.0));
+  CHECK(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
 }
@@ -86,7 +101,7 @@ TEST_CASE("test_timer_flat_profile", "[utilities]")
   REQUIRE(p.nameList.size() == 1);
   REQUIRE(p.nameList.at("timer1") == 0);
   REQUIRE(p.timeList.size() == 1);
-  REQUIRE(p.timeList[0] == Approx(1.1));
+  CHECK(p.timeList[0] == Approx(1.1));
   REQUIRE(p.callList.size() == 1);
   REQUIRE(p.callList[0] == 2);
 }
@@ -99,10 +114,10 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   FakeTimer* t2 = tm.createTimer("timer2");
   FakeTimer* t3 = tm.createTimer("timer1");
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t1->stop();
-  FakeCPUClock::fake_cpu_clock_increment = 1.2;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.2s);
   for (int i = 0; i < 3; i++)
   {
     t2->start();
@@ -123,8 +138,8 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
-  REQUIRE(p.timeList[idx1] == Approx(5.9));
-  REQUIRE(p.timeList[idx2] == Approx(3.6));
+  CHECK(p.timeList[idx1] == Approx(5.9));
+  CHECK(p.timeList[idx2] == Approx(3.6));
 
   REQUIRE(p.callList.size() == 2);
   REQUIRE(p.callList[idx1] == 5);
@@ -139,7 +154,7 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   FakeTimer* t1 = tm.createTimer("timer1");
   FakeTimer* t2 = tm.createTimer("timer2");
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t2->stop();
@@ -153,8 +168,8 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
-  REQUIRE(p.timeList[idx1] == Approx(3 * FakeCPUClock::fake_cpu_clock_increment));
-  REQUIRE(p.timeList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
+  CHECK(p.timeList[idx1] == Approx(3 * convert_to_s(FakeChronoClock::fake_chrono_clock_increment)));
+  CHECK(p.timeList[idx2] == Approx(convert_to_s(FakeChronoClock::fake_chrono_clock_increment)));
 #endif
 
   FakeTimerManager::StackProfileData p2;
@@ -166,12 +181,12 @@ TEST_CASE("test_timer_nested_profile", "[utilities]")
   idx2 = p2.nameList.at("timer1/timer2");
   REQUIRE(p2.timeList.size() == 2);
   REQUIRE(p2.timeExclList.size() == 2);
-  REQUIRE(p2.timeList[idx1] == Approx(3 * FakeCPUClock::fake_cpu_clock_increment));
-  REQUIRE(p2.timeList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
+  CHECK(p2.timeList[idx1] == Approx(convert_to_s(3 * FakeChronoClock::fake_chrono_clock_increment)));
+  CHECK(p2.timeList[idx2] == Approx(convert_to_s(FakeChronoClock::fake_chrono_clock_increment)));
 
   // Time in t1 minus time inside t2
-  REQUIRE(p2.timeExclList[idx1] == Approx(2 * FakeCPUClock::fake_cpu_clock_increment));
-  REQUIRE(p2.timeExclList[idx2] == Approx(FakeCPUClock::fake_cpu_clock_increment));
+  CHECK(p2.timeExclList[idx1] == Approx(2 * convert_to_s(FakeChronoClock::fake_chrono_clock_increment)));
+  CHECK(p2.timeExclList[idx2] == Approx(convert_to_s(FakeChronoClock::fake_chrono_clock_increment)));
 #endif
 }
 
@@ -183,7 +198,7 @@ TEST_CASE("test_timer_nested_profile_two_children", "[utilities]")
   FakeTimer* t2 = tm.createTimer("timer2");
   FakeTimer* t3 = tm.createTimer("timer3");
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t2->stop();
@@ -221,7 +236,7 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   FakeTimer* t5 = tm.createTimer("timer5");
 
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t3->start();
@@ -250,10 +265,10 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   REQUIRE(p2.names[5] == "timer1/timer3");
   REQUIRE(p2.names[6] == "timer1/timer3/timer4");
 
-  REQUIRE(p2.timeList[0] == Approx(14.3));
-  REQUIRE(p2.timeExclList[0] == Approx(3.3));
-  REQUIRE(p2.timeList[1] == Approx(7.7));
-  REQUIRE(p2.timeExclList[1] == Approx(2.2));
+  CHECK(p2.timeList[0] == Approx(14.3));
+  CHECK(p2.timeExclList[0] == Approx(3.3));
+  CHECK(p2.timeList[1] == Approx(7.7));
+  CHECK(p2.timeExclList[1] == Approx(2.2));
 #endif
 
   Libxml2Document doc;
@@ -272,7 +287,7 @@ TEST_CASE("test_timer_nested_profile_collate", "[utilities]")
   FakeTimer* t3  = tm.createTimer("timer3");
 
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.1;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.1s);
   t1->start();
   t2->start();
   t3->start();
@@ -385,15 +400,15 @@ TEST_CASE("test setup timers", "[utilities]")
 {
   FakeTimerManager tm;
   // Create  a list of timers and initialize it
-  std::vector<std::reference_wrapper<FakeTimer>>  Timers;
+  std::vector<std::reference_wrapper<FakeTimer>> Timers;
   setup_timers(Timers, TestTimerNames, timer_level_coarse, &tm);
 
-  FakeCPUClock::fake_cpu_clock_increment = 1.0;
+  FakeChronoClock::fake_chrono_clock_increment = convert_to_ns(1.0s);
   Timers[MyTimer1].get().start();
   Timers[MyTimer1].get().stop();
 
 #ifdef ENABLE_TIMERS
-  REQUIRE(Timers[MyTimer1].get().get_total() == Approx(1.0));
+  CHECK(Timers[MyTimer1].get().get_total() == Approx(1.0));
   REQUIRE(Timers[MyTimer1].get().get_num_calls() == 1);
 #endif
 }

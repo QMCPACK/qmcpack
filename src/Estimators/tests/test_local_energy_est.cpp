@@ -19,6 +19,7 @@
 #include "Estimators/LocalEnergyEstimator.h"
 #include "Estimators/LocalEnergyOnlyEstimator.h"
 #include "QMCDrivers/WalkerProperties.h"
+#include "io/hdf/hdf_archive.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -41,13 +42,16 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 
   le_est.accumulate(W, W.begin(), W.end(), 1.0);
 
-  REQUIRE(le_est.scalars[0].mean() == Approx(1.1));
+  CHECK(le_est.getName() == "LocalEnergyOnlyEstimator");
+  CHECK(le_est.scalars[0].mean() == Approx(1.1));
 }
 
 TEST_CASE("LocalEnergy", "[estimators]")
 {
   QMCHamiltonian H;
   LocalEnergyEstimator le_est(H, false);
+
+  CHECK(le_est.getName() == "LocalEnergyEstimator");
 
   std::unique_ptr<LocalEnergyEstimator> le_est2{le_est.clone()};
   REQUIRE(le_est2 != nullptr);
@@ -68,9 +72,9 @@ TEST_CASE("LocalEnergy", "[estimators]")
   // 0 - ENERGY_INDEX
   // 1 - ENERGY2_INDEX
   // 2 - POTENTIAL_INDEX
-  REQUIRE(le_est.scalars[0].mean() == Approx(1.1));
+  CHECK(le_est.scalars[0].mean() == Approx(1.1));
   REQUIRE(le_est.scalars[1].mean() == le_est.scalars[0].mean2());
-  REQUIRE(le_est.scalars[2].mean() == Approx(1.2));
+  CHECK(le_est.scalars[2].mean() == Approx(1.2));
 }
 
 TEST_CASE("LocalEnergy with hdf5", "[estimators]")
@@ -89,10 +93,14 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
 
   std::vector<ObservableHelper> h5desc;
 
-  hid_t h_file = H5Fcreate("tmp_obs.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  std::filesystem::path filename("tmp_obs.h5");
+  hdf_archive h_file;
+  h_file.create(filename);
   le_est.registerObservables(h5desc, h_file);
-  H5Fclose(h_file);
-  // Should make sure h5 file was created?  Check contents?
+  h_file.close();
+  REQUIRE(std::filesystem::exists(filename));
+  // Check contents?
+  REQUIRE(std::filesystem::remove(filename));
 
   LocalEnergyEstimator::RecordListType record;
   le_est.add2Record(record);

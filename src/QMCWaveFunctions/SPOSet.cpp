@@ -109,11 +109,9 @@ void SPOSet::mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                     const RefVector<ValueVector>& psi_v_list,
                                     const RefVector<GradVector>& dpsi_v_list,
                                     const RefVector<ValueVector>& d2psi_v_list,
-                                    const RefVector<ValueVector>& dspin_v_list) const
+                                    OffloadMatrix<ComplexType>& mw_dspin) const
 {
-  assert(this == &spo_list.getLeader());
-  for (int iw = 0; iw < spo_list.size(); iw++)
-    spo_list[iw].evaluateVGL_spin(P_list[iw], iat, psi_v_list[iw], dpsi_v_list[iw], d2psi_v_list[iw], dspin_v_list[iw]);
+  throw std::runtime_error(getClassName() + "::mw_evaluateVGLWithSpin() is not supported. \n");
 }
 
 void SPOSet::mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
@@ -265,6 +263,37 @@ void SPOSet::evaluateDerivatives(ParticleSet& P,
                            "::evaluateDerivatives "
                            "must be overloaded when the SPOSet is optimizable.");
 }
+
+void SPOSet::evaluateDerivativesWF(ParticleSet& P,
+                                   const opt_variables_type& optvars,
+                                   Vector<ValueType>& dlogpsi,
+                                   int FirstIndex,
+                                   int LastIndex)
+{
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivativesWF "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
+void SPOSet::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                 const opt_variables_type& optvars,
+                                 ValueVector& psi,
+                                 const ValueVector& psiinv,
+                                 std::vector<ValueType>& ratios,
+                                 Matrix<ValueType>& dratios,
+                                 int FirstIndex,
+                                 int LastIndex)
+{
+  // Match the fallback in WaveFunctionComponent that evaluates just the ratios
+  evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  if (isOptimizable())
+    throw std::logic_error("Bug!! " + getClassName() +
+                           "::evaluateDerivRatios "
+                           "must be overloaded when the SPOSet is optimizable.");
+}
+
 
 /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD

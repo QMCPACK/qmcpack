@@ -31,24 +31,24 @@ void test_real_accumulator_basic()
   REQUIRE(a1.count() == 0);
   REQUIRE(a1.good() == false);
   REQUIRE(a1.bad() == true);
-  REQUIRE(a1.mean() == Approx(0.0));
-  REQUIRE(a1.mean2() == Approx(0.0));
-  REQUIRE(a1.variance() == Approx(std::numeric_limits<T>::max()));
+  CHECK(a1.mean() == Approx(0.0));
+  CHECK(a1.mean2() == Approx(0.0));
+  CHECK(a1.variance() == Approx(std::numeric_limits<T>::max()));
 
   a1(2.0);
   REQUIRE(a1.count() == 1);
   REQUIRE(a1.good() == true);
   REQUIRE(a1.bad() == false);
-  REQUIRE(a1.result() == Approx(2.0));
-  REQUIRE(a1.result2() == Approx(4.0));
-  REQUIRE(a1.mean() == Approx(2.0));
-  REQUIRE(a1.mean2() == Approx(4.0));
-  REQUIRE(a1.variance() == Approx(0.0));
+  CHECK(a1.result() == Approx(2.0));
+  CHECK(a1.result2() == Approx(4.0));
+  CHECK(a1.mean() == Approx(2.0));
+  CHECK(a1.mean2() == Approx(4.0));
+  CHECK(a1.variance() == Approx(0.0));
 
   a1.clear();
   REQUIRE(a1.count() == 0);
-  REQUIRE(a1.result() == Approx(0.0));
-  REQUIRE(a1.result2() == Approx(0.0));
+  CHECK(a1.result() == Approx(0.0));
+  CHECK(a1.result2() == Approx(0.0));
 }
 
 TEST_CASE("accumulator basic float", "[estimators]") { test_real_accumulator_basic<double>(); }
@@ -63,19 +63,19 @@ void test_real_accumulator()
   a(3.1);
   a(-1.1);
   a(4.8);
-  REQUIRE(a.count() == Approx(4.0));
+  CHECK(a.count() == Approx(4.0));
 
-  REQUIRE(a.result() == Approx(8.8));
-  REQUIRE(a.result2() == Approx(37.86));
-  REQUIRE(a.mean() == Approx(2.2));
-  REQUIRE(a.mean2() == Approx(9.465));
-  REQUIRE(a.variance() == Approx(4.625));
+  CHECK(a.result() == Approx(8.8));
+  CHECK(a.result2() == Approx(37.86));
+  CHECK(a.mean() == Approx(2.2));
+  CHECK(a.mean2() == Approx(9.465));
+  CHECK(a.variance() == Approx(4.625));
 
   std::pair<T, T> mv = a.mean_and_variance();
-  REQUIRE(mv.first == Approx(a.mean()));
-  REQUIRE(mv.second == Approx(a.variance()));
+  CHECK(mv.first == Approx(a.mean()));
+  CHECK(mv.second == Approx(a.variance()));
 
-  REQUIRE(mean(a) == Approx(a.mean()));
+  CHECK(mean(a) == Approx(a.mean()));
 
   // check that this doesn't crash
   std::stringstream o;
@@ -94,17 +94,17 @@ void test_real_accumulator_weights()
   a(3.1, 2.4);
   a(-1.1, 2.1);
   a(4.8, 3.3);
-  REQUIRE(a.count() == Approx(8.8));
+  CHECK(a.count() == Approx(8.8));
 
-  REQUIRE(a.result() == Approx(22.97));
-  REQUIRE(a.result2() == Approx(105.637));
-  REQUIRE(a.mean() == Approx(2.6102272727));
-  REQUIRE(a.mean2() == Approx(12.004204545));
-  REQUIRE(a.variance() == Approx(5.1909181302));
+  CHECK(a.result() == Approx(22.97));
+  CHECK(a.result2() == Approx(105.637));
+  CHECK(a.mean() == Approx(2.6102272727));
+  CHECK(a.mean2() == Approx(12.004204545));
+  CHECK(a.variance() == Approx(5.1909181302));
 
   std::pair<T, T> mv = a.mean_and_variance();
-  REQUIRE(mv.first == Approx(a.mean()));
-  REQUIRE(mv.second == Approx(a.variance()));
+  CHECK(mv.first == Approx(a.mean()));
+  CHECK(mv.second == Approx(a.variance()));
 }
 
 TEST_CASE("accumulator with weights float", "[estimators]") { test_real_accumulator_weights<float>(); }

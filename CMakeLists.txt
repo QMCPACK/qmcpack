@@ -15,7 +15,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 3.15.0
+  VERSION 3.16.0
   LANGUAGES C CXX)
 
 # add the automatically determined parts of the RPATH
@@ -231,8 +231,26 @@ if(INSTALL_NEXUS)
 endif()
 
 ######################################################################
-# Set the compiler specific options/flags
+# Set compiler specific options/flags
 ######################################################################
+#-------------------------------------------------------------------------------
+# Check for OpenMP compiler support
+#
+# The CMake OpenMP package is *only* used to to verify compiler support.
+# No feature of the package is used and we customize OpenMP options directly
+# on a per vendor/compiler basis.
+#-------------------------------------------------------------------------------
+if(QMC_OMP)
+  find_package(OpenMP)
+  if(NOT OpenMP_FOUND)
+      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
+  endif()
+endif(QMC_OMP)
+
+#-------------------------------------------------------------------------------
+# Set vendor specific compiler options
+#-------------------------------------------------------------------------------
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
@@ -632,13 +650,9 @@ find_package(LibXml2 REQUIRED)
 #  set up HDF5 library
 #-------------------------------------------------------------------
 if(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      TRUE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" ON)
 else(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      FALSE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" OFF)
   if(HDF5_PREFER_PARALLEL)
     message(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
                         "Please set HDF5_PREFER_PARALLEL=0.")
@@ -653,12 +667,17 @@ else()
   set(HDF5_USE_STATIC_LIBRARIES off)
 endif()
 
-find_package(HDF5 COMPONENTS C)
+find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
-    message(STATUS "Parallel HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    if(HAVE_MPI)
+      message(STATUS "Parallel HDF5 library found")
+      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    else(HAVE_MPI)
+      message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
+                          "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
+    endif(HAVE_MPI)
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
@@ -694,7 +713,7 @@ if(HDF5_FOUND)
 
   add_library(IO::HDF5 INTERFACE IMPORTED)
   target_include_directories(IO::HDF5 INTERFACE "${HDF5_INCLUDE_DIR}")
-  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_16_API")
+  target_compile_definitions(IO::HDF5 INTERFACE "H5_USE_110_API")
   target_link_libraries(IO::HDF5 INTERFACE "${HDF5_LIBRARIES}")
   if(ENABLE_PHDF5)
     target_compile_definitions(IO::HDF5 INTERFACE "ENABLE_PHDF5")
@@ -722,6 +741,9 @@ set(HAVE_CUDA 0)
 if(QMC_CUDA OR ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
+    if(CMAKE_VERSION VERSION_LESS 3.21.0)
+      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
+    endif()
   else(QMC_CUDA2HIP)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
       message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
@@ -787,46 +809,44 @@ endif(USE_NVTX_API)
 #  set up ROCM compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_ROCM)
-  if(ROCM_ROOT)
-    message(STATUS "ROCM_ROOT provided. Searching for FindHIP.cmake file")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS ${ROCM_ROOT}
-      PATH_SUFFIXES hip/cmake REQUIRED
-      NO_DEFAULT_PATH)
-  else()
-    message(STATUS "ROCM_ROOT not provided. Searching for FindHIP.cmake file.")
-    find_path(
-      HIP_MODULE_FILE_DIR FindHIP.cmake
-      HINTS $ENV{ROCM_PATH} /opt/rocm
-      PATH_SUFFIXES hip/cmake)
-    if(HIP_MODULE_FILE_DIR)
-      message(STATUS "Found FindHIP.cmake file. ROCM_ROOT will be derived.")
-    else()
-      message(FATAL_ERROR "Failed to find FindHIP.cmake file. Please set ROCM_ROOT to your ROCm installation.")
-    endif()
-    string(REGEX REPLACE "\/hip\/cmake" "" ROCM_ROOT "${HIP_MODULE_FILE_DIR}")
+  enable_language(HIP)
+  set(CMAKE_HIP_LINKER_PREFERENCE_PROPAGATES 0)
+  if(DEFINED ROCM_ROOT)
+    message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
+    # explicit ROCM_ROOT takes precedence
+    list(PREPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
+  elseif(CMAKE_HIP_COMPILER_ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
   endif()
-  message(STATUS "Using ROCM_ROOT: ${ROCM_ROOT}")
 
-  list(APPEND CMAKE_MODULE_PATH ${HIP_MODULE_FILE_DIR})
-  list(APPEND CMAKE_PREFIX_PATH ${ROCM_ROOT})
-  # need FindHIP for hip_add_library similar to deprecated FindCUDA style
-  find_package(HIP MODULE REQUIRED)
-  # need hip in config mode for hip::host target.
-  find_package(hip CONFIG REQUIRED)
+  # use hip package to supply the hip runtime for CXX source code.
+  find_package(hip CONFIG)
+  if(NOT hip_FOUND)
+    message(FATAL_ERROR "The HIP runtime library cmake configure file hip-config.cmake cannot be found! "
+                        "This happens when the ROCm installation cannot be found by CMake. "
+                        "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
+  endif()
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
   find_package(rocthrust CONFIG REQUIRED)
+
   # architecture flags
-  set(HIP_ARCH gfx906 CACHE STRING "HIP architecture gfxXXX")
-  list(APPEND HIP_HIPCC_FLAGS "-fPIC -ffast-math -O3 -std=c++17")
-  list(APPEND HIP_HIPCC_FLAGS "--amdgpu-target=${HIP_ARCH}")
-  list(APPEND HIP_HIPCC_FLAGS "--gpu-max-threads-per-block=256")
+  if(DEFINED HIP_ARCH)
+    unset(HIP_ARCH CACHE)
+    message(
+      FATAL_ERROR "HIP_ARCH option has been removed. Use -DCMAKE_HIP_ARCHITECTURES=gfx90a if -DHIP_ARCH=gfx90a was used.")
+  endif()
+  if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
+    set(CMAKE_HIP_ARCHITECTURES gfx906)
+  endif()
+
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fPIC -ffast-math --gpu-max-threads-per-block=256")
   # warning suppression
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-vla")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-deprecated-declarations")
-  list(APPEND HIP_HIPCC_FLAGS "-Wno-unused-command-line-argument")
+  set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -Wno-vla -Wno-deprecated-declarations -Wno-unused-command-line-argument")
+
+  if(NOT DEFINED ROCM_ROOT)
+    list(PREPEND CMAKE_PREFIX_PATH ${CMAKE_HIP_COMPILER_ROCM_ROOT})
+  endif()
 
   if(BUILD_AFQMC)
     find_package(rocrand CONFIG REQUIRED)
@@ -866,12 +886,11 @@ endif(ENABLE_HIP)
 #  set up SYCL compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_SYCL)
-  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
-  if(CMAKE_VERSION VERSION_LESS 3.20.0)
-    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  if(NOT "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xIntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel oneAPI compiler (icpx).")
   endif()
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2023.0)
+    message(FATAL_ERROR "Requires Intel oneAPI 2023.0 or higher!")
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)

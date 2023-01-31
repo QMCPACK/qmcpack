@@ -70,5 +70,37 @@ Libxml2Document createEstimatorManagerNewInputXML()
   return estimators_doc;
 }
 
+Libxml2Document createEstimatorManagerNewVMCInputXML()
+{
+  const int max_node_recurse = 3;
+  Libxml2Document estimators_doc;
+  estimators_doc.newDoc("Estimators");
+  {
+    using namespace testing::onebodydensitymatrices;
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_momentum_distribution_input_sections[0]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+  {
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(valid_scalar_estimator_input_sections[local_energy_input]);
+    REQUIRE(okay);
+    xmlNodePtr node = doc.getRoot();
+    estimators_doc.addChild(xmlCopyNode(node, max_node_recurse));
+  }
+
+  return estimators_doc;
+}
+
+  
 } // namespace testing
 } // namespace qmcplusplus

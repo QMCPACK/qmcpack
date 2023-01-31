@@ -183,14 +183,14 @@ def generate_cubic_spline_coeff_test_case(n, xvals, yvals, naturalBC=(True,True)
     si2 = diff(sln[i], t[i], 2)
     sval = si2.subs(xsubs).subs(ysubs).subs(t[i], 0.0)
     #print('sval = ',sval)
-    check = "  REQUIRE(y2[%d] == Approx(%g));"%(i, sval)
+    check = "  CHECK(y2[%d] == Approx(%g));"%(i, sval)
     checks_str += check + "\n"
 
   # Last second derivative must be obtained from the end of the last interval
   si2 = diff(sln[n-2], t[n-2], 2)
   sval = si2.subs(xsubs).subs(ysubs).subs(t[n-2], xvals[n-1]-xvals[n-2])
   #print('last sval = ',sval)
-  check = "  REQUIRE(y2[%d] == Approx(%g));"%(n-1, sval)
+  check = "  CHECK(y2[%d] == Approx(%g));"%(n-1, sval)
   checks_str += check + "\n"
 
   leftDeriv = nd if naturalBC[0] else firstDeriv[0]
@@ -326,14 +326,14 @@ def generate_cubic_spline_evaluation_tests():
 
   output_check = ''
   for i in range(ncheck):
-    output_check += "  REQUIRE(check_yvals[%d] == Approx(%12.8g));\n"%(i,check_yvals[i])
+    output_check += "  CHECK(check_yvals[%d] == Approx(%12.8g));\n"%(i,check_yvals[i])
 
   output_check += '\n'
 
   for i in range(ncheck):
-    output_check += "  REQUIRE(check_yvals_d2u[%d].val == Approx(%12.8g));\n"%(i,check_y2vals[i][0])
-    output_check += "  REQUIRE(check_yvals_d2u[%d].du == Approx(%12.8g));\n"%(i,check_y2vals[i][1])
-    output_check += "  REQUIRE(check_yvals_d2u[%d].d2u == Approx(%12.8g));\n"%(i,check_y2vals[i][2])
+    output_check += "  CHECK(check_yvals_d2u[%d].val == Approx(%12.8g));\n"%(i,check_y2vals[i][0])
+    output_check += "  CHECK(check_yvals_d2u[%d].du == Approx(%12.8g));\n"%(i,check_y2vals[i][1])
+    output_check += "  CHECK(check_yvals_d2u[%d].d2u == Approx(%12.8g));\n"%(i,check_y2vals[i][2])
   output_check += '\n'
 
   test_idx = 1

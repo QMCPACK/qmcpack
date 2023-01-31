@@ -31,7 +31,7 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
         QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}
 
   trigger-rebase:
@@ -48,5 +48,5 @@ jobs:
       run: tests/test_automation/github-actions/ci/run_step.sh pull-rebase
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        QMCPACK_BOT_GPG_KEY: ${{ QMCPACK_BOT_GPG_KEY }}
+        QMCPACK_BOT_GPG_KEY: ${{ secrets.QMCPACK_BOT_GPG_KEY }}
         QMCPACK_BOT_GPG_SIGNING_KEY: ${{ secrets.QMCPACK_BOT_GPG_SIGNING_KEY }}

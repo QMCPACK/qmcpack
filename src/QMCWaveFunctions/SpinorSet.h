@@ -79,7 +79,7 @@ public:
    * @param psi_v_list the list of value vector pointers in a walker batch
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
-   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   * @param mw_dspin dual matrix of spin gradients. nw x num_orbitals
    */
   void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                               const RefVectorWithLeader<ParticleSet>& P_list,
@@ -87,7 +87,8 @@ public:
                               const RefVector<ValueVector>& psi_v_list,
                               const RefVector<GradVector>& dpsi_v_list,
                               const RefVector<ValueVector>& d2psi_v_list,
-                              const RefVector<ValueVector>& dspin_v_list) const override;
+                              OffloadMatrix<ComplexType>& mw_dspin) const override;
+
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
    *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return.

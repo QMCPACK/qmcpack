@@ -61,10 +61,8 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   elec.addTable(ions);
   elec.update();
 
+  const char* particles = R"(<tmp></tmp>)";
 
-  const char* particles = "<tmp> \
-</tmp> \
-";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -165,14 +163,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   TrialWaveFunction psi;
 
   //Add the two body jastrow
-  const char* particles = "<tmp> \
-  <jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\" gpu=\"no\">  \
-      <correlation speciesA=\"u\" speciesB=\"d\" rcut=\"10\" size=\"8\"> \
-          <coefficients id=\"ud\" type=\"Array\"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients> \
-        </correlation> \
-  </jastrow> \
-  </tmp> \
-  ";
+  const char* particles = R"(<tmp>
+  <jastrow name="J2" type="Two-Body" function="Bspline" print="yes" gpu="no">
+      <correlation speciesA="u" speciesB="d" rcut="10" size="8">
+          <coefficients id="ud" type="Array"> 2.015599059 1.548994099 1.17959447 0.8769687661 0.6245736507 0.4133517767 0.2333851935 0.1035636904</coefficients>
+        </correlation>
+  </jastrow>
+  </tmp>
+  )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
   REQUIRE(okay);
@@ -186,14 +184,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   // Done with two body jastrow.
 
   //Add the one body jastrow.
-  const char* particles2 = "<tmp> \
-  <jastrow name=\"J1\" type=\"One-Body\" function=\"Bspline\" source=\"ion0\" print=\"yes\"> \
-        <correlation elementType=\"Na\" rcut=\"10\" size=\"10\" cusp=\"0\"> \
-          <coefficients id=\"eNa\" type=\"Array\"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients> \
-        </correlation> \
-      </jastrow> \
-  </tmp> \
-  ";
+  const char* particles2 = R"(<tmp>
+  <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+        <correlation elementType="Na" rcut="10" size="10" cusp="0">
+          <coefficients id="eNa" type="Array"> 1.244201343 -1.188935609 -1.840397253 -1.803849126 -1.612058635 -1.35993202 -1.083353212 -0.8066295188 -0.5319252448 -0.3158819772</coefficients>
+        </correlation>
+      </jastrow>
+  </tmp>
+  )";
   bool okay3             = doc.parseFromString(particles2);
   REQUIRE(okay3);
 
@@ -204,9 +202,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RadialJastrowBuilder jastrow1bdy(c, elec, ions);
   psi.addComponent(jastrow1bdy.buildComponent(jas1));
 
-  const char* kexml = "<tmp> \
-</tmp> \
-";
+  const char* kexml = R"(<tmp></tmp>)";
 
   root = doc.getRoot();
 
@@ -224,7 +220,7 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
   RealType keval = bare_ke.evaluate(elec);
 
   //This is validated against an alternate code path (waveefunction tester for local energy).
-  REQUIRE(keval == Approx(-0.147507745));
+  CHECK(keval == Approx(-0.147507745));
 
   ParticleSet::ParticlePos HFTerm, PulayTerm;
   HFTerm.resize(ions.getTotalNum());
@@ -232,14 +228,14 @@ TEST_CASE("Bare KE Pulay PBC", "[hamiltonian]")
 
   RealType keval2 = bare_ke.evaluateWithIonDerivs(elec, ions, psi, HFTerm, PulayTerm);
 
-  REQUIRE(keval2 == Approx(-0.147507745));
+  CHECK(keval2 == Approx(-0.147507745));
   //These are validated against finite differences (delta=1e-6).
-  REQUIRE(PulayTerm[0][0] == Approx(-0.13166));
-  REQUIRE(PulayTerm[0][1] == Approx(0.0));
-  REQUIRE(PulayTerm[0][2] == Approx(0.0));
-  REQUIRE(PulayTerm[1][0] == Approx(-0.12145));
-  REQUIRE(PulayTerm[1][1] == Approx(0.0));
-  REQUIRE(PulayTerm[1][2] == Approx(0.0));
+  CHECK(PulayTerm[0][0] == Approx(-0.13166));
+  CHECK(PulayTerm[0][1] == Approx(0.0));
+  CHECK(PulayTerm[0][2] == Approx(0.0));
+  CHECK(PulayTerm[1][0] == Approx(-0.12145));
+  CHECK(PulayTerm[1][1] == Approx(0.0));
+  CHECK(PulayTerm[1][2] == Approx(0.0));
 }
 
 /** Provide a test scope parameterized on electron species mass that then can run a set of tests using

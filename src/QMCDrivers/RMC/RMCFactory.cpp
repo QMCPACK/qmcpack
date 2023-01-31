@@ -17,7 +17,8 @@
 
 namespace qmcplusplus
 {
-std::unique_ptr<QMCDriver> RMCFactory::create(MCWalkerConfiguration& w,
+std::unique_ptr<QMCDriver> RMCFactory::create(const ProjectData& project_data,
+                                              MCWalkerConfiguration& w,
                                               TrialWaveFunction& psi,
                                               QMCHamiltonian& h,
                                               Communicate* comm)
@@ -29,7 +30,7 @@ std::unique_ptr<QMCDriver> RMCFactory::create(MCWalkerConfiguration& w,
 
   if (RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
   {
-    qmc = std::make_unique<RMC>(w, psi, h, comm);
+    qmc = std::make_unique<RMC>(project_data, w, psi, h, comm);
   }
   qmc->setUpdateMode(RMCMode & 1);
   return qmc;

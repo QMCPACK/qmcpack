@@ -173,7 +173,7 @@ void TwoBodyJastrow<FT>::evaluateRatios(const VirtualParticleSet& VP, std::vecto
 {
   for (int k = 0; k < ratios.size(); ++k)
     ratios[k] =
-        std::exp(Uat[VP.refPtcl] - computeU(VP.refPS, VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
+        std::exp(Uat[VP.refPtcl] - computeU(VP.getRefPS(), VP.refPtcl, VP.getDistTableAB(my_table_ID_).getDistRow(k)));
 }
 
 template<typename FT>
@@ -201,7 +201,7 @@ void TwoBodyJastrow<FT>::mw_evaluateRatios(const RefVectorWithLeader<WaveFunctio
 
   // need to access the spin group of refPtcl. vp_leader doesn't necessary be a member of the list.
   // for this reason, refPtcl must be access from [0].
-  const int igt = vp_leader.refPS.getGroupID(vp_list[0].refPtcl);
+  const int igt = vp_leader.getRefPS().getGroupID(vp_list[0].refPtcl);
   const auto& dt_leader(vp_leader.getDistTableAB(wfc_leader.my_table_ID_));
 
   FT::mw_evaluateV(NumGroups, F.data() + igt * NumGroups, wfc_leader.N, grp_ids.data(), nVPs, mw_refPctls.data(),
@@ -264,12 +264,13 @@ typename TwoBodyJastrow<FT>::valT TwoBodyJastrow<FT>::computeU(const ParticleSet
   valT curUat(0);
   const int igt = P.GroupID[iat] * NumGroups;
   for (int jg = 0; jg < NumGroups; ++jg)
-  {
-    const FuncType& f2(*F[igt + jg]);
-    int iStart = P.first(jg);
-    int iEnd   = P.last(jg);
-    curUat += f2.evaluateV(iat, iStart, iEnd, dist.data(), DistCompressed.data());
-  }
+    if (F[igt + jg])
+    {
+      const FuncType& f2(*F[igt + jg]);
+      int iStart = P.first(jg);
+      int iEnd   = P.last(jg);
+      curUat += f2.evaluateV(iat, iStart, iEnd, dist.data(), DistCompressed.data());
+    }
   return curUat;
 }
 
@@ -277,7 +278,7 @@ template<typename FT>
 typename TwoBodyJastrow<FT>::posT TwoBodyJastrow<FT>::accumulateG(const valT* restrict du, const DisplRow& displ) const
 {
   posT grad;
-  for (int idim = 0; idim < DIM; ++idim)
+  for (int idim = 0; idim < ndim; ++idim)
   {
     const valT* restrict dX = displ.data(idim);
     valT s                  = valT();
@@ -295,6 +296,8 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
     : WaveFunctionComponent(obj_name),
       N(p.getTotalNum()),
       NumGroups(p.groups()),
+      ndim(p.getLattice().ndim),
+      lapfac(ndim - RealType(1)),
       use_offload_(use_offload),
       N_padded(getAlignedSize<valT>(N)),
       my_table_ID_(p.addTable(p)),
@@ -321,6 +324,15 @@ TwoBodyJastrow<FT>::TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, 
 
 template<typename FT>
 TwoBodyJastrow<FT>::~TwoBodyJastrow() = default;
+
+template<typename FT>
+void TwoBodyJastrow<FT>::checkSanity() const
+{
+  if (std::any_of(F.begin(), F.end(), [](auto* ptr) { return ptr == nullptr; }))
+    app_warning() << "Two-body Jastrow \"" << my_name_ << "\" doesn't cover all the particle pairs. "
+                  << "Consider fusing multiple entries if they are of the same type for optimal code performance."
+                  << std::endl;
+}
 
 template<typename FT>
 void TwoBodyJastrow<FT>::resizeInternalStorage()
@@ -426,12 +438,13 @@ void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
 
   const int igt = P.GroupID[iat] * NumGroups;
   for (int jg = 0; jg < NumGroups; ++jg)
-  {
-    const FuncType& f2(*F[igt + jg]);
-    int iStart = P.first(jg);
-    int iEnd   = std::min(jelmax, P.last(jg));
-    f2.evaluateVGL(iat, iStart, iEnd, dist.data(), u, du, d2u, DistCompressed.data(), DistIndice.data());
-  }
+    if (F[igt + jg])
+    {
+      const FuncType& f2(*F[igt + jg]);
+      int iStart = P.first(jg);
+      int iEnd   = std::min(jelmax, P.last(jg));
+      f2.evaluateVGL(iat, iStart, iEnd, dist.data(), u, du, d2u, DistCompressed.data(), DistIndice.data());
+    }
   //u[iat]=czero;
   //du[iat]=czero;
   //d2u[iat]=czero;
@@ -495,12 +508,13 @@ void TwoBodyJastrow<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Valu
     const int igt = ig * NumGroups;
     valT sumU(0);
     for (int jg = 0; jg < NumGroups; ++jg)
-    {
-      const FuncType& f2(*F[igt + jg]);
-      int iStart = P.first(jg);
-      int iEnd   = P.last(jg);
-      sumU += f2.evaluateV(-1, iStart, iEnd, dist.data(), DistCompressed.data());
-    }
+      if (F[igt + jg])
+      {
+        const FuncType& f2(*F[igt + jg]);
+        int iStart = P.first(jg);
+        int iEnd   = P.last(jg);
+        sumU += f2.evaluateV(-1, iStart, iEnd, dist.data(), DistCompressed.data());
+      }
 
     for (int i = P.first(ig); i < P.last(ig); ++i)
     {
@@ -563,7 +577,7 @@ void TwoBodyJastrow<FT>::mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComp
     auto& wfc   = wfc_list.getCastedElement<TwoBodyJastrow<FT>>(iw);
     wfc.cur_Uat = mw_vgl[iw][0];
     ratios[iw]  = std::exp(static_cast<PsiValueType>(wfc.Uat[iat] - wfc.cur_Uat));
-    for (int idim = 0; idim < DIM; idim++)
+    for (int idim = 0; idim < ndim; idim++)
       grad_new[iw][idim] += mw_vgl[iw][idim + 1];
   }
 }
@@ -581,9 +595,8 @@ void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
   }
 
   valT cur_d2Uat(0);
-  const auto& new_dr    = d_table.getTempDispls();
-  const auto& old_dr    = d_table.getOldDispls();
-  constexpr valT lapfac = DIM - RealType(1);
+  const auto& new_dr = d_table.getTempDispls();
+  const auto& old_dr = d_table.getOldDispls();
 #pragma omp simd reduction(+ : cur_d2Uat)
   for (int jat = 0; jat < N; jat++)
   {
@@ -595,7 +608,7 @@ void TwoBodyJastrow<FT>::acceptMove(ParticleSet& P, int iat, bool safe_to_delay)
     cur_d2Uat -= newl;
   }
   posT cur_dUat;
-  for (int idim = 0; idim < DIM; ++idim)
+  for (int idim = 0; idim < ndim; ++idim)
   {
     const valT* restrict new_dX    = new_dr.data(idim);
     const valT* restrict old_dX    = old_dr.data(idim);
@@ -671,11 +684,10 @@ void TwoBodyJastrow<FT>::recompute(const ParticleSet& P)
       const valT* restrict du  = cur_du.data();
       const valT* restrict d2u = cur_d2u.data();
       const auto& displ        = d_table.getDisplRow(iat);
-      constexpr valT lapfac    = DIM - RealType(1);
 #pragma omp simd reduction(+ : lap) aligned(du, d2u : QMC_SIMD_ALIGNMENT)
       for (int jat = 0; jat < iat; ++jat)
         lap += d2u[jat] + lapfac * du[jat];
-      for (int idim = 0; idim < DIM; ++idim)
+      for (int idim = 0; idim < ndim; ++idim)
       {
         const valT* restrict dX = displ.data(idim);
         valT s                  = valT();
@@ -693,7 +705,7 @@ void TwoBodyJastrow<FT>::recompute(const ParticleSet& P)
         Uat[jat] += u[jat];
         d2Uat[jat] -= d2u[jat] + lapfac * du[jat];
       }
-      for (int idim = 0; idim < DIM; ++idim)
+      for (int idim = 0; idim < ndim; ++idim)
       {
         valT* restrict save_g   = dUat.data(idim);
         const valT* restrict dX = displ.data(idim);
@@ -803,6 +815,8 @@ void TwoBodyJastrow<FT>::mw_evaluateGL(const RefVectorWithLeader<WaveFunctionCom
 template<typename FT>
 void TwoBodyJastrow<FT>::evaluateHessian(ParticleSet& P, HessVector& grad_grad_psi)
 {
+  if (ndim < 3)
+    throw std::runtime_error("double check! See 2d jastrow test.");
   log_value_ = 0.0;
   const auto& d_ee(P.getDistTableAA(my_table_ID_));
   valT dudr, d2udr2;
@@ -919,7 +933,6 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
     std::vector<TinyVector<RealType, 3>> derivs(NumVars);
     const auto& d_table = P.getDistTableAA(my_table_ID_);
     constexpr RealType cone(1);
-    constexpr RealType lapfac(OHMMS_DIM - cone);
     const size_t n  = d_table.sources();
     const size_t ng = P.groups();
     for (size_t i = 1; i < n; ++i)
@@ -937,11 +950,12 @@ void TwoBodyJastrow<FT>::evaluateDerivativesWF(ParticleSet& P,
             continue;
           RealType rinv(cone / dist[j]);
           PosType dr(displ[j]);
+          if (ndim < 3)
+            dr[2] = 0;
           for (int p = OffSet[ptype].first, ip = 0; p < OffSet[ptype].second; ++p, ++ip)
           {
             RealType dudr(rinv * derivs[ip][1]);
             RealType lap(derivs[ip][2] + lapfac * dudr);
-            //RealType lap(derivs[ip][2]+(OHMMS_DIM-1.0)*dudr);
             PosType gr(dudr * dr);
             dLogPsi[p] -= derivs[ip][0];
             gradLogPsi[p][i] += gr;
@@ -1018,11 +1032,11 @@ void TwoBodyJastrow<FT>::evaluateDerivRatios(const VirtualParticleSet& VP,
     {
       if (i == VP.refPtcl)
         continue;
-      const size_t ptype = VP.refPS.GroupID[i] * VP.refPS.groups() + VP.refPS.GroupID[VP.refPtcl];
+      const size_t ptype = VP.getRefPS().GroupID[i] * VP.getRefPS().groups() + VP.getRefPS().GroupID[VP.refPtcl];
       if (!RecalcSwitch[ptype])
         continue;
-      const auto dist_ref = i < VP.refPtcl ? VP.refPS.getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
-                                           : VP.refPS.getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
+      const auto dist_ref = i < VP.refPtcl ? VP.getRefPS().getDistTableAA(my_table_ID_).getDistRow(VP.refPtcl)[i]
+                                           : VP.getRefPS().getDistTableAA(my_table_ID_).getDistRow(i)[VP.refPtcl];
       //first calculate the old derivatives VP.refPtcl.
       std::fill(derivs_ref.begin(), derivs_ref.end(), 0.0);
       F[ptype]->evaluateDerivatives(dist_ref, derivs_ref);

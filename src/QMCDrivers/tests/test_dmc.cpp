@@ -106,13 +106,13 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
-  REQUIRE(elec.R[0][0] == Approx(0.6276702589209545));
-  REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.3723297410790455));
+  CHECK(elec.R[0][0] == Approx(0.6276702589209545));
+  CHECK(elec.R[0][1] == Approx(0.0));
+  CHECK(elec.R[0][2] == Approx(-0.3723297410790455));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.3723297410790455));
-  REQUIRE(elec.R[1][2] == Approx(1.0));
+  CHECK(elec.R[1][0] == Approx(0.0));
+  CHECK(elec.R[1][1] == Approx(-0.3723297410790455));
+  CHECK(elec.R[1][2] == Approx(1.0));
 
 
   // Check rejection in case of node-crossing
@@ -198,12 +198,12 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   // Each electron moved sqrt(tau)*gaussian_rng()
   //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
   //  See DMC_propagator notebook for computation of these values
-  REQUIRE(elec.R[0][0] == Approx(0.695481606677082));
-  REQUIRE(elec.R[0][1] == Approx(0.135622695565971));
-  REQUIRE(elec.R[0][2] == Approx(-0.168895697756948));
+  CHECK(elec.R[0][0] == Approx(0.695481606677082));
+  CHECK(elec.R[0][1] == Approx(0.135622695565971));
+  CHECK(elec.R[0][2] == Approx(-0.168895697756948));
 
-  REQUIRE(elec.R[1][0] == Approx(0.0678113477829853));
-  REQUIRE(elec.R[1][1] == Approx(-0.236707045539933));
-  REQUIRE(elec.R[1][2] == Approx(1.20343404334896));
+  CHECK(elec.R[1][0] == Approx(0.0678113477829853));
+  CHECK(elec.R[1][1] == Approx(-0.236707045539933));
+  CHECK(elec.R[1][2] == Approx(1.20343404334896));
 }
 } // namespace qmcplusplus

@@ -31,9 +31,9 @@ TEST_CASE("read_file", "[xml]")
 
 TEST_CASE("parseString", "[xml]")
 {
-  string s1("<?xml version=\"1.0\"?> \
-<simulation> \
-</simulation> ");
+  string s1(R"(<?xml version="1.0"?>
+    <simulation></simulation>
+    )");
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(s1);
@@ -51,10 +51,9 @@ TEST_CASE("parseString", "[xml]")
 
 TEST_CASE("XMLParsingString", "[xml]")
 {
-  string s1("<?xml version=\"1.0\"?> \
-<simulation name=\"qmc\"> \
-aa \
-</simulation> ");
+  string s1(R"(<?xml version="1.0"?>
+    <simulation name="qmc"> aa </simulation>
+    )");
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(s1);
@@ -75,14 +74,15 @@ aa \
 
 TEST_CASE("putContent", "[xml]")
 {
-  string s1("<?xml version=\"1.0\"?> \
-<simulation> \
-  <item1>2</item1> \
-  <item2>3.5</item2> \
-  <item3>4.0</item3> \
-  <item4>4.0 5.1</item4> \
-  <item5>4.0 5.1,</item5> \
-</simulation>");
+  string s1(R"(<?xml version="1.0"?>
+    <simulation>
+      <item1>2</item1>
+      <item2>3.5</item2>
+      <item3>4.0</item3>
+      <item4>4.0 5.1</item4>
+      <item5>4.0 5.1,</item5>
+    </simulation>
+    )");
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(s1);
@@ -104,7 +104,7 @@ TEST_CASE("putContent", "[xml]")
 
   float c;
   putContent(c, item);
-  REQUIRE(c == Approx(3.5));
+  CHECK(c == Approx(3.5));
 
   vector<double> d;
   item = xmlNextElementSibling(item);
@@ -140,11 +140,12 @@ TEST_CASE("write_file", "[xml]")
 
 TEST_CASE("XPathObject", "[xml]")
 {
-  const char* content = " \
-<simulation> \
-   <parameter name=\"p1\">1</parameter> \
-   <p2>2</p2> \
-</simulation>";
+  const char* content = R"(
+    <simulation>
+      <parameter name="p1">1</parameter>
+      <p2>2</p2>
+    </simulation>
+    )";
   Libxml2Document doc;
   bool okay = doc.parseFromString(content);
   REQUIRE(okay == true);

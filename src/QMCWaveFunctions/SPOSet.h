@@ -29,6 +29,7 @@
 #include "type_traits/CUDATypes.h"
 #endif
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
+#include "DualAllocatorAliases.hpp"
 
 namespace qmcplusplus
 {
@@ -59,6 +60,8 @@ public:
   using SPOPool_t   = std::map<std::string, SPOSet*>;
 
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
 
   /** constructor */
   SPOSet(const std::string& my_name);
@@ -122,12 +125,20 @@ public:
   /// apply rotation to all the orbitals
   virtual void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy = false);
 
+  /// Parameter derivatives of the wavefunction and the Laplacian of the wavefunction
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    Vector<ValueType>& dlogpsi,
                                    Vector<ValueType>& dhpsioverpsi,
                                    const int& FirstIndex,
                                    const int& LastIndex);
+
+  /// Parameter derivatives of the wavefunction
+  virtual void evaluateDerivativesWF(ParticleSet& P,
+                                     const opt_variables_type& optvars,
+                                     Vector<ValueType>& dlogpsi,
+                                     int FirstIndex,
+                                     int LastIndex);
 
   /** Evaluate the derivative of the optimized orbitals with respect to the parameters
    *  this is used only for MSD, to be refined for better serving both single and multi SD
@@ -203,6 +214,18 @@ public:
                                  const ValueVector& psiinv,
                                  std::vector<ValueType>& ratios);
 
+
+  /// Determinant ratios and parameter derivatives of the wavefunction for virtual moves
+  virtual void evaluateDerivRatios(const VirtualParticleSet& VP,
+                                   const opt_variables_type& optvars,
+                                   ValueVector& psi,
+                                   const ValueVector& psiinv,
+                                   std::vector<ValueType>& ratios,
+                                   Matrix<ValueType>& dratios,
+                                   int FirstIndex,
+                                   int LastIndex);
+
+
   /** evaluate determinant ratios for virtual moves, e.g., sphere move for nonlocalPP, of multiple walkers
    * @param spo_list the list of SPOSet pointers in a walker batch
    * @param vp_list a list of virtual particle sets in a walker batch
@@ -273,7 +296,8 @@ public:
    * @param psi_v_list the list of value vector pointers in a walker batch
    * @param dpsi_v_list the list of gradient vector pointers in a walker batch
    * @param d2psi_v_list the list of laplacian vector pointers in a walker batch
-   * @param dspin_v_list the list of spin gradients vector pointers in a walker batch
+   * @param mw_dspin is a dual matrix of spin gradients [nw][norb]
+   * Note that the device side of mw_dspin is up to date
    */
   virtual void mw_evaluateVGLWithSpin(const RefVectorWithLeader<SPOSet>& spo_list,
                                       const RefVectorWithLeader<ParticleSet>& P_list,
@@ -281,7 +305,7 @@ public:
                                       const RefVector<ValueVector>& psi_v_list,
                                       const RefVector<GradVector>& dpsi_v_list,
                                       const RefVector<ValueVector>& d2psi_v_list,
-                                      const RefVector<ValueVector>& dspin_v_list) const;
+                                      OffloadMatrix<ComplexType>& mw_dspin) const;
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital sets and determinant ratio
    *  and grads of multiple walkers. Device data of phi_vgl_v must be up-to-date upon return

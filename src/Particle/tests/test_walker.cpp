@@ -37,7 +37,7 @@ TEST_CASE("walker", "[particle]")
   REQUIRE(w.R.size() == 1);
   w.R[0] = 1.0;
 
-  REQUIRE(w.R[0][0] == Approx(1.0));
+  CHECK(w.R[0][0] == Approx(1.0));
 }
 
 /** Currently significant amounts of code assumes that the Walker by default 
@@ -93,7 +93,7 @@ TEST_CASE("walker HDF read and write", "[particle]")
 
   HDFVersion version(0, 4);
   HDFWalkerInput_0_4 hinp(wc_list2, num_ptcls, c, version);
-  bool okay = hinp.read_hdf5("walker_test");
+  bool okay = hinp.read_hdf5("walker_test.config.h5");
   REQUIRE(okay);
 
   REQUIRE(wc_list2.getActiveWalkers() == 2);

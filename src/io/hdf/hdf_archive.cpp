@@ -27,8 +27,9 @@ hdf_archive::~hdf_archive()
   if (access_id != H5P_DEFAULT)
     H5Pclose(access_id);
 #endif
+  if (lcpl_id != H5P_DEFAULT)
+    H5Pclose(lcpl_id);
   close();
-  H5Eset_auto2(H5E_DEFAULT, err_func, client_data);
 }
 
 void hdf_archive::close()
@@ -47,6 +48,8 @@ void hdf_archive::close()
 void hdf_archive::set_access_plist()
 {
   access_id = H5P_DEFAULT;
+  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
+  H5Pset_create_intermediate_group(lcpl_id, true);
   Mode.set(IS_PARALLEL, false);
   Mode.set(IS_MASTER, true);
   Mode.set(NOIO, false);
@@ -55,6 +58,8 @@ void hdf_archive::set_access_plist()
 void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
 {
   access_id = H5P_DEFAULT;
+  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
+  H5Pset_create_intermediate_group(lcpl_id, true);
   if (comm && comm->size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
@@ -64,10 +69,8 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
       access_id     = H5Pcreate(H5P_FILE_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
       H5Pset_all_coll_metadata_ops(access_id, true);
       H5Pset_coll_metadata_write(access_id, true);
-#endif
       H5Pset_fapl_mpio(access_id, comm->getMPI(), info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
       // enable parallel collective I/O
@@ -94,6 +97,8 @@ void hdf_archive::set_access_plist(Communicate* comm, bool request_pio)
 void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request_pio)
 {
   access_id = H5P_DEFAULT;
+  lcpl_id   = H5Pcreate(H5P_LINK_CREATE);
+  H5Pset_create_intermediate_group(lcpl_id, true);
   if (comm.size() > 1) //for parallel communicator
   {
     bool use_phdf5 = false;
@@ -103,10 +108,8 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
       // enable parallel I/O
       MPI_Info info = MPI_INFO_NULL;
       access_id     = H5Pcreate(H5P_FILE_ACCESS);
-#if H5_VERSION_GE(1, 10, 0)
       H5Pset_all_coll_metadata_ops(access_id, true);
       H5Pset_coll_metadata_write(access_id, true);
-#endif
       H5Pset_fapl_mpio(access_id, comm.get(), info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
       // enable parallel collective I/O
@@ -133,7 +136,7 @@ void hdf_archive::set_access_plist(boost::mpi3::communicator& comm, bool request
 #endif
 
 
-bool hdf_archive::create(const std::string& fname, unsigned flags)
+bool hdf_archive::create(const std::filesystem::path& fname, unsigned flags)
 {
   if (Mode[NOIO])
     return true;
@@ -144,7 +147,7 @@ bool hdf_archive::create(const std::string& fname, unsigned flags)
   return file_id != is_closed;
 }
 
-bool hdf_archive::open(const std::string& fname, unsigned flags)
+bool hdf_archive::open(const std::filesystem::path& fname, unsigned flags)
 {
   if (Mode[NOIO])
     return true;
@@ -210,7 +213,7 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
 
   if ((oinfo.type != H5O_TYPE_GROUP) && createit)
   {
-    g = H5Gcreate2(p, gname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    g = H5Gcreate2(p, gname.c_str(), lcpl_id, H5P_DEFAULT, H5P_DEFAULT);
   }
   else
   {
@@ -220,5 +223,7 @@ hid_t hdf_archive::push(const std::string& gname, bool createit)
     group_id.push(g);
   return g;
 }
+
+hid_t hdf_archive::push(const hdf_path& gname, bool createit) { return push(gname.string(), createit); }
 
 } // namespace qmcplusplus

@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
 #include "OMPTarget/OMPTargetMath.hpp"
+#include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
@@ -201,7 +202,8 @@ void SplineC2COMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d(SplineInst->getSplinePtr(), ru, myV, first, last);
     assign_v(r, myV, psi, first / 2, last / 2);
@@ -991,7 +993,8 @@ void SplineC2COMPTarget<ST>::evaluateVGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    // Factor of 2 because psi is complex and the spline storage and evaluation uses a real type
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, first, last);
     assign_vgh(r, psi, dpsi, grad_grad_psi, first / 2, last / 2);
@@ -1246,7 +1249,7 @@ void SplineC2COMPTarget<ST>::evaluateVGHGH(const ParticleSet& P,
 #pragma omp parallel
   {
     int first, last;
-    FairDivideAligned(myV.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
+    FairDivideAligned(2 * psi.size(), getAlignment<ST>(), omp_get_num_threads(), omp_get_thread_num(), first, last);
 
     spline2::evaluate3d_vghgh(SplineInst->getSplinePtr(), ru, myV, myG, myH, mygH, first, last);
     assign_vghgh(r, psi, dpsi, grad_grad_psi, grad_grad_grad_psi, first / 2, last / 2);
@@ -1302,9 +1305,9 @@ void SplineC2COMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
       multi_pos_copy[ipos * 6 + 4] = ru[1];
       multi_pos_copy[ipos * 6 + 5] = ru[2];
 
-      multi_psi_v.emplace_back(logdet[i + ipos], OrbitalSetSize);
-      multi_dpsi_v.emplace_back(dlogdet[i + ipos], OrbitalSetSize);
-      multi_d2psi_v.emplace_back(d2logdet[i + ipos], OrbitalSetSize);
+      multi_psi_v.emplace_back(logdet[i + ipos], logdet.cols());
+      multi_dpsi_v.emplace_back(dlogdet[i + ipos], dlogdet.cols());
+      multi_d2psi_v.emplace_back(d2logdet[i + ipos], d2logdet.cols());
 
       psi_v_list.push_back(multi_psi_v[ipos]);
       dpsi_v_list.push_back(multi_dpsi_v[ipos]);

@@ -95,7 +95,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   hd2.read(pxy1, "matrix");
   for (int i = 0; i < 4; i++)
   {
-    REQUIRE(outbuffer1(0, i) == Approx(allData(1, i)));
+    CHECK(outbuffer1(0, i) == Approx(allData(1, i)));
   }
 
   dims_local[0] = 3;
@@ -105,7 +105,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   hyperslab_proxy<Matrix<double>, 2> pxy2(outbuffer2, dims_unused, dims_local, offsets);
   hd2.read(pxy2, "matrix");
   for (int i = 0; i < 3; i++)
-    REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
+    CHECK(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
   // set dims_unused to sero and to be detect
   dims_unused[0] = 0;
@@ -117,7 +117,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   offsets[1]    = 0;
   hyperslab_proxy<Matrix<double>, 2> pxy3(outbuffer3, dims_unused, dims_local, offsets);
   hd2.read(pxy3, "matrix");
-  REQUIRE(outbuffer3(0, 0) == Approx(allData(2, 0)));
+  CHECK(outbuffer3(0, 0) == Approx(allData(2, 0)));
 
   // mostly the same as outbuffer2 but outbuffer4 resized by hyperslab_proxy
   dims_local[0] = 3;
@@ -129,7 +129,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   REQUIRE(outbuffer4.rows() == 3);
   REQUIRE(outbuffer4.cols() == 1);
   for (int i = 0; i < 3; i++)
-    REQUIRE(outbuffer2(i, 0) == Approx(allData(i, 2)));
+    CHECK(outbuffer2(i, 0) == Approx(allData(i, 2)));
 
   // method 2 here
   std::vector<double> locob1;
@@ -140,7 +140,7 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   REQUIRE(locob1.size() == 4);
   for (int i = 0; i < 4; i++)
   {
-    REQUIRE(locob1[i] == Approx(allData(1, i)));
+    CHECK(locob1[i] == Approx(allData(1, i)));
   }
 
   readSpec[0] = -1;
@@ -148,13 +148,13 @@ TEST_CASE("hdf_read_partial", "[hdf]")
   hd2.readSlabSelection(locob2, readSpec, "matrix");
   for (int i = 0; i < 3; i++)
   {
-    REQUIRE(locob2.data()[i] == Approx(allData(i, 2)));
-    REQUIRE(locob2(i) == Approx(allData(i, 2)));
+    CHECK(locob2.data()[i] == Approx(allData(i, 2)));
+    CHECK(locob2(i) == Approx(allData(i, 2)));
   }
 
   readSpec[0] = 2;
   readSpec[1] = 0;
   hd2.readSlabSelection(locob3, readSpec, "matrix");
-  REQUIRE(locob3.data()[0] == Approx(allData(2, 0)));
+  CHECK(locob3.data()[0] == Approx(allData(2, 0)));
   hd2.close();
 }

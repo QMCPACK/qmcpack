@@ -66,6 +66,8 @@ protected:
   int total_samples();
   Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
+
+  NewTimer& fill_timer_;
 };
 } // namespace qmcplusplus
 #endif

@@ -29,7 +29,8 @@ class VMCcuda : public QMCDriver
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w,
+  VMCcuda(const ProjectData& project_data,
+          MCWalkerConfiguration& w,
           TrialWaveFunction& psi,
           QMCHamiltonian& h,
           Communicate* comm,

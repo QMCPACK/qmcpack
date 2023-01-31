@@ -277,6 +277,7 @@ private:
   NewTimer& generate_samples_timer_;
   NewTimer& initialize_timer_;
   NewTimer& eigenvalue_timer_;
+  NewTimer& involvmat_timer_;
   NewTimer& line_min_timer_;
   NewTimer& cost_function_timer_;
   Timer t1;

@@ -202,16 +202,16 @@ void test_phmsd(boost::mpi3::communicator& world)
     //wfn.Overlap(wset);
     WALKER_TYPES type = afqmc::getWalkerTypeHDF5(UTEST_WFN, "PHMSD");
     std::map<std::string, AFQMCInfo> InfoMap;
-    InfoMap.insert(std::pair<std::string, AFQMCInfo>("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
+    InfoMap.insert(std::make_pair("info0", AFQMCInfo{"info0", NMO, NAEA, NAEB}));
     HamiltonianFactory HamFac(InfoMap);
-    std::string hamil_xml = "<Hamiltonian name=\"ham0\" info=\"info0\"> \
-  <parameter name=\"filetype\">hdf5</parameter> \
-  <parameter name=\"filename\">" +
-        UTEST_HAMIL + "</parameter> \
-  <parameter name=\"cutoff_decomposition\">1e-12</parameter> \
-  <parameter name=\"cutoff_1bar\">1e-12</parameter> \
-  </Hamiltonian> \
-  ";
+    std::string hamil_xml = R"(<Hamiltonian name="ham0" info="info0">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_HAMIL + R"(</parameter>
+      <parameter name="cutoff_decomposition">1e-12</parameter>
+      <parameter name="cutoff_1bar">1e-12</parameter>
+    </Hamiltonian>
+    )";
     const char* ham_xml_block = hamil_xml.c_str();
     Libxml2Document doc;
     bool okay = doc.parseFromString(ham_xml_block);
@@ -220,14 +220,14 @@ void test_phmsd(boost::mpi3::communicator& world)
     HamFac.push(ham_name, doc.getRoot());
     Hamiltonian& ham = HamFac.getHamiltonian(gTG, ham_name);
 
-    std::string wfn_xml = "<Wavefunction name=\"wfn0\" info=\"info0\" type=\"phmsd\"> \
-      <parameter name=\"filetype\">hdf5</parameter> \
-      <parameter name=\"filename\">" +
-        UTEST_WFN + "</parameter> \
-      <parameter name=\"rediag\">true</parameter> \
-      <parameter name=\"cutoff\">1e-6</parameter> \
-  </Wavefunction> \
-  ";
+    std::string wfn_xml = R"(<Wavefunction name="wfn0" info="info0" type="phmsd">
+      <parameter name="filetype">hdf5</parameter>
+      <parameter name="filename">)" +
+        UTEST_WFN + R"(</parameter>
+      <parameter name="rediag">true</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </Wavefunction>
+    )";
     const char* wfn_xml_block = wfn_xml.c_str();
     Libxml2Document doc2;
     okay = doc2.parseFromString(wfn_xml_block);
@@ -237,10 +237,10 @@ void test_phmsd(boost::mpi3::communicator& world)
     WfnFac.push(wfn_name, doc2.getRoot());
     int nwalk                 = 1;
     Wavefunction& wfn         = WfnFac.getWavefunction(TGwfn, TGwfn, wfn_name, type, &ham, 1e-6, nwalk);
-    const char* wlk_xml_block = "<WalkerSet name=\"wset0\">  \
-      <parameter name=\"walker_type\">collinear</parameter>  \
-    </WalkerSet> \
-    ";
+    const char* wlk_xml_block = R"(<WalkerSet name="wset0">
+      <parameter name="walker_type">collinear</parameter>
+    </WalkerSet>
+    )";
     Libxml2Document doc3;
     okay = doc3.parseFromString(wlk_xml_block);
     REQUIRE(okay);
@@ -292,15 +292,15 @@ void test_phmsd(boost::mpi3::communicator& world)
     // coefficients as using factory setup.
     for (auto it = wset.begin(); it != wset.end(); ++it)
     {
-      REQUIRE(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
-      REQUIRE(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
+      CHECK(std::abs(real(*it->overlap())) == Approx(std::abs(real(ovlp_sum))));
+      CHECK(std::abs(imag(*it->overlap())) == Approx(std::abs(imag(ovlp_sum))));
     }
     // It's not straightforward to calculate energy directly in unit test due to half
     // rotation.
     //wfn.Energy(wset);
     //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-    //REQUIRE(real(*it->energy()) == Approx(real(energy)));
-    //REQUIRE(imag(*it->energy()) == Approx(imag(energy)));
+    //CHECK(real(*it->energy()) == Approx(real(energy)));
+    //CHECK(imag(*it->energy()) == Approx(imag(energy)));
     //}
     //auto nCV = wfn.local_number_of_cholesky_vectors();
     //boost::multi::array<ComplexType,1> vMF(iextensions<1u>{nCV});

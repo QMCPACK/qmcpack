@@ -77,5 +77,5 @@ print
 print '  double gg[6] = {%g, %g, %g, %g, %g, %g};'%(vG[0,0], vG[0,1] + vG[1,0], vG[0,2] + vG[2,0], vG[1,1], vG[1,2] + vG[2,1], vG[2,2])
 print
 print '  double tr = SymTrace(h00, h01, h02, h11, h12, h22, gg);'
-print '  REQUIRE(tr == Approx(%g));'%tr
+print '  CHECK(tr == Approx(%g));'%tr
 print

@@ -1844,9 +1844,9 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep','gpusharing']
     elements    = ['sposet']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno,gpusharing=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
@@ -1892,10 +1892,10 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep','pbcimages','gpusharing']
     elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
     h5tags     = ['twistindex','twistangle','rcut']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno,gpusharing=yesno)
 #end class determinantset
 
 class spline(QIxml):
@@ -1940,9 +1940,9 @@ class radfunc(QIxml):
 #end class radfunc
 
 class slaterdeterminant(QIxml):
-    attributes = ['optimize','delay_rank']
+    attributes = ['optimize','delay_rank','gpu','matrix_inverter']
     elements   = ['determinant']
-    write_types = obj(optimize=yesno)
+    write_types = obj(optimize=yesno,gpu=yesno)
 #end class slaterdeterminant
 
 class determinant(QIxml):
@@ -4216,6 +4216,8 @@ class BundledQmcpackInput(SimulationInput):
             outfile= infile.rsplit('.',1)[0]+'.g'+str(index).zfill(3)+'.qmc'
             outfiles.append(infile)
             outfiles.append(outfile)
+            twfile = infile.rsplit('.',3)[0]+'.twist_info.dat'
+            outfiles.append(twfile)
             for outf in outfs:
                 prefix,rest = outf.split('.',1)
                 outfiles.append(prefix+'.g'+str(index).zfill(3)+'.'+rest)
@@ -4594,7 +4596,9 @@ def generate_bspline_builder(type           = 'bspline',
                              spo_up         = 'spo_u',
                              spo_down       = 'spo_d',
                              sposets        = None,
-                             system         = None
+                             system         = None,
+                             orbitals_cpu   = None,
+                             gpusharing     = None,
                              ):
     tilematrix = identity(3,dtype=int)
     if system!=None:
@@ -4618,7 +4622,7 @@ def generate_bspline_builder(type           = 'bspline',
             spindatasets   = True
             )
         )
-    if sort!=None:
+    if sort is not None:
         bsb.sort = sort
     #end if
     if truncate and buffer!=None:
@@ -4627,14 +4631,20 @@ def generate_bspline_builder(type           = 'bspline',
     if hybridrep is not None:
         bsb.hybridrep = hybridrep
     #end if
-    if twist!=None:
+    if twist is not None:
         bsb.twistnum = system.structure.select_twist(twist)
-    elif twistnum!=None:
+    elif twistnum is not None:
         bsb.twistnum = twistnum
     elif len(system.structure.kpoints)==1:
         bsb.twistnum = 0
     else:
         bsb.twistnum = None
+    #end if
+    if orbitals_cpu is not None and orbitals_cpu:
+        bsb.gpu = False
+    #end if
+    if gpusharing is not None:
+        bsb.gpusharing = gpusharing
     #end if
     return bsb
 #end def generate_bspline_builder
@@ -4742,6 +4752,7 @@ def generate_determinantset(up             = 'u',
                             spo_down       = 'spo_d',
                             spin_polarized = False,
                             delay_rank     = None,
+                            matrix_inv_cpu = None,
                             system         = None
                             ):
     if system is None:
@@ -4777,6 +4788,9 @@ def generate_determinantset(up             = 'u',
         )
     if delay_rank is not None:
         dset.slaterdeterminant.delay_rank = delay_rank
+    #end if
+    if matrix_inv_cpu is not None and matrix_inv_cpu:
+        dset.slaterdeterminant.matrix_inverter = 'host'
     #end if
     return dset
 #end def generate_determinantset
@@ -4889,6 +4903,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 href           = 'MISSING.h5',
                                 excitation     = None,
                                 delay_rank     = None,
+                                gpusharing     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4943,6 +4958,9 @@ def generate_determinantset_old(type           = 'bspline',
     #end if
     if delay_rank is not None:
         dset.slaterdeterminant.delay_rank = delay_rank
+    #end if
+    if gpusharing is not None:
+        dset.gpusharing = gpusharing
     #end if
     if excitation is not None:
 
@@ -5391,6 +5409,9 @@ def process_dm1b_estimator(dm,wfname):
                 rsponame = det.id
             #end if
             builders = QIcollections.get('sposet_builders')
+            if builders is None:
+                builders = [wf.sposet_builders.bspline]
+            #end if
             rspo = None
             for bld in builders:
                 if rsponame in bld.sposets:
@@ -7134,6 +7155,15 @@ def generate_qmcpack_input(**kwargs):
 
 
 
+def read_jastrows(filepath):
+    qi = QmcpackInput(filepath)
+    qi.pluralize()
+    jastrows = qi.get('jastrows')
+    return jastrows
+#end def read_jastrows
+
+
+
 gen_basic_input_defaults = obj(
     id             = 'qmc',            
     series         = 0,                
@@ -7161,6 +7191,8 @@ gen_basic_input_defaults = obj(
     hybrid_rcut    = None,             
     hybrid_lmax    = None,             
     orbitals_h5    = 'MISSING.h5',     
+    run_path       = None,
+    check_paths    = True,
     excitation     = None,             
     system         = 'missing',        
     pseudos        = None,
@@ -7190,6 +7222,11 @@ gen_basic_input_defaults = obj(
     J1_rcut_open   = 5.0,              
     J2_rcut_open   = 10.0,
     driver         = 'legacy', # legacy,batched
+    # batched driver inputs
+    orbitals_cpu   = None,     # place/evaluate orbitals on cpu if on gpu
+    matrix_inv_cpu = None,     # evaluate matrix inverse on cpu if on gpu
+    # legacy cuda inputs
+    gpusharing     = None,
     qmc            = None,     # opt,vmc,vmc_test,dmc,dmc_test
     )
 
@@ -7329,6 +7366,15 @@ def generate_basic_input(**kwargs):
             if kw.orbspline is None:
                 kw.orbspline = 'bspline'
             #end if
+            if kw.orbitals_h5!='MISSING.h5':
+                orbfile_exists = os.path.exists(kw.orbitals_h5)
+                if kw.check_paths and not orbfile_exists:
+                    QmcpackInput.class_error('user provided "orbitals_h5" path does not exist\nPath provided: {}\nTo disable this check, set check_paths=False'.format(kw.orbitals_h5),'generate_qmcpack_input')
+                #end if
+                if kw.run_path is not None:
+                    kw.orbitals_h5 = os.path.relpath(kw.orbitals_h5,kw.run_path)
+                #end if
+            #end if
             ssb = generate_sposet_builder(
                 type           = kw.orbspline,
                 twist          = kw.twist,
@@ -7341,6 +7387,8 @@ def generate_basic_input(**kwargs):
                 href           = kw.orbitals_h5,
                 spin_polarized = kw.spin_polarized,
                 system         = kw.system,
+                orbitals_cpu   = kw.orbitals_cpu,
+                gpusharing     = kw.gpusharing,
                 )
         #end if
         if kw.partition is None:
@@ -7356,6 +7404,7 @@ def generate_basic_input(**kwargs):
         dset = generate_determinantset(
             spin_polarized = kw.spin_polarized,
             delay_rank     = kw.delay_rank,
+            matrix_inv_cpu = kw.matrix_inv_cpu,
             system         = kw.system,
             )
     elif kw.det_format=='old':
@@ -7373,6 +7422,7 @@ def generate_basic_input(**kwargs):
             spin_polarized = kw.spin_polarized,
             excitation     = kw.excitation,
             delay_rank     = kw.delay_rank,
+            gpusharing     = kw.gpusharing,
             system         = kw.system,
             )
     else:
@@ -7386,7 +7436,16 @@ def generate_basic_input(**kwargs):
         determinantset = dset,
         )
 
-    if kw.J1 or kw.J2 or kw.J3:
+    if isinstance(kw.jastrows,str) and kw.jastrows.endswith('.xml'):
+        if not os.path.exists(kw.jastrows):
+            QmcpackInput.class_error('user provided "jastrows" file path does not exist\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+        #end if
+        jastrows = read_jastrows(kw.jastrows)
+        if jastrows is None:
+            QmcpackInput.class_error('no jastrows found at user provided "jastrows" file.\nFile path provided: {}'.format(kw.jastrows),'generate_qmcpack_input')
+        #end if
+        kw.jastrows = jastrows
+    elif kw.J1 or kw.J2 or kw.J3:
         kw.jastrows = generate_jastrows_alt(
             J1           = kw.J1          ,
             J2           = kw.J2          ,
@@ -7531,6 +7590,7 @@ gen_basic_afqmc_input_defaults = obj(
     wset_name   = 'wset0',
     prop_name   = 'prop0',
     system      = None,
+    run_path    = None,
     )
 
 def generate_basic_afqmc_input(**kwargs):

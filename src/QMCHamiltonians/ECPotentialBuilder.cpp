@@ -135,19 +135,16 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     std::unique_ptr<NonLocalECPotential> apot =
         std::make_unique<NonLocalECPotential>(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
 #endif
+
     int nknot_max = 0;
+    // These are actually NonLocalECPComponents
     for (int i = 0; i < nonLocalPot.size(); i++)
     {
       if (nonLocalPot[i])
       {
         nknot_max = std::max(nknot_max, nonLocalPot[i]->getNknot());
         if (NLPP_algo == "batched")
-        {
-          if( !targetPtcl.isSpinor())
-            nonLocalPot[i]->initVirtualParticle(targetPtcl);
-          else
-            throw std::runtime_error("Batched NLPP evaluation not validated with spinors.  Use algorithm=\"non-batched\" in pseudopotential block."); 
-        } 
+          nonLocalPot[i]->initVirtualParticle(targetPtcl);
         apot->addComponent(i, std::move(nonLocalPot[i]));
       }
     }
@@ -179,12 +176,16 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       {
         nknot_max = std::max(nknot_max, soPot[i]->getNknot());
         sknot_max = std::max(sknot_max, soPot[i]->getSknot());
+        if (NLPP_algo == "batched")
+          soPot[i]->initVirtualParticle(targetPtcl);
         apot->addComponent(i, std::move(soPot[i]));
       }
     }
     app_log() << "\n  Using SOECP potential \n"
               << "    Maximum grid on a sphere for SOECPotential: " << nknot_max << std::endl;
     app_log() << "    Maximum grid for Simpson's rule for spin integral: " << sknot_max << std::endl;
+    if (NLPP_algo == "batched")
+      app_log() << "    Using batched ratio computing in SOECP potential" << std::endl;
 
     if (physicalSO == "yes")
       targetH.addOperator(std::move(apot), "SOECP"); //default is physical operator
@@ -216,8 +217,9 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       std::string href("none");
       std::string ionName("none");
       std::string format("xml");
-      int nrule = -1;
+      int nrule  = -1;
       int llocal = -1;
+      bool disable_randomize_grid;
       //RealType rc(2.0);//use 2 Bohr
       OhmmsAttributeSet hAttrib;
       hAttrib.add(href, "href");
@@ -226,6 +228,7 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.add(format, "format");
       hAttrib.add(nrule, "nrule");
       hAttrib.add(llocal, "l-local");
+      hAttrib.add(disable_randomize_grid, "disable_randomize_grid", {false, true});
       //hAttrib.add(rc,"cutoff");
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
@@ -268,6 +271,10 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           if (ecp.pp_nonloc)
           {
+            if (disable_randomize_grid)
+              app_warning() << "NLPP grid randomization is turned off. This setting should only be used for testing."
+                            << std::endl;
+            ecp.pp_nonloc->set_randomize_grid(!disable_randomize_grid);
             hasNonLocalPot            = true;
             nonLocalPot[speciesIndex] = std::move(ecp.pp_nonloc);
           }

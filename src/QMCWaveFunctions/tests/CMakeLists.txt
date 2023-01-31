@@ -24,6 +24,7 @@ set(UTEST_HDF_INPUT7 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.orbs.h
 set(UTEST_HDF_INPUT8 ${qmcpack_SOURCE_DIR}/tests/molecules/LiH_ae_MSD/LiH.Multidet.h5)
 set(UTEST_HDF_INPUT9 ${qmcpack_SOURCE_DIR}/tests/converter/test_Bi_dirac/gold.orbs.h5)
 set(UTEST_HDF_INPUT10 ${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/lcao_spinor_molecule.h5)
+set(UTEST_HDF_INPUT11 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
 
 maybe_symlink(${UTEST_HDF_INPUT0} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT1} ${UTEST_DIR}/diamondC_2x1x1.pwscf.h5)
@@ -36,6 +37,25 @@ maybe_symlink(${UTEST_HDF_INPUT7} ${UTEST_DIR}/LiH.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT8} ${UTEST_DIR}/LiH.Multidet.h5)
 maybe_symlink(${UTEST_HDF_INPUT9} ${UTEST_DIR}/Bi.orbs.h5)
 maybe_symlink(${UTEST_HDF_INPUT10} ${UTEST_DIR}/lcao_spinor_molecule.h5)
+maybe_symlink(${UTEST_HDF_INPUT11} ${UTEST_DIR}/hcpBe.pwscf.h5)
+
+if(NOT QMC_DATA)
+  message(VERBOSE "QMC_DATA not set. NiO_a16 based tests not added.")
+elseif(NOT EXISTS ${QMC_DATA}/NiO)
+  message("NiO directory under QMC_DATA does not exist. NiO_a16 based tests not added.")
+else()
+
+  set(H5_FILE NiO-fcc-supertwist111-supershift000-S4.h5)
+  set(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
+
+  if(EXISTS ${H5_FULL_PATH})
+    #symlink h5 file
+    maybe_symlink(${H5_FULL_PATH} ${UTEST_DIR}/${H5_FILE})
+    set(NiO_a16_H5_FOUND TRUE)
+  else()
+    message(VERBOSE "NiO_a16 based tests not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
+  endif()
+endif()
 
 set(FILES_TO_COPY
     he_sto3g.wfj.xml
@@ -78,6 +98,7 @@ set(TRIALWF_SRC
     test_example_he.cpp
     test_lattice_gaussian.cpp
     test_TWFGrads.cpp)
+
 set(SPOSET_SRC
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
@@ -88,6 +109,10 @@ set(SPOSET_SRC
     test_hybridrep.cpp
     test_pw.cpp
     ${MO_SRCS})
+if(NiO_a16_H5_FOUND)
+  set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
+endif()
+
 set(JASTROW_SRC
     test_counting_jastrow.cpp
     test_polynomial_eeI_jastrow.cpp
@@ -100,7 +125,9 @@ set(JASTROW_SRC
     test_J1OrbitalSoA.cpp
     test_J1Spin.cpp
     test_J2_bspline.cpp
-    test_J2_derivatives.cpp)
+    test_J2_derivatives.cpp
+    test_2d_jastrow.cpp)
+
 set(DETERMINANT_SRC
     FakeSPO.cpp
     test_DiracDeterminant.cpp

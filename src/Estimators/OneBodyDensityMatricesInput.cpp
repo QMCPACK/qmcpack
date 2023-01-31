@@ -20,7 +20,7 @@ OneBodyDensityMatricesInput::OneBodyDensityMatricesInput(xmlNodePtr cur)
 {
   // This results in checkParticularValidity being called on OneBodyDensityMatrixInputSection
   input_section_.readXML(cur);
-  auto setIfInInput = [&](auto& var, const std::string& tag) -> bool { return input_section_.setIfInInput(var, tag); };
+  auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(energy_matrix_, "energy_matrix");
   setIfInInput(use_drift_, "use_drift");
   setIfInInput(normalized_, "normalized");

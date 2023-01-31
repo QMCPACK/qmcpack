@@ -1481,7 +1481,7 @@ class VaspInput(SimulationInput,Vobj):
     #end def write
 
 
-    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian'):
+    def incorporate_system(self,system,incorp_kpoints=True,coord='cartesian',set_nelect=True):
         structure = system.structure
 
         # assign kpoints
@@ -1521,8 +1521,10 @@ class VaspInput(SimulationInput,Vobj):
         #end if
 
         # handle charged systems
-        #  warning: spin polarization is handled by the user!
-        self.incar.nelect = system.particles.count_electrons()
+        if set_nelect or system.net_charge!=0:
+            #  warning: spin polarization is handled by the user!
+            self.incar.nelect = system.particles.count_electrons()
+        #end if
 
         return species
     #end def incorporate_system
@@ -1610,7 +1612,7 @@ class VaspInput(SimulationInput,Vobj):
         else:
             pseudo_map = obj()
             for ppname in pseudos:
-                element = ppname[0:2].strip('.')
+                element = ppname[0:2].strip('._')
                 pseudo_map[element] = ppname
             #end for
             ordered_pseudos = []
@@ -1745,16 +1747,13 @@ generate_any_defaults = obj(
     pseudos    = None,
     neb        = None,
     neb_args   = obj(),
-    coord      = 'cartesian'
+    coord      = 'cartesian',
+    set_nelect = True,
     )
 
 def generate_any_vasp_input(**kwargs):
     # handle 'system' name collision
-    system_str = None
-    if 'title' in kwargs:
-        system_str = kwargs['title']
-        del kwargs['title']
-    #end if
+    system_str = kwargs.pop('title',None)
 
     # remove keywords associated with kpoints, poscar, and any other formatted files
     vf = obj()
@@ -1792,7 +1791,12 @@ def generate_any_vasp_input(**kwargs):
     # incorporate system information
     species = None
     if vf.system is not None:
-        species = vi.incorporate_system(vf.system,gen_kpoints,vf.coord)
+        species = vi.incorporate_system(
+            system         = vf.system,
+            incorp_kpoints = gen_kpoints,
+            coord          = vf.coord,
+            set_nelect     = vf.set_nelect,
+            )
     #end if
 
     # set potcar

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2020 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Raymond Clay, rclay@sandia.gov, Sandia National Laboratory
 //                    Cody A. Melton, cmelton@sandia.gov, Sandia National Laboratories
@@ -14,6 +14,7 @@
 #ifndef QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_SO_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
@@ -38,37 +39,45 @@ private:
   using RadialPotentialType = OneDimCubicSpline<RealType>;
 
   ///Non Local part: angular momentum, potential and grid
-  int lmax;
+  int lmax_;
   ///the number of non-local channels
-  int nchannel;
-  int nknot;
-  int sknot;
+  int nchannel_;
+  int nknot_;
+  int sknot_;
+  int total_knots_; //spin + spatial knots
   ///Maximum cutoff the non-local pseudopotential
-  RealType Rmax;
+  RealType Rmax_;
   ///Angular momentum map
-  aligned_vector<int> angpp_m;
+  aligned_vector<int> angpp_m_;
   ///Non-Local part of the pseudo-potential
-  std::vector<RadialPotentialType*> sopp_m;
+  std::vector<RadialPotentialType*> sopp_m_;
 
   ComplexType sMatrixElements(RealType s1, RealType s2, int dim);
   ComplexType lmMatrixElements(int l, int m1, int m2, int dim);
   int kroneckerDelta(int x, int y);
 
-  ComplexType getAngularIntegral(RealType sold,
-                                 RealType snew,
-                                 ParticleSet& W,
-                                 TrialWaveFunction& Psi,
-                                 int iel,
-                                 RealType r,
-                                 const PosType& dr);
+  std::vector<PosType> deltaV_;
+  std::vector<RealType> deltaS_;
+  SpherGridType sgridxyz_m_;
+  SpherGridType rrotsgrid_m_;
+  std::vector<ValueType> psiratio_;
+  std::vector<ValueType> vrad_;
+  std::vector<RealType> sgridweight_m_;
+  //total spin and quadrature weights
+  std::vector<RealType> spin_quad_weights_;
+  //work array
+  std::vector<ValueType> wvec_;
+  //scratch spaces used by evaluateValueAndDerivative
+  Matrix<ValueType> dratio_;
+  Vector<ValueType> dlogpsi_vp_;
+  VirtualParticleSet* VP_;
 
-  std::vector<PosType> deltaV;
-  SpherGridType sgridxyz_m;
-  SpherGridType rrotsgrid_m;
-  std::vector<ValueType> psiratio;
-  std::vector<ValueType> vrad;
-  std::vector<RealType> sgridweight_m;
-
+  //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as 
+  //the spatial quadrature. In this function, it specifies the deltaS_ and deltaV_ for all the quadrature points and sets the interal weights
+  //in spin_quad_weights
+  //If there are s0,s1,...sN spin integral points and q0,q1,...qM spatial quadrature points, the order is
+  // s0q0, s0q1, ..., s0qM, s1q0, ..., sNq0, ..., sNqM for each of the deltaS_, deltaV_, and spin_quad_weights_
+  void buildTotalQuadrature(const RealType r, const PosType& dr, const RealType sold);
 
 public:
   SOECPComponent();
@@ -81,9 +90,7 @@ public:
 
   void resize_warrays(int n, int m, int s);
 
-  void randomize_grid(RandomGenerator& myRNG);
-  template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
+  void rotateQuadratureGrid(const TensorType& rmat);
 
   ///API for accessing the value of an SO radial potential at distance r.  For unit and other testing.
   friend RealType getSplinedSOPot(SOECPComponent* so_pp, int l, double r);
@@ -101,29 +108,27 @@ public:
    */
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
-  // This function needs to be updated to SoA. myTableIndex is introduced temporarily.
-  inline RealType evaluateValueAndDerivatives(ParticleSet& P,
-                                              int iat,
-                                              TrialWaveFunction& psi,
-                                              const opt_variables_type& optvars,
-                                              const std::vector<RealType>& dlogpsi,
-                                              std::vector<RealType>& dhpsioverpsi,
-                                              const int myTableIndex)
-  {
-    APP_ABORT("evaluateValueAndDerivatives not implemented yet\n");
-    return 0.0;
-  };
+  RealType evaluateValueAndDerivatives(ParticleSet& P,
+                                       int iat,
+                                       TrialWaveFunction& psi,
+                                       int iel,
+                                       RealType r,
+                                       const PosType& dr,
+                                       const opt_variables_type& optvars,
+                                       const Vector<ValueType>& dlogpsi,
+                                       Vector<ValueType>& dhpsioverpsi);
 
   void print(std::ostream& os);
 
-  //void initVirtualParticle(const ParticleSet& qp){};
+  void initVirtualParticle(const ParticleSet& qp);
+  void deleteVirtualParticle();
 
-  inline void setRmax(int rmax) { Rmax = rmax; }
-  inline RealType getRmax() const { return Rmax; }
-  inline void setLmax(int Lmax) { lmax = Lmax; }
-  inline int getLmax() const { return lmax; }
-  inline int getNknot() const { return nknot; }
-  inline int getSknot() const { return sknot; }
+  inline void setRmax(RealType rmax) { Rmax_ = rmax; }
+  inline RealType getRmax() const { return Rmax_; }
+  inline void setLmax(int Lmax) { lmax_ = Lmax; }
+  inline int getLmax() const { return lmax_; }
+  inline int getNknot() const { return nknot_; }
+  inline int getSknot() const { return sknot_; }
 
   friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);

@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-QMCAppBase::QMCAppBase() {}
+QMCAppBase::QMCAppBase() = default;
 
 QMCAppBase::~QMCAppBase()
 {

@@ -17,6 +17,7 @@
 #include "NonLocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/NLPP.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCDrivers/WalkerProperties.h"
 
@@ -48,7 +49,6 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA(ParticleSet& ions,
   setupCUDA(els);
 }
 
-
 std::unique_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   std::unique_ptr<NonLocalECPotential_CUDA> myclone =
@@ -57,7 +57,7 @@ std::unique_ptr<OperatorBase> NonLocalECPotential_CUDA::makeClone(ParticleSet& q
   {
     if (PPset[ig])
     {
-      myclone->addComponent(ig, std::unique_ptr<NonLocalECPComponent>(PPset[ig]->makeClone(qp)));
+      myclone->addComponent(ig, std::make_unique<NonLocalECPComponent>(*PPset[ig], qp));
     }
   }
   return myclone;
@@ -166,7 +166,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W, std::vector<R
     if (PPset[sp])
     {
       NonLocalECPComponent& pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
+      PPset[sp]->rotateQuadratureGrid(QuadPoints_host[sp], generateRandomRotationMatrix(*myRNG));
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
@@ -351,7 +351,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration& W,
     if (PPset[sp])
     {
       NonLocalECPComponent& pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
+      PPset[sp]->rotateQuadratureGrid(QuadPoints_host[sp], generateRandomRotationMatrix(*myRNG));
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)

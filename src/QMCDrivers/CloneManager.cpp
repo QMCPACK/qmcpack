@@ -80,7 +80,6 @@ CloneManager::CloneManager() : NumThreads(omp_get_max_threads()) { wPerRank.resi
 ///cleanup non-static data members
 CloneManager::~CloneManager()
 {
-  // delete_iter(CSMovers.begin(),CSMovers.end());
   delete_iter(Movers.begin(), Movers.end());
   delete_iter(estimatorClones.begin(), estimatorClones.end());
 

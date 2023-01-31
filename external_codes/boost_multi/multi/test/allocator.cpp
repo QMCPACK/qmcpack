@@ -1,11 +1,10 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// © Alfredo A. Correa 2019-2021
+// Copyright 2019-2022 Alfredo A. Correa
 
 #define BOOST_TEST_MODULE "C++ Unit Tests for Multi allocators"
-#define BOOST_TEST_DYN_LINK
 #include<boost/test/unit_test.hpp>
 
-#include "../array.hpp"
+#include "multi/array.hpp"
 
 //#include "../../multi/memory/stack.hpp" //TODO(correaa) test custom allocator
 
@@ -18,7 +17,7 @@ BOOST_AUTO_TEST_CASE(std_vector_of_arrays) {
 	std::transform(
 		begin(multi::iextension(3)), end(multi::iextension(3)),
 		std::back_inserter(va),
-		[](auto i){return multi::array<double, 2>({i, i}, static_cast<double>(i));}
+		[](auto idx){return multi::array<double, 2>({idx, idx}, static_cast<double>(idx));}
 	);
 
 	BOOST_REQUIRE( size(va[0]) == 0 );
@@ -36,28 +35,28 @@ BOOST_AUTO_TEST_CASE(std_vector_of_arrays) {
 	BOOST_REQUIRE( va == wa );
 
 	std::vector<multi::array<double, 2>> ua(3);
-	auto x = multi::iextension(static_cast<multi::size_type>(ua.size()));
+	auto iex = multi::iextension(static_cast<multi::size_type>(ua.size()));
 	std::transform(
-		begin(x), end(x),
+		begin(iex), end(iex),
 		begin(ua),
-		[](auto i){return multi::array<double, 2>({i, i}, static_cast<double>(i));}
+		[](auto idx){return multi::array<double, 2>({idx, idx}, static_cast<double>(idx));}
 	);
 	BOOST_REQUIRE( ua == va );
 }
 
 BOOST_AUTO_TEST_CASE(array1d_of_arrays2d) {
-	multi::array<multi::array<double, 2>, 1> A(multi::extensions_t<1>{multi::iextension{10}}, multi::array<double, 2>{});
-	BOOST_REQUIRE( size(A) == 10 );
+	multi::array<multi::array<double, 2>, 1> arr(multi::extensions_t<1>{multi::iextension{10}}, multi::array<double, 2>{});
+	BOOST_REQUIRE( size(arr) == 10 );
 
 	std::transform(
-		begin(extension(A)), end(extension(A)), begin(A),
-		[](auto i){return multi::array<double, 2>({i, i}, static_cast<double>(i));}
+		begin(extension(arr)), end(extension(arr)), begin(arr),
+		[](auto idx) {return multi::array<double, 2>({idx, idx}, static_cast<double>(idx));}
 	);
 
-	BOOST_REQUIRE( size(A[0]) == 0 );
-	BOOST_REQUIRE( size(A[1]) == 1 );
-	BOOST_REQUIRE( size(A[8]) == 8 );
-	BOOST_REQUIRE( A[8][4][4] == 8 );
+	BOOST_REQUIRE( size(arr[0]) == 0 );
+	BOOST_REQUIRE( size(arr[1]) == 1 );
+	BOOST_REQUIRE( size(arr[8]) == 8 );
+	BOOST_REQUIRE( arr[8][4][4] == 8 );
 }
 
 BOOST_AUTO_TEST_CASE(array_3d_of_array_2d)  {
@@ -72,32 +71,31 @@ BOOST_AUTO_TEST_CASE(array_3d_of_array_2d)  {
 }
 
 BOOST_AUTO_TEST_CASE(array_3d_with_hint_int) {
-	multi::array<double, 2> const A({3, 4});
-	multi::array<int, 3> B({3, 4, 5}, A.cbase());
+	multi::array<double, 2> const arr({3, 4});
+	multi::array<int, 3> arr_hint({3, 4, 5}, arr.cbase());
 
-	B[1][2][3] = 4;
-	BOOST_REQUIRE( size(B) == 3 );
-	BOOST_REQUIRE( B[1][2][3] == 4 );
+	arr_hint[1][2][3] = 4;
+	BOOST_REQUIRE( size(arr_hint) == 3 );
+	BOOST_REQUIRE( arr_hint[1][2][3] == 4 );
 
-	multi::array<int, 3> C({3, 4, 5}, 0);
-	BOOST_REQUIRE( size(C) == 3 );
+	multi::array<int, 3> arr2({3, 4, 5}, 0);
+	BOOST_REQUIRE( size(arr2) == 3 );
 
-	multi::array<int, 3> D({3, 4, 5}, 99);
-	BOOST_REQUIRE( size(D) == 3 );
+	multi::array<int, 3> arr3({3, 4, 5}, 99);
+	BOOST_REQUIRE( size(arr3) == 3 );
 }
 
 BOOST_AUTO_TEST_CASE(array_3d_with_hint_size_t) {
-	multi::array<double, 2> const A({3, 4});
-	multi::array<size_t, 3> B({3, 4, 5}, A.cbase());
+	multi::array<double, 2> const arr({3, 4});
+	multi::array<size_t, 3> arr_hint({3, 4, 5}, arr.cbase());
 
-	B[1][2][3] = 4;
-	BOOST_REQUIRE( size(B) == 3 );
-	BOOST_REQUIRE( B[1][2][3] == 4 );
+	arr_hint[1][2][3] = 4;
+	BOOST_REQUIRE( size(arr_hint) == 3 );
+	BOOST_REQUIRE( arr_hint[1][2][3] == 4 );
 
-	multi::array<size_t, 3> C({3, 4, 5}, 0UL);
-	BOOST_REQUIRE( size(C) == 3 );
+	multi::array<size_t, 3> arr3({3, 4, 5}, 0UL);
+	BOOST_REQUIRE( size(arr3) == 3 );
 
-	multi::array<size_t, 3> D({3, 4, 5}, 99);
-	BOOST_REQUIRE( size(D) == 3 );
+	multi::array<size_t, 3> arr4({3, 4, 5}, 99);
+	BOOST_REQUIRE( size(arr4) == 3 );
 }
-

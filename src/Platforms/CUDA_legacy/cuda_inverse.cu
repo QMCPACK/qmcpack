@@ -45,7 +45,7 @@
 #include <cuComplex.h>
 #else
 #include <hip/hip_runtime.h>
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 #include <hip/hip_complex.h>
 #include "Platforms/ROCm/cuda2hip.h"
 #include "Platforms/ROCm/hipBLAS.hpp"

@@ -187,23 +187,17 @@ void SpinDensity::addObservables(PropertySetType& plist, BufferType& collectable
 }
 
 
-void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void SpinDensity::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
-  hid_t sgid = H5Gcreate2(gid, name_.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-  //vector<int> ng(DIM);
-  //for(int d=0;d<DIM;++d)
-  //  ng[d] = grid[d];
-
   std::vector<int> ng(1);
   ng[0] = npoints;
 
+  hdf_path hdf_name{name_};
   for (int s = 0; s < nspecies; ++s)
   {
-    h5desc.emplace_back(species_name[s]);
+    h5desc.emplace_back(hdf_name / species_name[s]);
     auto& oh = h5desc.back();
     oh.set_dimensions(ng, my_index_ + s * npoints);
-    oh.open(sgid);
   }
 }
 

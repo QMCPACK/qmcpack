@@ -18,6 +18,7 @@
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "PerParticleHamiltonianLogger.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
@@ -28,7 +29,6 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "Utilities/IteratorUtility.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "hdf/hdf_archive.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
@@ -99,7 +99,8 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
           createEstimator<MomentumDistributionInput>(est_input, pset.getTotalNum(), pset.getTwist(),
                                                      pset.getLattice()) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
-                                                       twf.getSPOMap(), pset)))
+                                                       twf.getSPOMap(), pset) ||
+          createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");
 
@@ -210,9 +211,9 @@ void EstimatorManagerNew::startDriverRun()
 #endif
   if (my_comm_->rank() == 0)
   {
-    std::string fname(my_comm_->getName());
-    fname.append(".scalar.dat");
-    Archive = std::make_unique<std::ofstream>(fname.c_str());
+    std::filesystem::path fname(my_comm_->getName());
+    fname.concat(".scalar.dat");
+    Archive = std::make_unique<std::ofstream>(fname);
     addHeader(*Archive);
     if (h5desc.size())
     {
@@ -221,11 +222,11 @@ void EstimatorManagerNew::startDriverRun()
     fname  = my_comm_->getName() + ".stat.h5";
     h_file = std::make_unique<hdf_archive>();
     h_file->create(fname);
-    main_estimator_->registerObservables(h5desc, h_file->getFileID());
+    main_estimator_->registerObservables(h5desc, *h_file);
     for (int i = 0; i < scalar_ests_.size(); i++)
-      scalar_ests_[i]->registerObservables(h5desc, h_file->getFileID());
+      scalar_ests_[i]->registerObservables(h5desc, *h_file);
     for (auto& uope : operator_ests_)
-      uope->registerOperatorEstimator(h_file->getFileID());
+      uope->registerOperatorEstimator(*h_file);
   }
 }
 
@@ -346,8 +347,8 @@ void EstimatorManagerNew::writeScalarH5()
   {
     for (int o = 0; o < h5desc.size(); ++o)
       // cheating here, remove SquaredAverageCache from API
-      h5desc[o].write(AverageCache.data(), AverageCache.data());
-    H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+      h5desc[o].write(AverageCache.data(), *h_file);
+    h_file->flush();
   }
 
   if (Archive)
@@ -412,8 +413,8 @@ void EstimatorManagerNew::writeOperatorEstimators()
     if (h_file)
     {
       for (auto& op_est : operator_ests_)
-        op_est->write();
-      H5Fflush(h_file->getFileID(), H5F_SCOPE_LOCAL);
+        op_est->write(*h_file);
+      h_file->flush();
     }
   }
 }

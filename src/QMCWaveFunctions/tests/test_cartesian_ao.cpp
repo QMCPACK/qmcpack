@@ -87,7 +87,7 @@ void test_cartesian_ao()
     sposet->evaluateValue(elec, 0, values);
 
     //generated from ao_order_test.py
-    REQUIRE(values[0] == Approx(0.48224527310155046).epsilon(1E-6));
+    CHECK(values[0] == Approx(0.48224527310155046).epsilon(1E-6));
   }
 }
 
@@ -157,7 +157,7 @@ void test_dirac_ao()
     sposet->evaluateValue(elec, 0, values);
 
     //from ao_order_test.py
-    REQUIRE(values[0] == Approx(0.35953790416302006).epsilon(1E-6));
+    CHECK(values[0] == Approx(0.35953790416302006).epsilon(1E-6));
   }
 }
 

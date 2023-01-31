@@ -55,21 +55,20 @@ TraceRequest& OperatorBase::getRequest() noexcept { return request_; }
 ////////  FUNCTIONS ////////////////
 void OperatorBase::addObservables(PropertySetType& plist, BufferType& collectables) { addValue(plist); }
 
-void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hid_t gid) const
+void OperatorBase::registerObservables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const
 {
   const bool collect = update_mode_.test(COLLECTABLE);
   //exclude collectables
   if (!collect)
   {
-    h5desc.emplace_back(name_);
+    h5desc.emplace_back(hdf_path{name_});
     auto& oh = h5desc.back();
     std::vector<int> onedim(1, 1);
     oh.set_dimensions(onedim, my_index_);
-    oh.open(gid);
   }
 }
 
-void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hid_t gid) const {}
+void OperatorBase::registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const {}
 
 void OperatorBase::setObservables(PropertySetType& plist) { plist[my_index_] = value_; }
 

@@ -17,6 +17,7 @@
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_COMPONENT_H
 #include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/RandomRotationMatrix.h"
 #include <ResourceCollection.h>
 #include <TrialWaveFunction.h>
 #include "Numerics/OneDimGridBase.h"
@@ -27,6 +28,11 @@
 
 namespace qmcplusplus
 {
+namespace testing
+{
+class TestNonLocalECPotential;
+}
+
 /** Contains a set of radial grid potentials around a center.
 */
 class NonLocalECPComponent : public QMCTraits
@@ -115,13 +121,16 @@ private:
    */
   RealType calculateProjector(RealType r, const PosType& dr);
 
+  /// Can disable grid randomization for testing
+  bool do_randomize_grid_;
+
 public:
   NonLocalECPComponent();
 
-  ///destructor
-  ~NonLocalECPComponent();
+  /// Make a copy but have it associated with pset instead of nl_ecpc's pset
+  NonLocalECPComponent(const NonLocalECPComponent& nl_ecpc, const ParticleSet& pset);
 
-  NonLocalECPComponent* makeClone(const ParticleSet& qp);
+  ~NonLocalECPComponent();
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -133,11 +142,13 @@ public:
     sgridweight_m.push_back(weight);
   }
 
+  void set_randomize_grid(bool do_randomize_grid_);
+
   void resize_warrays(int n, int m, int l);
 
-  void randomize_grid(RandomGenerator& myRNG);
+  void rotateQuadratureGrid(const TensorType& rmat);
   template<typename T>
-  void randomize_grid(std::vector<T>& sphere, RandomGenerator& myRNG);
+  void rotateQuadratureGrid(std::vector<T>& sphere, const TensorType& rmat);
 
   /** contribute local non-local move data
    * @param iel reference electron id.
@@ -308,7 +319,11 @@ public:
   friend struct ECPComponentBuilder;
   // a lazy temporal solution
   friend class NonLocalECPotential_CUDA;
-}; //end of RadialPotentialSet
+
+  // for testing
+  friend class testing::TestNonLocalECPotential;
+};
+
 
 } // namespace qmcplusplus
 #endif

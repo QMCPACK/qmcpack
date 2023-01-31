@@ -66,8 +66,7 @@ QMCMain::QMCMain(Communicate* c)
       traces_xml(NULL)
 #endif
 {
-  Communicate node_comm;
-  node_comm.initializeAsNodeComm(*OHMMS::Controller);
+  Communicate node_comm{OHMMS::Controller->NodeComm()};
   // assign accelerators within a node
   DeviceManager::initializeGlobalDeviceManager(node_comm.rank(), node_comm.size());
 
@@ -149,6 +148,12 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
 #endif // GPU case end
+
+#ifdef QMC_COMPLEX
+  app_summary() << "  Complex build. QMC_COMPLEX=ON" << std::endl;
+#else
+  app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
+#endif
 
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "
@@ -486,7 +491,7 @@ bool QMCMain::validateXML()
           myComm->barrier_and_abort("Invalid XML document");
       }
       else
-        myComm->barrier_and_abort("tag \"include\" must include an \"href\" attribute.");
+        myComm->barrier_and_abort(R"(tag "include" must include an "href" attribute.)");
     }
     else if (cname == "qmcsystem")
     {

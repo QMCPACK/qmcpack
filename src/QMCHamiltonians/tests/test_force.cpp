@@ -84,14 +84,14 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   force.evaluate(elec);
 
   //std::cout << " Force = " << force.forces << std::endl;
-  REQUIRE(force.forces[0][0] == Approx(3.2));
-  REQUIRE(force.forces[0][1] == Approx(3.4));
-  REQUIRE(force.forces[0][2] == Approx(0.0));
+  CHECK(force.forces[0][0] == Approx(3.2));
+  CHECK(force.forces[0][1] == Approx(3.4));
+  CHECK(force.forces[0][2] == Approx(0.0));
 }
 
 void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
 {
-  REQUIRE(force2.Rcut == Approx(force.Rcut));
+  CHECK(force2.Rcut == Approx(force.Rcut));
   REQUIRE(force2.m_exp == force.m_exp);
   REQUIRE(force2.N_basis == force.N_basis);
   REQUIRE(force2.addionion == force.addionion);
@@ -103,20 +103,20 @@ void check_force_copy(ForceChiesaPBCAA& force, ForceChiesaPBCAA& force2)
     for (int j = 0; j < force2.Sinv.cols(); j++)
     {
       //std::cout << "Sinv " << i << "  " << j << " " << force2.Sinv(i,j) << " "  << force.Sinv(i,j) << std::endl;
-      REQUIRE(force2.Sinv(i, j) == Approx(force.Sinv(i, j)));
+      CHECK(force2.Sinv(i, j) == Approx(force.Sinv(i, j)));
     }
   }
 
   REQUIRE(force2.h.size() == force.h.size());
   for (int i = 0; i < force2.h.size(); i++)
   {
-    REQUIRE(force2.h[i] == Approx(force.h[i]));
+    CHECK(force2.h[i] == Approx(force.h[i]));
   }
 
   REQUIRE(force2.c.size() == force.c.size());
   for (int i = 0; i < force2.h.size(); i++)
   {
-    REQUIRE(force2.c[i] == Approx(force.c[i]));
+    CHECK(force2.c[i] == Approx(force.c[i]));
   }
 
   REQUIRE(force2.getDistanceTableAAID() == force.getDistanceTableAAID());
@@ -196,28 +196,28 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   std::cout << " Forces_IonIon = " << force.forces_IonIon << std::endl;
 
   // Unvalidated externally
-  REQUIRE(force.forces[0][0] == Approx(3.186559306));
-  REQUIRE(force.forces[0][1] == Approx(3.352572459));
-  REQUIRE(force.forces[0][2] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[0][0] == Approx(-0.1478626893));
-  REQUIRE(force.forces_IonIon[0][1] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[0][2] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[1][0] == Approx(0.1478626893));
-  REQUIRE(force.forces_IonIon[1][1] == Approx(0.0));
-  REQUIRE(force.forces_IonIon[1][2] == Approx(0.0));
+  CHECK(force.forces[0][0] == Approx(3.186559306));
+  CHECK(force.forces[0][1] == Approx(3.352572459));
+  CHECK(force.forces[0][2] == Approx(0.0));
+  CHECK(force.forces_IonIon[0][0] == Approx(-0.1478626893));
+  CHECK(force.forces_IonIon[0][1] == Approx(0.0));
+  CHECK(force.forces_IonIon[0][2] == Approx(0.0));
+  CHECK(force.forces_IonIon[1][0] == Approx(0.1478626893));
+  CHECK(force.forces_IonIon[1][1] == Approx(0.0));
+  CHECK(force.forces_IonIon[1][2] == Approx(0.0));
 
   // Let's test CoulombPBCAA and CoulombPBCAB forces, too; Unvalidated externally
   CoulombPBCAA ionForce(ions, false, true, false);
-  REQUIRE(ionForce.forces[0][0] == Approx(-0.1478626893));
-  REQUIRE(ionForce.forces[1][0] == Approx(0.1478626893));
+  CHECK(ionForce.forces[0][0] == Approx(-0.1478626893));
+  CHECK(ionForce.forces[1][0] == Approx(0.1478626893));
 
   CoulombPBCAB elecIonForce(ions, elec, true);
   elecIonForce.evaluate(elec); // Not computed upon construction
   std::cout << " CoulombElecIon = " << elecIonForce.forces << std::endl;
-  REQUIRE(elecIonForce.forces[0][0] == Approx(3.186558296));
-  REQUIRE(elecIonForce.forces[0][1] == Approx(3.352572459));
-  REQUIRE(elecIonForce.forces[1][0] == Approx(-0.3950094326));
-  REQUIRE(elecIonForce.forces[1][1] == Approx(0.142639218));
+  CHECK(elecIonForce.forces[0][0] == Approx(3.186558296));
+  CHECK(elecIonForce.forces[0][1] == Approx(3.352572459));
+  CHECK(elecIonForce.forces[1][0] == Approx(-0.3950094326));
+  CHECK(elecIonForce.forces[1][1] == Approx(0.142639218));
 
   // The following crafty test is supposed to crash if some checks are out of place
   // This imitates an actual simulation, where Nelec ~= Nnuc that would also crash
@@ -312,7 +312,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   double coeff[4] = {4375, -44296.9, 147656, -161133};
   for (int i = 0; i < 4; i++)
   {
-    REQUIRE(force.c[i] == Approx(coeff[i]));
+    CHECK(force.c[i] == Approx(coeff[i]));
   }
 
   ions.update();
@@ -322,12 +322,12 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   force.evaluate(elec);
   std::cout << " Force ionion = " << force.forces_IonIon << std::endl;
   std::cout << " Force = " << force.forces << std::endl;
-  REQUIRE(force.forces[0][0] == Approx(8.99061106).epsilon(1e-4));
-  REQUIRE(force.forces[0][1] == Approx(14.86091659).epsilon(1e-4));
-  REQUIRE(force.forces[0][2] == Approx(0.0));
-  REQUIRE(force.forces[1][0] == Approx(-0.2250998297).epsilon(1e-4));
-  REQUIRE(force.forces[1][1] == Approx(0.1388117844).epsilon(1e-4));
-  REQUIRE(force.forces[1][2] == Approx(0.0));
+  CHECK(force.forces[0][0] == Approx(8.99061106).epsilon(1e-4));
+  CHECK(force.forces[0][1] == Approx(14.86091659).epsilon(1e-4));
+  CHECK(force.forces[0][2] == Approx(0.0));
+  CHECK(force.forces[1][0] == Approx(-0.2250998297).epsilon(1e-4));
+  CHECK(force.forces[1][1] == Approx(0.1388117844).epsilon(1e-4));
+  CHECK(force.forces[1][2] == Approx(0.0));
 
   force.N_basis = 6;
   force.Rcut    = 0.8;
@@ -336,7 +336,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   double coeff2[6] = {3281.25, -33837.9, 135352, -261841, 245476, -89496.4};
   for (int i = 0; i < 6; i++)
   {
-    REQUIRE(force.c[i] == Approx(coeff2[i]));
+    CHECK(force.c[i] == Approx(coeff2[i]));
   }
 }
 
@@ -395,15 +395,15 @@ TEST_CASE("Ion-ion Force", "[hamiltonian]")
   double coeff2[3] = {0.00000000000, 0.70710678119, 0.0};
   for (int i = 0; i < 3; i++)
   {
-    REQUIRE(ionForce.forces[0][i] == Approx(coeff0[i]));
-    REQUIRE(ionForce.forces[1][i] == Approx(coeff1[i]));
-    REQUIRE(ionForce.forces[2][i] == Approx(coeff2[i]));
-    REQUIRE(elecIonForce.forces[0][i] == Approx(0.0));
-    REQUIRE(elecIonForce.forces[1][i] == Approx(0.0));
-    REQUIRE(elecIonForce.forces[2][i] == Approx(0.0));
-    REQUIRE(elecForce.forces[0][i] == Approx(0.0));
-    REQUIRE(elecForce.forces[1][i] == Approx(0.0));
-    REQUIRE(elecForce.forces[2][i] == Approx(0.0));
+    CHECK(ionForce.forces[0][i] == Approx(coeff0[i]));
+    CHECK(ionForce.forces[1][i] == Approx(coeff1[i]));
+    CHECK(ionForce.forces[2][i] == Approx(coeff2[i]));
+    CHECK(elecIonForce.forces[0][i] == Approx(0.0));
+    CHECK(elecIonForce.forces[1][i] == Approx(0.0));
+    CHECK(elecIonForce.forces[2][i] == Approx(0.0));
+    CHECK(elecForce.forces[0][i] == Approx(0.0));
+    CHECK(elecForce.forces[1][i] == Approx(0.0));
+    CHECK(elecForce.forces[2][i] == Approx(0.0));
   }
 }
 
@@ -457,31 +457,50 @@ TEST_CASE("AC Force", "[hamiltonian]")
   TrialWaveFunction psi;
   QMCHamiltonian qmcHamiltonian;
 
-  ACForce force(ions, elec, psi, qmcHamiltonian);
-
-  const std::string acforceXML = R"(<tmp> 
+  //This is redundant code, but necessary to avoid adding API's to
+  //modify internal state.  Avoid constructor+put() complexities for now.
+  //Revisit in future.  
+  //
+  //Old algorithm is the legacy force path, new is the fast force derivative path.
+  ACForce force_old(ions, elec, psi, qmcHamiltonian);
+  ACForce force_new(ions, elec, psi, qmcHamiltonian);
+  const std::string acforceXMLold = R"(<tmp> 
   <acforce spacewarp="no" swpow="2." delta="1.e-3">  
   </acforce> 
   </tmp> 
   )";
 
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(acforceXML);
-  REQUIRE(okay);
+  const std::string acforceXMLnew = R"(<tmp> 
+  <acforce spacewarp="no" swpow="2." delta="1.e-3" fast_derivatives="yes">  
+  </acforce> 
+  </tmp> 
+  )";
 
-  xmlNodePtr root = doc.getRoot();
-  xmlNodePtr h1   = xmlFirstElementChild(root);
+  Libxml2Document olddoc;
+  Libxml2Document newdoc;
+  bool oldokay = olddoc.parseFromString(acforceXMLold);
+  REQUIRE(oldokay);
+  bool newokay = newdoc.parseFromString(acforceXMLnew);
+  REQUIRE(newokay);
 
-  force.put(h1);
-  const auto v = force.evaluate(elec);
-  force.resetTargetParticleSet(elec); // does nothing?
+  xmlNodePtr oldroot = olddoc.getRoot();
+  xmlNodePtr oldh1   = xmlFirstElementChild(oldroot);
+  xmlNodePtr newroot = newdoc.getRoot();
+  xmlNodePtr newh1   = xmlFirstElementChild(newroot);
 
-  REQUIRE(v == Approx(0));
-  REQUIRE(force.get(std::cout) == true);
+  force_old.put(oldh1);
+  force_new.put(newh1);
+  const auto vold = force_old.evaluate(elec);
+  const auto vnew = force_new.evaluate(elec);
+  force_old.resetTargetParticleSet(elec); // does nothing?
 
-  force.add2Hamiltonian(elec, psi, qmcHamiltonian);
+  CHECK(vold == Approx(0));
+  CHECK(vnew == Approx(0));
+  REQUIRE(force_old.get(std::cout) == true);
 
-  auto clone = force.makeClone(elec, psi, qmcHamiltonian);
+  force_old.add2Hamiltonian(elec, psi, qmcHamiltonian);
+
+  auto clone = force_old.makeClone(elec, psi, qmcHamiltonian);
   REQUIRE(clone);
 }
 

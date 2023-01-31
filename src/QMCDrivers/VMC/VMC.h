@@ -25,7 +25,12 @@ class VMC : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm, bool enable_profiling);
+  VMC(const ProjectData& project_data_,
+      MCWalkerConfiguration& w,
+      TrialWaveFunction& psi,
+      QMCHamiltonian& h,
+      Communicate* comm,
+      bool enable_profiling);
   bool run() override;
   bool put(xmlNodePtr cur) override;
   QMCRunType getRunType() override { return QMCRunType::VMC; }

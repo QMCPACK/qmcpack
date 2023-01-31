@@ -97,28 +97,28 @@ TEST_CASE("SpaceWarp", "[hamiltonian]")
   SpaceWarpTransformation swt(elec, ions);
   swt.setPow(3.0);
 
-  REQUIRE(swt.f(2.0) == Approx(0.125));
-  REQUIRE(swt.df(2.0) == Approx(-0.1875));
+  CHECK(swt.f(2.0) == Approx(0.125));
+  CHECK(swt.df(2.0) == Approx(-0.1875));
 
   swt.setPow(4.0);
-  REQUIRE(swt.f(2.0) == Approx(0.0625));
-  REQUIRE(swt.df(2.0) == Approx(-0.125));
+  CHECK(swt.f(2.0) == Approx(0.0625));
+  CHECK(swt.df(2.0) == Approx(-0.125));
 
   swt.computeSWT(elec, ions, dE_L, elec.G, el_contribution, psi_contribution);
   app_log() << "EL_Contribution:  " << el_contribution << std::endl;
   app_log() << "PSi_Contribution: " << psi_contribution << std::endl;
-  REQUIRE(el_contribution[0][0] == Approx(-0.0326934696861));
-  REQUIRE(el_contribution[0][1] == Approx(-0.0826080664130));
-  REQUIRE(el_contribution[0][2] == Approx(0.0988243408507));
-  REQUIRE(el_contribution[1][0] == Approx(-0.0142002578379));
-  REQUIRE(el_contribution[1][1] == Approx(0.0583466121520));
-  REQUIRE(el_contribution[1][2] == Approx(-0.0613282484677));
+  CHECK(el_contribution[0][0] == Approx(-0.0326934696861));
+  CHECK(el_contribution[0][1] == Approx(-0.0826080664130));
+  CHECK(el_contribution[0][2] == Approx(0.0988243408507));
+  CHECK(el_contribution[1][0] == Approx(-0.0142002578379));
+  CHECK(el_contribution[1][1] == Approx(0.0583466121520));
+  CHECK(el_contribution[1][2] == Approx(-0.0613282484677));
 
-  REQUIRE(psi_contribution[0][0] == Approx(0.4051467191368));
-  REQUIRE(psi_contribution[0][1] == Approx(0.2757724717133));
-  REQUIRE(psi_contribution[0][2] == Approx(-0.3334287440127));
-  REQUIRE(psi_contribution[1][0] == Approx(-0.2829794189868));
-  REQUIRE(psi_contribution[1][1] == Approx(-0.3485464326533));
-  REQUIRE(psi_contribution[1][2] == Approx(0.3615981197327));
+  CHECK(psi_contribution[0][0] == Approx(0.4051467191368));
+  CHECK(psi_contribution[0][1] == Approx(0.2757724717133));
+  CHECK(psi_contribution[0][2] == Approx(-0.3334287440127));
+  CHECK(psi_contribution[1][0] == Approx(-0.2829794189868));
+  CHECK(psi_contribution[1][1] == Approx(-0.3485464326533));
+  CHECK(psi_contribution[1][2] == Approx(0.3615981197327));
 }
 } //namespace qmcplusplus

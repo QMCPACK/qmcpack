@@ -10,7 +10,7 @@ if(NOT QMC_CUDA)
     #   "eeenergy" "3.488827 0.000010") # e-e energy
     #   "samples" "80117760000 0.0") # samples
 
-    list(APPEND LIH_UHF_SHORT "kinetic" "7.991344 0.015") # kinetic energy
+    list(APPEND LIH_UHF_SHORT "kinetic" "7.991344 0.01") # kinetic energy
     list(APPEND LIH_UHF_SHORT "totenergy" "-7.9873125 0.00062") # total energy
     list(APPEND LIH_UHF_SHORT "eeenergy" "3.488827 0.00089") # e-e energy
     list(APPEND LIH_UHF_SHORT "samples" "9600000 0.0") # samples

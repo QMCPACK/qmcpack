@@ -38,7 +38,8 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
   value_ = 0.0;
   for (int ipp = 0; ipp < PPset.size(); ipp++)
     if (PPset[ipp])
-      PPset[ipp]->randomize_grid(*myRNG);
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+
   const auto& myTable = P.getDistTableAB(myTableIndex);
   for (int iat = 0; iat < NumIons; iat++)
     IonNeighborElecs.getNeighborList(iat).clear();
@@ -58,6 +59,29 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
         NeighborIons.push_back(iat);
         IonNeighborElecs.getNeighborList(iat).push_back(jel);
       }
+  }
+  return value_;
+}
+
+SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
+                                                                   const opt_variables_type& optvars,
+                                                                   const Vector<ValueType>& dlogpsi,
+                                                                   Vector<ValueType>& dhpsioverpsi)
+{
+  value_ = 0.0;
+  for (int ipp = 0; ipp < PPset.size(); ipp++)
+    if (PPset[ipp])
+      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+
+  const auto& myTable = P.getDistTableAB(myTableIndex);
+  for (int jel = 0; jel < P.getTotalNum(); jel++)
+  {
+    const auto& dist  = myTable.getDistRow(jel);
+    const auto& displ = myTable.getDisplRow(jel);
+    for (int iat = 0; iat < NumIons; iat++)
+      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+        value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                       dhpsioverpsi);
   }
   return value_;
 }
