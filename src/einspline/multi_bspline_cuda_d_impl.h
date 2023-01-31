@@ -397,9 +397,9 @@ eval_multi_multi_UBspline_3d_d_vgl_kernel
  double *vals[], double *grad_lapl[], uint3 dim, uint3 strides,
  int N, int row_stride, int spline_offset)
 {
-  int block = blockIdx.x;
+  int ir    = blockIdx.x;
   int thr   = threadIdx.x;
-  int ir    = blockIdx.y;
+  int block = blockIdx.y;
   int off   = block*SPLINE_BLOCK_SIZE+threadIdx.x;
   __shared__ double *myval, *mygrad_lapl;
   __shared__ double3 r;
@@ -546,9 +546,7 @@ eval_multi_multi_UBspline_3d_d_vgl_cuda
  double *vals_d[], double *grad_lapl_d[], int num, int row_stride)
 {
   dim3 dimBlock(SPLINE_BLOCK_SIZE);
-  dim3 dimGrid(spline->num_splines/SPLINE_BLOCK_SIZE, num);
-  if (spline->num_splines % SPLINE_BLOCK_SIZE)
-    dimGrid.x++;
+  dim3 dimGrid(num, (spline->num_splines + SPLINE_BLOCK_SIZE - 1) / SPLINE_BLOCK_SIZE);
   eval_multi_multi_UBspline_3d_d_vgl_kernel<<<dimGrid,dimBlock>>>
   (pos_d, spline->gridInv, spline->coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, spline->num_splines, row_stride, 0);
@@ -563,9 +561,7 @@ eval_multi_multi_UBspline_3d_d_vgl_cudasplit
 {
   int num_splines=spline->num_split_splines;
   dim3 dimBlock(SPLINE_BLOCK_SIZE);
-  dim3 dimGrid(num_splines/SPLINE_BLOCK_SIZE, num);
-  if (num_splines % SPLINE_BLOCK_SIZE)
-    dimGrid.x++;
+  dim3 dimGrid(num, (num_splines + SPLINE_BLOCK_SIZE - 1) / SPLINE_BLOCK_SIZE);
   eval_multi_multi_UBspline_3d_d_vgl_kernel<<<dimGrid,dimBlock,0,s>>>
   (pos_d, spline->gridInv, coefs, Linv_d, vals_d,
    grad_lapl_d, spline->dim, spline->stride, num_splines, row_stride, device_nr*num_splines*num);

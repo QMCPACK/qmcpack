@@ -231,8 +231,26 @@ if(INSTALL_NEXUS)
 endif()
 
 ######################################################################
-# Set the compiler specific options/flags
+# Set compiler specific options/flags
 ######################################################################
+#-------------------------------------------------------------------------------
+# Check for OpenMP compiler support
+#
+# The CMake OpenMP package is *only* used to to verify compiler support.
+# No feature of the package is used and we customize OpenMP options directly
+# on a per vendor/compiler basis.
+#-------------------------------------------------------------------------------
+if(QMC_OMP)
+  find_package(OpenMP)
+  if(NOT OpenMP_FOUND)
+      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
+  endif()
+endif(QMC_OMP)
+
+#-------------------------------------------------------------------------------
+# Set vendor specific compiler options
+#-------------------------------------------------------------------------------
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
@@ -632,13 +650,9 @@ find_package(LibXml2 REQUIRED)
 #  set up HDF5 library
 #-------------------------------------------------------------------
 if(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      TRUE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" ON)
 else(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      FALSE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" OFF)
   if(HDF5_PREFER_PARALLEL)
     message(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
                         "Please set HDF5_PREFER_PARALLEL=0.")
@@ -657,8 +671,13 @@ find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
-    message(STATUS "Parallel HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    if(HAVE_MPI)
+      message(STATUS "Parallel HDF5 library found")
+      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    else(HAVE_MPI)
+      message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
+                          "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
+    endif(HAVE_MPI)
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
