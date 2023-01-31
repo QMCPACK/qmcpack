@@ -71,7 +71,10 @@ public:
                             ValueMatrix& d2logdet) override;
 
 private:
-  const int numparticles_;
+  const int numparticles_; /// evaluate_notranspose arrays are nparticle x norb matrices.
+                           /// To ensure consistent array sizing and enforcement,
+                           /// we agree at construction how large these matrices will be.
+                           /// norb is stored in SPOSet::OrbitalSetSize.  
 
   //Value, electron gradient, and electron laplacian at "reference configuration".
   //i.e. before any attempted moves.
