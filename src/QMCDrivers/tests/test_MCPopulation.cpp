@@ -35,16 +35,29 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   TrialWaveFunction twf;
   WalkerConfigurations walker_confs;
 
+  // Test is intended to be run on one rank
   MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
-  population.createWalkers(8, walker_confs, 2.0);
-  CHECK(population.get_walkers().size() == 8);
-  CHECK(population.get_dead_walkers().size() == 8);
-  CHECK(population.get_num_local_walkers() == 8);
+  int num_walkers = 8;
+
+  population.createWalkers(num_walkers, walker_confs, 2.0);
+  CHECK(population.get_walkers().size() == num_walkers);
+  CHECK(population.get_dead_walkers().size() == num_walkers);
+  CHECK(population.get_num_local_walkers() == num_walkers);
+
+  const auto& walkers      = population.get_walkers();
+  const auto& dead_walkers = population.get_dead_walkers();
+  for (int i = 0; i < num_walkers; ++i)
+  {
+    CHECK(walkers[i]->getWalkerID() == i);
+    CHECK(walkers[i]->getParentID() == i);
+    CHECK(dead_walkers[i]->getWalkerID() == -1);
+    CHECK(dead_walkers[i]->getParentID() == -1);
+  }
 }
 
 
-TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
+TEST_CASE("MCPopulation::createWalkers_multiple_ranks", "[particle][population]")
 {
   using namespace testing;
   Communicate* comm;
@@ -62,37 +75,53 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
   for (int i = 0; i < num_ranks; ++i)
     pops.emplace_back(num_ranks, i, particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
 
+  int num_walkers = 8;
+  
   std::vector<long> walker_ids;
   for (int i = 0; i < num_ranks; ++i)
   {
-    pops[i].createWalkers(8, walker_confs, 2.0);
-    CHECK(pops[i].get_walkers().size() == 8);
-    CHECK(pops[i].get_dead_walkers().size() == 8);
-    CHECK(pops[i].get_num_local_walkers() == 8);
+    pops[i].createWalkers(num_walkers, walker_confs, 2.0);
+    CHECK(pops[i].get_walkers().size() == num_walkers);
+    CHECK(pops[i].get_dead_walkers().size() == num_walkers);
+    CHECK(pops[i].get_num_local_walkers() == num_walkers);
+    const auto& walkers      = pops[i].get_walkers();
+    const auto& dead_walkers = pops[i].get_dead_walkers();
+    for (int iw = 0; iw < num_walkers; ++iw)
+    {
+      // indirect test the nextWalkerID() returns
+      // \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ \f$
+      CAPTURE(i);
+      CAPTURE(iw);
+      CAPTURE(num_ranks);
+      CHECK(walkers[iw]->getWalkerID() == iw * num_ranks + i);
+      CHECK(walkers[iw]->getParentID() == iw * num_ranks + i);
+    }
+
     auto walker_elems = pops[i].get_walker_elements();
     for (WalkerElementsRef& wer : walker_elems)
     {
-      walker_ids.push_back(wer.walker.ID);
+      walker_ids.push_back(wer.walker.getWalkerID());
     }
   }
+
   std::sort(walker_ids.begin(), walker_ids.end());
   // Walker IDs cannot collide
-  for(int i = 1; i < walker_ids.size(); ++i)
-    CHECK(walker_ids[i-1] != walker_ids[i]);
+  for (int i = 1; i < walker_ids.size(); ++i)
+    CHECK(walker_ids[i - 1] != walker_ids[i]);
 
   int new_walkers = 3;
-  
-  for(int i = 0; i < num_ranks; ++i)
-    for(int iw = 0;  iw < new_walkers; ++iw) {
+
+  for (int i = 0; i < num_ranks; ++i)
+    for (int iw = 0; iw < new_walkers; ++iw)
+    {
       auto wer = pops[i].spawnWalker();
-      walker_ids.push_back(wer.walker.ID);
+      walker_ids.push_back(wer.walker.getWalkerID());
     }
 
   std::sort(walker_ids.begin(), walker_ids.end());
   // Walker IDs cannot collide
-  for(int i = 1; i < walker_ids.size(); ++i)
-    CHECK(walker_ids[i-1] != walker_ids[i]);
-
+  for (int i = 1; i < walker_ids.size(); ++i)
+    CHECK(walker_ids[i - 1] != walker_ids[i]);
 }
 
 
@@ -140,5 +169,5 @@ TEST_CASE("MCPopulation::redistributeWalkers", "[particle][population]")
   REQUIRE((*walker_consumers_incommensurate[0]).walkers.size() == 3);
   REQUIRE((*walker_consumers_incommensurate[2]).walkers.size() == 2);
 }
-
+  
 } // namespace qmcplusplus

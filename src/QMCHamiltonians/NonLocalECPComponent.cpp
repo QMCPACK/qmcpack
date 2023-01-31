@@ -869,6 +869,41 @@ void NonLocalECPComponent::evaluateOneBodyOpMatrixdRContribution(ParticleSet& W,
       dB[idim][sid][thisEIndex][iorb] += RealType(-1.0) * gpot[iorb][idim] - glpoly[iorb][idim] + gwfn[iorb][idim];
 }
 
+void NonLocalECPComponent::random_rotation(std::vector<PosType>& grid_points, RandomGenerator& myRNG)
+{
+  using std::acos;
+  using std::cos;
+  using std::sin;
+  ;
+
+  // Uniform random dirstribution on unit sphere
+  RealType theta = 2 * M_PI * myRNG();
+  RealType phi   = acos(1 - 2 * myRNG());
+  // Unit vector to point
+  RealType x = sin(phi) * cos(theta);
+  RealType y = sin(phi) * sin(theta);
+  RealType z = cos(phi);
+  // Rotation angle around that axis
+  RealType theta_over_2 = M_PI * myRNG();
+
+  RealType a      = cos(theta_over_2);
+  RealType uscale = sin(theta_over_2);
+  RealType b      = x * uscale;
+  RealType c      = y * uscale;
+  RealType d      = z * uscale;
+  RealType a2     = a * a;
+  RealType b2     = b * b;
+  RealType c2     = c * c;
+  RealType d2     = d * d;
+
+  TensorType rmat(a2 + b2 - c2 - d2, 2 * b * c - 2 * a * d, 2 * b * d + 2 * a * c, 2 * b * c + 2 * a * d,
+                  a2 - b2 - c2 - d2, 2 * c * d - 2 * a * b, 2 * b * d - 2 * a * c, 2 * c * d + 2 * a * b,
+                  a2 - b2 - c2 + d2);
+
+  for (auto& point : grid_points)
+    point = dot(rmat, point);
+}
+
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::rotateQuadratureGrid(const TensorType& rmat)
 {

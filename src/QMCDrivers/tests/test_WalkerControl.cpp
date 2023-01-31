@@ -13,6 +13,8 @@
 #include <functional>
 #include "catch.hpp"
 
+#include <math.h>
+
 #include "test_WalkerControl.h"
 #include "Message/Communicate.h"
 #include "ParticleSetPool.h"
@@ -94,78 +96,59 @@ void UnifiedDriverWalkerControlMPITest::testNewDistribution(std::vector<int>& mi
   WalkerControl::determineNewWalkerPopulation(num_per_rank, fair_offset, minus, plus);
 }
 
+
+void UnifiedDriverWalkerControlMPITest::testPopulationDiff(std::vector<int>& rank_counts_before,
+                                                           std::vector<int>& rank_counts_after)
+{
+  using MCPWalker = MCPopulation::MCPWalker;
+
+  int rank = dpools_.comm->rank();
+
+  // first get the walker counts to the expected numbers
+  // we do this buy updating the multiplicity and then calling
+  pop_->get_walkers()[0]->Weight = rank_counts_before[rank];
+  reportWalkersPerRank(dpools_.comm, *pop_);
+
+  wc_.branch(1, *pop_, false);
+
+  reportWalkersPerRank(dpools_.comm, *pop_);
+  CHECK(pop_->get_num_local_walkers() == rank_counts_after[rank]);
+}
+
 } // namespace testing
 
 TEST_CASE("WalkerControl::determineNewWalkerPopulation", "[drivers][walker_control]")
 {
   std::vector<int> minus;
   std::vector<int> plus;
-
   testing::UnifiedDriverWalkerControlMPITest::testNewDistribution(minus, plus);
   CHECK(minus.size() == 2);
   CHECK(plus.size() == 2);
 }
 
-/** Here we manipulate just the Multiplicity of a set of 1 walkers per rank
- */
-// Fails in debug after PR #2855 run unit tests in debug!
-// trips assert in ../src/Particle/Walker.h:514 !
+TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
+{
+  auto test_func = []() {
+    testing::UnifiedDriverWalkerControlMPITest test;
 
-// TEST_CASE("MPI WalkerControl multiplicity swap walkers", "[drivers][walker_control]")
-// {
-//   auto test_func = []() {
-//     outputManager.pause();
-//     testing::UnifiedDriverWalkerControlMPITest test;
-//     outputManager.resume();
-//     test.makeValidWalkers();
-//     SECTION("Simple")
-//     {
-//       std::vector<int> count_before{1, 1, 1};
-//       std::vector<int> count_after{1, 1, 1};
+    std::vector<int> count_before{3, 1, 1};
+    std::vector<int> count_after{1, 2, 2};
+    test.testPopulationDiff(count_before, count_after);
+  };
+  MPIExceptionWrapper mew;
+  mew(test_func);
+}
 
-//       // One walker on every node, should be no swapping
-//       test.testMultiplicity(count_before, count_after);
-//     }
+TEST_CASE("WalkerControl::nCopiesOverflowLogic", "[population]")
+{
+  // less straight forward but important situation
+  // this only works if the limit is an exactly representable integer in the platform's double
+  double too_large_d = static_cast<double>(std::numeric_limits<long>::max());
+  // std::cout << std::setprecision(20) << too_large_d << '\n';
+  CHECK(!(std::floor(too_large_d) < static_cast<double>(std::numeric_limits<long>::max())));
+  double small_enough_d = nextafter(static_cast<double>(std::numeric_limits<long>::max()), 0.0);
+  // std::cout << std::setprecision(20) <<small_enough_d << '\n';
+  CHECK(std::floor(small_enough_d) < std::ceil(static_cast<double>(std::numeric_limits<long>::max())));
+}
 
-//     SECTION("LoadBalance")
-//     {
-//       std::vector<int> count_before{3, 1, 1};
-//       std::vector<int> count_after{1, 2, 2};
-
-//       test.testMultiplicity(count_before, count_after);
-//     }
-//   };
-//   MPIExceptionWrapper mew;
-//   mew(test_func);
-// }
-
-// Fails in debug after PR #2855 run unit tests in debug!
-// trips assert at ../src/Particle/Walker.h:559 !
-// TEST_CASE("MPI WalkerControl population swap walkers", "[drivers][walker_control]")
-// {
-//   auto test_func = []() {
-//     outputManager.pause();
-//     testing::UnifiedDriverWalkerControlMPITest test;
-//     outputManager.resume();
-
-//     SECTION("Simple")
-//     {
-//       std::vector<int> count_before{1, 1, 1};
-//       std::vector<int> count_after{1, 1, 1};
-//       // One walker on every node, should be no swapping
-//       test.testPopulationDiff(count_before, count_after);
-//     }
-
-//     SECTION("LoadBalance")
-//     {
-//       std::vector<int> count_before{3, 1, 1};
-//       std::vector<int> count_after{1, 2, 2};
-//       test.testPopulationDiff(count_before, count_after);
-//     }
-//   };
-//   MPIExceptionWrapper mew;
-//   mew(test_func);
-// }
-
-
-} // namespace qmcplusplus
+} // NAMESPACE qmcplusplus

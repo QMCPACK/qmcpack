@@ -67,7 +67,7 @@ void PerParticleHamiltonianLogger::accumulate(const RefVector<MCPWalker>& walker
   // This could change every call for DMC.
   walker_ids_.clear();
   for (MCPWalker& walker : walkers)
-    walker_ids_.push_back(walker.ID);
+    walker_ids_.push_back(walker.getWalkerID());
   rank_estimator_->write(values_, walker_ids_);
 
   // \todo some per crowd reduction.

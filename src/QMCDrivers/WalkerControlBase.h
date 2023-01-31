@@ -91,7 +91,8 @@ public:
   /** start a block */
   void start();
 
-  /** legacy: start controller  and initialize the IDs of walkers*/
+  /** start controller  and initialize the IDs of walkers
+      \todo remove when legacy is dropped*/
   void setWalkerID(MCWalkerConfiguration& walkers);
 
   /** take averages and writes to a file */

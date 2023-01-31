@@ -83,10 +83,17 @@ private:
   UPtrVector<TrialWaveFunction> dead_walker_trial_wavefunctions_;
   UPtrVector<QMCHamiltonian> dead_walker_hamiltonians_;
 
-  // MCPopulation immutables
-  // would be nice if they were const but we'd lose the default move assignment
-  int num_ranks_;
-  int rank_;
+  /** @name immutables
+   *  MCPopulation state immutables
+   *  This immutable state is a tradoff, it violates the single source of truth "priniciple"
+   *  but removes coupling that would otherwise exist between MCPopulation and Communicator.
+   *  @{
+   */  
+  const int num_ranks_;
+  const int rank_;
+  /// @}
+  /// state for producing unique walker ids
+  int num_walkers_created_ = 0;
 
 public:
   /** Temporary constructor to deal with MCWalkerConfiguration be the only source of some information
@@ -103,7 +110,7 @@ public:
   MCPopulation& operator=(MCPopulation&) = delete;
   MCPopulation(MCPopulation&&)           = default;
 
-  /** @ingroup PopulationControl
+  /** @name PopulationControl
    *
    *  State Requirement:
    *   * createWalkers must have been called
@@ -112,7 +119,7 @@ public:
   WalkerElementsRef spawnWalker();
   void killWalker(MCPWalker&);
   void killLastWalker();
-  /** }@ */
+  /** @} */
 
   /** Creates walkers with a clone of the golden electron particle set and golden trial wavefunction
    *
@@ -150,7 +157,7 @@ public:
   void syncWalkersPerRank(Communicate* comm);
   void measureGlobalEnergyVariance(Communicate& comm, FullPrecRealType& ener, FullPrecRealType& variance) const;
 
-  /**@ingroup Accessors
+  /**@name accessors
    * @{
    */
 
@@ -223,14 +230,24 @@ public:
   const std::vector<RealType>& get_ptclgrp_mass() const { return ptclgrp_mass_; }
   const std::vector<RealType>& get_ptclgrp_inv_mass() const { return ptclgrp_inv_mass_; }
   const std::vector<RealType>& get_ptcl_inv_mass() const { return ptcl_inv_mass_; }
+  /// @}
 
-  /** }@ */
 
   /// check if all the internal vector contain consistent sizes;
   void checkIntegrity() const;
 
-  /// save walker configurations to walker_configs_ref_
+  /** save walker configurations to walker_configs_ref_
+   *  this is is just `R` and `spins` + possibly G, L
+   */
   void saveWalkerConfigurations(WalkerConfigurations& walker_configs);
+
+  /** Generator for walker_ids for this MCPopulation
+   *  This should be the single source for `walker_id`'s on this rank.
+   *  These are unique across MCPopulations with rank.
+   *  Defined as
+   *  \f$ walker_id = num_walkers_created_++ * num_ranks_ + rank_ \f$
+   */
+  long nextWalkerID();
 };
 
 } // namespace qmcplusplus
