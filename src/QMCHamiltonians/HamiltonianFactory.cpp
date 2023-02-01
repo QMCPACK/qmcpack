@@ -47,13 +47,8 @@
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #endif
-#if !defined(QMC_CUDA)
 #include "QMCHamiltonians/SkPot.h"
-#endif
 #include "OhmmsData/AttributeSet.h"
-#ifdef QMC_CUDA
-#include "QMCHamiltonians/SkEstimator_CUDA.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -149,14 +144,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
     {
       if (potType == "coulomb")
         addCoulombPotential(element);
-#if !defined(QMC_CUDA)
       else if (potType == "skpot")
       {
         std::unique_ptr<SkPot> hs = std::make_unique<SkPot>(targetPtcl);
         hs->put(element);
         targetH->addOperator(std::move(hs), "SkPot", true);
       }
-#endif
 #if OHMMS_DIM == 3
       else if (potType == "MPC" || potType == "mpc")
         addMPCPotential(element);
@@ -291,11 +284,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur)
       {
         if (PBCType) //only if perioidic
         {
-#ifdef QMC_CUDA
-          std::unique_ptr<SkEstimator_CUDA> apot = std::make_unique<SkEstimator_CUDA>(targetPtcl);
-#else
           std::unique_ptr<SkEstimator> apot = std::make_unique<SkEstimator>(targetPtcl);
-#endif
           apot->put(element);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) estimator" << std::endl;

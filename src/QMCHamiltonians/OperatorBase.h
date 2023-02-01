@@ -468,12 +468,6 @@ public:
 
   // TODO: add docs
 
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-
-  virtual void addEnergy(MCWalkerConfiguration& W,
-                         std::vector<RealType>& LocalEnergy,
-                         std::vector<std::vector<NonLocalData>>& Txy);
-
   virtual void informOfPerParticleListener() { has_listener_ = true; }
 
   bool isClassical() const noexcept;

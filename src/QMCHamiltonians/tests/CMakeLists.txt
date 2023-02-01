@@ -29,19 +29,11 @@ set(HAM_SRCS
     test_ObservableHelper.cpp
     test_Listener.cpp)
 
-if(NOT QMC_CUDA)
-  if(NOT QMC_COMPLEX)
-    set(HAM_SRCS ${HAM_SRCS} test_RotatedSPOs_NLPP.cpp)
-  endif()
+if(NOT QMC_COMPLEX)
+  set(HAM_SRCS ${HAM_SRCS} test_RotatedSPOs_NLPP.cpp)
 endif()
 
-    
-
-if(QMC_CUDA)
-  set(COULOMB_SRCS ${COULOMB_SRCS} test_coulomb_CUDA.cpp)
-else()
-  set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
-endif()
+set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
 
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
