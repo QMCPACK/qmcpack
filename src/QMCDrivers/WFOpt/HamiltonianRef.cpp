@@ -11,9 +11,6 @@
 
 
 #include "HamiltonianRef.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 
 namespace qmcplusplus
 {
