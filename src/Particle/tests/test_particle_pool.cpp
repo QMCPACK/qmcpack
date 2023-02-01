@@ -126,9 +126,7 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   pp.randomize();
 
   REQUIRE(elec->R[0][0] != 0.0);
-#if !defined(QMC_CUDA)
   REQUIRE(elec->spins[0] != 0.0);
-#endif
 }
 
 TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
