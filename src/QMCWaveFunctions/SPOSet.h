@@ -117,6 +117,9 @@ public:
   // Single Slater creation
   virtual void buildOptVariables(const size_t nel) {}
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
+  // The rotations parameter contains only the occupied-unoccupied rotations
+  // The full_rotations parameter contains all the rotations (occupied-unoccupied, occupied-occupied, unoccupied-unoccupied)
+  //  It is needed for the global rotation method
   virtual void buildOptVariables(const std::vector<std::pair<int, int>>& rotations,
                                  const std::vector<std::pair<int, int>>& full_rotations)
   {}
