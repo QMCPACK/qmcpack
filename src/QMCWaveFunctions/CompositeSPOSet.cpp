@@ -114,13 +114,6 @@ void CompositeSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& ps
   }
 }
 
-#ifdef QMC_CUDA
-void CompositeSPOSet::evaluate(const ParticleSet& P, PosType& r, ValueVector& psi)
-{
-  not_implemented("evaluate(P,r,psi)");
-}
-#endif
-
 void CompositeSPOSet::evaluate_notranspose(const ParticleSet& P,
                                            int first,
                                            int last,

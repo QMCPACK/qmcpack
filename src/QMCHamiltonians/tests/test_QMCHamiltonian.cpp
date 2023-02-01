@@ -53,8 +53,6 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
   //TODO: Would be nice to check some values but I think the system needs a little more setup
 }
 
-#ifndef QMC_CUDA
-
 /** QMCHamiltonian + Hamiltonians with listeners integration test
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
@@ -264,6 +262,5 @@ TEST_CASE("integrateListeners", "[hamiltonian]")
     CHECK(sum_local_nrg == Approx(sum_local_pots + sum_kinetic));
   }
 }
-#endif
 
 } // namespace qmcplusplus

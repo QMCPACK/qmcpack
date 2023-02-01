@@ -140,7 +140,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
-#if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
@@ -369,8 +368,6 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
   CHECK(grad_old.grads_positions[1][0] == Approx(14.77249702264));
   CHECK(grad_old.grads_positions[1][1] == Approx(-20.385235323777));
   CHECK(grad_old.grads_positions[1][2] == Approx(4.8529516184558));
-#endif
-
 #endif
 }
 

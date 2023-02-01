@@ -82,7 +82,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations
   // Reference values can be checked using eval_bspline_spo.py
@@ -223,10 +222,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
   CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
-#endif
-
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   /* 
      Here we test the low-level spline implementation of applyRotation().
 
@@ -474,7 +471,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -491,7 +487,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
@@ -544,7 +539,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -561,7 +555,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-#endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part
@@ -593,7 +586,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   SPOSet::OffloadMWVGLArray phi_vgl_v;
   phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
   spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   CHECK(std::real(ratio_v[0]) == Approx(0.2365307168));
   CHECK(std::real(grads_v[0][0]) == Approx(-5.4095164399));
   CHECK(std::real(grads_v[0][1]) == Approx(14.37990087));

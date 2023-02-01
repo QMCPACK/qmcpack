@@ -98,7 +98,6 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -115,7 +114,6 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   // lapl
   CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
 
 #if defined(QMC_COMPLEX)
   // imaginary part

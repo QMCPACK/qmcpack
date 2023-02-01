@@ -34,13 +34,6 @@
 #endif
 #endif
 
-#ifdef QMC_CUDA
-#include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
-#include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
-#include "QMCHamiltonians/CoulombPotential_CUDA.h"
-#include "QMCHamiltonians/MPC_CUDA.h"
-#endif
-
 //#include <iostream>
 namespace qmcplusplus
 {
@@ -64,11 +57,7 @@ void HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   app_summary() << "    Name: " << title << "   Physical : " << physical << std::endl;
   app_summary() << std::endl;
 
-#ifdef QMC_CUDA
-  std::unique_ptr<MPC_CUDA> mpc = std::make_unique<MPC_CUDA>(targetPtcl, cutoff);
-#else
   std::unique_ptr<MPC> mpc = std::make_unique<MPC>(targetPtcl, cutoff);
-#endif
   targetH->addOperator(std::move(mpc), "MPC", isphysical);
 #else
   APP_ABORT(
@@ -119,6 +108,7 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     }
     ptclA = pit->second.get();
   }
+
   if (sourceInp == targetInp) // AA type
   {
     if (!applyPBC && ptclA->getTotalNum() == 1)
@@ -128,17 +118,6 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       return;
     }
     bool quantum = (sourceInp == targetPtcl.getName());
-#ifdef QMC_CUDA
-    if (applyPBC)
-      targetH->addOperator(std::make_unique<CoulombPBCAA_CUDA>(*ptclA, quantum, doForces), title, physical);
-    else
-    {
-      if (quantum)
-        targetH->addOperator(std::make_unique<CoulombPotentialAA_CUDA>(*ptclA, true), title, physical);
-      else
-        targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
-    }
-#else
     if (applyPBC)
     {
       if (use_gpu.empty())
@@ -156,21 +135,13 @@ void HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     {
       targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, quantum, doForces), title, physical);
     }
-#endif
   }
   else //X-e type, for X=some other source
   {
-#ifdef QMC_CUDA
-    if (applyPBC)
-      targetH->addOperator(std::make_unique<CoulombPBCAB_CUDA>(*ptclA, targetPtcl), title);
-    else
-      targetH->addOperator(std::make_unique<CoulombPotentialAB_CUDA>(*ptclA, targetPtcl), title);
-#else
     if (applyPBC)
       targetH->addOperator(std::make_unique<CoulombPBCAB>(*ptclA, targetPtcl), title);
     else
       targetH->addOperator(std::make_unique<CoulombPotential<Return_t>>(*ptclA, targetPtcl, true), title);
-#endif
   }
 }
 
@@ -302,36 +273,5 @@ void HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   APP_ABORT("HamiltonianFactory::addPseudoPotential\n pairpot@type=\"pseudo\" is invalid if DIM != 3");
 #endif
 }
-
-//  void
-//  HamiltonianFactory::addConstCoulombPotential(xmlNodePtr cur, std::string& nuclei)
-//  {
-//    OhmmsAttributeSet hAttrib;
-//    std::string hname("IonIon");
-//    std::string forces("no");
-//    hAttrib.add(forces,"forces");
-//    hAttrib.add(hname,"name");
-//    hAttrib.put(cur);
-//    bool doForces = (forces == "yes") || (forces == "true");
-//
-//    app_log() << "  Creating Coulomb potential " << nuclei << "-" << nuclei << std::endl;
-//    renameProperty(nuclei);
-//    PSetMap::iterator pit(ptclPool.find(nuclei));
-//    if(pit != ptclPool.end()) {
-//      ParticleSet* ion=(*pit).second;
-//      if(PBCType)
-//      {
-//#ifdef QMC_CUDA
-//	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
-//#else
-//	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);
-//#endif
-//      } else {
-//        if(ion->getTotalNum()>1)
-//          targetH->addOperator(new CoulombPotential<Return_t>(ion),hname);
-//          //targetH->addOperator(new IonIonPotential(*ion),hname);
-//      }
-//    }
-//  }
 
 } // namespace qmcplusplus

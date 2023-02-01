@@ -17,8 +17,6 @@
 #ifndef QMCPLUSPLUS_COSTFUNCTIONBASE_H
 #define QMCPLUSPLUS_COSTFUNCTIONBASE_H
 
-#include <deque>
-#include <set>
 #include "Configuration.h"
 #include "Optimize/OptimizeBase.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"

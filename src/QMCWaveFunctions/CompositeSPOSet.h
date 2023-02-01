@@ -65,9 +65,6 @@ public:
   }
 
   //methods to be implemented in the future (possibly)
-#ifdef QMC_CUDA
-  void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi) override;
-#endif
   void evaluate_notranspose(const ParticleSet& P,
                             int first,
                             int last,

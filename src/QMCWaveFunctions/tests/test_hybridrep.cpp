@@ -29,7 +29,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-#if !defined(QMC_CUDA) && !defined(ENABLE_OFFLOAD)
+#if !defined(ENABLE_OFFLOAD)
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
@@ -115,7 +115,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // electron 0
@@ -258,7 +258,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -361,7 +361,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+#if defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.

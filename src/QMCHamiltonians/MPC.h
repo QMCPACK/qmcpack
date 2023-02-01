@@ -81,9 +81,6 @@ public:
 
   Return_t evaluate(ParticleSet& P) override;
 
-  /** implement all-walker stuff */
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
-
   /** Do nothing */
   bool put(xmlNodePtr cur) override;
 

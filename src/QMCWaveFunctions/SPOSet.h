@@ -25,9 +25,6 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "OptimizableObject.h"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 #include "OMPTarget/OffloadAlignedAllocators.hpp"
 #include "DualAllocatorAliases.hpp"
 
@@ -553,43 +550,6 @@ public:
 
   /// return class name
   virtual std::string getClassName() const = 0;
-
-#ifdef QMC_CUDA
-  /** Evaluate the SPO value at an explicit position.
-   * Ye: This is used only for debugging the CUDA code and should be removed.
-   */
-  virtual void evaluate(const ParticleSet& P, PosType& r, ValueVector& psi);
-
-  using CTS = CUDAGlobalTypes;
-
-  //////////////////////////////////////////
-  // Walker-parallel vectorized functions //
-  //////////////////////////////////////////
-  virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ValueType*>& phi);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi,
-                        gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
-                        int row_stride);
-
-  virtual void evaluate(std::vector<Walker_t*>& walkers,
-                        std::vector<PosType>& new_pos,
-                        gpu::device_vector<CTS::ValueType*>& phi,
-                        gpu::device_vector<CTS::ValueType*>& grad_lapl_list,
-                        int row_stride,
-                        int k,
-                        bool klinear);
-
-  virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi);
-  virtual void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi);
-#endif
 
 protected:
   /// name of the object, unique identifier
