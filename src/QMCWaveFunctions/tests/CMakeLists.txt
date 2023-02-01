@@ -98,6 +98,7 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
+    ConstantSPOSet.cpp
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
     test_spo_collection_input_MSD_LCAO_h5.cpp
@@ -106,6 +107,7 @@ set(SPOSET_SRC
     test_CompositeSPOSet.cpp
     test_hybridrep.cpp
     test_pw.cpp
+    test_ConstantSPOSet.cpp
     ${MO_SRCS})
 if(NiO_a16_H5_FOUND)
   set(SPOSET_SRC ${SPOSET_SRC} test_einset_NiO_a16.cpp)
