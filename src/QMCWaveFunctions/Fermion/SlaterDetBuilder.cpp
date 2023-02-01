@@ -27,10 +27,6 @@
 
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
-#if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
@@ -374,11 +370,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   std::unique_ptr<DiracDeterminantBase> adet;
 
-  //TODO: the switch logic should be improved as we refine the input tags.
-#if defined(QMC_CUDA)
-  app_summary() << "      Using legacy CUDA acceleration." << std::endl;
-  adet = std::make_unique<DiracDeterminantCUDA>(std::move(psi_clone), firstIndex, lastIndex);
-#else
   if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
@@ -457,11 +448,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
     }
   }
-#endif
-
-#ifdef QMC_CUDA
-  targetPsi.setndelay(delay_rank);
-#endif
 
   app_log() << std::endl;
   app_log().flush();
@@ -839,7 +825,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             }
           } // if(name=="det")
           csf = csf->next;
-        } // csf loop
+        }   // csf loop
         if (DetsPerCSF.back() == 0)
         {
           APP_ABORT("Found empty CSF (no det blocks).");

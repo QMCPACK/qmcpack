@@ -16,12 +16,6 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
-
-#if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowCUDA.h"
-#endif
-
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -51,18 +45,6 @@ public:
   using J1SpinType = J1Spin<RadFuncType>;
   using J2Type     = TwoBodyJastrow<RadFuncType>;
 };
-
-#if defined(QMC_CUDA)
-template<>
-class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::CUDA_LEGACY>
-{
-public:
-  using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J1Type      = OneBodyJastrowCUDA<RadFuncType>;
-  using J1SpinType  = void;
-  using J2Type      = TwoBodyJastrowCUDA<RadFuncType>;
-};
-#endif
 
 template<>
 class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::OMPTARGET>
@@ -541,22 +523,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     if (Jastfunction == "bspline")
     {
       if (SpinOpt == "yes")
-      {
-#if defined(QMC_CUDA)
-        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported "
-                                  "in legacy CUDA build.");
-#else
         return createJ1<BsplineFunctor<RealType>, true>(cur);
-#endif
-      }
       else
-      {
-#if defined(QMC_CUDA)
-        return createJ1<BsplineFunctor<RealType>, false, detail::CUDA_LEGACY>(cur);
-#else
         return createJ1<BsplineFunctor<RealType>>(cur);
-#endif
-      }
     }
     else if (Jastfunction == "pade")
     {
@@ -603,9 +572,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     // it's a two body jastrow factor
     if (Jastfunction == "bspline")
     {
-#if defined(QMC_CUDA)
-      return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
-#else
       if (useGPU.empty())
         useGPU = targetPtcl.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
 
@@ -626,7 +592,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       }
       else
         return createJ2<BsplineFunctor<RealType>>(cur);
-#endif
     }
     else if (Jastfunction == "pade")
     {
