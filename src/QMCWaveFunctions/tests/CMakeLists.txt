@@ -98,7 +98,6 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
-    ConstantSPOSet.cpp
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
     test_spo_collection_input_MSD_LCAO_h5.cpp
@@ -129,13 +128,16 @@ set(JASTROW_SRC
     test_2d_jastrow.cpp)
 
 set(DETERMINANT_SRC
-    FakeSPO.cpp
     test_DiracDeterminant.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
     test_DiracMatrix.cpp
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
+
+add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
+target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
 
 # @TODO: Remove when rotations work for complex stuff
 if(NOT QMC_COMPLEX)
@@ -174,6 +176,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     qmcparticle_omptarget
     platform_LA
     platform_runtime
+    sposets_for_testing
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)
