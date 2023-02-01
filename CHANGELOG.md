@@ -2,7 +2,17 @@
 
 Notable changes to QMCPACK are documented in this file.
 
-## [Unreleased]
+## [3.16.0] - 2023-01-31
+
+This release contains important bug fixes as well as feature improvements. It is a recommended release for all users. Thanks to
+everyone who reported an issue or suggested an improvement. See GitHub for the full list of merged pull requests and closed issues.
+
+This release is expected to be the last including the legacy CUDA implementation, the version built with QMC_CUDA=1. Users should
+transition to the batched drivers which support greater functionality as well as both CPU and GPU execution. Users should adopt
+these drivers now and report any issues. The new drivers can be requested with the driver_version input parameter, see
+https://qmcpack.readthedocs.io/en/develop/performance_portable.html . In a subsequent release, the non-batched CPU drivers will also
+be removed leaving only the performance portable batched drivers. This will result in a single implementation of most functionality,
+improving overall usability and maintainability.
 
 * Important bugfix to NLPP integration grid rotations and update to all relevant deterministic test values. See issue
   [\#4362](https://github.com/QMCPACK/qmcpack/issues/4362) for full discussion and visualization. Found and corrected by
