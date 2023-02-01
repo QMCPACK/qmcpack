@@ -355,12 +355,12 @@ public:
 
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
-  bool params_supplied;
+  bool params_supplied = false;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
 
   /// Flag to ensure rotation is applied to shared coefficients only on one thread
-  bool use_this_copy_to_apply_rotation_;
+  bool use_this_copy_to_apply_rotation_ = false;
 
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;
@@ -369,7 +369,7 @@ private:
   opt_variables_type myVarsFull;
 
   /// Use global rotation or history list
-  bool use_global_rot_;
+  bool use_global_rot_ = true;
 };
 
 } //namespace qmcplusplus
