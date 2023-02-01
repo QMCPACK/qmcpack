@@ -73,7 +73,8 @@ option(ENABLE_SYCL "Enable SYCL offload" OFF)
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
 if(QMC_CUDA)
-  message(FATAL_ERROR "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON.")
+  message(FATAL_ERROR "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON. "
+                      "For NVIDIA GPU support use ENABLE_OFFLOAD with ENABLE_CUDA. Use v3.16.0 or earlier if you need QMC_CUDA.")
 endif(QMC_CUDA)
 
 if(ENABLE_CUDA AND ENABLE_SYCL)
