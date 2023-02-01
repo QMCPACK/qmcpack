@@ -36,7 +36,6 @@ public:
   enum detail
   {
     CPU,
-    CUDA_LEGACY,
     CUDA,
     OMPTARGET
   };
