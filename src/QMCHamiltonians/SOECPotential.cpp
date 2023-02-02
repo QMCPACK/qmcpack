@@ -21,14 +21,14 @@ namespace qmcplusplus
  *\param psi Trial wave function
 */
 SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi)
-    : myRNG(nullptr), IonConfig(ions), Psi(psi), Peln(els), ElecNeighborIons(els), IonNeighborElecs(ions)
+    : myRNG_(nullptr), IonConfig_(ions), Psi_(psi), Peln_(els), ElecNeighborIons_(els), IonNeighborElecs_(ions)
 {
   setEnergyDomain(POTENTIAL);
   twoBodyQuantumDomain(ions, els);
-  myTableIndex = els.addTable(ions);
-  NumIons      = ions.getTotalNum();
-  PP.resize(NumIons, nullptr);
-  PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
+  myTableIndex_ = els.addTable(ions);
+  NumIons_      = ions.getTotalNum();
+  PP_.resize(NumIons_, nullptr);
+  PPset_.resize(IonConfig_.getSpeciesSet().getTotalNum());
 }
 
 void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
@@ -36,28 +36,28 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
   value_ = 0.0;
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+  for (int ipp = 0; ipp < PPset_.size(); ipp++)
+    if (PPset_[ipp])
+      PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG_));
 
-  const auto& myTable = P.getDistTableAB(myTableIndex);
-  for (int iat = 0; iat < NumIons; iat++)
-    IonNeighborElecs.getNeighborList(iat).clear();
+  const auto& myTable = P.getDistTableAB(myTableIndex_);
+  for (int iat = 0; iat < NumIons_; iat++)
+    IonNeighborElecs_.getNeighborList(iat).clear();
   for (int jel = 0; jel < P.getTotalNum(); jel++)
-    ElecNeighborIons.getNeighborList(jel).clear();
+    ElecNeighborIons_.getNeighborList(jel).clear();
 
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
     const auto& dist               = myTable.getDistRow(jel);
     const auto& displ              = myTable.getDisplRow(jel);
-    std::vector<int>& NeighborIons = ElecNeighborIons.getNeighborList(jel);
-    for (int iat = 0; iat < NumIons; iat++)
-      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
+    std::vector<int>& NeighborIons = ElecNeighborIons_.getNeighborList(jel);
+    for (int iat = 0; iat < NumIons_; iat++)
+      if (PP_[iat] != nullptr && dist[iat] < PP_[iat]->getRmax())
       {
-        RealType pairpot = PP[iat]->evaluateOne(P, iat, Psi, jel, dist[iat], -displ[iat]);
+        RealType pairpot = PP_[iat]->evaluateOne(P, iat, Psi_, jel, dist[iat], -displ[iat]);
         value_ += pairpot;
         NeighborIons.push_back(iat);
-        IonNeighborElecs.getNeighborList(iat).push_back(jel);
+        IonNeighborElecs_.getNeighborList(iat).push_back(jel);
       }
   }
   return value_;
@@ -69,38 +69,38 @@ SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& 
                                                                    Vector<ValueType>& dhpsioverpsi)
 {
   value_ = 0.0;
-  for (int ipp = 0; ipp < PPset.size(); ipp++)
-    if (PPset[ipp])
-      PPset[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG));
+  for (int ipp = 0; ipp < PPset_.size(); ipp++)
+    if (PPset_[ipp])
+      PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG_));
 
-  const auto& myTable = P.getDistTableAB(myTableIndex);
+  const auto& myTable = P.getDistTableAB(myTableIndex_);
   for (int jel = 0; jel < P.getTotalNum(); jel++)
   {
     const auto& dist  = myTable.getDistRow(jel);
     const auto& displ = myTable.getDisplRow(jel);
-    for (int iat = 0; iat < NumIons; iat++)
-      if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
-        value_ += PP[iat]->evaluateValueAndDerivatives(P, iat, Psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                       dhpsioverpsi);
+    for (int iat = 0; iat < NumIons_; iat++)
+      if (PP_[iat] != nullptr && dist[iat] < PP_[iat]->getRmax())
+        value_ += PP_[iat]->evaluateValueAndDerivatives(P, iat, Psi_, jel, dist[iat], -displ[iat], optvars, dlogpsi,
+                                                        dhpsioverpsi);
   }
   return value_;
 }
 
 std::unique_ptr<OperatorBase> SOECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(IonConfig, qp, psi);
-  for (int ig = 0; ig < PPset.size(); ++ig)
-    if (PPset[ig])
-      myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(PPset[ig]->makeClone(qp)));
+  std::unique_ptr<SOECPotential> myclone = std::make_unique<SOECPotential>(IonConfig_, qp, psi);
+  for (int ig = 0; ig < PPset_.size(); ++ig)
+    if (PPset_[ig])
+      myclone->addComponent(ig, std::unique_ptr<SOECPComponent>(PPset_[ig]->makeClone(qp)));
   return myclone;
 }
 
 void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& ppot)
 {
-  for (int iat = 0; iat < PP.size(); iat++)
-    if (IonConfig.GroupID[iat] == groupID)
-      PP[iat] = ppot.get();
-  PPset[groupID] = std::move(ppot);
+  for (int iat = 0; iat < PP_.size(); iat++)
+    if (IonConfig_.GroupID[iat] == groupID)
+      PP_[iat] = ppot.get();
+  PPset_[groupID] = std::move(ppot);
 }
 
 } // namespace qmcplusplus

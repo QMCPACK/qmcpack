@@ -37,7 +37,7 @@ public:
 
   bool get(std::ostream& os) const override
   {
-    os << "SOECPotential: " << IonConfig.getName();
+    os << "SOECPotential: " << IonConfig_.getName();
     return true;
   }
 
@@ -45,26 +45,26 @@ public:
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 
-  void setRandomGenerator(RandomGenerator* rng) override { myRNG = rng; }
+  void setRandomGenerator(RandomGenerator* rng) override { myRNG_ = rng; }
 
 protected:
-  RandomGenerator* myRNG;
-  std::vector<SOECPComponent*> PP;
-  std::vector<std::unique_ptr<SOECPComponent>> PPset;
-  ParticleSet& IonConfig;
-  TrialWaveFunction& Psi;
+  RandomGenerator* myRNG_;
+  std::vector<SOECPComponent*> PP_;
+  std::vector<std::unique_ptr<SOECPComponent>> PPset_;
+  ParticleSet& IonConfig_;
+  TrialWaveFunction& Psi_;
 
 private:
   ///number of ions
-  int NumIons;
+  int NumIons_;
   ///index of distance table for ion-el pair
-  int myTableIndex;
+  int myTableIndex_;
   ///reference to the electrons
-  ParticleSet& Peln;
+  ParticleSet& Peln_;
   ///neighborlist of electrons
-  NeighborLists ElecNeighborIons;
+  NeighborLists ElecNeighborIons_;
   ///neighborlist of ions
-  NeighborLists IonNeighborElecs;
+  NeighborLists IonNeighborElecs_;
 };
 } // namespace qmcplusplus
 
