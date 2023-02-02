@@ -163,7 +163,7 @@ public:
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override { opt_obj_refs.push_back(*this); }
 
   void checkInVariablesExclusive(opt_variables_type& active) final;
-  void resetParametersExclusive(const opt_variables_type& active) final;
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) final;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

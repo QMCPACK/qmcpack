@@ -226,7 +226,6 @@ public:
 
   void checkInVariablesExclusive(opt_variables_type& active) override
   {
-    use_this_copy_to_apply_rotation_ = true;
     if (myVars.size())
       active.insertFrom(myVars);
   }
@@ -234,7 +233,7 @@ public:
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override;
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -358,9 +357,6 @@ private:
   bool params_supplied = false;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
-
-  /// Flag to ensure rotation is applied to shared coefficients only on one thread
-  bool use_this_copy_to_apply_rotation_ = false;
 
   /// List of previously applied parameters
   std::vector<std::vector<RealType>> history_params_;

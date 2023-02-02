@@ -320,7 +320,7 @@ protected:
   /// survey all the optimizable objects
   UniqueOptObjRefs extractOptimizableObjects(TrialWaveFunction& psi) const;
 
-  void resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const;
+  void resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables, bool isPrimaryObject) const;
 
 #ifdef HAVE_LMY_ENGINE
   virtual Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj)

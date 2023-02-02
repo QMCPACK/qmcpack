@@ -702,7 +702,7 @@ void kSpaceJastrow::checkInVariablesExclusive(opt_variables_type& active)
 
 void kSpaceJastrow::checkOutVariables(const opt_variables_type& active) { myVars.getIndex(active); }
 
-void kSpaceJastrow::resetParametersExclusive(const opt_variables_type& active)
+void kSpaceJastrow::resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject)
 {
   int ii = 0;
 

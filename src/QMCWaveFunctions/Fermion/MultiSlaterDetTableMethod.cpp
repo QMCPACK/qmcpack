@@ -720,7 +720,7 @@ void MultiSlaterDetTableMethod::checkOutVariables(const opt_variables_type& acti
       Dets[id]->checkOutVariables(active);
 }
 
-void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_type& active)
+void MultiSlaterDetTableMethod::resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject)
 {
   if (CI_Optimizable)
   {

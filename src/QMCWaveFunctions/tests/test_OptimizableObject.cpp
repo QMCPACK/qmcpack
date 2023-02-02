@@ -22,7 +22,7 @@ class FakeOptimizableObject : public OptimizableObject
 public:
   FakeOptimizableObject(const std::string& my_name) : OptimizableObject(my_name) {}
   void checkInVariablesExclusive(opt_variables_type& active) override {}
-  void resetParametersExclusive(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override {}
 };
 
 TEST_CASE("Test OptimizableObject", "[wavefunction]")

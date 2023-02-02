@@ -66,7 +66,7 @@ public:
 
   /** reset the parameters during optimizations. Exclusive, see checkInVariablesExclusive
    */
-  virtual void resetParametersExclusive(const opt_variables_type& active) = 0;
+  virtual void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) = 0;
 
   /** print the state, e.g., optimizables */
   virtual void reportStatus(std::ostream& os) {}

@@ -1050,7 +1050,7 @@ struct PolynomialFunctor3D : public OptimizableFunctorBase
     return true;
   }
 
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override
   {
     if (notOpt)
       return;

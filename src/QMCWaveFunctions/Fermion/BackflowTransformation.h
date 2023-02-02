@@ -166,7 +166,7 @@ public:
   // it is exposed as a whole to the opitmizer. Thus the underlying OptimizableObject are not explosed.
   // Simply redirect existing implentation.
   void checkInVariablesExclusive(opt_variables_type& active) final { checkInVariables(active); }
-  void resetParametersExclusive(const opt_variables_type& active) final { resetParameters(active); }
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) final { resetParameters(active); }
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 

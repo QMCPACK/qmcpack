@@ -314,7 +314,7 @@ struct UserFunctor : public OptimizableFunctorBase
     myVars.getIndex(active);
   }
 
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override
   {
     if (myVars.size())
     {

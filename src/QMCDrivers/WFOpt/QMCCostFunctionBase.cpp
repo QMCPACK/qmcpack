@@ -1086,12 +1086,12 @@ UniqueOptObjRefs QMCCostFunctionBase::extractOptimizableObjects(TrialWaveFunctio
   return opt_obj_refs;
 }
 
-void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables) const
+void QMCCostFunctionBase::resetOptimizableObjects(TrialWaveFunction& psi, const opt_variables_type& opt_variables, bool isPrimaryObject) const
 {
   const auto opt_obj_refs = extractOptimizableObjects(psi);
   for (OptimizableObject& obj : opt_obj_refs)
     if (obj.isOptimized())
-      obj.resetParametersExclusive(opt_variables);
+      obj.resetParametersExclusive(opt_variables, isPrimaryObject);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

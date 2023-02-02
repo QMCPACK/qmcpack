@@ -184,7 +184,7 @@ struct CubicSplineSingle : public OptimizableFunctorBase
   }
 
   ///reset the input/output function
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override
   {
     if (InFunc)
     {
@@ -257,7 +257,7 @@ struct CubicSplineBasisSet : public OptimizableFunctorBase
   ///set the output numerical function
   void setOutFunc(FNOUT* out_) { OutFunc = out_; }
   ///reset the input/output function
-  void resetParametersExclusive(const opt_variables_type& active) override
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override
   {
     if (!InFunc)
       APP_ABORT("CubicSplineBasisSet::resetParameters failed due to null input function ");

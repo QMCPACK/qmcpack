@@ -135,7 +135,7 @@ struct FakeFunctor : public OptimizableFunctorBase
 
   void checkOutVariables(const opt_variables_type& active) override {}
 
-  void resetParametersExclusive(const opt_variables_type& active) override {}
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override {}
 
 
   std::vector<TinyVector<real_type, 3>> derivs_;

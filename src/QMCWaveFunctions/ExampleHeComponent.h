@@ -40,7 +40,7 @@ public:
   bool isOptimizable() const override { return true; }
   void checkInVariablesExclusive(OptVariablesType& active) override { active.insertFrom(my_vars_); }
   void checkOutVariables(const OptVariablesType& active) override { my_vars_.getIndex(active); }
-  void resetParametersExclusive(const OptVariablesType& active) override;
+  void resetParametersExclusive(const OptVariablesType& active, bool isPrimaryObject=false) override;
 
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,

@@ -101,7 +101,7 @@ public:
   void extractOptimizableObjectRefs(UniqueOptObjRefs& opt_obj_refs) override;
   void checkOutVariables(const opt_variables_type& active) override;
   void checkInVariablesExclusive(opt_variables_type& active) override;
-  void resetParametersExclusive(const opt_variables_type& active) override;
+  void resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject=false) override;
 
   //builds orbital rotation parameters using MultiSlater member variables
   void buildOptVariables();

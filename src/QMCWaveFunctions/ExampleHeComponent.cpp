@@ -209,7 +209,7 @@ std::unique_ptr<WaveFunctionComponent> ExampleHeComponent::makeClone(ParticleSet
   return std::make_unique<ExampleHeComponent>(*this);
 }
 
-void ExampleHeComponent::resetParametersExclusive(const OptVariablesType& active)
+void ExampleHeComponent::resetParametersExclusive(const OptVariablesType& active, bool isPrimaryObject)
 {
   if (my_vars_.size())
   {

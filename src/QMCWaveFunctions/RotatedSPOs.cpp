@@ -92,7 +92,7 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
   }
 }
 
-void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
+void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active, bool isPrimaryObject)
 {
   std::vector<RealType> delta_param(m_act_rot_inds.size());
 
@@ -119,7 +119,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
     for (int i = 0; i < m_full_rot_inds.size(); i++)
       old_param[i] = myVarsFull[i];
 
-    if (use_this_copy_to_apply_rotation_)
+    if (isPrimaryObject)
       applyDeltaRotation(delta_param, old_param, new_param);
 
     // Save the the params
@@ -128,7 +128,7 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
   }
   else
   {
-    if (use_this_copy_to_apply_rotation_)
+    if (isPrimaryObject)
       apply_rotation(delta_param, false);
 
     // Save the parameters in the history list
@@ -1409,8 +1409,6 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->myVarsFull      = this->myVarsFull;
   myclone->history_params_ = this->history_params_;
   myclone->use_global_rot_ = this->use_global_rot_;
-
-  // use_this_copy_to_apply_rotation_ is deliberately not copied
 
   return myclone;
 }

@@ -887,7 +887,7 @@ void TrialWaveFunction::resetParameters(const opt_variables_type& active)
 {
   auto opt_obj_refs = extractOptimizableObjectRefs();
   for (OptimizableObject& obj : opt_obj_refs)
-    obj.resetParametersExclusive(active);
+    obj.resetParametersExclusive(active, true);
 }
 
 void TrialWaveFunction::reportStatus(std::ostream& os)
