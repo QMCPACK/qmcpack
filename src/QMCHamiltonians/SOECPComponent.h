@@ -72,7 +72,7 @@ private:
   Vector<ValueType> dlogpsi_vp_;
   VirtualParticleSet* VP_;
 
-  //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as 
+  //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as
   //the spatial quadrature. In this function, it specifies the deltaS_ and deltaV_ for all the quadrature points and sets the interal weights
   //in spin_quad_weights
   //If there are s0,s1,...sN spin integral points and q0,q1,...qM spatial quadrature points, the order is
@@ -129,6 +129,8 @@ public:
   inline int getLmax() const { return lmax_; }
   inline int getNknot() const { return nknot_; }
   inline int getSknot() const { return sknot_; }
+
+  const VirtualParticleSet* getVP() const { return VP_; };
 
   friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);

@@ -17,6 +17,9 @@
 
 namespace qmcplusplus
 {
+template<typename T>
+struct NLPPJob;
+
 class SOECPotential : public OperatorBase
 {
 public:
@@ -32,6 +35,10 @@ public:
                                        const opt_variables_type& optvars,
                                        const Vector<ValueType>& dlogpsi,
                                        Vector<ValueType>& dhpsioverpsi) override;
+
+  void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
+                   const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                   const RefVectorWithLeader<ParticleSet>& p_list) const override;
 
   bool put(xmlNodePtr cur) override { return true; }
 
@@ -65,6 +72,8 @@ private:
   NeighborLists ElecNeighborIons_;
   ///neighborlist of ions
   NeighborLists IonNeighborElecs_;
+  //job list for evaluation
+  std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
 };
 } // namespace qmcplusplus
 
