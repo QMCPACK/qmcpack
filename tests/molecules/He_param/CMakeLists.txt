@@ -158,6 +158,25 @@ if(NOT QMC_CUDA)
       SCALAR_VALUES
       HE_ORB_ROT_PARAM)
 
+    list(APPEND HE_ORB_ROT_RHF_PARAM spo-up_orb_rot_0000_0001  -0.766  0.01) # scalar name, value, error
+    qmc_run_and_check_custom_scalar(
+      BASE_NAME
+      short-He_orb_rot_param_grad_rhf
+      BASE_DIR
+      "${qmcpack_SOURCE_DIR}/tests/molecules/He_param"
+      PREFIX
+      He_orb_rot_param_grad_rhf.param
+      INPUT_FILE
+      He_orb_rot_param_grad_rhf.xml
+      PROCS
+      1
+      THREADS
+      16
+      SERIES
+      0
+      SCALAR_VALUES
+      HE_ORB_ROT_RHF_PARAM)
+
     # Two atomic orbitals, with jastrow
 
     list(APPEND HE_ORB_ROT_JASTROW_PARAM spo-up_orb_rot_0000_0001    0.078  0.02)  # scalar name, value, error
