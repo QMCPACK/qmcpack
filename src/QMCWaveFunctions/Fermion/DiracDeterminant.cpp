@@ -43,15 +43,9 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
 {
   resize(NumPtcls, NumPtcls);
 
-  if (isOptimizable())
-  {
-    RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
-    if (rot_spo)
-      rot_spo->buildOptVariables(NumPtcls);
-    else
-      throw std::runtime_error("Cast of Phi to RotatedSPOs failed.");
-  }
-
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(NumPtcls);
 
   if (Phi->getOrbitalSetSize() < NumPtcls)
   {

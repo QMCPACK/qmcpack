@@ -41,14 +41,10 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPO
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);
-  if (isOptimizable())
-  {
-    RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
-    if (rot_spo)
-      rot_spo->buildOptVariables(NumPtcls);
-    else
-      throw std::runtime_error("Cast of Phi to RotatedSPOs failed.");
-  }
+
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(NumPtcls);
 }
 
 template<typename DET_ENGINE>

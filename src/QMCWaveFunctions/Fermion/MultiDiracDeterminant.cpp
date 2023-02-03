@@ -809,8 +809,6 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
   RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
   if (rot_spo)
     rot_spo->buildOptVariables(m_act_rot_inds);
-  else
-    throw std::runtime_error("Cast of Phi to RotatedSPOs failed.");
 }
 
 int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,
