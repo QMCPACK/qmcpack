@@ -22,6 +22,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "QMCWaveFunctions/RotatedSPOs.h"
 
 namespace qmcplusplus
 {
@@ -43,7 +44,14 @@ DiracDeterminant<DU_TYPE>::DiracDeterminant(std::unique_ptr<SPOSet>&& spos,
   resize(NumPtcls, NumPtcls);
 
   if (isOptimizable())
-    Phi->buildOptVariables(NumPtcls);
+  {
+    RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+    if (rot_spo)
+      rot_spo->buildOptVariables(NumPtcls);
+    else
+      throw std::runtime_error("Cast of Phi to RotatedSPOs failed.");
+  }
+
 
   if (Phi->getOrbitalSetSize() < NumPtcls)
   {

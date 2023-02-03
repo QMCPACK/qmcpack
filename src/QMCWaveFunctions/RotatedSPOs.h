@@ -91,10 +91,10 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(size_t nel) override;
+  void buildOptVariables(size_t nel);
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
