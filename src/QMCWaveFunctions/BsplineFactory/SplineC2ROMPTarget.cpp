@@ -147,8 +147,8 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, offload_scratch_ptr + first,
-                                             index);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+                                             offload_scratch_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
         PRAGMA_OFFLOAD("omp parallel for")
@@ -231,8 +231,8 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, offload_scratch_iat_ptr + first,
-                                             index);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
         PRAGMA_OFFLOAD("omp parallel for")
@@ -357,8 +357,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, offload_scratch_iat_ptr + first,
-                                             index);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
         PRAGMA_OFFLOAD("omp parallel for")
@@ -569,11 +569,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_ptr + first,
-                                             offload_scratch_ptr + spline_padded_size + first,
-                                             offload_scratch_ptr + spline_padded_size * 4 + first, spline_padded_size,
-                                             index);
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_ptr + first + index, spline_padded_size);
         const int output_index = first + index;
         offload_scratch_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
             SymTrace(offload_scratch_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
@@ -588,8 +585,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
         C2R::assign_vgl(x, y, z, results_scratch_ptr, sposet_padded_size, mKK_ptr, offload_scratch_ptr,
-                        spline_padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local,
-                        nComplexBands_local, index);
+                        spline_padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local,
+                        index);
     }
   }
 
@@ -663,11 +660,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + spline_padded_size + first,
-                                               offload_scratch_iw_ptr + spline_padded_size * 4 + first,
-                                               spline_padded_size, index);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first + index, spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
               SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
@@ -682,8 +676,8 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
-                          sposet_padded_size, mKK_ptr, offload_scratch_iw_ptr, spline_padded_size, G,
-                          myKcart_ptr, myKcart_padded_size, first_spo_local, nComplexBands_local, index);
+                          sposet_padded_size, mKK_ptr, offload_scratch_iw_ptr, spline_padded_size, G, myKcart_ptr,
+                          myKcart_padded_size, first_spo_local, nComplexBands_local, index);
       }
   }
 
@@ -844,11 +838,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + spline_padded_size + first,
-                                               offload_scratch_iw_ptr + spline_padded_size * 4 + first,
-                                               spline_padded_size, index);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first + index, spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
               SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
