@@ -15,129 +15,13 @@
 #include "spline2/MultiBsplineEval_OMPoffload.hpp"
 #include "QMCWaveFunctions/BsplineFactory/contraction_helper.hpp"
 #include "Platforms/OMPTarget/ompReductionComplex.hpp"
-#include "OMPTarget/OMPTargetMath.hpp"
+#include "ApplyPhaseC2C.hpp"
 #include "Concurrency/OpenMP.h"
 
 namespace qmcplusplus
 {
 template<typename ST>
 SplineC2COMPTarget<ST>::SplineC2COMPTarget(const SplineC2COMPTarget& in) = default;
-
-namespace C2C
-{
-template<typename ST, typename TT>
-inline void assign_v(ST x,
-                     ST y,
-                     ST z,
-                     TT* restrict results_scratch_ptr,
-                     const ST* restrict offload_scratch_ptr,
-                     const ST* restrict myKcart_ptr,
-                     size_t myKcart_padded_size,
-                     size_t first_spo,
-                     int index)
-{
-  const ST* restrict kx = myKcart_ptr;
-  const ST* restrict ky = myKcart_ptr + myKcart_padded_size;
-  const ST* restrict kz = myKcart_ptr + myKcart_padded_size * 2;
-
-  const ST* restrict val = offload_scratch_ptr;
-  TT* restrict psi       = results_scratch_ptr;
-
-  //phase
-  ST s, c, p = -(x * kx[index] + y * ky[index] + z * kz[index]);
-  omptarget::sincos(p, &s, &c);
-
-  const ST val_r         = val[index * 2];
-  const ST val_i         = val[index * 2 + 1];
-  psi[first_spo + index] = TT(val_r * c - val_i * s, val_i * c + val_r * s);
-}
-
-/** assign_vgl
-   */
-template<typename ST, typename TT>
-inline void assign_vgl(ST x,
-                       ST y,
-                       ST z,
-                       TT* restrict results_scratch_ptr,
-                       size_t orb_padded_size,
-                       const ST* mKK_ptr,
-                       const ST* restrict offload_scratch_ptr,
-                       size_t spline_padded_size,
-                       const ST symGGt[6],
-                       const ST G[9],
-                       const ST* myKcart_ptr,
-                       size_t myKcart_padded_size,
-                       size_t first_spo,
-                       int index)
-{
-  constexpr ST two(2);
-  const ST &g00 = G[0], &g01 = G[1], &g02 = G[2], &g10 = G[3], &g11 = G[4], &g12 = G[5], &g20 = G[6], &g21 = G[7],
-           &g22 = G[8];
-
-  const ST* restrict k0 = myKcart_ptr;
-  const ST* restrict k1 = myKcart_ptr + myKcart_padded_size;
-  const ST* restrict k2 = myKcart_ptr + myKcart_padded_size * 2;
-
-  const ST* restrict val = offload_scratch_ptr;
-  const ST* restrict g0  = offload_scratch_ptr + spline_padded_size;
-  const ST* restrict g1  = offload_scratch_ptr + spline_padded_size * 2;
-  const ST* restrict g2  = offload_scratch_ptr + spline_padded_size * 3;
-  const ST* restrict h00 = offload_scratch_ptr + spline_padded_size * 4;
-  const ST* restrict h01 = offload_scratch_ptr + spline_padded_size * 5;
-  const ST* restrict h02 = offload_scratch_ptr + spline_padded_size * 6;
-  const ST* restrict h11 = offload_scratch_ptr + spline_padded_size * 7;
-  const ST* restrict h12 = offload_scratch_ptr + spline_padded_size * 8;
-  const ST* restrict h22 = offload_scratch_ptr + spline_padded_size * 9;
-
-  const size_t jr = index << 1;
-  const size_t ji = jr + 1;
-
-  const ST kX    = k0[index];
-  const ST kY    = k1[index];
-  const ST kZ    = k2[index];
-  const ST val_r = val[jr];
-  const ST val_i = val[ji];
-
-  //phase
-  ST s, c, p = -(x * kX + y * kY + z * kZ);
-  omptarget::sincos(p, &s, &c);
-
-  //dot(PrimLattice.G,myG[j])
-  const ST dX_r = g00 * g0[jr] + g01 * g1[jr] + g02 * g2[jr];
-  const ST dY_r = g10 * g0[jr] + g11 * g1[jr] + g12 * g2[jr];
-  const ST dZ_r = g20 * g0[jr] + g21 * g1[jr] + g22 * g2[jr];
-
-  const ST dX_i = g00 * g0[ji] + g01 * g1[ji] + g02 * g2[ji];
-  const ST dY_i = g10 * g0[ji] + g11 * g1[ji] + g12 * g2[ji];
-  const ST dZ_i = g20 * g0[ji] + g21 * g1[ji] + g22 * g2[ji];
-
-  // \f$\nabla \psi_r + {\bf k}\psi_i\f$
-  const ST gX_r = dX_r + val_i * kX;
-  const ST gY_r = dY_r + val_i * kY;
-  const ST gZ_r = dZ_r + val_i * kZ;
-  const ST gX_i = dX_i - val_r * kX;
-  const ST gY_i = dY_i - val_r * kY;
-  const ST gZ_i = dZ_i - val_r * kZ;
-
-  const ST lcart_r = SymTrace(h00[jr], h01[jr], h02[jr], h11[jr], h12[jr], h22[jr], symGGt);
-  const ST lcart_i = SymTrace(h00[ji], h01[ji], h02[ji], h11[ji], h12[ji], h22[ji], symGGt);
-  const ST lap_r   = lcart_r + mKK_ptr[index] * val_r + two * (kX * dX_i + kY * dY_i + kZ * dZ_i);
-  const ST lap_i   = lcart_i + mKK_ptr[index] * val_i - two * (kX * dX_r + kY * dY_r + kZ * dZ_r);
-
-  TT* restrict psi    = results_scratch_ptr;
-  TT* restrict dpsi_x = results_scratch_ptr + orb_padded_size;
-  TT* restrict dpsi_y = results_scratch_ptr + orb_padded_size * 2;
-  TT* restrict dpsi_z = results_scratch_ptr + orb_padded_size * 3;
-  TT* restrict d2psi  = results_scratch_ptr + orb_padded_size * 4;
-
-  const size_t psiIndex = first_spo + index;
-  psi[psiIndex]         = TT(c * val_r - s * val_i, c * val_i + s * val_r);
-  d2psi[psiIndex]       = TT(c * lap_r - s * lap_i, c * lap_i + s * lap_r);
-  dpsi_x[psiIndex]      = TT(c * gX_r - s * gX_i, c * gX_i + s * gX_r);
-  dpsi_y[psiIndex]      = TT(c * gY_r - s * gY_i, c * gY_i + s * gY_r);
-  dpsi_z[psiIndex]      = TT(c * gZ_r - s * gZ_i, c * gZ_i + s * gZ_r);
-}
-} // namespace C2C
 
 template<typename ST>
 inline void SplineC2COMPTarget<ST>::set_spline(SingleSplineType* spline_r,
@@ -276,8 +160,8 @@ void SplineC2COMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                             index);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
@@ -396,8 +280,8 @@ void SplineC2COMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, a, b, c, offload_scratch_iat_ptr + first, first,
-                                             index);
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+                                             offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
@@ -506,8 +390,7 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
 
   const auto padded_size = myV.size();
-  // for V(1)G(3)H(6) intermediate result
-  offload_scratch.resize(padded_size * 10);
+  offload_scratch.resize(padded_size * SoAFields3D::NUM_FIELDS);
   const auto orb_size = psi.size();
   // for V(1)G(3)L(1) final result
   results_scratch.resize(padded_size * 5);
@@ -546,14 +429,24 @@ void SplineC2COMPTarget<ST>::evaluateVGL(const ParticleSet& P,
 
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                             offload_scratch_ptr + first, offload_scratch_ptr + padded_size + first,
-                                             offload_scratch_ptr + padded_size * 4 + first, padded_size, first, index);
+      {
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                             offload_scratch_ptr + first + index, padded_size);
+        const int output_index = first + index;
+        offload_scratch_ptr[padded_size * SoAFields3D::LAPL + output_index] =
+            SymTrace(offload_scratch_ptr[padded_size * SoAFields3D::HESS00 + output_index],
+                     offload_scratch_ptr[padded_size * SoAFields3D::HESS01 + output_index],
+                     offload_scratch_ptr[padded_size * SoAFields3D::HESS02 + output_index],
+                     offload_scratch_ptr[padded_size * SoAFields3D::HESS11 + output_index],
+                     offload_scratch_ptr[padded_size * SoAFields3D::HESS12 + output_index],
+                     offload_scratch_ptr[padded_size * SoAFields3D::HESS22 + output_index], symGGt);
+      }
+
       const size_t first_cplx = first / 2;
       const size_t last_cplx  = omptarget::min(last / 2, orb_size);
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = first_cplx; index < last_cplx; index++)
-        C2C::assign_vgl(x, y, z, results_scratch_ptr, padded_size, mKK_ptr, offload_scratch_ptr, padded_size, symGGt, G,
+        C2C::assign_vgl(x, y, z, results_scratch_ptr, padded_size, mKK_ptr, offload_scratch_ptr, padded_size, G,
                         myKcart_ptr, myKcart_padded_size, first_spo_local, index);
     }
   }
@@ -580,8 +473,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto padded_size        = myV.size();
-  // for V(1)G(3)H(6) intermediate result
-  offload_scratch.resize(padded_size * num_pos * 10);
+  offload_scratch.resize(padded_size * num_pos * SoAFields3D::NUM_FIELDS);
   const auto orb_size = psi_v_list[0].get().size();
   // for V(1)G(3)L(1) final result
   results_scratch.resize(padded_size * num_pos * 5);
@@ -609,7 +501,7 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         const size_t first = ChunkSizePerTeam * team_id;
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
 
-        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * SoAFields3D::NUM_FIELDS;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + padded_size * iw * 5;
 
         int ix, iy, iz;
@@ -625,17 +517,25 @@ void SplineC2COMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + padded_size + first,
-                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                               index);
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first + index, padded_size);
+          const int output_index = first + index;
+          offload_scratch_iw_ptr[padded_size * SoAFields3D::LAPL + output_index] =
+              SymTrace(offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS00 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS01 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS02 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS11 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS12 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS22 + output_index], symGGt);
+        }
+
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
-                          padded_size, mKK_ptr, offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr,
+                          padded_size, mKK_ptr, offload_scratch_iw_ptr, padded_size, G, myKcart_ptr,
                           myKcart_padded_size, first_spo_local, index);
       }
   }
@@ -741,8 +641,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
   const auto padded_size        = myV.size();
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
-  // for V(1)G(3)H(6) intermediate result
-  mw_offload_scratch.resize(padded_size * num_pos * 10);
+  mw_offload_scratch.resize(padded_size * num_pos * SoAFields3D::NUM_FIELDS);
   // for V(1)G(3)L(1) final result
   mw_results_scratch.resize(padded_size * num_pos * 5);
   // per team ratio and grads
@@ -775,7 +674,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         const size_t first = ChunkSizePerTeam * team_id;
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, padded_size);
 
-        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * 10;
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + padded_size * iw * SoAFields3D::NUM_FIELDS;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + padded_size * iw * 5;
         const auto* restrict pos_iw_ptr       = reinterpret_cast<ST*>(buffer_H2D_ptr + buffer_H2D_stride * iw);
         const auto* restrict invRow_iw_ptr =
@@ -794,18 +693,26 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first,
-                                               offload_scratch_iw_ptr + padded_size + first,
-                                               offload_scratch_iw_ptr + padded_size * 4 + first, padded_size, first,
-                                               index);
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+                                               offload_scratch_iw_ptr + first + index, padded_size);
+          const int output_index = first + index;
+          offload_scratch_iw_ptr[padded_size * SoAFields3D::LAPL + output_index] =
+              SymTrace(offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS00 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS01 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS02 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS11 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS12 + output_index],
+                       offload_scratch_iw_ptr[padded_size * SoAFields3D::HESS22 + output_index], symGGt);
+        }
+
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = omptarget::min(last / 2, orb_size);
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2C::assign_vgl(pos_iw_ptr[0], pos_iw_ptr[1], pos_iw_ptr[2], psi_iw_ptr, padded_size, mKK_ptr,
-                          offload_scratch_iw_ptr, padded_size, symGGt, G, myKcart_ptr, myKcart_padded_size,
-                          first_spo_local, index);
+                          offload_scratch_iw_ptr, padded_size, G, myKcart_ptr, myKcart_padded_size, first_spo_local,
+                          index);
 
         ValueType* restrict psi    = psi_iw_ptr;
         ValueType* restrict dpsi_x = psi_iw_ptr + padded_size;
