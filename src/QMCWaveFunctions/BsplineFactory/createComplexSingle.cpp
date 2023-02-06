@@ -46,7 +46,7 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexSingle(EinsplineSetBuilde
       app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
                     << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2C<float>>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2COMPTarget<float>>>>(e);
     }
     else
     {

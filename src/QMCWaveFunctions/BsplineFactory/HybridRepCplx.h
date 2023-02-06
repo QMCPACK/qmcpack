@@ -37,8 +37,10 @@ public:
   using RealType         = typename SPLINEBASE::RealType;
   // types for evaluation results
   using typename SPLINEBASE::GGGVector;
+  using typename SPLINEBASE::GradMatrix;
   using typename SPLINEBASE::GradVector;
   using typename SPLINEBASE::HessVector;
+  using typename SPLINEBASE::ValueMatrix;
   using typename SPLINEBASE::ValueType;
   using typename SPLINEBASE::ValueVector;
 
@@ -205,6 +207,17 @@ public:
                      GGGVector& grad_grad_grad_psi) override
   {
     APP_ABORT("HybridRepCplx::evaluate_vghgh not implemented!");
+  }
+
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) override
+  {
+    // bypass SPLINEBASE::evaluate_notranspose
+    BsplineSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
   template<class BSPLINESPO>
