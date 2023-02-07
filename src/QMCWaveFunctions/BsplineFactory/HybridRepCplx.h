@@ -37,8 +37,12 @@ public:
   using RealType         = typename SPLINEBASE::RealType;
   // types for evaluation results
   using typename SPLINEBASE::GGGVector;
+  using typename SPLINEBASE::GradMatrix;
+  using typename SPLINEBASE::GradType;
   using typename SPLINEBASE::GradVector;
   using typename SPLINEBASE::HessVector;
+  using typename SPLINEBASE::OffloadMWVGLArray;
+  using typename SPLINEBASE::ValueMatrix;
   using typename SPLINEBASE::ValueType;
   using typename SPLINEBASE::ValueVector;
 
@@ -57,6 +61,7 @@ public:
 
   std::string getClassName() const final { return "Hybrid" + SPLINEBASE::getClassName(); }
   std::string getKeyword() const final { return "Hybrid" + SPLINEBASE::getKeyword(); }
+  bool isOMPoffload() const final { return false; }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<HybridRepCplx>(*this); }
 
@@ -156,6 +161,15 @@ public:
     }
   }
 
+  void mw_evaluateDetRatios(const RefVectorWithLeader<SPOSet>& spo_list,
+                            const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
+                            const RefVector<ValueVector>& psi_list,
+                            const std::vector<const ValueType*>& invRow_ptr_list,
+                            std::vector<std::vector<ValueType>>& ratios_list) const final
+  {
+    BsplineSet::mw_evaluateDetRatios(spo_list, vp_list, psi_list, invRow_ptr_list, ratios_list);
+  }
+
   void evaluateVGL(const ParticleSet& P, const int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override
   {
     const RealType smooth_factor = HYBRIDBASE::evaluate_vgl(P, iat, myV, myG, myL);
@@ -179,6 +193,27 @@ public:
       SPLINEBASE::evaluateVGL(P, iat, psi, dpsi, d2psi);
       HYBRIDBASE::interpolate_buffer_vgl(psi, dpsi, d2psi, psi_AO, dpsi_AO, d2psi_AO);
     }
+  }
+
+  void mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& sa_list,
+                      const RefVectorWithLeader<ParticleSet>& P_list,
+                      int iat,
+                      const RefVector<ValueVector>& psi_v_list,
+                      const RefVector<GradVector>& dpsi_v_list,
+                      const RefVector<ValueVector>& d2psi_v_list) const final
+  {
+    BsplineSet::mw_evaluateVGL(sa_list, P_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list);
+  }
+
+  void mw_evaluateVGLandDetRatioGrads(const RefVectorWithLeader<SPOSet>& spo_list,
+                                      const RefVectorWithLeader<ParticleSet>& P_list,
+                                      int iat,
+                                      const std::vector<const ValueType*>& invRow_ptr_list,
+                                      OffloadMWVGLArray& phi_vgl_v,
+                                      std::vector<ValueType>& ratios,
+                                      std::vector<GradType>& grads) const final
+  {
+    BsplineSet::mw_evaluateVGLandDetRatioGrads(spo_list, P_list, iat, invRow_ptr_list, phi_vgl_v, ratios, grads);
   }
 
   void evaluateVGH(const ParticleSet& P,
@@ -205,6 +240,17 @@ public:
                      GGGVector& grad_grad_grad_psi) override
   {
     APP_ABORT("HybridRepCplx::evaluate_vghgh not implemented!");
+  }
+
+  void evaluate_notranspose(const ParticleSet& P,
+                            int first,
+                            int last,
+                            ValueMatrix& logdet,
+                            GradMatrix& dlogdet,
+                            ValueMatrix& d2logdet) final
+  {
+    // bypass SPLINEBASE::evaluate_notranspose
+    BsplineSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   }
 
   template<class BSPLINESPO>

@@ -124,7 +124,7 @@ public:
   virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
   bool isComplex() const override { return true; };
-  bool isOMPoffload() const override { return true; }
+  virtual bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
   {
