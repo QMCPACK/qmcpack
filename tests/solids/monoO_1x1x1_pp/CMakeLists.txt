@@ -23,7 +23,7 @@ qmc_run_and_check(
   qmc_j3_short.in.xml
   1
   16
-  ${SUCCESS_STATUS_CUDA}
+  TRUE
   0
   MONO_O_J3_SCALARS # VMC
 )
@@ -59,7 +59,7 @@ qmc_run_and_check(
   qmc_j3_long.in.xml
   1
   16
-  ${SUCCESS_STATUS_CUDA}
+  TRUE
   0
   LONG_MONO_O_J3_SCALARS # VMC
 )
