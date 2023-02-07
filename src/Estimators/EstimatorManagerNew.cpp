@@ -40,7 +40,7 @@
 namespace qmcplusplus
 {
 
-using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+using SPOMap = SPOSet::SPOMap;
 
 EstimatorManagerNew::EstimatorManagerNew(const QMCHamiltonian& ham, Communicate* c)
     : RecordCount(0), my_comm_(c), max4ascii(8), FieldWidth(20)

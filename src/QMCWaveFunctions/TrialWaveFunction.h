@@ -71,7 +71,7 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using SPOMap = SPOSet::SPOMap;
 
   /// enum type for computing partial WaveFunctionComponents
   enum class ComputeType
