@@ -19,9 +19,6 @@
 #include "Particle/ParticleSet.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -104,32 +101,6 @@ struct ConservedEnergy : public OperatorBase
   {
     return std::make_unique<ConservedEnergy>();
   }
-
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
-  {
-    // Value of LocalEnergy is not used in caller because this is auxiliary H.
-    auto& walkers = W.WalkerList;
-    for (int iw = 0; iw < walkers.size(); iw++)
-    {
-      Walker_t& w = *(walkers[iw]);
-      RealType flux;
-      RealType gradsq = Dot(w.G, w.G);
-      RealType lap    = Sum(w.L);
-#ifdef QMC_COMPLEX
-      RealType gradsq_cc = Dot_CC(w.G, w.G);
-      flux               = lap + gradsq + gradsq_cc;
-#else
-      flux = lap + 2 * gradsq;
-#endif
-      w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = flux;
-    }
-  }
-#endif
 };
 } // namespace qmcplusplus
 #endif

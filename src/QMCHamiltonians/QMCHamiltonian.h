@@ -141,7 +141,7 @@ public:
    *
    * Add observable_helper information for the data stored in ParticleSet::mcObservables.
    */
-  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive &file) const;
+  void registerCollectables(std::vector<ObservableHelper>& h5desc, hdf_archive& file) const;
 
   /** Listener Registration
    *  This must be called on a QMCHamiltonian that has acquired multiwalker resources
@@ -427,21 +427,6 @@ public:
   /** return a clone */
   std::unique_ptr<QMCHamiltonian> makeClone(ParticleSet& qp, TrialWaveFunction& psi) const;
 
-#ifdef QMC_CUDA
-  ////////////////////////////////////////////
-  // Vectorized evaluation routines for GPU //
-  ////////////////////////////////////////////
-  void evaluate(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-  void evaluate(MCWalkerConfiguration& W,
-                std::vector<RealType>& energyVector,
-                std::vector<std::vector<NonLocalData>>& Txy);
-
-private:
-  /////////////////////
-  // Vectorized data //
-  /////////////////////
-  std::vector<QMCHamiltonian::FullPrecRealType> LocalEnergyVector, AuxEnergyVector;
-#endif
 private:
   static constexpr std::array<std::string_view, 8> available_quantities_{"weight", "LocalEnergy", "LocalPotential",
                                                                          "Vq",     "Vc",          "Vqq",

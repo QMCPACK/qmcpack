@@ -43,9 +43,9 @@ enum
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) //, PopHist(5), DMCEnergyHist(5)
 {
-  BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
-  BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
-  BranchMode.set(B_USETAUEFF, 1);    //use taueff
+  BranchMode.set(B_DMCSTAGE, 0);                                       //warmup stage
+  BranchMode.set(B_POPCONTROL, 1);                                     //use standard DMC
+  BranchMode.set(B_USETAUEFF, 1);                                      //use taueff
   BranchMode.set(B_CLEARHISTORY, 0); //clear history and start with the current average
   BranchMode.set(B_KILLNODES, 0);    //when killing walkers at nodes etrial is updated differently
   vParam.fill(1.0);
@@ -628,9 +628,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   ToDoSteps = iParam[B_WARMUPSTEPS] = (iParam[B_WARMUPSTEPS]) ? iParam[B_WARMUPSTEPS] : 10;
   setBranchCutoff(vParam[SBVP::SIGMA2], WalkerController->get_target_sigma(), 10);
   WalkerController->reset();
-#ifdef QMC_CUDA
-  reset(); // needed. Ye
-#endif
   if (BackupWalkerController)
     BackupWalkerController->reset();
 

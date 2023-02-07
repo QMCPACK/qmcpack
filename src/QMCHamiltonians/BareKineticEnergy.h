@@ -144,13 +144,6 @@ public:
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
-#endif
   /** initialize a shared resource and hand it to a collection
    */
   void createResource(ResourceCollection& collection) const override;

@@ -368,25 +368,6 @@ MPC::Return_t MPC::evaluate(ParticleSet& P)
   return value_;
 }
 
-void MPC::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  //only used for debugging
-  //  const int nw=W.getActiveWalkers();
-  //  const int indx=NUMPROPERTIES+myIndex;
-  //#ifdef QMC_CUDA
-  //#pragma omp parallel for
-  //  for(int iw=0; iw<nw; ++iw)
-  //  {
-  //    ParticleSet& p(*myPtcl[omp_get_thread_num()]);
-  //    p.R=W[iw]->R;
-  //    p.update();
-  //    RealType e=evalSR(p)+evalLR(p)+Vconst;
-  //    W[iw]->getPropertyBase()[indx] = e;
-  //    LocalEnergy[iw]+=e;
-  //  }
-  //#endif
-}
-
 bool MPC::put(xmlNodePtr cur)
 {
   Ecut = -1.0;

@@ -349,7 +349,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     if (is_active)
       value_ = evaluate(P); // No forces for the active
     else
-      hf_terms -= forces; // No Pulay here
+      hf_terms -= forces;   // No Pulay here
     return value_;
   }
 
@@ -392,29 +392,6 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     }
     else
       return std::make_unique<CoulombPotential>(Pa, qp, true);
-  }
-
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override
-  {
-    auto& walkers = W.WalkerList;
-    if (is_active)
-    {
-      for (int iw = 0; iw < W.getActiveWalkers(); iw++)
-      {
-        W.loadWalker(*walkers[iw], false);
-        W.update();
-        value_                                                        = evaluate(W);
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
-        LocalEnergy[iw] += value_;
-      }
-    }
-    else
-      // assuminig the same results for all the walkers when the set is not active
-      for (int iw = 0; iw < LocalEnergy.size(); iw++)
-      {
-        walkers[iw]->getPropertyBase()[WP::NUMPROPERTIES + my_index_] = value_;
-        LocalEnergy[iw] += value_;
-      }
   }
 };
 

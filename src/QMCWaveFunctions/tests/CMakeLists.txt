@@ -77,15 +77,13 @@ foreach(fname ${FILES_TO_COPY})
   execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
 endforeach()
 
-if(NOT QMC_CUDA)
-  if(NOT QMC_COMPLEX)
-    set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp test_RotatedSPOs_LCAO.cpp)
-    if(NOT QMC_MIXED_PRECISION)
-      set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
-    endif()
-  else()
-    set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
+if(NOT QMC_COMPLEX)
+  set(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp test_cartesian_ao.cpp test_RotatedSPOs_LCAO.cpp)
+  if(NOT QMC_MIXED_PRECISION)
+    set(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
   endif()
+else()
+  set(MO_SRCS test_pyscf_complex_MO.cpp test_MO_spinor.cpp)
 endif()
 
 set(COMMON_SRC test_variable_set.cpp test_OptimizableObject.cpp)
@@ -100,7 +98,6 @@ set(TRIALWF_SRC
     test_TWFGrads.cpp)
 
 set(SPOSET_SRC
-    ConstantSPOSet.cpp
     test_spo_collection_input_spline.cpp
     test_spo_collection_input_LCAO_xml.cpp
     test_spo_collection_input_MSD_LCAO_h5.cpp
@@ -131,7 +128,6 @@ set(JASTROW_SRC
     test_2d_jastrow.cpp)
 
 set(DETERMINANT_SRC
-    FakeSPO.cpp
     test_DiracDeterminant.cpp
     test_DiracDeterminantBatched.cpp
     test_multi_dirac_determinant.cpp
@@ -139,12 +135,14 @@ set(DETERMINANT_SRC
     test_ci_configuration.cpp
     test_multi_slater_determinant.cpp)
 
+add_library(sposets_for_testing FakeSPO.cpp ConstantSPOSet.cpp)
+target_include_directories(sposets_for_testing PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(sposets_for_testing PUBLIC qmcwfs)
+
 # @TODO: Remove when rotations work for complex stuff
 if(NOT QMC_COMPLEX)
   if(NOT ENABLE_CUDA)
-    if(NOT QMC_CUDA)
-      set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
-    endif()
+    set(SPOSET_SRC test_RotatedSPOs.cpp ${SPOSET_SRC})
   endif()
 endif()
 
@@ -178,6 +176,7 @@ foreach(CATEGORY common trialwf sposet jastrow determinant)
     qmcparticle_omptarget
     platform_LA
     platform_runtime
+    sposets_for_testing
     utilities_for_test
     container_testing)
   if(USE_OBJECT_TARGET)

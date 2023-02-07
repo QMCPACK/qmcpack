@@ -15,9 +15,6 @@ set(UTEST_EXE test_${SRC_DIR})
 set(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 set(TEST_SRCS test_qmctypes.cpp test_template_types.cpp)
-if(QMC_CUDA)
-  set(TEST_SRCS test_cuda_types.cpp)
-endif(QMC_CUDA)
 add_executable(${UTEST_EXE} ${TEST_SRCS})
 target_link_libraries(${UTEST_EXE} catch_main containers)
 

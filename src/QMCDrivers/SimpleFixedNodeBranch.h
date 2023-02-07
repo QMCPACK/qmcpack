@@ -106,25 +106,25 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   enum
   {
-    B_DMC = 0 /**< 1 for dmc, 0 for anything else */
+    B_DMC = 0          /**< 1 for dmc, 0 for anything else */
     ,
-    B_DMCSTAGE = 1 /**< 1 for main, 0 for wamrup  */
+    B_DMCSTAGE = 1     /**< 1 for main, 0 for wamrup  */
     ,
-    B_POPCONTROL = 2 /**< 1 for the standard dmc, 0 for the comb method */
+    B_POPCONTROL = 2   /**< 1 for the standard dmc, 0 for the comb method */
     ,
-    B_USETAUEFF = 3 /**< 1 to use taueff accordning to JCP 93, 0 to use tau */
+    B_USETAUEFF = 3    /**< 1 to use taueff accordning to JCP 93, 0 to use tau */
     ,
     B_CLEARHISTORY = 4 /**< 1 to clear the history */
     ,
-    B_KILLNODES = 5 /**< 1 to kill walkers when a node crossing is detected */
+    B_KILLNODES = 5    /**< 1 to kill walkers when a node crossing is detected */
     ,
-    B_RESTART = 6 /**< 1 if restarting */
+    B_RESTART = 6      /**< 1 if restarting */
     ,
-    B_RMC = 7 /**< 1 for rmc, 0 for anything else */
+    B_RMC = 7          /**< 1 for rmc, 0 for anything else */
     ,
-    B_RMCSTAGE = 8 /**< 1 for main, 0 for warmup */
+    B_RMCSTAGE = 8     /**< 1 for main, 0 for warmup */
     ,
-    B_MODE_MAX = 10 /**< size of BranchMode */
+    B_MODE_MAX = 10    /**< size of BranchMode */
   };
 
   /** booleans to set the branch modes
@@ -141,21 +141,21 @@ struct SimpleFixedNodeBranch : public QMCTraits
    */
   enum
   {
-    B_WARMUPSTEPS = 0 /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
+    B_WARMUPSTEPS = 0          /**< warmup steps, valid when BranchMode[D_DMCSTAGE] == 0 */
     ,
     B_ENERGYUPDATEINTERVAL = 1 /**< frequency of the trial energy updates, default 1 */
     ,
-    B_COUNTER = 2 /**< counter for tracking object state */
+    B_COUNTER = 2              /**< counter for tracking object state */
     ,
-    B_TARGETWALKERS = 3 /**< target total number of walkers per mpi group */
+    B_TARGETWALKERS = 3        /**< target total number of walkers per mpi group */
     ,
-    B_MAXWALKERS = 4 /**< maximum number of walkers per node */
+    B_MAXWALKERS = 4           /**< maximum number of walkers per node */
     ,
-    B_MINWALKERS = 5 /**< minimum number of walkers per node */
+    B_MINWALKERS = 5           /**< minimum number of walkers per node */
     ,
-    B_BRANCHINTERVAL = 6 /**< interval between branch, see population control */
+    B_BRANCHINTERVAL = 6       /**< interval between branch, see population control */
     ,
-    B_IPARAM_MAX = 8 /**< size of iParam */
+    B_IPARAM_MAX = 8           /**< size of iParam */
   };
 
   /** input parameters of integer types
@@ -442,7 +442,7 @@ struct SimpleFixedNodeBranch : public QMCTraits
   /** reset the internal parameters
    * @return new target population over old target population
    *
-   * only used by CUDA legacy
+   * only used by legacy drivers
    */
   int resetRun(xmlNodePtr cur);
 

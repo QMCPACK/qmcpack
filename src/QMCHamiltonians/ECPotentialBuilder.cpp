@@ -22,11 +22,6 @@
 #include "QMCHamiltonians/L2Potential.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
-#ifdef QMC_CUDA
-#include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
-#include "QMCHamiltonians/LocalECPotential_CUDA.h"
-#include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -98,11 +93,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     if (IonConfig.getLattice().SuperCellEnum == SUPERCELL_OPEN || pbc == "no")
     {
-#ifdef QMC_CUDA
-      std::unique_ptr<LocalECPotential_CUDA> apot = std::make_unique<LocalECPotential_CUDA>(IonConfig, targetPtcl);
-#else
       std::unique_ptr<LocalECPotential> apot = std::make_unique<LocalECPotential>(IonConfig, targetPtcl);
-#endif
       for (int i = 0; i < localPot.size(); i++)
         if (localPot[i])
           apot->add(i, std::move(localPot[i]), localZeff[i]);
@@ -112,11 +103,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     {
       if (doForces)
         app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
-#ifdef QMC_CUDA
-      std::unique_ptr<CoulombPBCAB_CUDA> apot = std::make_unique<CoulombPBCAB_CUDA>(IonConfig, targetPtcl, doForces);
-#else
-      std::unique_ptr<CoulombPBCAB> apot     = std::make_unique<CoulombPBCAB>(IonConfig, targetPtcl, doForces);
-#endif
+      std::unique_ptr<CoulombPBCAB> apot = std::make_unique<CoulombPBCAB>(IonConfig, targetPtcl, doForces);
       for (int i = 0; i < localPot.size(); i++)
       {
         if (localPot[i])
@@ -127,14 +114,8 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if (hasNonLocalPot)
   {
-#ifdef QMC_CUDA
-    std::unique_ptr<NonLocalECPotential_CUDA> apot =
-        std::make_unique<NonLocalECPotential_CUDA>(IonConfig, targetPtcl, targetPsi, usePBC, doForces,
-                                                   use_DLA == "yes");
-#else
     std::unique_ptr<NonLocalECPotential> apot =
         std::make_unique<NonLocalECPotential>(IonConfig, targetPtcl, targetPsi, doForces, use_DLA == "yes");
-#endif
 
     int nknot_max = 0;
     // These are actually NonLocalECPComponents
