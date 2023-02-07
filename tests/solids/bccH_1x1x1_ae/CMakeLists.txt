@@ -39,7 +39,6 @@ qmc_run_and_check(
   BCC_H_DMC_SCALARS # DMC
 )
 
-
 # Check VMCUpdateAll driver using all-particle updates
 qmc_run_and_check(
   short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
@@ -80,12 +79,12 @@ qmc_run_and_check(
 )
 
 # Deterministic correlated sampling test
-list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A"   "-1.5879406376 0.00001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B"   "-1.5845867400 0.00001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_A" "-1.5879406376 0.00001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "totenergy_B" "-1.5845867400 0.00001")
 list(APPEND DET_BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.0033713724 0.00001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_A"      "-0.9628996202 0.0000001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_B"      "-0.9581655983 0.0000001")
-list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB"    "-0.0047340219 0.0000001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_A" "-0.9628996202 0.0000001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "ionion_B" "-0.9581655983 0.0000001")
+list(APPEND DET_BCC_H_CSVMC_SCALARS "dionion_AB" "-0.0047340219 0.0000001")
 
 qmc_run_and_check(
   deterministic-bccH_1x1x1_ae-csvmc-all_sdj
@@ -186,8 +185,7 @@ qmc_run_and_check(
 )
 
 # Check CPU time limit
-cpu_limit_run("bccH_1x1x1_ae-rmc-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 1 120
-              qmc_cpu_limit_rmc.xml)
+cpu_limit_run("bccH_1x1x1_ae-rmc-1-1" "${qmcpack_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae" 1 1 120 qmc_cpu_limit_rmc.xml)
 
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Reduced number of blocks and samples compared to other short bccH tests

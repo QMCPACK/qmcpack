@@ -219,25 +219,25 @@ qmc_run_and_check(
 )
 
 # Deterministic test
-  if(QMC_MIXED_PRECISION)
-    list(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.99301725 0.00001597")
-    list(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "7.42550431 0.00001588")
-    list(APPEND DET_LIH_GAMMA_SCALARS "potential" "-16.41852156 0.000005")
-    list(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.39002015 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68928007 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922134 0.000005")
-    list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
-    list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04160754 0.00002925")
-  else()
-    list(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.99302939 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "7.42549769 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "potential" "-16.41852708 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.39001949 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68927959 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922800 0.000001")
-    list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
-    list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04162024 0.000001")
-  endif()
+if(QMC_MIXED_PRECISION)
+  list(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.99301725 0.00001597")
+  list(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "7.42550431 0.00001588")
+  list(APPEND DET_LIH_GAMMA_SCALARS "potential" "-16.41852156 0.000005")
+  list(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.39002015 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68928007 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922134 0.000005")
+  list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04160754 0.00002925")
+else()
+  list(APPEND DET_LIH_GAMMA_SCALARS "totenergy" "-8.99302939 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "kinetic" "7.42549769 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "potential" "-16.41852708 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "eeenergy" "-1.39001949 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "ionion" "-3.68927959 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "localecp" "-11.33922800 0.000001")
+  list(APPEND DET_LIH_GAMMA_SCALARS "samples" "9 0.0")
+  list(APPEND DET_LIH_GAMMA_SCALARS "flux" "0.04162024 0.000001")
+endif()
 
 qmc_run_and_check(
   deterministic-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
@@ -262,8 +262,7 @@ qmc_run_and_check(
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   4
   1
-  TRUE
- )
+  TRUE)
 
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
@@ -272,8 +271,7 @@ qmc_run_and_check(
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   3
   1
-  FALSE
- )
+  FALSE)
 
 qmc_run_and_check(
   deterministic-ensemble_blocks_LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
@@ -282,5 +280,4 @@ qmc_run_and_check(
   det_ensemble_blocks_hf_vmc_LiH-gamma.txt
   5
   1
-  TRUE
- )
+  TRUE)
