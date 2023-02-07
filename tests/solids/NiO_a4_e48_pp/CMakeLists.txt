@@ -174,7 +174,7 @@ else()
       NiO-hybridrep-j3-vmc-short.in.xml
       1
       16
-      ${SUCCESS_STATUS_CUDA}
+      TRUE
       1
       NIO_A4_E48_J3_SCALARS # VMC
     )
@@ -188,7 +188,7 @@ else()
       NiO-hybridrep-j3-batched-vmc-short.in.xml
       1
       16
-      ${SUCCESS_STATUS_CUDA}
+      TRUE
       1
       NIO_A4_E48_J3_SCALARS # VMC
     )

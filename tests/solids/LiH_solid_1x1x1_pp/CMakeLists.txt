@@ -68,7 +68,7 @@ qmc_run_and_check(
   hf_vmc_LiH-x_hybridrep.xml
   1
   16
-  ${SUCCESS_STATUS_CUDA}
+  TRUE
   0
   LIH_X_SCALARS # VMC
 )
@@ -119,7 +119,7 @@ if(QMC_COMPLEX)
     md_cc_vmc_LiH-gamma.xml
     1
     16
-    ${SUCCESS_STATUS_CUDA}
+    TRUE
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )
@@ -132,7 +132,7 @@ else()
     md_rc_vmc_LiH-gamma.xml
     1
     16
-    ${SUCCESS_STATUS_CUDA}
+    TRUE
     1
     LIH_MD_GAMMA_SCALARS # VMC
   )
