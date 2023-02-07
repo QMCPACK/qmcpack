@@ -29,7 +29,6 @@ using std::string;
 
 namespace qmcplusplus
 {
-#if !defined(ENABLE_OFFLOAD)
 TEST_CASE("Hybridrep SPO from HDF diamond_1x1x1", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
@@ -363,8 +362,6 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   spo->mw_evaluateVGL(spo_list, P_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
 #if defined(QMC_COMPLEX)
   // real part
-  // due to the different ordering of bands skip the tests on CUDA+Real builds
-  // checking evaluations, reference values are not independently generated.
   // value
   CHECK(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
   CHECK(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
@@ -378,9 +375,7 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   // lapl
   CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
   CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-#endif
 
-#if defined(QMC_COMPLEX)
   // imaginary part
   // value
   CHECK(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
@@ -397,6 +392,5 @@ TEST_CASE("Hybridrep SPO from HDF diamond_2x1x1", "[wavefunction]")
   CHECK(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
 #endif
 }
-#endif
 
 } // namespace qmcplusplus
