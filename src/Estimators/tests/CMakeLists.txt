@@ -42,7 +42,7 @@ set(SRCS
 
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
-target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test)
+target_link_libraries(${UTEST_EXE} catch_main qmcutil qmcestimators_unit utilities_for_test sposets_for_testing)
 if(USE_OBJECT_TARGET)
   target_link_libraries(
     ${UTEST_EXE}
