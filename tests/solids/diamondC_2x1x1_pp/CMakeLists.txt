@@ -19,58 +19,58 @@ qmc_run_and_check(
   0
   DIAMOND2_SCALARS # VMC
 )
-if(NOT QMC_CUDA)
-  # 16 batches of 1 walker each
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short
-    qmc_short_vmcbatch.in.xml
-    1
-    16
-    TRUE
-    0
-    DIAMOND2_SCALARS # VMC
-  )
 
-  # 4 batches of 4 walkers
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch-4b_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short
-    qmc_short_vmcbatch_4b.in.xml
-    1
-    4
-    TRUE
-    0
+# 16 batches of 1 walker each
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short
+  qmc_short_vmcbatch.in.xml
+  1
+  16
+  TRUE
+  0
     DIAMOND2_SCALARS # VMC
-  )
+)
 
-  # 4 batches of 4 walkers with asynchronous WF computation
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch-4b-asynctwf_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short
-    qmc_short_vmcbatch_4b_asynctwf.in.xml
-    1
-    4
-    TRUE
-    0
-    DIAMOND2_SCALARS # VMC
-  )
+# 4 batches of 4 walkers
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch-4b_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short
+  qmc_short_vmcbatch_4b.in.xml
+  1
+  4
+  TRUE
+  0
+  DIAMOND2_SCALARS # VMC
+)
 
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch-4b_sdbatch_jas
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short
-    qmc_short_sdbatch_vmcbatch_4b.in.xml
-    1
-    4
-    TRUE
-    0
-    DIAMOND2_SCALARS # VMC
-  )
-endif()
+# 4 batches of 4 walkers with asynchronous WF computation
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch-4b-asynctwf_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short
+  qmc_short_vmcbatch_4b_asynctwf.in.xml
+  1
+  4
+  TRUE
+  0
+  DIAMOND2_SCALARS # VMC
+)
+
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch-4b_sdbatch_jas
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short
+  qmc_short_sdbatch_vmcbatch_4b.in.xml
+  1
+  4
+  TRUE
+  0
+  DIAMOND2_SCALARS # VMC
+)
+
 qmc_run_and_check(
   short-diamondC_2x1x1_pp-delayed_update-vmc_sdj
   "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
@@ -123,46 +123,44 @@ qmc_run_and_check(
   DIAMOND2_DMC_SCALARS # DMC
 )
 
-if(NOT QMC_CUDA)
-  #16 batches of 16 walkers in one rank
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short_vmcbatch_dmcbatch
-    qmc_short_vmcbatch_dmcbatch.in.xml
-    1
-    16
-    TRUE
-    1
-    DIAMOND2_DMC_SCALARS # DMC
-  )
+#16 batches of 16 walkers in one rank
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short_vmcbatch_dmcbatch
+  qmc_short_vmcbatch_dmcbatch.in.xml
+  1
+  16
+  TRUE
+  1
+  DIAMOND2_DMC_SCALARS # DMC
+)
 
-  #4 batches of 16 walkers in one rank, batched slater det
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short_sdbatch_vmcbatch_dmcbatch
-    qmc_short_sdbatch_vmcbatch_dmcbatch.in.xml
-    1
-    4
-    TRUE
-    1
-    DIAMOND2_DMC_SCALARS # DMC
-  )
+#4 batches of 16 walkers in one rank, batched slater det
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch_dmcbatch-4b_sdbatch_jas
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short_sdbatch_vmcbatch_dmcbatch
+  qmc_short_sdbatch_vmcbatch_dmcbatch.in.xml
+  1
+  4
+  TRUE
+  1
+  DIAMOND2_DMC_SCALARS # DMC
+)
 
-  # 4 batches of 16 walkers over 4 ranks
-  qmc_run_and_check(
-    short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_4r_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    qmc_short_vmcbatch_dmcbatch_4r
-    qmc_short_vmcbatch_dmcbatch_4r.in.xml
-    4
-    4
-    TRUE
-    1
-    DIAMOND2_DMC_SCALARS # DMC
-  )
-endif()
+# 4 batches of 16 walkers over 4 ranks
+qmc_run_and_check(
+  short-diamondC_2x1x1_pp-vmcbatch_dmcbatch_4r_sdj
+  "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+  qmc_short_vmcbatch_dmcbatch_4r
+  qmc_short_vmcbatch_dmcbatch_4r.in.xml
+  4
+  4
+  TRUE
+  1
+  DIAMOND2_DMC_SCALARS # DMC
+)
 
 list(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.01")
 qmc_run_and_check(
@@ -323,7 +321,6 @@ qmc_run_and_check(
 #
 
 # VMC RUN
-if(NOT QMC_CUDA)
   if(QMC_MIXED_PRECISION)
     if(QMC_COMPLEX)
       list(APPEND DET_DIAMOND2_SCALARS "totenergy" "-22.30533101 0.00003531")
@@ -1518,292 +1515,3 @@ if(NOT QMC_CUDA)
     1
     DET_DIAMOND2_DMC_PW_SCALARS # dMC
   )
-
-
-  # CUDA references
-else()
-  # VMC runs
-  if(QMC_MIXED_PRECISION)
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_SCALARS "totenergy" "-21.89076069 0.00003")
-      list(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.34475369 0.00001")
-      list(APPEND DET_DIAMOND2_SCALARS "potential" "-41.23550388 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "eeenergy" "-5.807169758 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "ionion" "-25.55132695 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "localecp" "-12.80697366 0.000005")
-      list(APPEND DET_DIAMOND2_SCALARS "nonlocalecp" "2.92996774 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_SCALARS "flux" "-10.84154438 0.00003")
-    else()
-      list(APPEND DET_DIAMOND2_SCALARS "totenergy" "-21.88611879 0.00005")
-      list(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.34914975 0.000005")
-      list(APPEND DET_DIAMOND2_SCALARS "potential" "-41.23526213 0.00001")
-      list(APPEND DET_DIAMOND2_SCALARS "eeenergy" "-5.807173593 0.00001")
-      list(APPEND DET_DIAMOND2_SCALARS "ionion" "-25.55132695 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "localecp" "-12.80669499 0.000007")
-      list(APPEND DET_DIAMOND2_SCALARS "nonlocalecp" "2.92992820 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_SCALARS "flux" "-10.85016132 0.00003")
-    endif()
-  else()
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_SCALARS "totenergy" "-21.89076388 0.00003")
-      list(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.34474147 0.00001")
-      list(APPEND DET_DIAMOND2_SCALARS "potential" "-41.23550536 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "eeenergy" "-5.80717002 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "ionion" "-25.55132694 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "localecp" "-12.80697507 0.000005")
-      list(APPEND DET_DIAMOND2_SCALARS "nonlocalecp" "2.92996261 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_SCALARS "flux" "-10.84152599 0.00003")
-    else()
-      list(APPEND DET_DIAMOND2_SCALARS "totenergy" "-21.88613040 0.00005")
-      list(APPEND DET_DIAMOND2_SCALARS "kinetic" "19.34913447 0.000005")
-      list(APPEND DET_DIAMOND2_SCALARS "potential" "-41.23526487 0.00001")
-      list(APPEND DET_DIAMOND2_SCALARS "eeenergy" "-5.80717246 0.000001")
-      list(APPEND DET_DIAMOND2_SCALARS "ionion" "-25.55132694 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "localecp" "-12.80670171 0.000007")
-      list(APPEND DET_DIAMOND2_SCALARS "nonlocalecp" "2.92993060 0.000003")
-      list(APPEND DET_DIAMOND2_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_SCALARS "flux" "-10.85014255 0.00003")
-    endif()
-  endif()
-
-  qmc_run_and_check(
-    deterministic-diamondC_2x1x1_pp-vmc_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    det_qmc_short
-    det_qmc_short.in.xml
-    1
-    1
-    TRUE
-    0
-    DET_DIAMOND2_SCALARS # VMC
-  )
-
-  if(QMC_MIXED_PRECISION)
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-22.18799788 0.00002")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "18.95319569 0.00002")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "potential" "-41.14119357 0.00003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "eeenergy" "-3.88188177 0.000005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "localecp" "-11.23308424 0.00005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "nonlocalecp" "-0.47490064 0.00001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "126.46941612 0.003")
-    else()
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-22.19133675 0.00004")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "18.94980840 0.00002")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "potential" "-41.14114515 0.00003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "eeenergy" "-3.88190522 0.000003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "localecp" "-11.23303633 0.00005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "nonlocalecp" "-0.47487657 0.00003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "126.44713222 0.005")
-    endif()
-  else()
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-22.18802202 0.000005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "18.95317230 0.00002")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "potential" "-41.14119432 0.00003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "eeenergy" "-3.88187969 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "localecp" "-11.23309278 0.00005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "nonlocalecp" "-0.47489496 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "126.46866392 0.00004")
-    else()
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "totenergy" "-22.19134196 0.00001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "kinetic" "18.94979179 0.00002")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "potential" "-41.14113375 0.00003")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "eeenergy" "-3.88190131 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "localecp" "-11.23304320 0.00005")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "nonlocalecp" "-0.47486231 0.000001")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "samples" "9 0.0")
-      list(APPEND DET_DIAMOND2_EXCITED_SCALARS "flux" "126.44663268 0.00004")
-    endif()
-  endif()
-
-  qmc_run_and_check(
-    deterministic-diamondC_2x1x1_pp-vmc_sdj_excited
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    det_qmc_short_excited
-    det_qmc_short_excited.in.xml
-    1
-    1
-    TRUE
-    0
-    DET_DIAMOND2_EXCITED_SCALARS # VMC
-  )
-
-  # VMC DELAYED-UPDATE
-  if(QMC_MIXED_PRECISION)
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-21.74282586 0.00002")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "17.06504779 0.00002395")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-38.80788498 0.00003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "eeenergy" "-7.303211623 0.000012")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "ionion" "-25.55132695 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "localecp" "-6.872058488 0.0000239")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "0.91870619 0.00001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-10.69690014 0.00009929")
-    else()
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-21.74340099 0.000016")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "17.06563918 0.00003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-38.80905209 0.00003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "eeenergy" "-7.302218153 0.0000127")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "ionion" "-25.55132695 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "localecp" "-6.874538168 0.000038")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "0.91904051 0.00000571")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-10.69114954 0.0000894")
-    endif()
-  else()
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-21.74286857 0.000003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "17.06504267 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-38.80791124 0.000003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "eeenergy" "-7.30320156 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "ionion" "-25.55132694 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "localecp" "-6.87209644 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "0.91871400 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-10.69683005 0.000001")
-    else()
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "totenergy" "-21.74344087 0.000003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "kinetic" "17.06562079 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "potential" "-38.80906166 0.000003")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "eeenergy" "-7.30220276 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "ionion" "-25.55132694 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "localecp" "-6.87457977 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "nonlocalecp" "0.91904429 0.000001")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "samples" "9.00000000 0.0")
-      list(APPEND DET_DIAMOND2_DELAY_SCALARS "flux" "-10.69100800 0.000001")
-    endif()
-  endif()
-
-  qmc_run_and_check(
-    deterministic-diamondC_2x1x1_pp-delayed_update-vmc_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    det_qmc_short
-    det_qmc_short_delayedupdate.in.xml
-    1
-    1
-    TRUE
-    0
-    DET_DIAMOND2_DELAY_SCALARS # VMC
-  )
-
-  # DMC RUN
-  if(QMC_MIXED_PRECISION)
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-19.40406328 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "18.56465394 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "potential" "-37.96871869 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "eeenergy" "-5.716501203 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "ionion" "-25.55132695 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "localecp" "-7.865690665 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "1.16480701 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
-    else()
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-19.40457971 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "18.56412828 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "potential" "-37.96871564 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "eeenergy" "-5.71649912 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "ionion" "-25.55132695 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "localecp" "-7.865695195 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "1.16480943 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
-    endif()
-  else()
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-19.40407081 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "18.56465081 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "potential" "-37.96872162 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "eeenergy" "-5.71650065 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "ionion" "-25.55132694 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "localecp" "-7.86569882 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "1.16480679 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
-    else()
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "totenergy" "-19.40460484 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "kinetic" "18.56411412 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "potential" "-37.96871896 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "eeenergy" "-5.71649975 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "ionion" "-25.55132694 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "localecp" "-7.86569564 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "nonlocalecp" "1.16480782 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_SCALARS "samples" "9.00000000 0.0")
-    endif()
-  endif()
-
-  qmc_run_and_check(
-    deterministic-diamondC_2x1x1_pp-dmc_sdj
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    det_qmc_short_vmc_dmc
-    det_qmc_short_vmc_dmc.in.xml
-    1
-    1
-    TRUE
-    1
-    DET_DIAMOND2_DMC_SCALARS # DMC
-  )
-
-  if(QMC_MIXED_PRECISION)
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.85399954 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.58786766 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "potential" "-46.44186720 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "eeenergy" "-0.12546506 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "localecp" "-16.80234482 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "-3.96273064 0.000003")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
-    else()
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.84813302 0.00003")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.59365883 0.000011")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "potential" "-46.44179186 0.00002")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "eeenergy" "-0.12546240 0.00000221")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "localecp" "-16.80229811 0.00003")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "-3.96270432 0.000005")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
-    endif()
-  else()
-    if(QMC_COMPLEX)
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.85401627 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.58784791 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "potential" "-46.44186417 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "eeenergy" "-0.12546245 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "localecp" "-16.80234024 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "-3.96273430 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
-    else()
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "totenergy" "-21.84814524 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "kinetic" "24.59364737 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "potential" "-46.44179262 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "eeenergy" "-0.12546178 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "ionion" "-25.55132693 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "localecp" "-16.80229488 0.00001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "nonlocalecp" "-3.96270918 0.000001")
-      list(APPEND DET_DIAMOND2_DMC_EXCITED_SCALARS "samples" "9.00000000 0.0")
-    endif()
-  endif()
-
-  qmc_run_and_check(
-    deterministic-diamondC_2x1x1_pp-dmc_sdj_excited
-    "${qmcpack_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-    det_qmc_short_vmc_dmc_excited
-    det_qmc_short_vmc_dmc_excited.in.xml
-    1
-    1
-    TRUE
-    1
-    DET_DIAMOND2_DMC_EXCITED_SCALARS # DMC
-  )
-endif()

@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
 
     # 4 H atom cluster gaussian tests, all electron
@@ -22,6 +21,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping H4_msd_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping H4_msd_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

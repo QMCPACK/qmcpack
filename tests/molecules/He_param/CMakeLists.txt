@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_MIXED_PRECISION)
 
 
@@ -226,7 +225,3 @@ if(NOT QMC_CUDA)
   else()
     message(VERBOSE "Skipping He_param tests because parameter output is not supported by mixed precison build (QMC_MIXED_PRECISION=1)")
   endif()
-
-else()
-  message(VERBOSE "Skipping He_param tests because parameter output is not supported by CUDA build (QMC_CUDA=1)")
-endif()

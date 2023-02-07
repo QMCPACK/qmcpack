@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(QMC_COMPLEX)
 
     # Reference VMC run in qmc_ref_long.s000.scalar.dat
@@ -78,6 +77,3 @@ if(NOT QMC_CUDA)
   else()
     message(VERBOSE "Skipping Complex Periodic LCAO  if Complex code not build (QMC_COMPLEX=0)")
   endif()
-else()
-  message(VERBOSE "Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
-endif()

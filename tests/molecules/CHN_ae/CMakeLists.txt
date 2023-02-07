@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # CHN molecular Cusp Correction test for all electron B3LYP using pyscf
@@ -30,7 +29,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping CuspCorrection tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE
-    "Skipping CuspCorrection tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

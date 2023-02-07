@@ -37,8 +37,7 @@ function(ADD_C_GRAPHITE_TEST TEST_NAME PROCS THREADS TEST_DIR TEST_SOURCE_DIR IN
   set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${WDIR}")
   set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${THREADS})
   set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
-  if(QMC_CUDA
-     OR ENABLE_CUDA
+  if(ENABLE_CUDA
      OR ENABLE_OFFLOAD)
     set_tests_properties(${TEST_NAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
   endif()
@@ -78,11 +77,7 @@ else()
     message("C-graphite sizes to benchmark: ${C_SIZES}")
   endif()
 
-  if(QMC_CUDA)
-    set(COMPUTE_TYPE gpu)
-  else()
-    set(COMPUTE_TYPE cpu)
-  endif()
+  set(COMPUTE_TYPE cpu)
 
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../NiO/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -101,23 +96,16 @@ else()
     if(EXISTS ${H5_FULL_PATH})
       list(GET WALKER_COUNTS ${INDEX} WALKER_COUNT)
       set(ADJUST_INPUT "-i")
-      #legacy CUDA
-      if (QMC_CUDA)
-       set(DRIVER_TYPE legacy_CUDA)
-       set(PERF_TEST performance-C-graphite-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
-       set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
-       add_c_graphite_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
-      else()
-       set(DRIVER_TYPE cpu_driver)
-       set(PERF_TEST performance-C-graphite-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
-       set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
-       add_c_graphite_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
+      #Legacy driver
+      set(DRIVER_TYPE cpu_driver)
+      set(PERF_TEST performance-C-graphite-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+      add_c_graphite_test(${PERF_TEST} 1 16 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT}")
       #Batched driver           
-       set(DRIVER_TYPE batched_driver)
-       set(PERF_TEST performance-C-graphite-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
-       set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
-       add_c_graphite_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")
-      endif()	
+      set(DRIVER_TYPE batched_driver)
+      set(PERF_TEST performance-C-graphite-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
+      add_c_graphite_test(${PERF_TEST} 1 4 ${TEST_DIR} ${TEST_SOURCE_DIR} ${INPUT_FILE} ${H5_FILE} "${ADJUST_INPUT} -w ${WALKER_COUNT} -u --detbatched")	
       	    
     else()
       message("${PERF_TEST} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")

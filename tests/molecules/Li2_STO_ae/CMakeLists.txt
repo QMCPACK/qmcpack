@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # Li2 molecular dimer STO tests, all electron
@@ -63,6 +62,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping Li2_STO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping Li2_STO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

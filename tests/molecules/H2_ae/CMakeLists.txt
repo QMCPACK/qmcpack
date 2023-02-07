@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     if(BUILD_LMYENGINE_INTERFACE)
 
@@ -37,6 +36,3 @@ if(NOT QMC_CUDA)
   else()
     message(VERBOSE "Skipping H2 tests because orbital rotation is not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping H2 tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

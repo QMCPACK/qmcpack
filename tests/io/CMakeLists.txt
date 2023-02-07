@@ -98,7 +98,6 @@ run_restart_and_check(
   check.sh
   true)
 
-if(NOT QMC_CUDA)
   run_restart_and_check(
     deterministic-restart_batch
     "${qmcpack_SOURCE_DIR}/tests/io/restart_batch"
@@ -121,7 +120,6 @@ if(NOT QMC_CUDA)
     16
     check.sh
     true)
-endif()
 
 run_restart_and_check(
   deterministic-save_spline_coefs

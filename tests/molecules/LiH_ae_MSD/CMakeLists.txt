@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
 
     # VMC short run with no Jastrows and UN-Truncated WF
@@ -172,6 +171,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping LiH_ae_MSD tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     if(NOT QMC_MIXED_PRECISION)
       #
@@ -67,6 +66,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping Co_L2 test because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping Co_L2 test because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

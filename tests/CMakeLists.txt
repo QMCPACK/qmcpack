@@ -40,11 +40,7 @@ else()
   set(SUCCESS_STATUS_OFFLOAD TRUE)
 endif()
 
-if(QMC_CUDA)
-  set(SUCCESS_STATUS_CUDA FALSE)
-else()
-  set(SUCCESS_STATUS_CUDA TRUE)
-endif()
+set(SUCCESS_STATUS_CUDA TRUE)
 
 if(BUILD_AFQMC)
   include("${qmcpack_SOURCE_DIR}/CMake/python.cmake")

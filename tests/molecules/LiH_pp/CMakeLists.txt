@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # LiH molecule pseudopotential tests
@@ -322,6 +321,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping LiH_pp test because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping LiH_pp test because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

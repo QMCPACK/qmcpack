@@ -1,7 +1,6 @@
 #
 # HEG J2 RPA test
 #
-if(NOT QMC_CUDA)
 
   #
   # Tests for HEG with 54 electrons and an RPA two body Jastrow
@@ -59,8 +58,3 @@ if(NOT QMC_CUDA)
   ## list(APPEND DET_HEG54J2RPA_SCALARS "eeenergy" "-7.55488135 0.000001")
   ##endif()
  endif()
-
-
-else()
-  message(VERBOSE "Skipping HEG J2 RPA test because they are not supported by CUDA build (QMC_CUDA=1)")
-endif()

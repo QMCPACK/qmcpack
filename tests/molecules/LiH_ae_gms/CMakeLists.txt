@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # LiH molecule gaussian tests, all electron using Gamess
@@ -90,6 +89,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping LiH_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping LiH_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

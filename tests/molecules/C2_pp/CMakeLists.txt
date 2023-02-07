@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
 
     #C2_PP test targets the Multideterminant route of the code. The wavefunction data is  stored in a XML format AND HDF5 Format. Both files should be run
@@ -107,6 +106,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping C2_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping C2_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

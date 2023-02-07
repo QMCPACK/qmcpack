@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
 
     # 2 water molecules far away test for Tmoves.
@@ -120,7 +119,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE
-    "Skipping H2O_dimer_sep_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
 
     # E_scf_QP=-150.95914112726956
@@ -153,6 +152,3 @@ if(NOT QMC_CUDA)
   else()
     message(VERBOSE "Skipping C4_ae tests because Pure real WF are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping C4_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

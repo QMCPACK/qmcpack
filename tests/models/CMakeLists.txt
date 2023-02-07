@@ -18,7 +18,6 @@ list(APPEND GEP_SCALARS "kinetic" "0.225 0.0028")
 list(APPEND GEP_SCALARS "potential" "0.225 0.0028")
 list(APPEND GEP_SCALARS "latdev" "1.0   0.013")
 
-if(NOT QMC_CUDA)
   qmc_run_and_check(
     short-sho-vmc
     "${qmcpack_SOURCE_DIR}/tests/models/sho"
@@ -44,9 +43,3 @@ if(NOT QMC_CUDA)
     0
     GEP_SCALARS # VMC
   )
-
-else()
-  message(VERBOSE
-    "Skipping SHO model potential and grid external potential tests because they are not supported by CUDA build (QMC_CUDA=1)"
-  )
-endif()

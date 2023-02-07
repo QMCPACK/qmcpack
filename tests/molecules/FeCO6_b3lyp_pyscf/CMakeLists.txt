@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP using pyscf
@@ -110,7 +109,3 @@ endif()
     message(VERBOSE
       "Skipping  FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE
-    "Skipping FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

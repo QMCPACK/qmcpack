@@ -1,9 +1,8 @@
 # C-molecule benchmark tests
 
 # Input variables
-# QMC_DATA - C-molecule subdirectory should contain the *.h5 files
+# QMC_DATA - C-molecule subdirectory should contain the *.h5 file
 
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     function(
       ADD_C_MOLECULE_TEST
@@ -54,8 +53,7 @@ if(NOT QMC_CUDA)
       set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${WDIR}")
       set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${THREADS})
       set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
-      if(QMC_CUDA
-         OR ENABLE_CUDA
+      if(ENABLE_CUDA
          OR ENABLE_OFFLOAD)
         set_tests_properties(${TEST_NAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
       endif()
@@ -140,7 +138,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping C-molecule performance tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE
-    "Skipping C-molecule performance tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()

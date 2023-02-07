@@ -1,7 +1,6 @@
 #
 # Homogeneous electron gas (HEG) tests
 #
-if(NOT QMC_CUDA)
 
   #
   # Tests for HEG with 14 electrons at the gamma point and various wavefunctions
@@ -405,6 +404,3 @@ if(NOT QMC_CUDA)
       )
 
     endif()
-else()
-  message(VERBOSE "Skipping all HEG tests because they are not supported by CUDA build (QMC_CUDA=1)")
-endif()

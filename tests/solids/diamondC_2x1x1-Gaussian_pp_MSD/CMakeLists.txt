@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
 
   # VMC long run with no Jastrows
   # Compare directly to sCI Energy of: E=-21.34158422, T=19.99861447, and V=-41.34019869
@@ -1005,6 +1004,6 @@ if(NOT QMC_CUDA)
     det_diamondC_2x1x1-Gaussian_pp_MSD_VMC_DMC_BATCH_MWALKERS-r2-t3_3_SCALARS # DMC
   )
 
-else()
-  message(VERBOSE "Skipping Periodic LCAO as not supported by CUDA build (QMC_CUDA=1)")
-endif()
+
+
+

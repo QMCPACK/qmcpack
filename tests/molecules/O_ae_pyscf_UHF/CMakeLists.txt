@@ -1,4 +1,3 @@
-if(NOT QMC_CUDA)
   if(NOT QMC_COMPLEX)
     #
     # O triplet UHF molecule gaussian tests, all electron using pyscf
@@ -46,6 +45,3 @@ if(NOT QMC_CUDA)
     message(VERBOSE
       "Skipping O_ae_uhf tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
   endif()
-else()
-  message(VERBOSE "Skipping O_ae_uhf tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
-endif()
