@@ -523,7 +523,9 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   const char* particles = R"(<tmp>
 <sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
-    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+    <rotated_sposet>
+      <sposet type="bspline" name="spo_ud" size="2" spindataset="0"/>
+    </rotated_sposet>
 </sposet_builder>
 </tmp>)";
 
