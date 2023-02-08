@@ -28,12 +28,8 @@ TEST_CASE("Density Estimator", "[hamiltonian]")
 
   elec.setName("elec");
   elec.create({2});
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
+  elec.R[0] = {0.0, 1.0, 0.0};
+  elec.R[1] = {0.4, 0.3, 0.0};
 
   SpeciesSet& tspecies = elec.getSpeciesSet();
   int upIdx            = tspecies.addSpecies("u");
