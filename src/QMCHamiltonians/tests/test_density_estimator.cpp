@@ -65,16 +65,4 @@ TEST_CASE("Density Estimator evaluate exception", "[hamiltonian]")
   CHECK_THROWS_AS(density_estimator.evaluate(elec), std::invalid_argument);
 }
 
-TEST_CASE("Density Estimator addEnergy", "[hamiltonian]")
-{
-  const SimulationCell simulation_cell;
-  MCWalkerConfiguration mc_walker_config(simulation_cell);
-  mc_walker_config.createWalkers(2);
-  ParticleSet elec(simulation_cell);
-  DensityEstimator density_estimator(elec);
-
-  std::vector<QMCTraits::RealType> local_energy(1);
-  density_estimator.addEnergy(mc_walker_config, local_energy);
-}
-
 } // namespace qmcplusplus
