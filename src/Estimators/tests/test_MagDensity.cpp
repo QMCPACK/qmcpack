@@ -123,16 +123,16 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   auto spo_up = std::make_unique<ConstantSPOSet>("ConstantUpSet",nelec,norb);
   auto spo_dn = std::make_unique<ConstantSPOSet>("ConstantDnSet",nelec,norb);
 
-  //spo_up->setRefVals(mup);
-  //spo_dn->setRefVals(mdn);
-//  auto spinor_set = std::make_unique<SpinorSet>();
-//  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
+  spo_up->setRefVals(mup);
+  spo_dn->setRefVals(mdn);
+  auto spinor_set = std::make_unique<SpinorSet>("ConstSpinorSet");
+  spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
-//  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
+  auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
 
-//  TrialWaveFunction psi;
-//  psi.addComponent(std::move(dd));
-//  psi.evaluateLog(elec_); //make sure all intermediates are calculated and initialized.
+  TrialWaveFunction psi;
+  psi.addComponent(std::move(dd));
+  psi.evaluateLog(elec_); //make sure all intermediates are calculated and initialized.
   /*
   MagDensityEstimator magdensity(elec_, psi);
 
