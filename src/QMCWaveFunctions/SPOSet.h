@@ -54,7 +54,7 @@ public:
   using GGGMatrix   = OrbitalSetTraits<ValueType>::GradHessMatrix;
   using VGLVector   = OrbitalSetTraits<ValueType>::VGLVector;
   using Walker_t    = ParticleSet::Walker_t;
-  using SPOPool_t   = std::map<std::string, SPOSet*>;
+  using SPOMap      = std::map<std::string, const std::unique_ptr<const SPOSet>>;
 
   using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
   template<typename DT>
