@@ -89,8 +89,8 @@ if(NOT QMC_MIXED_PRECISION)
 
     # Two atomic orbitals, no jastrow
 
-    list(APPEND HE_ORB_ROT_PARAM spo-up_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
-    list(APPEND HE_ORB_ROT_PARAM spo-down_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_PARAM rot-spo-up_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_PARAM rot-spo-down_orb_rot_0000_0001 -0.218 0.01) # scalar name, value, error
 
     qmc_run_and_check_custom_scalar(
       BASE_NAME
@@ -164,7 +164,7 @@ if(NOT QMC_MIXED_PRECISION)
       SCALAR_VALUES
       HE_ORB_ROT_PARAM)
 
-    list(APPEND HE_ORB_ROT_RHF_PARAM spo-up_orb_rot_0000_0001 -0.766 0.01) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_RHF_PARAM rot-spo-up_orb_rot_0000_0001 -0.766 0.01) # scalar name, value, error
     qmc_run_and_check_custom_scalar(
       BASE_NAME
       short-He_orb_rot_param_grad_rhf
@@ -185,8 +185,8 @@ if(NOT QMC_MIXED_PRECISION)
 
     # Two atomic orbitals, with jastrow
 
-    list(APPEND HE_ORB_ROT_JASTROW_PARAM spo-up_orb_rot_0000_0001 0.078 0.02) # scalar name, value, error
-    list(APPEND HE_ORB_ROT_JASTROW_PARAM spo-down_orb_rot_0000_0001 0.078 0.02)
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-up_orb_rot_0000_0001 0.078 0.02) # scalar name, value, error
+    list(APPEND HE_ORB_ROT_JASTROW_PARAM rot-spo-down_orb_rot_0000_0001 0.078 0.02)
     list(APPEND HE_ORB_ROT_JASTROW_PARAM jud_b -0.106 0.013)
 
     qmc_run_and_check_custom_scalar(
