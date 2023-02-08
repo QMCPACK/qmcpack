@@ -2,8 +2,6 @@
 
 if(MIXED_PRECISION)
   message(VERBOSE "Skipping optimizer deterministic He tests in mixed precision (QMC_MIXED_PRECISION=1)")
-elseif(QMC_CUDA)
-  message(VERBOSE "Skipping optimizer deterministic He tests because CUDA is not supported (QMC_CUDA=1)")
 else()
   simple_run_and_check(
     deterministic-He_ae-opt
@@ -47,13 +45,11 @@ else()
     -r
     reference.det_He_opt_mwalkers_2-3.s001.opt.xml)
 
-
   list(APPEND He_VMC_SCALARS "totenergy" "-3.25291030 0.000001")
 
   list(APPEND He_VMC_MWALKERS_1-16_SCALAR "totenergy" "-2.84983901 0.000001")
 
   list(APPEND He_VMC_MWALKERS_2-3_SCALAR "totenergy" "-2.81743526 0.000001")
-
 
   qmc_run_and_check(
     deterministic-He_ae-opt_vmc
@@ -127,7 +123,6 @@ else()
     -r
     reference.det_He_opt_batch_mwalkers_1-16.s001.opt.xml)
 
-
   simple_run_and_check(
     deterministic-He_ae-opt-batch-mwalkers
     "${qmcpack_SOURCE_DIR}/tests/molecules/He_ae"
@@ -141,7 +136,6 @@ else()
     det_He_opt_batch_mwalkers
     -r
     reference.det_He_opt_batch_mwalkers_2-3.s001.opt.xml)
-
 
   qmc_run_and_check(
     deterministic-He_ae-opt_vmc-batch
@@ -178,6 +172,5 @@ else()
     2
     He_batch_VMC_MWALKERS_2-3_SCALARS # VMC
   )
-
 
 endif()
