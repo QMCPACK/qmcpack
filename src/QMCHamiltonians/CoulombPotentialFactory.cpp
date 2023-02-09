@@ -27,6 +27,7 @@
 #if OHMMS_DIM == 3
 #include "QMCHamiltonians/ECPotentialBuilder.h"
 #include "QMCHamiltonians/ForceBase.h"
+#include "QMCHamiltonians/BareForce.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCHamiltonians/ACForce.h"
 #if defined(HAVE_LIBFFTW)

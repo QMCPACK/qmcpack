@@ -25,12 +25,12 @@
 
 #include <ResourceHandle.h>
 
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "Utilities/Resource.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif
@@ -364,7 +364,7 @@ public:
   bool has_L2() { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
-    * @param r single particle coordinate
+    * @param r single fffficle coordinate
     * @param D diffusion matrix (outputted)
     * @param K drift modification vector (outputted)
     */
