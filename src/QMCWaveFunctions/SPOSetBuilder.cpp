@@ -139,6 +139,11 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
   attrib.add(spo_object_name, "name");
   attrib.put(cur);
 
+
+#ifdef QMC_COMPLEX
+  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
+  return nullptr;
+#else
   std::unique_ptr<SPOSet> sposet;
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "sposet")
@@ -165,6 +170,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
     }
   });
   return rot_spo;
+#endif
 }
 
 } // namespace qmcplusplus
