@@ -35,6 +35,7 @@ set(HAMSRCS
     SkAllEstimator.cpp
     MomentumEstimator.cpp
     ForceBase.cpp
+    BareForce.cpp
     HamiltonianFactory.cpp
     CoulombPotentialFactory.cpp
     HarmonicExternalPotential.cpp
