@@ -29,9 +29,9 @@ class GridExternalPotential : public OperatorBase
 public:
   GridExternalPotential(ParticleSet& P);
 
-  std::string getClassName() const override;
+  std::string getClassName() const override { return "GridExternalPotential"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
   //standard interface functions
   bool put(xmlNodePtr cur) override;

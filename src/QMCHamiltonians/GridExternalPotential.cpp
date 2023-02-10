@@ -24,10 +24,6 @@ GridExternalPotential::GridExternalPotential(ParticleSet& P) : ps_(P)
   oneBodyQuantumDomain(P);
 }
 
-std::string GridExternalPotential::getClassName() const { return "GridExternalPotential"; }
-
-void GridExternalPotential::resetTargetParticleSet(ParticleSet& P) {}
-
 bool GridExternalPotential::put(xmlNodePtr cur)
 {
   using std::sqrt;
