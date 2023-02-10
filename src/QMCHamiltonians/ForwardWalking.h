@@ -31,7 +31,7 @@ public:
   ForwardWalking();
 
   ///destructor
-  ~ForwardWalking() override = default;
+  ~ForwardWalking() override;
 
   std::string getClassName() const override { return "ForwardWalking"; }
 
