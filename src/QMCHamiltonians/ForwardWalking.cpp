@@ -26,12 +26,6 @@ namespace qmcplusplus
 {
 ForwardWalking::ForwardWalking() { update_mode_.set(OPTIMIZABLE, 1); }
 
-ForwardWalking::~ForwardWalking() {}
-
-std::string ForwardWalking::getClassName() const { return "ForwardWalking"; }
-
-void ForwardWalking::resetTargetParticleSet(ParticleSet& P) {}
-
 ForwardWalking::Return_t ForwardWalking::rejectedMove(ParticleSet& P)
 {
   for (int i = 0; i < nobservables_; i++)

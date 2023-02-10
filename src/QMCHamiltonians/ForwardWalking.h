@@ -31,11 +31,11 @@ public:
   ForwardWalking();
 
   ///destructor
-  ~ForwardWalking() override;
+  ~ForwardWalking() override = default;
 
-  std::string getClassName() const override;
+  std::string getClassName() const override { return "ForwardWalking"; }
 
-  void resetTargetParticleSet(ParticleSet& P) override;
+  void resetTargetParticleSet(ParticleSet& P) override {}
 
   Return_t rejectedMove(ParticleSet& P) override;
 
