@@ -110,12 +110,14 @@ case "$1" in
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
+      export FFTW_HOME=/opt/view
 
       # Make current environment variables available to subsequent steps
       echo "PATH=/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
+      echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
     fi
     
     case "${GH_JOBNAME}" in
