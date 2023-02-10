@@ -136,29 +136,11 @@ void ForceBase::setParticleSetStress(QMCTraits::PropertySetType& plist, int offs
   }
 }
 
-bool ForceBase::getAddIonIon() const noexcept { return add_ion_ion_; }
-
-void ForceBase::setAddIonIon(bool val) noexcept { add_ion_ion_ = val; }
-
-const ParticleSet::ParticlePos& ForceBase::getForces() const noexcept { return forces_; }
-
 void ForceBase::setForces(const ParticleSet::ParticlePos& forces) { forces_ = forces; }
 
 void ForceBase::setForces(Real val) { forces_ = val; }
 
-const ParticleSet::ParticlePos& ForceBase::getForcesIonIon() const noexcept { return forces_ion_ion_; }
-
 void ForceBase::setForcesIonIon(const ParticleSet::ParticlePos& forces_ion_ion) { forces_ion_ion_ = forces_ion_ion; }
-
-const SymTensor<Real, OHMMS_DIM>& ForceBase::getStressIonIon() const noexcept { return stress_ion_ion_; }
-
-const SymTensor<Real, OHMMS_DIM>& ForceBase::getStressEE() const noexcept { return stress_ee_; }
-
-const SymTensor<Real, OHMMS_DIM>& ForceBase::getStressEI() const noexcept { return stress_ei_; }
-
-const SymTensor<Real, OHMMS_DIM>& ForceBase::getStressKin() const noexcept { return stress_kin_; }
-
-const SymTensor<Real, OHMMS_DIM>& ForceBase::getStress() const noexcept { return stress_; }
 
 void ForceBase::initVarReduction(Real rcut, int m, int numFuncs)
 {

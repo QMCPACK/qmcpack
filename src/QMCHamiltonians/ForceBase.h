@@ -58,21 +58,21 @@ public:
   void setParticleSetF(QMCTraits::PropertySetType& plist, int offset);
   void setParticleSetStress(QMCTraits::PropertySetType& plist, int offset);
 
-  bool getAddIonIon() const noexcept;
-  void setAddIonIon(bool val) noexcept;
+  bool getAddIonIon() const noexcept { return add_ion_ion_; }
+  void setAddIonIon(bool val) noexcept { add_ion_ion_ = val; }
 
-  const ParticleSet::ParticlePos& getForces() const noexcept;
+  const ParticleSet::ParticlePos& getForces() const noexcept { return forces_; }
   void setForces(const ParticleSet::ParticlePos& forces);
   void setForces(Real val);
 
-  const ParticleSet::ParticlePos& getForcesIonIon() const noexcept;
+  const ParticleSet::ParticlePos& getForcesIonIon() const noexcept { return forces_ion_ion_; }
   void setForcesIonIon(const ParticleSet::ParticlePos& forces_ion_ion);
 
-  const SymTensor<Real, OHMMS_DIM>& getStressIonIon() const noexcept;
-  const SymTensor<Real, OHMMS_DIM>& getStressEE() const noexcept;
-  const SymTensor<Real, OHMMS_DIM>& getStressEI() const noexcept;
-  const SymTensor<Real, OHMMS_DIM>& getStressKin() const noexcept;
-  const SymTensor<Real, OHMMS_DIM>& getStress() const noexcept;
+  const SymTensor<Real, OHMMS_DIM>& getStressIonIon() const noexcept { return stress_ion_ion_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressEE() const noexcept { return stress_ee_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressEI() const noexcept { return stress_ei_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressKin() const noexcept { return stress_kin_; }
+  const SymTensor<Real, OHMMS_DIM>& getStress() const noexcept { return stress_; }
 
 protected:
   int first_force_index_;
