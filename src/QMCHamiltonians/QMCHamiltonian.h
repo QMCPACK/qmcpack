@@ -364,7 +364,7 @@ public:
   bool has_L2() { return l2_ptr != nullptr; }
 
   /** compute D matrix and K vector for L2 potential propagator
-    * @param r single fffficle coordinate
+    * @param r single particle coordinate
     * @param D diffusion matrix (outputted)
     * @param K drift modification vector (outputted)
     */
