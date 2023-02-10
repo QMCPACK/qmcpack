@@ -75,7 +75,8 @@ COPY --from=builder /opt/view /opt/view
 COPY --from=builder /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
 
 # building from source is missing ld (the linker)
-RUN yum install -y binutils
+RUN yum install -y gcc-toolset-11-binutils
+RUN export PATH=/opt/rh/gcc-toolset-11/root/bin/:$PATH
 RUN yum install -y libgcc.i686 glibc-devel.i686 libstdc++-devel.i686
 RUN ranlib /opt/view/lib/gcc/x86_64-pc-linux-gnu/11.3.0/libgcc.a
 
