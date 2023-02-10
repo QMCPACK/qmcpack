@@ -112,6 +112,7 @@ case "$1" in
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
       export FFTW_HOME=/opt/view
       export LibXml2_ROOT=/opt/view
+      export HDF5_ROOT=/opt/view
 
 
       # Make current environment variables available to subsequent steps
@@ -121,6 +122,7 @@ case "$1" in
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
       echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
       echo "LibXml2_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "HDF5_ROOT=/opt/view" >> $GITHUB_ENV
     fi
     
     case "${GH_JOBNAME}" in
