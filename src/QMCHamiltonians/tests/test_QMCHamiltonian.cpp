@@ -18,6 +18,7 @@
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "TestListenerFunction.h"
+#include "Utilities/ResourceCollection.h"
 #include "Utilities/StlPrettyPrint.hpp"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 
