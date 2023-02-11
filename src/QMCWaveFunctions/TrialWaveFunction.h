@@ -60,6 +60,11 @@ public:
   // derived types from WaveFunctionComponent
   using RealType     = WaveFunctionComponent::RealType;
   using ComplexType  = WaveFunctionComponent::ComplexType;
+
+#ifndef NDEBUG
+  using FullPrecRealType =  WaveFunctionComponent::FullPrecRealType;
+#endif
+
   using ValueType    = WaveFunctionComponent::ValueType;
   using GradType     = WaveFunctionComponent::GradType;
   using BufferType   = WaveFunctionComponent::BufferType;
