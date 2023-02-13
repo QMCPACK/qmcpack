@@ -135,7 +135,6 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
   OhmmsAttributeSet attrib;
-  attrib.add(spo_object_name, "id");
   attrib.add(spo_object_name, "name");
   attrib.put(cur);
 
