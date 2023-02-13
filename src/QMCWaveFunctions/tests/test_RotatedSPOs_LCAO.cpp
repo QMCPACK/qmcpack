@@ -90,7 +90,8 @@ std::string setupRotationXML(const std::string& rot_angle_up,
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-     <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">)";
+     <rotated_sposet name="rot-spo-up">
+       <sposet basisset="LCAOBSet" name="spo-up">)";
 
   // Opt vars for up determinant
   //       <opt_vars>0.1</opt_vars>
@@ -110,10 +111,13 @@ std::string setupRotationXML(const std::string& rot_angle_up,
 
   std::string coeff_up_element = wf_input_coeff_up_start + coeff_up + wf_input_coeff_up_end;
 
+  const std::string sposet_end = R"(</sposet>)";
+
   // Middle part of XML input block
   const std::string wf_input2 = R"(
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">)";
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down">)";
 
   // Opt vars for down determinant
   //   <opt_vars>0.2</opt_vars>
@@ -131,12 +135,12 @@ std::string setupRotationXML(const std::string& rot_angle_up,
   std::string coeff_down_element = wf_input_coeff_down_start + coeff_down + wf_input_coeff_down_end;
 
   const std::string wf_input3 = R"(
-      </sposet>
+      </rotated_sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
    </wavefunction>)";
@@ -144,11 +148,13 @@ std::string setupRotationXML(const std::string& rot_angle_up,
 
   // clang-format off
   std::string wf_input = std::string(wf_input1) + "\n" +
+                         coeff_up_element + "\n" +
+                         sposet_end + "\n" +
                          (rot_angle_up.empty() ? std::string() : rot_angle_up_element) +
-                         coeff_up_element +
                          wf_input2 + "\n" +
+                         coeff_down_element + "\n" +
+                         sposet_end + "\n" +
                          (rot_angle_down.empty() ? std::string() : rot_angle_down_element) +
-                         coeff_down_element +
                          std::string(wf_input3);
   // clang-format on
 
@@ -317,23 +323,27 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
+      <rotated_sposet name="rot-spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
+        </sposet>
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
+        </sposet>
+      </rotated_sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="Jee" type="Two-Body" function="pade">

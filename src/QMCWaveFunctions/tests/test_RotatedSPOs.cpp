@@ -522,8 +522,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
-    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
+      <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
 
@@ -533,10 +533,11 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   xmlNodePtr root = doc.getRoot();
 
-  xmlNodePtr ein1 = xmlFirstElementChild(root);
+  xmlNodePtr sposet_builder = xmlFirstElementChild(root);
+  xmlNodePtr sposet_ptr = xmlFirstElementChild(sposet_builder);
 
-  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, ein1);
-  auto spo = einSet.createSPOSetFromXML(ein1);
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, sposet_builder);
+  auto spo = einSet.createSPOSetFromXML(sposet_ptr);
   REQUIRE(spo);
 
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
