@@ -105,7 +105,7 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active, bool computeForces, bo
       app_log() << "  Check passed." << std::endl;
     }
   }
-  prefix = "F_AA";
+  prefix_ = "F_AA";
   app_log() << "  Maximum K shell " << AA->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AA->Fk.size() << std::endl;
   app_log() << "  Fixed Coulomb potential for " << ref.getName();
@@ -127,7 +127,7 @@ void CoulombPBCAA::updateSource(ParticleSet& s)
   mRealType eL(0.0), eS(0.0);
   if (ComputeForces)
   {
-    forces = 0.0;
+    forces_ = 0.0;
     eS     = evalSRwithForces(s);
     eL     = evalLRwithForces(s);
   }
@@ -315,7 +315,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evaluateWithIonDerivs(ParticleSet& P,
                                                            ParticleSet::ParticlePos& pulay_terms)
 {
   if (ComputeForces and !is_active)
-    hf_terms -= forces;
+    hf_terms -= forces_;
   //No pulay term.
   return value_;
 }
@@ -467,7 +467,7 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalLRwithForces(ParticleSet& P)
     //AA->evaluateGrad(P, P, spec2, Zat, grad);
     dAA->evaluateGrad(P, P, spec2, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
-      forces[iat] += Z2 * grad[iat];
+      forces_[iat] += Z2 * grad[iat];
   } //spec2
   return evalLR(P);
 }
@@ -491,8 +491,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       esum += Zat[j] * rVs->splint(dist[j]) * rinv;
 
       PosType grad = Zat[j] * Zat[ipart] * (d_rV_dr - V) * rinv * rinv * dr[j];
-      forces[ipart] += grad;
-      forces[j] -= grad;
+      forces_[ipart] += grad;
+      forces_[j] -= grad;
     }
     SR += Zat[ipart] * esum;
 
@@ -512,8 +512,8 @@ CoulombPBCAA::Return_t CoulombPBCAA::evalSRwithForces(ParticleSet& P)
       esum += Zat[j] * rVs->splint(dist2[j]) * rinv;
 
       PosType grad = Zat[j] * Zat[ipart_reverse] * (d_rV_dr - V) * rinv * rinv * dr2[j];
-      forces[ipart_reverse] += grad;
-      forces[j] -= grad;
+      forces_[ipart_reverse] += grad;
+      forces_[j] -= grad;
     }
     SR += Zat[ipart_reverse] * esum;
   }

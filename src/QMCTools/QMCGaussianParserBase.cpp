@@ -1094,7 +1094,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   }
   /// 64 bit fixed width integer
   const unsigned bit_kind = 64;
-  static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
+  static_assert(bit_kind == sizeof(uint64_t) * 8, "Must be 64 bit fixed width integer");
   static_assert(bit_kind == sizeof(unsigned long long) * 8, "Must be 64 bit fixed width integer");
   /// the number of 64 bit integers which represent the binary string for occupation
   int N_int;
@@ -1111,8 +1111,8 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
   hout.write(N_int, "Nbits");
   hout.write(nbexcitedstates, "nexcitedstate");
 
-  Matrix<int64_t> tempAlpha(ci_size, N_int);
-  Matrix<int64_t> tempBeta(ci_size, N_int);
+  Matrix<uint64_t> tempAlpha(ci_size, N_int);
+  Matrix<uint64_t> tempBeta(ci_size, N_int);
   for (int i = 0; i < CIcoeff.size(); i++)
   {
     std::string loc_alpha = CIalpha[i].substr(0, ci_nstates);
@@ -1138,7 +1138,7 @@ xmlNodePtr QMCGaussianParserBase::createMultiDeterminantSetCIHDF5()
     for (std::size_t l = 0; l < N_int; l++)
     {
       offset = bit_kind * l;
-      int64_t Val;
+      uint64_t Val;
       std::string Var_alpha, Var_beta;
       Var_alpha.resize(bit_kind);
       Var_beta.resize(bit_kind);
