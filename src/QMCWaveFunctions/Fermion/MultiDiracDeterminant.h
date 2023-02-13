@@ -51,13 +51,8 @@ public:
   template<typename DT>
   using UnpinnedOffloadMatrix = Matrix<DT, OffloadAllocator<DT>>;
 
-  using IndexVector = SPOSet::IndexVector;
   using ValueVector = SPOSet::ValueVector;
   using ValueMatrix = SPOSet::ValueMatrix;
-  using GradVector  = SPOSet::GradVector;
-  using GradMatrix  = SPOSet::GradMatrix;
-  using HessMatrix  = SPOSet::HessMatrix;
-  using HessType    = SPOSet::HessType;
 
   struct MultiDiracDetMultiWalkerResource : public Resource
   {
