@@ -191,9 +191,9 @@ bool QMCMain::execute()
               << "/*************************************************\n"
               << " ********  This is an AFQMC calculation   ********\n"
               << " *************************************************" << std::endl;
-    xmlNodePtr cur = XmlDocStack.top()->getRoot();
+    xmlNodePtr cur = xml_doc_stack_.top()->getRoot();
 
-    xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
+    xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
     //initialize the random number generator
     xmlNodePtr rptr = my_random_control_.initialize(m_context);
 
@@ -204,7 +204,7 @@ bool QMCMain::execute()
       app_log() << " Error in AFQMCFactory::parse() ." << std::endl;
       return false;
     }
-    cur = XmlDocStack.top()->getRoot();
+    cur = xml_doc_stack_.top()->getRoot();
     return afqmc_fac.execute(cur);
   }
 #else
