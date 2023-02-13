@@ -19,6 +19,7 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
@@ -254,6 +255,15 @@ void test_He_mw(bool transform)
   psi_list.push_back(psi_2);
   dpsi_list.push_back(dpsi_2);
   d2psi_list.push_back(d2psi_2);
+
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec.createResource(pset_res);
+  sposet->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, P_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   //LCAOrbitalSet::OffloadMWVGLArray phi_vgl_v;
   //sposet->mw_evaluateVGL(spo_list, P_list, 0, phi_vgl_v);
