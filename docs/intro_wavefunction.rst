@@ -873,6 +873,9 @@ Additional information:
 - ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
   ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
 
+- When the multideterminant wavefunction is read from an HDF5 file in the ``detlist`` child, the HDF5 dataset must use 64 bit unsigned integers to represent the determinants. The ``utils/determinants_tools.py`` script described in further detail below will check that the determinants are stored using the correct type and correct files that are storing signed 64 bit integers.
+
+
 .. code-block::
    :caption: multideterminant set XML element.
    :name: multideterminant.xml

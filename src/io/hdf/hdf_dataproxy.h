@@ -40,6 +40,10 @@ struct h5data_proxy : public h5_space_type<T, 0>
     return h5d_read(grp, aname, get_address(&ref), xfer_plist);
   }
 
+  inline bool check_existence(hid_t grp, const std::string& aname) { return h5d_check_existence(grp, aname); }
+
+  inline bool check_type(hid_t grp, const std::string& aname) { return h5d_check_type<data_type>(grp, aname); }
+
   inline bool write(const data_type& ref, hid_t grp, const std::string& aname, hid_t xfer_plist = H5P_DEFAULT) const
   {
     return h5d_write(grp, aname.c_str(), FileSpace::rank, dims, get_address(&ref), xfer_plist);
