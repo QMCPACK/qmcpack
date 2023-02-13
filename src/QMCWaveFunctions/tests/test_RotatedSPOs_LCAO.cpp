@@ -91,7 +91,7 @@ std::string setupRotationXML(const std::string& rot_angle_up,
         </atomicBasisSet>
       </basisset>
      <rotated_sposet name="rot-spo-up">
-       <sposet basisset="LCAOBSet" name="spo-up" size="2">)";
+       <sposet basisset="LCAOBSet" name="spo-up">)";
 
   // Opt vars for up determinant
   //       <opt_vars>0.1</opt_vars>
@@ -117,7 +117,7 @@ std::string setupRotationXML(const std::string& rot_angle_up,
   const std::string wf_input2 = R"(
       </rotated_sposet>
       <rotated_sposet name="rot-spo-down">
-        <sposet basisset="LCAOBSet" name="spo-down" size="2">)";
+        <sposet basisset="LCAOBSet" name="spo-down">)";
 
   // Opt vars for down determinant
   //   <opt_vars>0.2</opt_vars>
@@ -139,8 +139,8 @@ std::string setupRotationXML(const std::string& rot_angle_up,
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="rot-spo-up" spin="1" size="2"/>
-        <determinant id="rot-spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
    </wavefunction>)";
@@ -324,7 +324,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </atomicBasisSet>
       </basisset>
       <rotated_sposet name="rot-spo-up">
-        <sposet basisset="LCAOBSet" name="spo-up" size="2">
+        <sposet basisset="LCAOBSet" name="spo-up">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -332,7 +332,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </sposet>
       </rotated_sposet>
       <rotated_sposet name="rot-spo-down">
-        <sposet basisset="LCAOBSet" name="spo-down" size="2">
+        <sposet basisset="LCAOBSet" name="spo-down">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -342,8 +342,8 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="rot-spo-up" spin="1" size="2"/>
-        <determinant id="rot-spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="Jee" type="Two-Body" function="pade">
