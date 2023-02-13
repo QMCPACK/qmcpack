@@ -14,20 +14,19 @@ with h5py.File("LiH.Multidet.h5", "w") as hdf5_file:
     # Multidet group
     md = hdf5_file.create_group("MultiDet")
     # Determinants
-    dets_0 = np.array([[3],[5]], dtype=np.uint)
-    dets_1 = np.array([[3],[3]], dtype=np.uint)
-    dets_2 = np.array([[1],[4]], dtype=np.uint)
-    
-    detset_0 = md.create_dataset('CI_0', data=dets_0)
-    detset_1 = md.create_dataset('CI_1', data=dets_1)
-    detset_2 = md.create_dataset('CI_2', data=dets_2)
+    dets_0 = np.array([[3], [5]], dtype=np.uint)
+    dets_1 = np.array([[3], [3]], dtype=np.uint)
+    dets_2 = np.array([[1], [4]], dtype=np.uint)
+
+    detset_0 = md.create_dataset("CI_0", data=dets_0)
+    detset_1 = md.create_dataset("CI_1", data=dets_1)
+    detset_2 = md.create_dataset("CI_2", data=dets_2)
     # Coeff
     coeff = np.array([0.7071, -0.7071])
-    
-    coeffset = md.create_dataset('Coeff', data=coeff)
+
+    coeffset = md.create_dataset("Coeff", data=coeff)
     # misc bits
-    numdets = md.create_dataset('NbDet', data=np.array([2]))
-    numbits = md.create_dataset('Nbits', data=np.array([1]))
-    nexited = md.create_dataset('mexcotedstate', data=np.array([1]))
-    nstate = md.create_dataset('nstate', data=np.array([5]))
-    
+    numdets = md.create_dataset("NbDet", data=np.array([2]))
+    numbits = md.create_dataset("Nbits", data=np.array([1]))
+    nexited = md.create_dataset("nexcitedstate", data=np.array([1]))
+    nstate = md.create_dataset("nstate", data=np.array([5]))

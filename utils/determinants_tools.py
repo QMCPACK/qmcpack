@@ -25,7 +25,7 @@ from functools import partial
 #      the only valid integer representation of this determinants is ( (1,), (0,) )
 
 # Assume that each integer is unsigned. If not they should be converted before using the sanitize function.
-
+import numpy as np
 from collections import namedtuple
 Determinants = namedtuple('Determinants', ['alpha', 'beta'])
 CSF = namedtuple('CSF', ['double', 'single'])
@@ -129,19 +129,22 @@ if __name__ == '__main__':
 
     from collections import Counter
     from itertools import chain
-    
+
     parser = argparse.ArgumentParser(
         description='Provide information about a multideterminant wavefunction stored in HDF5 format.')
 
-    parser.add_argument("h5path", type=str, 
+    parser.add_argument("h5path", type=str,
         help="Path to a h5file")
 
     parser.add_argument("-v", "--verbose",
         help="For each determinant, print its bitmask representation, associated CSF and excitation degree",
         action="store_true")
 
-    parser.add_argument("-s", "--silent", 
+    parser.add_argument("-s", "--silent",
         help="Disable check", action="store_true")
+
+    parser.add_argument("--transform",
+        help="Transform a HDF5 that uses signed integers to unsigned integers.", action="store_true")
 
     args = parser.parse_args()
 
@@ -153,13 +156,36 @@ if __name__ == '__main__':
             import sys
             sys.exit(1)
 
-    with h5py.File(args.h5path, 'r') as f:
+    open_mode = 'r'
+    if args.transform:
+        open_mode = 'a'
+    with h5py.File(args.h5path, open_mode) as f:
+        alpha_group = 'MultiDet/CI_Alpha'
+        if alpha_group not in f:
+            alpha_group = 'MultiDet/CI_0'
+        beta_group = 'MultiDet/CI_Beta'
+        if beta_group not in f:
+            beta_group = 'MultiDet/CI_1'
 
-        bit_kind_size = f['MultiDet/CI_Alpha'].dtype.itemsize * 8
+        bit_kind_size = f[alpha_group].dtype.itemsize * 8
 
         # We sanitize the determinants. Aka we transform any negative integers, into the proper unsigned one.
-        i_alpha= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Alpha'])
-        i_beta= (sanitize(d,bit_kind_size) for d in f['MultiDet/CI_Beta'])
+        i_alpha= (sanitize(d,bit_kind_size) for d in f[alpha_group])
+        i_beta= (sanitize(d,bit_kind_size) for d in f[beta_group])
+        if args.transform:
+            alpha_dets = np.array([i for i in i_alpha], dtype=np.uint64)
+            del f[alpha_group]
+            f.create_dataset(alpha_group, data=alpha_dets)
+            beta_dets = np.array([i for i in i_beta], dtype=np.uint64)
+            del f[beta_group]
+            f.create_dataset(beta_group, data=beta_dets)
+            # regenerate iterators
+            i_alpha= (sanitize(d,bit_kind_size) for d in f[alpha_group])
+            i_beta= (sanitize(d,bit_kind_size) for d in f[beta_group])
+
+        if f[alpha_group].dtype == 'int64':
+            raise TypeError("This HDF5 file uses signed 64 bit integers (int64) to represent the determinants. QMCPACK expects unsigned integers (uint64) this can cause issues when used in qmcpack.")
+
         i_det = zip(i_alpha, i_beta)
 
         # Getting the reference determinant to compute the excitation degree.

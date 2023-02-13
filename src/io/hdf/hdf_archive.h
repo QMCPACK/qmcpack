@@ -146,6 +146,35 @@ public:
    */
   bool is_group(const std::string& aname);
 
+  /** check if aname is a dataset
+   * @param aname dataset's name
+   * @return true, if aname exists and it is a dataset
+   */
+  bool is_dataset(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    int dummy_data;
+    h5data_proxy<int> e(dummy_data);
+    return e.check_existence(p, aname);
+  }
+
+  /** check if aname is a dataset of type T
+   * @param aname group's name
+   * @return true, if aname is a dataset of type T
+   */
+  template<typename T>
+  bool is_dataset_of_type(const std::string& aname)
+  {
+    if (Mode[NOIO])
+      return true;
+    hid_t p = group_id.empty() ? file_id : group_id.top();
+    T dummy_data;
+    h5data_proxy<T> e(dummy_data);
+    return e.check_type(p, aname);
+  }
+
   /** return the top of the group stack
    */
   inline hid_t top() const { return group_id.empty() ? file_id : group_id.top(); }
