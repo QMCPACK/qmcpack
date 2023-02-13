@@ -53,6 +53,8 @@ public:
   using DualVector = Vector<DT, PinnedDualAllocator<DT>>;
   template<typename DT>
   using DualMatrix    = Matrix<DT, PinnedDualAllocator<DT>>;
+  template<typename DT>
+  using OffloadMatrix = Matrix<DT, OffloadPinnedAllocator<DT>>;
   using DualVGLVector = VectorSoaContainer<Value, DIM + 2, PinnedDualAllocator<Value>>;
 
   using OffloadMWVGLArray = typename SPOSet::OffloadMWVGLArray;
@@ -74,6 +76,8 @@ public:
     std::vector<Grad> grad_new_local;
     // multi walker of spingrads
     std::vector<Value> spingrad_new_local;
+    // mw spin gradients of orbitals, matrix is [nw][norb]
+    OffloadMatrix<ComplexType> mw_dspin;
   };
 
   /** constructor
@@ -98,6 +102,10 @@ public:
                            const opt_variables_type& active,
                            Vector<Value>& dlogpsi,
                            Vector<Value>& dhpsioverpsi) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
@@ -124,6 +132,11 @@ public:
                          const RefVectorWithLeader<const VirtualParticleSet>& vp_list,
                          std::vector<std::vector<Value>>& ratios) const override;
 
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios) override;
+
   PsiValue ratioGrad(ParticleSet& P, int iat, Grad& grad_iat) override;
 
   void mw_ratioGrad(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
@@ -149,6 +162,12 @@ public:
                    std::vector<Grad>& grad_now) const override;
 
   Grad evalGradWithSpin(ParticleSet& P, int iat, ComplexType& spingrad) override;
+
+  void mw_evalGradWithSpin(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+                           const RefVectorWithLeader<ParticleSet>& p_list,
+                           int iat,
+                           std::vector<Grad>& grad_now,
+                           std::vector<ComplexType>& spingrad_now) const override;
 
   /** \todo would be great to have docs.
    *  Note: Can result in substantial CPU memory allocation on first call.

@@ -73,8 +73,8 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
   app_log() << "Second parameter: " << results[1] << std::endl;
 
   //The engine should update the parameters using the generic default step size of .001 and obtain these values.
-  REQUIRE(std::real(results[0]) == Approx(.995));
-  REQUIRE(std::real(results[1]) == Approx(-2.001));
+  CHECK(std::real(results[0]) == Approx(.995));
+  CHECK(std::real(results[1]) == Approx(-2.001));
 
   //Provide fake data to test mpi_unbiased_ratio_of_means
   int n              = 2;
@@ -99,9 +99,9 @@ TEST_CASE("DescentEngine RMSprop update", "[drivers][descent]")
   app_log() << "Standard Error: " << stdErr << std::endl;
 
   //mpi_unbiased_ratio_of_means should calculate the mean, variance, and standard error and obtain the values below
-  REQUIRE(std::real(mean) == Approx(-2.0));
-  REQUIRE(std::real(variance) == Approx(0.0));
-  REQUIRE(std::real(stdErr) == Approx(0.0));
+  CHECK(std::real(mean) == Approx(-2.0));
+  CHECK(std::real(variance) == Approx(0.0));
+  CHECK(std::real(stdErr) == Approx(0.0));
 }
 #endif
 } // namespace qmcplusplus

@@ -67,11 +67,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   std::string warp_tag("no");
   std::string append_tag("no");
   std::string profiling_tag("no");
-#if defined(QMC_CUDA)
-  std::string gpu_tag("yes");
-#else
-  std::string gpu_tag("no");
-#endif
   OhmmsAttributeSet aAttrib;
   aAttrib.add(qmc_mode, "method",
               {"", "vmc", "vmc_batch", "dmc", "dmc_batch", "csvmc", "rmc", "linear", "linear_batch", "wftest"});
@@ -80,7 +75,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   aAttrib.add(warp_tag, "warp");
   aAttrib.add(append_tag, "append");
   aAttrib.add(profiling_tag, "profiling");
-  aAttrib.add(gpu_tag, "gpu");
   aAttrib.add(das.traces_tag, "trace");
   aAttrib.put(cur);
   das.append_run                 = (append_tag == "yes");
@@ -88,9 +82,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   das.what_to_do[SPACEWARP_MODE] = (warp_tag == "yes");
   das.what_to_do[MULTIPLE_MODE]  = (multi_tag == "yes");
   das.what_to_do[UPDATE_MODE]    = (update_mode == "pbyp");
-#if defined(QMC_CUDA)
-  das.what_to_do[GPU_MODE] = (gpu_tag == "yes");
-#endif
   infoSummary.flush();
   infoLog.flush();
 
@@ -105,11 +96,7 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
   switch (project_data_.getDriverVersion())
   {
   case DV::BATCH:
-#if defined(QMC_CUDA)
-    throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
-                             "Please use OpenMP offload build.");
-#endif
-    if (qmc_mode.find("vmc") < nchars) // order matters here
+    if (qmc_mode.find("vmc") < nchars)      // order matters here
       das.new_run_type = QMCRunType::VMC_BATCH;
     else if (qmc_mode.find("dmc") < nchars) // order matters here
       das.new_run_type = QMCRunType::DMC_BATCH;
@@ -120,11 +107,6 @@ QMCDriverFactory::DriverAssemblyState QMCDriverFactory::readSection(xmlNodePtr c
     break;
   // Begin to separate driver version = batch input reading from the legacy input parsing
   case DV::LEGACY:
-#if defined(QMC_CUDA)
-    if (qmc_mode.find("batch") < nchars)
-      throw std::runtime_error("Batched drivers don't support legacy CUDA build! "
-                               "Please use OpenMP offload build.");
-#endif
     if (qmc_mode.find("linear_batch") < nchars) // order matters here
       das.new_run_type = QMCRunType::LINEAR_OPTIMIZE_BATCH;
     else if (qmc_mode.find("linear") < nchars)

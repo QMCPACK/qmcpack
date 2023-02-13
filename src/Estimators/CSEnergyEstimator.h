@@ -57,6 +57,8 @@ struct CSEnergyEstimator : public ScalarEstimatorBase
 
   CSEnergyEstimator(CSLocalEnergyInput&& input, const QMCHamiltonian& h);
 
+  std::string getName() const override { return "CSEnergyEstimator"; }
+
   inline RealType getUmbrellaWeight(int ipsi)
   {
     return scalars_saved[ipsi * LE_INDEX + WEIGHT_INDEX].result();

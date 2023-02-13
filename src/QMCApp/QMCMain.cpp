@@ -117,15 +117,11 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << "\n  Precision used in this calculation, see definitions in the manual:"
                 << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
                 << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
-#ifdef QMC_CUDA
-                << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION)
-                << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
-#endif
                 << std::endl;
 
   // Record features configured in cmake or selected via command-line arguments to the printout
   app_summary() << std::endl;
-#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(QMC_CUDA) && !defined(ENABLE_HIP) && \
+#if !defined(ENABLE_OFFLOAD) && !defined(ENABLE_CUDA) && !defined(ENABLE_HIP) && \
     !defined(ENABLE_SYCL)
   app_summary() << "  CPU only build" << std::endl;
 #else // GPU case
@@ -138,16 +134,18 @@ QMCMain::QMCMain(Communicate* c)
 
 #if defined(QMC_CUDA2HIP) && defined(ENABLE_CUDA)
   app_summary() << "  HIP acceleration with CUDA source code build option is enabled" << std::endl;
-#elif defined(QMC_CUDA2HIP) && defined(QMC_CUDA)
-  app_summary() << "  HIP acceleration with legacy CUDA source code build option is enabled" << std::endl;
 #elif defined(ENABLE_CUDA)
   app_summary() << "  CUDA acceleration build option is enabled" << std::endl;
-#elif defined(QMC_CUDA)
-  app_summary() << "  Legacy CUDA acceleration build option is enabled" << std::endl;
 #elif defined(ENABLE_SYCL)
   app_summary() << "  SYCL acceleration build option is enabled" << std::endl;
 #endif
 #endif // GPU case end
+
+#ifdef QMC_COMPLEX
+  app_summary() << "  Complex build. QMC_COMPLEX=ON" << std::endl;
+#else
+  app_summary() << "  Real build. QMC_COMPLEX=OFF" << std::endl;
+#endif
 
 #ifdef ENABLE_TIMERS
   app_summary() << "  Timer build option is enabled. Current timer level is "

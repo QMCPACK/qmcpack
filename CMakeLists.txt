@@ -15,7 +15,7 @@ endif()
 ######################################################################
 project(
   qmcpack
-  VERSION 3.15.9
+  VERSION 3.16.9
   LANGUAGES C CXX)
 
 # add the automatically determined parts of the RPATH
@@ -72,22 +72,17 @@ option(ENABLE_SYCL "Enable SYCL offload" OFF)
 # So the dependency must be explicitly specified with USE_OBJECT_TARGET.
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
-if(ENABLE_CUDA AND QMC_CUDA)
-  message(FATAL_ERROR "ENABLE_CUDA=ON and QMC_CUDA=ON can not be set together!")
-endif(ENABLE_CUDA AND QMC_CUDA)
-
-if(ENABLE_OFFLOAD AND QMC_CUDA)
-  message(FATAL_ERROR "ENABLE_OFFLOAD=ON doesn't work together with QMC_CUDA=ON! Did you mean ENABLE_CUDA=ON?")
-endif()
+if(QMC_CUDA)
+  message(FATAL_ERROR "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON. "
+                      "For NVIDIA GPU support use ENABLE_OFFLOAD with ENABLE_CUDA. Use v3.16.0 or earlier if you need QMC_CUDA.")
+endif(QMC_CUDA)
 
 if(ENABLE_CUDA AND ENABLE_SYCL)
   message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
 endif(ENABLE_CUDA AND ENABLE_SYCL)
 
 # set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
-if(ENABLE_CUDA
-   OR QMC_CUDA
-   AND NOT QMC_CUDA2HIP)
+if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   if(DEFINED CUDA_ARCH)
     unset(CUDA_ARCH CACHE)
     message(
@@ -126,30 +121,15 @@ endif()
 #--------------------------------------------------------------------
 message(STATUS "Defining the float point precision")
 #--------------------------------------------------------------------
-if(QMC_CUDA)
-  option(QMC_MIXED_PRECISION "Enable/disable mixed precision" ON)
+option(QMC_MIXED_PRECISION "Enable/disable mixed precision" OFF)
+if(QMC_MIXED_PRECISION)
+  set(OHMMS_PRECISION float)
+  set(MIXED_PRECISION ON)
+else(QMC_MIXED_PRECISION)
   set(OHMMS_PRECISION double)
-  set(CUDA_PRECISION_FULL double)
-  if(QMC_MIXED_PRECISION)
-    set(CUDA_PRECISION float)
-  else(QMC_MIXED_PRECISION)
-    set(CUDA_PRECISION double)
-  endif(QMC_MIXED_PRECISION)
-  message("   Base precision = ${OHMMS_PRECISION}")
-  message("   Full precision = ${OHMMS_PRECISION_FULL}")
-  message("   CUDA base precision = ${CUDA_PRECISION}")
-  message("   CUDA full precision = ${CUDA_PRECISION_FULL}")
-else(QMC_CUDA)
-  option(QMC_MIXED_PRECISION "Enable/disable mixed precision" OFF)
-  if(QMC_MIXED_PRECISION)
-    set(OHMMS_PRECISION float)
-    set(MIXED_PRECISION ON)
-  else(QMC_MIXED_PRECISION)
-    set(OHMMS_PRECISION double)
-  endif(QMC_MIXED_PRECISION)
-  message("   Base precision = ${OHMMS_PRECISION}")
-  message("   Full precision = ${OHMMS_PRECISION_FULL}")
-endif(QMC_CUDA)
+endif(QMC_MIXED_PRECISION)
+message("   Base precision = ${OHMMS_PRECISION}")
+message("   Full precision = ${OHMMS_PRECISION_FULL}")
 
 #--------------------------------------------------------------------
 # Set debug printout
@@ -175,10 +155,6 @@ option(ENABLE_GCOV "Enable code coverage" OFF)
 option(BUILD_UNIT_TESTS "Build unit tests" ON)
 option(BUILD_MICRO_BENCHMARKS "Build micro benchmarks" ON)
 option(BUILD_LMYENGINE_INTERFACE "Build LMY engine" ON)
-if(QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
-  message(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
-  set(BUILD_LMYENGINE_INTERFACE OFF)
-endif()
 if(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
   message(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
   set(BUILD_LMYENGINE_INTERFACE OFF)
@@ -197,7 +173,7 @@ option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
 cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
 # CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
 cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF
-                       "ENABLE_TIMERS AND ( QMC_CUDA OR ENABLE_CUDA )" OFF)
+                       "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
 set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
@@ -231,8 +207,26 @@ if(INSTALL_NEXUS)
 endif()
 
 ######################################################################
-# Set the compiler specific options/flags
+# Set compiler specific options/flags
 ######################################################################
+#-------------------------------------------------------------------------------
+# Check for OpenMP compiler support
+#
+# The CMake OpenMP package is *only* used to to verify compiler support.
+# No feature of the package is used and we customize OpenMP options directly
+# on a per vendor/compiler basis.
+#-------------------------------------------------------------------------------
+if(QMC_OMP)
+  find_package(OpenMP)
+  if(NOT OpenMP_FOUND)
+      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
+  endif()
+endif(QMC_OMP)
+
+#-------------------------------------------------------------------------------
+# Set vendor specific compiler options
+#-------------------------------------------------------------------------------
 if(CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 else(CMAKE_TOOLCHAIN_FILE)
@@ -632,13 +626,9 @@ find_package(LibXml2 REQUIRED)
 #  set up HDF5 library
 #-------------------------------------------------------------------
 if(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      TRUE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" ON)
 else(HAVE_MPI)
-  set(HDF5_PREFER_PARALLEL
-      FALSE
-      CACHE BOOL "Request parallel/serial HDF5 library")
+  option(HDF5_PREFER_PARALLEL "Request parallel/serial HDF5 library" OFF)
   if(HDF5_PREFER_PARALLEL)
     message(FATAL_ERROR "Parallel HDF5 library cannot be selected with QMCPACK non-MPI build. "
                         "Please set HDF5_PREFER_PARALLEL=0.")
@@ -657,8 +647,13 @@ find_package(HDF5 1.10 COMPONENTS C)
 
 if(HDF5_FOUND)
   if(HDF5_IS_PARALLEL)
-    message(STATUS "Parallel HDF5 library found")
-    option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    if(HAVE_MPI)
+      message(STATUS "Parallel HDF5 library found")
+      option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" ON)
+    else(HAVE_MPI)
+      message(FATAL_ERROR "Parallel HDF5 library found but cannot be used with QMCPACK non-MPI build. "
+                          "Please provide a serial HDF5 library or switch to building QMCPACK with MPI.")
+    endif(HAVE_MPI)
   else(HDF5_IS_PARALLEL)
     message(STATUS "Serial HDF5 library found")
     option(ENABLE_PHDF5 "Enable code paths using parallel HDF5" OFF)
@@ -719,7 +714,7 @@ endif()
 #  set up CUDA compiler options and libraries
 #-------------------------------------------------------------------
 set(HAVE_CUDA 0)
-if(QMC_CUDA OR ENABLE_CUDA)
+if(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
     if(CMAKE_VERSION VERSION_LESS 3.21.0)
@@ -727,7 +722,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     endif()
   else(QMC_CUDA2HIP)
     if(CMAKE_VERSION VERSION_LESS 3.18.0)
-      message(FATAL_ERROR "QMC_CUDA or ENABLE_CUDA require CMake 3.18.0 or later")
+      message(FATAL_ERROR "ENABLE_CUDA require CMake 3.18.0 or later")
     endif()
     if(NOT DEFINED CMAKE_CUDA_STANDARD)
       set(CMAKE_CUDA_STANDARD 17)
@@ -745,7 +740,7 @@ if(QMC_CUDA OR ENABLE_CUDA)
     endif()
 
     enable_language(CUDA)
-    if(QMC_CUDA)
+    if(ENABLE_CUDA)
       include(TestCUDAHostCompatibility)
     endif()
     find_package(CUDAToolkit 11.0 REQUIRED)
@@ -764,12 +759,12 @@ if(QMC_CUDA OR ENABLE_CUDA)
     set(HAVE_CUDA 1)
     message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
   endif()
-else(QMC_CUDA OR ENABLE_CUDA)
+else(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")
   endif()
   message(STATUS "CUDA disabled")
-endif(QMC_CUDA OR ENABLE_CUDA)
+endif(ENABLE_CUDA)
 
 if(USE_NVTX_API)
   message(STATUS "Enabling use of CUDA NVTX APIs")
@@ -867,12 +862,11 @@ endif(ENABLE_HIP)
 #  set up SYCL compiler options and libraries
 #-------------------------------------------------------------------
 if(ENABLE_SYCL)
-  # require 3.20 to recognize IntelLLVM compiler ID and check accurate version numbers.
-  if(CMAKE_VERSION VERSION_LESS 3.20.0)
-    message(FATAL_ERROR "ENABLE_SYCL require CMake 3.20.0 or later")
+  if(NOT "x${CMAKE_CXX_COMPILER_ID}" STREQUAL "xIntelLLVM")
+    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel oneAPI compiler (icpx).")
   endif()
-  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    message(FATAL_ERROR "QMCPACK only supports SYCL with LLVM-based Intel compiler (icpx).")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 2023.0)
+    message(FATAL_ERROR "Requires Intel oneAPI 2023.0 or higher!")
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)

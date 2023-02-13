@@ -62,6 +62,7 @@ struct ScalarEstimatorBase
 
   /// Is this estimator a main estimator i.e. the estimator required for a particular driver.
   virtual bool isMainEstimator() const { return false; }
+  virtual std::string getName() const = 0;
   
   ///return average of the
   inline RealType average(int i = 0) const { return scalars_saved[i].mean(); }

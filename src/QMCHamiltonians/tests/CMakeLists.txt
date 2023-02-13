@@ -28,16 +28,18 @@ set(HAM_SRCS
     test_QMCHamiltonian.cpp
     test_ObservableHelper.cpp
     test_Listener.cpp)
-    
 
-if(QMC_CUDA)
-  set(COULOMB_SRCS ${COULOMB_SRCS} test_coulomb_CUDA.cpp)
-else()
-  set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
+if(NOT QMC_COMPLEX)
+  set(HAM_SRCS ${HAM_SRCS} test_RotatedSPOs_NLPP.cpp)
 endif()
+
+set(FORCE_SRCS ${FORCE_SRCS} test_ion_derivs.cpp)
 
 set(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp/pwscf.pwscf.h5)
 maybe_symlink(${UTEST_HDF_INPUT} ${UTEST_DIR}/diamondC_1x1x1.pwscf.h5)
+
+set(UTEST_HDF_INPUT2 ${qmcpack_SOURCE_DIR}/tests/solids/hcpBe_1x1x1_pp/pwscf.pwscf.h5)
+maybe_symlink(${UTEST_HDF_INPUT2} ${UTEST_DIR}/hcpBe.pwscf.h5)
 
 foreach(fname Na2.structure.xml simple.txt)
   maybe_symlink(${CMAKE_CURRENT_SOURCE_DIR}/${fname} ${UTEST_DIR}/${fname})
@@ -47,7 +49,7 @@ foreach(fname cn.wfnoj.xml cn.wfj.xml cn.msd-wfnoj.xml cn.msd-wfj.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/src/QMCWaveFunctions/tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 
-foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml)
+foreach(fname C.BFD.xml Na.BFD.xml so_ecp_test.xml C.ccECP.xml N.ccECP.xml Be.BFD.xml)
   maybe_symlink(${qmcpack_SOURCE_DIR}/tests/pseudopotentials_for_tests/${fname} ${UTEST_DIR}/${fname})
 endforeach()
 

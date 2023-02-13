@@ -16,12 +16,6 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J1Spin.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
-
-#if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowCUDA.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowCUDA.h"
-#endif
-
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -51,18 +45,6 @@ public:
   using J1SpinType = J1Spin<RadFuncType>;
   using J2Type     = TwoBodyJastrow<RadFuncType>;
 };
-
-#if defined(QMC_CUDA)
-template<>
-class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::CUDA_LEGACY>
-{
-public:
-  using RadFuncType = BsplineFunctor<RadialJastrowBuilder::RealType>;
-  using J1Type      = OneBodyJastrowCUDA<RadFuncType>;
-  using J1SpinType  = void;
-  using J2Type      = TwoBodyJastrowCUDA<RadFuncType>;
-};
-#endif
 
 template<>
 class JastrowTypeHelper<BsplineFunctor<RadialJastrowBuilder::RealType>, RadialJastrowBuilder::detail::OMPTARGET>
@@ -156,7 +138,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
 
   std::string input_name(getXMLAttributeValue(cur, "name"));
   std::string j2name = input_name.empty() ? "J2_" + Jastfunction : input_name;
-  const size_t ndim = targetPtcl.getLattice().ndim;
+  const size_t ndim  = targetPtcl.getLattice().ndim;
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   auto J2 = std::make_unique<J2Type>(j2name, targetPtcl, Implementation == RadialJastrowBuilder::detail::OMPTARGET);
 
@@ -222,7 +204,8 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
         RealType qq       = species(chargeInd, ia) * species(chargeInd, ib);
         RealType red_mass = species(massInd, ia) * species(massInd, ib) / (species(massInd, ia) + species(massInd, ib));
         RealType dim_factor = (ia == ib) ? 1.0 / (ndim + 1) : 1.0 / (ndim - 1);
-        if (ndim == 1) dim_factor = 1.0 / (ndim + 1);
+        if (ndim == 1)
+          dim_factor = 1.0 / (ndim + 1);
         cusp = -2 * qq * red_mass * dim_factor;
       }
       app_summary() << "    Radial function for species: " << spA << " - " << spB << std::endl;
@@ -260,6 +243,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ2(xmlNodePtr
   // Ye: actually don't know what uk.dat is used for
   if (targetPtcl.getLattice().SuperCellEnum)
     computeJ2uk(J2->getPairFunctions());
+
+  // sanity check before returning the constructed J2
+  J2->checkSanity();
 
   return J2;
 }
@@ -381,7 +367,7 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
       rAttrib.put(kids);
 
       const auto coef_id = extractCoefficientsID(kids);
-      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? jname + "_"  + speciesA + speciesB : coef_id);
+      auto functor       = std::make_unique<RadFuncType>(coef_id.empty() ? jname + "_" + speciesA + speciesB : coef_id);
       functor->setPeriodic(SourcePtcl->getLattice().SuperCellEnum != SUPERCELL_OPEN);
       functor->cutoff_radius = targetPtcl.getLattice().WignerSeitzRadius;
       functor->setCusp(cusp);
@@ -428,6 +414,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::createJ1(xmlNodePtr
     }
     kids = kids->next;
   }
+
+  // sanity check before returning the constructed J1
+  J1->checkSanity();
 
   if (success)
     return J1;
@@ -534,22 +523,9 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     if (Jastfunction == "bspline")
     {
       if (SpinOpt == "yes")
-      {
-#if defined(QMC_CUDA)
-        myComm->barrier_and_abort("RadialJastrowBuilder::buildComponent spin resolved bspline Jastrow is not supported "
-                                  "in legacy CUDA build.");
-#else
         return createJ1<BsplineFunctor<RealType>, true>(cur);
-#endif
-      }
       else
-      {
-#if defined(QMC_CUDA)
-        return createJ1<BsplineFunctor<RealType>, false, detail::CUDA_LEGACY>(cur);
-#else
         return createJ1<BsplineFunctor<RealType>>(cur);
-#endif
-      }
     }
     else if (Jastfunction == "pade")
     {
@@ -596,9 +572,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
     // it's a two body jastrow factor
     if (Jastfunction == "bspline")
     {
-#if defined(QMC_CUDA)
-      return createJ2<BsplineFunctor<RealType>, detail::CUDA_LEGACY>(cur);
-#else
       if (useGPU.empty())
         useGPU = targetPtcl.getCoordinates().getKind() == DynamicCoordinateKind::DC_POS_OFFLOAD ? "yes" : "no";
 
@@ -619,7 +592,6 @@ std::unique_ptr<WaveFunctionComponent> RadialJastrowBuilder::buildComponent(xmlN
       }
       else
         return createJ2<BsplineFunctor<RealType>>(cur);
-#endif
     }
     else if (Jastfunction == "pade")
     {

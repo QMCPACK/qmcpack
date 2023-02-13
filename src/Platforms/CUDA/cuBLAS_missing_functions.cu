@@ -11,7 +11,6 @@
 
 
 #include "cuBLAS_missing_functions.hpp"
-#include <stdexcept>
 #include "config.h"
 #ifndef QMC_CUDA2HIP
 #include <cuComplex.h>

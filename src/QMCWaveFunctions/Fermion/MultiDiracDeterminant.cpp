@@ -16,6 +16,9 @@
 
 #include "MultiDiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
@@ -805,7 +808,11 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
       }
     }
 
-  Phi->buildOptVariables(m_act_rot_inds);
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(m_act_rot_inds);
+#endif
 }
 
 int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,

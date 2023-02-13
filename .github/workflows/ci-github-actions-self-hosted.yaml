@@ -42,7 +42,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.1.0
+        uses: octokit/request-action@v2.1.7
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -52,7 +52,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{ matrix.jobname }}"
@@ -91,7 +91,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{matrix.jobname}}"
@@ -115,17 +115,13 @@ jobs:
       fail-fast: false
       matrix:
         jobname: [
-            GCC9-NoMPI-Legacy-CUDA-Real-Mixed, # mixed precision
-            GCC9-NoMPI-Legacy-CUDA-Complex-Mixed,
-            GCC9-NoMPI-Legacy-CUDA-Real, # full precision
-            GCC9-NoMPI-Legacy-CUDA-Complex,
             Clang15-MPI-CUDA-AFQMC-Offload-Real-Mixed, # auxiliary field, offload
             Clang15-MPI-CUDA-AFQMC-Offload-Real,
             Clang15-MPI-CUDA-AFQMC-Offload-Complex-Mixed,
             Clang15-MPI-CUDA-AFQMC-Offload-Complex,
-            Intel19-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
-            Intel19-MPI-CUDA-AFQMC-Complex-Mixed,
-            Intel19-MPI-CUDA-AFQMC-Real,
+            Intel21-MPI-CUDA-AFQMC-Real-Mixed, # auxiliary field, requires MPI
+            Intel21-MPI-CUDA-AFQMC-Complex-Mixed,
+            Intel21-MPI-CUDA-AFQMC-Real,
           ]
 
     steps:
@@ -144,7 +140,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.1.0
+        uses: octokit/request-action@v2.1.7
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -154,7 +150,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{ matrix.jobname }}"
@@ -193,7 +189,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-sulfur CI ${{matrix.jobname}}"
@@ -222,10 +218,6 @@ jobs:
             ROCm-Clang13-NoMPI-CUDA2HIP-Real,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed,
             ROCm-Clang13-NoMPI-CUDA2HIP-Complex,
-            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real-Mixed,
-            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Real,
-            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex-Mixed,
-            ROCm-Clang13-MPI-Legacy-CUDA2HIP-Complex,
           ]
 
     steps:
@@ -244,7 +236,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.1.0
+        uses: octokit/request-action@v2.1.7
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -254,7 +246,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"
@@ -293,7 +285,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"
@@ -339,7 +331,7 @@ jobs:
       - name: GitHub API Request
         if: steps.check.outputs.triggered == 'true'
         id: request
-        uses: octokit/request-action@v2.1.0
+        uses: octokit/request-action@v2.1.7
         with:
           route: ${{github.event.issue.pull_request.url}}
         env:
@@ -349,7 +341,7 @@ jobs:
       # just like any other third-party service
       - name: Create PR status
         if: steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"
@@ -388,7 +380,7 @@ jobs:
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'
-        uses: Sibz/github-status-action@v1
+        uses: Sibz/github-status-action@v1.1.6
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
           context: "ornl-nitrogen CI ${{matrix.jobname}}"

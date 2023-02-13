@@ -1,5 +1,13 @@
 # Test that if a C++ compiler is compatiable with the libstdc++ in use
 
+# Test "#include <cstdio>" before version compatibility checks.
+include(CheckIncludeFileCXX)
+check_include_file_cxx(cstdio INCLUDE_CSTDIO_WORKS)
+if(NOT INCLUDE_CSTDIO_WORKS)
+  unset(INCLUDE_CSTDIO_WORKS CACHE)
+  message(FATAL_ERROR "`#include <cstdio>` test failed! Please provide a working C++ compiler.")
+endif()
+
 try_compile(
   LIBSTDCXX_OKAY
   ${CMAKE_BINARY_DIR}

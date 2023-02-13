@@ -39,12 +39,6 @@ add_subdirectory(OMPTarget)
 target_link_libraries(platform_runtime PUBLIC platform_omptarget_runtime)
 target_link_libraries(platform_LA INTERFACE platform_omptarget_LA)
 
-# include CUDA platform, legacy implementation
-if(QMC_CUDA)
-  add_subdirectory(CUDA_legacy)
-  target_link_libraries(platform_runtime PUBLIC platform_cuda_legacy)
-endif(QMC_CUDA)
-
 # include CUDA platform
 if(ENABLE_CUDA)
   add_subdirectory(CUDA)

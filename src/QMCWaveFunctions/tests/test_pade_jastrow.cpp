@@ -39,7 +39,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
 
   double r = 1.2;
   double u = pf.evaluate(r);
-  REQUIRE(u == Approx(2.232142857142857));
+  CHECK(u == Approx(2.232142857142857));
 }
 
 TEST_CASE("Pade2 functor", "[wavefunction]")
@@ -55,7 +55,7 @@ TEST_CASE("Pade2 functor", "[wavefunction]")
 
   double r = 1.2;
   double u = pf2.evaluate(r);
-  REQUIRE(u == Approx(0.11657142857142856));
+  CHECK(u == Approx(0.11657142857142856));
 }
 
 
@@ -118,7 +118,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
   elec_.update();
 
   double logpsi_real = std::real(jas->evaluateLog(elec_, elec_.G, elec_.L));
-  REQUIRE(logpsi_real == Approx(-1.862821769493147));
+  CHECK(logpsi_real == Approx(-1.862821769493147));
 }
 
 TEST_CASE("Pade2 Jastrow", "[wavefunction]")

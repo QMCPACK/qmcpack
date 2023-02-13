@@ -17,6 +17,9 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 #include "CPU/SIMD/simd.hpp"
 #include <cassert>
 
@@ -40,8 +43,12 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPO
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);
-  if (isOptimizable())
-    Phi->buildOptVariables(NumPtcls);
+
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(NumPtcls);
+#endif
 }
 
 template<typename DET_ENGINE>
@@ -195,6 +202,65 @@ typename DiracDeterminantBatched<DET_ENGINE>::Grad DiracDeterminantBatched<DET_E
   assert(checkG(g));
   spingrad += spin_g;
   return g;
+}
+
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::mw_evalGradWithSpin(
+    const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
+    const RefVectorWithLeader<ParticleSet>& p_list,
+    int iat,
+    std::vector<Grad>& grad_now,
+    std::vector<ComplexType>& spingrad_now) const
+{
+  assert(this == &wfc_list.getLeader());
+  auto& wfc_leader = wfc_list.getCastedLeader<DiracDeterminantBatched<DET_ENGINE>>();
+  auto& mw_res     = *wfc_leader.mw_res_;
+  auto& mw_dspin   = mw_res.mw_dspin;
+  ScopedTimer local_timer(RatioTimer);
+
+  const int nw = wfc_list.size();
+  const int num_orbitals = wfc_leader.Phi->size();
+  mw_dspin.resize(nw, num_orbitals);
+
+  //Here, we are just always recomputing the spin gradients from the SPOSet for simplicity.
+  //If we stored and modified the accept/reject to include updating stored spin gradients, we could the
+  //mw_evaluateVGLWithSpin call below and just use the stored spin gradients.
+  //May revisit this in the future.
+  RefVectorWithLeader<SPOSet> phi_list(*Phi);
+  RefVector<SPOSet::ValueVector> psi_v_list, lap_v_list;
+  RefVector<SPOSet::GradVector> grad_v_list;
+  for (int iw = 0; iw < wfc_list.size(); iw++)
+  {
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    phi_list.push_back(*det.Phi);
+    psi_v_list.push_back(det.psiV_host_view);
+    grad_v_list.push_back(det.dpsiV_host_view);
+    lap_v_list.push_back(det.d2psiV_host_view);
+  }
+
+  auto& phi_leader = phi_list.getLeader();
+  phi_leader.mw_evaluateVGLWithSpin(phi_list, p_list, iat, psi_v_list, grad_v_list, lap_v_list, mw_dspin);
+
+  std::vector<const Value*> dpsiM_row_list(nw, nullptr);
+  RefVectorWithLeader<DET_ENGINE> engine_list(wfc_leader.det_engine_);
+  engine_list.reserve(nw);
+
+  const int WorkingIndex = iat - FirstIndex;
+  for (int iw = 0; iw < nw; iw++)
+  {
+    auto& det = wfc_list.getCastedElement<DiracDeterminantBatched<DET_ENGINE>>(iw);
+    // capacity is the size of each vector in the VGL so this advances us to the g then makes
+    // an offset into the gradients
+    dpsiM_row_list[iw] = det.psiM_vgl.device_data() + psiM_vgl.capacity() + NumOrbitals * WorkingIndex * DIM;
+    engine_list.push_back(det.det_engine_);
+  }
+
+  DET_ENGINE::mw_evalGradWithSpin(engine_list, dpsiM_row_list, mw_dspin, WorkingIndex, grad_now, spingrad_now);
+
+#ifndef NDEBUG
+  for (int iw = 0; iw < nw; iw++)
+    checkG(grad_now[iw]);
+#endif
 }
 
 template<typename DET_ENGINE>
@@ -757,6 +823,18 @@ void DiracDeterminantBatched<DET_ENGINE>::mw_evaluateRatios(
 }
 
 template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                                              const opt_variables_type& optvars,
+                                                              std::vector<ValueType>& ratios,
+                                                              Matrix<ValueType>& dratios)
+{
+  const int WorkingIndex = VP.refPtcl - FirstIndex;
+  assert(WorkingIndex >= 0);
+  std::copy_n(det_engine_.get_psiMinv()[WorkingIndex], d2psiV.size(), d2psiV.data());
+  Phi->evaluateDerivRatios(VP, optvars, psiV_host_view, d2psiV_host_view, ratios, dratios, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value>& ratios)
 {
   {
@@ -767,7 +845,6 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateRatiosAlltoOne(ParticleSet& P,
   for (int i = 0; i < psiMinv.rows(); i++)
     ratios[FirstIndex + i] = simd::dot(psiMinv[i], psiV.data(), NumOrbitals);
 }
-
 
 template<typename DET_ENGINE>
 void DiracDeterminantBatched<DET_ENGINE>::resizeScratchObjectsForIonDerivs()
@@ -1047,6 +1124,14 @@ void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivatives(ParticleSet& P,
                                                               Vector<Value>& dhpsioverpsi)
 {
   Phi->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi, FirstIndex, LastIndex);
+}
+
+template<typename DET_ENGINE>
+void DiracDeterminantBatched<DET_ENGINE>::evaluateDerivativesWF(ParticleSet& P,
+                                                                const opt_variables_type& active,
+                                                                Vector<ValueType>& dlogpsi)
+{
+  Phi->evaluateDerivativesWF(P, active, dlogpsi, FirstIndex, LastIndex);
 }
 
 template<typename DET_ENGINE>

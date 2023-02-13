@@ -208,23 +208,27 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"Intel19-MPI-CUDA-AFQMC"*)
+      *"Intel21-MPI-CUDA-AFQMC"*)
         echo "Configure for building with ENABLE_CUDA and AFQMC  " \
-              "with Intel 2019 compiler, need built-from-source OpenBLAS due to bug in rpm"
+             "with Intel classic compiler in OneAPI 2021 (to be deprecated in 2023), " \
+             "need built-from-source OpenBLAS due to bug in rpm"
         
-        source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+        source /opt/intel/oneapi/setvars.sh
 
-        export OMPI_CC=/opt/intel2020/bin/icc
-        export OMPI_CXX=/opt/intel2020/bin/icpc
+        export OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc
+        export OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc
         
         # Make current environment variables available to subsequent steps
-        echo "OMPI_CC=/opt/intel2020/bin/icc" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/intel2020/bin/icpc" >> $GITHUB_ENV
+        echo "OMPI_CC=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icc" >> $GITHUB_ENV
+        echo "OMPI_CXX=/opt/intel/oneapi/compiler/2023.0.0/linux/bin/intel64/icpc" >> $GITHUB_ENV
 
         cmake -GNinja \
               -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
               -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
               -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
+              -DCMAKE_C_FLAGS="-diag-disable=10441" \
+              -DCMAKE_CXX_FLAGS="-diag-disable=10441" \
+              -DCMAKE_CUDA_FLAGS="-diag-disable=10441" \
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
@@ -254,31 +258,6 @@ case "$1" in
               -DQMC_DATA=$QMC_DATA_DIR \
               ${GITHUB_WORKSPACE}
       ;;
-      *"ROCm-Clang13-MPI-Legacy-CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
-
-        export ROCM_PATH=/opt/rocm
-        export OMPI_CC=/opt/rocm/llvm/bin/clang
-        export OMPI_CXX=/opt/rocm/llvm/bin/clang++
-
-        # Make current environment variables available to subsequent steps
-        echo "ROCM_PATH=/opt/rocm" >> $GITHUB_ENV
-        echo "OMPI_CC=/opt/rocm/llvm/bin/clang" >> $GITHUB_ENV
-        echo "OMPI_CXX=/opt/rocm/llvm/bin/clang++" >> $GITHUB_ENV
-
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/usr/lib64/openmpi/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/lib64/openmpi/bin/mpicxx \
-              -DMPIEXEC_EXECUTABLE=/usr/lib64/openmpi/bin/mpirun \
-              -DQMC_CUDA=1 \
-              -DQMC_CUDA2HIP=ON \
-              -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
       *"GCC9-MPI-CUDA-AFQMC"*)
         echo 'Configure for building with ENABLE_CUDA and AFQMC, need built-from-source OpenBLAS due to bug in rpm'
         cmake -GNinja \
@@ -288,17 +267,6 @@ case "$1" in
               -DBUILD_AFQMC=ON \
               -DENABLE_CUDA=ON \
               -DCMAKE_PREFIX_PATH="/opt/OpenBLAS/0.3.18" \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-      *"GCC9-NoMPI-Legacy-CUDA"*)
-        echo 'Configure for building with Legacy CUDA'
-        cmake -GNinja \
-              -DQMC_CUDA=1 \
-              -DQMC_MPI=0 \
               -DQMC_COMPLEX=$IS_COMPLEX \
               -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -402,9 +370,9 @@ case "$1" in
        export LD_LIBRARY_PATH=/opt/llvm/15.0.0/lib:/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
     fi
 
-    if [[ "${GH_JOBNAME}" =~ (Intel19) ]]
+    if [[ "${GH_JOBNAME}" =~ (Intel21) ]]
     then
-       source /opt/intel2020/bin/compilervars.sh -arch intel64 -platform linux
+       source /opt/intel/oneapi/setvars.sh
     fi
 
     if [[ "${GH_JOBNAME}" =~ (MKL) ]]

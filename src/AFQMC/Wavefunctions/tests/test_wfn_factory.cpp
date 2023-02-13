@@ -165,8 +165,8 @@ void wfn_fac(boost::mpi3::communicator& world)
 
       wfn.Overlap(wset);
       //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-      //REQUIRE(real(*it->overlap()) == Approx(1.0));
-      //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+      //CHECK(real(*it->overlap()) == Approx(1.0));
+      //CHECK(imag(*it->overlap()) == Approx(0.0));
       //}
 
       using CMatrix = ComplexMatrix<Allocator>;
@@ -181,9 +181,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset.begin(); it != wset.end(); ++it)
         {
-          REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -215,8 +215,8 @@ void wfn_fac(boost::mpi3::communicator& world)
           Xsum = 0;
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-          REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
         }
       }
       else
@@ -255,8 +255,8 @@ void wfn_fac(boost::mpi3::communicator& world)
             for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-          REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
         }
       }
       else
@@ -304,8 +304,8 @@ void wfn_fac(boost::mpi3::communicator& world)
       wfn2.Overlap(wset2);
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        REQUIRE(real(*it->overlap()) == Approx(1.0));
-        REQUIRE(imag(*it->overlap()) == Approx(0.0));
+        CHECK(real(*it->overlap()) == Approx(1.0));
+        CHECK(imag(*it->overlap()) == Approx(0.0));
       }
 
       wfn2.Energy(wset2);
@@ -313,9 +313,9 @@ void wfn_fac(boost::mpi3::communicator& world)
       {
         for (auto it = wset2.begin(); it != wset2.end(); ++it)
         {
-          REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-          REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-          REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+          CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+          CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+          CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
         }
       }
       else
@@ -337,8 +337,8 @@ void wfn_fac(boost::mpi3::communicator& world)
           Xsum = 0;
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
-          REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-          REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+          CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+          CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
         }
       }
       else
@@ -372,8 +372,8 @@ void wfn_fac(boost::mpi3::communicator& world)
             for (int i = 0; i < std::get<0>(vHS.sizes()); i++)
               Vsum += vHS[i][n];
           }
-          REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-          REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+          CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+          CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
         }
       }
       else
@@ -501,8 +501,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     wfn.Overlap(wset);
     //for(auto it = wset.begin(); it!=wset.end(); ++it) {
-    //REQUIRE(real(*it->overlap()) == Approx(1.0));
-    //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+    //CHECK(real(*it->overlap()) == Approx(1.0));
+    //CHECK(imag(*it->overlap()) == Approx(0.0));
     //}
 
     using CMatrix = ComplexMatrix<Allocator>;
@@ -517,9 +517,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset.begin(); it != wset.end(); ++it)
       {
-        REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -553,8 +553,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           for (int i = 0; i < X.size(); i++)
             Xsum += X[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-        REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
       }
     }
     else
@@ -608,8 +608,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-        REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
       }
     }
     else
@@ -660,8 +660,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
 
     wfn2.Overlap(wset2);
     //for(auto it = wset2.begin(); it!=wset2.end(); ++it) {
-    //REQUIRE(real(*it->overlap()) == Approx(1.0));
-    //REQUIRE(imag(*it->overlap()) == Approx(0.0));
+    //CHECK(real(*it->overlap()) == Approx(1.0));
+    //CHECK(imag(*it->overlap()) == Approx(0.0));
     //}
 
     wfn2.Energy(wset2);
@@ -669,9 +669,9 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
     {
       for (auto it = wset2.begin(); it != wset2.end(); ++it)
       {
-        REQUIRE(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
-        REQUIRE(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
-        REQUIRE(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
+        CHECK(real(*it->E1()) == Approx(real(file_data.E0 + file_data.E1)));
+        CHECK(real(*it->EXX() + *it->EJ()) == Approx(real(file_data.E2)));
+        CHECK(imag(it->energy()) == Approx(imag(file_data.E0 + file_data.E1 + file_data.E2)));
       }
     }
     else
@@ -698,8 +698,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           for (int i = 0; i < X2.size(); i++)
             Xsum += X2[i][n];
         Xsum = (TGwfn.TG() += Xsum);
-        REQUIRE(real(Xsum) == Approx(real(file_data.Xsum)));
-        REQUIRE(imag(Xsum) == Approx(imag(file_data.Xsum)));
+        CHECK(real(Xsum) == Approx(real(file_data.Xsum)));
+        CHECK(imag(Xsum) == Approx(imag(file_data.Xsum)));
       }
     }
     else
@@ -748,8 +748,8 @@ void wfn_fac_distributed(boost::mpi3::communicator& world, int ngroups)
           }
         }
         Vsum = (TGwfn.TG() += Vsum);
-        REQUIRE(real(Vsum) == Approx(real(file_data.Vsum)));
-        REQUIRE(imag(Vsum) == Approx(imag(file_data.Vsum)));
+        CHECK(real(Vsum) == Approx(real(file_data.Vsum)));
+        CHECK(imag(Vsum) == Approx(imag(file_data.Vsum)));
       }
     }
     else
@@ -899,8 +899,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     t1=Time.elapsed();
     app_log()<<" PHMSD Overlap: " <<setprecision(12) <<*wset[0].overlap() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
-      REQUIRE( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
+      CHECK( real(*wset[0].overlap()) == Approx(real(*wset[i].overlap())));
+      CHECK( imag(*wset[0].overlap()) == Approx(imag(*wset[i].overlap())));
     }
 
     using shmCMatrix = boost::multi::array<ComplexType,2alloc_,
@@ -911,12 +911,12 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" "
              <<*wset[0].E1() <<" " <<*wset[0].EXX() <<" " <<*wset[0].EJ() <<" " <<t1 <<std::endl;
     for(int i=1; i<nwalk; i++) {
-      REQUIRE( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
-      REQUIRE( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
-      REQUIRE( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
-      REQUIRE( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
-      REQUIRE( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
-      REQUIRE( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
+      CHECK( real(*wset[0].E1()) == Approx(real(*wset[i].E1())));
+      CHECK( imag(*wset[0].E1()) == Approx(imag(*wset[i].E1())));
+      CHECK( real(*wset[0].EJ()) == Approx(real(*wset[i].EJ())));
+      CHECK( imag(*wset[0].EJ()) == Approx(imag(*wset[i].EJ())));
+      CHECK( real(*wset[0].EXX()) == Approx(real(*wset[i].EXX())));
+      CHECK( imag(*wset[0].EXX()) == Approx(imag(*wset[i].EXX())));
     }
 #ifdef __compare__
     Time.restart();
@@ -954,8 +954,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         Xsum=0;
         for(int i=0; i<X.size(0); i++)
           Xsum += X[i][n];
-        REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
-        REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+        CHECK( real(Xsum) == Approx(real(file_data.Xsum)) );
+        CHECK( imag(Xsum) == Approx(imag(file_data.Xsum)) );
       }
     } else
 #endif
@@ -972,8 +972,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         ComplexType Xsum_=0;
         for(int i=0; i<X.size(0); i++)
           Xsum_ += X[i][n];
-        REQUIRE( real(Xsum) == Approx(real(Xsum_)) );
-        REQUIRE( imag(Xsum) == Approx(imag(Xsum_)) );
+        CHECK( real(Xsum) == Approx(real(Xsum_)) );
+        CHECK( imag(Xsum) == Approx(imag(Xsum_)) );
       }
     }
 
@@ -994,8 +994,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
           for(int i=0; i<vHS.size(0); i++)
             Vsum += vHS[i][n];
         }
-        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+        CHECK( real(Vsum) == Approx(real(file_data.Vsum)) );
+        CHECK( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else
 #endif
@@ -1018,8 +1018,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
           for(int i=0; i<vHS.size(0); i++)
             Vsum_ += vHS[i][n];
         }
-        REQUIRE( real(Vsum) == Approx(real(Vsum_)) );
-        REQUIRE( imag(Vsum) == Approx(imag(Vsum_)) );
+        CHECK( real(Vsum) == Approx(real(Vsum_)) );
+        CHECK( imag(Vsum) == Approx(imag(Vsum_)) );
       }
     }
 
@@ -1069,8 +1069,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
         else
           for(int i=0; i<vHS_.size(0); i++)
             Vsum += vHS_[i][0];
-        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
-        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+        CHECK( real(Vsum) == Approx(real(file_data.Vsum)) );
+        CHECK( imag(Vsum) == Approx(imag(file_data.Vsum)) );
       }
     } else 
 */

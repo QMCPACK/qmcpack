@@ -29,25 +29,12 @@
 #include "Particle/MCWalkerConfiguration.h"
 #include "type_traits/template_types.hpp"
 #include "TWFGrads.hpp"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 
 /**@file WaveFunctionComponent.h
  *@brief Declaration of WaveFunctionComponent
  */
 namespace qmcplusplus
 {
-#ifdef QMC_CUDA
-struct NLjob
-{
-  int walker;
-  int elec;
-  int numQuadPoints;
-  NLjob(int w, int e, int n) : walker(w), elec(e), numQuadPoints(n) {}
-};
-#endif
-
 ///forward declaration
 class WaveFunctionComponent;
 class ResourceCollection;
@@ -124,6 +111,9 @@ public:
   WaveFunctionComponent(const std::string& obj_name = "");
   ///default destructor
   virtual ~WaveFunctionComponent();
+
+  /// Validate the internal consistency of the object
+  virtual void checkSanity() const {}
 
   /// return object name
   const std::string& getName() const { return my_name_; }
@@ -490,9 +480,7 @@ public:
    *  Note: this function differs from the evaluateDerivatives function in the way that it only computes
    *        the derivative of the log of the wavefunction.
   */
-  virtual void evaluateDerivativesWF(ParticleSet& P,
-                                     const opt_variables_type& optvars,
-                                     Vector<ValueType>& dlogpsi);
+  virtual void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi);
 
   /** Calculates the derivatives of \f$ \nabla \textnormal{log} \psi_f \f$ with respect to
       the optimizable parameters, and the dot product of this is then
@@ -538,158 +526,6 @@ public:
                                    const opt_variables_type& optvars,
                                    std::vector<ValueType>& ratios,
                                    Matrix<ValueType>& dratios);
-
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-
-  virtual void freeGPUmem() {}
-
-  virtual void recompute(MCWalkerConfiguration& W, bool firstTime) {}
-
-  virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, int kblocksize) {}
-
-  /** Evaluate the log of the WF for all walkers
-   *  @param walkers   vector of all walkers
-   *  @param logPsi    output vector of log(psi)
-   */
-  virtual void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addLog for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  /** Evaluate the wave-function ratio w.r.t. moving particle iat
-   *  for all walkers
-   *  @param walkers     vector of all walkers
-   *  @param iat         particle which is moving
-   *  @param psi_ratios  output vector with psi_new/psi_old
-   */
-  virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  // Returns the WF ratio and gradient w.r.t. iat for each walker
-  // in the respective vectors
-  virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& grad)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void ratio(MCWalkerConfiguration& W,
-                     int iat,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void calcRatio(MCWalkerConfiguration& W,
-                         int iat,
-                         std::vector<ValueType>& psi_ratios,
-                         std::vector<GradType>& grad,
-                         std::vector<ValueType>& lapl)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::calcRatio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void addRatio(MCWalkerConfiguration& W,
-                        int iat,
-                        int k,
-                        std::vector<ValueType>& psi_ratios,
-                        std::vector<GradType>& grad,
-                        std::vector<ValueType>& lapl)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addRatio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void ratio(std::vector<Walker_t*>& walkers,
-                     std::vector<int>& iatList,
-                     std::vector<PosType>& rNew,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::ratio for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-
-  virtual void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::addGradient for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::calcGradient for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::gradLapl for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void det_lookahead(MCWalkerConfiguration& W,
-                             std::vector<ValueType>& psi_ratios,
-                             std::vector<GradType>& grad,
-                             std::vector<ValueType>& lapl,
-                             int iat,
-                             int k,
-                             int kd,
-                             int nw)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::det_lookahead for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::update for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-
-  virtual void NLratios(MCWalkerConfiguration& W,
-                        std::vector<NLjob>& jobList,
-                        std::vector<PosType>& quadPoints,
-                        std::vector<ValueType>& psi_ratios)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-  virtual void NLratios(MCWalkerConfiguration& W,
-                        gpu::device_vector<CUDA_PRECISION*>& Rlist,
-                        gpu::device_vector<int*>& ElecList,
-                        gpu::device_vector<int>& NumCoreElecs,
-                        gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
-                        gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                        int numQuadPoints)
-  {
-    APP_ABORT("Need specialization of WaveFunctionComponent::NLRatios for " + getClassName() +
-              ".\n Required CUDA functionality not implemented. Contact developers.\n");
-  }
-
-#endif
 
 private:
   /** compute the current gradients and spin gradients for the iat-th particle of multiple walkers

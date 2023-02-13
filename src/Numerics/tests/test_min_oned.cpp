@@ -44,9 +44,9 @@ public:
     REQUIRE(xb < xc);
 
     // For a starting point of 1.3
-    //REQUIRE(xa == Approx(-0.0041));
-    //REQUIRE(xb == Approx( 0.03615));
-    //REQUIRE(xc == Approx(-0.04435));
+    //CHECK(xa == Approx(-0.0041));
+    //CHECK(xb == Approx( 0.03615));
+    //CHECK(xc == Approx(-0.04435));
 
 
     RealType fa = one_cycle(xa);
@@ -69,8 +69,8 @@ public:
     auto bracket = bracket_minimum([this](RealType x) -> RealType { return one_cycle(x); }, x0);
     auto m       = find_minimum([this](RealType x) -> RealType { return one_cycle(x); }, bracket);
 
-    REQUIRE(m.first == Approx(min_value));
-    REQUIRE(m.second == Approx(0.0));
+    CHECK(m.first == Approx(min_value));
+    CHECK(m.second == Approx(0.0));
   }
 };
 

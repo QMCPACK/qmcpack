@@ -287,9 +287,9 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
     val =  expr.subs(slist).subs(rlist).evalf()
     if print_value:
       if using_soa:
-        out += "  REQUIRE(XYZ[%d] == Approx(%.12g));\n"%(idx, val)
+        out += "  CHECK(XYZ[%d] == Approx(%.12g));\n"%(idx, val)
       else:
-        out += "  REQUIRE(ct.getYlm(%d) == Approx(%.12g));\n"%(idx, val)
+        out += "  CHECK(ct.getYlm(%d) == Approx(%.12g));\n"%(idx, val)
     dx = diff(expr, Symbol('x'))
     dy = diff(expr, Symbol('y'))
     dz = diff(expr, Symbol('z'))
@@ -298,21 +298,21 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
     dz_val =  dz.subs(slist).subs(rlist).evalf()
     if print_grad:
       if using_soa:
-        out += "  REQUIRE(gr0[%d] == Approx(%.12g));\n"%(idx, dx_val)
-        out += "  REQUIRE(gr1[%d] == Approx(%.12g));\n"%(idx, dy_val)
-        out += "  REQUIRE(gr2[%d] == Approx(%.12g));\n"%(idx, dz_val)
+        out += "  CHECK(gr0[%d] == Approx(%.12g));\n"%(idx, dx_val)
+        out += "  CHECK(gr1[%d] == Approx(%.12g));\n"%(idx, dy_val)
+        out += "  CHECK(gr2[%d] == Approx(%.12g));\n"%(idx, dz_val)
       else:
-        out += "  REQUIRE(ct.getGradYlm(%d)[0] == Approx(%.12g));\n"%(idx, dx_val)
-        out += "  REQUIRE(ct.getGradYlm(%d)[1] == Approx(%.12g));\n"%(idx, dy_val)
-        out += "  REQUIRE(ct.getGradYlm(%d)[2] == Approx(%.12g));\n"%(idx, dz_val)
+        out += "  CHECK(ct.getGradYlm(%d)[0] == Approx(%.12g));\n"%(idx, dx_val)
+        out += "  CHECK(ct.getGradYlm(%d)[1] == Approx(%.12g));\n"%(idx, dy_val)
+        out += "  CHECK(ct.getGradYlm(%d)[2] == Approx(%.12g));\n"%(idx, dz_val)
 
     lap = diff(expr, Symbol('x'), 2) + diff(expr, Symbol('y'), 2) + diff(expr, Symbol('z'), 2)
     lap_val = lap.subs(slist).subs(rlist).evalf()
     if print_lap:
       if using_soa:
-        out += "  REQUIRE(lap[%d] == Approx(%.12g));\n"%(idx, lap_val)
+        out += "  CHECK(lap[%d] == Approx(%.12g));\n"%(idx, lap_val)
       else:
-        out += "  REQUIRE(ct.getLaplYlm(%d) == Approx(%.12g));\n"%(idx, lap_val)
+        out += "  CHECK(ct.getLaplYlm(%d) == Approx(%.12g));\n"%(idx, lap_val)
 
 
     if print_hess:
@@ -325,12 +325,12 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
 
           #print ii,jj,hess_val
           #if hess_val != 0:
-          #  print "  REQUIRE(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));"%(idx, ii, jj, hess_val)
+          #  print "  CHECK(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));"%(idx, ii, jj, hess_val)
           if using_soa:
             if ii <= jj:
-              out += "  REQUIRE(h%d%d[%d] == Approx(%.12g));\n"%(ii, jj, idx, hess_val)
+              out += "  CHECK(h%d%d[%d] == Approx(%.12g));\n"%(ii, jj, idx, hess_val)
           else:
-            out += "  REQUIRE(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, hess_val)
+            out += "  CHECK(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, hess_val)
 
       out += '\n'
 
@@ -343,7 +343,7 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
             ggg_s = diff(diff(diff(expr, si), sj), sk)
             ggg_val = ggg_s.subs(slist).subs(rlist).evalf()
 
-            out += "  REQUIRE(ct.getGGGYlm(%d)[%d](%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, kk, ggg_val)
+            out += "  CHECK(ct.getGGGYlm(%d)[%d](%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, kk, ggg_val)
 
       out += '\n'
 

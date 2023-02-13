@@ -43,30 +43,6 @@ namespace qmcplusplus
 class BareKineticEnergy : public OperatorBase
 {
 public:
-  ///true, if all the species have the same mass
-  bool SameMass;
-  ///mass of the particle
-  FullPrecRealType M;
-  ///\f$ 1/(2 m^*) \f$
-  FullPrecRealType OneOver2M;
-  ///MinusOver2M[i] = \f$ -1/2m[i]\f$ for the ith species
-  std::vector<FullPrecRealType> MinusOver2M;
-
-  ParticleSet::ParticleGradient Gtmp;
-  ParticleSet::ParticleLaplacian Ltmp;
-
-  ///single particle trace samples
-  bool streaming_kinetic;
-  bool streaming_kinetic_comp;
-  bool streaming_momentum;
-
-#if !defined(REMOVE_TRACEMANAGER)
-  Array<TraceReal, 1>* T_sample;
-  Array<TraceComp, 1>* T_sample_comp;
-  Array<TraceComp, 2>* p_sample;
-#endif
-  ParticleSet& Ps;
-
   /** constructor with particleset
    * @param target particleset
    *
@@ -77,9 +53,9 @@ public:
   ///destructor
   ~BareKineticEnergy() override;
 
-  bool dependsOnWaveFunction() const override { return true; }
-  std::string getClassName() const override { return "BareKineticEnergy"; }
-  void resetTargetParticleSet(ParticleSet& P) override {}
+  bool dependsOnWaveFunction() const override;
+  std::string getClassName() const override;
+  void resetTargetParticleSet(ParticleSet& p) override;
 
 #if !defined(REMOVE_TRACEMANAGER)
   void contributeParticleQuantities() override;
@@ -168,13 +144,6 @@ public:
 
   std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
 
-#ifdef QMC_CUDA
-  ////////////////////////////////
-  // Vectorized version for GPU //
-  ////////////////////////////////
-  // Nothing is done on GPU here, just copy into vector
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
-#endif
   /** initialize a shared resource and hand it to a collection
    */
   void createResource(ResourceCollection& collection) const override;
@@ -197,6 +166,25 @@ private:
     Vector<RealType> t_samples;
     Vector<std::complex<RealType>> tcmp_samples;
   };
+
+  ///true, if all the species have the same mass
+  bool same_mass_;
+
+  ///mass of the particle
+  FullPrecRealType particle_mass_;
+
+  ///\f$ 1/(2 m^*) \f$
+  FullPrecRealType one_over_2m_;
+  ///minus_over_2m_[i] = \f$ -1/2m[i]\f$ for the ith species
+  std::vector<FullPrecRealType> minus_over_2m_;
+
+#if !defined(REMOVE_TRACEMANAGER)
+  Array<TraceReal, 1>* t_sample_;
+  Array<TraceComp, 1>* t_sample_comp_;
+  Array<TraceComp, 2>* p_sample_;
+#endif
+
+  ParticleSet& ps_;
 
   ResourceHandle<MultiWalkerResource> mw_res_;
 

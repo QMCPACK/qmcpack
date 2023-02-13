@@ -60,7 +60,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF(bool skipChecks)
            "      %9.6f %9.6f %9.6f ]\n",
            SuperLattice(0, 0), SuperLattice(0, 1), SuperLattice(0, 2), SuperLattice(1, 0), SuperLattice(1, 1),
            SuperLattice(1, 2), SuperLattice(2, 0), SuperLattice(2, 1), SuperLattice(2, 2));
-  app_log() << buff;
+  app_log() << buff << std::endl;
   if (!CheckLattice())
     throw std::runtime_error("CheckLattice failed");
   PrimCell.set(Lattice);

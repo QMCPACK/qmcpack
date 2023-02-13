@@ -34,13 +34,18 @@ class EstimatorManagerInputTests;
 } // namespace testing
 
 /** These are the estimator input types EstimatorManagerInput delegates to.
- *  We of course know all the estimator types at compile time and it is useful to have type safety for their usage.
+ *  We know all the estimator types at compile time and it is useful to have type safety for their usage.
+ *  All input clasess must satisfy std::is_trivially_copyable..
  */
 class SpinDensityInput;
 class MomentumDistributionInput;
 class OneBodyDensityMatricesInput;
-using EstimatorInput =
-    std::variant<std::monostate, MomentumDistributionInput, SpinDensityInput, OneBodyDensityMatricesInput>;
+class PerParticleHamiltonianLoggerInput;
+using EstimatorInput  = std::variant<std::monostate,
+                                    MomentumDistributionInput,
+                                    SpinDensityInput,
+                                    OneBodyDensityMatricesInput,
+                                    PerParticleHamiltonianLoggerInput>;
 using EstimatorInputs = std::vector<EstimatorInput>;
 
 /** The scalar esimtator inputs
@@ -77,6 +82,11 @@ public:
    */
   void readXML(xmlNodePtr cur);
 
+  /** typed appending of already parsed inputs.
+   *  only used in testing.
+   */
+  void append(const EstimatorInput& ei);
+  void append(const ScalarEstimatorInput& sei);
 private:
   /// this is a vector of variants for typesafe access to the estimator inputs
   EstimatorInputs estimator_inputs_;

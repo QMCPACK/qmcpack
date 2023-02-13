@@ -310,12 +310,12 @@ void test_lcao_spinor()
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
   SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
+  mw_dspin.resize(2, OrbitalSetSize);
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
@@ -327,27 +327,26 @@ void test_lcao_spinor()
     psi_work_2   = 0.0;
     dpsi_work_2  = 0.0;
     d2psi_work_2 = 0.0;
-    dspsi_work_2 = 0.0;
 
     MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
-    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(vlp).epsilon(eps));
-    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(vds).epsilon(eps));
+    CHECK(mw_dspin(0, 0) == ComplexApprox(vds).epsilon(eps));
     //walker 1
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(vdy2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(vdz2).epsilon(eps));
     CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(vlp2).epsilon(eps));
-    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
+    CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
 
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
@@ -637,12 +636,12 @@ void test_lcao_spinor_excited()
   SPOSet::ValueVector psi_work_2(OrbitalSetSize);
   SPOSet::GradVector dpsi_work_2(OrbitalSetSize);
   SPOSet::ValueVector d2psi_work_2(OrbitalSetSize);
-  SPOSet::ValueVector dspsi_work_2(OrbitalSetSize);
 
   RefVector<SPOSet::ValueVector> psi_v_list   = {psi_work, psi_work_2};
   RefVector<SPOSet::GradVector> dpsi_v_list   = {dpsi_work, dpsi_work_2};
   RefVector<SPOSet::ValueVector> d2psi_v_list = {d2psi_work, d2psi_work_2};
-  RefVector<SPOSet::ValueVector> dspsi_v_list = {dspsi_work, dspsi_work_2};
+  SPOSet::OffloadMatrix<SPOSet::ComplexType> mw_dspin;
+  mw_dspin.resize(2, OrbitalSetSize); //two walkers
   //check mw_evaluateVGLWithSpin
   for (int iat = 0; iat < 1; iat++)
   {
@@ -654,28 +653,26 @@ void test_lcao_spinor_excited()
     psi_work_2   = 0.0;
     dpsi_work_2  = 0.0;
     d2psi_work_2 = 0.0;
-    dspsi_work_2 = 0.0;
 
     MCCoords<CoordsType::POS_SPIN> displs(2);
     displs.positions = {-dR[iat], -dR[iat]};
     displs.spins     = {-dS[iat], -dS[iat]};
     elec_.mw_makeMove(p_list, iat, displs);
-    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, dspsi_v_list);
+    spo->mw_evaluateVGLWithSpin(spo_list, p_list, iat, psi_v_list, dpsi_v_list, d2psi_v_list, mw_dspin);
     //walker 0
     CHECK(psi_v_list[0].get()[0] == ComplexApprox(val).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][0] == ComplexApprox(vdx).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][1] == ComplexApprox(vdy).epsilon(eps));
     CHECK(dpsi_v_list[0].get()[0][2] == ComplexApprox(vdz).epsilon(eps));
     CHECK(d2psi_v_list[0].get()[0] == ComplexApprox(vlp).epsilon(eps));
-    CHECK(dspsi_v_list[0].get()[0] == ComplexApprox(vds).epsilon(eps));
+    CHECK(mw_dspin(0, 0) == ComplexApprox(vds).epsilon(eps));
     //walker 1
     CHECK(psi_v_list[1].get()[0] == ComplexApprox(val2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][0] == ComplexApprox(vdx2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][1] == ComplexApprox(vdy2).epsilon(eps));
     CHECK(dpsi_v_list[1].get()[0][2] == ComplexApprox(vdz2).epsilon(eps));
     CHECK(d2psi_v_list[1].get()[0] == ComplexApprox(vlp2).epsilon(eps));
-    CHECK(dspsi_v_list[1].get()[0] == ComplexApprox(vds2).epsilon(eps));
-
+    CHECK(mw_dspin(1, 0) == ComplexApprox(vds2).epsilon(eps));
     std::vector<bool> accept = {false, false};
     elec_.mw_accept_rejectMove<CoordsType::POS_SPIN>(p_list, iat, accept);
   }

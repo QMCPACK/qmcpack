@@ -21,9 +21,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
@@ -37,29 +34,32 @@ using Return_t = BareKineticEnergy::Return_t;
    * Store mass per species and use SameMass to choose the methods.
    * if SameMass, probably faster and easy to vectorize but no impact on the performance.
    */
-BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : Ps(p), psi_(psi)
+BareKineticEnergy::BareKineticEnergy(ParticleSet& p, TrialWaveFunction& psi) : ps_(p), psi_(psi)
 {
   setEnergyDomain(KINETIC);
   oneBodyQuantumDomain(p);
-  streaming_kinetic      = false;
-  streaming_kinetic_comp = false;
-  streaming_momentum     = false;
   update_mode_.set(OPTIMIZABLE, 1);
   SpeciesSet& tspecies(p.getSpeciesSet());
-  MinusOver2M.resize(tspecies.size());
-  int massind = tspecies.addAttribute("mass");
-  SameMass    = true;
-  M           = tspecies(massind, 0);
-  OneOver2M   = 0.5 / M;
+  minus_over_2m_.resize(tspecies.size());
+  int massind    = tspecies.addAttribute("mass");
+  same_mass_     = true;
+  particle_mass_ = tspecies(massind, 0);
+  one_over_2m_   = 0.5 / particle_mass_;
   for (int i = 0; i < tspecies.size(); ++i)
   {
-    SameMass &= (std::abs(tspecies(massind, i) - M) < 1e-6);
-    MinusOver2M[i] = -1.0 / (2.0 * tspecies(massind, i));
+    same_mass_ &= (std::abs(tspecies(massind, i) - particle_mass_) < 1e-6);
+    minus_over_2m_[i] = -1.0 / (2.0 * tspecies(massind, i));
   }
 }
 
 ///destructor
 BareKineticEnergy::~BareKineticEnergy() = default;
+
+bool BareKineticEnergy::dependsOnWaveFunction() const { return true; }
+
+std::string BareKineticEnergy::getClassName() const { return "BareKineticEnergy"; }
+
+void BareKineticEnergy::resetTargetParticleSet(ParticleSet& p) {}
 
 #if !defined(REMOVE_TRACEMANAGER)
 void BareKineticEnergy::contributeParticleQuantities()
@@ -75,9 +75,9 @@ void BareKineticEnergy::checkoutParticleQuantities(TraceManager& tm)
       request_.streaming_array("momentum");
   if (streaming_particles_)
   {
-    T_sample      = tm.checkout_real<1>(name_, Ps);
-    T_sample_comp = tm.checkout_complex<1>(name_ + "_complex", Ps);
-    p_sample      = tm.checkout_complex<2>("momentum", Ps, DIM);
+    t_sample_      = tm.checkout_real<1>(name_, ps_);
+    t_sample_comp_ = tm.checkout_complex<1>(name_ + "_complex", ps_);
+    p_sample_      = tm.checkout_complex<2>("momentum", ps_, DIM);
   }
 }
 
@@ -85,9 +85,9 @@ void BareKineticEnergy::deleteParticleQuantities()
 {
   if (streaming_particles_)
   {
-    delete T_sample;
-    delete T_sample_comp;
-    delete p_sample;
+    delete t_sample_;
+    delete t_sample_comp_;
+    delete p_sample_;
   }
 }
 #endif
@@ -102,26 +102,25 @@ Return_t BareKineticEnergy::evaluate(ParticleSet& P)
   }
   else
 #endif
-      if (SameMass)
+      if (same_mass_)
   {
-//app_log() << "Here" << std::endl;
 #ifdef QMC_COMPLEX
     value_ = std::real(CplxDot(P.G, P.G) + CplxSum(P.L));
-    value_ *= -OneOver2M;
+    value_ *= -one_over_2m_;
 #else
     value_ = Dot(P.G, P.G) + Sum(P.L);
-    value_ *= -OneOver2M;
+    value_ *= -one_over_2m_;
 #endif
   }
   else
   {
     value_ = 0.0;
-    for (int i = 0; i < MinusOver2M.size(); ++i)
+    for (int i = 0; i < minus_over_2m_.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      value_ += x * MinusOver2M[i];
+      value_ += x * minus_over_2m_[i];
     }
   }
   return value_;
@@ -220,7 +219,7 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
     iongradpsi_[iat] = psi.evalGradSource(P, ions, iat, iongrad_grad_, iongrad_lapl_);
     //conversion from potentially complex to definitely real.
     convertToReal(iongradpsi_[iat], iongradpsireal_[iat]);
-    if (SameMass)
+    if (same_mass_)
     {
       for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
       {
@@ -228,7 +227,7 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
         //end.  Sum() and Dot() perform the needed functions and spit out the real part at the end.
         term2_                 = P.L * iongradpsi_[iat][iondim];
         term4_                 = P.G * iongradpsi_[iat][iondim];
-        pulaytmp_[iat][iondim] = -OneOver2M *
+        pulaytmp_[iat][iondim] = -one_over_2m_ *
             (Sum(iongrad_lapl_[iondim]) + Sum(term2_) + 2.0 * Dot(iongrad_grad_[iondim], P.G) + Dot(P.G, term4_));
       }
     }
@@ -236,35 +235,34 @@ Return_t BareKineticEnergy::evaluateWithIonDerivs(ParticleSet& P,
     {
       for (int iondim = 0; iondim < OHMMS_DIM; iondim++)
       {
-        for (int g = 0; g < MinusOver2M.size(); g++)
+        for (int g = 0; g < minus_over_2m_.size(); g++)
         {
           for (int iel = P.first(g); iel < P.last(g); iel++)
           {
-            pulaytmp_[iat][iondim] += MinusOver2M[g] *
+            pulaytmp_[iat][iondim] += minus_over_2m_[g] *
                 (dlaplacian(P.G[iel], P.L[iel], iongrad_grad_[iondim][iel], iongrad_lapl_[iondim][iel],
                             iongradpsi_[iat][iondim]));
           }
         }
       }
     }
-    //convert to real.
     convertToReal(pulaytmp_[iat], pulaytmpreal_[iat]);
   }
 
-  if (SameMass)
+  if (same_mass_)
   {
     value_ = Dot(P.G, P.G) + Sum(P.L);
-    value_ *= -OneOver2M;
+    value_ *= -one_over_2m_;
   }
   else
   {
     value_ = 0.0;
-    for (int i = 0; i < MinusOver2M.size(); ++i)
+    for (int i = 0; i < minus_over_2m_.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      value_ += x * MinusOver2M[i];
+      value_ += x * minus_over_2m_[i];
     }
   }
   pulaytmpreal_ -= value_ * iongradpsireal_;
@@ -325,7 +323,7 @@ void BareKineticEnergy::evaluateOneBodyOpMatrix(ParticleSet& P,
       for (int iorb = 0; iorb < norbs; iorb++)
       {
         gradJdotgradPhi[sid][iel - first][iorb] = RealType(2.0) * dot(GradType(G[iel]), grad_M[sid][iel - first][iorb]);
-        B[sid][iel - first][iorb] += RealType(MinusOver2M[ig]) *
+        B[sid][iel - first][iorb] += RealType(minus_over_2m_[ig]) *
             (lapl_M[sid][iel - first][iorb] + gradJdotgradPhi[sid][iel - first][iorb] +
              ValueType(L[iel] + dot(G[iel], G[iel])) * M[sid][iel - first][iorb]);
       }
@@ -417,7 +415,7 @@ void BareKineticEnergy::evaluateOneBodyOpMatrixForceDeriv(ParticleSet& P,
       {
         for (int iorb = 0; iorb < norbs; iorb++)
         {
-          Bforce[idim][sid][iel - first][iorb] = RealType(MinusOver2M[ig]) *
+          Bforce[idim][sid][iel - first][iorb] = RealType(minus_over_2m_[ig]) *
               (dlapl[idim][sid][iel - first][iorb] +
                RealType(2.0) *
                    (dot(GradType(G[iel]), dgmat[idim][sid][iel - first][iorb]) +
@@ -470,7 +468,7 @@ void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<Operato
   auto num_species = p_leader.getSpeciesSet().getTotalNum();
   t_samp.resize(num_particles);
   tcmp_samp.resize(num_particles);
-  const RealType clambda(-OneOver2M);
+  const RealType clambda(-one_over_2m_);
   auto evaluate_walker_per_particle = [num_particles, name, &t_samp, &tcmp_samp,
                                        clambda](const int walker_index, const BareKineticEnergy& bke,
                                                 const ParticleSet& pset,
@@ -480,7 +478,7 @@ void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<Operato
     std::fill(tcmp_samp.begin(), tcmp_samp.end(), 0.0);
 
     std::complex<RealType> t1 = 0.0;
-    if (bke.SameMass)
+    if (bke.same_mass_)
       for (int i = 0; i < num_particles; i++)
       {
         t1           = pset.L[i] + dot(pset.G[i], pset.G[i]);
@@ -491,12 +489,11 @@ void BareKineticEnergy::mw_evaluatePerParticle(const RefVectorWithLeader<Operato
       }
     else
     {
-      for (int s = 0; s < bke.MinusOver2M.size(); ++s)
+      for (int s = 0; s < bke.minus_over_2m_.size(); ++s)
       {
-        FullPrecRealType mlambda = bke.MinusOver2M[s];
+        FullPrecRealType mlambda = bke.minus_over_2m_[s];
         for (int i = pset.first(s); i < pset.last(s); ++i)
         {
-          //t1 = mlambda*( pset.L[i] + dot(pset.G[i],pset.G[i]) );
           t1 = pset.L[i] + dot(pset.G[i], pset.G[i]);
           t1 *= mlambda;
           t_samp[i]    = real(t1);
@@ -532,13 +529,13 @@ void BareKineticEnergy::mw_evaluatePerParticleWithToperator(
 #if !defined(REMOVE_TRACEMANAGER)
 Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
 {
-  Array<RealType, 1>& T_samp                    = *T_sample;
-  Array<std::complex<RealType>, 1>& T_samp_comp = *T_sample_comp;
-  Array<std::complex<RealType>, 2>& p_samp      = *p_sample;
+  Array<RealType, 1>& T_samp                    = *t_sample_;
+  Array<std::complex<RealType>, 1>& T_samp_comp = *t_sample_comp_;
+  Array<std::complex<RealType>, 2>& p_samp      = *p_sample_;
   std::complex<RealType> t1                     = 0.0;
-  const RealType clambda(-OneOver2M);
+  const RealType clambda(-one_over_2m_);
   value_ = 0.0;
-  if (SameMass)
+  if (same_mass_)
   {
     for (int i = 0; i < P.getTotalNum(); i++)
     {
@@ -553,12 +550,11 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
   }
   else
   {
-    for (int s = 0; s < MinusOver2M.size(); ++s)
+    for (int s = 0; s < minus_over_2m_.size(); ++s)
     {
-      FullPrecRealType mlambda = MinusOver2M[s];
+      FullPrecRealType mlambda = minus_over_2m_[s];
       for (int i = P.first(s); i < P.last(s); ++i)
       {
-        //t1 = mlambda*( P.L[i] + dot(P.G[i],P.G[i]) );
         t1 = P.L[i] + dot(P.G[i], P.G[i]);
         t1 *= mlambda;
         T_samp(i)      = real(t1);
@@ -595,20 +591,20 @@ Return_t BareKineticEnergy::evaluate_sp(ParticleSet& P)
 
 Return_t BareKineticEnergy::evaluate_orig(ParticleSet& P)
 {
-  if (SameMass)
+  if (same_mass_)
   {
     value_ = Dot(P.G, P.G) + Sum(P.L);
-    value_ *= -OneOver2M;
+    value_ *= -one_over_2m_;
   }
   else
   {
     value_ = 0.0;
-    for (int i = 0; i < MinusOver2M.size(); ++i)
+    for (int i = 0; i < minus_over_2m_.size(); ++i)
     {
       Return_t x = 0.0;
       for (int j = P.first(i); j < P.last(i); ++j)
         x += laplacian(P.G[j], P.L[j]);
-      value_ += x * MinusOver2M[i];
+      value_ += x * minus_over_2m_[i];
     }
   }
   return value_;
@@ -631,21 +627,4 @@ std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, Tria
   return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
-#ifdef QMC_CUDA
-////////////////////////////////
-// Vectorized version for GPU //
-////////////////////////////////
-// Nothing is done on GPU here, just copy into vector
-void BareKineticEnergy::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  auto& walkers = W.WalkerList;
-  for (int iw = 0; iw < walkers.size(); iw++)
-  {
-    Walker_t& w                                        = *(walkers[iw]);
-    RealType KE                                        = -OneOver2M * (Dot(w.G, w.G) + Sum(w.L));
-    w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = KE;
-    LocalEnergy[iw] += KE;
-  }
-}
-#endif
 } // namespace qmcplusplus

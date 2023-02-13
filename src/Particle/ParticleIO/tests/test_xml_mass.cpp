@@ -93,7 +93,7 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
     int species_id           = electrons.GroupID[iat];
     std::string species_name = tspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == order[iat]);
-    REQUIRE(tspecies(massind, species_id) == Approx(1.0));
+    CHECK(tspecies(massind, species_id) == Approx(1.0));
   }
 
   // test ions
@@ -105,7 +105,7 @@ TEST_CASE("read_particle_mass_same_xml", "[particle_io][xml]")
     int species_id           = ions.GroupID[iat];
     std::string species_name = pspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == porder[iat]);
-    REQUIRE(pspecies(pmassind, species_id) == Approx(1836.15));
+    CHECK(pspecies(pmassind, species_id) == Approx(1836.15));
   }
 } // TEST_CASE read_particle_mass_same_xml
 

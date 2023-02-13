@@ -158,24 +158,24 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
 
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-14.233853149));
+  CHECK(logpsi == Approx(-14.233853149));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
   RealType eloc       = ham.evaluateDeterministic(elec);
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.6170527168e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.6214045316e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(9.1821937928e+00));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.3849558361e+01));
+  CHECK(eloc == Approx(-1.6170527168e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.6214045316e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(9.1821937928e+00));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.3849558361e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -255,13 +255,13 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   wf_grad    = 0.0;
   ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
-  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
+  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
 
-  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 
   hf_term    = 0.0;
   pulay_term = 0.0;
@@ -270,13 +270,13 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
-  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
+  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
 
-  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
 TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
@@ -325,7 +325,7 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   //  HamTest NonLocalECP 1.373654152480333224e+01
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-8.9455094611e+00));
+  CHECK(logpsi == Approx(-8.9455094611e+00));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
@@ -333,17 +333,17 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.77926812569e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.6214045316e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(7.6732404154e+00));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.37365415248e+01));
+  CHECK(eloc == Approx(-1.77926812569e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.6214045316e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(7.6732404154e+00));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.37365415248e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -422,13 +422,13 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   wf_grad    = 0.0;
   ham.evaluateIonDerivsDeterministic(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
-  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
+  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
 
-  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 
   hf_term    = 0.0;
   pulay_term = 0.0;
@@ -437,13 +437,13 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec, ions, *psi, hf_term, pulay_term, wf_grad);
 
-  REQUIRE(dot(hf_term[0], hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0], pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0], wf_grad[0]) != Approx(0));
+  CHECK(dot(hf_term[0], hf_term[0]) != Approx(0));
+  CHECK(dot(pulay_term[0], pulay_term[0]) != Approx(0));
+  CHECK(dot(wf_grad[0], wf_grad[0]) != Approx(0));
 
-  REQUIRE(dot(hf_term[1], hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1], pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1], wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1], hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1], pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1], wf_grad[1]) != Approx(0));
 }
 
 TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
@@ -492,7 +492,7 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   //HamTest NonLocalECP 1.269054876473223636e+01
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-1.41149961982e+01));
+  CHECK(logpsi == Approx(-1.41149961982e+01));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
@@ -500,17 +500,17 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.59769057565e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.62140453161e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(1.05350086757e+01));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.26905487647e+01));
+  CHECK(eloc == Approx(-1.59769057565e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.62140453161e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(1.05350086757e+01));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.26905487647e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -534,9 +534,9 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
 
   //This is not implemented yet.  Uncomment to perform check after implementation.
   //Reference from finite differences on this configuration.
-  /*  REQUIRE( wf_grad[0][0] == Approx(-1.7045200053189544));
-  REQUIRE( wf_grad[0][1] == Approx( 2.6980932676501368)); 
-  REQUIRE( wf_grad[0][2] == Approx( 6.5358393587011667)); 
+  /*  CHECK( wf_grad[0][0] == Approx(-1.7045200053189544));
+  CHECK( wf_grad[0][1] == Approx( 2.6980932676501368)); 
+  CHECK( wf_grad[0][2] == Approx( 6.5358393587011667)); 
   CHECK( wf_grad[1][0] == Approx( 1.6322817486980055)); 
   CHECK( wf_grad[1][1] == Approx( 0.0091648450606385));
   CHECK( wf_grad[1][2] == Approx( 0.1031883398283639)); */
@@ -631,7 +631,7 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
 
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-8.69329994846e+00));
+  CHECK(logpsi == Approx(-8.69329994846e+00));
 
   QMCHamiltonian& ham = create_CN_Hamiltonian(hf);
 
@@ -639,17 +639,17 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.75211124679e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.62140453161e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(9.18772166638e+00));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.24936290628e+01));
+  CHECK(eloc == Approx(-1.75211124679e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.62140453161e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(9.18772166638e+00));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.24936290628e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -779,10 +779,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
@@ -1038,10 +1038,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
 
   using ValueMatrix = SPOSet::ValueMatrix;
@@ -1306,7 +1306,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   //  HamTest NonLocalECP 1.373654152480333224e+01
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-8.9455094611e+00));
+  CHECK(logpsi == Approx(-8.9455094611e+00));
 
   QMCHamiltonian& ham = *hf.getH();
 
@@ -1314,17 +1314,17 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.77926812569e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.6214045316e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(7.6732404154e+00));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.37365415248e+01));
+  CHECK(eloc == Approx(-1.77926812569e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.9015560571e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.6214045316e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.7839428299e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(7.6732404154e+00));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.37365415248e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -1405,11 +1405,11 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
  
   CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
   CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
+  CHECK(dot(wf_grad[0],wf_grad[0]) != Approx(0));
  
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
  
   hf_term    = 0.0;
   pulay_term = 0.0;
@@ -1418,13 +1418,13 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   ham.setRandomGenerator(&myrng);
   ham.evaluateIonDerivs(elec,ions,*psi,hf_term,pulay_term,wf_grad);
   
-  REQUIRE(dot(hf_term[0],hf_term[0]) != Approx(0));
-  REQUIRE(dot(pulay_term[0],pulay_term[0]) != Approx(0));
-  REQUIRE(dot(wf_grad[0],wf_grad[0]) != Approx(0));
+  CHECK(dot(hf_term[0],hf_term[0]) != Approx(0));
+  CHECK(dot(pulay_term[0],pulay_term[0]) != Approx(0));
+  CHECK(dot(wf_grad[0],wf_grad[0]) != Approx(0));
  
-  REQUIRE(dot(hf_term[1],hf_term[1]) != Approx(0));
-  REQUIRE(dot(pulay_term[1],pulay_term[1]) != Approx(0));
-  REQUIRE(dot(wf_grad[1],wf_grad[1]) != Approx(0));
+  CHECK(dot(hf_term[1],hf_term[1]) != Approx(0));
+  CHECK(dot(pulay_term[1],pulay_term[1]) != Approx(0));
+  CHECK(dot(wf_grad[1],wf_grad[1]) != Approx(0));
  
 }*/
 
@@ -1491,7 +1491,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   //HamTest NonLocalECP 1.269054876473223636e+01
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-1.41149961982e+01));
+  CHECK(logpsi == Approx(-1.41149961982e+01));
 
   QMCHamiltonian& ham = *hf.getH();
 
@@ -1499,17 +1499,17 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.59769057565e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.62140453161e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(1.05350086757e+01));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.26905487647e+01));
+  CHECK(eloc == Approx(-1.59769057565e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.62140453161e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(1.05350086757e+01));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.26905487647e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;
@@ -1647,7 +1647,7 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
 
 
   RealType logpsi = psi->evaluateLog(elec);
-  REQUIRE(logpsi == Approx(-8.69329994846e+00));
+  CHECK(logpsi == Approx(-8.69329994846e+00));
 
   QMCHamiltonian& ham = *hf.getH();
 
@@ -1655,17 +1655,17 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   enum observ_id
   {
     KINETIC = 0,
-    ELECELEC,
-    IONION,
     LOCALECP,
-    NONLOCALECP
+    NONLOCALECP,
+    ELECELEC,
+    IONION
   };
-  REQUIRE(eloc == Approx(-1.75211124679e+01));
-  REQUIRE(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
-  REQUIRE(ham.getObservable(IONION) == Approx(9.62140453161e+00));
-  REQUIRE(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
-  REQUIRE(ham.getObservable(KINETIC) == Approx(9.18772166638e+00));
-  REQUIRE(ham.getObservable(NONLOCALECP) == Approx(1.24936290628e+01));
+  CHECK(eloc == Approx(-1.75211124679e+01));
+  CHECK(ham.getObservable(ELECELEC) == Approx(1.90155605707e+01));
+  CHECK(ham.getObservable(IONION) == Approx(9.62140453161e+00));
+  CHECK(ham.getObservable(LOCALECP) == Approx(-6.78394282995e+01));
+  CHECK(ham.getObservable(KINETIC) == Approx(9.18772166638e+00));
+  CHECK(ham.getObservable(NONLOCALECP) == Approx(1.24936290628e+01));
 
   for (int i = 0; i < ham.sizeOfObservables(); i++)
     app_log() << "  HamTest " << ham.getObservableName(i) << " " << ham.getObservable(i) << std::endl;

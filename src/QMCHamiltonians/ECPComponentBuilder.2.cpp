@@ -20,15 +20,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-//#include "Utilities/IteratorUtility.h"
-#ifdef QMC_CUDA
-#ifndef QMC_CUDA2HIP
-#include <cuda_runtime_api.h>
-#else
-#include <hip/hip_runtime.h>
-#include "Platforms/ROCm/cuda2hip.h"
-#endif
-#endif
 
 namespace qmcplusplus
 {
@@ -55,7 +46,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   int nup   = 0;
   int nso   = 0;
   OhmmsAttributeSet aAttrib;
-  int quad_rule = -1;
+  int quad_rule     = -1;
   int local_channel = -1;
   aAttrib.add(eunits, "units");
   aAttrib.add(format, "format");
@@ -144,7 +135,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   // we may not know which one is local yet.
 
   std::vector<int> angList;
-  std::vector<int> angListSO; //For spin-orbit, if it exists
+  std::vector<int> angListSO;      //For spin-orbit, if it exists
   std::vector<xmlNodePtr> vpsPtr;
   std::vector<xmlNodePtr> vpsoPtr; //For spin-orbit, if it exists.
   Lmax   = -1;
@@ -373,8 +364,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     app->spline();
     pp_so->add(angList[l], app);
   }
-  NumSO       = angList.size();
-  pp_so->Rmax = rmax;
+  NumSO        = angList.size();
+  pp_so->Rmax_ = rmax;
 }
 
 bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
@@ -474,15 +465,8 @@ void ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
                                     RealType rmax,
                                     mRealType Vprefactor)
 {
-#if defined(QMC_CUDA) && !defined(QMC_CUDA2HIP)
-  int device;
-  cudaCheck(cudaGetDevice(&device));
-  cudaDeviceProp deviceProp;
-  cudaCheck(cudaGetDeviceProperties(&deviceProp, device));
-  const int max_points = deviceProp.maxTexture1D - 1;
-#else
+  //ALERT magic number
   const int max_points = 100000;
-#endif
   app_log() << "   Creating a Linear Grid Rmax=" << rmax << std::endl;
   //this is a new grid
   mRealType d = 1e-4;

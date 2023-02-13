@@ -84,8 +84,6 @@ protected:
   // Number of walkers per crowd. Size of vector is number of crowds.
   std::vector<int> walkers_per_crowd_;
 
-  std::vector<std::unique_ptr<CostFunctionCrowdData>> opt_eval_;
-
   NewTimer& check_config_timer_;
   NewTimer& corr_sampling_timer_;
   NewTimer& fill_timer_;

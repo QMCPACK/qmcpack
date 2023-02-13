@@ -30,9 +30,6 @@
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "TWFGrads.hpp"
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -74,15 +71,7 @@ public:
   using LogValueType     = WaveFunctionComponent::LogValueType;
   using PsiValueType     = WaveFunctionComponent::PsiValueType;
 
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
-
-#ifdef QMC_CUDA
-  using CTS          = CUDAGlobalTypes;
-  using RealMatrix_t = WaveFunctionComponent::RealMatrix_t;
-  using ValueMatrix  = WaveFunctionComponent::ValueMatrix;
-  using GradMatrix   = WaveFunctionComponent::GradMatrix;
-  using Walker_t     = ParticleSet::Walker_t;
-#endif
+  using SPOMap = SPOSet::SPOMap;
 
   /// enum type for computing partial WaveFunctionComponents
   enum class ComputeType
@@ -312,7 +301,7 @@ public:
                                 ComputeType ct = ComputeType::ALL);
 
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
-  void evaluateDerivRatios(const VirtualParticleSet& P,
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
                            const opt_variables_type& optvars,
                            std::vector<ValueType>& ratios,
                            Matrix<ValueType>& dratio);
@@ -572,118 +561,6 @@ private:
   // helper function for extracting a list of laplacian from a list of TrialWaveFunction
   static RefVector<ParticleSet::ParticleLaplacian> extractLRefList(
       const RefVectorWithLeader<TrialWaveFunction>& wf_list);
-
-  ///////////////////////////////////////////
-  // Vectorized version for GPU evaluation //
-  ///////////////////////////////////////////
-#ifdef QMC_CUDA
-private:
-  gpu::device_host_vector<CTS::ValueType> GPUratios;
-  gpu::device_host_vector<CTS::GradType> GPUgrads;
-  gpu::device_host_vector<CTS::ValueType> GPUlapls;
-  int ndelay; // delay rank
-
-public:
-  void freeGPUmem();
-
-  void recompute(MCWalkerConfiguration& W, bool firstTime = true);
-
-  void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool, bool onlyOptimizable = false, int kblocksize = 1);
-  void getGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void calcGradient(MCWalkerConfiguration& W, int iat, int k, std::vector<GradType>& grad);
-  void calcGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad) { calcGradient(W, iat, 0, grad); }
-  void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad);
-  void evaluateLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi);
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios);
-  void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& newG);
-  void ratio(MCWalkerConfiguration& W,
-             int iat,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& newG,
-             std::vector<ValueType>& newL);
-  void calcRatio(MCWalkerConfiguration& W,
-                 int iat,
-                 std::vector<ValueType>& psi_ratios,
-                 std::vector<GradType>& newG,
-                 std::vector<ValueType>& newL);
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                int k,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& newG,
-                std::vector<ValueType>& newL);
-  void addRatio(MCWalkerConfiguration& W,
-                int iat,
-                std::vector<ValueType>& psi_ratios,
-                std::vector<GradType>& newG,
-                std::vector<ValueType>& newL)
-  {
-    addRatio(W, iat, 0, psi_ratios, newG, newL);
-  }
-  void det_lookahead(MCWalkerConfiguration& W,
-                     std::vector<ValueType>& psi_ratios,
-                     std::vector<GradType>& grad,
-                     std::vector<ValueType>& lapl,
-                     int iat,
-                     int k,
-                     int kd,
-                     int nw);
-
-#ifdef QMC_COMPLEX
-  void convertRatiosFromComplexToReal(std::vector<ValueType>& psi_ratios, std::vector<RealType>& psi_ratios_real);
-#endif
-  void ratio(std::vector<Walker_t*>& walkers,
-             std::vector<int>& iatList,
-             std::vector<PosType>& rNew,
-             std::vector<ValueType>& psi_ratios,
-             std::vector<GradType>& newG,
-             std::vector<ValueType>& newL);
-
-  void NLratios(MCWalkerConfiguration& W,
-                gpu::device_vector<CUDA_PRECISION*>& Rlist,
-                gpu::device_vector<int*>& ElecList,
-                gpu::device_vector<int>& NumCoreElecs,
-                gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
-                gpu::device_vector<CUDA_PRECISION*>& RatioList,
-                int numQuadPoints,
-                ComputeType ct = ComputeType::ALL);
-
-  void NLratios(MCWalkerConfiguration& W,
-                std::vector<NLjob>& jobList,
-                std::vector<PosType>& quadPoints,
-                std::vector<ValueType>& psi_ratios,
-                ComputeType ct = ComputeType::ALL);
-
-  void update(MCWalkerConfiguration* W, std::vector<Walker_t*>& walkers, int iat, std::vector<bool>* acc, int k);
-  void update(std::vector<Walker_t*>& walkers, int iat) { update(NULL, walkers, iat, NULL, 0); }
-  void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList);
-
-  void gradLapl(MCWalkerConfiguration& W, GradMatrix& grads, ValueMatrix& lapl);
-
-
-  void evaluateDeltaLog(MCWalkerConfiguration& W, std::vector<RealType>& logpsi_opt);
-
-  void evaluateDeltaLog(MCWalkerConfiguration& W,
-                        std::vector<RealType>& logpsi_fixed,
-                        std::vector<RealType>& logpsi_opt,
-                        GradMatrix& fixedG,
-                        ValueMatrix& fixedL);
-
-  void evaluateOptimizableLog(MCWalkerConfiguration& W,
-                              std::vector<RealType>& logpsi_opt,
-                              GradMatrix& optG,
-                              ValueMatrix& optL);
-
-  void evaluateDerivatives(MCWalkerConfiguration& W,
-                           const opt_variables_type& optvars,
-                           RealMatrix_t& dlogpsi,
-                           RealMatrix_t& dhpsioverpsi);
-
-
-  void setndelay(int delay) { ndelay = delay; }
-
-  int getndelay() { return ndelay; }
-#endif
 };
 /**@}*/
 } // namespace qmcplusplus

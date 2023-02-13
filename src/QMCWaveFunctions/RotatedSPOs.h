@@ -91,10 +91,10 @@ public:
 
 
   // Single Slater creation
-  void buildOptVariables(size_t nel) override;
+  void buildOptVariables(size_t nel);
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations) override;
+  void buildOptVariables(const RotationIndices& rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
@@ -103,6 +103,12 @@ public:
                            Vector<ValueType>& dhpsioverpsi,
                            const int& FirstIndex,
                            const int& LastIndex) override;
+
+  void evaluateDerivativesWF(ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             Vector<ValueType>& dlogpsi,
+                             int FirstIndex,
+                             int LastIndex) override;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
@@ -246,6 +252,15 @@ public:
   {
     Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
   }
+
+  void evaluateDerivRatios(const VirtualParticleSet& VP,
+                           const opt_variables_type& optvars,
+                           ValueVector& psi,
+                           const ValueVector& psiinv,
+                           std::vector<ValueType>& ratios,
+                           Matrix<ValueType>& dratios,
+                           int FirstIndex,
+                           int LastIndex) override;
 
   void evaluateVGH(const ParticleSet& P,
                    int iat,

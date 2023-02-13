@@ -45,9 +45,6 @@ struct OffloadSwitches
 };
 
 /** Templated test of TrialWF with different DiracDet flavors.
- *  If QMC_CUDA there is no testing converage beyond setup.
- *  \todo at the very least the prepocessor define QMC_CUDA shouldn't be 
- *  used and a constexpr based on DeterminantTypes that actually depend on legacy cuda.
  */
 template<class DiracDet, class SPO_precision>
 void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitches& offload_switches)
@@ -187,31 +184,30 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   RadialJastrowBuilder jb(c, elec_);
   psi.addComponent(jb.buildComponent(jas1));
 
-#if !defined(QMC_CUDA)
   // initialize distance tables.
   elec_.update();
   double logpsi = psi.evaluateLog(elec_);
 
   app_log() << "debug before YYY logpsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
-             << std::endl;
+            << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi == Approx(-4.546410485374186));
+  CHECK(logpsi == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi == Approx(-5.932711221043984));
+  CHECK(logpsi == Approx(-5.932711221043984));
 #endif
 
   auto logpsi_cplx = psi.evaluateGL(elec_, false);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   logpsi_cplx = psi.evaluateGL(elec_, true);
 #if defined(QMC_COMPLEX)
-  REQUIRE(std::real(logpsi_cplx) == Approx(-4.546410485374186));
+  CHECK(std::real(logpsi_cplx) == Approx(-4.546410485374186));
 #else
-  REQUIRE(std::real(logpsi_cplx) == Approx(-5.932711221043984));
+  CHECK(std::real(logpsi_cplx) == Approx(-5.932711221043984));
 #endif
 
   // make a TrialWaveFunction Clone
@@ -220,9 +216,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   elec_clone.update();
   double logpsi_clone = psi_clone->evaluateLog(elec_clone);
 #if defined(QMC_COMPLEX)
-  REQUIRE(logpsi_clone == Approx(-4.546410485374186));
+  CHECK(logpsi_clone == Approx(-4.546410485374186));
 #else
-  REQUIRE(logpsi_clone == Approx(-5.932711221043984));
+  CHECK(logpsi_clone == Approx(-5.932711221043984));
 #endif
 
   const int moved_elec_id = 0;
@@ -253,19 +249,19 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   psi.acceptMove(elec_, moved_elec_id);
   elec_.acceptMove(moved_elec_id);
   app_log() << "before YYY getLogPsi " << std::setprecision(16) << psi.getLogPsi() << " " << psi.getPhase()
-             << std::endl;
+            << std::endl;
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   elec_.update(true);
   psi.evaluateLog(elec_);
 #if defined(QMC_COMPLEX)
-  REQUIRE(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
+  CHECK(psi.getLogPsi() == Approx(-6.626861768296886).epsilon(5e-5));
 #else
-  REQUIRE(psi.getLogPsi() == Approx(-8.013162503965223));
+  CHECK(psi.getLogPsi() == Approx(-8.013162503965223));
 #endif
 
   // testing batched interfaces
@@ -285,9 +281,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateLog(wf_ref_list, p_ref_list);
   app_log() << "before YYY [0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi() << " "
-             << wf_ref_list[0].getPhase() << std::endl;
+            << wf_ref_list[0].getPhase() << std::endl;
   app_log() << "before YYY [1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi() << " "
-             << wf_ref_list[1].getPhase() << std::endl;
+            << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082042)));
@@ -306,9 +302,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   grad_old.grads_positions[1] = wf_ref_list[1].evalGrad(p_ref_list[1], moved_elec_id);
 
   app_log() << "evalGrad " << std::setprecision(14) << grad_old.grads_positions[0][0] << " "
-             << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
-             << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
-             << grad_old.grads_positions[1][2] << std::endl;
+            << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
+            << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
+            << grad_old.grads_positions[1][2] << std::endl;
 
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id, grad_old);
 
@@ -343,7 +339,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
     GradType grad_temp;
     ValueType r_1 = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_temp);
     app_log() << "calcRatio calcRatioGrad " << std::setprecision(14) << r_0 << " " << r_1 << " " << grad_temp[0] << " "
-               << grad_temp[1] << " " << grad_temp[2] << std::endl;
+              << grad_temp[1] << " " << grad_temp[2] << std::endl;
 #if defined(QMC_COMPLEX)
     CHECK(r_0 == ComplexApprox(ValueType(253.71869245791, -0.00034808849808193)).epsilon(1e-4));
     CHECK(r_1 == ComplexApprox(ValueType(36.915636007059, -6.4240180082292e-05)).epsilon(1e-5));
@@ -388,17 +384,17 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
     ratios[1] = wf_ref_list[1].calcRatioGrad(p_ref_list[1], moved_elec_id, grad_new.grads_positions[1]);
 
     app_log() << "calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-               << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
-               << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
-               << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;
+              << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
+              << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
+              << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;
   }
   //Temporary as switch to std::reference_wrapper proceeds
   // testing batched interfaces
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id, ratios, grad_new);
   app_log() << "flex_calcRatioGrad " << std::setprecision(14) << ratios[0] << " " << ratios[1] << std::endl
-             << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
-             << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
-             << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;
+            << grad_new.grads_positions[0][0] << " " << grad_new.grads_positions[0][1] << " "
+            << grad_new.grads_positions[0][2] << " " << grad_new.grads_positions[1][0] << " "
+            << grad_new.grads_positions[1][1] << " " << grad_new.grads_positions[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(ratios[0] == ComplexApprox(ValueType(1, 0)).epsilon(5e-5));
   CHECK(grad_new.grads_positions[0][0] ==
@@ -428,9 +424,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   std::vector<bool> isAccepted(2, true);
   TrialWaveFunction::mw_accept_rejectMove(wf_ref_list, p_ref_list, moved_elec_id, isAccepted, true);
   app_log() << "flex_acceptMove WF_list[0] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[0].getLogPsi()
-             << " " << wf_ref_list[0].getPhase() << std::endl;
+            << " " << wf_ref_list[0].getPhase() << std::endl;
   app_log() << "flex_acceptMove WF_list[1] getLogPsi getPhase " << std::setprecision(16) << wf_ref_list[1].getLogPsi()
-             << " " << wf_ref_list[1].getPhase() << std::endl;
+            << " " << wf_ref_list[1].getPhase() << std::endl;
 #if defined(QMC_COMPLEX)
   REQUIRE(std::complex<RealType>(wf_ref_list[0].getLogPsi(), wf_ref_list[0].getPhase()) ==
           LogComplexApprox(std::complex<RealType>(-6.626861768296848, -3.141586279082065)));
@@ -448,9 +444,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   const int moved_elec_id_next = 1;
   TrialWaveFunction::mw_evalGrad(wf_ref_list, p_ref_list, moved_elec_id_next, grad_old);
   app_log() << "evalGrad next electron " << std::setprecision(14) << grad_old.grads_positions[0][0] << " "
-             << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
-             << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
-             << grad_old.grads_positions[1][2] << std::endl;
+            << grad_old.grads_positions[0][1] << " " << grad_old.grads_positions[0][2] << " "
+            << grad_old.grads_positions[1][0] << " " << grad_old.grads_positions[1][1] << " "
+            << grad_old.grads_positions[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(grad_old.grads_positions[0][0] ==
         ComplexApprox(ValueType(-114.82740072726, -7.605305979232e-05)).epsilon(grad_precision));
@@ -479,9 +475,9 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet::mw_makeMove(p_ref_list, moved_elec_id_next, displ);
   TrialWaveFunction::mw_calcRatioGrad(wf_ref_list, p_ref_list, moved_elec_id_next, ratios, grad_new);
   app_log() << "ratioGrad next electron " << std::setprecision(14) << grad_new.grads_positions[0][0] << " "
-             << grad_new.grads_positions[0][1] << " " << grad_new.grads_positions[0][2] << " "
-             << grad_new.grads_positions[1][0] << " " << grad_new.grads_positions[1][1] << " "
-             << grad_new.grads_positions[1][2] << std::endl;
+            << grad_new.grads_positions[0][1] << " " << grad_new.grads_positions[0][2] << " "
+            << grad_new.grads_positions[1][0] << " " << grad_new.grads_positions[1][1] << " "
+            << grad_new.grads_positions[1][2] << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(grad_new.grads_positions[0][0] ==
         ComplexApprox(ValueType(9.6073058494562, -1.4375146770852e-05)).epsilon(8e-5));
@@ -513,8 +509,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, false);
 #ifndef NDEBUG
   app_log() << "invMat next electron " << std::setprecision(14) << det_up->getPsiMinv()[0][0] << " "
-             << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
-             << " " << std::endl;
+            << det_up->getPsiMinv()[0][1] << " " << det_up->getPsiMinv()[1][0] << " " << det_up->getPsiMinv()[1][1]
+            << " " << std::endl;
 #if defined(QMC_COMPLEX)
   CHECK(det_up->getPsiMinv()[0][0] == ComplexApprox(ValueType(38.503358805635, -38.503358805645)).epsilon(1e-4));
   CHECK(det_up->getPsiMinv()[0][1] == ComplexApprox(ValueType(-31.465077529568, 31.465077529576)).epsilon(1e-4));
@@ -545,7 +541,7 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   ParticleSet::mw_update(p_ref_list);
   TrialWaveFunction::mw_evaluateGL(wf_ref_list, p_ref_list, true);
   for (int iw = 0; iw < log_values.size(); iw++)
-    REQUIRE(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
+    CHECK(LogComplexApprox(log_values[iw]) == LogValueType{wf_ref_list[iw].getLogPsi(), wf_ref_list[iw].getPhase()});
 
   // test NLPP related APIs
   const int nknot = 3;
@@ -557,15 +553,15 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
 
   const auto& ei_table1 = elec_.getDistTableAB(ei_table_index);
   // make virtual move of elec 0, reference ion 1
-  NLPPJob<RealType> job1(1, 0, elec_.R[0], ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
+  NLPPJob<RealType> job1(1, 0, ei_table1.getDistances()[0][1], -ei_table1.getDisplacements()[0][1]);
   const auto& ei_table2 = elec_clone.getDistTableAB(ei_table_index);
   // make virtual move of elec 1, reference ion 3
-  NLPPJob<RealType> job2(3, 1, elec_clone.R[1], ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
+  NLPPJob<RealType> job2(3, 1, ei_table2.getDistances()[1][3], -ei_table2.getDisplacements()[1][3]);
 
   std::vector<PosType> deltaV1{{0.1, 0.2, 0.3}, {0.1, 0.3, 0.2}, {0.2, 0.1, 0.3}};
   std::vector<PosType> deltaV2{{0.02, 0.01, 0.03}, {0.02, 0.03, 0.01}, {0.03, 0.01, 0.02}};
 
-  VirtualParticleSet::mw_makeMoves(vp_list, {deltaV1, deltaV2}, {job1, job2}, false);
+  VirtualParticleSet::mw_makeMoves(vp_list, p_ref_list, {deltaV1, deltaV2}, {job1, job2}, false);
 
   std::vector<ValueType> nlpp1_ratios(nknot), nlpp2_ratios(nknot);
   TrialWaveFunction::mw_evaluateRatios(wf_ref_list, RefVectorWithLeader<const VirtualParticleSet>(vp, {vp, vp_clone}),
@@ -577,7 +573,6 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
   CHECK(ValueApprox(nlpp2_ratios[0]).epsilon(ratio_precision) == ValueType(-0.3505144708));
   CHECK(ValueApprox(nlpp2_ratios[1]).epsilon(ratio_precision) == ValueType(-3.350712448));
   CHECK(ValueApprox(nlpp2_ratios[2]).epsilon(ratio_precision) == ValueType(-2.0885822923));
-#endif // QMC_CUDA
 }
 
 TEST_CASE("TrialWaveFunction_diamondC_2x1x1", "[wavefunction]")

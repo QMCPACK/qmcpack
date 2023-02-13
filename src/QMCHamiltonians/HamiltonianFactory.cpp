@@ -47,14 +47,8 @@
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #endif
-// #include "QMCHamiltonians/ZeroVarObs.h"
-#if !defined(QMC_CUDA)
 #include "QMCHamiltonians/SkPot.h"
-#endif
 #include "OhmmsData/AttributeSet.h"
-#ifdef QMC_CUDA
-#include "QMCHamiltonians/SkEstimator_CUDA.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -68,7 +62,6 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
       targetPtcl(qp),
       ptclPool(pset),
       psiPool(oset),
-      myNode(NULL),
       psiName("psi0")
 {
   //PBCType is zero or 1 but should be generalized
@@ -91,7 +84,7 @@ HamiltonianFactory::HamiltonianFactory(const std::string& hName,
  *  </hamiltonian>
  * \endxmlonly
  */
-bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
+bool HamiltonianFactory::build(xmlNodePtr cur)
 {
   if (cur == NULL)
     return false;
@@ -109,25 +102,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   hAttrib.add(defaultKE, "default");
   hAttrib.put(cur);
   renameProperty(source);
-  bool attach2Node = false;
-  if (buildtree)
-  {
-    if (myNode == NULL)
-    {
-      //#if (LIBXMLD_VERSION < 20616)
-      //        app_warning() << "   Workaround of libxml2 bug prior to 2.6.x versions" << std::endl;
-      //        myNode = xmlCopyNode(cur,2);
-      //#else
-      //        app_warning() << "   using libxml2 2.6.x versions" << std::endl;
-      //        myNode = xmlCopyNode(cur,1);
-      //#endif
-      myNode = xmlCopyNode(cur, 1);
-    }
-    else
-    {
-      attach2Node = true;
-    }
-  }
   auto psi_it(psiPool.find(psiName));
   if (psi_it == psiPool.end())
     APP_ABORT("Unknown psi \"" + psiName + "\" for target Psi");
@@ -135,13 +109,18 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   // KineticEnergy must be the first element in the hamiltonian array.
   if (defaultKE != "no")
     targetH->addOperator(std::make_unique<BareKineticEnergy>(targetPtcl, *targetPsi), "Kinetic");
-  xmlNodePtr cur_saved(cur);
-  cur = cur->children;
-  while (cur != NULL)
-  {
+
+  // Virtual particle sets only need to carry distance tables used by the wavefunction.
+  // Other Hamiltonian elements or estimators may add distance tables in particle sets.
+  // Process pseudopotentials first to minimize the needed distance tables in virtual particle sets.
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "pairpot" && getXMLAttributeValue(element, "type") == "pseudo")
+      addPseudoPotential(element);
+  });
+
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     std::string notype = "0";
     std::string noname = "any";
-    std::string cname((const char*)cur->name);
     std::string potType(notype);
     std::string potName(noname);
     std::string potUnit("hartree");
@@ -156,7 +135,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     attrib.add(potName, "name");
     attrib.add(potUnit, "units");
     attrib.add(estType, "potential");
-    attrib.put(cur);
+    attrib.put(element);
     renameProperty(sourceInp);
     renameProperty(targetInp);
 
@@ -164,55 +143,47 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
     if (cname == "pairpot")
     {
       if (potType == "coulomb")
-      {
-        addCoulombPotential(cur);
-      }
-#if !defined(QMC_CUDA)
+        addCoulombPotential(element);
       else if (potType == "skpot")
       {
         std::unique_ptr<SkPot> hs = std::make_unique<SkPot>(targetPtcl);
-        hs->put(cur);
+        hs->put(element);
         targetH->addOperator(std::move(hs), "SkPot", true);
       }
-#endif
 #if OHMMS_DIM == 3
       else if (potType == "MPC" || potType == "mpc")
-        addMPCPotential(cur);
-      else if (potType == "pseudo")
-        addPseudoPotential(cur);
+        addMPCPotential(element);
 #endif
     }
     else if (cname == "constant")
     {
       //just to support old input
       if (potType == "coulomb")
-        addCoulombPotential(cur);
+        addCoulombPotential(element);
     }
     else if (cname == "extpot")
     {
       if (potType == "harmonic_ext" || potType == "HarmonicExt")
       {
         std::unique_ptr<HarmonicExternalPotential> hs = std::make_unique<HarmonicExternalPotential>(targetPtcl);
-        hs->put(cur);
+        hs->put(element);
         targetH->addOperator(std::move(hs), "HarmonicExt", true);
       }
       if (potType == "grid")
       {
         std::unique_ptr<GridExternalPotential> hs = std::make_unique<GridExternalPotential>(targetPtcl);
-        hs->put(cur);
+        hs->put(element);
         targetH->addOperator(std::move(hs), "Grid", true);
       }
     }
     else if (cname == "estimator")
     {
       if (potType == "flux")
-      {
         targetH->addOperator(std::make_unique<ConservedEnergy>(), potName, false);
-      }
       else if (potType == "specieskinetic")
       {
         std::unique_ptr<SpeciesKineticEnergy> apot = std::make_unique<SpeciesKineticEnergy>(targetPtcl);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "latticedeviation")
@@ -236,44 +207,39 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         std::string target_group, source_group;
         local_attrib.add(target_group, "tgroup");
         local_attrib.add(source_group, "sgroup");
-        local_attrib.put(cur);
+        local_attrib.put(element);
 
         std::unique_ptr<LatticeDeviationEstimator> apot =
             std::make_unique<LatticeDeviationEstimator>(*pit->second, *spit->second, target_group, source_group);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "Force")
-      {
-        addForceHam(cur);
-      }
+        addForceHam(element);
       else if (potType == "gofr")
       {
         std::unique_ptr<PairCorrEstimator> apot = std::make_unique<PairCorrEstimator>(targetPtcl, sourceInp);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "density")
       {
-        //          if(PBCType)//only if perioidic
-        {
-          std::unique_ptr<DensityEstimator> apot = std::make_unique<DensityEstimator>(targetPtcl);
-          apot->put(cur);
-          targetH->addOperator(std::move(apot), potName, false);
-        }
+        std::unique_ptr<DensityEstimator> apot = std::make_unique<DensityEstimator>(targetPtcl);
+        apot->put(element);
+        targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "spindensity")
       {
         app_log() << "  Adding SpinDensity" << std::endl;
         std::unique_ptr<SpinDensity> apot = std::make_unique<SpinDensity>(targetPtcl);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "structurefactor")
       {
         app_log() << "  Adding StaticStructureFactor" << std::endl;
         std::unique_ptr<StaticStructureFactor> apot = std::make_unique<StaticStructureFactor>(targetPtcl);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "orbitalimages")
@@ -281,7 +247,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         app_log() << "  Adding OrbitalImages" << std::endl;
         std::unique_ptr<OrbitalImages> apot =
             std::make_unique<OrbitalImages>(targetPtcl, ptclPool, myComm, targetPsi->getSPOMap());
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -289,7 +255,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         app_log() << "  Adding EnergyDensityEstimator" << std::endl;
         std::unique_ptr<EnergyDensityEstimator> apot = std::make_unique<EnergyDensityEstimator>(ptclPool, defaultKE);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
       else if (potType == "dm1b")
@@ -298,7 +264,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         std::string source = "";
         OhmmsAttributeSet attrib;
         attrib.add(source, "source");
-        attrib.put(cur);
+        attrib.put(element);
         auto pit(ptclPool.find(source));
         ParticleSet* Pc = nullptr;
         if (source == "")
@@ -310,7 +276,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           APP_ABORT("Unknown source \"" + source + "\" for DensityMatrices1B");
         }
         std::unique_ptr<DensityMatrices1B> apot = std::make_unique<DensityMatrices1B>(targetPtcl, *targetPsi, Pc);
-        apot->put(cur);
+        apot->put(element);
         targetH->addOperator(std::move(apot), potName, false);
       }
 #endif
@@ -318,12 +284,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         if (PBCType) //only if perioidic
         {
-#ifdef QMC_CUDA
-          std::unique_ptr<SkEstimator_CUDA> apot = std::make_unique<SkEstimator_CUDA>(targetPtcl);
-#else
           std::unique_ptr<SkEstimator> apot = std::make_unique<SkEstimator>(targetPtcl);
-#endif
-          apot->put(cur);
+          apot->put(element);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) estimator" << std::endl;
         }
@@ -336,7 +298,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         OhmmsAttributeSet hAttrib;
         hAttrib.add(PsiName, "psi");
         hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
+        hAttrib.put(element);
         auto pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
         {
@@ -357,7 +319,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         std::string SourceName = "";
         OhmmsAttributeSet attrib;
         attrib.add(SourceName, "source");
-        attrib.put(cur);
+        attrib.put(element);
 
         auto pit(ptclPool.find(SourceName));
         if (pit == ptclPool.end())
@@ -368,7 +330,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (PBCType)
         {
           std::unique_ptr<SkAllEstimator> apot = std::make_unique<SkAllEstimator>(*pit->second, targetPtcl);
-          apot->put(cur);
+          apot->put(element);
           targetH->addOperator(std::move(apot), potName, false);
           app_log() << "Adding S(k) ALL estimator" << std::endl;
         }
@@ -380,11 +342,11 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if (estType == "coulomb")
         {
           std::unique_ptr<Pressure> BP = std::make_unique<Pressure>(targetPtcl);
-          BP->put(cur);
+          BP->put(element);
           targetH->addOperator(std::move(BP), "Pressure", false);
           int nlen(100);
           attrib.add(nlen, "truncateSum");
-          attrib.put(cur);
+          attrib.put(element);
           //             DMCPressureCorr* DMCP = new DMCPressureCorr(targetPtcl,nlen);
           //             targetH->addOperator(DMCP,"PressureSum",false);
         }
@@ -395,7 +357,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         std::string PsiName = "psi0";
         OhmmsAttributeSet hAttrib;
         hAttrib.add(PsiName, "wavefunction");
-        hAttrib.put(cur);
+        hAttrib.put(element);
         auto psi_it(psiPool.find(PsiName));
         if (psi_it == psiPool.end())
         {
@@ -403,18 +365,9 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         }
         std::unique_ptr<MomentumEstimator> ME = std::make_unique<MomentumEstimator>(targetPtcl, *psi_it->second);
         bool rt(myComm->rank() == 0);
-        ME->putSpecial(cur, targetPtcl, rt);
+        ME->putSpecial(element, targetPtcl, rt);
         targetH->addOperator(std::move(ME), "MomentumEstimator", false);
       }
-    }
-    else if (cname == "Kinetic")
-    {
-      std::string TargetName = "e";
-      std::string SourceName = "I";
-      OhmmsAttributeSet hAttrib;
-      hAttrib.add(TargetName, "Dependant");
-      hAttrib.add(SourceName, "Independent");
-      hAttrib.put(cur);
     }
 
     if (nham < targetH->total_size()) //if(cname!="text" && cname !="comment")
@@ -427,50 +380,26 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       //APP_ABORT("HamiltonianFactory::build\n  a name for operator of type "+cname+" "+potType+" must be provided in the xml input");
       targetH->addOperatorType(potName, potType);
     }
+  });
 
-    if (attach2Node)
-      xmlAddChild(myNode, xmlCopyNode(cur, 1));
-    cur = cur->next;
-  }
   //add observables with physical and simple estimators
   targetH->addObservables(targetPtcl);
   //do correction
   bool dmc_correction = false;
-  cur                 = cur_saved->children;
-  while (cur != NULL)
-  {
-    std::string cname((const char*)cur->name);
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     std::string potType("0");
     OhmmsAttributeSet attrib;
     attrib.add(potType, "type");
-    attrib.put(cur);
-    if (cname == "estimator")
+    attrib.put(element);
+    if (cname == "estimator" && potType == "ForwardWalking")
     {
-      if (potType == "ZeroVarObs")
-      {
-        app_log() << "  Not Adding ZeroVarObs Operator" << std::endl;
-        //         ZeroVarObs* FW=new ZeroVarObs();
-        //         FW->put(cur,*targetH,targetPtcl);
-        //         targetH->addOperator(FW,"ZeroVarObs",false);
-      }
-      //         else if(potType == "DMCCorrection")
-      //         {
-      //           TrialDMCCorrection* TE = new TrialDMCCorrection();
-      //           TE->putSpecial(cur,*targetH,targetPtcl);
-      //           targetH->addOperator(TE,"DMC_CORR",false);
-      //           dmc_correction=true;
-      //         }
-      else if (potType == "ForwardWalking")
-      {
-        app_log() << "  Adding Forward Walking Operator" << std::endl;
-        std::unique_ptr<ForwardWalking> FW = std::make_unique<ForwardWalking>();
-        FW->putSpecial(cur, *targetH, targetPtcl);
-        targetH->addOperator(std::move(FW), "ForwardWalking", false);
-        dmc_correction = true;
-      }
+      app_log() << "  Adding Forward Walking Operator" << std::endl;
+      std::unique_ptr<ForwardWalking> FW = std::make_unique<ForwardWalking>();
+      FW->putSpecial(element, *targetH, targetPtcl);
+      targetH->addOperator(std::move(FW), "ForwardWalking", false);
+      dmc_correction = true;
     }
-    cur = cur->next;
-  }
+  });
   //evaluate the observables again
   if (dmc_correction)
     targetH->addObservables(targetPtcl);
@@ -491,7 +420,7 @@ void HamiltonianFactory::renameProperty(std::string& aname)
 
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
-  bool success = build(cur, false);
+  bool success = build(cur);
   return success;
 }
 

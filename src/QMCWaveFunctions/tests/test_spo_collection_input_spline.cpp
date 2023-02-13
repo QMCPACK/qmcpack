@@ -98,40 +98,38 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // value
-  REQUIRE(std::real(psiM[1][0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psiM[1][1]) == Approx(1.2383049726));
+  CHECK(std::real(psiM[1][0]) == Approx(0.9008999467));
+  CHECK(std::real(psiM[1][1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::real(dpsiM[1][0][0]) == Approx(0.0025820041));
-  REQUIRE(std::real(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::real(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::real(dpsiM[1][1][0]) == Approx(0.1069662273));
-  REQUIRE(std::real(dpsiM[1][1][1]) == Approx(-0.4364597797));
-  REQUIRE(std::real(dpsiM[1][1][2]) == Approx(-0.106951952));
+  CHECK(std::real(dpsiM[1][0][0]) == Approx(0.0025820041));
+  CHECK(std::real(dpsiM[1][0][1]) == Approx(-0.1880052537));
+  CHECK(std::real(dpsiM[1][0][2]) == Approx(-0.0025404284));
+  CHECK(std::real(dpsiM[1][1][0]) == Approx(0.1069662273));
+  CHECK(std::real(dpsiM[1][1][1]) == Approx(-0.4364597797));
+  CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.106951952));
   // lapl
-  REQUIRE(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
-  REQUIRE(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
+  CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
+  CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
 
 #if defined(QMC_COMPLEX)
   // imaginary part
   // value
-  REQUIRE(std::imag(psiM[1][0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psiM[1][1]) == Approx(1.2383049726));
+  CHECK(std::imag(psiM[1][0]) == Approx(0.9008999467));
+  CHECK(std::imag(psiM[1][1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::imag(dpsiM[1][0][0]) == Approx(0.0025820041));
-  REQUIRE(std::imag(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::imag(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::imag(dpsiM[1][1][0]) == Approx(0.1069453433));
-  REQUIRE(std::imag(dpsiM[1][1][1]) == Approx(-0.43649593));
-  REQUIRE(std::imag(dpsiM[1][1][2]) == Approx(-0.1069145575));
+  CHECK(std::imag(dpsiM[1][0][0]) == Approx(0.0025820041));
+  CHECK(std::imag(dpsiM[1][0][1]) == Approx(-0.1880052537));
+  CHECK(std::imag(dpsiM[1][0][2]) == Approx(-0.0025404284));
+  CHECK(std::imag(dpsiM[1][1][0]) == Approx(0.1069453433));
+  CHECK(std::imag(dpsiM[1][1][1]) == Approx(-0.43649593));
+  CHECK(std::imag(dpsiM[1][1][2]) == Approx(-0.1069145575));
   // lapl
-  REQUIRE(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
-  REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
+  CHECK(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
+  CHECK(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
 }
 

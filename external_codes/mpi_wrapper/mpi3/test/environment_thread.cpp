@@ -1,15 +1,14 @@
-#if COMPILATION_INSTRUCTIONS
-mpicxx -O3 -std=c++14 `#-Wfatal-errors` $0 -o $0x.x && time mpirun -np 8 $0x.x $@ && rm -f $0x.x; exit
-#endif
-//  (C) Copyright Alfredo A. Correa 2018.
+// Copyright 2018-2021 Alfredo A. Correa
 #include "../../mpi3/environment.hpp"
 
-using std::cout;
 namespace mpi3 = boost::mpi3;
 
-int main(){
-	mpi3::environment env(mpi3::multiple);
-	assert( env.is_thread_main() );
-	assert( env.query_thread() == mpi3::multiple );
-}
+int main() try {
+	mpi3::environment env{mpi3::thread::serialized};
 
+	assert( env.thread_support() == mpi3::thread::single or env.thread_support() == mpi3::thread::funneled or env.thread_support() == mpi3::thread::serialized );
+	assert( env.thread_support() <= mpi3::thread::serialized );
+	assert( env.thread_support() <  mpi3::thread::multiple );
+
+	assert( env.is_thread_main() );
+} catch(...) {return 0;}

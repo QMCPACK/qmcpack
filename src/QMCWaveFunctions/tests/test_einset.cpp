@@ -34,28 +34,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 
   ParticleSet::ParticleLayout lattice;
   // monoO
-  /*
-  lattice.R(0,0) = 5.10509515;
-  lattice.R(0,1) = -3.23993545;
-  lattice.R(0,2) = 0.0;
-  lattice.R(1,0) = 5.10509515;
-  lattice.R(1,1) = 3.23993545;
-  lattice.R(1,2) = 0.0;
-  lattice.R(2,0) = -6.49690625;
-  lattice.R(2,1) = 0.0;
-  lattice.R(2,2) = 7.08268015;
-  */
+  // lattice.R(0,0) = {5.10509515, -3.23993545,  0.0, 5.10509515, 3.23993545, 0.0, -6.49690625, 0.0, 7.08268015};
 
   // diamondC_1x1x1
-  lattice.R(0, 0) = 3.37316115;
-  lattice.R(0, 1) = 3.37316115;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -67,23 +49,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({2});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
 
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
   elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -108,7 +82,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations
   // Reference values can be checked using eval_bspline_spo.py
@@ -146,15 +119,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   // Catch default is 100*(float epsilson)
   double eps = 2000 * std::numeric_limits<float>::epsilon();
   //hess
-  REQUIRE(std::real(ddpsiV[1](0, 0)) == Approx(-2.3160984034));
-  REQUIRE(std::real(ddpsiV[1](0, 1)) == Approx(1.8089479397));
-  REQUIRE(std::real(ddpsiV[1](0, 2)) == Approx(0.5608575749));
-  REQUIRE(std::real(ddpsiV[1](1, 0)) == Approx(1.8089479397));
-  REQUIRE(std::real(ddpsiV[1](1, 1)) == Approx(-0.07996207476).epsilon(eps));
-  REQUIRE(std::real(ddpsiV[1](1, 2)) == Approx(0.5237969314));
-  REQUIRE(std::real(ddpsiV[1](2, 0)) == Approx(0.5608575749));
-  REQUIRE(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
-  REQUIRE(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
+  CHECK(std::real(ddpsiV[1](0, 0)) == Approx(-2.3160984034));
+  CHECK(std::real(ddpsiV[1](0, 1)) == Approx(1.8089479397));
+  CHECK(std::real(ddpsiV[1](0, 2)) == Approx(0.5608575749));
+  CHECK(std::real(ddpsiV[1](1, 0)) == Approx(1.8089479397));
+  CHECK(std::real(ddpsiV[1](1, 1)) == Approx(-0.07996207476).epsilon(eps));
+  CHECK(std::real(ddpsiV[1](1, 2)) == Approx(0.5237969314));
+  CHECK(std::real(ddpsiV[1](2, 0)) == Approx(0.5608575749));
+  CHECK(std::real(ddpsiV[1](2, 1)) == Approx(0.5237969314));
+  CHECK(std::real(ddpsiV[1](2, 2)) == Approx(-2.316497764));
 
   SPOSet::HessMatrix hesspsiV(elec_.R.size(), psi_size);
   SPOSet::GGGMatrix d3psiV(elec_.R.size(), psi_size);
@@ -186,27 +159,27 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 */
 
 #if 0 //Enable when finite precision issue on Rhea is found.
-  REQUIRE(std::real(d3psiV(1,0)[0][0] ) == Approx(0.0463371276));
-  REQUIRE(std::real(d3psiV(1,0)[0][1] ) == Approx(1.1755813360));
-  REQUIRE(std::real(d3psiV(1,0)[0][2] ) == Approx(0.0660155713));
-  REQUIRE(std::real(d3psiV(1,0)[0][4] ) == Approx(0.0414704382));
-  REQUIRE(std::real(d3psiV(1,0)[0][5] ) == Approx(-0.5167412758));
-  REQUIRE(std::real(d3psiV(1,0)[0][8] ) == Approx(0.0659536421));
-  REQUIRE(std::real(d3psiV(1,0)[1][4] ) == Approx(-4.8771157264));
-  REQUIRE(std::real(d3psiV(1,0)[1][5] ) == Approx(0.0415326356));
-  REQUIRE(std::real(d3psiV(1,0)[1][8] ) == Approx(1.1755810976));
-  REQUIRE(std::real(d3psiV(1,0)[2][8] ) == Approx(0.0463993549));
+  CHECK(std::real(d3psiV(1,0)[0][0] ) == Approx(0.0463371276));
+  CHECK(std::real(d3psiV(1,0)[0][1] ) == Approx(1.1755813360));
+  CHECK(std::real(d3psiV(1,0)[0][2] ) == Approx(0.0660155713));
+  CHECK(std::real(d3psiV(1,0)[0][4] ) == Approx(0.0414704382));
+  CHECK(std::real(d3psiV(1,0)[0][5] ) == Approx(-0.5167412758));
+  CHECK(std::real(d3psiV(1,0)[0][8] ) == Approx(0.0659536421));
+  CHECK(std::real(d3psiV(1,0)[1][4] ) == Approx(-4.8771157264));
+  CHECK(std::real(d3psiV(1,0)[1][5] ) == Approx(0.0415326356));
+  CHECK(std::real(d3psiV(1,0)[1][8] ) == Approx(1.1755810976));
+  CHECK(std::real(d3psiV(1,0)[2][8] ) == Approx(0.0463993549));
 
-  REQUIRE(std::real(d3psiV(1,1)[0][0] ) == Approx(6.7155771255));
-  REQUIRE(std::real(d3psiV(1,1)[0][1] ) == Approx(5.5450510978));
-  REQUIRE(std::real(d3psiV(1,1)[0][2] ) == Approx(0.9829711914));
-  REQUIRE(std::real(d3psiV(1,1)[0][4] ) == Approx(-3.1704092025));
-  REQUIRE(std::real(d3psiV(1,1)[0][5] ) == Approx(-1.9537661075));
-  REQUIRE(std::real(d3psiV(1,1)[0][8] ) == Approx(1.9305641651));
-  REQUIRE(std::real(d3psiV(1,1)[1][4] ) == Approx(3.6051378250));
-  REQUIRE(std::real(d3psiV(1,1)[1][5] ) == Approx(-0.7382576465));
-  REQUIRE(std::real(d3psiV(1,1)[1][8] ) == Approx(5.5741839408));
-  REQUIRE(std::real(d3psiV(1,1)[2][8] ) == Approx(3.1312348842));
+  CHECK(std::real(d3psiV(1,1)[0][0] ) == Approx(6.7155771255));
+  CHECK(std::real(d3psiV(1,1)[0][1] ) == Approx(5.5450510978));
+  CHECK(std::real(d3psiV(1,1)[0][2] ) == Approx(0.9829711914));
+  CHECK(std::real(d3psiV(1,1)[0][4] ) == Approx(-3.1704092025));
+  CHECK(std::real(d3psiV(1,1)[0][5] ) == Approx(-1.9537661075));
+  CHECK(std::real(d3psiV(1,1)[0][8] ) == Approx(1.9305641651));
+  CHECK(std::real(d3psiV(1,1)[1][4] ) == Approx(3.6051378250));
+  CHECK(std::real(d3psiV(1,1)[1][5] ) == Approx(-0.7382576465));
+  CHECK(std::real(d3psiV(1,1)[1][8] ) == Approx(5.5741839408));
+  CHECK(std::real(d3psiV(1,1)[2][8] ) == Approx(3.1312348842));
 #endif
 
   // Test the batched interface
@@ -249,10 +222,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
   CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
-#endif
-
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   /* 
      Here we test the low-level spline implementation of applyRotation().
 
@@ -438,21 +409,13 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
 #endif
 }
 
-TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
+TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 {
   Communicate* c = OHMMS::Controller;
 
   ParticleSet::ParticleLayout lattice;
   // diamondC_2x1x1
-  lattice.R(0, 0) = 6.7463223;
-  lattice.R(0, 1) = 6.7463223;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -464,29 +427,20 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   ions_.setName("ion");
   ptcl.addParticleSet(std::move(ions_uptr));
   ions_.create({4});
-  ions_.R[0][0] = 0.0;
-  ions_.R[0][1] = 0.0;
-  ions_.R[0][2] = 0.0;
-  ions_.R[1][0] = 1.68658058;
-  ions_.R[1][1] = 1.68658058;
-  ions_.R[1][2] = 1.68658058;
-  ions_.R[2][0] = 3.37316115;
-  ions_.R[2][1] = 3.37316115;
-  ions_.R[2][2] = 0.0;
-  ions_.R[3][0] = 5.05974173;
-  ions_.R[3][1] = 5.05974173;
-  ions_.R[3][2] = 1.68658058;
+  ions_.R[0] = {0.0, 0.0, 0.0};
+  ions_.R[1] = {1.68658058, 1.68658058, 1.68658058};
+  ions_.R[2] = {3.37316115, 3.37316115, 0.0};
+  ions_.R[3] = {5.05974173, 5.05974173, 1.68658058};
 
 
   elec_.setName("elec");
   ptcl.addParticleSet(std::move(elec_uptr));
-  elec_.create({2});
-  elec_.R[0][0] = 0.0;
-  elec_.R[0][1] = 0.0;
-  elec_.R[0][2] = 0.0;
-  elec_.R[1][0] = 0.0;
-  elec_.R[1][1] = 1.0;
-  elec_.R[1][2] = 0.0;
+  elec_.create({5});
+  elec_.R[0] = {0.0, 0.0, 0.0};
+  elec_.R[1] = {0.0, 1.0, 0.0};
+  elec_.R[2] = {0.0, 1.1, 0.0};
+  elec_.R[3] = {0.0, 1.2, 0.0};
+  elec_.R[4] = {0.0, 1.3, 0.0};
 
   SpeciesSet& tspecies       = elec_.getSpeciesSet();
   int upIdx                  = tspecies.addSpecies("u");
@@ -495,7 +449,7 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
 
   //diamondC_2x1x1
   const char* particles = R"(<tmp>
-<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="4"/>
+<determinantset type="einspline" href="diamondC_2x1x1.pwscf.h5" tilematrix="2 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="float" size="5"/>
 </tmp>
 )";
 
@@ -517,40 +471,38 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // value
-  REQUIRE(std::real(psiM[1][0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psiM[1][1]) == Approx(1.2383049726));
+  CHECK(std::real(psiM[1][0]) == Approx(0.9008999467));
+  CHECK(std::real(psiM[1][1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::real(dpsiM[1][0][0]) == Approx(0.0025820041));
-  REQUIRE(std::real(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::real(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::real(dpsiM[1][1][0]) == Approx(0.1069662273));
-  REQUIRE(std::real(dpsiM[1][1][1]) == Approx(-0.4364597797));
-  REQUIRE(std::real(dpsiM[1][1][2]) == Approx(-0.106951952));
+  CHECK(std::real(dpsiM[1][0][0]) == Approx(0.0025820041));
+  CHECK(std::real(dpsiM[1][0][1]) == Approx(-0.1880052537));
+  CHECK(std::real(dpsiM[1][0][2]) == Approx(-0.0025404284));
+  CHECK(std::real(dpsiM[1][1][0]) == Approx(0.1069662273));
+  CHECK(std::real(dpsiM[1][1][1]) == Approx(-0.4364597797));
+  CHECK(std::real(dpsiM[1][1][2]) == Approx(-0.106951952));
   // lapl
-  REQUIRE(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
-  REQUIRE(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
-#endif
+  CHECK(std::real(d2psiM[1][0]) == Approx(-1.3757134676));
+  CHECK(std::real(d2psiM[1][1]) == Approx(-2.4803137779));
 
 #if defined(QMC_COMPLEX)
   // imaginary part
   // value
-  REQUIRE(std::imag(psiM[1][0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psiM[1][1]) == Approx(1.2383049726));
+  CHECK(std::imag(psiM[1][0]) == Approx(0.9008999467));
+  CHECK(std::imag(psiM[1][1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::imag(dpsiM[1][0][0]) == Approx(0.0025820041));
-  REQUIRE(std::imag(dpsiM[1][0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::imag(dpsiM[1][0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::imag(dpsiM[1][1][0]) == Approx(0.1069453433));
-  REQUIRE(std::imag(dpsiM[1][1][1]) == Approx(-0.43649593));
-  REQUIRE(std::imag(dpsiM[1][1][2]) == Approx(-0.1069145575));
+  CHECK(std::imag(dpsiM[1][0][0]) == Approx(0.0025820041));
+  CHECK(std::imag(dpsiM[1][0][1]) == Approx(-0.1880052537));
+  CHECK(std::imag(dpsiM[1][0][2]) == Approx(-0.0025404284));
+  CHECK(std::imag(dpsiM[1][1][0]) == Approx(0.1069453433));
+  CHECK(std::imag(dpsiM[1][1][1]) == Approx(-0.43649593));
+  CHECK(std::imag(dpsiM[1][1][2]) == Approx(-0.1069145575));
   // lapl
-  REQUIRE(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
-  REQUIRE(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
+  CHECK(std::imag(d2psiM[1][0]) == Approx(-1.3757134676));
+  CHECK(std::imag(d2psiM[1][1]) == Approx(-2.4919104576));
 #endif
 
   // test batched interfaces
@@ -587,40 +539,62 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1", "[wavefunction]")
   d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // value
-  REQUIRE(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
+  CHECK(std::real(psi_v_list[1].get()[0]) == Approx(0.9008999467));
+  CHECK(std::real(psi_v_list[1].get()[1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::real(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][0]) == Approx(0.1069662273));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][1]) == Approx(-0.4364597797));
-  REQUIRE(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.106951952));
+  CHECK(std::real(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
+  CHECK(std::real(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
+  CHECK(std::real(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
+  CHECK(std::real(dpsi_v_list[1].get()[1][0]) == Approx(0.1069662273));
+  CHECK(std::real(dpsi_v_list[1].get()[1][1]) == Approx(-0.4364597797));
+  CHECK(std::real(dpsi_v_list[1].get()[1][2]) == Approx(-0.106951952));
   // lapl
-  REQUIRE(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  REQUIRE(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
-#endif
+  CHECK(std::real(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
+  CHECK(std::real(d2psi_v_list[1].get()[1]) == Approx(-2.4803137779));
 
 #if defined(QMC_COMPLEX)
   // imaginary part
   // value
-  REQUIRE(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
-  REQUIRE(std::imag(psi_v_list[1].get()[1]) == Approx(1.2383049726));
+  CHECK(std::imag(psi_v_list[1].get()[0]) == Approx(0.9008999467));
+  CHECK(std::imag(psi_v_list[1].get()[1]) == Approx(1.2383049726));
   // grad
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][0]) == Approx(0.1069453433));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][1]) == Approx(-0.43649593));
-  REQUIRE(std::imag(dpsi_v_list[1].get()[1][2]) == Approx(-0.1069145575));
+  CHECK(std::imag(dpsi_v_list[1].get()[0][0]) == Approx(0.0025820041));
+  CHECK(std::imag(dpsi_v_list[1].get()[0][1]) == Approx(-0.1880052537));
+  CHECK(std::imag(dpsi_v_list[1].get()[0][2]) == Approx(-0.0025404284));
+  CHECK(std::imag(dpsi_v_list[1].get()[1][0]) == Approx(0.1069453433));
+  CHECK(std::imag(dpsi_v_list[1].get()[1][1]) == Approx(-0.43649593));
+  CHECK(std::imag(dpsi_v_list[1].get()[1][2]) == Approx(-0.1069145575));
   // lapl
-  REQUIRE(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
-  REQUIRE(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
+  CHECK(std::imag(d2psi_v_list[1].get()[0]) == Approx(-1.3757134676));
+  CHECK(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.4919104576));
+#endif
+
+  const size_t nw = 2;
+  std::vector<SPOSet::ValueType> ratio_v(nw);
+  std::vector<SPOSet::GradType> grads_v(nw);
+
+  Vector<SPOSet::ValueType, OffloadPinnedAllocator<SPOSet::ValueType>> inv_row(5);
+  inv_row = {0.1, 0.2, 0.3, 0.4, 0.5};
+  inv_row.updateTo();
+
+  std::vector<const SPOSet::ValueType*> inv_row_ptr(nw, inv_row.device_data());
+
+  SPOSet::OffloadMWVGLArray phi_vgl_v;
+  phi_vgl_v.resize(QMCTraits::DIM_VGL, nw, 5);
+  spo->mw_evaluateVGLandDetRatioGrads(spo_list, p_list, 0, inv_row_ptr, phi_vgl_v, ratio_v, grads_v);
+#if !defined(QMC_COMPLEX)
+  CHECK(std::real(ratio_v[0]) == Approx(0.2365307168));
+  CHECK(std::real(grads_v[0][0]) == Approx(-5.4095164399));
+  CHECK(std::real(grads_v[0][1]) == Approx(14.37990087));
+  CHECK(std::real(grads_v[0][2]) == Approx(16.9374788259));
+  CHECK(std::real(ratio_v[1]) == Approx(1.0560744941));
+  CHECK(std::real(grads_v[1][0]) == Approx(-0.0863436466));
+  CHECK(std::real(grads_v[1][1]) == Approx(-0.7499371447));
+  CHECK(std::real(grads_v[1][2]) == Approx(0.8570534314));
 #endif
 }
 
@@ -643,12 +617,8 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   agroup[0] = 1;
   agroup[1] = 1;
   elec.create(agroup);
-  elec.R[0][0] = 0.00;
-  elec.R[0][1] = 0.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.0;
-  elec.R[1][1] = 1.0;
-  elec.R[1][2] = 0.0;
+  elec.R[0] = {0.0, 0.0, 0.0};
+  elec.R[1] = {0.0, 1.0, 0.0};
 
   EinsplineSetBuilder::PSetMap ptcl_map;
   ptcl_map.emplace(elec_ptr->getName(), std::move(elec_ptr));

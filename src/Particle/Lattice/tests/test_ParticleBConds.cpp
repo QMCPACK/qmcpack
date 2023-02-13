@@ -35,7 +35,7 @@ TEST_CASE("open_bconds", "[lattice]")
   vec_t v(3.0, 4.0, 5.0);
 
   OHMMS_PRECISION r2 = bcond.apply_bc(v);
-  REQUIRE(Approx(r2) == 50.0);
+  CHECK(Approx(r2) == 50.0);
 
 
   std::vector<vec_t> disps(1);
@@ -44,15 +44,15 @@ TEST_CASE("open_bconds", "[lattice]")
 
   bcond.apply_bc(disps, r, rinv);
 
-  REQUIRE(Approx(r[0]) == std::sqrt(50.0));
-  REQUIRE(Approx(rinv[0]) == 1.0 / std::sqrt(50.0));
+  CHECK(Approx(r[0]) == std::sqrt(50.0));
+  CHECK(Approx(rinv[0]) == 1.0 / std::sqrt(50.0));
 
   r[0] = 0.0;
   bcond.apply_bc(disps, r);
-  REQUIRE(Approx(r[0]) == std::sqrt(50.0));
+  CHECK(Approx(r[0]) == std::sqrt(50.0));
 
   bcond.evaluate_rsquared(disps.data(), rr.data(), disps.size());
-  REQUIRE(Approx(rr[0]) == 50.0);
+  CHECK(Approx(rr[0]) == 50.0);
 }
 
 /** Lattice is defined but Open BC is also used.
@@ -64,7 +64,7 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
   Lattice.R.diagonal(0.4);
   Lattice.reset();
 
-  REQUIRE(Lattice.Volume == Approx(0.4 * 0.4 * 0.4));
+  CHECK(Lattice.Volume == Approx(0.4 * 0.4 * 0.4));
 
   DTD_BConds<OHMMS_PRECISION, 3, SUPERCELL_BULK> bcond(Lattice);
 
@@ -75,7 +75,7 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
 
   vec_t v2(0.5, 0.0, 0.0);
   r2 = bcond.apply_bc(v2);
-  REQUIRE(r2 == Approx(0.01));
+  CHECK(r2 == Approx(0.01));
 }
 
 TEST_CASE("uniform 3D Lattice layout", "[lattice]")

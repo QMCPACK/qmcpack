@@ -213,7 +213,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
         trace += BPRDM[i][i];
-      REQUIRE(trace.real() == Approx(NAEA));
+      CHECK(trace.real() == Approx(NAEA));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType, 2, pointer> G(Gw.origin(), {NMO, NMO});
@@ -228,7 +228,7 @@ void reduced_density_matrix(boost::mpi3::communicator& world)
       ComplexType trace = ComplexType(0.0);
       for (int i = 0; i < NMO; i++)
         trace += BPRDM[0][i][i] + BPRDM[1][i][i];
-      REQUIRE(trace.real() == Approx(NAEA + NAEB));
+      CHECK(trace.real() == Approx(NAEA + NAEB));
       boost::multi::array<ComplexType, 2, Allocator> Gw({1, 2 * NMO * NMO}, alloc_);
       wfn.MixedDensityMatrix(wset, Gw, false, true);
       boost::multi::array_ref<ComplexType, 3, pointer> G(Gw.origin(), {2, NMO, NMO});

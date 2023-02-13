@@ -133,17 +133,17 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
   //app_log() << "construct QMCFixedSampleLinearOptimizeBatched" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false, // exact sampling
-                                                     true,  // ground state?
-                                                     false, // variance correct,
+                                                     false,  // exact sampling
+                                                     true,   // ground state?
+                                                     false,  // variance correct,
                                                      true,
-                                                     true,  // print matrices,
-                                                     true,  // build matrices
-                                                     false, // spam
-                                                     false, // use var deps?
-                                                     true,  // chase lowest
-                                                     false, // chase closest
-                                                     false, // eom
+                                                     true,   // print matrices,
+                                                     true,   // build matrices
+                                                     false,  // spam
+                                                     false,  // use var deps?
+                                                     true,   // chase lowest
+                                                     false,  // chase closest
+                                                     false,  // eom
                                                      false,
                                                      false,  // eom related
                                                      false,  // eom related
@@ -161,10 +161,10 @@ QMCFixedSampleLinearOptimizeBatched::QMCFixedSampleLinearOptimizeBatched(
                                                      1.0e-6, // convergence threshold
                                                      0.99,   // minimum S singular val
                                                      0.0, 0.0,
-                                                     10.0, // max change allowed
-                                                     1.00, // identity shift
-                                                     1.00, // overlap shift
-                                                     0.3,  // max parameter change
+                                                     10.0,   // max change allowed
+                                                     1.00,   // identity shift
+                                                     1.00,   // overlap shift
+                                                     0.3,    // max parameter change
                                                      shift_scales, app_log());
 #endif
 }
@@ -1598,13 +1598,7 @@ bool QMCFixedSampleLinearOptimizeBatched::one_shift_run()
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-#ifdef QMC_CUDA
-  // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
-  // more investiation is needed.
-  const RealType initCost = optTarget->Cost(true);
-#else
   const RealType initCost = optTarget->computedCost();
-#endif
 
   // say what we are doing
   app_log() << std::endl

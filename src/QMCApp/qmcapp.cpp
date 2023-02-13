@@ -25,7 +25,6 @@
 #include "Platforms/Host/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Host/sysutil.h"
-#include "Platforms/CUDA_legacy/devices.h"
 #include "ProjectData.h"
 #include "QMCApp/QMCMain.h"
 #include "Utilities/qmc_common.h"
@@ -46,18 +45,13 @@ int main(int argc, char** argv)
   using namespace qmcplusplus;
 #ifdef HAVE_MPI
   mpi3::environment env(argc, argv);
-  OHMMS::Controller->initialize(env);
+  OHMMS::Controller = new Communicate(env.world());
 #endif
   try
   {
     //qmc_common  and MPI is initialized
     qmcplusplus::qmc_common.initialize(argc, argv);
     int clones = 1;
-#ifdef QMC_CUDA
-    bool useGPU(true);
-#else
-    bool useGPU(false);
-#endif
     std::vector<std::string> fgroup1, fgroup2;
     int i = 1;
     while (i < argc)
@@ -65,8 +59,6 @@ int main(int argc, char** argv)
       std::string c(argv[i]);
       if (c[0] == '-')
       {
-        if (c.find("gpu") < c.size())
-          useGPU = true;
         if (c.find("clones") < c.size())
           clones = atoi(argv[++i]);
         if (c == "-debug")
@@ -163,8 +155,6 @@ int main(int argc, char** argv)
       OHMMS::Controller->finalize();
       return 1;
     }
-    if (useGPU)
-      Init_CUDA();
     //safe to move on
     Communicate* qmcComm = OHMMS::Controller;
     if (inputs.size() > 1)
@@ -238,9 +228,6 @@ int main(int argc, char** argv)
     timer_manager.print(qmcComm);
 
     qmc.reset();
-
-    if (useGPU)
-      Finalize_CUDA();
   }
   catch (const std::exception& e)
   {
@@ -278,10 +265,4 @@ void output_hardware_info(Communicate* comm, Libxml2Document& doc, xmlNodePtr ro
   doc.addChild(hardware, "openmp_threads", omp_get_max_threads());
 #endif
   doc.addChild(hardware, "openmp", using_openmp);
-
-  bool using_gpu = false;
-#ifdef QMC_CUDA
-  using_gpu = true;
-#endif
-  doc.addChild(hardware, "gpu", using_gpu);
 }

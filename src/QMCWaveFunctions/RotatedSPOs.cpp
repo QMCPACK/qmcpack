@@ -306,6 +306,131 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
     }
 }
 
+void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
+                                      const opt_variables_type& optvars,
+                                      ValueVector& psi,
+                                      const ValueVector& psiinv,
+                                      std::vector<ValueType>& ratios,
+                                      Matrix<ValueType>& dratios,
+                                      int FirstIndex,
+                                      int LastIndex)
+{
+  Phi->evaluateDetRatios(VP, psi, psiinv, ratios);
+
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi->getOrbitalSetSize();
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  const ParticleSet& P = VP.getRefPS();
+  int iel              = VP.refPtcl;
+
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T_orig;
+  T_orig.resize(nel, nmo);
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T_orig.data(), nmo);
+
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+  ValueVector tmp_psi;
+  tmp_psi.resize(nmo);
+
+  for (int iat = 0; iat < VP.getTotalNum(); iat++)
+  {
+    Phi->evaluateValue(VP, iat, tmp_psi);
+
+    for (int j = 0; j < nmo; j++)
+      psiM_all(iel - FirstIndex, j) = tmp_psi[j];
+
+    for (int i = 0; i < nel; i++)
+      for (int j = 0; j < nel; j++)
+        psiM_inv(i, j) = psiM_all(i, j);
+
+    Invert(psiM_inv.data(), nel, nel);
+
+    const ValueType* const A(psiM_all.data());
+    const ValueType* const Ainv(psiM_inv.data());
+
+    // The matrix A is rectangular.  Ainv is the inverse of the square part of the matrix.
+    // The multiply of Ainv and the square part of A is just the identity.
+    // This multiply could be reduced to Ainv and the non-square part of A.
+    BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
+    {
+      int kk           = myVars.where(i);
+      const int p      = m_act_rot_inds.at(i).first;
+      const int q      = m_act_rot_inds.at(i).second;
+      dratios(iat, kk) = T(p, q) - T_orig(p, q); // dratio size is (nknot, num_vars)
+    }
+  }
+}
+
+void RotatedSPOs::evaluateDerivativesWF(ParticleSet& P,
+                                        const opt_variables_type& optvars,
+                                        Vector<ValueType>& dlogpsi,
+                                        int FirstIndex,
+                                        int LastIndex)
+{
+  const size_t nel = LastIndex - FirstIndex;
+  const size_t nmo = Phi->getOrbitalSetSize();
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART1
+
+  psiM_inv.resize(nel, nel);
+  psiM_all.resize(nel, nmo);
+  dpsiM_all.resize(nel, nmo);
+  d2psiM_all.resize(nel, nmo);
+
+  psiM_inv   = 0;
+  psiM_all   = 0;
+  dpsiM_all  = 0;
+  d2psiM_all = 0;
+
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
+
+  for (int i = 0; i < nel; i++)
+    for (int j = 0; j < nel; j++)
+      psiM_inv(i, j) = psiM_all(i, j);
+
+  Invert(psiM_inv.data(), nel, nel);
+
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~PART2
+  const ValueType* const A(psiM_all.data());
+  const ValueType* const Ainv(psiM_inv.data());
+  SPOSet::ValueMatrix T;
+  T.resize(nel, nmo);
+
+  BLAS::gemm('N', 'N', nmo, nel, nel, ValueType(1.0), A, nmo, Ainv, nel, ValueType(0.0), T.data(), nmo);
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int kk      = myVars.where(i);
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi[kk] = T(p, q);
+  }
+}
+
 void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
                                       const opt_variables_type& optvars,
                                       Vector<ValueType>& dlogpsi,
@@ -401,11 +526,11 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk              = myVars.where(i);
-    const int p         = m_act_rot_inds.at(i).first;
-    const int q         = m_act_rot_inds.at(i).second;
-    dlogpsi[kk]      = T(p, q);
-    dhpsioverpsi[kk] = ValueType(-0.5) * Y4(p, q);
+    int kk      = myVars.where(i);
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi[kk] += T(p, q);
+    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
   }
 }
 

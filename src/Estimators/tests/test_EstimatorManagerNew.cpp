@@ -48,9 +48,11 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
-  Libxml2Document estimators_doc = createEstimatorManagerNewInputXML();
+  Libxml2Document estimators_doc = createEstimatorManagerNewVMCInputXML();
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
+  CHECK(emi.get_estimator_inputs().size() == 2);
+  CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
@@ -61,7 +63,28 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
 
   CHECK(emn.getNumEstimators() == 2);
+  // Because the only scalar estimator becomes the main estimator.
   CHECK(emn.getNumScalarEstimators() == 0);
+  EstimatorManagerNewTestAccess emnta(emn);
+  CHECK(emnta.getMainEstimator().getName() == "LocalEnergyEstimator");
+
+  
+  // Check behavior when multiple "main" estimators are in the input
+  // Each should override the previous main input as this is the behavior of legacy.
+  Libxml2Document estimators_doc2 = createEstimatorManagerNewInputXML();
+  EstimatorManagerInput emi2(estimators_doc2.getRoot());
+
+  CHECK(emi2.get_estimator_inputs().size() == 2);
+  CHECK(emi2.get_scalar_estimator_inputs().size() == 5);
+
+  EstimatorManagerNew emn2(comm, std::move(emi2), ham, pset, twf);
+
+  CHECK(emn2.getNumEstimators() == 2);
+  // Because the only scalar estimator becomes the main estimator.
+  CHECK(emn2.getNumScalarEstimators() == 0);
+  EstimatorManagerNewTestAccess emnta2(emn2);
+  CHECK(emnta2.getMainEstimator().getName() == "RMCLocalEnergyEstimator");
+
 }
 
 TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
@@ -79,13 +102,13 @@ TEST_CASE("EstimatorManagerNew::collectMainEstimators", "[estimators]")
   embt.fakeMainScalarSamples();
   embt.collectMainEstimators();
   double correct_value = 5.0;
-  REQUIRE(embt.em.get_AverageCache()[0] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[0] == Approx(correct_value));
   correct_value = 8.0;
-  REQUIRE(embt.em.get_AverageCache()[1] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[1] == Approx(correct_value));
   correct_value = 11.0;
-  REQUIRE(embt.em.get_AverageCache()[2] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[2] == Approx(correct_value));
   correct_value = 14.0;
-  REQUIRE(embt.em.get_AverageCache()[3] == Approx(correct_value));
+  CHECK(embt.em.get_AverageCache()[3] == Approx(correct_value));
 }
 
 TEST_CASE("EstimatorManagerNew::collectScalarEstimators", "[estimators]")
