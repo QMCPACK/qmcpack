@@ -29,19 +29,19 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
 {
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout;
-  //using namespace testing::onebodydensitymatrices;
+  using namespace testing::magdensity;
   MagnetizationDensityInput magdens_in;
-/*
-  for (auto input_xml : valid_one_body_density_matrices_input_sections)
+
+  for (auto input_xml : valid_mag_density_input_sections)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    OneBodyDensityMatricesInput obdmi(node);
+    MagnetizationDensityInput obdmi(node);
   }
 
-  for (auto input_xml : testing::invalid_one_body_density_matrices_input_sections)
+/*  for (auto input_xml : testing::invalid_one_body_density_matrices_input_sections)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);

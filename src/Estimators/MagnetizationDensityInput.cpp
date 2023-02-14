@@ -27,7 +27,7 @@ void MagnetizationDensityInput::readXML(xmlNodePtr cur)
 {
 }
 
-SpinDensityInput::DerivedParameters SpinDensityInput::calculateDerivedParameters(const Lattice& lattice) const
+MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(const Lattice& lattice) const
 {
   PosType corner = 0.0;
   if (have_center_)
