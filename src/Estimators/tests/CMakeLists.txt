@@ -37,7 +37,8 @@ set(SRCS
     test_OneBodyDensityMatricesInput.cpp
     test_OneBodyDensityMatrices.cpp
     test_PerParticleHamiltonianLogger.cpp
-    test_EstimatorManagerCrowd.cpp)
+    test_EstimatorManagerCrowd.cpp
+    test_MagnetizationDensityInput.cpp)
 
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
