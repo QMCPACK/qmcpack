@@ -302,18 +302,31 @@ TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
   int nel = 1;
   int nmo = 3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
-
   CHECK(rot_ind.size() == 2);
+
+  // Full rotation contains all rotations
+  // Size should be number of pairs of orbitals: nmo*(nmo-1)/2
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  CHECK(full_rot_ind.size() == 3);
 
   nel = 2;
   RotatedSPOs::RotationIndices rot_ind2;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
   CHECK(rot_ind2.size() == 2);
 
+  RotatedSPOs::RotationIndices full_rot_ind2;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind2);
+  CHECK(full_rot_ind2.size() == 3);
+
   nmo = 4;
   RotatedSPOs::RotationIndices rot_ind3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
   CHECK(rot_ind3.size() == 4);
+
+  RotatedSPOs::RotationIndices full_rot_ind3;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind3);
+  CHECK(full_rot_ind3.size() == 6);
 }
 
 TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
@@ -534,7 +547,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   xmlNodePtr root = doc.getRoot();
 
   xmlNodePtr sposet_builder = xmlFirstElementChild(root);
-  xmlNodePtr sposet_ptr = xmlFirstElementChild(sposet_builder);
+  xmlNodePtr sposet_ptr     = xmlFirstElementChild(sposet_builder);
 
   EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, sposet_builder);
   auto spo = einSet.createSPOSetFromXML(sposet_ptr);
@@ -590,5 +603,61 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
 }
 
+// Test construction of delta rotation
+TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  int nel = 2;
+  int nmo = 4;
+  RotatedSPOs::RotationIndices rot_ind;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  // rot_ind size is 4 and full rot_ind size is 6
+
+  ValueMatrix rot_m4(nmo, nmo);
+  rot_m4 = ValueType(0);
+
+  // When comparing with gen_matrix_ops.py, be aware of the order of indices
+  // in full_rot
+  // rot_ind is (0,2) (0,3) (1,2) (1,3)
+  // full_rot_ind is (0,2) (0,3) (1,2) (1,3) (0,1) (2,3)
+  // The extra indices go at the back
+  std::vector<ValueType> old_params   = {1.5, 0.2, -0.15, 0.03, -1.1, 0.05};
+  std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
+  std::vector<ValueType> new_params(6);
+
+  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+
+  // clang-format off
+  std::vector<ValueType> rot_data4 =
+    { -0.371126931484737,  0.491586564957393,   -0.784780958819798,   0.0687480658200083,
+      -0.373372784561548,  0.66111547793048,     0.610450337985578,   0.225542620014052,
+       0.751270334458895,  0.566737323353515,   -0.0297901110611425, -0.336918744155143,
+       0.398058348785074,  0.00881931472604944, -0.102867783149713,   0.911531672428406 };
+  // clang-format on
+
+  ValueMatrix new_rot_m4(rot_data4.data(), 4, 4);
+
+  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, new_rot_m4, true);
+  CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
+
+  // Reminder: Ordering!
+  std::vector<ValueType> expected_new_param = {1.6813965019790489,   0.3623564254653294,  -0.05486544454559908,
+                                               -0.20574472941408453, -0.9542513302873077, 0.27497788909911774};
+  for (int i = 0; i < new_params.size(); i++)
+    CHECK(new_params[i] == Approx(expected_new_param[i]));
+
+
+  // Rotated back to original position
+
+  std::vector<ValueType> new_params2(6);
+  std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
+  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  for (int i = 0; i < new_params2.size(); i++)
+    CHECK(new_params2[i] == Approx(old_params[i]));
+}
 
 } // namespace qmcplusplus
