@@ -22,10 +22,6 @@ std::unique_ptr<QMCDriverInterface> DMCFactoryNew::create(const ProjectData& pro
                                                           MCPopulation&& pop,
                                                           Communicate* comm)
 {
-#if defined(QMC_CUDA)
-  comm->barrier_and_abort("DMC batched driver is not supported by legacy CUDA builds.");
-#endif
-
   app_summary() << "\n========================================"
                    "\n  Reading DMC driver XML input section"
                    "\n========================================"

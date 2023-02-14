@@ -81,7 +81,7 @@ public:
   using ParticleScalar = ParticleSet::Scalar_t;
 
   ///typedef for SPOMap
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using SPOMap = SPOSet::SPOMap;
 
   ///enum to denote energy domain of operators
   enum EnergyDomains
@@ -467,12 +467,6 @@ public:
 #endif
 
   // TODO: add docs
-
-  virtual void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy);
-
-  virtual void addEnergy(MCWalkerConfiguration& W,
-                         std::vector<RealType>& LocalEnergy,
-                         std::vector<std::vector<NonLocalData>>& Txy);
 
   virtual void informOfPerParticleListener() { has_listener_ = true; }
 

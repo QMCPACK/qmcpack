@@ -36,9 +36,6 @@
 #else
 using TraceManager = int;
 #endif
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -130,26 +127,12 @@ QMCDriver::QMCDriver(const ProjectData& project_data,
   m_param.add(MaxCPUSecs, "maxcpusecs", {}, TagStatus::DEPRECATED);
   m_param.add(MaxCPUSecs, "max_seconds");
   // by default call recompute at the end of each block in the mixed precision case.
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  if (typeid(CTS::RealType) == typeid(float))
-  {
-    // gpu mixed precision
-    nBlocksBetweenRecompute = 1;
-  }
-  else if (typeid(CTS::RealType) == typeid(double))
-  {
-    // gpu double precision
-    nBlocksBetweenRecompute = 10;
-  }
-#else
 #ifdef MIXED_PRECISION
   // cpu mixed precision
   nBlocksBetweenRecompute = 1;
 #else
   // cpu double precision
   nBlocksBetweenRecompute = 10;
-#endif
 #endif
   m_param.add(nBlocksBetweenRecompute, "blocks_between_recompute");
   ////add each OperatorBase to W.PropertyList so that averages can be taken
@@ -427,20 +410,11 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
 
   //set the default walker to the number of threads times 10
   Period4CheckPoint = -1;
-  // set default for delayed update streak k to zero, meaning use the original Sherman-Morrison rank-1 update
-  // if kdelay is set to k (k>1), then the new rank-k scheme is used
-#ifdef QMC_CUDA
-  kDelay = Psi.getndelay();
-#endif
-  int defaultw = omp_get_max_threads();
+  int defaultw      = omp_get_max_threads();
   OhmmsAttributeSet aAttrib;
   aAttrib.add(Period4CheckPoint, "checkpoint");
   aAttrib.add(kDelay, "kdelay");
   aAttrib.put(cur);
-#ifdef QMC_CUDA
-  W.setkDelay(kDelay);
-  kDelay = W.getkDelay(); // in case number is sanitized
-#endif
   if (cur != NULL)
   {
     //initialize the parameter set
@@ -520,11 +494,7 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   else
   {
     app_log() << "Resetting walkers" << std::endl;
-#ifdef QMC_CUDA
-    int nths(1);
-#else
     int nths(omp_get_max_threads());
-#endif
     nTargetWalkers = (std::max(nths, (nTargetWalkers / nths) * nths));
     int nw         = W.getActiveWalkers();
     int ndiff      = 0;

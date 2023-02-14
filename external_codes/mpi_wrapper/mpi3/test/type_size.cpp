@@ -46,7 +46,9 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 		struct foo_t {
 			float a;
 			int b;
-		} foo{};
+		};
+		[[maybe_unused]]  // nvcc false warning
+		foo_t foo{};
 
 		foo.a = 1.2F;
 		foo.b = 5;

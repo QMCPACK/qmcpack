@@ -192,6 +192,16 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		assert( plane.shape()[0] == cart_comm.shape()[0] );
 		assert( plane.shape()[1] == cart_comm.shape()[2] );
 	}
+	{
+		auto plane_comm = cart_comm.plane(0, 1);
+		assert( plane_comm.shape()[0] == cart_comm.shape()[0] );
+		assert( plane_comm.shape()[1] == cart_comm.shape()[1] );
+	}
+	{
+		auto plane_comm = cart_comm.plane();
+		assert( plane_comm.shape()[0] == cart_comm.shape()[0] );
+		assert( plane_comm.shape()[1] == cart_comm.shape()[1] );
+	}
 }
 {
 	mpi3::cartesian_communicator<2> cart_comm(world, {3, 2});

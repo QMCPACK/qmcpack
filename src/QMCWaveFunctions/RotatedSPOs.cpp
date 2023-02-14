@@ -331,7 +331,7 @@ void RotatedSPOs::evaluateDerivRatios(const VirtualParticleSet& VP,
   d2psiM_all = 0;
 
   const ParticleSet& P = VP.getRefPS();
-  int iel = VP.refPtcl;
+  int iel              = VP.refPtcl;
 
   Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_all, dpsiM_all, d2psiM_all);
 
@@ -526,11 +526,11 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk           = myVars.where(i);
-    const int p      = m_act_rot_inds.at(i).first;
-    const int q      = m_act_rot_inds.at(i).second;
-    dlogpsi[kk]      = T(p, q);
-    dhpsioverpsi[kk] = ValueType(-0.5) * Y4(p, q);
+    int kk      = myVars.where(i);
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi[kk] += T(p, q);
+    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
   }
 }
 

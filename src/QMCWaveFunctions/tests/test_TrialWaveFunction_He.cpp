@@ -114,7 +114,6 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   return twf_ptr;
 }
 
-#ifndef QMC_CUDA
 TEST_CASE("TrialWaveFunction flex_evaluateParameterDerivatives", "[wavefunction]")
 {
   using ValueType = QMCTraits::ValueType;
@@ -447,7 +446,5 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
     CHECK(logpsi2b == Approx(logpsi_variable_list2[1]));
   }
 }
-#endif
-
 
 } // namespace qmcplusplus

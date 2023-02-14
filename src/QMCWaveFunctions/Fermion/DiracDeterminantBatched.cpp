@@ -17,6 +17,9 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Numerics/MatrixOperators.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 #include "CPU/SIMD/simd.hpp"
 #include <cassert>
 
@@ -40,8 +43,12 @@ DiracDeterminantBatched<DET_ENGINE>::DiracDeterminantBatched(std::unique_ptr<SPO
 {
   static_assert(std::is_same<SPOSet::ValueType, typename DET_ENGINE::Value>::value);
   resize(NumPtcls, NumPtcls);
-  if (isOptimizable())
-    Phi->buildOptVariables(NumPtcls);
+
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(NumPtcls);
+#endif
 }
 
 template<typename DET_ENGINE>

@@ -15,6 +15,22 @@
 
 namespace qmcplusplus
 {
+enum SoAFields3D
+{
+  VAL = 0,
+  GRAD0,
+  GRAD1,
+  GRAD2,
+  HESS00,
+  HESS01,
+  HESS02,
+  HESS11,
+  HESS12,
+  HESS22,
+  LAPL,
+  NUM_FIELDS
+};
+
 /** compute Trace(H*G)
    *
    * gg is symmetrized as
@@ -26,7 +42,7 @@ namespace qmcplusplus
    *  gg[5]=GG(2,2)
    */
 template<typename T>
-inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T* restrict gg)
+inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T gg[6])
 {
   return h00 * gg[0] + h01 * gg[1] + h02 * gg[2] + h11 * gg[3] + h12 * gg[4] + h22 * gg[5];
 }

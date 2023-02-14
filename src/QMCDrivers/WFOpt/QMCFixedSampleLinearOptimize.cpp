@@ -131,17 +131,17 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine<ValueType>(&vdeps,
-                                                     false, // exact sampling
-                                                     true,  // ground state?
-                                                     false, // variance correct,
+                                                     false,  // exact sampling
+                                                     true,   // ground state?
+                                                     false,  // variance correct,
                                                      true,
-                                                     true,  // print matrices,
-                                                     true,  // build matrices
-                                                     false, // spam
-                                                     false, // use var deps?
-                                                     true,  // chase lowest
-                                                     false, // chase closest
-                                                     false, // eom
+                                                     true,   // print matrices,
+                                                     true,   // build matrices
+                                                     false,  // spam
+                                                     false,  // use var deps?
+                                                     true,   // chase lowest
+                                                     false,  // chase closest
+                                                     false,  // eom
                                                      false,
                                                      false,  // eom related
                                                      false,  // eom related
@@ -159,10 +159,10 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(const ProjectData& pr
                                                      1.0e-6, // convergence threshold
                                                      0.99,   // minimum S singular val
                                                      0.0, 0.0,
-                                                     10.0, // max change allowed
-                                                     1.00, // identity shift
-                                                     1.00, // overlap shift
-                                                     0.3,  // max parameter change
+                                                     10.0,   // max change allowed
+                                                     1.00,   // identity shift
+                                                     1.00,   // overlap shift
+                                                     0.3,    // max parameter change
                                                      shift_scales, app_log());
 #endif
 
@@ -491,13 +491,11 @@ bool QMCFixedSampleLinearOptimize::run()
 */
 bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 {
-  std::string useGPU("yes");
   std::string vmcMove("pbyp");
   std::string ReportToH5("no");
   std::string OutputMatrices("no");
   std::string FreezeParameters("no");
   OhmmsAttributeSet oAttrib;
-  oAttrib.add(useGPU, "gpu");
   oAttrib.add(vmcMove, "move");
   oAttrib.add(ReportToH5, "hdf5");
 
@@ -556,16 +554,13 @@ bool QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 
     hybridEngineObj->incrementStepCounter();
 
-    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    return processOptXML(hybridEngineObj->getSelectedXML(), vmcMove, ReportToH5 == "yes");
   }
   else
-    return processOptXML(q, vmcMove, ReportToH5 == "yes", useGPU == "yes");
+    return processOptXML(q, vmcMove, ReportToH5 == "yes");
 }
 
-bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
-                                                 const std::string& vmcMove,
-                                                 bool reportH5,
-                                                 bool useGPU)
+bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml, const std::string& vmcMove, bool reportH5)
 {
   m_param.put(opt_xml);
   targetExcitedStr = lowerCase(targetExcitedStr);
@@ -649,12 +644,6 @@ bool QMCFixedSampleLinearOptimize::processOptXML(xmlNodePtr opt_xml,
   if (W.getActiveWalkers() == 0)
     addWalkers(omp_get_max_threads());
   NumOfVMCWalkers = W.getActiveWalkers();
-
-#if defined(QMC_CUDA)
-  if (useGPU)
-    myComm->barrier_and_abort("Wavefunction optimization in legacy CUDA implementation has been removed. "
-                              "Please use CPU code or performance portable GPU implementation.");
-#endif
 
   // Destroy old object to stop timer to correctly order timer with object lifetime scope
   vmcEngine.reset(nullptr);

@@ -24,6 +24,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Utilities/ResourceCollection.h"
 
 namespace qmcplusplus
 {

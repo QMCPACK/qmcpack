@@ -21,9 +21,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
-#ifdef QMC_CUDA
-#include "Particle/MCWalkerConfiguration.h"
-#endif
 #include "type_traits/ConvertToReal.h"
 
 namespace qmcplusplus
@@ -630,21 +627,4 @@ std::unique_ptr<OperatorBase> BareKineticEnergy::makeClone(ParticleSet& qp, Tria
   return std::make_unique<BareKineticEnergy>(qp, psi);
 }
 
-#ifdef QMC_CUDA
-////////////////////////////////
-// Vectorized version for GPU //
-////////////////////////////////
-// Nothing is done on GPU here, just copy into vector
-void BareKineticEnergy::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  auto& walkers = W.WalkerList;
-  for (int iw = 0; iw < walkers.size(); iw++)
-  {
-    Walker_t& w                                        = *(walkers[iw]);
-    RealType KE                                        = -one_over_2m_ * (Dot(w.G, w.G) + Sum(w.L));
-    w.getPropertyBase()[WP::NUMPROPERTIES + my_index_] = KE;
-    LocalEnergy[iw] += KE;
-  }
-}
-#endif
 } // namespace qmcplusplus

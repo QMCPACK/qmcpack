@@ -27,10 +27,6 @@
 #endif
 #include "Concurrency/OpenMP.h"
 
-#ifdef QMC_CUDA
-#include "QMCDrivers/VMC/VMC_CUDA.h"
-#endif
-
 namespace qmcplusplus
 {
 std::unique_ptr<QMCDriverInterface> VMCFactory::create(const ProjectData& project_data,
@@ -42,12 +38,7 @@ std::unique_ptr<QMCDriverInterface> VMCFactory::create(const ProjectData& projec
 {
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   std::unique_ptr<QMCDriverInterface> qmc;
-#ifdef QMC_CUDA
-  if (VMCMode & 16)
-    qmc = std::make_unique<VMCcuda>(project_data, w, psi, h, comm, enable_profiling);
-  else
-#endif
-      if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
+  if (VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
   {
     qmc = std::make_unique<VMC>(project_data, w, psi, h, comm, enable_profiling);
   }

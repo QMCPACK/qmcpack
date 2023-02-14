@@ -133,6 +133,44 @@ inline bool h5d_read(hid_t grp, const std::string& aname, T* first, hid_t xfer_p
   return ret != -1;
 }
 
+inline bool h5d_check_existence(hid_t grp, const std::string& aname)
+{
+  if (grp < 0)
+    return true;
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
+  if (h1 < 0)
+  {
+    H5Dclose(h1);
+    return false;
+  }
+  H5Dclose(h1);
+  return true;
+}
+
+template<typename T>
+inline bool h5d_check_type(hid_t grp, const std::string& aname)
+{
+  if (grp < 0)
+    return true;
+  hid_t h1 = H5Dopen(grp, aname.c_str(), H5P_DEFAULT);
+  T temp(0);
+  hid_t h5d_type_id = get_h5_datatype(temp);
+  hid_t datatype    = H5Dget_type(h1);
+  if (datatype == H5I_INVALID_HID)
+    throw std::runtime_error(aname + " dataset either does not exist or there was an error determining its type.");
+  htri_t equality_check = H5Tequal(datatype, h5d_type_id);
+  H5Dclose(h1);
+  switch (equality_check)
+  {
+  case 1:
+    return true;
+  case 0:
+    return false;
+  default:
+    throw std::runtime_error("Type comparison attempted with an invalid type or nonexistent dataset " + aname);
+  }
+}
+
 template<typename T>
 inline bool h5d_write(hid_t grp,
                       const std::string& aname,

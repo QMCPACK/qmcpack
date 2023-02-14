@@ -60,24 +60,33 @@ inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T, 3>::Sp
 #ifdef ENABLE_OFFLOAD
 #pragma omp for
 #else
-#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals: QMC_SIMD_ALIGNMENT)
+#pragma omp simd aligned(coefs, coefszs, coefs2zs, coefs3zs, vals : QMC_SIMD_ALIGNMENT)
 #endif
       for (int n = 0; n < num_splines; n++)
         vals[n] += pre00 * (c[0] * coefs[n] + c[1] * coefszs[n] + c[2] * coefs2zs[n] + c[3] * coefs3zs[n]);
     }
 }
 
+/** evaluate value, gradients and hessian
+ * @param ix location in x
+ * @param iy location in y
+ * @param iz location in z
+ * @param index spline index
+ * @param a interpolation parameter in x
+ * @param b interpolation parameter in y
+ * @param c interpolation parameter in z
+ * @param vals value output location
+ */
 template<typename T>
 inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>::SplineType* restrict spline_m,
                                int ix,
                                int iy,
                                int iz,
+                               const int index,
                                const T a[4],
                                const T b[4],
                                const T c[4],
-                               T* restrict vals,
-                               const int first,
-                               const int index)
+                               T* restrict vals)
 {
   const intptr_t xs = spline_m->x_stride;
   const intptr_t ys = spline_m->y_stride;
@@ -87,12 +96,12 @@ inline void evaluate_v_impl_v2(const typename qmcplusplus::bspline_traits<T, 3>:
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
     {
-      const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs) + first;
+      const T* restrict coefs = spline_m->coefs + ((ix + i) * xs + (iy + j) * ys + iz * zs);
       val += a[i] * b[j] *
           (c[0] * coefs[index] + c[1] * coefs[index + zs] + c[2] * coefs[index + zs * 2] +
            c[3] * coefs[index + zs * 3]);
     }
-  vals[index] = val;
+  *vals = val;
 }
 
 } // namespace spline2offload

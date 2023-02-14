@@ -28,10 +28,6 @@
 #include "Particle/SampleStack.h"
 #include "Utilities/IteratorUtility.h"
 
-#ifdef QMC_CUDA
-#include "type_traits/CUDATypes.h"
-#endif
-
 namespace qmcplusplus
 {
 //Forward declaration
@@ -79,43 +75,6 @@ public:
   using const_iterator = WalkerList_t::const_iterator;
 
   using ReptileList_t = UPtrVector<Reptile>;
-
-  // Data for GPU-acceleration via CUDA
-  // These hold a list of pointers to the positions, gradients, and
-  // laplacians for each walker.  These vectors .data() is often
-  // passed to GPU kernels.
-#ifdef QMC_CUDA
-  using CTS = CUDAGlobalTypes;
-  gpu::device_vector<CTS::RealType*> RList_GPU;
-  gpu::device_vector<CTS::ValueType*> GradList_GPU, LapList_GPU;
-  // First index is the species.  The second index is the walker
-  std::vector<gpu::device_vector<CUDA_PRECISION_FULL*>> RhokLists_GPU;
-  gpu::device_vector<CTS::ValueType*> DataList_GPU;
-  gpu::device_vector<CTS::PosType> Rnew_GPU;
-  gpu::host_vector<CTS::PosType> Rnew_host;
-  std::vector<PosType> Rnew;
-  gpu::device_vector<CTS::RealType*> NLlist_GPU;
-  gpu::host_vector<CTS::RealType*> NLlist_host;
-  gpu::host_vector<CTS::RealType*> hostlist;
-  gpu::host_vector<CTS::ValueType*> hostlist_valueType;
-  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
-  gpu::host_vector<CTS::PosType> R_host;
-  gpu::host_vector<CTS::GradType> Grad_host;
-  gpu::device_vector<int> iatList_GPU;
-  gpu::host_vector<int> iatList_host;
-  gpu::device_vector<int> AcceptList_GPU;
-  gpu::host_vector<int> AcceptList_host;
-
-  void allocateGPU(size_t buffersize);
-  void copyWalkersToGPU(bool copyGrad = false);
-  void copyWalkerGradToGPU();
-  void updateLists_GPU();
-  int CurrentParticle;
-  void proposeMove_GPU(std::vector<PosType>& newPos, int iat);
-  void acceptMove_GPU(std::vector<bool>& toAccept, int k);
-  void acceptMove_GPU(std::vector<bool>& toAccept) { acceptMove_GPU(toAccept, 0); }
-  void NLMove_GPU(std::vector<Walker_t*>& walkers, std::vector<PosType>& Rnew, std::vector<int>& iat);
-#endif
 
   ///default constructor
   MCWalkerConfiguration(const SimulationCell& simulation_cell,
@@ -197,105 +156,11 @@ public:
   int getMaxSamples() const;
   //@}
 
-#ifdef QMC_CUDA
-  inline void setklinear() { klinear = true; }
-
-  inline bool getklinear() { return klinear; }
-
-  inline void setkDelay(int k)
-  {
-    klinear = false;
-    kDelay  = k;
-    if (kDelay < 0)
-    {
-      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero (no delay)."
-                << std::endl;
-      kDelay = 0;
-    }
-    if (kDelay == 1)
-      kDelay =
-          0; // use old algorithm as additional overhead for k=1 is not doing anything useful outside of code development
-    kblocksize = 1;
-    kblock     = 0;
-    kcurr      = 0;
-    kstart     = 0;
-    if (kDelay)
-    {
-      app_log() << "  Using delayed updates (k = " << kDelay << ") for all walkers" << std::endl;
-      kblocksize = kDelay;
-    }
-    kupdate = kblocksize;
-  }
-
-  inline int getkDelay() { return kDelay; }
-
-  inline int getkblock() { return kblock; }
-
-  inline int getkblocksize() { return kblocksize; }
-
-  inline int getkcurr() { return kcurr; }
-
-  inline int getkstart() { return kstart; }
-
-  inline int getkupdate() { return kupdate; }
-
-  inline int getnat(int iat)
-  {
-    for (unsigned int gid = 0; gid < groups(); gid++)
-      if (last(gid) > iat)
-        return last(gid) - first(gid);
-    return -1;
-  }
-
-  inline bool update_now(int iat)
-  {
-    // in case that we finished the current k-block (kcurr=0) *or* (<- This case also takes care of no delayed updates as kcurr will always be zero then)
-    // if we run out of electrons (nat) but still have some k's in the current k-block, an update needs to happen now
-    bool end_of_matrix = (kcurr + kblock * kblocksize >= getnat(iat));
-    bool update        = ((!kcurr) || end_of_matrix);
-    kupdate            = kblocksize;
-    if (update)
-    {
-      if (kblock > 0)
-      {
-        kstart = kblock * kblocksize;
-        if (kcurr == 0)
-          kstart -=
-              kblocksize; // means we looped cleanly within kblocksize matrix (and kblock is too large by 1), hence start is at (kblock-1)*kblocksize
-        kupdate = kcurr + kblock * kblocksize - kstart;
-        kcurr   = 0;
-        if (!klinear)
-          CurrentParticle -= kupdate - 1;
-      }
-    }
-    // reset kblock if we're out of matrix blocks
-    if (end_of_matrix)
-      kblock = 0;
-    return update;
-  }
-#endif
-
 protected:
   ///true if the buffer is ready for particle-by-particle updates
   bool ReadyForPbyP;
   ///update-mode index
   int UpdateMode;
-#ifdef QMC_CUDA
-  ///delayed update streak parameter k
-  int kDelay;
-  ///block dimension (usually k) in case delayed updates are used (there are nat/kblocksize blocks available)
-  int kblocksize = 1;
-  ///current block
-  int kblock;
-  ///current k within current block
-  int kcurr;
-  ///current k to start from update
-  int kstart;
-  ///number of columns to update
-  int kupdate;
-  ///klinear switch to indicate if values are calculated sequentially for algorithms using drift
-  bool klinear;
-#endif
 
   RealType LocalEnergy;
 
@@ -310,12 +175,6 @@ private:
   MultiChain* Polymer;
 
   SampleStack samples;
-
-  /** initialize the PropertyList
-   *
-   * Add the named values of the default properties
-  void initPropertyList();
-   */
 };
 } // namespace qmcplusplus
 #endif
