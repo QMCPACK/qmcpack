@@ -190,6 +190,14 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   return std::real(pairpot);
 }
 
+  void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
+                                      const RefVectorWithLeader<ParticleSet>& p_list,
+                                      const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                      const RefVectorWithLeader<const NLPPJob<RealType>>& joblist,
+                                      std::vector<RealType>& pairpots,
+                                      ResourceCollection& collection)
+  {}
+
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
                                                                      int iat,
                                                                      TrialWaveFunction& Psi,
