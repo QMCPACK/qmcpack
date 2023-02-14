@@ -42,6 +42,9 @@ public:
   // Only core->active rotations are created.
   static void createRotationIndices(int nel, int nmo, RotationIndices& rot_indices);
 
+  // Construct a list for all the matrix indices, including core->active, core->core and active->active
+  static void createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices);
+
   // Fill in antisymmetric matrix from the list of rotation parameter indices
   // and a list of parameter values.
   // This function assumes rot_mat is properly sized upon input and is set to zero.
@@ -57,6 +60,15 @@ public:
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+
+  // Perform the construction of matrices and extraction of parameters for a delta rotation.
+  // Split out and made static for testing.
+  static void constructDeltaRotation(const std::vector<RealType>& delta_param,
+                                     const std::vector<RealType>& old_param,
+                                     const RotationIndices& act_rot_inds,
+                                     const RotationIndices& full_rot_inds,
+                                     std::vector<RealType>& new_param,
+                                     ValueMatrix& new_rot_mat);
 
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
