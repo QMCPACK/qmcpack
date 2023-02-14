@@ -29,7 +29,7 @@ void part2(mpi3::communicator& world) {
 	double const v     = world.rank();
 	double       total = 0;
 
-	double const* const it = world.reduce_n(&v, 1, &total, std::plus<>{}, 0);
+	double const* const it = world.reduce_n(&v, 1, &total, std::plus<>{});
 	if(world.rank() == 0) {
 		assert(total == static_cast<double>(world.size() * (world.size() - 1)) / 2);
 	} else {
@@ -59,7 +59,7 @@ int mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator world) try {
 	assert(world.size() > 1);
 
 	part1(world);
-	part2(world);
+	part2(world);  // TODO(correaa) fix this
 	part3(world);
 
 	return 0;

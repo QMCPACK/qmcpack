@@ -12,9 +12,10 @@
 #include <iostream>
 #include <tuple>  // tie
 
-#define BOOST_MPI3_MAJOR_VERSION 0  // NOLINT(cppcoreguidelines-macro-usage)
-#define BOOST_MPI3_MINOR_VERSION 81  // NOLINT(cppcoreguidelines-macro-usage)
-#define BOOST_MPI3_PATCH_VERSION 0  // NOLINT(cppcoreguidelines-macro-usage)
+#define BOOST_MPI3_MAJOR_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
+#define BOOST_MPI3_MINOR_VERSION 81  // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
+#define BOOST_MPI3_PATCH_VERSION 0   // NOLINT(cppcoreguidelines-macro-usage,modernize-macro-to-enum)
+
 #define BOOST_MPI3_VERSION_STRING "Boost.MPI3/0.81"  // NOLINT(cppcoreguidelines-macro-usage)
 
 #define BOOST_MPI3_VERSION (BOOST_MPI3_MAJOR_VERSION * 100 + BOOST_MPI3_MINOR_VERSION * 10)
