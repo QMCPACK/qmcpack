@@ -209,6 +209,19 @@ else()
         ${INPUT_FILE}
         ${H5_FILE}
         "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -u --detbatched")
+      # To help analyze multithread offload implementations, add a single threaded batched test with same total workload as 4 thread case
+      if(ENABLE_OFFLOAD)
+        add_nio_test(
+          ${PERF_TEST}
+          1
+          1
+          ${TEST_DIR}
+          ${TEST_SOURCE_DIR}
+          ${INPUT_FILE}
+          ${H5_FILE}
+          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -u --detbatched")
+      endif(ENABLE_OFFLOAD)
+
     else()
       message(
         "NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT} performance test not added because the corresponding h5 file not found: ${H5_FULL_PATH}"

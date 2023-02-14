@@ -74,7 +74,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     setEnergyDomain(POTENTIAL);
     twoBodyQuantumDomain(s, s);
     nCenters = s.getTotalNum();
-    prefix   = "F_AA";
+    prefix_   = "F_AA";
 
     if (!is_active) //precompute the value
     {
@@ -167,7 +167,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
   /** evaluate AA-type forces */
   inline void evaluateAAForces(const DistanceTableAA& d, const ParticleScalar* restrict Z)
   {
-    forces = 0.0;
+    forces_ = 0.0;
     for (size_t iat = 1; iat < nCenters; ++iat)
     {
       const auto& dist  = d.getDistRow(iat);
@@ -175,8 +175,8 @@ struct CoulombPotential : public OperatorBase, public ForceBase
       T q               = Z[iat];
       for (size_t j = 0; j < iat; ++j)
       {
-        forces[iat] += -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
-        forces[j] -= -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
+        forces_[iat] += -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
+        forces_[j] -= -q * Z[j] * displ[j] / (dist[j] * dist[j] * dist[j]);
       }
     }
   }
@@ -349,7 +349,7 @@ struct CoulombPotential : public OperatorBase, public ForceBase
     if (is_active)
       value_ = evaluate(P); // No forces for the active
     else
-      hf_terms -= forces;   // No Pulay here
+      hf_terms -= forces_;   // No Pulay here
     return value_;
   }
 

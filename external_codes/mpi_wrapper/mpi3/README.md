@@ -84,9 +84,9 @@ In this way, changes to existing code can be made incrementally.
 ## Installation
 
 The library is "header-only"; no separate compilation is necessary.
-Most functions are inline or template functions.
 In order to compile it requires an MPI distribution (e.g. OpenMPI or MPICH2) and the corresponding compiler-wrapper (`mpic++` or `mpicxx`).
-Currently the library requires C++14 (usually activated with the compiler option `-std=c++14`) and Boost. In particular it depends on Boost.Serialization and may require linking to this library if values passed are not basic types (`-lboost_serialization`). A typical compilation/run command looks like this:
+This library requires C++14 and the Boost library installed.
+A typical compilation/run command looks like this:
 
 ```bash
 $ mpic++ -std=c++14 -O3 mpi3/test/communicator_send.cpp -o communicator_send.x -lboost_serialization
@@ -96,8 +96,10 @@ $ mpirun -n 8 ./communicator_send.x
 In a system such as Red Hat, the dependencies can by installed by
 
 ```bash
-$ dnf install gcc-c++ boost-devel openmpi-devel mpich-devel
+dnf install gcc-c++ boost-devel openmpi-devel mpich-devel
 ```
+
+Some systems require loading the MPI module before compiling and using MPI programs, `module load mpi/mpich`.
 
 The library is tested frequently against `openmpi` and `mpich`, and less frequently with `mvapich2`.
 
@@ -106,9 +108,12 @@ The library is tested frequently against `openmpi` and `mpich`, and less frequen
 The library has a basic `ctest` based testing system.
 
 ```bash
+# module load mpi/mpich  # or mpi/openmpi  , needed in systems like Fedora
 cd mpi3/test
-mkdir build; cd build
-cmake .. && make && ctest
+mkdir build && cd build
+cmake ..
+cmake --build ..
+ctest
 ```
 
 ## Initialization

@@ -567,14 +567,7 @@ void SplineC2COMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
 {
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2COMPTarget<ST>>();
-  // make this class unit tests friendly without the need of setup resources.
-  if (!phi_leader.mw_mem_)
-  {
-    app_warning() << "SplineC2COMPTarget : This message should not be seen in production (performance bug) runs but "
-                     "only unit tests (expected)."
-                  << std::endl;
-    phi_leader.mw_mem_ = std::make_unique<SplineOMPTargetMultiWalkerMem<ST, ComplexT>>();
-  }
+  assert(phi_leader.mw_mem_);
   auto& mw_mem             = *phi_leader.mw_mem_;
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;

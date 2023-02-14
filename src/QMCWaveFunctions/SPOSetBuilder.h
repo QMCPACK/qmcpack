@@ -71,6 +71,9 @@ public:
   /// create an sposet from xml and save the resulting SPOSet
   std::unique_ptr<SPOSet> createSPOSet(xmlNodePtr cur);
 
+  /// create orbital rotation transformation from xml and save the resulting SPOSet
+  std::unique_ptr<SPOSet> createRotatedSPOSet(xmlNodePtr cur);
+
   const std::string& getTypeName() const { return type_name_; }
 
 protected:

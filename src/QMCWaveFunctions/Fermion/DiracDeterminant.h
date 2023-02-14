@@ -49,7 +49,6 @@ public:
   using GradMatrix  = SPOSet::GradMatrix;
   using HessMatrix  = SPOSet::HessMatrix;
   using HessVector  = SPOSet::HessVector;
-  using HessType    = SPOSet::HessType;
 
   using mValueType = QMCTraits::QTFull::ValueType;
   using mGradType  = TinyVector<mValueType, DIM>;
@@ -77,9 +76,7 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override;
 
-  void evaluateDerivativesWF(ParticleSet& P,
-                             const opt_variables_type& optvars,
-                             Vector<ValueType>& dlogpsi) override;
+  void evaluateDerivativesWF(ParticleSet& P, const opt_variables_type& optvars, Vector<ValueType>& dlogpsi) override;
 
   void registerData(ParticleSet& P, WFBufferType& buf) override;
 
