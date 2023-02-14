@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 ///initialize the static data member
 //ParticleSetPool* QMCMainState::ptclPool = new ParticleSetPool;
-QMCMainState::QMCMainState(Communicate* c) : MPIObjectBase(c), curRunType(QMCRunType::DUMMY), qmcSystem(nullptr)
+QMCMainState::QMCMainState(Communicate* c) : MPIObjectBase(c), qmcSystem(nullptr)
 {
   ////create ParticleSetPool
   ptclPool = std::make_unique<ParticleSetPool>(myComm);

@@ -40,12 +40,6 @@ class HamiltonianPool;
 
 struct QMCMainState : public MPIObjectBase
 {
-  ///type of qmcdriver
-  QMCRunType curRunType;
-
-  ///name of the current QMCriver
-  std::string curMethod;
-
   /** current MCWalkerConfiguration
    */
   MCWalkerConfiguration* qmcSystem;

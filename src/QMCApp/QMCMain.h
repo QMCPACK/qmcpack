@@ -65,7 +65,7 @@ private:
   std::vector<xmlNodePtr> walker_set_in_;
 
   ///traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml_;
 
   ///qmc sections
   std::vector<std::pair<xmlNodePtr, bool>> qmc_action_;
@@ -93,6 +93,9 @@ private:
   /** execute loop **/
   void executeLoop(xmlNodePtr cur);
 
+  ///execute <debug/> element
+  bool executeDebugSection(xmlNodePtr cur);
+
   /** execute qmc
    * @param cur qmc xml node
    * @param reuse if true, reuse the driver built from the last QMC section. This should be used by loop only.
@@ -103,8 +106,6 @@ private:
   ///execute <cmc/> element
   bool executeCMCSection(xmlNodePtr cur);
 
-  ///execute <debug/> element
-  bool executeDebugSection(xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif
