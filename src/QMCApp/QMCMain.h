@@ -38,7 +38,7 @@ class QMCMain : public MPIObjectBase, public QMCAppBase
 public:
   QMCMain(Communicate* c);
 
-  ~QMCMain();
+  ~QMCMain() override;
 
   bool validateXML() override;
   bool execute() override;
