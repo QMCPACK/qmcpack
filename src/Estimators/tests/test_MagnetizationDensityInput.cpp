@@ -41,16 +41,16 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
     MagnetizationDensityInput obdmi(node);
   }
 
-/*  for (auto input_xml : testing::invalid_one_body_density_matrices_input_sections)
+  for (auto input_xml : testing::invalid_mag_density_input_sections)
   {
     Libxml2Document doc;
     bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
 
-    CHECK_THROWS_AS(OneBodyDensityMatricesInput(node), UniformCommunicateError);
+  //  CHECK_THROWS_AS(MagnetizationDensityInput(node), UniformCommunicateError);
   }
-  */
+  
 }
 
 } // namespace qmcplusplus
