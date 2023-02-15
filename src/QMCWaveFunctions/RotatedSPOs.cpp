@@ -178,7 +178,6 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
 
   const size_t nmo = Phi->getOrbitalSetSize();
   ValueMatrix rot_mat(nmo, nmo);
-  rot_mat = ValueType(0);
 
   constructAntiSymmetricMatrix(m_act_rot_inds, param, rot_mat);
 
@@ -206,13 +205,11 @@ void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_para
   assert(new_rot_mat.rows() == new_rot_mat.cols());
 
   ValueMatrix old_rot_mat(nmo, nmo);
-  old_rot_mat = ValueType(0);
 
   constructAntiSymmetricMatrix(full_rot_inds, old_param, old_rot_mat);
   exponentiate_antisym_matrix(old_rot_mat);
 
   ValueMatrix delta_rot_mat(nmo, nmo);
-  delta_rot_mat = ValueType(0);
 
   constructAntiSymmetricMatrix(act_rot_inds, delta_param, delta_rot_mat);
   exponentiate_antisym_matrix(delta_rot_mat);
