@@ -42,6 +42,8 @@ void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_i
 
 void RotatedSPOs::createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices)
 {
+  rot_indices.reserve(nmo * (nmo - 1) / 2);
+
   // start with core-active rotations - put them at the beginning of the list
   // so it matches the other list of rotation indices
   for (int i = 0; i < nel; i++)
@@ -219,8 +221,7 @@ void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_para
              nmo);
 
   ValueMatrix log_rot_mat(nmo, nmo);
-  log_rot_mat = new_rot_mat;
-  log_antisym_matrix(log_rot_mat);
+  log_antisym_matrix(new_rot_mat, log_rot_mat);
   extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
 }
 
@@ -286,7 +287,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
 }
 
-void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
+void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
   const int n = mat.rows();
   std::vector<RealType> mat_h(n * n, 0);
@@ -353,7 +354,7 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
-      mat[i][j] = mat_cd[i + n * j].real();
+      output[i][j] = mat_cd[i + n * j].real();
     }
 }
 
