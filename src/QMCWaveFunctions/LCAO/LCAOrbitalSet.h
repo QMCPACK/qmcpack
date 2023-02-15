@@ -55,7 +55,7 @@ public:
 
   std::unique_ptr<SPOSet> makeClone() const override;
 
-  void storeParamsBeforeRotation() override { C_copy = *C; }
+  void storeParamsBeforeRotation() override { C_copy = std::make_shared<ValueMatrix>(*C); }
 
   void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
 
@@ -211,7 +211,7 @@ protected:
   ///number of Single-particle orbitals
   const IndexType BasisSetSize;
   /// a copy of the original C before orbital rotation is applied;
-  ValueMatrix C_copy;
+  std::shared_ptr<ValueMatrix> C_copy;
 
   ///true if C is an identity matrix
   bool Identity;
