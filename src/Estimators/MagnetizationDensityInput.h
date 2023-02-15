@@ -25,6 +25,16 @@ class MagnetizationDensity;
 class MagnetizationDensityInput
 {
 public:
+  enum class Integrator
+  {
+    SIMPSONS,
+    MONTECARLO
+  };
+
+  inline static const std::unordered_map<std::string, std::any>
+      lookup_input_enum_value{{"integrator-simpsons", Integrator::SIMPSONS},
+                              {"integrator-montecarlo", Integrator::MONTECARLO}};
+
   using Real               = QMCTraits::RealType;
   using POLT               = PtclOnLatticeTraits;
   using Lattice            = POLT::ParticleLayout;
@@ -44,14 +54,9 @@ public:
   TinyVector<int, DIM> get_grid() const { return grid_; }
   int get_npoints() const { return npoints_; }
   int get_nsamples() const { return nsamples_; }
+  Integrator get_integrator() const { return integrator_; }
   bool get_write_report() const { return write_report_; }
   bool get_save_memory() const { return save_memory_; }
-
-  enum class Integrator
-  {
-    SIMPSONS,
-    METROPOLIS
-  };
 
   struct DerivedParameters
   {
@@ -77,14 +82,14 @@ public:
     MagnetizationDensityInputSection()
     {
       // clang-format off
-      section_name  = "OneBodyDensityMatrix";
+      section_name  = "MagnetizationDensity";
       attributes    = {"name", "type"};
-      parameters    = {"spin_integrator", 
+      parameters    = {"integrator", 
                        "corner", "center", "samples", "grid", "dr"
                       };
       bools         = {};
       enums         = {"integrator"};
-      strings       = {"name", "type","spin_integrator"};
+      strings       = {"name", "type"};
       multi_strings = {};
       integers      = {"samples"};
       reals         = {};
@@ -94,10 +99,10 @@ public:
       // clang-format on
 
     }
+    std::any assignAnyEnum(const std::string& name) const override;
   };
 private:
-  void readXML(xmlNodePtr cur);
-
+  MagnetizationDensityInputSection input_section_;
   ///name of this Estimator
   std::string myName_;
   Integrator integrator_;

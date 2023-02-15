@@ -34,7 +34,7 @@ namespace magdensity
   constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  simpson       </parameter>
+  <parameter name="integrator"   >  simpsons       </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
 </estimator>
@@ -47,8 +47,7 @@ namespace magdensity
 )XML",
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  uniform_grid  </parameter>
-  <parameter name="samples"      >  64            </parameter>
+  <parameter name="samples"      >  32            </parameter>
   <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
 </estimator>
 )XML"

@@ -14,18 +14,18 @@
 
 #include "OhmmsData/AttributeSet.h"
 #include "Message/UniformCommunicateError.h"
-
+#include "EstimatorInput.h"
 namespace qmcplusplus
 {
 
-MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr node)
+MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
 {
-  readXML(node);
+  input_section_.readXML(cur);
+  auto setIfInInput = LAMBDA_setIfInInput;
+  setIfInInput(nsamples_, "samples");
+  setIfInInput(integrator_,"integrator"); 
 }
 
-void MagnetizationDensityInput::readXML(xmlNodePtr cur)
-{
-}
 
 MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(const Lattice& lattice) const
 {
@@ -52,6 +52,11 @@ MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculat
     gdims[d] = gdims[d - 1] / grid[d];
 
   return {corner, grid, gdims, npoints};
+}
+
+std::any MagnetizationDensityInput::MagnetizationDensityInputSection::assignAnyEnum(const std::string& name) const
+{
+  return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
 }
 
 }//namespace qmcplusplus

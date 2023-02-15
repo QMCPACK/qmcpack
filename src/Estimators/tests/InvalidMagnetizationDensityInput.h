@@ -25,20 +25,20 @@ namespace testing
   constexpr std::array<std::string_view, 3> invalid_mag_density_input_sections{
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  eimpson       </parameter>
+  <parameter name="integrator"   >  tacocat       </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
 </estimator>
 )XML",
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  montecarlo       </parameter>
+  <parameter name="integrator"   >  montcearlo       </parameter>
   <parameter name="samples"      >  128           </parameter>
 </estimator>
 )XML",
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  uniform_grid  </parameter>
+  <parameter name="integrator"   >  simpson  </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
 </estimator>

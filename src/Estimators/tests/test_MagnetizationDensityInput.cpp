@@ -30,7 +30,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
   using POLT    = PtclOnLatticeTraits;
   using Lattice = POLT::ParticleLayout;
   using namespace testing::magdensity;
-  MagnetizationDensityInput magdens_in;
+  //MagnetizationDensityInput magdens_in;
 
   for (auto input_xml : valid_mag_density_input_sections)
   {
@@ -38,7 +38,9 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
     bool okay = doc.parseFromString(input_xml);
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
-    MagnetizationDensityInput obdmi(node);
+    MagnetizationDensityInput magdens(node);
+    app_log()<<"NSAMPLES = "<<magdens.get_nsamples()<<std::endl;
+    app_log()<<"INTEGRATOR = "<<int(magdens.get_integrator())<<std::endl;
   }
 
   for (auto input_xml : testing::invalid_mag_density_input_sections)
@@ -48,7 +50,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
 
-  //  CHECK_THROWS_AS(MagnetizationDensityInput(node), UniformCommunicateError);
+    CHECK_THROWS(MagnetizationDensityInput(node));
   }
   
 }
