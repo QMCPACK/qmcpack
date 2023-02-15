@@ -601,9 +601,10 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateSplinesVGLMultiPos(const size_t num_pos,
-                                                        const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
-                                                        Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const
+void SplineC2ROMPTarget<ST>::evaluateSplinesVGLMultiPos(
+    const size_t num_pos,
+    const Vector<char, OffloadPinnedAllocator<char>>& multi_pos_and_indices,
+    Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const
 {
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
@@ -614,21 +615,24 @@ void SplineC2ROMPTarget<ST>::evaluateSplinesVGLMultiPos(const size_t num_pos,
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr    = SplineInst->getSplinePtr();
-  auto* pos_copy_ptr        = multi_pos.data();
+  auto* pos_indices_ptr     = multi_pos_and_indices.data();
   auto* offload_scratch_ptr = offload_scratch.data();
   auto* GGt_ptr             = GGt_offload->data();
 
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: pos_copy_ptr[0:num_pos*6])")
+                    map(always, to: pos_indices_ptr[:multi_pos_and_indices.size()])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
         const size_t first = ChunkSizePerTeam * team_id;
         const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
 
-        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
+        auto* restrict pos_copy_ptr   = reinterpret_cast<const ST*>(pos_indices_ptr);
+        auto* restrict walker_indices = reinterpret_cast<const int*>(pos_indices_ptr + num_pos * 6 * sizeof(ST));
+        auto* restrict offload_scratch_iw_ptr =
+            offload_scratch_ptr + spline_padded_size * walker_indices[iw] * SoAFields3D::NUM_FIELDS;
 
         int ix, iy, iz;
         ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
@@ -659,7 +663,7 @@ void SplineC2ROMPTarget<ST>::evaluateSplinesVGLMultiPos(const size_t num_pos,
 template<typename ST>
 void SplineC2ROMPTarget<ST>::transformSplinesToSPOsMultiPos(
     const size_t num_pos,
-    const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
+    const Vector<char, OffloadPinnedAllocator<char>>& multi_pos_and_indices,
     const Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
     Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
     const RefVector<ValueVector>& psi_v_list,
@@ -676,7 +680,7 @@ void SplineC2ROMPTarget<ST>::transformSplinesToSPOsMultiPos(
 
   // Ye: need to extract sizes and pointers before entering target region
   const auto* spline_ptr           = SplineInst->getSplinePtr();
-  auto* pos_copy_ptr               = multi_pos.data();
+  auto* pos_indices_ptr            = multi_pos_and_indices.data();
   auto* offload_scratch_ptr        = offload_scratch.data();
   auto* results_scratch_ptr        = results_scratch.data();
   const auto myKcart_padded_size   = myKcart->capacity();
@@ -694,8 +698,11 @@ void SplineC2ROMPTarget<ST>::transformSplinesToSPOsMultiPos(
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
-        auto* restrict psi_iw_ptr             = results_scratch_ptr + sposet_padded_size * iw * 5;
+        auto* restrict pos_copy_ptr   = reinterpret_cast<const ST*>(pos_indices_ptr);
+        auto* restrict walker_indices = reinterpret_cast<const int*>(pos_indices_ptr + num_pos * 6 * sizeof(ST));
+        auto* restrict offload_scratch_iw_ptr =
+            offload_scratch_ptr + spline_padded_size * walker_indices[iw] * SoAFields3D::NUM_FIELDS;
+        auto* restrict psi_iw_ptr = results_scratch_ptr + sposet_padded_size * walker_indices[iw] * 5;
 
         const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
                          PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
@@ -742,14 +749,16 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
   assert(phi_leader.mw_mem_);
-  auto& mw_mem             = *phi_leader.mw_mem_;
-  auto& mw_pos_copy        = mw_mem.mw_pos_copy;
-  auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
-  auto& mw_results_scratch = mw_mem.mw_results_scratch;
-  const size_t nwalkers    = sa_list.size();
-  mw_pos_copy.resize(nwalkers * 6);
+  auto& mw_mem                = *phi_leader.mw_mem_;
+  auto& multi_pos_and_indices = mw_mem.multi_pos_copy_and_walker_indices;
+  auto& mw_offload_scratch    = mw_mem.mw_offload_scratch;
+  auto& mw_results_scratch    = mw_mem.mw_results_scratch;
+  const size_t nwalkers       = sa_list.size();
+  multi_pos_and_indices.resize(nwalkers * (6 * sizeof(ST) + sizeof(int)));
 
   // pack particle positions
+  ST* mw_pos_copy     = reinterpret_cast<ST*>(multi_pos_and_indices.data());
+  int* walker_indices = reinterpret_cast<int*>(multi_pos_and_indices.data() + nwalkers * 6 * sizeof(ST));
   for (size_t iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
@@ -760,11 +769,12 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
     mw_pos_copy[iw * 6 + 3] = ru[0];
     mw_pos_copy[iw * 6 + 4] = ru[1];
     mw_pos_copy[iw * 6 + 5] = ru[2];
+    walker_indices[iw]      = iw;
   }
 
-  phi_leader.evaluateSplinesVGLMultiPos(nwalkers, mw_pos_copy, mw_offload_scratch);
-  phi_leader.transformSplinesToSPOsMultiPos(nwalkers, mw_pos_copy, mw_offload_scratch, mw_results_scratch, psi_v_list,
-                                            dpsi_v_list, d2psi_v_list);
+  phi_leader.evaluateSplinesVGLMultiPos(nwalkers, multi_pos_and_indices, mw_offload_scratch);
+  phi_leader.transformSplinesToSPOsMultiPos(nwalkers, multi_pos_and_indices, mw_offload_scratch, mw_results_scratch,
+                                            psi_v_list, dpsi_v_list, d2psi_v_list);
 }
 
 template<typename ST>
@@ -1700,7 +1710,7 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
   for (size_t iat = first, i = 0; iat < last; iat += block_size, i += block_size)
   {
     const size_t actual_block_size = std::min(last - iat, block_size);
-    multi_pos_copy.resize(actual_block_size * 6);
+    multi_pos_copy_and_walker_indices.resize(actual_block_size * (6 * sizeof(ST) + sizeof(int)));
     multi_psi_v.clear();
     multi_dpsi_v.clear();
     multi_d2psi_v.clear();
@@ -1708,6 +1718,9 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
     dpsi_v_list.clear();
     d2psi_v_list.clear();
 
+    ST* multi_pos_copy = reinterpret_cast<ST*>(multi_pos_copy_and_walker_indices.data());
+    int* walker_indices =
+        reinterpret_cast<int*>(multi_pos_copy_and_walker_indices.data() + actual_block_size * 6 * sizeof(ST));
     for (int ipos = 0; ipos < actual_block_size; ++ipos)
     {
       // pack particle positions
@@ -1719,6 +1732,7 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
       multi_pos_copy[ipos * 6 + 3] = ru[0];
       multi_pos_copy[ipos * 6 + 4] = ru[1];
       multi_pos_copy[ipos * 6 + 5] = ru[2];
+      walker_indices[ipos]         = ipos;
 
       multi_psi_v.emplace_back(logdet[i + ipos], OrbitalSetSize);
       multi_dpsi_v.emplace_back(dlogdet[i + ipos], OrbitalSetSize);
@@ -1729,9 +1743,9 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
       d2psi_v_list.push_back(multi_d2psi_v[ipos]);
     }
 
-    evaluateSplinesVGLMultiPos(actual_block_size, multi_pos_copy, offload_scratch);
-    transformSplinesToSPOsMultiPos(actual_block_size, multi_pos_copy, offload_scratch, results_scratch, psi_v_list,
-                                   dpsi_v_list, d2psi_v_list);
+    evaluateSplinesVGLMultiPos(actual_block_size, multi_pos_copy_and_walker_indices, offload_scratch);
+    transformSplinesToSPOsMultiPos(actual_block_size, multi_pos_copy_and_walker_indices, offload_scratch,
+                                   results_scratch, psi_v_list, dpsi_v_list, d2psi_v_list);
   }
 }
 

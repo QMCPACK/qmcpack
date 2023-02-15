@@ -93,14 +93,10 @@ private:
   ///psiinv and position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<TT, OffloadPinnedAllocator<TT>> psiinv_pos_copy;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
-  Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
-
-  void evaluateSplinesVGLMultiPos(const size_t num_pos,
-                                  const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
-                                  Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const;
+  Vector<char, OffloadPinnedAllocator<char>> multi_pos_copy_and_walker_indices;
 
   void transformSplinesToSPOsMultiPos(const size_t num_pos,
-                                      const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                                      const Vector<char, OffloadPinnedAllocator<char>>& multi_pos_and_indices,
                                       const Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
                                       Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
                                       const RefVector<ValueVector>& psi_v_list,
@@ -114,6 +110,10 @@ protected:
   gContainer_type myG;
   hContainer_type myH;
   ghContainer_type mygH;
+
+  void evaluateSplinesVGLMultiPos(const size_t num_pos,
+                                  const Vector<char, OffloadPinnedAllocator<char>>& multi_pos_and_indices,
+                                  Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const;
 
 public:
   SplineC2ROMPTarget(const std::string& my_name)

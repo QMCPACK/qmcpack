@@ -32,6 +32,7 @@ struct SplineOMPTargetMultiWalkerMem : public Resource
   Vector<TT, OffloadPinnedAllocator<TT>> mw_results_scratch;
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> mw_pos_copy;
+  Vector<char, OffloadPinnedAllocator<char>> multi_pos_copy_and_walker_indices;
   ///multi purpose H2D buffer for mw_evaluateVGLandDetRatioGrads
   Matrix<char, OffloadPinnedAllocator<char>> buffer_H2D;
   ///multi purpose H2D buffer for mw_evaluateDetRatios
