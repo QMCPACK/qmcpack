@@ -288,47 +288,7 @@ void VMC::resetRun()
     qmc_common.memory_allocated += W.getActiveWalkers() * W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMC::resetRun", before);
   }
-  //     //JNKIM: THIS IS BAD AND WRONG
-  //     if (UseDrift == "rn")
-  //     {
-  //       RealType avg_w(0);
-  //       RealType n_w(0);
-  // #pragma omp parallel
-  //       {
-  //         int ip=omp_get_thread_num();
-  //         for (int step=0; step<nWarmupSteps; ++step)
-  //         {
-  //           avg_w=0;
-  //           n_w=0;
-  //           for (int prestep=0; prestep<myRNWarmupSteps; ++prestep)
-  //           {
-  //             Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-  //             #pragma omp single
-  //             {
-  //               MCWalkerConfiguration::iterator wit(W.begin()), wit_end(W.end());
-  //               while (wit!=wit_end)
-  //               {
-  //                 avg_w += (*wit)->Weight;
-  //                 n_w +=1;
-  //                 wit++;
-  //               }
-  //             }
-  //             #pragma omp barrier
-  //            }
-  //            #pragma omp single
-  //            {
-  //              avg_w *= 1.0/n_w;
-  //              RealType w_m = avg_w/(1.0-avg_w);
-  //              w_m = std::log(0.5+0.5*w_m);
-  //              if (std::abs(w_m)>0.01)
-  //                logepsilon += w_m;
-  //            }
-  //           }
-  //
-  //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-  //           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-  //       }
-  //     }
+  
   for (int ip = 0; ip < NumThreads; ++ip)
     wClones[ip]->clearEnsemble();
   if (nSamplesPerThread)
