@@ -66,7 +66,9 @@ void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indice
                                                ValueMatrix& rot_mat)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size
+
+  rot_mat = 0.0;
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
