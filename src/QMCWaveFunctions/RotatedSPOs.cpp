@@ -40,12 +40,35 @@ void RotatedSPOs::createRotationIndices(int nel, int nmo, RotationIndices& rot_i
       rot_indices.emplace_back(i, j);
 }
 
+void RotatedSPOs::createRotationIndicesFull(int nel, int nmo, RotationIndices& rot_indices)
+{
+  rot_indices.reserve(nmo * (nmo - 1) / 2);
+
+  // start with core-active rotations - put them at the beginning of the list
+  // so it matches the other list of rotation indices
+  for (int i = 0; i < nel; i++)
+    for (int j = nel; j < nmo; j++)
+      rot_indices.emplace_back(i, j);
+
+  // Add core-core rotations - put them at the end of the list
+  for (int i = 0; i < nel; i++)
+    for (int j = i + 1; j < nel; j++)
+      rot_indices.emplace_back(i, j);
+
+  // Add active-active rotations - put them at the end of the list
+  for (int i = nel; i < nmo; i++)
+    for (int j = i + 1; j < nmo; j++)
+      rot_indices.emplace_back(i, j);
+}
+
 void RotatedSPOs::constructAntiSymmetricMatrix(const RotationIndices& rot_indices,
                                                const std::vector<ValueType>& param,
                                                ValueMatrix& rot_mat)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size
+
+  rot_mat = 0.0;
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
@@ -159,7 +182,6 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
 
   const size_t nmo = Phi->getOrbitalSetSize();
   ValueMatrix rot_mat(nmo, nmo);
-  rot_mat = ValueType(0);
 
   constructAntiSymmetricMatrix(m_act_rot_inds, param, rot_mat);
 
@@ -172,6 +194,38 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   Phi->applyRotation(rot_mat, use_stored_copy);
 }
 
+void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_param,
+                                         const std::vector<RealType>& old_param,
+                                         const RotationIndices& act_rot_inds,
+                                         const RotationIndices& full_rot_inds,
+                                         std::vector<RealType>& new_param,
+                                         ValueMatrix& new_rot_mat)
+{
+  assert(delta_param.size() == act_rot_inds.size());
+  assert(old_param.size() == full_rot_inds.size());
+  assert(new_param.size() == full_rot_inds.size());
+
+  const size_t nmo = new_rot_mat.rows();
+  assert(new_rot_mat.rows() == new_rot_mat.cols());
+
+  ValueMatrix old_rot_mat(nmo, nmo);
+
+  constructAntiSymmetricMatrix(full_rot_inds, old_param, old_rot_mat);
+  exponentiate_antisym_matrix(old_rot_mat);
+
+  ValueMatrix delta_rot_mat(nmo, nmo);
+
+  constructAntiSymmetricMatrix(act_rot_inds, delta_param, delta_rot_mat);
+  exponentiate_antisym_matrix(delta_rot_mat);
+
+  // Apply delta rotation to old rotation.
+  BLAS::gemm('N', 'N', nmo, nmo, nmo, 1.0, delta_rot_mat.data(), nmo, old_rot_mat.data(), nmo, 0.0, new_rot_mat.data(),
+             nmo);
+
+  ValueMatrix log_rot_mat(nmo, nmo);
+  log_antisym_matrix(new_rot_mat, log_rot_mat);
+  extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
+}
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
 void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
@@ -235,7 +289,7 @@ void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)
     }
 }
 
-void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
+void RotatedSPOs::log_antisym_matrix(const ValueMatrix& mat, ValueMatrix& output)
 {
   const int n = mat.rows();
   std::vector<RealType> mat_h(n * n, 0);
@@ -302,7 +356,7 @@ void RotatedSPOs::log_antisym_matrix(ValueMatrix& mat)
         app_log() << "warning: large imaginary value in antisymmetric matrix: (i,j) = (" << i << "," << j
                   << "), im = " << mat_cd[i + n * j].imag() << std::endl;
       }
-      mat[i][j] = mat_cd[i + n * j].real();
+      output[i][j] = mat_cd[i + n * j].real();
     }
 }
 
