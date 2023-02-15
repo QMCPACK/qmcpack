@@ -601,20 +601,76 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
 }
 
 template<typename ST>
-void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
-                                                 Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
-                                                 Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
-                                                 const RefVector<ValueVector>& psi_v_list,
-                                                 const RefVector<GradVector>& dpsi_v_list,
-                                                 const RefVector<ValueVector>& d2psi_v_list) const
+void SplineC2ROMPTarget<ST>::evaluateSplinesVGLMultiPos(const size_t num_pos,
+                                                        const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
+                                                        Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const
 {
-  const size_t num_pos          = psi_v_list.size();
   const size_t ChunkSizePerTeam = 512;
   const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
   const auto spline_padded_size = myV.size();
   const auto sposet_padded_size = getAlignedSize<TT>(OrbitalSetSize);
   // for V(1)G(3)H(6) intermediate result
   offload_scratch.resize(spline_padded_size * num_pos * SoAFields3D::NUM_FIELDS);
+
+  // Ye: need to extract sizes and pointers before entering target region
+  const auto* spline_ptr    = SplineInst->getSplinePtr();
+  auto* pos_copy_ptr        = multi_pos.data();
+  auto* offload_scratch_ptr = offload_scratch.data();
+  auto* GGt_ptr             = GGt_offload->data();
+
+  {
+    ScopedTimer offload(offload_timer_);
+    PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
+                    map(always, to: pos_copy_ptr[0:num_pos*6])")
+    for (int iw = 0; iw < num_pos; iw++)
+      for (int team_id = 0; team_id < NumTeams; team_id++)
+      {
+        const size_t first = ChunkSizePerTeam * team_id;
+        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
+
+        auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
+
+        int ix, iy, iz;
+        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
+        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
+                                              pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+
+        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
+                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
+
+        PRAGMA_OFFLOAD("omp parallel for")
+        for (int index = 0; index < last - first; index++)
+        {
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
+                                               d2c, offload_scratch_iw_ptr + first + index, spline_padded_size);
+          const int output_index = first + index;
+          offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
+              SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
+                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
+        }
+      }
+  }
+}
+
+template<typename ST>
+void SplineC2ROMPTarget<ST>::transformSplinesToSPOsMultiPos(
+    const size_t num_pos,
+    const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos,
+    const Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
+    Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
+    const RefVector<ValueVector>& psi_v_list,
+    const RefVector<GradVector>& dpsi_v_list,
+    const RefVector<ValueVector>& d2psi_v_list) const
+{
+  assert(num_pos == psi_v_list.size());
+  const size_t ChunkSizePerTeam = 512;
+  const int NumTeams            = (myV.size() + ChunkSizePerTeam - 1) / ChunkSizePerTeam;
+  const auto spline_padded_size = myV.size();
+  const auto sposet_padded_size = getAlignedSize<TT>(OrbitalSetSize);
   // for V(1)G(3)L(1) final result
   results_scratch.resize(sposet_padded_size * num_pos * 5);
 
@@ -625,7 +681,6 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   auto* results_scratch_ptr        = results_scratch.data();
   const auto myKcart_padded_size   = myKcart->capacity();
   auto* mKK_ptr                    = mKK->data();
-  auto* GGt_ptr                    = GGt_offload->data();
   auto* PrimLattice_G_ptr          = PrimLattice_G_offload->data();
   auto* myKcart_ptr                = myKcart->data();
   const size_t first_spo_local     = first_spo;
@@ -635,44 +690,22 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
   {
     ScopedTimer offload(offload_timer_);
     PRAGMA_OFFLOAD("omp target teams distribute collapse(2) num_teams(NumTeams*num_pos) \
-                    map(always, to: pos_copy_ptr[0:num_pos*6]) \
                     map(always, from: results_scratch_ptr[0:sposet_padded_size*num_pos*5])")
     for (int iw = 0; iw < num_pos; iw++)
       for (int team_id = 0; team_id < NumTeams; team_id++)
       {
-        const size_t first = ChunkSizePerTeam * team_id;
-        const size_t last  = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
-
         auto* restrict offload_scratch_iw_ptr = offload_scratch_ptr + spline_padded_size * iw * SoAFields3D::NUM_FIELDS;
         auto* restrict psi_iw_ptr             = results_scratch_ptr + sposet_padded_size * iw * 5;
 
-        int ix, iy, iz;
-        ST a[4], b[4], c[4], da[4], db[4], dc[4], d2a[4], d2b[4], d2c[4];
-        spline2::computeLocationAndFractional(spline_ptr, pos_copy_ptr[iw * 6 + 3], pos_copy_ptr[iw * 6 + 4],
-                                              pos_copy_ptr[iw * 6 + 5], ix, iy, iz, a, b, c, da, db, dc, d2a, d2b, d2c);
+        const ST G[9] = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
+                         PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
+                         PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
 
-        const ST G[9]      = {PrimLattice_G_ptr[0], PrimLattice_G_ptr[1], PrimLattice_G_ptr[2],
-                              PrimLattice_G_ptr[3], PrimLattice_G_ptr[4], PrimLattice_G_ptr[5],
-                              PrimLattice_G_ptr[6], PrimLattice_G_ptr[7], PrimLattice_G_ptr[8]};
-        const ST symGGt[6] = {GGt_ptr[0], GGt_ptr[1] + GGt_ptr[3], GGt_ptr[2] + GGt_ptr[6],
-                              GGt_ptr[4], GGt_ptr[5] + GGt_ptr[7], GGt_ptr[8]};
-
-        PRAGMA_OFFLOAD("omp parallel for")
-        for (int index = 0; index < last - first; index++)
-        {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first + index, spline_padded_size);
-          const int output_index = first + index;
-          offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
-              SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS01 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS02 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS11 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS12 + output_index],
-                       offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS22 + output_index], symGGt);
-        }
+        const size_t first      = ChunkSizePerTeam * team_id;
+        const size_t last       = omptarget::min(first + ChunkSizePerTeam, spline_padded_size);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
+
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = first_cplx; index < last_cplx; index++)
           C2R::assign_vgl(pos_copy_ptr[iw * 6], pos_copy_ptr[iw * 6 + 1], pos_copy_ptr[iw * 6 + 2], psi_iw_ptr,
@@ -713,11 +746,11 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
   auto& mw_results_scratch = mw_mem.mw_results_scratch;
-  const int nwalkers       = sa_list.size();
+  const size_t nwalkers    = sa_list.size();
   mw_pos_copy.resize(nwalkers * 6);
 
   // pack particle positions
-  for (int iw = 0; iw < nwalkers; ++iw)
+  for (size_t iw = 0; iw < nwalkers; ++iw)
   {
     const PointType& r = P_list[iw].activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
@@ -729,8 +762,9 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
     mw_pos_copy[iw * 6 + 5] = ru[2];
   }
 
-  phi_leader.evaluateVGLMultiPos(mw_pos_copy, mw_offload_scratch, mw_results_scratch, psi_v_list, dpsi_v_list,
-                                 d2psi_v_list);
+  phi_leader.evaluateSplinesVGLMultiPos(nwalkers, mw_pos_copy, mw_offload_scratch);
+  phi_leader.transformSplinesToSPOsMultiPos(nwalkers, mw_pos_copy, mw_offload_scratch, mw_results_scratch, psi_v_list,
+                                            dpsi_v_list, d2psi_v_list);
 }
 
 template<typename ST>
@@ -831,8 +865,8 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
-                                               offload_scratch_iw_ptr + first + index, spline_padded_size);
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b,
+                                               d2c, offload_scratch_iw_ptr + first + index, spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
               SymTrace(offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::HESS00 + output_index],
@@ -1646,7 +1680,7 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
                                                   ValueMatrix& d2logdet)
 {
   // chunk the [first, last) loop into blocks to save temporary memory usage
-  const int block_size = 16;
+  const size_t block_size = 16;
 
   // reference vectors refer to the rows of matrices
   std::vector<ValueVector> multi_psi_v;
@@ -1663,9 +1697,9 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
   dpsi_v_list.reserve(block_size);
   d2psi_v_list.reserve(block_size);
 
-  for (int iat = first, i = 0; iat < last; iat += block_size, i += block_size)
+  for (size_t iat = first, i = 0; iat < last; iat += block_size, i += block_size)
   {
-    const int actual_block_size = std::min(last - iat, block_size);
+    const size_t actual_block_size = std::min(last - iat, block_size);
     multi_pos_copy.resize(actual_block_size * 6);
     multi_psi_v.clear();
     multi_dpsi_v.clear();
@@ -1695,7 +1729,9 @@ void SplineC2ROMPTarget<ST>::evaluate_notranspose(const ParticleSet& P,
       d2psi_v_list.push_back(multi_d2psi_v[ipos]);
     }
 
-    evaluateVGLMultiPos(multi_pos_copy, offload_scratch, results_scratch, psi_v_list, dpsi_v_list, d2psi_v_list);
+    evaluateSplinesVGLMultiPos(actual_block_size, multi_pos_copy, offload_scratch);
+    transformSplinesToSPOsMultiPos(actual_block_size, multi_pos_copy, offload_scratch, results_scratch, psi_v_list,
+                                   dpsi_v_list, d2psi_v_list);
   }
 }
 

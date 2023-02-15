@@ -95,12 +95,17 @@ private:
   ///position scratch space, used to avoid allocation on the fly and faster transfer
   Vector<ST, OffloadPinnedAllocator<ST>> multi_pos_copy;
 
-  void evaluateVGLMultiPos(const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
-                           Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
-                           Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
-                           const RefVector<ValueVector>& psi_v_list,
-                           const RefVector<GradVector>& dpsi_v_list,
-                           const RefVector<ValueVector>& d2psi_v_list) const;
+  void evaluateSplinesVGLMultiPos(const size_t num_pos,
+                                  const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                                  Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch) const;
+
+  void transformSplinesToSPOsMultiPos(const size_t num_pos,
+                                      const Vector<ST, OffloadPinnedAllocator<ST>>& multi_pos_copy,
+                                      const Vector<ST, OffloadPinnedAllocator<ST>>& offload_scratch,
+                                      Vector<TT, OffloadPinnedAllocator<TT>>& results_scratch,
+                                      const RefVector<ValueVector>& psi_v_list,
+                                      const RefVector<GradVector>& dpsi_v_list,
+                                      const RefVector<ValueVector>& d2psi_v_list) const;
 
 protected:
   /// intermediate result vectors
