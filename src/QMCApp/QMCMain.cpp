@@ -33,6 +33,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "Particle/HDFWalkerIO.h"
 #include "Particle/InitMolecularSystem.h"
+#include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/Communicate.h"
@@ -58,12 +59,16 @@
 namespace qmcplusplus
 {
 QMCMain::QMCMain(Communicate* c)
-    : QMCMainState(c),
+    : MPIObjectBase(c),
       QMCAppBase(),
+      particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
+      psi_pool_(std::make_unique<WaveFunctionPool>(*particle_set_pool_, myComm)),
+      ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
+      qmc_system_(nullptr),
       first_qmc_(true)
 #if !defined(REMOVE_TRACEMANAGER)
       ,
-      traces_xml(NULL)
+      traces_xml_(NULL)
 #endif
 {
   Communicate node_comm{OHMMS::Controller->NodeComm()};
@@ -154,14 +159,12 @@ QMCMain::QMCMain(Communicate* c)
   app_summary() << std::endl;
 }
 
-///destructor
 QMCMain::~QMCMain()
 {
   // free last_driver before clearing P,Psi,H clones
   last_driver_.reset();
   CloneManager::clearClones();
 }
-
 
 bool QMCMain::execute()
 {
@@ -227,7 +230,7 @@ bool QMCMain::execute()
     myComm->barrier_and_abort("QMCMain::execute. Input document does not contain valid objects");
 
   //initialize all the instances of distance tables and evaluate them
-  ptclPool->reset();
+  particle_set_pool_->reset();
   infoSummary.flush();
   infoLog.flush();
   app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
@@ -235,8 +238,8 @@ bool QMCMain::execute()
   app_log() << "=========================================================\n";
   app_log() << " Summary of QMC systems \n";
   app_log() << "=========================================================\n";
-  ptclPool->get(app_log());
-  hamPool->get(app_log());
+  particle_set_pool_->get(app_log());
+  ham_pool_->get(app_log());
   OHMMS::Controller->barrier();
   if (qmc_common.dryrun)
   {
@@ -245,7 +248,6 @@ bool QMCMain::execute()
   }
   t3->stop();
   Timer t1;
-  curMethod              = std::string("invalid");
   qmc_common.qmc_counter = 0;
   for (int qa = 0; qa < qmc_action_.size(); qa++)
   {
@@ -359,23 +361,6 @@ void QMCMain::executeLoop(xmlNodePtr cur)
   last_driver_.reset(nullptr);
 }
 
-bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
-{
-  std::string target("e");
-  std::string random_test("no");
-  OhmmsAttributeSet a;
-  a.add(target, "target");
-  a.add(random_test, "testrng");
-  a.put(cur);
-  if (random_test == "yes")
-    RandomNumberControl::test();
-  if (qmcSystem == 0)
-    qmcSystem = ptclPool->getWalkerSet(target);
-  bool success = runQMC(cur, reuse);
-  first_qmc_   = false;
-  return success;
-}
-
 /** validate the main document and (read the walker sets !)
  * @return false, if any of the basic objects is not properly created.
  *
@@ -454,15 +439,15 @@ bool QMCMain::validateXML()
     bool inputnode = true;
     if (cname == "particleset")
     {
-      ptclPool->put(cur);
+      particle_set_pool_->put(cur);
     }
     else if (cname == "wavefunction")
     {
-      psiPool->put(cur);
+      psi_pool_->put(cur);
     }
     else if (cname == "hamiltonian")
     {
-      hamPool->put(cur);
+      ham_pool_->put(cur);
     }
     else if (cname == "include")
     {
@@ -488,13 +473,13 @@ bool QMCMain::validateXML()
     }
     else if (cname == "init")
     {
-      InitMolecularSystem moinit(*ptclPool);
+      InitMolecularSystem moinit(*particle_set_pool_);
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
     else if (cname == "traces")
     {
-      traces_xml = cur;
+      traces_xml_ = cur;
     }
 #endif
     else
@@ -508,17 +493,17 @@ bool QMCMain::validateXML()
     cur = cur->next;
   }
 
-  if (ptclPool->empty())
+  if (particle_set_pool_->empty())
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing particleset.");
 
-  if (psiPool->empty())
+  if (psi_pool_->empty())
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing wavefunction.");
 
-  if (hamPool->empty())
+  if (ham_pool_->empty())
     myComm->barrier_and_abort("QMCMain::validateXML. Illegal input. Missing Hamiltonian.");
 
   //randomize any particleset with random="yes" && random_source="ion0"
-  ptclPool->randomize();
+  particle_set_pool_->randomize();
 
   setMCWalkers(m_context);
 
@@ -547,22 +532,22 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if (cname == "simulationcell")
     {
       inputnode = true;
-      ptclPool->readSimulationCellXML(cur);
+      particle_set_pool_->readSimulationCellXML(cur);
     }
     else if (cname == "particleset")
     {
       inputnode = true;
-      ptclPool->put(cur);
+      particle_set_pool_->put(cur);
     }
     else if (cname == "wavefunction")
     {
       inputnode = true;
-      psiPool->put(cur);
+      psi_pool_->put(cur);
     }
     else if (cname == "hamiltonian")
     {
       inputnode = true;
-      hamPool->put(cur);
+      ham_pool_->put(cur);
     }
     else if (cname == "estimators")
     {
@@ -609,8 +594,8 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     try
     {
       QMCDriverFactory::DriverAssemblyState das = driver_factory.readSection(cur);
-      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmcSystem, *ptclPool, *psiPool,
-                                                  *hamPool, myComm);
+      qmc_driver = driver_factory.createQMCDriver(cur, das, estimator_manager_input_, *qmc_system_, *particle_set_pool_,
+                                                  *psi_pool_, *ham_pool_, myComm);
       append_run = das.append_run;
     }
     catch (const UniformCommunicateError& ue)
@@ -640,7 +625,7 @@ bool QMCMain::runQMC(xmlNodePtr cur, bool reuse)
     // story of a QMCDriver's life.
     qmc_driver->putWalkers(walker_set_in_);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmc_driver->putTraces(traces_xml);
+    qmc_driver->putTraces(traces_xml_);
 #endif
     qmc_driver->process(cur);
     infoSummary.flush();
@@ -689,6 +674,93 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
       RandomNumberControl::read(fname, myComm);
   }
   return true;
+}
+
+bool QMCMain::executeDebugSection(xmlNodePtr cur)
+{
+  app_log() << "QMCMain::executeDebugSection " << std::endl;
+  app_log() << "  Use this to debug new features with <debug/> in the input file " << std::endl;
+
+  return true;
+}
+
+bool QMCMain::executeQMCSection(xmlNodePtr cur, bool reuse)
+{
+  std::string target("e");
+  std::string random_test("no");
+  OhmmsAttributeSet a;
+  a.add(target, "target");
+  a.add(random_test, "testrng");
+  a.put(cur);
+  if (random_test == "yes")
+    RandomNumberControl::test();
+  if (qmc_system_ == nullptr)
+    qmc_system_ = particle_set_pool_->getWalkerSet(target);
+  bool success = runQMC(cur, reuse);
+  first_qmc_   = false;
+  return success;
+}
+
+bool QMCMain::executeCMCSection(xmlNodePtr cur)
+{
+  bool success = true;
+  std::string target("ion0");
+  OhmmsAttributeSet a;
+  a.add(target, "target");
+  a.put(cur);
+
+  MCWalkerConfiguration* ions   = particle_set_pool_->getWalkerSet(target);
+  TrialWaveFunction* primaryPsi = psi_pool_->getPrimary();
+  QMCHamiltonian* primaryH      = ham_pool_->getPrimary();
+
+  app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
+
+  int nat = ions->getTotalNum();
+  ParticleSet::ParticlePos deltaR(nat);
+
+  makeGaussRandomWithEngine(deltaR, Random); //generate random displacement
+  qmc_system_->update();
+
+  double logpsi1 = primaryPsi->evaluateLog(*qmc_system_);
+  std::cout << "logpsi1 " << logpsi1 << std::endl;
+
+  double eloc1 = primaryH->evaluate(*qmc_system_);
+  std::cout << "Local Energy " << eloc1 << std::endl;
+
+  for (int i = 0; i < primaryH->sizeOfObservables(); i++)
+    app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
+
+  for (int iat = 0; iat < nat; ++iat)
+  {
+    ions->R[iat] += deltaR[iat];
+
+    ions->update(); //update position and distance table of itself
+    primaryH->updateSource(*ions);
+
+    qmc_system_->update();
+    double logpsi2 = primaryPsi->evaluateLog(*qmc_system_);
+    double eloc2   = primaryH->evaluate(*qmc_system_);
+
+    std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
+    std::cout << "logpsi " << logpsi2 << std::endl;
+    std::cout << "Local Energy " << eloc2 << std::endl;
+    for (int i = 0; i < primaryH->sizeOfObservables(); i++)
+      app_log() << "  HamTest " << primaryH->getObservableName(i) << " " << primaryH->getObservable(i) << std::endl;
+
+    ions->R[iat] -= deltaR[iat];
+    ions->update(); //update position and distance table of itself
+    primaryH->updateSource(*ions);
+
+    qmc_system_->update();
+    double logpsi3 = primaryPsi->evaluateLog(*qmc_system_);
+    double eloc3   = primaryH->evaluate(*qmc_system_);
+
+    if (std::abs(eloc1 - eloc3) > 1e-12)
+    {
+      std::cout << "ERROR Energies are different " << std::endl;
+    }
+  }
+  return success;
 }
 
 

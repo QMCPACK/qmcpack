@@ -19,9 +19,9 @@
 #ifndef QMCPLUSPLUS_MAINAPPLICATIONS_H
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
-#include "QMCDrivers/QMCDriverFactory.h"
-#include "QMCApp/QMCMainState.h"
+#include "Message/MPIObjectBase.h"
 #include "QMCApp/QMCAppBase.h"
+#include "QMCDrivers/QMCDriverFactory.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "hdf/hdf_error_suppression.h"
 
@@ -33,19 +33,34 @@ namespace qmcplusplus
  * This is a generalized QMC application which can handle multiple ParticleSet,
  * TrialWaveFunction and QMCHamiltonian objects.
  */
-class QMCMain : public QMCMainState, public QMCAppBase
+class QMCMain : public MPIObjectBase, public QMCAppBase
 {
 public:
-  ///constructor
   QMCMain(Communicate* c);
 
-  ///destructor
   ~QMCMain() override;
 
   bool validateXML() override;
   bool execute() override;
 
+  ParticleSetPool& getParticlePool() { return *particle_set_pool_; }
+
 private:
+  /// ParticleSet Pool
+  std::unique_ptr<ParticleSetPool> particle_set_pool_;
+
+  /// TrialWaveFunction Pool
+  std::unique_ptr<WaveFunctionPool> psi_pool_;
+
+  /// QMCHamiltonian Pool
+  std::unique_ptr<HamiltonianPool> ham_pool_;
+
+  /// current MCWalkerConfiguration
+  MCWalkerConfiguration* qmc_system_;
+
+  ///Global estimators defined outside of <qmc> nodes
+  std::optional<EstimatorManagerInput> estimator_manager_input_;
+
   ///flag to indicate that a qmc is the first QMC
   bool first_qmc_;
 
@@ -65,7 +80,7 @@ private:
   std::vector<xmlNodePtr> walker_set_in_;
 
   ///traces xml
-  xmlNodePtr traces_xml;
+  xmlNodePtr traces_xml_;
 
   ///qmc sections
   std::vector<std::pair<xmlNodePtr, bool>> qmc_action_;
@@ -93,6 +108,9 @@ private:
   /** execute loop **/
   void executeLoop(xmlNodePtr cur);
 
+  ///execute <debug/> element
+  bool executeDebugSection(xmlNodePtr cur);
+
   /** execute qmc
    * @param cur qmc xml node
    * @param reuse if true, reuse the driver built from the last QMC section. This should be used by loop only.
@@ -102,9 +120,6 @@ private:
 
   ///execute <cmc/> element
   bool executeCMCSection(xmlNodePtr cur);
-
-  ///execute <debug/> element
-  bool executeDebugSection(xmlNodePtr cur);
 };
 } // namespace qmcplusplus
 #endif
