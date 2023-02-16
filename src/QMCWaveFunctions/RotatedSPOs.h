@@ -352,11 +352,17 @@ public:
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
 
+  /// Use history list (false) or global rotation (true)
+  void set_use_global_rotation(bool use_global_rotation) { use_global_rot_ = use_global_rotation; }
+
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  /// Use global rotation or history list
+  bool use_global_rot_ = true;
 };
 
 } //namespace qmcplusplus

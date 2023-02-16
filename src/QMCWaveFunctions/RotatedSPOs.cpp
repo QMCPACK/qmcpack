@@ -1319,6 +1319,7 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
+  myclone->use_global_rot_ = this->use_global_rot_;
   return myclone;
 }
 
