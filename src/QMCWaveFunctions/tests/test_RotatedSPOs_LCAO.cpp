@@ -242,7 +242,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(dhpsi_over_psi_list[0][1] == ValueApprox(7.84119772047731));
 }
 
-// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
+// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from identity coefficients
 TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 {
   Communicate* c;
@@ -327,7 +327,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </atomicBasisSet>
       </basisset>
       <rotated_sposet name="rot-spo-up">
-        <sposet basisset="LCAOBSet" name="spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -335,7 +335,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </sposet>
       </rotated_sposet>
       <rotated_sposet name="rot-spo-down">
-        <sposet basisset="LCAOBSet" name="spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
