@@ -96,6 +96,48 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
   }
 }
 
+void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
+{
+  std::vector<RealType> delta_param(m_act_rot_inds.size());
+
+  size_t psize = m_act_rot_inds.size();
+
+  if (use_global_rot_)
+  {
+    psize = m_full_rot_inds.size();
+    assert(psize >= m_act_rot_inds.size());
+  }
+
+  std::vector<RealType> old_param(psize);
+  std::vector<RealType> new_param(psize);
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int loc        = myVars.where(i);
+    delta_param[i] = active[loc] - myVars[i];
+    myVars[i]      = active[loc];
+  }
+
+  if (use_global_rot_)
+  {
+    for (int i = 0; i < m_full_rot_inds.size(); i++)
+      old_param[i] = myVarsFull[i];
+
+    applyDeltaRotation(delta_param, old_param, new_param);
+
+    // Save the the params
+    for (int i = 0; i < m_full_rot_inds.size(); i++)
+      myVarsFull[i] = new_param[i];
+  }
+  else
+  {
+    apply_rotation(delta_param, false);
+
+    // Save the parameters in the history list
+    history_params_.push_back(delta_param);
+  }
+}
+
 void RotatedSPOs::buildOptVariables(const size_t nel)
 {
 #if !defined(QMC_COMPLEX)
@@ -226,6 +268,17 @@ void RotatedSPOs::apply_rotation(const std::vector<RealType>& param, bool use_st
   */
   exponentiate_antisym_matrix(rot_mat);
   Phi->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::applyDeltaRotation(const std::vector<RealType>& delta_param,
+                                     const std::vector<RealType>& old_param,
+                                     std::vector<RealType>& new_param)
+{
+  const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix new_rot_mat(nmo, nmo);
+  constructDeltaRotation(delta_param, old_param, m_act_rot_inds, m_full_rot_inds, new_param, new_rot_mat);
+
+  Phi->applyRotation(new_rot_mat, true);
 }
 
 void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_param,

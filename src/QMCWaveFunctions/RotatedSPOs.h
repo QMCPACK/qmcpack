@@ -64,6 +64,14 @@ public:
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
 
+  // For global rotation, inputs are the old parameters and the delta parameters.
+  // The corresponding rotation matrices are constructed, multiplied together,
+  // and the new parameters extracted.
+  // The new rotation is applied to the underlying SPO coefficients
+  void applyDeltaRotation(const std::vector<RealType>& delta_param,
+                          const std::vector<RealType>& old_param,
+                          std::vector<RealType>& new_param);
+
   // Perform the construction of matrices and extraction of parameters for a delta rotation.
   // Split out and made static for testing.
   static void constructDeltaRotation(const std::vector<RealType>& delta_param,
@@ -218,28 +226,14 @@ public:
 
   void checkInVariablesExclusive(opt_variables_type& active) override
   {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
-
     if (myVars.size())
       active.insertFrom(myVars);
-    Phi->storeParamsBeforeRotation();
   }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override
-  {
-    std::vector<RealType> param(m_act_rot_inds.size());
-    for (int i = 0; i < m_act_rot_inds.size(); i++)
-    {
-      int loc  = myVars.where(i);
-      param[i] = myVars[i] = active[loc];
-    }
-    apply_rotation(param, true);
-  }
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -366,6 +360,9 @@ private:
 
   /// Full set of rotation matrix parameters for use in global rotation method
   opt_variables_type myVarsFull;
+
+  /// List of previously applied parameters
+  std::vector<std::vector<RealType>> history_params_;
 
   /// Use global rotation or history list
   bool use_global_rot_ = true;
