@@ -37,6 +37,9 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
+  // Full set of rotation values for global rotation
+  RotationIndices m_full_rot_inds;
+
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
   // Only core->active rotations are created.
@@ -106,7 +109,7 @@ public:
   void buildOptVariables(size_t nel);
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations);
+  void buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
@@ -360,6 +363,9 @@ private:
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  /// Full set of rotation matrix parameters for use in global rotation method
+  opt_variables_type myVarsFull;
 
   /// Use global rotation or history list
   bool use_global_rot_ = true;

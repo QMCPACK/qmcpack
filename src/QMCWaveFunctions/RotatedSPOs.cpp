@@ -86,7 +86,7 @@ void RotatedSPOs::extractParamsFromAntiSymmetricMatrix(const RotationIndices& ro
                                                        std::vector<ValueType>& param)
 {
   assert(rot_indices.size() == param.size());
-  // Assumes rot_mat is of the correct size and initialized to zero upon entry
+  // Assumes rot_mat is of the correct size
 
   for (int i = 0; i < rot_indices.size(); i++)
   {
@@ -115,20 +115,32 @@ void RotatedSPOs::buildOptVariables(const size_t nel)
     // create active rotation parameter indices
     RotationIndices created_m_act_rot_inds;
 
+    RotationIndices created_full_rot_inds;
+    if (use_global_rot_)
+      createRotationIndicesFull(nel, nmo, created_full_rot_inds);
+
     createRotationIndices(nel, nmo, created_m_act_rot_inds);
 
-    buildOptVariables(created_m_act_rot_inds);
+    buildOptVariables(created_m_act_rot_inds, created_full_rot_inds);
   }
 #endif
 }
 
-void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
+void RotatedSPOs::buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations)
 {
 #if !defined(QMC_COMPLEX)
   const size_t nmo = Phi->getOrbitalSetSize();
 
   // create active rotations
   m_act_rot_inds = rotations;
+
+  if (use_global_rot_)
+    m_full_rot_inds = full_rotations;
+
+  if (use_global_rot_)
+    app_log() << "Orbital rotation using global rotation" << std::endl;
+  else
+    app_log() << "Orbital rotation using history" << std::endl;
 
   // This will add the orbital rotation parameters to myVars
   // and will also read in initial parameter values supplied in input file
@@ -162,6 +174,25 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
     }
   }
 
+  if (use_global_rot_)
+  {
+    myVarsFull.clear();
+    for (int i = 0; i < m_full_rot_inds.size(); i++)
+    {
+      p = m_full_rot_inds[i].first;
+      q = m_full_rot_inds[i].second;
+      std::stringstream sstr;
+      sstr << my_name_ << "_orb_rot_" << (p < 10 ? "0" : "") << (p < 100 ? "0" : "") << (p < 1000 ? "0" : "") << p
+           << "_" << (q < 10 ? "0" : "") << (q < 100 ? "0" : "") << (q < 1000 ? "0" : "") << q;
+
+      if (params_supplied && i < m_act_rot_inds.size())
+        myVarsFull.insert(sstr.str(), params[i]);
+      else
+        myVarsFull.insert(sstr.str(), 0.0);
+    }
+  }
+
+
   //Printing the parameters
   if (true)
   {
@@ -169,10 +200,13 @@ void RotatedSPOs::buildOptVariables(const RotationIndices& rotations)
     myVars.print(app_log());
   }
 
-  std::vector<RealType> param(m_act_rot_inds.size());
-  for (int i = 0; i < m_act_rot_inds.size(); i++)
-    param[i] = myVars[i];
-  apply_rotation(param, false);
+  if (params_supplied)
+  {
+    std::vector<RealType> param(m_act_rot_inds.size());
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
+      param[i] = myVars[i];
+    apply_rotation(param, false);
+  }
 #endif
 }
 
@@ -1319,6 +1353,7 @@ std::unique_ptr<SPOSet> RotatedSPOs::makeClone() const
   myclone->params_supplied = this->params_supplied;
   myclone->m_act_rot_inds  = this->m_act_rot_inds;
   myclone->myVars          = this->myVars;
+  myclone->myVarsFull      = this->myVarsFull;
   myclone->use_global_rot_ = this->use_global_rot_;
   return myclone;
 }
