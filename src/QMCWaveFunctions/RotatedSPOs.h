@@ -37,6 +37,9 @@ public:
   // Active orbital rotation parameter indices
   RotationIndices m_act_rot_inds;
 
+  // Full set of rotation values for global rotation
+  RotationIndices m_full_rot_inds;
+
   // Construct a list of the matrix indices for non-zero rotation parameters.
   // (The structure for a sparse representation of the matrix)
   // Only core->active rotations are created.
@@ -60,6 +63,14 @@ public:
 
   //function to perform orbital rotations
   void apply_rotation(const std::vector<RealType>& param, bool use_stored_copy);
+
+  // For global rotation, inputs are the old parameters and the delta parameters.
+  // The corresponding rotation matrices are constructed, multiplied together,
+  // and the new parameters extracted.
+  // The new rotation is applied to the underlying SPO coefficients
+  void applyDeltaRotation(const std::vector<RealType>& delta_param,
+                          const std::vector<RealType>& old_param,
+                          std::vector<RealType>& new_param);
 
   // Perform the construction of matrices and extraction of parameters for a delta rotation.
   // Split out and made static for testing.
@@ -106,7 +117,7 @@ public:
   void buildOptVariables(size_t nel);
 
   // For the MSD case rotations must be created in MultiSlaterDetTableMethod class
-  void buildOptVariables(const RotationIndices& rotations);
+  void buildOptVariables(const RotationIndices& rotations, const RotationIndices& full_rotations);
 
 
   void evaluateDerivatives(ParticleSet& P,
@@ -215,28 +226,14 @@ public:
 
   void checkInVariablesExclusive(opt_variables_type& active) override
   {
-    //reset parameters to zero after coefficient matrix has been updated
-    for (int k = 0; k < myVars.size(); ++k)
-      myVars[k] = 0.0;
-
     if (myVars.size())
       active.insertFrom(myVars);
-    Phi->storeParamsBeforeRotation();
   }
 
   void checkOutVariables(const opt_variables_type& active) override { myVars.getIndex(active); }
 
   ///reset
-  void resetParametersExclusive(const opt_variables_type& active) override
-  {
-    std::vector<RealType> param(m_act_rot_inds.size());
-    for (int i = 0; i < m_act_rot_inds.size(); i++)
-    {
-      int loc  = myVars.where(i);
-      param[i] = myVars[i] = active[loc];
-    }
-    apply_rotation(param, true);
-  }
+  void resetParametersExclusive(const opt_variables_type& active) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
@@ -352,11 +349,23 @@ public:
   //  void evaluateThirdDeriv(const ParticleSet& P, int first, int last, GGGMatrix& grad_grad_grad_logdet)
   //  {Phi->evaluateThridDeriv(P, first, last, grad_grad_grad_logdet); }
 
+  /// Use history list (false) or global rotation (true)
+  void set_use_global_rotation(bool use_global_rotation) { use_global_rot_ = use_global_rotation; }
+
 private:
   /// true if SPO parameters (orbital rotation parameters) have been supplied by input
   bool params_supplied;
   /// list of supplied orbital rotation parameters
   std::vector<RealType> params;
+
+  /// Full set of rotation matrix parameters for use in global rotation method
+  opt_variables_type myVarsFull;
+
+  /// List of previously applied parameters
+  std::vector<std::vector<RealType>> history_params_;
+
+  /// Use global rotation or history list
+  bool use_global_rot_ = true;
 };
 
 } //namespace qmcplusplus

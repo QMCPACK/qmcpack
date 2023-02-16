@@ -242,7 +242,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(dhpsi_over_psi_list[0][1] == ValueApprox(7.84119772047731));
 }
 
-// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
+// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from identity coefficients
 TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 {
   Communicate* c;
@@ -327,7 +327,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </atomicBasisSet>
       </basisset>
       <rotated_sposet name="rot-spo-up">
-        <sposet basisset="LCAOBSet" name="spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -335,7 +335,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
         </sposet>
       </rotated_sposet>
       <rotated_sposet name="rot-spo-down">
-        <sposet basisset="LCAOBSet" name="spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
@@ -530,6 +530,7 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
 }
 
 // Test rotation using stored coefficients
+//  and test consistency between history list and global rotation
 TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 {
   using RealType    = QMCTraits::RealType;
@@ -644,6 +645,36 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
 
   CheckMatrixResult check_matrix_result0 = checkMatrix(*lcao_global->C, new_rot_m0, true);
   CHECKED_ELSE(check_matrix_result0.result) { FAIL(check_matrix_result0.result_message); }
+
+  std::vector<RealType> old_params = {0.0, 0.0, 0.0};
+  std::vector<RealType> new_params(3);
+  global_rot_spo->applyDeltaRotation(params1, old_params, new_params);
+
+  std::vector<RealType> params2 = {0.3, 0.15};
+  rot_spo->apply_rotation(params2, false);
+
+  std::vector<RealType> new_params2(3);
+  global_rot_spo->applyDeltaRotation(params2, new_params, new_params2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+  // Value after two rotations, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data3 =
+    {  0.862374825309137,  0.38511734273482,   0.328624851461217,
+      -0.377403929117215,  0.921689108007811, -0.0897522281988318,
+      -0.337455085840952, -0.046624248032951,  0.940186281826872 };
+  // clang-format on
+
+  ValueMatrix new_rot_m3(rot_data3.data(), 3, 3);
+
+  CheckMatrixResult check_matrix_result3 = checkMatrix(*lcao1->C, new_rot_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+
+  // Need to flip the sign on the first two entries to match the output from gen_matrix_ops.py
+  std::vector<ValueType> expected_param = {0.3998099017676912, 0.34924318065960236, -0.02261313113492491};
+  for (int i = 0; i < expected_param.size(); i++)
+    CHECK(new_params2[i] == Approx(expected_param[i]));
 }
 
 } // namespace qmcplusplus
