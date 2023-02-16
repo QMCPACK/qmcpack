@@ -58,6 +58,9 @@ private:
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
+  ///Copy of original splines for orbital rotation
+  std::shared_ptr<std::vector<RealType>> coef_copy_;
+
   ///thread private ratios for reduction when using nested threading, numVP x numThread
   Matrix<TT> ratios_private;
 
@@ -82,6 +85,9 @@ public:
   bool isRotationSupported() const override { return true; }
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineR2R>(*this); }
+
+  /// Store an original copy of the spline coefficients for orbital rotation
+  void storeParamsBeforeRotation() override;
 
   /* 
      Implements orbital rotations via [1,2]. 

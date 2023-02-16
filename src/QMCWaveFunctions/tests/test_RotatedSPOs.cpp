@@ -119,6 +119,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
 #if !defined(QMC_COMPLEX)
 
+  spo->storeParamsBeforeRotation();
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
@@ -557,6 +558,7 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   auto spo = einSet.createSPOSetFromXML(sposet_ptr);
   REQUIRE(spo);
 
+  spo->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 1 electron, 2 orbitals
