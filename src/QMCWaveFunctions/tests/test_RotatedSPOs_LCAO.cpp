@@ -17,7 +17,10 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
-
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "checkMatrix.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -525,4 +528,122 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
   CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
 }
+
+// Test rotation using stored coefficients
+TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
+{
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+  REQUIRE(wp.empty() == true);
+
+  // Only care that this wavefunction has 3 SPOs and a 3x3 coefficient matrix
+  const char* wf_input = R"(<wavefunction target='e'>
+
+     <sposet_collection type="MolecularOrbital">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
+          <basisGroup rid="R0" l="0" m="0" type="Slater">
+             <radfunc n="1" exponent="2.0"/>
+          </basisGroup>
+          <basisGroup rid="R1" l="0" m="0" type="Slater">
+             <radfunc n="2" exponent="1.0"/>
+          </basisGroup>
+          <basisGroup rid="R2" l="0" m="0" type="Slater">
+             <radfunc n="3" exponent="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <rotated_sposet name="rot-spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+        </sposet>
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+        </sposet>
+      </rotated_sposet>
+    </sposet_collection>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <slaterdeterminant>
+        <determinant id="rot-spo-up"/>
+        <determinant id="rot-spo-down"/>
+      </slaterdeterminant>
+    </determinantset>
+   </wavefunction>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  // Type should be pointer to SlaterDet
+  auto orb1       = psi->getOrbitals()[0].get();
+  SlaterDet* sdet = dynamic_cast<SlaterDet*>(orb1);
+  REQUIRE(sdet != nullptr);
+
+  // Use the SPOs from different spins to separately track rotation applied using the stored coefficients
+  // versus the regular coefficients.
+  // The coefficient matrices should match after the same rotations are applied to each.
+  SPOSetPtr spoptr     = sdet->getPhi(0);
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(spoptr);
+  REQUIRE(rot_spo != nullptr);
+
+  SPOSetPtr spoptr1           = sdet->getPhi(1);
+  RotatedSPOs* global_rot_spo = dynamic_cast<RotatedSPOs*>(spoptr1);
+  REQUIRE(global_rot_spo != nullptr);
+
+  std::vector<RealType> params1 = {0.1, 0.2};
+
+  // Apply against the existing coefficients
+  rot_spo->apply_rotation(params1, false);
+
+  // Apply against the stored coefficients
+  global_rot_spo->apply_rotation(params1, true);
+
+  // Value after first rotation, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data0 =
+        {  0.975103993210479,   0.0991687475215628,  0.198337495043126,
+          -0.0991687475215628,  0.995020798642096,  -0.00995840271580824,
+          -0.198337495043126,  -0.00995840271580824, 0.980083194568384 };
+  // clang-format on
+
+  ValueMatrix new_rot_m0(rot_data0.data(), 3, 3);
+
+  LCAOrbitalSet* lcao1       = dynamic_cast<LCAOrbitalSet*>(rot_spo->Phi.get());
+  LCAOrbitalSet* lcao_global = dynamic_cast<LCAOrbitalSet*>(global_rot_spo->Phi.get());
+
+  CheckMatrixResult check_matrix_result = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  CheckMatrixResult check_matrix_result0 = checkMatrix(*lcao_global->C, new_rot_m0, true);
+  CHECKED_ELSE(check_matrix_result0.result) { FAIL(check_matrix_result0.result_message); }
+}
+
 } // namespace qmcplusplus
