@@ -116,12 +116,10 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     copyWalkers(W);
   }
   //set Weight and Multiplicity to default values
-  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  while (it != it_end)
+  for (auto& walker : W)
   {
-    (*it)->Weight       = 1.0;
-    (*it)->Multiplicity = 1.0;
-    ++it;
+    walker->Weight       = 1.0;
+    walker->Multiplicity = 1.0;
   }
   //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);

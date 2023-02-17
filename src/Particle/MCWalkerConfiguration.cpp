@@ -152,12 +152,10 @@ void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
     APP_ABORT("Fatal Exception");
   }
 
-  iterator it(WalkerList.begin()), it_end(WalkerList.end());
-  while (it != it_end)
+  for (auto& walker : WalkerList)
   {
-    (*it)->resizeProperty(ncopy, m);
-    (*it)->Weight = 1;
-    ++it;
+    walker->resizeProperty(ncopy, m);
+    walker->Weight = 1.0;
   }
   resizeWalkerHistories();
 }
