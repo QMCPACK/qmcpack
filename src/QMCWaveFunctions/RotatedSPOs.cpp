@@ -14,7 +14,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
-
+#include "io/hdf/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -135,6 +135,98 @@ void RotatedSPOs::resetParametersExclusive(const opt_variables_type& active)
 
     // Save the parameters in the history list
     history_params_.push_back(delta_param);
+  }
+}
+
+void RotatedSPOs::saveExtraParameters(hdf_archive& hout)
+{
+  if (use_global_rot_)
+  {
+    hid_t grp                   = hout.push("rotation_global");
+    std::string rot_global_name = std::string("rotation_global_") + Phi->getName();
+
+    int nparam = myVarsFull.size();
+    std::vector<RealType> full_params(nparam);
+    for (int i = 0; i < nparam; i++)
+      full_params[i] = myVarsFull[i];
+
+    hout.write(full_params, rot_global_name);
+  }
+  else
+  {
+    hid_t grp   = hout.push("rotation_history");
+    size_t rows = history_params_.size();
+    size_t cols = 0;
+    if (rows > 0)
+      cols = history_params_[0].size();
+
+    Matrix<RealType> tmp(rows, cols);
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < cols; j++)
+        tmp(i, j) = history_params_[i][j];
+
+    std::string rot_hist_name = std::string("rotation_history_") + Phi->getName();
+    hout.write(tmp, rot_hist_name);
+  }
+
+  hout.pop();
+}
+
+void RotatedSPOs::readExtraParameters(hdf_archive& hin)
+{
+  hid_t grp_hist   = hin.push("rotation_history");
+  hid_t grp_global = hin.push("rotation_global");
+  if (grp_hist < 0 && grp_global < 0)
+    app_warning() << "Rotation parameters not found in VP file";
+
+  if (grp_global >= 0)
+  {
+    std::string rot_global_name = std::string("rotation_global_") + Phi->getName();
+
+    std::vector<int> sizes(1);
+    if (!hin.getShape<RealType>(rot_global_name, sizes))
+      throw std::runtime_error("Failed to read rotation_global in VP file");
+
+    int nparam_actual = sizes[0];
+    int nparam = myVarsFull.size();
+
+    if (nparam != nparam_actual)
+    {
+      std::ostringstream tmp_err;
+      tmp_err << "Expected number of full rotation parameters (" << nparam << ") does not match number in file ("
+              << nparam_actual << ")";
+      throw std::runtime_error(tmp_err.str());
+    }
+    std::vector<RealType> full_params(nparam);
+    hin.read(full_params, rot_global_name);
+    for (int i = 0; i < nparam; i++)
+      myVarsFull[i] = full_params[i];
+
+    for (int i = 0; i < m_act_rot_inds.size(); i++)
+      myVars[i] = full_params[i];
+
+    hin.pop();
+
+    applyFullRotation(full_params, true);
+  }
+  else
+  {
+    std::string rot_hist_name = std::string("rotation_history_") + Phi->getName();
+    std::vector<int> sizes(2);
+    if (!hin.getShape<RealType>(rot_hist_name, sizes))
+      throw std::runtime_error("Failed to read rotation history in VP file");
+
+    int rows = sizes[0];
+    int cols = sizes[1];
+    Matrix<RealType> tmp(rows, cols);
+    hin.read(tmp, rot_hist_name);
+    for (size_t i = 0; i < rows; i++)
+      for (size_t j = 0; j < cols; j++)
+        history_params_[i][j] = tmp(i, j);
+
+    hin.pop();
+
+    applyRotationHistory();
   }
 }
 
@@ -313,6 +405,35 @@ void RotatedSPOs::constructDeltaRotation(const std::vector<RealType>& delta_para
   log_antisym_matrix(new_rot_mat, log_rot_mat);
   extractParamsFromAntiSymmetricMatrix(full_rot_inds, log_rot_mat, new_param);
 }
+
+void RotatedSPOs::applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy)
+{
+  assert(full_param.size() == m_full_rot_inds.size());
+
+  const size_t nmo = Phi->getOrbitalSetSize();
+  ValueMatrix rot_mat(nmo, nmo);
+  rot_mat = ValueType(0);
+
+  constructAntiSymmetricMatrix(m_full_rot_inds, full_param, rot_mat);
+
+  /*
+    rot_mat is now an anti-hermitian matrix. Now we convert
+    it into a unitary matrix via rot_mat = exp(-rot_mat).
+    Finally, apply unitary matrix to orbs.
+  */
+  exponentiate_antisym_matrix(rot_mat);
+  Phi->applyRotation(rot_mat, use_stored_copy);
+}
+
+void RotatedSPOs::applyRotationHistory()
+{
+  for (auto delta_param : history_params_)
+  {
+    apply_rotation(delta_param, false);
+  }
+}
+
+
 
 // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
 void RotatedSPOs::exponentiate_antisym_matrix(ValueMatrix& mat)

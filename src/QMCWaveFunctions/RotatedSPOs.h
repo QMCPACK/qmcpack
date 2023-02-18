@@ -81,6 +81,14 @@ public:
                                      std::vector<RealType>& new_param,
                                      ValueMatrix& new_rot_mat);
 
+  // When initializing the rotation from VP files
+  // This function applies the rotation history
+  void applyRotationHistory();
+
+  // This function applies the global rotation (similar to apply_rotation, but for the full
+  // set of rotation parameters)
+  void applyFullRotation(const std::vector<RealType>& full_param, bool use_stored_copy);
+
   // Compute matrix exponential of an antisymmetric matrix (result is rotation matrix)
   static void exponentiate_antisym_matrix(ValueMatrix& mat);
 
@@ -234,6 +242,9 @@ public:
 
   ///reset
   void resetParametersExclusive(const opt_variables_type& active) override;
+
+  void saveExtraParameters(hdf_archive& hout) override;
+  void readExtraParameters(hdf_archive& hin) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions
