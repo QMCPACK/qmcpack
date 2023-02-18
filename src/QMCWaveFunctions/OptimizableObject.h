@@ -72,6 +72,23 @@ public:
   virtual void reportStatus(std::ostream& os) {}
 
   void setOptimization(bool state) { is_optimized_ = state; }
+
+  /** save extra parameters for wavefunction state
+   *
+   *  The hdf archive is expected to be created in VariableSet::saveAsHDF
+   */
+  virtual void saveExtraParameters(hdf_archive& hout)
+  {
+  }
+
+  /** read extra parameters for wavefunction state
+   *
+   *  The hdf archive is expected to be opened in VariableSet::readFromHDF
+   */
+  virtual void readExtraParameters(hdf_archive& hin)
+  {
+  }
+
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>
