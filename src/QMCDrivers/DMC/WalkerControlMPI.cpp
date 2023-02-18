@@ -86,7 +86,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
   ScopedTimer local_timer(myTimers[DMC_MPI_branch]);
   {
     ScopedTimer local_timer(myTimers[DMC_MPI_prebalance]);
-    std::fill(curData.begin(), curData.end(), 0);
+    std::fill(curData.begin(), curData.end(), 0.0);
     sortWalkers(W);
     //use NumWalkersSent from the previous exchange
     curData[SENTWALKERS_INDEX] = NumWalkersSent;

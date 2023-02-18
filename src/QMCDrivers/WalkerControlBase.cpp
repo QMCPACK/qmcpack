@@ -30,15 +30,8 @@ namespace qmcplusplus
 {
 using WP = WalkerProperties::Indexes;
 
-WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
-    : MPIObjectBase(c),
-      n_min_(1),
-      n_max_(10),
-      MaxCopy(2),
-      target_sigma_(10),
-      NumWalkersCreated(0),
-      SwapMode(0),
-      write_release_nodes_(rn)
+WalkerControlBase::WalkerControlBase(Communicate* c)
+    : MPIObjectBase(c), n_min_(1), n_max_(10), MaxCopy(2), target_sigma_(10), NumWalkersCreated(0), SwapMode(0)
 {
   method_       = -1; //assign invalid method
   num_contexts_ = myComm->size();
@@ -69,10 +62,7 @@ void WalkerControlBase::start()
   if (MyContext == 0)
   {
     std::string hname(myComm->getName());
-    if (write_release_nodes_)
-      hname.append(".rn.dat");
-    else
-      hname.append(".dmc.dat");
+    hname.append(".dmc.dat");
     if (hname != dmcFname)
     {
       dmcStream = std::make_unique<std::ofstream>(hname.c_str());
@@ -81,10 +71,6 @@ void WalkerControlBase::start()
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
                    << "Weight" << std::setw(20) << "NumOfWalkers" << std::setw(20)
                    << "AvgSentWalkers"; //add the number of walkers
-      if (write_release_nodes_)
-      {
-        (*dmcStream) << std::setw(20) << "RNWalkers" << std::setw(20) << "AlternateEnergy";
-      }
       (*dmcStream) << std::setw(20) << "TrialEnergy" << std::setw(20) << "DiffEff";
       //         if (WriteRN)
       (*dmcStream) << std::setw(20) << "LivingFraction";
@@ -136,11 +122,6 @@ void WalkerControlBase::measureProperties(int iter)
                  << ensemble_property_.Variance << std::setw(20) << ensemble_property_.Weight << std::setw(20)
                  << ensemble_property_.NumSamples << std::setw(20)
                  << curData[SENTWALKERS_INDEX] / static_cast<double>(num_contexts_);
-    if (write_release_nodes_)
-    {
-      (*dmcStream) << std::setw(20) << ensemble_property_.RNSamples << std::setw(20)
-                   << ensemble_property_.AlternateEnergy;
-    }
     (*dmcStream) << std::setw(20) << trialEnergy << std::setw(20)
                  << ensemble_property_.R2Accepted / ensemble_property_.R2Proposed;
     //       if (WriteRN) (*dmcStream)
@@ -168,50 +149,25 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   int nrn(0), ncr(0), nfn(0), nc(0);
   for (auto& walker : W)
   {
-    bool inFN = ((walker->ReleasedNodeAge) == 0);
-    nc        = std::min(static_cast<int>(walker->Multiplicity), MaxCopy);
-    if (write_release_nodes_)
-    {
-      if (walker->ReleasedNodeAge == 1)
-        ncr += 1;
-      else if (walker->ReleasedNodeAge == 0)
-      {
-        nfn += 1;
-      }
-      r2_accepted += walker->Properties(WP::R2ACCEPTED);
-      r2_proposed += walker->Properties(WP::R2PROPOSED);
-      FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
-      FullPrecRealType bfe(walker->Properties(WP::ALTERNATEENERGY));
-      FullPrecRealType wgt   = (walker->Weight);
-      FullPrecRealType rnwgt = (walker->ReleasedNodeWeight);
-      esum += wgt * rnwgt * e;
-      e2sum += wgt * rnwgt * e * e;
-      wsum += rnwgt * wgt;
-      ecum += e;
-      besum += bfe * wgt;
-      bwgtsum += wgt;
-    }
+    nc = std::min(static_cast<int>(walker->Multiplicity), MaxCopy);
+    if (nc > 0)
+      nfn++;
     else
-    {
-      if (nc > 0)
-        nfn++;
-      else
-        ncr++;
-      r2_accepted += walker->Properties(WP::R2ACCEPTED);
-      r2_proposed += walker->Properties(WP::R2PROPOSED);
-      FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
-      // This is a trick to estimate the number of walkers
-      // after the first iterration branching.
-      //RealType wgt=((*it)->Weight);
-      FullPrecRealType wgt = FullPrecRealType(nc);
-      esum += wgt * e;
-      e2sum += wgt * e * e;
-      wsum += wgt;
-      ecum += e;
-    }
+      ncr++;
+    r2_accepted += walker->Properties(WP::R2ACCEPTED);
+    r2_proposed += walker->Properties(WP::R2PROPOSED);
+    FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
+    // This is a trick to estimate the number of walkers
+    // after the first iterration branching.
+    //RealType wgt=((*it)->Weight);
+    FullPrecRealType wgt = FullPrecRealType(nc);
+    esum += wgt * e;
+    e2sum += wgt * e * e;
+    wsum += wgt;
+    ecum += e;
   }
   //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
+  std::fill(curData.begin(), curData.end(), 0.0);
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
   curData[WALKERSIZE_INDEX] = W.getActiveWalkers();
@@ -282,59 +238,28 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   int nrn(0), ncr(0);
   for (auto& walker : W)
   {
-    bool inFN    = (walker->ReleasedNodeAge == 0);
     const int nc = std::min(static_cast<int>(walker->Multiplicity), MaxCopy);
-    if (write_release_nodes_)
-    {
-      if (walker->ReleasedNodeAge == 1)
-        ncr += 1;
-      r2_accepted += walker->Properties(WP::R2ACCEPTED);
-      r2_proposed += walker->Properties(WP::R2PROPOSED);
-      FullPrecRealType local_energy(walker->Properties(WP::LOCALENERGY));
-      FullPrecRealType alternate_energy(walker->Properties(WP::ALTERNATEENERGY));
-      FullPrecRealType wgt   = (walker->Weight);
-      FullPrecRealType rnwgt = (walker->ReleasedNodeWeight);
-      esum += wgt * rnwgt * local_energy;
-      e2sum += wgt * rnwgt * local_energy * local_energy;
-      wsum += rnwgt * wgt;
-      ecum += local_energy;
-      besum += alternate_energy * wgt;
-      bwgtsum += wgt;
-    }
-    else
-    {
-      if (nc == 0)
-        ncr++;
-      r2_accepted += walker->Properties(WP::R2ACCEPTED);
-      r2_proposed += walker->Properties(WP::R2PROPOSED);
-      FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
-      FullPrecRealType wgt = (walker->Weight);
-      esum += wgt * e;
-      e2sum += wgt * e * e;
-      wsum += wgt;
-      ecum += e;
-    }
-
-    if ((nc) && (inFN))
+    if (nc == 0)
+      ncr++;
+    r2_accepted += walker->Properties(WP::R2ACCEPTED);
+    r2_proposed += walker->Properties(WP::R2PROPOSED);
+    FullPrecRealType e(walker->Properties(WP::LOCALENERGY));
+    FullPrecRealType wgt = (walker->Weight);
+    esum += wgt * e;
+    e2sum += wgt * e * e;
+    wsum += wgt;
+    ecum += e;
+    if (nc)
     {
       NumWalkers += nc;
       good_w.push_back(std::move(walker));
       ncopy_w.push_back(nc - 1);
     }
-    else if (nc)
-    {
-      NumWalkers += nc;
-      nrn += nc;
-      good_rn.push_back(std::move(walker));
-      ncopy_rn.push_back(nc - 1);
-    }
     else
-    {
       bad_w.push_back(std::move(walker));
-    }
   }
   //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
+  std::fill(curData.begin(), curData.end(), 0.0);
   //update curData
   curData[ENERGY_INDEX]     = esum;
   curData[ENERGY_SQ_INDEX]  = e2sum;
@@ -351,17 +276,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   curData[RNSIZE_INDEX]   = nrn;
   curData[B_ENERGY_INDEX] = besum;
   curData[B_WGT_INDEX]    = bwgtsum;
-  ////this should be move
-  //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-  //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-  //W.EnsembleProperty.Energy=(esum/=wsum);
-  //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
-  //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  if (write_release_nodes_)
-  {
-    good_w.insert(good_w.end(), std::make_move_iterator(good_rn.begin()), std::make_move_iterator(good_rn.end()));
-    ncopy_w.insert(ncopy_w.end(), ncopy_rn.begin(), ncopy_rn.end());
-  }
   return NumWalkers;
 }
 
