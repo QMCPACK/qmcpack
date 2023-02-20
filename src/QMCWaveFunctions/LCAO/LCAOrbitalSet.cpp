@@ -779,9 +779,9 @@ void LCAOrbitalSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last
 void LCAOrbitalSet::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
 {
   if (!use_stored_copy)
-    C_copy = *C;
+    *C_copy = *C;
   //gemm is out-of-place
-  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy.data(), BasisSetSize,
+  BLAS::gemm('N', 'T', BasisSetSize, OrbitalSetSize, OrbitalSetSize, RealType(1.0), C_copy->data(), BasisSetSize,
              rot_mat.data(), OrbitalSetSize, RealType(0.0), C->data(), BasisSetSize);
 
   /* debugging code
