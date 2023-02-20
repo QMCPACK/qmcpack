@@ -48,15 +48,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ParticleSet::ParticleLayout lattice;
 
   // diamondC_1x1x1
-  lattice.R(0, 0) = 3.37316115;
-  lattice.R(0, 1) = 3.37316115;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -504,15 +496,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 4.32747284;
-  lattice.R(0, 1) = 0.00000000;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = -2.16373642;
-  lattice.R(1, 1) = 3.74770142;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = 0.00000000;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 6.78114995;
+  lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
+               0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
