@@ -17,13 +17,12 @@
 #include "EstimatorInput.h"
 namespace qmcplusplus
 {
-
 MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
 {
   input_section_.readXML(cur);
   auto setIfInInput = LAMBDA_setIfInInput;
   setIfInInput(nsamples_, "samples");
-  setIfInInput(integrator_,"integrator"); 
+  setIfInInput(integrator_, "integrator");
   have_center_ = setIfInInput(center_, "center");
   have_corner_ = setIfInInput(corner_, "corner");
   have_grid_   = setIfInInput(grid_real_, "grid");
@@ -31,7 +30,8 @@ MagnetizationDensityInput::MagnetizationDensityInput(xmlNodePtr cur)
 }
 
 
-MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(const Lattice& lattice) const
+MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculateDerivedParameters(
+    const Lattice& lattice) const
 {
   PosType corner = 0.0;
   if (have_center_)
@@ -45,12 +45,13 @@ MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculat
     {
       grid[d] = (int)std::ceil(std::sqrt(dot(lattice.Rv[d], lattice.Rv[d])) / dr_[d]);
       //Now we know the lattice and can compute grid points from dr.  We check it's validity here.
-      if(grid[d] < 1)
-        throw UniformCommunicateError("MagnetizationDensity input: invalid dr.  Number of grid points implied is less than 1");
+      if (grid[d] < 1)
+        throw UniformCommunicateError(
+            "MagnetizationDensity input: invalid dr.  Number of grid points implied is less than 1");
     }
   else if (have_grid_)
     for (int d = 0; d < DIM; ++d)
-      grid[d] = (int)std::ceil(grid_real_[d]); 
+      grid[d] = (int)std::ceil(grid_real_[d]);
   size_t npoints = 1;
   for (int d = 0; d < DIM; ++d)
     npoints *= grid[d];
@@ -74,39 +75,38 @@ void MagnetizationDensityInput::MagnetizationDensityInputSection::checkParticula
   const std::string error_tag{"MagnetizationDensity input: "};
   checkCenterCorner(*this, error_tag);
 
-  if ( has("grid") && has("dr" ) )
+  if (has("grid") && has("dr"))
     throw UniformCommunicateError(error_tag + " cannot define grid and dr.");
 
-  if ( has("grid") )
+  if (has("grid"))
   {
     PosType thisgrid = get<PosType>("grid");
-    for( int d=0; d<DIM; ++d)
+    for (int d = 0; d < DIM; ++d)
     {
       if (thisgrid[d] < 1.0)
         throw UniformCommunicateError(error_tag + " number of grid points must be >=1 in each direction");
     }
   }
   //This is the most we can test without knowing the lattice.
-  //Correctness determined if dr implies grid with more than 1 point in each direction. 
-  //Check is performed in calculateDerivedParameters(). 
-  if ( has("dr") )
+  //Correctness determined if dr implies grid with more than 1 point in each direction.
+  //Check is performed in calculateDerivedParameters().
+  if (has("dr"))
   {
     PosType thisdr = get<PosType>("dr");
-    for( int d=0; d<DIM; ++d)
+    for (int d = 0; d < DIM; ++d)
     {
       if (thisdr[d] <= 0.0)
         throw UniformCommunicateError(error_tag + " grid spacing dr must be >= 0 in each direction");
-      if (thisdr[d] >=10.0)
-        app_log()<<error_tag+" dr larger than 10.0.  Make sure that this grid spacing is intended.\n";
+      if (thisdr[d] >= 10.0)
+        app_log() << error_tag + " dr larger than 10.0.  Make sure that this grid spacing is intended.\n";
     }
   }
-  if ( has("samples") )
+  if (has("samples"))
   {
     int samps = get<int>("samples");
     if (samps < 1)
       throw UniformCommunicateError(error_tag + " number of samples has to be greater than 0");
   }
-
 }
 
-}//namespace qmcplusplus
+} //namespace qmcplusplus

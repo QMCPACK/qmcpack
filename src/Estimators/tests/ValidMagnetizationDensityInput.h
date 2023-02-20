@@ -19,20 +19,19 @@ namespace qmcplusplus
 {
 namespace testing
 {
-
 namespace magdensity
 {
-  enum Inputs
-  {
-    valid_magdensity_input = 0,
-    valid_magdensity_input_grid,
-    valid_magdensity_input_dr,
-    valid_magdensity_input_integrator,
-  };
+enum Inputs
+{
+  valid_magdensity_input = 0,
+  valid_magdensity_input_grid,
+  valid_magdensity_input_dr,
+  valid_magdensity_input_integrator,
+};
 
-  // clang-format: off
-  constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
-      R"XML(
+// clang-format: off
+constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
+    R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="integrator"   >  simpsons       </parameter>
   <parameter name="samples"      >  64            </parameter>
@@ -40,21 +39,21 @@ namespace magdensity
   <parameter name="grid"         >  4 3 2 </parameter>
 </estimator>
 )XML",
-      R"XML(
+    R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="integrator"   >  montecarlo       </parameter>
   <parameter name="samples"      >  128           </parameter>
 </estimator>
 )XML",
-      R"XML(
+    R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="samples"      >  32            </parameter>
   <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
 </estimator>
 )XML"
-  // clang-format: on
-  };
-}
+    // clang-format: on
+};
+} // namespace magdensity
 
 } // namespace testing
 } // namespace qmcplusplus
