@@ -47,15 +47,7 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 #endif
   // diamondC_1x1x1
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0)   = 3.37316115;
-  lattice.R(0, 1)   = 3.37316115;
-  lattice.R(0, 2)   = 0.0;
-  lattice.R(1, 0)   = 0.0;
-  lattice.R(1, 1)   = 3.37316115;
-  lattice.R(1, 2)   = 3.37316115;
-  lattice.R(2, 0)   = 3.37316115;
-  lattice.R(2, 1)   = 0.0;
-  lattice.R(2, 2)   = 3.37316115;
+  lattice.R         = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
   lattice.BoxBConds = {1, 1, 1};
   lattice.reset();
 

@@ -470,15 +470,8 @@ void test_DiracDeterminant_spinor_update(const DetMatInvertor inverter_kind)
 
   // O2 test example from pwscf non-collinear calculation.
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 5.10509515;
-  lattice.R(0, 1) = -3.23993545;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = 5.10509515;
-  lattice.R(1, 1) = 3.23993545;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = -6.49690625;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 7.08268015;
+  lattice.R = {5.10509515, -3.23993545, 0.00000000, 5.10509515, 3.23993545,
+               0.00000000, -6.49690625, 0.00000000, 7.08268015};
 
   //Shamelessly stealing this from test_einset.cpp.  3 particles though.
   const SimulationCell simulation_cell(lattice);

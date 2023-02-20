@@ -32,15 +32,7 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
 
   // diamondC_2x1x1
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 6.7463223;
-  lattice.R(0, 1) = 6.7463223;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {6.7463223, 6.7463223, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
