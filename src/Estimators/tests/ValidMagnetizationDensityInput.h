@@ -37,6 +37,7 @@ namespace magdensity
   <parameter name="integrator"   >  simpsons       </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
+  <parameter name="grid"         >  4 3 2 </parameter>
 </estimator>
 )XML",
       R"XML(

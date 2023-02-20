@@ -49,9 +49,9 @@ public:
    */
   MagnetizationDensityInput(){};
   MagnetizationDensityInput(const MagnetizationDensityInput&) = default;
-  Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }
-  TinyVector<int, DIM> get_grid() const { return grid_; }
+  PosType get_grid() const { return grid_real_; }
+  PosType get_dr() const {return dr_; }
   int get_nsamples() const { return nsamples_; }
   Integrator get_integrator() const { return integrator_; }
   bool get_write_report() const { return write_report_; }
@@ -99,6 +99,7 @@ public:
 
     }
     std::any assignAnyEnum(const std::string& name) const override;
+    void checkParticularValidity() override;
   };
 private:
   MagnetizationDensityInputSection input_section_;
@@ -107,14 +108,13 @@ private:
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_ = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo. 
  
-  Lattice cell_;
-  PosType corner_;
-  PosType dr_;
-  PosType grid_real_;
-  PosType center_;
-  TinyVector<int, DIM> grid_;
-  bool write_report_;
-  bool save_memory_;
+  PosType corner_ = {0.0, 0.0, 0.0};
+  //These two are coupled.  dr determines the grid, and visa versa.
+  PosType dr_ = {0.1,0.1,0.1};
+  PosType grid_real_ = {10,10,10};
+  PosType center_ = {0.0, 0.0, 0.0};
+  bool write_report_ = false;
+  bool save_memory_  = false;
   /** these are necessary for calculateDerivedParameters
    *  
    *  If we are going to later write out a canonical input for
@@ -124,7 +124,6 @@ private:
   bool have_grid_   = false;
   bool have_center_ = false;
   bool have_corner_ = false;
-  bool have_cell_   = false;
 };
 } // namespace qmcplusplus
 #endif  /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_INPUT_H */

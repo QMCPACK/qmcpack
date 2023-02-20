@@ -32,23 +32,22 @@ namespace testing
 )XML",
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  montcearlo       </parameter>
+  <parameter name="center"       > 0.0 1.0 0.0 </parameter>
+  <parameter name="corner"       > 0.0 0.1 0.0 </parameter>
   <parameter name="samples"      >  128           </parameter>
 </estimator>
 )XML",
       R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="integrator"   >  simpson  </parameter>
-  <parameter name="samples"      >  64            </parameter>
-  <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
+  <parameter name="grid"       >  0.9 1 5   </parameter>
 </estimator>
 )XML"
   // clang-format: on
   };
 
   constexpr int invalid_magnetization_density_integrator = 0;
-  constexpr int invalid_magnetization_density =1;
-  constexpr int invalid_magnetization_density_grid=2;
+  constexpr int invalid_magnetization_density_cornercenter =1;
+  constexpr int invalid_magnetization_density_badgrid=2;
 } // namespace testing
 } // namespace qmcplusplus
 
