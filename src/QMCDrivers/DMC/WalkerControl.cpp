@@ -273,7 +273,7 @@ void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::ve
     wsum += wgt;
   }
   //temp is an array to perform reduction operations
-  std::fill(curData.begin(), curData.end(), 0);
+  std::fill(curData.begin(), curData.end(), 0.0);
   curData[ENERGY_INDEX]      = esum;
   curData[ENERGY_SQ_INDEX]   = e2sum;
   curData[WALKERSIZE_INDEX]  = walkers.size(); // num of all the current walkers (good+bad)
