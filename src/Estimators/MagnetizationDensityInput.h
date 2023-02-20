@@ -52,7 +52,6 @@ public:
   Lattice get_cell() const { return cell_; }
   PosType get_corner() const { return corner_; }
   TinyVector<int, DIM> get_grid() const { return grid_; }
-  int get_npoints() const { return npoints_; }
   int get_nsamples() const { return nsamples_; }
   Integrator get_integrator() const { return integrator_; }
   bool get_write_report() const { return write_report_; }
@@ -103,16 +102,17 @@ public:
   };
 private:
   MagnetizationDensityInputSection input_section_;
-  ///name of this Estimator
-  std::string myName_;
-  Integrator integrator_;
+  //Default Values
+  std::string myName_ = "MagnetizationDensityInput";
+  Integrator integrator_ = Integrator::SIMPSONS;
+  int nsamples_ = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo. 
+ 
   Lattice cell_;
   PosType corner_;
   PosType dr_;
+  PosType grid_real_;
   PosType center_;
   TinyVector<int, DIM> grid_;
-  int npoints_;
-  int nsamples_; //Number of grid points for spin quadrature, or samples for Monte Carlo. 
   bool write_report_;
   bool save_memory_;
   /** these are necessary for calculateDerivedParameters
