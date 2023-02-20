@@ -149,8 +149,6 @@ WalkerElementsRef MCPopulation::spawnWalker()
     // registration and allocation were done then so are not necessary when resurrecting walkers and elements
     walkers_.back()->Generation         = 0;
     walkers_.back()->Age                = 0;
-    walkers_.back()->ReleasedNodeWeight = 1.0;
-    walkers_.back()->ReleasedNodeAge    = 0;
     walkers_.back()->Multiplicity       = 1.0;
     walkers_.back()->Weight             = 1.0;
   }
