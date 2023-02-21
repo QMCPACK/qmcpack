@@ -82,6 +82,10 @@ except:
 #end try
 
 
+roots_n     = lambda p, x: np.roots(np.polyder(p[::-1], x))
+root_vals_n = lambda p, x: np.polyval(p[::-1], roots_n(p, x))
+moment_n    = lambda p, x: np.polyval(np.polyder(p[::-1], x), roots_n(p, x-1))
+
 
 all_fit_functions = obj(
     ts = obj(
@@ -104,6 +108,32 @@ all_fit_functions = obj(
             params   = [('intercept',lambda p: p[0])],
             ),
         ),
+    u = obj(
+        quadratic = obj(
+            nparam   = 3,
+            function = lambda p,t: p[0]+p[1]*t+p[2]*t*t,
+            format   = '{0} + {1}*t + {2}*t^2',
+            params   = [('minimum_u',lambda p: roots_n(p, 1)),
+                        ('minimum_e',lambda p: root_vals_n(p,1)),
+                        ('curvature', lambda p: moment_n(p, 2))],
+            ),
+        cubic = obj(
+            nparam   = 4,
+            function = lambda p,t: p[0]+p[1]*t+p[2]*t*t+p[3]*t*t*t,
+            format   = '{0} + {1}*t + {2}*t^2 + {3}*t^3',
+            params   = [('minimum_u',lambda p: roots_n(p, 1)[moment_n(p,2) > 0]),
+                        ('minimum_e',lambda p: root_vals_n(p,1)[moment_n(p,2) > 0]),
+                        ('curvature',lambda p: moment_n(p, 2)[moment_n(p,2) > 0])],
+            ),            
+        quartic = obj(
+            nparam   = 5,
+            function = lambda p,t: p[0]+p[1]*t+p[2]*t*t+p[3]*t*t*t+p[4]*t*t*t*t,
+            format   = '{0} + {1}*t + {2}*t^2 + {3}*t^3 + {4}*t^4',
+            params   = [('minimum_u',lambda p: roots_n(p, 1)[moment_n(p,2) > 0]),
+                        ('minimum_e',lambda p: root_vals_n(p,1)[moment_n(p,2) > 0]),
+                        ('curvature',lambda p: moment_n(p, 2)[moment_n(p,2) > 0])],
+            ),            
+        ),        
     )
 
 fit_functions = obj()
@@ -132,6 +162,10 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
     #end for
 
     # setup initial guess parameters
+    if fname=='quartic':
+        pp = np.polyfit(q,E,4)
+    if fname=='cubic':
+        pp = np.polyfit(q,E,4)
     if fname=='quadratic':
         pp = np.polyfit(q,E,2)
     else:
@@ -400,7 +434,117 @@ def timestep_fit():
     #end if
 #end def timestep_fit
 
+def hubbard_u_fit():
+       # read command line inputs
+    usage = '''usage: %prog u [options] [scalar files]'''
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog {}.{}.{}'.format(*nexus_version))
 
+    parser.add_option('-f','--fit',dest='fit_function',
+                          default='quadratic',
+                          help='Fitting function, options are {0} (default=%default).'.format(sorted(fit_functions.keys()))
+                      )
+    parser.add_option('-s', '--series_start',dest='series_start',
+                      type="int", default=None,
+                      help='Series number for first DMC run.  Use to exclude prior VMC scalar files if they have been provided (default=%default).'
+                      )
+    parser.add_option('-u','--hubbard_u',dest='hubbards',
+                          default=None,
+                          help='Hubbard_u values corresponding to scalar files, excluding any prior to --series_start (default=%default).'
+                      )
+    parser.add_option('-e','--equils',dest='equils',
+                          default=None,
+                          help='Equilibration lengths corresponding to scalar files, excluding any prior to --series_start.  Can be a single value for all files.  If not provided, equilibration periods will be estimated.'
+                      )
+    parser.add_option('-b','--reblock_factors',dest='reblock_factors',
+                          default=None,
+                          help='Reblocking factors corresponding to scalar files, excluding any prior to --series_start.  Can be a single value for all files.  If not provided, reblocking factors will be estimated.'
+                      )
+    parser.add_option('--noplot',dest='noplot',
+                      action='store_true',default=False,
+                      help='Do not show plots. (default=%default).'
+                      )
+
+    options,args = parser.parse_args()
+    scalar_files = list(sorted(args[1:]))
+    opt = obj(**options.__dict__)
+    if len(scalar_files)==0:
+        log('\n'+parser.format_help().strip()+'\n')
+        exit()
+    #end if
+
+    if opt.fit_function not in fit_functions:
+        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+    #end if
+    if opt.hubbards is None:
+        opt.hubbards = ''
+    #end if
+    parse_list(opt,'hubbards',float)
+    parse_list(opt,'equils',int,len1=True)
+    parse_list(opt,'reblock_factors',int,len1=True)
+    
+    # read in scalar energy data
+    Edata,Emean,Eerror,scalar_files = process_scalar_files(
+        scalar_files    = scalar_files,
+        series_start    = opt.series_start,
+        equils          = opt.equils,
+        reblock_factors = opt.reblock_factors,
+        )
+
+    if len(Edata)!=len(opt.hubbards):
+        error('must provide one hubbard_u value per scalar file\nnumber of hubbard_u provided: {0}\nnumber of scalar files provided: {1}\hubbards provided: {2}\nscalar files provided: {3}'.format(len(opt.hubbards),len(scalar_files),opt.hubbards,scalar_files))
+    #end if
+    # perform jackknife analysis of the fit
+    
+    pf,pmean,perror,auxres = qmcfit(opt.hubbards,Edata,opt.fit_function) 
+
+    func_info = fit_functions[opt.fit_function]
+    pvals = []
+    for n in range(len(pmean)):
+        pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
+    #end for
+
+    log('\nfit function  : '+opt.fit_function)
+    log('fitted formula: '+func_info.format.format(*pvals))
+    for pname,pfunc in func_info.params:
+        # print(auxres[pname])
+        for i in range(len(auxres[pname][0])):
+            pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
+            unit = ""
+            if pname == "minimum_e":
+                unit = "Ha"
+            elif pname == "minimum_u":
+                unit = "eV"
+            #end if
+            log('root {0} {1:<14}: {2} +/- {3} {4}'.format(i+1,pname,pm,pe, unit))
+    #end for
+    
+    # plot the fit (if available)
+    if plots_available and not opt.noplot:
+        lw = 2
+        ms = 10
+        ts = opt.hubbards
+        tsmin = ts.min()
+        tsmax = ts.max()
+        tsrange = tsmax-tsmin
+
+        U_min,U_err = auxres.minimum_u
+        E_min,E_err = auxres.minimum_e
+        real_U_in_range = np.isreal(U_min) & (U_min < tsmax) &  (U_min > tsmin)
+        U_min = np.real(U_min[real_U_in_range])
+        U_err = np.real(U_err[real_U_in_range])
+        E_min = np.real(E_min[real_U_in_range])
+        tsfit = np.linspace(0,1.1*tsmax,400)
+        Efit  = func_info.function(pmean,tsfit)
+        plt.figure()
+        plt.plot(tsfit,Efit,'k-',lw=lw)
+        plt.errorbar(ts,Emean,Eerror,fmt='b.',ms=ms)
+        plt.errorbar(U_min,E_min,xerr=U_err,fmt='r.',ms=ms)
+        plt.xlim([tsmin-0.1*tsrange,tsmax + 0.1*tsrange])
+        plt.xlabel('Hubbard U (eV)')
+        plt.ylabel('DMC Energy (Ha)')
+        plt.show()
+    #end if    
+#end def hubbard_u_fit 
 
 if __name__=='__main__':
     fit_types = sorted(all_fit_functions.keys())
@@ -417,6 +561,8 @@ if __name__=='__main__':
         
     if fit_type=='ts':
         timestep_fit()
+    elif fit_type == 'u':
+        hubbard_u_fit()
     else:
         error('unsupported fit type: {0}'.format(fit_type))
     #end if
