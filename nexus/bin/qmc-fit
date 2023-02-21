@@ -505,9 +505,9 @@ def hubbard_u_fit():
 
     log('\nfit function  : '+opt.fit_function)
     log('fitted formula: '+func_info.format.format(*pvals))
+    num_roots = len(auxres[pname][0])
     for pname,pfunc in func_info.params:
-        # print(auxres[pname])
-        for i in range(len(auxres[pname][0])):
+        for i in range(num_roots):
             pm,pe = stat_strings(*np.array(auxres[pname])[:,i])
             unit = ""
             if pname == "minimum_e":

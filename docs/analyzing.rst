@@ -1057,15 +1057,15 @@ Production quality checklist
 
 .. _qmcfit:
 
-Using the qmc-fit tool for statistical time step extrapolation and curve fitting
---------------------------------------------------------------------------------
+Using the qmc-fit tool for statistical time step extrapolation, trial wavefunction optimization and curve fitting
+-----------------------------------------------------------------------------------------------------------------
 
 The ``qmc-fit`` tool is used to provide statistical estimates of
 curve-fitting parameters based on QMCPACK data. Although ``qmc-fit``
 will eventually support many types of fitted curves (e.g., Morse
 potential binding curves and various equation-of-state fitting curves),
 it is currently limited to estimating fitting parameters related to time
-step extrapolation.
+step extrapolation and trial wavefunction optimization.
 
 The jackknife statistical technique
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1225,6 +1225,69 @@ estimated value of :math:`-3848.28(7)` instead.
   :align: center
 
   Linear (top) and quadratic (bottom) time step fits to DMC data for a 32-atom supercell of MnO obtained with ``qmc-fit``.  Zero time step estimates are indicated by the red data point on the left side of either panel.
+
+Performing trial wavefunction optimization fitting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this section, we use a 24-atom supercell of monolayer FeCl:math:`_{2}` as an example system
+for wavefunction optimization fitting. Using single determinant DFT wavefunctions, 
+a practical method to perform wavefunction optimization is done through scanning 
+the Hubbard-U parameter for the open shell atoms in the system. Similarly, 
+one can also scan different exact exchange ratio parameters in hybrid-DFT calculations.
+Here, we will show an example of this fitting via using Hubbard-U parameter, but 
+the same procedure can be applied to any single-parameter scans of trial wavefunctions.
+Data for this system has been collected in DMC using the following sequence of Hubbard-U values
+on Fe-d orbitals: :math:`0 1 2 3 4 5` eV. Some non-zero U value often minimizes the 
+DMC energy, but optimized U values have limited transferability across different systems.
+Similar to the procedure in performing timestep statistical fitting, quality of the input statistics 
+must be checked using ``qmca`` utility to determine the reblocking factor and equilibration
+periods. 
+
+Assuming that an equilibration period of initial 50 steps, ``-e 50``, and a reblocking period of 
+4, ``-b 6``, is sufficient to remove correlations in the statistical local energies, the ``qmc-fit`` 
+tool can be used in the following way to obtain a quadratic fit of the data:
+
+::
+
+  >qmc-fit u -e 50 -b 6 -u "0 1 2 3 4 5" -f quadratic dmc_u_*/dmc.s001.scalar.dat
+  fit function  : quadratic
+  fitted formula: (-1230.1071 +/- 0.0045) + (-0.0683 +/- 0.0040)*t + (0.00883 +/- 0.00077)*t^2
+  root 1 minimum_u     : 3.87 +/- 0.14 eV
+  root 1 minimum_e     : -1230.2391 +/- 0.0026 Ha
+  root 1 curvature     : 0.0177 +/- 0.0015
+
+Here, ``qmc-fit u`` indicates we are performing a Hubbard-U/exact-exchange ratio fit, 
+``-u`` option provides a list of Hubbard-U values ‘0 1 2 3 4 5’ corresponding to the auto-sorted
+dmc scalar files with wildcard ``dmc_u_*/dmc.s001.scalar.dat``. Here, ``qmc-fit`` command is invoked at a 
+directory where folders such as ``dmc_u_0_2x2x1, dmc_u_1_2x2x1, dmc_u_2_2x2x1`` reside. 
+Here, the text output provides the U value (``minimum_u``) and local energies (``minimum_e``) 
+at the minima of the polynomial which falls within the range of Hubbard-U values provided in the command 
+line, e.g. from 0 to 5. Therefore, a U value of :math:`3.8(1)` eV minimizes the DMC energy of the system. 
+The ``curvature`` is printed for informative purposes only, but a curvature with small error bar could 
+indicate a higher quality polynomial fit. Similar to the timestep fit, a plot of the fit will also 
+produced as default where the minima of the polynomial is shown as a red dot as in :numref:`fig13`.
+
+Different fitting functions are supported via the ``-f`` option. 
+Currently supported options include ``quadratic`` (:math:`a+bt+ct^2`), and 
+``cubic`` (:math:`a+bt+ct^2+dt^3`) and ``quartic`` (:math:`a+bt+ct^2+dt^3+et^4`). 
+An example of a cubic fit is given as below:
+
+::
+
+  >qmc-fit u -e 50 -b 6 -u "0 1 2 3 4 5" -f cubic dmc_u_*/dmc.s001.scalar.dat
+
+  fit function  : cubic
+  fitted formula: (-1230.1087 +/- 0.0045) + (-0.0608 +/- 0.0073)*t + (0.0047 +/- 0.0033)*t^2 + (0.00055 +/- 0.00041)*t^3
+  root 1 minimum_u     : 3.85 +/- 0.11 eV
+  root 1 minimum_e     : -1230.2415 +/- 0.0033 Ha
+  root 1 curvature     : 0.0221 +/- 0.0034
+
+.. _fig13:
+.. figure:: /figs/qmcfit_hubbard_quadratic.png
+  :width: 400
+  :align: center
+
+  Quadratic Hubbard-U fits to DMC data for a 24-atom supercell of monolayer FeCl:math:`_{2}` obtained with ``qmc-fit``.  DMC local energy minima are indicated by the red data point on the bottom halves of either panel.
 
 .. _qdens:
 
