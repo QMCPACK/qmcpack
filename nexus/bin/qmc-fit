@@ -115,7 +115,7 @@ all_fit_functions = obj(
             format   = '{0} + {1}*t + {2}*t^2',
             params   = [('minimum_u',lambda p: roots_n(p, 1)),
                         ('minimum_e',lambda p: root_vals_n(p,1)),
-                        ('curvature', lambda p: moment_n(p, 2))],
+                        ('curvature',lambda p: moment_n(p, 2))],
             ),
         cubic = obj(
             nparam   = 4,
@@ -165,7 +165,7 @@ def qmcfit(q,E,fname='linear',minimizer=least_squares):
     if fname=='quartic':
         pp = np.polyfit(q,E,4)
     if fname=='cubic':
-        pp = np.polyfit(q,E,4)
+        pp = np.polyfit(q,E,3)
     if fname=='quadratic':
         pp = np.polyfit(q,E,2)
     else:
@@ -517,8 +517,8 @@ def hubbard_u_fit():
             #end if
             log('root {0} {1:<14}: {2} +/- {3} {4}'.format(i+1,pname,pm,pe, unit))
     #end for
-    
     # plot the fit (if available)
+
     if plots_available and not opt.noplot:
         lw = 2
         ms = 10
