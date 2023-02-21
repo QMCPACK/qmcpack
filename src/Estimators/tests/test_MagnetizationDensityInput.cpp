@@ -32,6 +32,8 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
   using PosType = QMCTraits::PosType;
   using namespace testing::magdensity;
 
+  Lattice lattice = testing::makeTestLattice();
+
   for (auto input_xml : valid_mag_density_input_sections)
   {
     Libxml2Document doc;
@@ -39,6 +41,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
     REQUIRE(okay);
     xmlNodePtr node = doc.getRoot();
     MagnetizationDensityInput magdens(node);
+    MagnetizationDensityInput::DerivedParameters dev_par = magdens.calculateDerivedParameters(lattice);
   }
 
   for (auto input_xml : testing::invalid_mag_density_input_sections)
@@ -66,6 +69,7 @@ TEST_CASE("MagnetizationDensityInput::from_xml", "[estimators]")
     PosType grid   = magdens.get_grid();
     PosType dr     = magdens.get_dr();
     PosType corner = magdens.get_corner();
+
 
     app_log() << "NSAMPLES = " << nsamples << std::endl;
     app_log() << "INTEGRATOR = " << integrator << std::endl;

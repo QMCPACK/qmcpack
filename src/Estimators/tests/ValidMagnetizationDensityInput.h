@@ -34,21 +34,23 @@ constexpr std::array<std::string_view, 3> valid_mag_density_input_sections{
     R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="integrator"   >  simpsons       </parameter>
-  <parameter name="samples"      >  64            </parameter>
-  <parameter name="center"       >  0.0 0.0 0.1   </parameter>
-  <parameter name="grid"         >  4 3 2 </parameter>
+  <parameter name="samples"      >  64             </parameter>
+  <parameter name="center"       >  0.0 0.0 0.1    </parameter>
+  <parameter name="grid"         >  4 3 2          </parameter>
 </estimator>
 )XML",
     R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="integrator"   >  montecarlo       </parameter>
-  <parameter name="samples"      >  128           </parameter>
+  <parameter name="samples"      >  128              </parameter>
+  <parameter name="dr"           >  0.01 0.02 0.03   </parameter>
 </estimator>
 )XML",
     R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
   <parameter name="samples"      >  32            </parameter>
   <parameter name="corner"       >  0.0 0.0 0.1   </parameter>
+  <parameter name="grid"         >  4 3 2         </parameter>
 </estimator>
 )XML"
     // clang-format: on

@@ -26,13 +26,15 @@ constexpr std::array<std::string_view, 3> invalid_mag_density_input_sections{
   <parameter name="integrator"   >  tacocat       </parameter>
   <parameter name="samples"      >  64            </parameter>
   <parameter name="center"       >  0.0 0.0 0.1   </parameter>
+  <parameter name="grid"         >  4 4 4         </parameter>
 </estimator>
 )XML",
     R"XML(
 <estimator type="MagnetizationDensity" name="magdensity">
-  <parameter name="center"       > 0.0 1.0 0.0 </parameter>
-  <parameter name="corner"       > 0.0 0.1 0.0 </parameter>
-  <parameter name="samples"      >  128           </parameter>
+  <parameter name="center"       >  0.0 1.0 0.0 </parameter>
+  <parameter name="corner"       >  0.0 0.1 0.0 </parameter>
+  <parameter name="samples"      >  128         </parameter>
+  <parameter name="dr"           >  0.1 0.1 0.1 </parameter>
 </estimator>
 )XML",
     R"XML(

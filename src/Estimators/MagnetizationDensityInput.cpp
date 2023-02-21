@@ -34,12 +34,15 @@ MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculat
     const Lattice& lattice) const
 {
   PosType corner = 0.0;
+  //Corner and center can be taken care of by defaults.  corner=0 if not specified.
   if (have_center_)
     corner = center_ - lattice.Center;
   else if (have_corner_)
     corner = corner_;
 
   TinyVector<int, DIM> grid;
+
+  //dr or grid must be specified to perform the grid math.  Input already checked before we get here.  
   if (have_dr_)
     for (int d = 0; d < DIM; ++d)
     {
@@ -52,6 +55,7 @@ MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculat
   else if (have_grid_)
     for (int d = 0; d < DIM; ++d)
       grid[d] = (int)std::ceil(grid_real_[d]);
+  
   size_t npoints = 1;
   for (int d = 0; d < DIM; ++d)
     npoints *= grid[d];
@@ -87,11 +91,11 @@ void MagnetizationDensityInput::MagnetizationDensityInputSection::checkParticula
         throw UniformCommunicateError(error_tag + " number of grid points must be >=1 in each direction");
     }
   }
-  //This is the most we can test without knowing the lattice.
-  //Correctness determined if dr implies grid with more than 1 point in each direction.
-  //Check is performed in calculateDerivedParameters().
-  if (has("dr"))
+  else if (has("dr"))
   {
+    //This is the most we can test without knowing the lattice.
+    //Correctness determined if dr implies grid with more than 1 point in each direction.
+    //Check is performed in calculateDerivedParameters().
     PosType thisdr = get<PosType>("dr");
     for (int d = 0; d < DIM; ++d)
     {
@@ -101,6 +105,9 @@ void MagnetizationDensityInput::MagnetizationDensityInputSection::checkParticula
         app_log() << error_tag + " dr larger than 10.0.  Make sure that this grid spacing is intended.\n";
     }
   }
+  else
+    throw UniformCommunicateError(error_tag + " grid or dr must be specified.");
+
   if (has("samples"))
   {
     int samps = get<int>("samples");
