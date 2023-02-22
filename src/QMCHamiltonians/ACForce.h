@@ -62,6 +62,8 @@ public:
  *  isn't sufficient.  We override it here. **/
   void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
 
+  RealType compute_regularizer_f(const ParticleGradient & G, const RealType epsilon);
+  
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P) final;
 
@@ -99,7 +101,6 @@ private:
   Forces sw_grad_;
 
  
-  RealType compute_regularizer_f(const ParticleGradient & G, const RealType epsilon);
   TWFFastDerivWrapper psi_wrapper_;
 };
 

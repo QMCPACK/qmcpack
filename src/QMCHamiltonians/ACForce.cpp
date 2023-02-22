@@ -194,7 +194,13 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
 
 ACForce::RealType ACForce::compute_regularizer_f(const ParticleSet::ParticleGradient& G, const RealType epsilon)
 {
-  RealType gdotg=Dot_CC(G,G);
+  RealType gdotg=0.0;
+  #if defined(QMC_COMPLEX)
+    gdotg=Dot_CC(G,G);
+  #else
+    gdotg=Dot(G,G);
+  #endif
+
   RealType gmag=std::sqrt(gdotg);
   RealType x;
 
