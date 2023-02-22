@@ -216,9 +216,7 @@ ACForce::RealType ACForce::compute_regularizer_f(const ParticleSet::ParticleGrad
   //Argument of polynomial is x/epsilon=1/(epsilon*|grad(logpsi)|)
   double xovereps = 1.0 / (epsilon * gmag);
   if (xovereps >= 1.0)
-  {
     regvalue = 1.0;
-  }
   else
   {
     //There's a discrepancy between AIP Advances 10, 085213 (2020) and arXiv:2002.01434 for polynomial.
