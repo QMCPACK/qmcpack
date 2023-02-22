@@ -45,13 +45,7 @@ MagnetizationDensityInput::DerivedParameters MagnetizationDensityInput::calculat
   //dr or grid must be specified to perform the grid math.  Input already checked before we get here.  
   if (have_dr_)
     for (int d = 0; d < DIM; ++d)
-    {
       grid[d] = (int)std::ceil(std::sqrt(dot(lattice.Rv[d], lattice.Rv[d])) / dr_[d]);
-      //Now we know the lattice and can compute grid points from dr.  We check it's validity here.
-      if (grid[d] < 1)
-        throw UniformCommunicateError(
-            "MagnetizationDensity input: invalid dr.  Number of grid points implied is less than 1");
-    }
   else if (have_grid_)
     for (int d = 0; d < DIM; ++d)
       grid[d] = (int)std::ceil(grid_real_[d]);
