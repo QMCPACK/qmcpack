@@ -68,7 +68,7 @@ public:
   * \param[in] epsilon, regularizer parameter.
   * \return Value of regularizer f(G,epsilon).
   */
-  RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
+  static RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
 
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P) final;
