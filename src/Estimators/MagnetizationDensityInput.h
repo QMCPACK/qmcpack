@@ -29,12 +29,12 @@ public:
     SIMPSONS,
     MONTECARLO
   };
-
-  inline static const std::unordered_map<std::string, std::any> lookup_input_enum_value{{"integrator-simpsons",
-                                                                                         Integrator::SIMPSONS},
-                                                                                        {"integrator-montecarlo",
-                                                                                         Integrator::MONTECARLO}};
-
+  // Weird clang format issues with the following.  Disable clang-format for now.
+  // clang-format off
+  inline static const std::unordered_map<std::string, std::any>
+      lookup_input_enum_value{{"integrator-simpsons", Integrator::SIMPSONS},
+                              {"integrator-montecarlo", Integrator::MONTECARLO}};
+  // clang-format on
   using Real               = QMCTraits::RealType;
   using POLT               = PtclOnLatticeTraits;
   using Lattice            = POLT::ParticleLayout;
