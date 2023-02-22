@@ -71,7 +71,9 @@ bool ACForce::put(xmlNodePtr cur)
   attr.add(reg_epsilon_,"epsilon");
   attr.add(fastDerivatives_, "fast_derivatives", {false});
   attr.put(cur);
-
+  if( reg_epsilon_ < 0)
+    throw std::runtime_error("ACForce::put(): epsilon<0 not allowed.")
+;
   if (fastDerivatives_)
     app_log() << "ACForce is using the fast force algorithm\n";
   else
