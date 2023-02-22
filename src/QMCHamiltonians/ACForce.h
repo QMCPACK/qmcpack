@@ -26,7 +26,7 @@ namespace qmcplusplus
 class ACForce : public OperatorBase
 {
 public:
-  using Forces = ParticleSet::ParticlePos;
+  using Forces           = ParticleSet::ParticlePos;
   using ParticleGradient = ParticleSet::ParticleGradient;
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
@@ -62,15 +62,15 @@ public:
  *  isn't sufficient.  We override it here. **/
   void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
 
-  RealType compute_regularizer_f(const ParticleGradient & G, const RealType epsilon);
-  
+  RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
+
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P) final;
 
 private:
   ///Finite difference timestep
-  RealType delta_; 
- 
+  RealType delta_;
+
   //** Internal variables **/
   //  I'm assuming that psi, ions, elns, and the hamiltonian are bound to this
   //  instantiation.  Making sure no crosstalk happens is the job of whatever clones this.
@@ -100,7 +100,7 @@ private:
   Forces sw_pulay_;
   Forces sw_grad_;
 
- 
+
   TWFFastDerivWrapper psi_wrapper_;
 };
 

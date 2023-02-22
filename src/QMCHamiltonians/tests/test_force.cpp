@@ -486,19 +486,19 @@ TEST_CASE("AC Force", "[hamiltonian]")
 
   ParticleSet::ParticleGradient g(elec.getTotalNum());
   //Let magnitude be 1
-  g[0][0]=std::sqrt(1.0/2.0);
-  g[1][2]=std::sqrt(1.0/2.0);
+  g[0][0] = std::sqrt(1.0 / 2.0);
+  g[1][2] = std::sqrt(1.0 / 2.0);
 
   //Epsilon = 2 places this within the regularizer threshold of x < 1.
-  Real regval = force_new.compute_regularizer_f(g,2);
-  CHECK( regval == Approx(1.421875) );
-  //Epsilon = 0.001 places this way outside of regularizer threshold.  
+  Real regval = force_new.compute_regularizer_f(g, 2);
+  CHECK(regval == Approx(1.421875));
+  //Epsilon = 0.001 places this way outside of regularizer threshold.
   //Should return 1.
-  regval = force_new.compute_regularizer_f(g,0.001);
-  CHECK( regval == Approx(1.0) );
+  regval = force_new.compute_regularizer_f(g, 0.001);
+  CHECK(regval == Approx(1.0));
   //Epsilon = 0.0 indicates the regularizer is not used.  Return 1.
-  regval = force_new.compute_regularizer_f(g,0.0);
-  CHECK( regval == Approx(1.0) );
+  regval = force_new.compute_regularizer_f(g, 0.0);
+  CHECK(regval == Approx(1.0));
 
   Libxml2Document olddoc;
   Libxml2Document newdoc;
