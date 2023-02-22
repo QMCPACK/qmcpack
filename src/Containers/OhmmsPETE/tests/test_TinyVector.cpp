@@ -32,14 +32,14 @@ void test_tiny_vector()
   // default constructor sets elements to zero
   for (int i = 0; i < D; i++)
   {
-    REQUIRE(v1[i] == Approx(0.0));
+    CHECK(v1[i] == Approx(0.0));
   }
 
   vec_t v2(1.0);
   // single constructor sets all the elements to that value
   for (int i = 0; i < D; i++)
   {
-    REQUIRE(v2[i] == Approx(1.0));
+    CHECK(v2[i] == Approx(1.0));
   }
 
   // TODO: add optional bounds checks to element access methods
@@ -53,7 +53,7 @@ void test_tiny_vector()
 
   // Dot product
   double dotp = dot(v2, v4);
-  REQUIRE(sum == Approx(dotp));
+  CHECK(sum == Approx(dotp));
 
   // Multiply add
   v1 += 2.0 * v4;
@@ -65,8 +65,8 @@ void test_tiny_vector_size_two()
 {
   using vec_t = TinyVector<double, D>;
   vec_t v3(1.0, 2.0);
-  REQUIRE(v3[0] == Approx(1.0));
-  REQUIRE(v3[1] == Approx(2.0));
+  CHECK(v3[0] == Approx(1.0));
+  CHECK(v3[1] == Approx(2.0));
   // problem: elements past those explicitly set are undefined
   // in this case, vectors with D > 2 will have undefined elements.
 }

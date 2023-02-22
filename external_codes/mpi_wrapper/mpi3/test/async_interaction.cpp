@@ -1,8 +1,11 @@
-#include "../../mpi3/communicator.hpp"
-#include "../../mpi3/main.hpp"
-#include "../../mpi3/process.hpp"
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2018-2023 Alfredo A. Correa
 
-#include<future>
+#include <mpi3/communicator.hpp>
+#include <mpi3/main.hpp>
+#include <mpi3/process.hpp>
+
+#include <future>
 
 namespace mpi3 = boost::mpi3;
 

@@ -37,7 +37,7 @@ TEST_CASE("walker", "[particle]")
   REQUIRE(w.R.size() == 1);
   w.R[0] = 1.0;
 
-  REQUIRE(w.R[0][0] == Approx(1.0));
+  CHECK(w.R[0][0] == Approx(1.0));
 }
 
 /** Currently significant amounts of code assumes that the Walker by default 

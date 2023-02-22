@@ -70,7 +70,6 @@ public:
   void report(const std::string& pad);
   void test(int moves, ParticleSet& P);
   Return_t test_evaluate(ParticleSet& P, int& pmin, int& pmax);
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 };
 
 } // namespace qmcplusplus

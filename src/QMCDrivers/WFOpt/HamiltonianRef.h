@@ -14,9 +14,6 @@
 #define QMCPLUSPLUS_HAMILTONIANREF_H
 
 #include <OperatorBase.h>
-#ifdef QMC_CUDA
-class MCWalkerConfiguration;
-#endif
 
 namespace qmcplusplus
 {

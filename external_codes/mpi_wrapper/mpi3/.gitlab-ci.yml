@@ -1,12 +1,10 @@
 # -*-indent-tabs-mode:nil;c-basic-offset:2;tab-width:4;-*-
-# Copyright 2020-2022 Alfredo A. Correa
+# Copyright 2020-2023 Alfredo A. Correa
 
-image: debian:testing
+image: correaadock/gnudev:v2
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  OMPI_ALLOW_RUN_AS_ROOT: 1
-  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: 1
 
 openmpi:
   stage: build
@@ -17,18 +15,8 @@ openmpi:
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE="--oversubscribe"
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - make
-    - ctest --output-on-failure
-
-#    - curl --output webimage.sh --url https://registrationcenter-download.intel.com/akdlm/irc_nas/18479/l_HPCKit_p_2022.1.2.117_offline.sh --retry 5 --retry-delay 5
-#    - chmod +x webimage.sh
-#    - ./webimage.sh -x -f webimage_extracted --log extract.log
-#    - rm -rf webimage.sh
-#    - ls -1 webimage_extracted/
-#    - WEBIMAGE_NAME=$(ls -1 webimage_extracted/)
-#    - webimage_extracted/"$WEBIMAGE_NAME"/bootstrapper -s --action install --components=intel.oneapi.lin.dpcpp-cpp-compiler-pro                            --eula=accept --log-dir=.
-#    - rm -rf webimage_extracted
-#    - . /opt/intel/oneapi/setvars.sh
+    - cmake --build . --parallel 2 || make VERBOSE=1
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
 
 icpc-intelmpi:
   stage: build
@@ -41,7 +29,7 @@ icpc-intelmpi:
     - mkdir build && cd build
     - icpc --version
     - CXX=icpc CXXFLAGS="-diag-disable=593,2196,1786,1478" cmake .. -DCMAKE_BUILD_TYPE=Debug  #https://community.intel.com/t5/Intel-C-Compiler/Inline-and-no-inline-warning/td-p/1216764
-    - make
+    - cmake --build . --parallel 2 || cmake --build . --verbose
     - ctest --output-on-failure
   needs: ["openmpi"]
 
@@ -56,7 +44,7 @@ icpx-intelmpi:
     - mkdir build && cd build
     - icpx --version
     - CXX=icpx CXXFLAGS="-O1" cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - make
+    - cmake --build . --parallel 2 || make VERBOSE=1
     - ctest --output-on-failure
   needs: ["openmpi"]
 
@@ -71,102 +59,74 @@ openmpi-clang:
     - clang++ --version
     - mpirun --version
     - CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - make
-    - ctest --output-on-failure
+    - cmake --build . --parallel 2 || make VERBOSE=1
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi"]
 
 openmpi-clang20:
   stage: build
   script:
     - apt update -qq && apt install -qq -y --no-install-recommends ca-certificates libopenmpi-dev openmpi-bin cmake make clang git libstdc++-12-dev libboost-serialization-dev
-    - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
     - cd test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE="--oversubscribe"
     - clang++ --version
     - mpirun --version
     - CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20
-    - make VERBOSE=1
-    - ctest --output-on-failure
+    - cmake --build . --parallel 2 || make VERBOSE=1
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi-clang"]
 
 openmpi-clang-tidy:
   stage: build
   script:
     - apt update -qq && apt install -qq -y --no-install-recommends ca-certificates libopenmpi-dev openmpi-bin clang libstdc++-12-dev clang-tidy cmake git make libboost-serialization-dev
-    - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
-    - cd test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE="--oversubscribe"
     - clang++ --version
     - clang-tidy --version
     - CXX=clang++ cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_CLANG_TIDY="clang-tidy"
-    - make VERBOSE=1
-    - ctest --output-on-failure
+    - make --jobs=2 || make VERBOSE=1
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi-clang"]
 
 openmpi-cppcheck:
   stage: build
   script:
     - apt update -qq && apt install -qq -y --no-install-recommends libopenmpi-dev openmpi-bin g++ libstdc++-12-dev ca-certificates cmake cppcheck git make libboost-serialization-dev
-    - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
-    - cd test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE="--oversubscribe"
     - g++ --version
     - cppcheck --version
     - cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_CPPCHECK="cppcheck;--force;--enable=all;--inline-suppr;--language=c++;--suppress=missingIncludeSystem;--suppress=syntaxError;--suppress=unmatchedSuppression;--std=c++17;--error-exitcode=666;-UEXCLUDE_CPPCHECK"
-    - make VERBOSE=1
-    - ctest --output-on-failure
+    - make --jobs=2 || make VERBOSE=1
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi"]
-
-#        - export CC=mpicc
-#        - export CXX=mpic++
-#        - export CCFLAGS="`mpic++ --showme:incdirs`"
-#        - export CXXFLAGS="`mpic++ --showme:incdirs`"
-#        - echo $CXXFLAGS
-
-#openmpi-valgrind:
-#    stage: build
-#    script:
-#        - apt update  -qq
-#        - apt install -qq -y --no-install-recommends libopenmpi-dev openmpi-bin cmake make g++ libboost-serialization-dev valgrind
-#        - cd ..
-#        - ln -s boost-mpi3 mpi3
-#        - cd mpi3/test
-#        - mkdir build
-#        - cd build
-#        - export MPI_OVERSUBSCRIBE=--oversubscribe
-#        - export VALGRIND_EXE="valgrind --suppressions=communicator_main.cpp.openmpi.supp"
-#        - cmake ..
-#        - pwd
-#        - mpirun --version
-#        - make -j 4
-#        - ctest -VV --output-on-failure
 
 mpich-debug:
   stage: build
   script:
-    - apt update -qq && apt install -qq -y --no-install-recommends libmpich-dev mpich ca-certificates cmake git make g++ libboost-serialization-dev
-    - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
+    - apt update -qq && apt install -qq -y --no-install-recommends libmpich-dev mpich
     - cd test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE=""
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - make
+    - cmake --build . --parallel 2 || cmake --build . --verbose
     - ctest --output-on-failure
 
 mpich-valgrind:
   stage: build
+  allow_failure: true
   script:
-    - apt update -qq && apt install -qq -y --no-install-recommends libmpich-dev mpich ca-certificates cmake make g++ git libboost-serialization-dev valgrind
+    - apt update -qq && apt-get install -qq -y --no-install-recommends libmpich-dev mpich
     - mpirun --version
-    - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3/test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE=""
-    - export VALGRIND_EXE="valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --error-exitcode=1"
+    - export VALGRIND_EXE="valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all --suppressions=.valgrind_suppressions --gen-suppressions=all --error-exitcode=1 "
     - cmake .. -DCMAKE_BUILD_TYPE=Debug
-    - make
+    - make --jobs=2 || make VERBOSE=1
+    - ulimit -n       # reports current value
+    - ulimit -n 1024  # workaround neededed by valgrind in docker running in Fedora 37
     - ctest --output-on-failure
   needs: ["mpich-debug"]
 
@@ -181,64 +141,30 @@ qmcpack-openmpi:
     - git subtree add --squash -P external_codes/mpi_wrapper/mpi3 https://gitlab.com/correaa/boost-mpi3.git $CI_COMMIT_BRANCH
     - cd build
     - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_BUILD_TYPE=Debug -DMPIEXEC_PREFLAGS="--allow-run-as-root;--bind-to;none" .. #-DCMAKE_CXX_FLAGS="-Werror"
-    - make # afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R afqmc --output-on-failure
+    - make --jobs=2 || make VERBOSE=1 # afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R afqmc --output-on-failure
   needs: ["openmpi"]
 
 qmcpack-cuda-runner:
   allow_failure: true
-  stage: test
+  image: nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04
   tags:
-    - intel_compiler
+    - nvidia-docker
+  stage: test
   script:
+    - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ cmake make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev
     - cmake --version
-    - git clone https://github.com/QMCPACK/qmcpack.git
-    - cp -r qmcpack qmcpack.noupdate
+    - git clone --depth=1 https://github.com/QMCPACK/qmcpack.git
     - cd qmcpack
     - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
     - git rm -r external_codes/mpi3 && git commit -m "remove mpi3 subtree"
     - git subtree add --squash -P external_codes/mpi3 $CI_REPOSITORY_URL $CI_COMMIT_BRANCH # e.g. https://gitlab.com/correaa/boost-multi.git
-    - cd ../qmcpack.noupdate
+    - cd ../qmcpack
     - cd build
-    - CUDACXX=/usr/local/cuda/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations" ..
-    - make ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
-    - ctest -R afqmc     --output-on-failure
-    - cd ../../qmcpack
-    - cd build
-    - CUDACXX=/usr/local/cuda/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-9 -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations" ..
-    - make -j4 ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-    - ctest -R ppconvert --output-on-failure
-    - ctest -R afqmc     --output-on-failure
-  needs: ["openmpi-cuda-12", "qmcpack-openmpi"]
-
-#qmcpack-icpc-runner:
-#  stage: test
-#  tags:
-#    - intel_compiler
-#  script:
-#    - . /opt/intel/oneapi/setvars.sh
-#    - export CXX="icpc"
-#    - $CXX --version
-#    - cmake --version
-#    - git clone https://github.com/QMCPACK/qmcpack.git
-#    - cd qmcpack
-#    - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-#    - git rm -r external_codes/boost_multi/multi && git commit -m "remove multi subtree"
-#    - echo $CI_REPOSITORY_URL
-#    - echo $CI_COMMIT_BRANCH
-#    - git subtree add --squash -P external_codes/boost_multi/multi https://gitlab.com/correaa/boost-multi.git master
-#    - git rm -r external_codes/mpi_wrapper/mpi3 && git commit -m "remove mpi3 subtree"
-#    - git subtree add --squash -P external_codes/mpi_wrapper/mpi3 https://gitlab.com/correaa/boost-mpi3.git $CI_COMMIT_BRANCH
-#    - cd build
-#    - cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 ..
-#    - make -j 16 ppconvert afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-#    - ctest -R ppconvert --output-on-failure
-
-#    - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose  # following https://askubuntu.com/a/865294/15943
-#    - mkdir /opt/cmake
-#    - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#    - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+    - CUDACXX=/usr/local/cuda/bin/nvcc cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++ -DCMAKE_CXX_FLAGS="-Wno-deprecated -Wno-deprecated-declarations" ..
+    - make -j4 afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest -R afqmc --output-on-failure
+  needs: ["openmpi-cuda-11", "qmcpack-openmpi"]
 
 inq-openmpi:
   stage: test
@@ -254,126 +180,49 @@ inq-openmpi:
     - cd ../..
     - mkdir build && cd build
     - ../configure --prefix=$HOME --disable-debug
-    - make
+    - make --jobs=2 || make VERBOSE=1
     - make install
-    - ctest --output-on-failure
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi"]
 
-#inq-nvcc-ompi:
-#    stage: test
-#    tags:
-#        - cuda_gpu
-#    script:
-#        - export PREFIX=`mktemp -d`
-#        - git clone https://gitlab.com/npneq/inq.git --recurse-submodules
-#        - cd inq
-#        - cd external_libs/mpi3
-#        - git checkout $CI_COMMIT_BRANCH
-#        - cd ../..
-#        - mkdir build && cd build
-#        - CUDACXX=/usr/local/cuda/bin/nvcc ../configure --prefix=$PREFIX --enable-cuda --disable-debug --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
-#        - make -j8
-#        - make -j8 install
-#        - ctest --output-on-failure --timeout 600
-#        - cd src; INQ_EXEC_ENV="mpirun --oversubscribe -np 4" ctest --output-on-failure --timeout 600; cd ..
-#        - rm -rf $PREFIX
+# - export DEBIAN_FRONTEND=noninteractive
+# - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates git gnupg software-properties-common
+# - apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/3bf863cc.pub
+# - add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/ /"
+# - add-apt-repository contrib
+# - apt-get update
+# - apt-get -y install cuda
 
-#openmpi-icpc-runner:
-#    stage: test
-#    tags:
-#        - cuda_gpu
-#    script:
-#        - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3/test
-#        - mkdir build && cd build
-#        - CXX=/opt/intel/oneapi/compiler/2021.2.0/linux/bin/intel64/icpc cmake .. -DCMAKE_BUILD_TYPE=Debug
-#        - mpirun --version
-#        - make VERBOSE=1
-#        - ctest --output-on-failure --timeout 120
-
-#cuda-11.4-std17:
-#    image: nvidia/cuda:11.4.0-devel
-#    allow_failure: true
-#    stage: test
-#    script:
-#      - export DEBIAN_FRONTEND=noninteractive
-#      - apt install curl
-#      - curl -s https://packages.gitlab.com/gpg.key | apt-key add -
-#      - apt-get update && apt-get install -qq -y --no-install-recommends ca-certificates libopenmpi-dev openmpi-bin cmake make libboost-serialization-dev wget
-#      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#      - mkdir /opt/cmake
-#      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#      - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
-#      - cd test
-#      - nvcc --version
-#      - mkdir build && cd build
-#      - export MPI_OVERSUBSCRIBE="--oversubscribe"
-#      - CUDACXX=nvcc cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_CUDA=1
-#      - cmake --build . --verbose
-#      - ctest --output-on-failure
-
-openmpi-cuda-12:
+# TODO(correaa) -> openmpi-cuda-11
+openmpi-cuda-11:
   stage: build
   allow_failure: false
-  image: debian:stable
+  image: nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04
   script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates git gnupg software-properties-common
-    - apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/3bf863cc.pub
-    - add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/ /"
-    - add-apt-repository contrib
-    - apt-get update
-    - apt-get -y install cuda
-    - apt-get install --no-install-recommends -y cmake libboost-test-dev libboost-serialization-dev libopenmpi-dev make
-    - /usr/local/cuda-12/bin/nvcc --version
+    - apt-get update && apt-get install --no-install-recommends -y cmake libboost-test-dev libboost-serialization-dev libopenmpi-dev make git
+    - /usr/local/cuda-11/bin/nvcc --version
     - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
     - cd test
     - mkdir build && cd build
     - export MPI_OVERSUBSCRIBE="--oversubscribe"
-    - cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -DCMAKE_BUILD_TYPE=Debug -DENABLE_CUDA=1
-    - cmake --build . || make VERBOSE=1
-    - ctest --output-on-failure
+    - cmake .. -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11/bin/nvcc -DCMAKE_BUILD_TYPE=Debug -DENABLE_CUDA=1
+    - cmake --build . --parallel 2 || cmake --build . --verbose
+    - OMPI_ALLOW_RUN_AS_ROOT=1 OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 ctest --output-on-failure
   needs: ["openmpi"]
 
-#cuda-11.4-std17:
-#    image: nvidia/cuda:11.4.0-devel
-#    allow_failure: true
-#    stage: test
-#    script:
-#      - export DEBIAN_FRONTEND=noninteractive
-#      - apt install curl
-#      - curl -s https://packages.gitlab.com/gpg.key | apt-key add -
-#      - apt-get update && apt-get install -qq -y --no-install-recommends ca-certificates libopenmpi-dev openmpi-bin cmake make libboost-serialization-dev wget
-#      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#      - mkdir /opt/cmake
-#      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#      - cd .. && ln -s boost-mpi3 mpi3 && cd mpi3
-#      - cd test
-#      - nvcc --version
-#      - mkdir build && cd build
-#      - export MPI_OVERSUBSCRIBE="--oversubscribe"
-#      - CUDACXX=nvcc cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_CUDA=1
-#      - cmake --build . --verbose
-#      - ctest --output-on-failure
+# - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
+# - mkdir /opt/cmake
+# - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
+# - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 
-inq-cuda-12-openmpi-compileonly:
+inq-cuda-11-openmpi-compileonly:
   stage: build
   allow_failure: true
-  image: debian:stable
+  image: nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04
+  tags:
+    - nvidia-docker
   script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get update && apt-get install --no-install-recommends -y --quiet ca-certificates gnupg software-properties-common
-    - apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/3bf863cc.pub
-    - add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/debian11/x86_64/ /"
-    - add-apt-repository contrib
-    - apt-get update
-    - apt-get -y install cuda
-    - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev libhdf5-dev gfortran g++ pkg-config make git ca-certificates wget
-    - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-    - mkdir /opt/cmake
-    - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-    - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
+    - apt-get update && apt-get install --no-install-recommends -y --quiet cmake libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev libhdf5-dev gfortran g++ pkg-config make git ca-certificates wget
     - cmake --version
     - git clone https://gitlab.com/npneq/inq.git --recurse-submodules
     - cd inq
@@ -381,94 +230,10 @@ inq-cuda-12-openmpi-compileonly:
     - git checkout $CI_COMMIT_BRANCH
     - cd ../..
     - mkdir build && cd build
-    - /usr/local/cuda-12/bin/nvcc -V
-    - CUDA_ARCH_OVERRIDE=1 ../configure --prefix=$HOME --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_COMPILER=/usr/local/cuda-12/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=70
-    - make silicon
+    - /usr/local/cuda-11/bin/nvcc -V
+    - CUDA_ARCH_OVERRIDE=1 ../configure --prefix=$HOME --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_COMPILER=/usr/local/cuda-11/bin/nvcc -DCMAKE_CUDA_ARCHITECTURES=61
+    - make silicon --jobs=2
+    - make install
+    - ctest -R silicon
   needs:
-    - openmpi-cuda-12
-
-#inq-cuda-11.2-compileonly:
-#    image: nvidia/cuda:11.2.0-devel
-#    allow_failure: true
-#    stage: test
-#    script:
-#      - export DEBIAN_FRONTEND=noninteractive
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config make git ca-certificates wget
-#      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#      - mkdir /opt/cmake
-#      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#      - cmake --version
-#      - git clone https://gitlab.com/npneq/inq.git --recurse-submodules
-#      - cd inq
-#      - cd external_libs/mpi3
-#      - git checkout $CI_COMMIT_BRANCH
-#      - cd ../..
-#      - mkdir build && cd build
-#      - /usr/local/cuda/bin/nvcc -V
-#      - CUDACXX=/usr/local/cuda/bin/nvcc CUDA_ARCH_OVERRIDE=1 ../configure --prefix=$HOME --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
-#      - make silicon
-
-#inq-cuda-11.4-compileonly:
-#    image: nvidia/cuda:11.4.0-devel
-#    allow_failure: true
-#    stage: test
-#    script:
-#      - export DEBIAN_FRONTEND=noninteractive
-#      - apt-get update && apt-get install --no-install-recommends -y --quiet libblas-dev liblapack-dev libfftw3-dev libboost-filesystem-dev libboost-serialization-dev libopenmpi-dev gfortran g++ pkg-config make git ca-certificates wget
-#      - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#      - mkdir /opt/cmake
-#      - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#      - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#      - cmake --version
-#      - git clone https://gitlab.com/npneq/inq.git --recurse-submodules
-#      - cd inq
-#      - cd external_libs/mpi3
-#      - git checkout $CI_COMMIT_BRANCH
-#      - cd ../..
-#      - mkdir build && cd build
-#      - /usr/local/cuda/bin/nvcc -V
-#      - CUDACXX=/usr/local/cuda/bin/nvcc CUDA_ARCH_OVERRIDE=1 ../configure --prefix=$HOME --enable-cuda --with-cuda-prefix=/usr/local/cuda --pass-thru -DCMAKE_CUDA_ARCHITECTURES=70
-#      - make silicon
-
-#qmcpack-cuda-11.2-compileonly:
-#    image: nvidia/cuda:11.2.0-devel
-#    stage: test
-#    script:
-#        - export DEBIAN_FRONTEND=noninteractive
-#        - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev wget
-#        - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#        - mkdir /opt/cmake
-#        - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#        - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#        - cmake --version
-#        - git clone https://github.com/QMCPACK/qmcpack.git
-#        - cd qmcpack
-#        - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-#        - git rm -r external_codes/mpi_wrapper/mpi3 && git commit -m "remove mpi3 subtree"
-#        - git subtree add --squash -P external_codes/mpi_wrapper/mpi3 https://gitlab.com/correaa/boost-mpi3.git $CI_COMMIT_BRANCH
-#        - cd build
-#        - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
-#        - make qmcpack afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-
-
-#qmcpack-cuda-11.4-compileonly:
-#    image: nvidia/cuda:11.4.0-devel
-#    stage: test
-#    script:
-#        - export DEBIAN_FRONTEND=noninteractive
-#        - apt-get -qq update && apt-get -qq install --no-install-recommends -y libblas-dev liblapack-dev libfftw3-dev libboost-serialization-dev libopenmpi-dev gfortran g++ make git ca-certificates numdiff python3 python3-numpy python3-h5py python3-mpi4py python3-scipy libxml2-dev libhdf5-dev wget
-#        - wget https://cmake.org/files/v3.21/cmake-3.21.3-linux-x86_64.sh --no-verbose # following https://askubuntu.com/a/865294/15943
-#        - mkdir /opt/cmake
-#        - sh cmake-3.21.3-linux-x86_64.sh --skip-license --prefix=/opt/cmake
-#        - ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
-#        - cmake --version
-#        - git clone https://github.com/QMCPACK/qmcpack.git
-#        - cd qmcpack
-#        - git config --global user.email "alfredo.correa@gmail.com" && git config --global user.name "Alfredo Correa"
-#        - git rm -r external_codes/mpi_wrapper/mpi3 && git commit -m "remove mpi3 subtree"
-#        - git subtree add --squash -P external_codes/mpi_wrapper/mpi3 https://gitlab.com/correaa/boost-mpi3.git $CI_COMMIT_BRANCH
-#        - cd build
-#        - cmake -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -DBUILD_PPCONVERT=1 -DQMC_CXX_STANDARD=17 -DENABLE_CUDA=1 ..
-#        - make qmcpack afqmc test_afqmc_matrix test_afqmc_numerics test_afqmc_slaterdeterminantoperations test_afqmc_walkers test_afqmc_hamiltonians test_afqmc_hamiltonian_operations test_afqmc_phmsd test_afqmc_wfn_factory test_afqmc_prop_factory test_afqmc_estimators qmc-afqmc-performance
-
+    - openmpi-cuda-11

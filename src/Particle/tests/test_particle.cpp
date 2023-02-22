@@ -84,8 +84,8 @@ TEST_CASE("symmetric_distance_table OpenBC", "[particle]")
 
   source.update();
   /// make sure getCoordinates().getAllParticlePos() is updated no matter SoA or AoS.
-  REQUIRE(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
-  REQUIRE(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
+  CHECK(source.getCoordinates().getAllParticlePos()[0][1] == Approx(1.0));
+  CHECK(source.getCoordinates().getAllParticlePos()[1][2] == Approx(3.2));
 
   const int TableID = source.addTable(source);
   source.update();

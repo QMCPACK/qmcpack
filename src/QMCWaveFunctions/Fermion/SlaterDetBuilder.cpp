@@ -27,10 +27,6 @@
 
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDetTableMethod.h"
-#if defined(QMC_CUDA)
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
-#endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
@@ -374,11 +370,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
 
   std::unique_ptr<DiracDeterminantBase> adet;
 
-  //TODO: the switch logic should be improved as we refine the input tags.
-#if defined(QMC_CUDA)
-  app_summary() << "      Using legacy CUDA acceleration." << std::endl;
-  adet = std::make_unique<DiracDeterminantCUDA>(std::move(psi_clone), firstIndex, lastIndex);
-#else
   if (BFTrans)
   {
     app_summary() << "      Using backflow transformation." << std::endl;
@@ -457,11 +448,6 @@ std::unique_ptr<DiracDeterminantBase> SlaterDetBuilder::putDeterminant(
       }
     }
   }
-#endif
-
-#ifdef QMC_CUDA
-  targetPsi.setndelay(delay_rank);
-#endif
 
   app_log() << std::endl;
   app_log().flush();
@@ -839,7 +825,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur,
             }
           } // if(name=="det")
           csf = csf->next;
-        } // csf loop
+        }   // csf loop
         if (DetsPerCSF.back() == 0)
         {
           APP_ABORT("Found empty CSF (no det blocks).");
@@ -1043,7 +1029,7 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
   size_t H5_ndets, H5_nstates;
   /// 64 bit fixed width integer
   const unsigned bit_kind = 64;
-  static_assert(bit_kind == sizeof(int64_t) * 8, "Must be 64 bit fixed width integer");
+  static_assert(bit_kind == sizeof(uint64_t) * 8, "Must be 64 bit fixed width integer");
   /// the number of 64 bit integers which represent the binary string for occupation
   int N_int;
   std::string Dettype = "DETS";
@@ -1138,23 +1124,34 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
               << " Optimized coefficients were substituted to the original set of coefficients." << std::endl;
   }
 
-  std::vector<Matrix<int64_t>> temps;
+  std::vector<Matrix<uint64_t>> temps;
   for (int grp = 0; grp < nGroups; grp++)
   {
-    Matrix<int64_t> tmp(ndets, N_int);
+    Matrix<uint64_t> tmp(ndets, N_int);
     temps.push_back(tmp);
     std::string ci_str;
 
-    if (!hin.readEntry(temps[grp], "CI_" + std::to_string(grp)))
+    std::string ds_tag = "CI_" + std::to_string(grp);
+    if (!hin.is_dataset(ds_tag))
     {
       //for backwards compatibility
       if (grp == 0)
-        hin.read(temps[grp], "CI_Alpha");
+        ds_tag = "CI_Alpha";
       else if (grp == 1)
-        hin.read(temps[grp], "CI_Beta");
-      else
-        APP_ABORT("Unknown HDF5 CI format");
+        ds_tag = "CI_Beta";
     }
+
+    if (!hin.is_dataset_of_type<uint64_t>(ds_tag))
+    {
+      if (hin.is_dataset_of_type<int64_t>(ds_tag))
+        APP_ABORT(
+            "QMCPACK expects the HDF5 CI vectors to be stored as unsigned 64 bit integers. This HDF5 uses signed 64 "
+            "bit integers. The determinants_tools.py script can transform this file using the 'transform' flag.");
+      APP_ABORT("Unknown HDF5 CI format");
+    }
+
+    if (!hin.readEntry(temps[grp], ds_tag))
+      APP_ABORT("Unknown HDF5 CI format");
   }
 
   std::vector<std::string> MyCIs(nGroups);
@@ -1187,8 +1184,8 @@ bool SlaterDetBuilder::readDetListH5(xmlNodePtr cur,
       std::vector<std::bitset<bit_kind>> a2s(nGroups);
       for (int grp = 0; grp < nGroups; grp++)
       {
-        int64_t a = temps[grp][ni][k];
-        a2s[grp]  = a;
+        uint64_t a = temps[grp][ni][k];
+        a2s[grp]   = a;
       }
 
       for (int i = 0; i < bit_kind; i++)

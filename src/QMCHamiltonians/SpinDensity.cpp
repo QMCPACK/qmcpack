@@ -273,31 +273,4 @@ SpinDensity::Return_t SpinDensity::test_evaluate(ParticleSet& P, int& pmin, int&
   return 0.0;
 }
 
-
-void SpinDensity::addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy)
-{
-  int nw = W.WalkerList.size();
-  for (int iw = 0; iw < nw; iw++)
-  {
-    Walker_t& w     = *W.WalkerList[iw];
-    RealType weight = w.Weight / nw;
-    int p           = 0;
-    int offset      = my_index_;
-    for (int s = 0; s < nspecies; ++s, offset += npoints)
-      for (int ps = 0; ps < species_size[s]; ++ps, ++p)
-      {
-        PosType u = cell.toUnit(w.R[p] - corner);
-        //bool inside = true;
-        //for(int d=0;d<DIM;++d)
-        //  inside &= u[d]>0.0 && u[d]<1.0;
-        //if(inside)
-        //{
-        int point = offset;
-        for (int d = 0; d < DIM; ++d)
-          point += gdims[d] * ((int)(grid[d] * (u[d] - std::floor(u[d])))); //periodic only
-        W.Collectables[point] += weight;
-        //}
-      }
-  }
-}
 } // namespace qmcplusplus

@@ -99,7 +99,7 @@ TEST_CASE("adotpby", "[Numerics][ma_blas_extensions]")
     }
     using ma::adotpby;
     adotpby(alpha, a, b, beta, y.origin());
-    REQUIRE(y[0] == Approx(0.5 * a.size() * 0.01));
+    CHECK(y[0] == Approx(0.5 * a.size() * 0.01));
   }
   SECTION("complex")
   {
@@ -118,8 +118,8 @@ TEST_CASE("adotpby", "[Numerics][ma_blas_extensions]")
     using ma::adotpby;
     adotpby(alpha, a, b, beta, y.origin());
     copy_n(y.data(), y.size(), y_cpu.data());
-    REQUIRE(std::real(y_cpu[0]) == Approx(a.size() * 0.01));
-    REQUIRE(std::imag(y_cpu[0]) == Approx(0.00));
+    CHECK(std::real(y_cpu[0]) == Approx(a.size() * 0.01));
+    CHECK(std::imag(y_cpu[0]) == Approx(0.00));
   }
 }
 
@@ -186,7 +186,7 @@ TEST_CASE("sum", "[Numerics][ma_blas_extensions]")
   Tensor1D<double> y = {1, 2, 3};
   using ma::sum;
   double res = sum(y);
-  REQUIRE(res == Approx(6.0));
+  CHECK(res == Approx(6.0));
 }
 
 TEST_CASE("sum2D", "[Numerics][ma_blas_extensions]")
@@ -198,7 +198,7 @@ TEST_CASE("sum2D", "[Numerics][ma_blas_extensions]")
   copy_n(buffer.data(), buffer.size(), y.origin());
   using ma::sum;
   double res = sum(y);
-  REQUIRE(res == Approx(36.0));
+  CHECK(res == Approx(36.0));
 }
 
 TEST_CASE("sum3D", "[Numerics][ma_blas_extensions]")
@@ -210,7 +210,7 @@ TEST_CASE("sum3D", "[Numerics][ma_blas_extensions]")
   copy_n(buffer.data(), buffer.size(), y.origin());
   using ma::sum;
   double res = sum(y);
-  REQUIRE(res == Approx(351.0));
+  CHECK(res == Approx(351.0));
 }
 
 TEST_CASE("sum4D", "[Numerics][ma_blas_extensions]")
@@ -222,7 +222,7 @@ TEST_CASE("sum4D", "[Numerics][ma_blas_extensions]")
   copy_n(buffer.data(), buffer.size(), y.origin());
   using ma::sum;
   double res = sum(y);
-  REQUIRE(res == Approx(3240.0));
+  CHECK(res == Approx(3240.0));
 }
 
 TEST_CASE("zero_complex_part", "[Numerics][ma_blas_extensions]")
@@ -244,9 +244,9 @@ TEST_CASE("set_identity2D", "[Numerics][ma_blas_extensions]")
   copy_n(buffer.data(), buffer.size(), y.origin());
   using ma::set_identity;
   set_identity(y);
-  REQUIRE(y[0][0] == Approx(1.0));
-  REQUIRE(y[1][1] == Approx(1.0));
-  REQUIRE(y[2][2] == Approx(1.0));
+  CHECK(y[0][0] == Approx(1.0));
+  CHECK(y[1][1] == Approx(1.0));
+  CHECK(y[2][2] == Approx(1.0));
 }
 
 TEST_CASE("set_identity3D", "[Numerics][ma_blas_extensions]")
@@ -257,9 +257,9 @@ TEST_CASE("set_identity3D", "[Numerics][ma_blas_extensions]")
   copy_n(buffer.data(), buffer.size(), y.origin());
   using ma::set_identity;
   set_identity(y);
-  REQUIRE(y[0][0][0] == Approx(1.0));
-  REQUIRE(y[1][1][1] == Approx(1.0));
-  REQUIRE(y[2][2][2] == Approx(1.0));
+  CHECK(y[0][0][0] == Approx(1.0));
+  CHECK(y[1][1][1] == Approx(1.0));
+  CHECK(y[2][2][2] == Approx(1.0));
 }
 
 TEST_CASE("fill2D", "[Numerics][ma_blas_extensions]")

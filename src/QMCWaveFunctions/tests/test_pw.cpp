@@ -34,15 +34,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
 
   // BCC H
   PtclOnLatticeTraits::ParticleLayout lattice;
-  lattice.R(0, 0) = 3.77945227;
-  lattice.R(0, 1) = 0.0;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.77945227;
-  lattice.R(1, 2) = 0.0;
-  lattice.R(2, 0) = 0.0;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.77945227;
+  lattice.R = {3.77945227, 0.0, 0.0, 0.0, 3.77945227, 0.0, 0.0, 0.0, 3.77945227};
   lattice.reset();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -128,7 +120,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(std::real(orbs[0]) == Approx(-1.2473558998));
+  CHECK(std::real(orbs[0]) == Approx(-1.2473558998));
 
 #if 0
   // Dump values of the orbitals
@@ -173,15 +165,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
 
   // LiH
   PtclOnLatticeTraits::ParticleLayout lattice;
-  lattice.R(0, 0) = -3.55;
-  lattice.R(0, 1) = 0.0;
-  lattice.R(0, 2) = 3.55;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.55;
-  lattice.R(1, 2) = 3.55;
-  lattice.R(2, 0) = -3.55;
-  lattice.R(2, 1) = 3.55;
-  lattice.R(2, 2) = 0.0;
+  lattice.R = {-3.55, 0.0, 3.55, 0.0, 3.55, 3.55, -3.55, 3.55, 0.0};
   lattice.reset();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -273,7 +257,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   SPOSet::ValueVector orbs(orbSize);
   spo->evaluateValue(elec, 0, orbs);
 
-  REQUIRE(std::real(orbs[0]) == Approx(-14.3744302974));
+  CHECK(std::real(orbs[0]) == Approx(-14.3744302974));
 
 #if 0
   // Dump values of the orbitals

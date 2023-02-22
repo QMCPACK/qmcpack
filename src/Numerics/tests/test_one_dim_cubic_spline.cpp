@@ -29,9 +29,9 @@ TEST_CASE("spline_function_1", "[numerics]")
 
   CubicSplineSolve(x, y, n, 1e+33, 1e+33, y2);
 
-  REQUIRE(y2[0] == Approx(0));
-  REQUIRE(y2[1] == Approx(-2.25));
-  REQUIRE(y2[2] == Approx(0));
+  CHECK(y2[0] == Approx(0));
+  CHECK(y2[1] == Approx(-2.25));
+  CHECK(y2[2] == Approx(0));
 }
 
 
@@ -45,9 +45,9 @@ TEST_CASE("spline_function_2", "[numerics]")
 
   CubicSplineSolve(x, y, n, 1e+33, 1.0, y2);
 
-  REQUIRE(y2[0] == Approx(0));
-  REQUIRE(y2[1] == Approx(-3.85714));
-  REQUIRE(y2[2] == Approx(6.42857));
+  CHECK(y2[0] == Approx(0));
+  CHECK(y2[1] == Approx(-3.85714));
+  CHECK(y2[2] == Approx(6.42857));
 }
 
 
@@ -61,9 +61,9 @@ TEST_CASE("spline_function_3", "[numerics]")
 
   CubicSplineSolve(x, y, n, 1.0, 2.0, y2);
 
-  REQUIRE(y2[0] == Approx(2.75));
-  REQUIRE(y2[1] == Approx(-5.5));
-  REQUIRE(y2[2] == Approx(10.25));
+  CHECK(y2[0] == Approx(2.75));
+  CHECK(y2[1] == Approx(-5.5));
+  CHECK(y2[2] == Approx(10.25));
 }
 
 
@@ -77,10 +77,10 @@ TEST_CASE("spline_function_4", "[numerics]")
 
   CubicSplineSolve(x, y, n, 1e+33, 1e+33, y2);
 
-  REQUIRE(y2[0] == Approx(0));
-  REQUIRE(y2[1] == Approx(-2.12121));
-  REQUIRE(y2[2] == Approx(2.23485));
-  REQUIRE(y2[3] == Approx(0));
+  CHECK(y2[0] == Approx(0));
+  CHECK(y2[1] == Approx(-2.12121));
+  CHECK(y2[2] == Approx(2.23485));
+  CHECK(y2[3] == Approx(0));
 }
 
 
@@ -94,10 +94,10 @@ TEST_CASE("spline_function_5", "[numerics]")
 
   CubicSplineSolve(x, y, n, 0.0, 1.0, y2);
 
-  REQUIRE(y2[0] == Approx(3.60507));
-  REQUIRE(y2[1] == Approx(-3.04348));
-  REQUIRE(y2[2] == Approx(2.31884));
-  REQUIRE(y2[3] == Approx(1.34058));
+  CHECK(y2[0] == Approx(3.60507));
+  CHECK(y2[1] == Approx(-3.04348));
+  CHECK(y2[2] == Approx(2.31884));
+  CHECK(y2[3] == Approx(1.34058));
 }
 
 
@@ -147,31 +147,31 @@ TEST_CASE("one_dim_cubic_spline_1", "[numerics]")
     //std::cout << i << " r = " << r << " val = " << val << " " << check_yvals[i] << std::endl;
   }
 
-  REQUIRE(check_yvals[0] == Approx(1));
-  REQUIRE(check_yvals[1] == Approx(1.532));
-  REQUIRE(check_yvals[2] == Approx(1.976));
-  REQUIRE(check_yvals[3] == Approx(1.836));
-  REQUIRE(check_yvals[4] == Approx(1.352));
-  REQUIRE(check_yvals[5] == Approx(1.5));
+  CHECK(check_yvals[0] == Approx(1));
+  CHECK(check_yvals[1] == Approx(1.532));
+  CHECK(check_yvals[2] == Approx(1.976));
+  CHECK(check_yvals[3] == Approx(1.836));
+  CHECK(check_yvals[4] == Approx(1.352));
+  CHECK(check_yvals[5] == Approx(1.5));
 
-  REQUIRE(check_yvals_d2u[0].val == Approx(1));
-  REQUIRE(check_yvals_d2u[0].du == Approx(1));
-  REQUIRE(check_yvals_d2u[0].d2u == Approx(2.75));
-  REQUIRE(check_yvals_d2u[1].val == Approx(1.532));
-  REQUIRE(check_yvals_d2u[1].du == Approx(1.44));
-  REQUIRE(check_yvals_d2u[1].d2u == Approx(-0.55));
-  REQUIRE(check_yvals_d2u[2].val == Approx(1.976));
-  REQUIRE(check_yvals_d2u[2].du == Approx(0.56));
-  REQUIRE(check_yvals_d2u[2].d2u == Approx(-3.85));
-  REQUIRE(check_yvals_d2u[3].val == Approx(1.836));
-  REQUIRE(check_yvals_d2u[3].du == Approx(-1.16));
-  REQUIRE(check_yvals_d2u[3].d2u == Approx(-2.35));
-  REQUIRE(check_yvals_d2u[4].val == Approx(1.352));
-  REQUIRE(check_yvals_d2u[4].du == Approx(-0.84));
-  REQUIRE(check_yvals_d2u[4].d2u == Approx(3.95));
-  REQUIRE(check_yvals_d2u[5].val == Approx(1.5));
-  REQUIRE(check_yvals_d2u[5].du == Approx(2));
-  REQUIRE(check_yvals_d2u[5].d2u == Approx(10.25));
+  CHECK(check_yvals_d2u[0].val == Approx(1));
+  CHECK(check_yvals_d2u[0].du == Approx(1));
+  CHECK(check_yvals_d2u[0].d2u == Approx(2.75));
+  CHECK(check_yvals_d2u[1].val == Approx(1.532));
+  CHECK(check_yvals_d2u[1].du == Approx(1.44));
+  CHECK(check_yvals_d2u[1].d2u == Approx(-0.55));
+  CHECK(check_yvals_d2u[2].val == Approx(1.976));
+  CHECK(check_yvals_d2u[2].du == Approx(0.56));
+  CHECK(check_yvals_d2u[2].d2u == Approx(-3.85));
+  CHECK(check_yvals_d2u[3].val == Approx(1.836));
+  CHECK(check_yvals_d2u[3].du == Approx(-1.16));
+  CHECK(check_yvals_d2u[3].d2u == Approx(-2.35));
+  CHECK(check_yvals_d2u[4].val == Approx(1.352));
+  CHECK(check_yvals_d2u[4].du == Approx(-0.84));
+  CHECK(check_yvals_d2u[4].d2u == Approx(3.95));
+  CHECK(check_yvals_d2u[5].val == Approx(1.5));
+  CHECK(check_yvals_d2u[5].du == Approx(2));
+  CHECK(check_yvals_d2u[5].d2u == Approx(10.25));
 }
 
 } // namespace qmcplusplus

@@ -115,17 +115,17 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   int iat = 0;
   grad0   = example_he->evalGrad(elec, iat);
 
-  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(all_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(all_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(all_grad[0][2]));
 
   ParticleSet::GradType grad1;
   iat   = 1;
   grad1 = example_he->evalGrad(elec, iat);
 
-  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
+  CHECK(grad1[0] == ValueApprox(all_grad[1][0]));
+  CHECK(grad1[1] == ValueApprox(all_grad[1][1]));
+  CHECK(grad1[2] == ValueApprox(all_grad[1][2]));
 
 
   // Compare ratio and ratioGrad with a zero displacement
@@ -135,28 +135,28 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
 
   PsiValueType ratio = example_he->ratio(elec, iat);
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  CHECK(std::real(ratio) == Approx(1.0));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);
 
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  CHECK(std::real(ratio) == Approx(1.0));
 
-  REQUIRE(grad0[0] == ValueApprox(all_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(all_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(all_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(all_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(all_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(all_grad[0][2]));
 
   iat = 1;
   elec.makeMove(iat, zero_displ);
   ratio = example_he->ratio(elec, iat);
-  REQUIRE(std::real(ratio) == Approx(1.0));
+  CHECK(std::real(ratio) == Approx(1.0));
 
 
   ratio = example_he->ratioGrad(elec, iat, grad1);
 
-  REQUIRE(std::real(ratio) == Approx(1.0));
-  REQUIRE(grad1[0] == ValueApprox(all_grad[1][0]));
-  REQUIRE(grad1[1] == ValueApprox(all_grad[1][1]));
-  REQUIRE(grad1[2] == ValueApprox(all_grad[1][2]));
+  CHECK(std::real(ratio) == Approx(1.0));
+  CHECK(grad1[0] == ValueApprox(all_grad[1][0]));
+  CHECK(grad1[1] == ValueApprox(all_grad[1][1]));
+  CHECK(grad1[2] == ValueApprox(all_grad[1][2]));
 
   // Compare ratio and ratioGrad with a non-zero displacement
   // Should compare more displacements
@@ -178,15 +178,15 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec.makeMove(iat, displ);
 
   ratio = example_he->ratio(elec, iat);
-  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
+  CHECK(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);
 
-  REQUIRE(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
+  CHECK(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
-  REQUIRE(grad0[0] == ValueApprox(new_grad[0][0]));
-  REQUIRE(grad0[1] == ValueApprox(new_grad[0][1]));
-  REQUIRE(grad0[2] == ValueApprox(new_grad[0][2]));
+  CHECK(grad0[0] == ValueApprox(new_grad[0][0]));
+  CHECK(grad0[1] == ValueApprox(new_grad[0][1]));
+  CHECK(grad0[2] == ValueApprox(new_grad[0][2]));
 
   // Compare parameter derivatives
 
@@ -204,7 +204,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   var_param["B"] = new_B;
   example_he->resetParametersExclusive(var_param);
-  REQUIRE(example_he->B == Approx(new_B));
+  CHECK(example_he->B == Approx(new_B));
 
   ParticleSet::ParticleGradient grad_plus_h;
   ParticleSet::ParticleLaplacian lap_plus_h;
@@ -223,13 +223,13 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   Vector<ValueType> dhpsioverpsi(nparam);
   example_he->evaluateDerivatives(elec, var_param, dlogpsi, dhpsioverpsi);
 
-  REQUIRE(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
+  CHECK(dlogpsi[0] == ValueApprox(std::real(fd_logpsi)).epsilon(h));
 
   ValueType eloc   = -0.5 * (Sum(all_lap) + Dot(all_grad, all_grad));
   ValueType eloc_h = -0.5 * (Sum(lap_plus_h) + Dot(grad_plus_h, grad_plus_h));
 
   ValueType fd_eloc = (eloc_h - eloc) / h;
 
-  REQUIRE(dhpsioverpsi[0] == ValueApprox(fd_eloc).epsilon(h));
+  CHECK(dhpsioverpsi[0] == ValueApprox(fd_eloc).epsilon(h));
 }
 } // namespace qmcplusplus

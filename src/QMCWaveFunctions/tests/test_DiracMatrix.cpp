@@ -45,7 +45,7 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
   fillIdentityMatrix(m);
 
   dm.invert_transpose(m, m_invT, log_value);
-  REQUIRE(log_value == LogComplexApprox(0.0));
+  CHECK(log_value == LogComplexApprox(0.0));
 
   Matrix<ValueType> eye;
   eye.resize(3, 3);
@@ -69,7 +69,7 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 
   simd::transpose(a.data(), a.rows(), a.cols(), a_T.data(), a_T.rows(), a_T.cols());
   dm.invert_transpose(a_T, a_inv, log_value);
-  REQUIRE(log_value == LogComplexApprox(TestMatrix1::logDet()));
+  CHECK(log_value == LogComplexApprox(TestMatrix1::logDet()));
 
   Matrix<ValueType> b;
   b.resize(3, 3);
@@ -347,7 +347,7 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   ValueType det_ratio1 = simd::dot(v.data(), invRow.data(), invRow.size());
 
   ValueType det_ratio = 0.178276269185;
-  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
+  CHECK(det_ratio1 == ValueApprox(det_ratio));
   updateEng.acceptRow(a_inv, 0, v, det_ratio1);
 
   Matrix<ValueType> b;

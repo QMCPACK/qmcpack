@@ -24,9 +24,6 @@ std::unique_ptr<QMCDriver> RMCFactory::create(const ProjectData& project_data,
                                               Communicate* comm)
 {
   std::unique_ptr<QMCDriver> qmc;
-#ifdef QMC_CUDA
-  APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
-#endif
 
   if (RMCMode == 0 || RMCMode == 1) //(0,0,0) (0,0,1) pbyp and all electron
   {

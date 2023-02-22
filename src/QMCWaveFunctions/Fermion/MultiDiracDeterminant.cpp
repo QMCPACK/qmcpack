@@ -16,6 +16,9 @@
 
 #include "MultiDiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
+#ifndef QMC_COMPLEX
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#endif
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 #include "CPU/BLAS.hpp"
@@ -787,6 +790,7 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
 
   // create active rotation parameter indices
   std::vector<std::pair<int, int>> m_act_rot_inds;
+  std::vector<std::pair<int, int>> other_rot_inds;
 
   for (int i = 0; i < nmo; i++)
     for (int j = i + 1; j < nmo; j++)
@@ -803,9 +807,25 @@ void MultiDiracDeterminant::buildOptVariables(std::vector<size_t>& C2node)
                 int>(i,
                      j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
       }
+      else
+      {
+        other_rot_inds.push_back(std::pair<int, int>(i, j));
+      }
     }
 
-  Phi->buildOptVariables(m_act_rot_inds);
+  std::vector<std::pair<int, int>> full_rot_inds;
+
+  // Copy the adjustable rotations first
+  full_rot_inds = m_act_rot_inds;
+  // Add the other rotations at the end
+  full_rot_inds.insert(full_rot_inds.end(), other_rot_inds.begin(), other_rot_inds.end());
+
+
+#ifndef QMC_COMPLEX
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(Phi.get());
+  if (rot_spo)
+    rot_spo->buildOptVariables(m_act_rot_inds, full_rot_inds);
+#endif
 }
 
 int MultiDiracDeterminant::build_occ_vec(const OffloadVector<int>& data,

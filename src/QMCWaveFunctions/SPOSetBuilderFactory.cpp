@@ -186,6 +186,11 @@ void SPOSetBuilderFactory::buildSPOSetCollection(xmlNodePtr cur)
       addSPOSet(std::unique_ptr<SPOSet>(bb->createSPOSet(element)));
       nsposets++;
     }
+    if (cname == "rotated_sposet")
+    {
+      addSPOSet(std::unique_ptr<SPOSet>(bb->createRotatedSPOSet(element)));
+      nsposets++;
+    }
   });
 
   if (nsposets == 0)

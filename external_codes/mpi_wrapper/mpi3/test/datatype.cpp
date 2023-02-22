@@ -1,30 +1,28 @@
-#if COMPILATION_INSTRUCTIONS
-mpic++ -g -O3 -Wall -Wextra $0 -o $0x -D_MAKE_BOOST_SERIALIZATION_HEADER_ONLY`#-lboost_serialization`&&mpirun -n 3 valgrind --leak-check=full --show-reachable=yes --error-limit=no                                 --suppressions=communicator_main.cpp.openmpi.supp $0x&&rm $0x;exit
-#endif
-// © Alfredo A. Correa 2022
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2022-2023 Alfredo A. Correa
 
-#include "../../mpi3/communicator.hpp"
-#include "../../mpi3/main.hpp"
+#include <mpi3/communicator.hpp>
+#include <mpi3/main.hpp>
 
-#include<complex>
-#include<list>
-#include<string>
+#include <complex>
+#include <list>
+#include <string>
 
 namespace mpi3 = boost::mpi3;
 
-auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator /*world*/) -> int try{
-	using mpi3::detail::is_basic;
+auto mpi3::main(int /*argc*/, char** /*argv*/, mpi3::communicator /*world*/) -> int try {
+	using mpi3::detail::is_basic_v;
 
-	static_assert( is_basic<int>{} );
-	static_assert( is_basic<double>{} );
-	static_assert( is_basic<mpi3::detail::float_int>{} );
+	static_assert( is_basic_v<int> );
+	static_assert( is_basic_v<double> );
+	static_assert( is_basic_v<mpi3::detail::float_int> );
+	static_assert( is_basic_v<std::complex<double>> );
 
-	static_assert( not is_basic<std::string>{} );
+	static_assert( not is_basic_v<std::string> );
 
 	assert( mpi3::detail::basic_datatype<double>{} == MPI_DOUBLE );
 
 	return 0;
-}catch(...){
+} catch(...) {
 	return 1;
 }
-

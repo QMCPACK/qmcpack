@@ -21,6 +21,7 @@
 
 #include <memory>
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "OMPTarget/OffloadAlignedAllocators.hpp"
 
 namespace qmcplusplus
 {
@@ -36,12 +37,15 @@ template<class COT, typename ORBT>
 class SoaLocalizedBasisSet : public SoaBasisSetBase<ORBT>
 {
 public:
-  using RealType   = typename COT::RealType;
-  using BaseType   = SoaBasisSetBase<ORBT>;
-  using vgl_type   = typename BaseType::vgl_type;
-  using vgh_type   = typename BaseType::vgh_type;
-  using vghgh_type = typename BaseType::vghgh_type;
-  using PosType    = typename ParticleSet::PosType;
+  using RealType  = typename COT::RealType;
+  using BaseType  = SoaBasisSetBase<ORBT>;
+  using ValueType = QMCTraits::ValueType;
+
+  using vgl_type          = typename BaseType::vgl_type;
+  using vgh_type          = typename BaseType::vgh_type;
+  using vghgh_type        = typename BaseType::vghgh_type;
+  using PosType           = typename ParticleSet::PosType;
+  using OffloadMWVGLArray = Array<ValueType, 3, OffloadPinnedAllocator<ValueType>>; // [VGL, walker, Orbs]
 
   using BaseType::BasisSetSize;
 
@@ -103,6 +107,8 @@ public:
    * @param trialMove if true, use getTempDists()/getTempDispls()
    */
   void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl) override;
+
+  void mw_evaluateVGL(const RefVectorWithLeader<ParticleSet>& P_list, int iat, OffloadMWVGLArray& vgl) override;
 
   /** compute VGH 
    * @param P quantum particleset

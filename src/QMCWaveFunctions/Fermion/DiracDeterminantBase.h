@@ -49,7 +49,7 @@ public:
         LastIndex(last),
         NumOrbitals(last - first),
         NumPtcls(last - first)
-  { }
+  {}
 
   ///default destructor
   ~DiracDeterminantBase() override {}
@@ -165,22 +165,6 @@ public:
    * can overwrite to clone itself correctly.
    */
   virtual std::unique_ptr<DiracDeterminantBase> makeCopy(std::unique_ptr<SPOSet>&& spo) const = 0;
-
-#ifdef QMC_CUDA
-  // expose GPU interfaces
-  //using WaveFunctionComponent::recompute;
-  using WaveFunctionComponent::addLog;
-  using WaveFunctionComponent::reserve;
-  //using WaveFunctionComponent::ratio;
-  using WaveFunctionComponent::addGradient;
-  using WaveFunctionComponent::addRatio;
-  using WaveFunctionComponent::calcGradient;
-  using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::det_lookahead;
-  using WaveFunctionComponent::gradLapl;
-  using WaveFunctionComponent::NLratios;
-  using WaveFunctionComponent::update;
-#endif
 
 protected:
   /// Timers

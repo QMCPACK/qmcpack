@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -111,7 +112,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -162,6 +163,15 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
   SPOSet::ValueVector psi(spo->getOrbitalSetSize());
   SPOSet::GradVector dpsi(spo->getOrbitalSetSize());
   SPOSet::ValueVector d2psi(spo->getOrbitalSetSize());
@@ -181,7 +191,7 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   d2psi_v_list.push_back(d2psi_2);
 
   spo->mw_evaluateVGL(spo_list, p_list, 0, psi_v_list, dpsi_v_list, d2psi_v_list);
-#if !defined(QMC_CUDA) && !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX)
   // real part
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
@@ -217,7 +227,6 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::imag(d2psi_v_list[1].get()[1]) == Approx(-2.6130394936).epsilon(0.0001));
 #endif
 
-#if !defined(QMC_CUDA)
   const size_t nw = 2;
   std::vector<SPOSet::ValueType> ratio_v(nw);
   std::vector<SPOSet::GradType> grads_v(nw);
@@ -258,7 +267,6 @@ TEST_CASE("Einspline SPO from HDF NiO a16 97 electrons", "[wavefunction]")
   CHECK(std::imag(grads_v[1][1]) == Approx(-0.0000331457));
   CHECK(std::imag(grads_v[1][2]) == Approx(0.0000295465));
   CHECK(std::imag(phi_vgl_v(0, 1, 0)) == Approx(2.6693942547));
-#endif
 #endif
 }
 } // namespace qmcplusplus

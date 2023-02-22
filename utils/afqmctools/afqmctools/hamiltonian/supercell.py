@@ -26,7 +26,7 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     nproc = comm.size
     rank = comm.rank
 
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     # Unpack pyscf data.
     # 1. core (1-body) Hamiltonian.
@@ -63,9 +63,9 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
     numv = 0
 
     if rank == 0 and verbose:
-        print(" # Time to reach cholesky: {:.2e} s".format(time.clock()-tstart))
+        print(" # Time to reach cholesky: {:.2e} s".format(time.process_time()()-tstart))
         sys.stdout.flush()
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     # Setup parallel partition of work.
     part = Partition(comm, maxvecs, nmo_tot, nmo_max, nkpts)
@@ -86,10 +86,10 @@ def write_hamil_supercell(comm, scf_data, hamil_file, chol_cut,
         sys.stdout.flush()
 
     # Left and right pair densities. Only left contains Coulomb kernel.
-    t0 = time.clock()
+    t0 = time.process_time()()
     Xaoik, Xaolj = gen_orbital_products(cell, mydf, X, nmo_pk, ngs,
                                         part, kpts, nmo_max)
-    t1 = time.clock()
+    t1 = time.process_time()()
     if part.rank == 0 and verbose:
         print(" # Time to generate orbital products: {:.2e} s".format(t1-t0))
         sys.stdout.flush()
@@ -118,7 +118,7 @@ def write_rhoG_supercell(comm, scf_data, hdf_file, Gcut,
     nproc = comm.size
     rank = comm.rank
 
-    tstart = time.clock()
+    tstart = time.process_time()()
 
     # Unpack pyscf data.
     # 1. Rotation matrix to orthogonalised basis.
@@ -475,7 +475,7 @@ def gen_orbital_products(cell, mydf, X, nmo_pk, ngs, part, kpts, nmo_max):
         Xaolj[k,:,:] = Xaoik[k,:,:]
         coulG = tools.get_coulG(cell, kpts[k2]-kpts[k1], mesh=mydf.mesh)
         Xaoik[k,:,:] *= (coulG*cell.vol/ngs**2).reshape(-1,1)
-    t1 = time.clock()
+    t1 = time.process_time()()
     return Xaoik, Xaolj
 
 
@@ -536,11 +536,11 @@ class Cholesky(object):
         # Setup residual matrix.
         ngs = Xaoik.shape[1]
         nkpts = len(kpts)
-        t0 = time.clock()
+        t0 = time.process_time()()
         residual, k1max, k2max, i1max, i2max, maxv = (
                 self.generate_diagonal(Xaoik, Xaolj, part, nmo_pk)
                 )
-        t1 = time.clock()
+        t1 = time.process_time()()
         if part.rank == 0 and self.verbose:
             print(" # Time to generate diagonal (initial residual):"
                   " {:.2e}".format(t1-t0))
@@ -562,7 +562,7 @@ class Cholesky(object):
                   "Cholesky solver.")
         done[k3,k4,i3,i4] = 1
 
-        tstart = time.clock()
+        tstart = time.process_time()()
         if comm.rank == 0:
             sys.stdout.flush()
 
@@ -574,7 +574,7 @@ class Cholesky(object):
             if self.verbose:
                 print(format_fixed_width_strings(header))
         while more:
-            t0 = time.clock()
+            t0 = time.process_time()()
             # stop condition
             if numv >= part.maxvecs:
                 print(" Too many vectors needed to converge. Increase maximum "
@@ -612,7 +612,7 @@ class Cholesky(object):
             # add new Cholesky vector
             # 1. evaluate new column (ik|imax,kmax)
 
-            t1 = time.clock()
+            t1 = time.process_time()()
             tadd = 0.0
 
             for k in range(part.nkk):
@@ -621,7 +621,7 @@ class Cholesky(object):
                 if k3 == self.kconserv[k1,k2,k4]:
                     q1 = kpts[k2] - kpts[k1] + kpts[k3] - kpts[k4]
                     if numpy.sum(abs(q1)) > 1e-9:
-                        t_ = time.clock()
+                        t_ = time.process_time()()
                         ip = -1
                         for ii in range(27):
                             if numpy.sum(numpy.linalg.norm(q1-Qi[ii,:])) < 1e-12:
@@ -632,14 +632,14 @@ class Cholesky(object):
                             sys.exit()
                         for ix in range(ngs):
                             Xkl[ix] = Xkl0[gmap[ip,ix]]
-                        tadd += time.clock() - t_
+                        tadd += time.process_time()() - t_
                     else:
                         Xkl[0:ngs] = Xkl0[0:ngs]
                     n_ = min(nmo_pk[k1]*nmo_pk[k2], part.ijN) - part.ij0
                     cholvecs[k,0:n_,numv] = numpy.dot(Xaoik[k,:,0:n_].T,
                                                       Xkl.conj())
 
-            t2 = time.clock()
+            t2 = time.process_time()()
 
             # 2. subtract projection along previous components
             cholvecs[:,:,numv] -= numpy.dot(cholvecs[:,:,0:numv],
@@ -663,14 +663,14 @@ class Cholesky(object):
                         i1max = (ij+part.ij0) // nmo_pk[k2]
                         i2max = (ij+part.ij0) % nmo_pk[k2]
 
-            t3 = time.clock()
+            t3 = time.process_time()()
 
             # assemble full CV on head node
             comm.Allgather(numpy.array([k1max,k2max,i1max,i2max,maxv],
                                        dtype=numpy.float64), self.maxres_buff)
             k3, k4, i3, i4, vmax = self.find_k3k4(comm.size)
 
-            t4 = time.clock()
+            t4 = time.process_time()()
 
             # only root keeps track of residual and I/O
             if part.rank == 0:
@@ -682,7 +682,7 @@ class Cholesky(object):
                 if self.verbose:
                     print("{:17d} ".format(numv)+format_fixed_width_floats(output))
                 # print("{:8d}  {:13.8e}".format(numv, vmax))
-                tstart = time.clock()
+                tstart = time.process_time()()
 
                 if numv%100 == 0:
                     sys.stdout.flush()
@@ -697,7 +697,7 @@ class Cholesky(object):
                 sys.exit()
             done[k3,k4,i3,i4]=1
 
-            t6 = time.clock()
+            t6 = time.process_time()()
         return cholvecs[:,:,:numv]
 
 def write_h1(h5grp, intgs, npk, ik2n, gtol=1e-6):

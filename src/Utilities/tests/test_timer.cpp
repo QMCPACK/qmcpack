@@ -72,7 +72,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
     ScopedFakeTimer st(*t1);
   }
 #if defined(ENABLE_TIMERS)
-  REQUIRE(t1->get_total() == Approx(1.0));
+  CHECK(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
 
@@ -83,7 +83,7 @@ TEST_CASE("test_timer_scoped", "[utilities]")
     ScopedFakeTimer st(t2);
   }
 #if defined(ENABLE_TIMERS)
-  REQUIRE(t1->get_total() == Approx(1.0));
+  CHECK(t1->get_total() == Approx(1.0));
   REQUIRE(t1->get_num_calls() == 1);
 #endif
 }
@@ -101,7 +101,7 @@ TEST_CASE("test_timer_flat_profile", "[utilities]")
   REQUIRE(p.nameList.size() == 1);
   REQUIRE(p.nameList.at("timer1") == 0);
   REQUIRE(p.timeList.size() == 1);
-  REQUIRE(p.timeList[0] == Approx(1.1));
+  CHECK(p.timeList[0] == Approx(1.1));
   REQUIRE(p.callList.size() == 1);
   REQUIRE(p.callList[0] == 2);
 }
@@ -138,8 +138,8 @@ TEST_CASE("test_timer_flat_profile_same_name", "[utilities]")
   int idx1 = p.nameList.at("timer1");
   int idx2 = p.nameList.at("timer2");
   REQUIRE(p.timeList.size() == 2);
-  REQUIRE(p.timeList[idx1] == Approx(5.9));
-  REQUIRE(p.timeList[idx2] == Approx(3.6));
+  CHECK(p.timeList[idx1] == Approx(5.9));
+  CHECK(p.timeList[idx2] == Approx(3.6));
 
   REQUIRE(p.callList.size() == 2);
   REQUIRE(p.callList[idx1] == 5);
@@ -265,10 +265,10 @@ TEST_CASE("test_timer_nested_profile_alt_routes", "[utilities]")
   REQUIRE(p2.names[5] == "timer1/timer3");
   REQUIRE(p2.names[6] == "timer1/timer3/timer4");
 
-  REQUIRE(p2.timeList[0] == Approx(14.3));
-  REQUIRE(p2.timeExclList[0] == Approx(3.3));
-  REQUIRE(p2.timeList[1] == Approx(7.7));
-  REQUIRE(p2.timeExclList[1] == Approx(2.2));
+  CHECK(p2.timeList[0] == Approx(14.3));
+  CHECK(p2.timeExclList[0] == Approx(3.3));
+  CHECK(p2.timeList[1] == Approx(7.7));
+  CHECK(p2.timeExclList[1] == Approx(2.2));
 #endif
 
   Libxml2Document doc;
@@ -408,7 +408,7 @@ TEST_CASE("test setup timers", "[utilities]")
   Timers[MyTimer1].get().stop();
 
 #ifdef ENABLE_TIMERS
-  REQUIRE(Timers[MyTimer1].get().get_total() == Approx(1.0));
+  CHECK(Timers[MyTimer1].get().get_total() == Approx(1.0));
   REQUIRE(Timers[MyTimer1].get().get_num_calls() == 1);
 #endif
 }

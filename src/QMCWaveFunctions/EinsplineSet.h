@@ -24,10 +24,6 @@
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "Utilities/TimerManager.h"
 #include "spline/einspline_engine.hpp"
-#ifdef QMC_CUDA
-#include "einspline/multi_bspline_create_cuda.h"
-#include "QMCWaveFunctions/detail/CUDA_legacy/AtomicOrbitalCuda.h"
-#endif
 
 namespace qmcplusplus
 {
@@ -92,36 +88,24 @@ template<>
 struct MultiOrbitalTraits<double, 2>
 {
   using SplineType = multi_UBspline_2d_d;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_2d_d_cuda;
-#endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<double>, 2>
 {
   using SplineType = multi_UBspline_2d_z;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_2d_z_cuda;
-#endif
 };
 
 template<>
 struct MultiOrbitalTraits<float, 2>
 {
   using SplineType = multi_UBspline_2d_s;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_2d_s_cuda;
-#endif
 };
 
 template<>
 struct MultiOrbitalTraits<std::complex<float>, 2>
 {
   using SplineType = multi_UBspline_2d_c;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_2d_c_cuda;
-#endif
 };
 
 template<>
@@ -130,9 +114,6 @@ struct MultiOrbitalTraits<double, 3>
   using SplineType = multi_UBspline_3d_d;
   using BCType     = BCtype_d;
   using DataType   = double;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_3d_d_cuda;
-#endif
 };
 
 template<>
@@ -141,9 +122,6 @@ struct MultiOrbitalTraits<std::complex<double>, 3>
   using SplineType = multi_UBspline_3d_z;
   using BCType     = BCtype_z;
   using DataType   = std::complex<double>;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_3d_z_cuda;
-#endif
 };
 
 
@@ -153,9 +131,6 @@ struct MultiOrbitalTraits<float, 3>
   using SplineType = multi_UBspline_3d_s;
   using BCType     = BCtype_s;
   using DataType   = float;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_3d_s_cuda;
-#endif
 };
 
 template<>
@@ -164,42 +139,7 @@ struct MultiOrbitalTraits<std::complex<float>, 3>
   using SplineType = multi_UBspline_3d_c;
   using BCType     = BCtype_c;
   using DataType   = std::complex<float>;
-#ifdef QMC_CUDA
-  using CudaSplineType = multi_UBspline_3d_c_cuda;
-#endif
 };
-
-
-#ifdef QMC_CUDA
-template<typename StoreType, typename CudaPrec>
-struct StorageTypeConverter;
-template<>
-struct StorageTypeConverter<double, double>
-{
-  using CudaStorageType = double;
-};
-template<>
-struct StorageTypeConverter<double, float>
-{
-  using CudaStorageType = float;
-};
-template<>
-struct StorageTypeConverter<std::complex<double>, float>
-{
-  using CudaStorageType = std::complex<float>;
-};
-template<>
-struct StorageTypeConverter<std::complex<double>, std::complex<double>>
-{
-  using CudaStorageType = std::complex<double>;
-};
-template<>
-struct StorageTypeConverter<std::complex<double>, double>
-{
-  using CudaStorageType = std::complex<double>;
-};
-#endif
-
 
 ////////////////////////////////////////////////////////////////////
 // Template class for evaluating multiple extended Bloch orbitals //
@@ -284,39 +224,6 @@ protected:
   ////////////
   NewTimer &ValueTimer, &VGLTimer, &VGLMatTimer;
   NewTimer& EinsplineTimer;
-
-#ifdef QMC_CUDA
-  // Cuda equivalents of the above
-  using CudaStorageType = typename StorageTypeConverter<StorageType, CUDA_PRECISION>::CudaStorageType;
-  using CudaSplineType  = typename MultiOrbitalTraits<CudaStorageType, OHMMS_DIM>::CudaSplineType;
-
-  CudaSplineType* CudaMultiSpline;
-  gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
-  gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
-  std::vector<cudaIpcMemHandle_t> spline_rank_handles;
-  std::vector<CudaStorageType*> spline_rank_pointers;
-  std::vector<cudaEvent_t> spline_events;
-  std::vector<cudaStream_t> spline_streams;
-  int abort_counter  = 0;
-  bool split_splines = false;
-  void resize_cuda(int numWalkers);
-  void get_split_spline_pointers();
-  // Cuda equivalent
-  gpu::device_vector<int> CudaMakeTwoCopies;
-  gpu::device_vector<int> CudaTwoCopiesIndex;
-  // Cuda equivalent
-  gpu::device_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM>> CudakPoints, CudakPoints_reduced;
-  void applyPhaseFactors(gpu::device_vector<CudaStorageType*>& storageVector, gpu::device_vector<CTS::RealType*>& phi);
-  // Data for vectorized evaluations
-  gpu::host_vector<CTS::PosType> hostPos, hostPhasePos, NLhostPos;
-  gpu::device_vector<CTS::PosType> cudapos, cudaphasepos, NLcudapos;
-  gpu::host_vector<CTS::RealType> hostSign, NLhostSign;
-  gpu::device_vector<CTS::RealType> cudaSign, NLcudaSign;
-  // This stores the inverse of the lattice vector matrix in
-  // GPU memory.
-  gpu::device_vector<CTS::RealType> Linv_cuda, L_cuda;
-  gpu::host_vector<CTS::RealType> L_host, Linv_host;
-#endif
 
 public:
   /** create MultiSpline
@@ -424,56 +331,6 @@ public:
                             ComplexGGGMatrix& grad_grad_grad_logdet) override;
 #endif
 
-#ifdef QMC_CUDA
-  void finalizeConstruction() override;
-
-  // Vectorized evaluation functions
-#if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::RealType*>& phi) override;
-  inline void evaluate(std::vector<Walker_t*>& walkers,
-                       std::vector<PosType>& newpos,
-                       gpu::device_vector<CTS::RealType*>& phi,
-                       gpu::device_vector<CTS::RealType*>& grad_lapl,
-                       int row_stride) override
-  {
-    evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
-  }
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::RealType*>& phi,
-                gpu::device_vector<CTS::RealType*>& grad_lapl,
-                int row_stride,
-                int k,
-                bool klinear) override;
-
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
-#else
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
-  inline void evaluate(std::vector<Walker_t*>& walkers,
-                       std::vector<PosType>& newpos,
-                       gpu::device_vector<CTS::ComplexType*>& phi,
-                       gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                       int row_stride) override
-  {
-    evaluate(walkers, newpos, phi, grad_lapl, row_stride, 0, false);
-  }
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi,
-                gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                int row_stride,
-                int k,
-                bool klinear) override;
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi) override;
-#endif
-#endif
-
   void setOrbitalSetSize(int norbs) override;
   std::string Type();
 
@@ -492,179 +349,11 @@ public:
         VGLTimer(*timer_manager.createTimer("EinsplineSetExtended::VGL")),
         VGLMatTimer(*timer_manager.createTimer("EinsplineSetExtended::VGLMatrix")),
         EinsplineTimer(*timer_manager.createTimer("libeinspline"))
-#ifdef QMC_CUDA
-        ,
-        CudaMultiSpline(NULL),
-        CudaValueVector("EinsplineSetExtended::CudaValueVector"),
-        CudaGradLaplVector("EinsplineSetExtended::CudaGradLaplVector"),
-        CudaValuePointers("EinsplineSetExtended::CudaValuePointers"),
-        CudaGradLaplPointers("EinsplineSetExtended::CudaGradLaplPointers"),
-        CudaMakeTwoCopies("EinsplineSetExtended::CudaMakeTwoCopies"),
-        CudaTwoCopiesIndex("EinsplineSetExtended::CudaTwoCopiesIndex"),
-        CudakPoints("EinsplineSetExtended::CudakPoints"),
-        CudakPoints_reduced("EinsplineSetExtended::CudakPoints_reduced"),
-        cudapos("EinsplineSetExtended::cudapos"),
-        NLcudapos("EinsplineSetExtended::NLcudapos"),
-        cudaSign("EinsplineSetExtended::cudaSign"),
-        NLcudaSign("EinsplineSetExtended::NLcudaSign"),
-        Linv_cuda("EinsplineSetExtended::Linv_cuda"),
-        L_cuda("EinsplineSetExtended::L_cuda")
-#endif
   {
     for (int i = 0; i < OHMMS_DIM; i++)
       HalfG[i] = 0;
   }
 };
-
-#ifdef QMC_CUDA
-template<typename T>
-struct AtomicSplineJob
-{
-  T dist, SplineDelta;
-  T rhat[OHMMS_DIM];
-  int lMax, YlmIndex;
-  T* SplineCoefs;
-  T *phi, *grad_lapl;
-  T PAD[3];
-  //T PAD[(64 - (2*OHMMS_DIM*sizeof(T) + 2*sizeof(int) + 2*sizeof(T*)))/sizeof(T)];
-};
-
-template<typename T>
-struct AtomicPolyJob
-{
-  T dist, SplineDelta;
-  T rhat[OHMMS_DIM];
-  int lMax, PolyOrder, YlmIndex;
-  T* PolyCoefs;
-  T *phi, *grad_lapl;
-  T PAD[2];
-  //T PAD[(64 - (2*OHMMS_DIM*sizeof(T) + 2*sizeof(int) + 2*sizeof(T*)))/sizeof(T)];
-};
-
-
-template<typename StorageType>
-class EinsplineSetHybrid : public EinsplineSetExtended<StorageType>
-{
-  friend class EinsplineSetBuilder;
-
-protected:
-  int a;
-  //////////////////////
-  // Type definitions //
-  //////////////////////
-  using CTS             = CUDAGlobalTypes;
-  using Walker_t        = typename EinsplineSetExtended<StorageType>::Walker_t;
-  using PosType         = typename EinsplineSetExtended<StorageType>::PosType;
-  using CudaStorageType = typename EinsplineSetExtended<StorageType>::CudaStorageType;
-
-  std::vector<gpu::device_vector<CTS::RealType>> AtomicSplineCoefs_GPU, AtomicPolyCoefs_GPU;
-  gpu::device_vector<AtomicOrbitalCuda<CTS::RealType>> AtomicOrbitals_GPU;
-
-  // gpu::host_vector<AtomicPolyJob<CTS::RealType> >   AtomicPolyJobs_CPU;
-  // gpu::device_vector<AtomicPolyJob<CTS::RealType> >   AtomicPolyJobs_GPU;
-  // gpu::host_vector<AtomicSplineJob<CTS::RealType> > AtomicSplineJobs_CPU;
-  // gpu::device_vector<AtomicSplineJob<CTS::RealType> > AtomicSplineJobs_GPU;
-
-  gpu::device_vector<HybridJobType> HybridJobs_GPU;
-  gpu::device_vector<CTS::RealType> IonPos_GPU;
-  gpu::device_vector<CTS::RealType> CutoffRadii_GPU, PolyRadii_GPU;
-  gpu::device_vector<HybridData<CTS::RealType>> HybridData_GPU;
-
-  gpu::device_vector<CTS::RealType> Ylm_GPU;
-  gpu::device_vector<CTS::RealType*> Ylm_ptr_GPU, dYlm_dtheta_ptr_GPU, dYlm_dphi_ptr_GPU;
-  gpu::host_vector<CTS::RealType*> Ylm_ptr_CPU, dYlm_dtheta_ptr_CPU, dYlm_dphi_ptr_CPU;
-  gpu::device_vector<CTS::RealType> rhats_GPU;
-  gpu::host_vector<CTS::RealType> rhats_CPU;
-  gpu::device_vector<int> JobType;
-
-  // Vectors for 3D Bspline evaluation
-  gpu::device_vector<CTS::RealType> BsplinePos_GPU;
-  gpu::host_vector<CTS::RealType> BsplinePos_CPU;
-  gpu::device_vector<CudaStorageType*> BsplineVals_GPU, BsplineGradLapl_GPU;
-  gpu::host_vector<CudaStorageType*> BsplineVals_CPU, BsplineGradLapl_CPU;
-
-  // The maximum lMax across all atomic orbitals
-  int lMax;
-  int numlm, NumOrbitals, Ylm_BS;
-  // Stores the maximum number of walkers that can be handled by currently
-  // allocated GPU memory.  Must resize if we have more walkers than this.
-  int CurrentWalkers;
-
-  //////////////////////////////
-  /// Orbital storage objects //
-  //////////////////////////////
-
-  ////////////
-  // Timers //
-  ////////////
-  // Data for vectorized evaluations
-
-  void sort_electrons(std::vector<PosType>& pos);
-
-public:
-  void finalizeConstruction() override;
-  //    void registerTimers();
-
-  // Resize cuda objects
-  void resize_cuda(int numwalkers);
-
-  // Vectorized evaluation functions
-#if !defined(QMC_COMPLEX)
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::RealType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::RealType*>& phi,
-                gpu::device_vector<CTS::RealType*>& grad_lapl,
-                int row_stride) override;
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::RealType*>& phi) override;
-#else
-  void evaluate(std::vector<Walker_t*>& walkers, int iat, gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi) override;
-  void evaluate(std::vector<Walker_t*>& walkers,
-                std::vector<PosType>& newpos,
-                gpu::device_vector<CTS::ComplexType*>& phi,
-                gpu::device_vector<CTS::ComplexType*>& grad_lapl,
-                int row_stride) override;
-  void evaluate(std::vector<PosType>& pos, gpu::device_vector<CTS::ComplexType*>& phi) override;
-#endif
-
-  std::string Type();
-
-  std::string getClassName() const override { return "EinsplineSetHybrid"; }
-
-  std::unique_ptr<SPOSet> makeClone() const override;
-
-  EinsplineSetHybrid(const std::string& my_name) : EinsplineSetExtended<StorageType>(my_name) {}
-};
-
-#endif
-
-//  template<typename StorageType>
-//  inline void EinsplineSetExtended<StorageType>::computePhaseFactors
-//  (TinyVector<RealType,OHMMS_DIM> r)
-//  {
-//    for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
-//    eval_e2iphi(phase,eikr);
-////#ifdef HAVE_MKL
-////    for (int i=0; i<kPoints.size(); i++)
-////      phase[i] = -dot(r, kPoints[i]);
-////    vzCIS(OrbitalSetSize, phase, (double*)eikr.data());
-////#else
-////    double s, c;
-////    for (int i=0; i<kPoints.size(); i++) {
-////      phase[i] = -dot(r, kPoints[i]);
-////      qmcplusplus::sincos (phase[i], &s, &c);
-////      eikr[i] = std::complex<double>(c,s);
-////    }
-////#endif
-//  }
-//
-
 
 } // namespace qmcplusplus
 #endif

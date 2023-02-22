@@ -34,7 +34,6 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
-  void addEnergy(MCWalkerConfiguration& W, std::vector<RealType>& LocalEnergy) override;
 
   void addObservables(PropertySetType& plist);
   void addObservables(PropertySetType& plist, BufferType& olist) override;

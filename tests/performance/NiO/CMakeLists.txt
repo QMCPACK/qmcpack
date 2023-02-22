@@ -34,8 +34,9 @@ function(
   maybe_symlink("${QMC_DATA}/NiO/${H5_FILE}" "${WDIR}/../${H5_FILE}")
 
   separate_arguments(ADJUST_INPUT)
-  execute_process(COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
-                          ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/NiO")
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} ${qmcpack_SOURCE_DIR}/tests/performance/adjust_qmcpack_input.py ${ADJUST_INPUT}
+            ${TEST_DIR}/${INPUT_FILE} WORKING_DIRECTORY "${qmcpack_BINARY_DIR}/tests/performance/NiO")
 
   set(TEST_NAME ${TEST_NAME}-${PROCS}-${THREADS})
   math(EXPR TOT_PROCS "${PROCS} * ${THREADS}")
@@ -50,9 +51,7 @@ function(
   set_tests_properties(${TEST_NAME} PROPERTIES WORKING_DIRECTORY "${WDIR}")
   set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT OMP_NUM_THREADS=${THREADS})
   set_tests_properties(${TEST_NAME} PROPERTIES PROCESSORS ${TOT_PROCS} PROCESSOR_AFFINITY TRUE)
-  if(QMC_CUDA
-     OR ENABLE_CUDA
-     OR ENABLE_OFFLOAD)
+  if(ENABLE_CUDA OR ENABLE_OFFLOAD)
     set_tests_properties(${TEST_NAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
   endif()
 
@@ -137,7 +136,7 @@ else()
     endforeach()
     message("NiO sizes to benchmark: ${NIO_SIZES}")
   endif()
-  
+
   if(QMC_NIO_MAX_SIZE)
     message(FATAL_ERROR "Variable QMC_NIO_MAX_SIZE has been renamed to QMC_PERFORMANCE_NIO_MAX_ATOMS")
   endif()
@@ -157,75 +156,72 @@ else()
     if(EXISTS ${H5_FULL_PATH})
       list(GET WALKER_COUNTS ${INDEX} WALKER_COUNT)
       set(ADJUST_INPUT "-i")
-      if(NOT QMC_CUDA)
-        # CPU driver
-        set(DRIVER_TYPE cpu_driver)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE}-w${WALKER_COUNT})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE})
-        add_nio_test(
-          ${PERF_TEST}
-          1
-          16
-          ${TEST_DIR}
-          ${TEST_SOURCE_DIR}
-          ${INPUT_FILE}
-          ${H5_FILE}
-          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d 1")
-        ## delayed update
-        list(GET DELAY_RANKS ${INDEX} NDELAY)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
-        add_nio_test(
-          ${PERF_TEST}
-          1
-          16
-          ${TEST_DIR}
-          ${TEST_SOURCE_DIR}
-          ${INPUT_FILE}
-          ${H5_FILE}
-          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY}")
-        ## J3
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE})
-        add_nio_test(
-          ${PERF_TEST}
-          1
-          16
-          ${TEST_DIR}
-          ${TEST_SOURCE_DIR}
-          ${INPUT_FILE}
-          ${H5_FILE}
-          "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -j ${TEST_DIR}/J123.xml")
+      # CPU driver
+      set(DRIVER_TYPE cpu_driver)
+      set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-SM1-${DRIVER_TYPE})
+      add_nio_test(
+        ${PERF_TEST}
+        1
+        16
+        ${TEST_DIR}
+        ${TEST_SOURCE_DIR}
+        ${INPUT_FILE}
+        ${H5_FILE}
+        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d 1")
+      ## delayed update
+      list(GET DELAY_RANKS ${INDEX} NDELAY)
+      set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
+      add_nio_test(
+        ${PERF_TEST}
+        1
+        16
+        ${TEST_DIR}
+        ${TEST_SOURCE_DIR}
+        ${INPUT_FILE}
+        ${H5_FILE}
+        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY}")
+      ## J3
+      set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-J3-${DRIVER_TYPE})
+      add_nio_test(
+        ${PERF_TEST}
+        1
+        16
+        ${TEST_DIR}
+        ${TEST_SOURCE_DIR}
+        ${INPUT_FILE}
+        ${H5_FILE}
+        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -j ${TEST_DIR}/J123.xml")
 
-        # Batched driver
-        set(DRIVER_TYPE batched_driver)
-        ## delayed update
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
+      # Batched driver
+      set(DRIVER_TYPE batched_driver)
+      ## delayed update
+      set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE}-w${WALKER_COUNT})
+      set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-DU${NDELAY}-${DRIVER_TYPE})
+      add_nio_test(
+        ${PERF_TEST}
+        1
+        4
+        ${TEST_DIR}
+        ${TEST_SOURCE_DIR}
+        ${INPUT_FILE}
+        ${H5_FILE}
+        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -u --detbatched")
+      # To help analyze multithread offload implementations, add a single threaded batched test with same total workload as 4 thread case
+      if(ENABLE_OFFLOAD)
         add_nio_test(
           ${PERF_TEST}
           1
-          4
+          1
           ${TEST_DIR}
           ${TEST_SOURCE_DIR}
           ${INPUT_FILE}
           ${H5_FILE}
           "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -u --detbatched")
-      else(NOT QMC_CUDA)
-        # legacy CUDA driver
-        set(DRIVER_TYPE legacy_cuda)
-        set(PERF_TEST performance-NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE}-w${WALKER_COUNT})
-        set(TEST_DIR dmc-a${ATOM_COUNT}-e${ELECTRON_COUNT}-${DRIVER_TYPE})
-        add_nio_test(
-          ${PERF_TEST}
-          1
-          16
-          ${TEST_DIR}
-          ${TEST_SOURCE_DIR}
-          ${INPUT_FILE}
-          ${H5_FILE}
-          "${ADJUST_INPUT} -w ${WALKER_COUNT}")
-      endif(NOT QMC_CUDA)
+      endif(ENABLE_OFFLOAD)
+
     else()
       message(
         "NiO-a${ATOM_COUNT}-e${ELECTRON_COUNT} performance test not added because the corresponding h5 file not found: ${H5_FULL_PATH}"

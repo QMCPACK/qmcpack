@@ -124,7 +124,7 @@ public:
   virtual std::string getClassName() const override { return "SplineC2ROMPTarget"; }
   virtual std::string getKeyword() const override { return "SplineC2R"; }
   bool isComplex() const override { return true; };
-  bool isOMPoffload() const override { return true; }
+  virtual bool isOMPoffload() const override { return true; }
 
   void createResource(ResourceCollection& collection) const override
   {
@@ -221,13 +221,10 @@ public:
   /** remap kPoints to pack the double copy */
   inline void resize_kpoints()
   {
-#ifndef QMC_CUDA
-    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands = this->remap_kpoints();
-#endif
-    int nk  = kPoints.size();
-    mKK     = std::make_shared<OffloadVector<ST>>(nk);
-    myKcart = std::make_shared<OffloadPosVector<ST>>(nk);
+    const int nk  = kPoints.size();
+    mKK           = std::make_shared<OffloadVector<ST>>(nk);
+    myKcart       = std::make_shared<OffloadPosVector<ST>>(nk);
     for (size_t i = 0; i < nk; ++i)
     {
       (*mKK)[i]     = -dot(kPoints[i], kPoints[i]);

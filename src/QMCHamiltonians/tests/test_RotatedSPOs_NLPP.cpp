@@ -35,7 +35,7 @@ namespace qmcplusplus
 // Copied and extended from QMCWaveFunctions/tests/test_RotatedSPOs.cpp
 
 
-TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
+void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 {
   using RealType = QMCTraits::RealType;
 
@@ -104,7 +104,7 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
   WaveFunctionPool wp(pp, c);
   REQUIRE(wp.empty() == true);
 
-  const char* wf_input = R"(
+  const char* wf_input_multi_det = R"(
        <wavefunction name="psi0" target="e">
          <sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="double" truncate="no" save_coefs="no">
             <sposet type="bspline" name="spo_up" size="2" spindataset="0" optimize="yes">
@@ -121,6 +121,30 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
          </determinantset>
       </wavefunction>)";
 
+  const char* wf_input_single_det = R"(
+       <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" precision="double" truncate="no" save_coefs="no">
+            <sposet type="bspline" name="spo_up" size="2" spindataset="0" optimize="yes">
+            </sposet>
+            <sposet type="bspline" name="spo_down" size="2" spindataset="0" optimize="yes">
+            </sposet>
+         </sposet_builder>
+         <determinantset>
+           <slaterdeterminant>
+               <determinant id="spo_up" size="1">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="spo_down" size="1">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+      </wavefunction>)";
+
+  const char* wf_input = wf_input_multi_det;
+  if (use_single_det)
+    wf_input = wf_input_single_det;
+
   Libxml2Document doc;
   bool okay = doc.parseFromString(wf_input);
   REQUIRE(okay);
@@ -134,13 +158,23 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
 
   // Note the pbc="no" setting to turn off long-range summation.
-  const char* ham_input = R"(
+  const char* ham_input_nlpp_nonbatched = R"(
         <hamiltonian name="h0" type="generic" target="e">
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml" algorithm="non-batched" pbc="no">
             <pseudo elementType="Be" href="Be.BFD.xml" nrule="2" disable_randomize_grid="yes"/>
          </pairpot>
       </hamiltonian>)";
 
+  const char* ham_input_nlpp_batched = R"(
+        <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml" algorithm="batched" pbc="no">
+            <pseudo elementType="Be" href="Be.BFD.xml" nrule="2" disable_randomize_grid="yes"/>
+         </pairpot>
+      </hamiltonian>)";
+
+  const char* ham_input = ham_input_nlpp_nonbatched;
+  if (use_nlpp_batched)
+    ham_input = ham_input_nlpp_batched;
 
   HamiltonianFactory hf("h0", elec, pp.getPool(), wp.getPool(), c);
 
@@ -238,6 +272,23 @@ TEST_CASE("RotatedSPOs SplineR2R hcpBe values multi det", "[wavefunction]")
 
   CHECK(dhpsi_over_psi_list2[0][0] == Approx(dhpsioverpsi2[0]));
   CHECK(dhpsi_over_psi_list2[0][1] == Approx(dhpsioverpsi2[1]));
+}
+
+TEST_CASE("RotatedSPOs SplineR2R hcpBe values", "[wavefunction]")
+{
+  SECTION("nlpp non-batched")
+  {
+    bool use_single_det   = GENERATE(true, false);
+    bool use_nlpp_batched = false;
+    test_hcpBe_rotation(use_single_det, use_nlpp_batched);
+  }
+
+  SECTION("nlpp batched")
+  {
+    bool use_single_det   = true;
+    bool use_nlpp_batched = true;
+    test_hcpBe_rotation(use_single_det, use_nlpp_batched);
+  }
 }
 
 } // namespace qmcplusplus
