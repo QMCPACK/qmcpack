@@ -83,8 +83,8 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   assert(spline_ptr != nullptr);
   const auto spl_coefs      = spline_ptr->coefs;
   const auto Nsplines       = spline_ptr->num_splines; // May include padding
-  const auto coefs_tot_size = spline_ptr->coefs_size;
-  const auto BasisSetSize   = coefs_tot_size / Nsplines;
+  const auto coefs_tot_size = spline_ptr->coefs_size;  // 2x longer to accomodate complex coefs
+  const auto BasisSetSize   = coefs_tot_size / Nsplines / 2; // complex layout
   const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
   assert(OrbitalSetSize >= TrueNOrbs);
 
@@ -101,19 +101,24 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
 
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  std::vector<ValueType> new_coefs(coefs_tot_size, 0);
+  // Gotta handle complex spl_coefs layout by hand. Each coef is stored
+  // as two realtypes adjacent in memory. 
+  std::vector<ST> new_coefs(coefs_tot_size, 0);
   for (auto i = 0; i < BasisSetSize; i++)
   {
     for (auto j = 0; j < Nsplines; j++)
     {
-      const auto cur_elem = Nsplines * i + j;
-      auto newval{0.};
+      const auto cur_elem = 2*(Nsplines * i + j);
+      auto newval_real{0.};
+      auto newval_imag{0.};
       for (auto k = 0; k < Nsplines; k++)
       {
-        const auto index = i * Nsplines + k;
-        newval += *(spl_coefs + index) * tmpU[k][j];
+        const auto index = 2*(i * Nsplines + k);
+        newval_real += *(spl_coefs + index) * tmpU[k][j].real();
+        newval_imag += *(spl_coefs + index) * tmpU[k][j].imag();
       }
-      new_coefs[cur_elem] = newval;
+      new_coefs[cur_elem]     = newval_real;
+      new_coefs[cur_elem + 1] = newval_imag;
     }
   }
 
