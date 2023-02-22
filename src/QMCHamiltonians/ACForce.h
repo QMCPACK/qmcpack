@@ -61,8 +61,8 @@ public:
   /** Since we store a reference to QMCHamiltonian, the baseclass method add2Hamiltonian 
  *  isn't sufficient.  We override it here. **/
   void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
-  
-/** Computes multiplicative regularizer f(G,epsilon) according to Pathak-Wagner arXiv:2002.01434 .
+
+  /** Computes multiplicative regularizer f(G,epsilon) according to Pathak-Wagner arXiv:2002.01434 .
   * G estimates proximity to node, and f(G,epsilon) in that paper is used to scale all values.   
   * \param[in] G, nabla_i ln(Psi), so vector of all electron gradients. 
   * \param[in] epsilon, regularizer parameter.
