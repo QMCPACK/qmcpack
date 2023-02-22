@@ -496,6 +496,9 @@ TEST_CASE("AC Force", "[hamiltonian]")
   //Should return 1.
   regval = force_new.compute_regularizer_f(g,0.001);
   CHECK( regval == Approx(1.0) );
+  //Epsilon = 0.0 indicates the regularizer is not used.  Return 1.
+  regval = force_new.compute_regularizer_f(g,0.0);
+  CHECK( regval == Approx(1.0) );
 
   Libxml2Document olddoc;
   Libxml2Document newdoc;

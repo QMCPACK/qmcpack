@@ -68,7 +68,7 @@ bool ACForce::put(xmlNodePtr cur)
   attr.add(useSpaceWarp_, "spacewarp", {false}); //"yes" or "no"
   attr.add(swpow, "swpow");                      //Real number"
   attr.add(delta_, "delta");                     //Real number"
-  attr.add(reg_epsilon_,"regularizer_epsilon");
+  attr.add(reg_epsilon_,"epsilon");
   attr.add(fastDerivatives_, "fast_derivatives", {false});
   attr.put(cur);
 
@@ -194,6 +194,11 @@ void ACForce::setParticlePropertyList(PropertySetType& plist, int offset)
 
 ACForce::RealType ACForce::compute_regularizer_f(const ParticleSet::ParticleGradient& G, const RealType epsilon)
 {
+  //epsilon=0 corresponds to no regularization.  However, since 
+  //epsilon ends up in denominators, return 1 here.
+  if (std::abs(epsilon)<1e-6)
+    return 1.0;
+
   RealType gdotg=0.0;
   #if defined(QMC_COMPLEX)
     gdotg=Dot_CC(G,G);
