@@ -1227,7 +1227,7 @@ estimated value of :math:`-3848.28(7)` instead.
 Performing trial wavefunction optimization fitting, e.g., to find optimal DFT+U
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this section, we use a 24-atom supercell of monolayer FeCl:math:`_{2}` as an example system for wavefunction optimization
+In this section, we use a 24-atom supercell of monolayer FeCl\ :sub:`2`\  as an example system for wavefunction optimization
 fitting. Using single determinant DFT wavefunctions, a practical method to perform wavefunction optimization is done through
 scanning the Hubbard-U parameter in a DFT+U calculation used to generate the trial wavefunction. Similarly, one can also scan
 different exact exchange ratio parameters in hybrid-DFT calculations. Here, we will show an example of this fitting for the
@@ -1279,7 +1279,7 @@ An example of a cubic fit is given as below:
   :width: 400
   :align: center
 
-  Quadratic Hubbard-U fits to DMC data for a 24-atom supercell of monolayer FeCl:math:`_{2}` obtained with ``qmc-fit``.  DMC local energy minima are indicated by the red data point on the bottom halves of either panel.
+  Quadratic Hubbard-U fits to DMC data for a 24-atom supercell of monolayer FeCl\ :sub:`2`\  obtained with ``qmc-fit``.  DMC local energy minima are indicated by the red data point on the bottom halves of either panel.
 
 .. _qdens:
 
