@@ -31,11 +31,12 @@ constexpr bool generate_test_data = false;
 
 TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
   TrialWaveFunction twf;
@@ -58,10 +59,11 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
  */
 TEST_CASE("integrateListeners", "[hamiltonian]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto hamiltonian_pool  = MinimalHamiltonianPool::makeHamWithEEEI(comm, particle_pool, wavefunction_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   //auto& species_set        = pset_target.getSpeciesSet();

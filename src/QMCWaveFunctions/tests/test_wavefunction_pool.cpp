@@ -81,13 +81,14 @@ void setupParticleSetPool(ParticleSetPool& pp)
 
 TEST_CASE("WaveFunctionPool", "[qmcapp]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(pp, c);
+  WaveFunctionPool wp(test_project, pp, c);
 
   REQUIRE(wp.empty() == true);
 

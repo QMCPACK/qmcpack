@@ -23,12 +23,13 @@ TEST_CASE("CompositeSPO::diamond_1x1x1", "[wavefunction")
 {
   Libxml2Document doc;
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset             = *particle_pool.getParticleSet("e");
   auto& twf              = *wavefunction_pool.getWaveFunction("wavefunction");
 

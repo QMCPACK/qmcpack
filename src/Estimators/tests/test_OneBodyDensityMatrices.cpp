@@ -216,13 +216,14 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   auto lattice     = testing::makeTestLattice();
   auto species_set = testing::makeSpeciesSet(SpeciesCases::GOOD);
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& spo_map           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto& spo_map          = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   // Good constructor
   OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, spo_map, pset_target);
@@ -244,14 +245,15 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
 
   using MCPWalker = OperatorEstBase::MCPWalker;
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& species_set      = pset_target.getSpeciesSet();
-  auto& spo_map           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto& spo_map          = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Inputs test_case) {
     Libxml2Document doc;
@@ -283,11 +285,12 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
 
   using MCPWalker = OperatorEstBase::MCPWalker;
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& species_set      = pset_target.getSpeciesSet();
   auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
@@ -312,6 +315,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   using namespace onebodydensitymatrices;
   using MCPWalker = OperatorEstBase::MCPWalker;
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -322,7 +326,7 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
   auto& pset_target      = *(particle_pool.getParticleSet("e"));
   auto& pset_source      = *(particle_pool.getParticleSet("ion"));
@@ -402,6 +406,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
   using MCPWalker = OperatorEstBase::MCPWalker;
   using namespace onebodydensitymatrices;
 
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
@@ -419,7 +424,7 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
     std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
 
     auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
     auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
     auto& pset_target      = *(particle_pool.getParticleSet("e"));
     auto& species_set      = pset_target.getSpeciesSet();

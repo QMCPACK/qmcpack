@@ -75,11 +75,12 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset             = *(particle_pool.getParticleSet("e"));
   DataLocality dl        = DataLocality::crowd;
 
@@ -121,11 +122,12 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset             = *(particle_pool.getParticleSet("e"));
   DataLocality dl        = DataLocality::crowd;
 
@@ -226,29 +228,29 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
 
   // Instantiate other dependencies (internal QMCPACK objects)
   auto lattice = testing::makeTestLattice();
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm;
   comm = OHMMS::Controller;
 
   auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
+  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
   auto& pset             = *(particle_pool.getParticleSet("e"));
   DataLocality dl        = DataLocality::crowd;
 
   // Build from input
   MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
-  
+
   auto clone = md.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &md);
   REQUIRE(dynamic_cast<decltype(&md)>(clone.get()) != nullptr);
-  
+
   // This check can be removed once a rank locality memory scheme is implemented
   // for MomentumDistribution.  Then checks relevant to that should be added.
   MomentumDistributionInput fail_mdi(node);
   dl = DataLocality::rank;
   MomentumDistribution fail_md(std::move(fail_mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
   CHECK_THROWS_AS(clone = fail_md.spawnCrowdClone(), std::runtime_error);
-  
 }
 
 } // namespace qmcplusplus
