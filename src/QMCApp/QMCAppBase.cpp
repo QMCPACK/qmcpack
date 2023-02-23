@@ -21,7 +21,7 @@ QMCAppBase::QMCAppBase() = default;
 
 QMCAppBase::~QMCAppBase()
 {
-  while (!XmlDocStack.empty())
+  while (!xml_doc_stack_.empty())
   {
     popDocument();
   }
@@ -33,7 +33,7 @@ bool QMCAppBase::pushDocument(const std::string& infile)
   bool success          = adoc->parse(infile);
   if (success)
   {
-    XmlDocStack.push(adoc);
+    xml_doc_stack_.push(adoc);
   }
   else
   {
@@ -45,12 +45,12 @@ bool QMCAppBase::pushDocument(const std::string& infile)
 
 void QMCAppBase::popDocument()
 {
-  if (!XmlDocStack.empty())
+  if (!xml_doc_stack_.empty())
   //Check if the stack is empty
   {
-    Libxml2Document* adoc = XmlDocStack.top();
+    Libxml2Document* adoc = xml_doc_stack_.top();
     delete adoc;
-    XmlDocStack.pop();
+    xml_doc_stack_.pop();
   }
 }
 
@@ -69,15 +69,15 @@ bool QMCAppBase::parse(const std::string& infile)
 
 void QMCAppBase::saveXml()
 {
-  if (!XmlDocStack.empty())
+  if (!xml_doc_stack_.empty())
   {
-    std::string newxml(myProject.currentMainRoot());
+    std::string newxml(my_project_.currentMainRoot());
     newxml.append(".cont.xml");
     app_log() << "\n========================================================="
               << "\n  A new xml input file : " << newxml << std::endl;
-    XmlDocStack.top()->dump(newxml);
+    xml_doc_stack_.top()->dump(newxml);
   }
 }
 
-const std::string& QMCAppBase::getTitle() const { return myProject.getTitle(); }
+const std::string& QMCAppBase::getTitle() const { return my_project_.getTitle(); }
 } // namespace qmcplusplus

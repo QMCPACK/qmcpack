@@ -189,14 +189,6 @@ public:
     return std::exp(vParam[SBVP::TAUEFF] * (vParam[SBVP::ETRIAL] - 0.5 * (enew + eold)));
   }
 
-  inline RealType branchWeightReleasedNode(RealType enew, RealType eold, RealType eref) const
-  {
-    if (BranchMode[B_DMCSTAGE])
-      return std::exp(vParam[SBVP::TAU] * (eref - 0.5 * (enew + eold)));
-    else
-      return 1.0;
-  }
-
   /** return the bare branch weight with a filtering using an energy window
    *
    * Cutoff values are set by the variance

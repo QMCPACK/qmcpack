@@ -22,8 +22,8 @@ function(ADD_AFQMC_PYSCF_WORKFLOW_TEST test_name input_dir TEST_SCALARS TEST_OBS
   set(TESTNAME "converter_test_pyscf_to_afqmc_${test_name}")
   add_test(
     NAME ${TESTNAME}
-    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROC_INT} ${MPIEXEC_PREFLAGS}
-            ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
+    COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} ${NPROC_INT} ${MPIEXEC_PREFLAGS} ${Python3_EXECUTABLE}
+            ${PROJECT_SOURCE_DIR}/utils/afqmctools/bin/pyscf_to_afqmc.py ${ARGN}
     WORKING_DIRECTORY ${TESTDIR})
   set_tests_properties(${TESTNAME} PROPERTIES DEPENDS "converter_test_pyscf_${test_name}")
   set_property(TEST ${TESTNAME} APPEND PROPERTY LABELS "converter;afqmc")

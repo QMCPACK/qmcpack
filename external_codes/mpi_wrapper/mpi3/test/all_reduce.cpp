@@ -81,9 +81,31 @@ auto mpi3::main(int/*argc*/, char**/*argv*/, mpi3::communicator world) -> int tr
 		assert( all == false );
 	}
 	{
-		bool const b = not(world.rank() == 2);
-		bool const all = (world &= b);
-		assert( all == false );
+		bool const b = not(world.rank() == 1);
+		bool const all_of = (world &= b);
+		assert( all_of == false );
+	}
+	{
+		assert(world.size() != 1);
+
+		bool const b = (world.rank() == 1);
+		bool any_of = false;
+		world.all_reduce_n(&b, 1, &any_of, std::logical_or<>{});
+		assert(any_of);
+
+		bool all_of = true;
+		world.all_reduce_n(&b, 1, &all_of, std::logical_and<>{});
+		assert(not all_of);
+	}
+	{
+		assert(world.size() != 1);
+
+		bool const b = (world.rank() == 1);
+		bool const any_of = (world |= b);
+		assert(any_of);
+
+		bool const all_of = (world &= b);
+		assert(not all_of);
 	}
 
 	return 0;

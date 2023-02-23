@@ -93,26 +93,26 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 
   // i-i = e-e stress is validated against Quantum Espresso's ewald method
   //  they are also double checked using finite-difference
-  CHECK(est.stress_ee(0, 0) == Approx(-0.01087883));
-  CHECK(est.stress_ee(0, 1) == Approx(0.0));
-  CHECK(est.stress_ee(0, 2) == Approx(0.0));
-  CHECK(est.stress_ee(1, 0) == Approx(0.0));
-  CHECK(est.stress_ee(1, 1) == Approx(-0.01087883));
-  CHECK(est.stress_ee(1, 2) == Approx(0.0));
-  CHECK(est.stress_ee(2, 0) == Approx(0.0));
-  CHECK(est.stress_ee(2, 1) == Approx(0.0));
-  CHECK(est.stress_ee(2, 2) == Approx(-0.01087883));
+  CHECK(est.getStressEE()(0, 0) == Approx(-0.01087883));
+  CHECK(est.getStressEE()(0, 1) == Approx(0.0));
+  CHECK(est.getStressEE()(0, 2) == Approx(0.0));
+  CHECK(est.getStressEE()(1, 0) == Approx(0.0));
+  CHECK(est.getStressEE()(1, 1) == Approx(-0.01087883));
+  CHECK(est.getStressEE()(1, 2) == Approx(0.0));
+  CHECK(est.getStressEE()(2, 0) == Approx(0.0));
+  CHECK(est.getStressEE()(2, 1) == Approx(0.0));
+  CHECK(est.getStressEE()(2, 2) == Approx(-0.01087883));
 
   //Electron-Ion stress diagonal is internally validated using fd.
-  CHECK(est.stress_ei(0, 0) == Approx(-0.00745376));
-  //CHECK(est.stress_ei(0, 1) == Approx(0.0));
-  //CHECK(est.stress_ei(0, 2) == Approx(0.0));
-  //CHECK(est.stress_ei(1, 0) == Approx(0.0));
-  CHECK(est.stress_ei(1, 1) == Approx(-0.00745376));
-  //CHECK(est.stress_ei(1, 2) == Approx(0.0));
-  //CHECK(est.stress_ei(2, 0) == Approx(0.0));
-  //CHECK(est.stress_ei(2, 1) == Approx(0.0));
-  CHECK(est.stress_ei(2, 2) == Approx(-0.00745376));
+  CHECK(est.getStressEI()(0, 0) == Approx(-0.00745376));
+  //CHECK(est.getStressEI()(0, 1) == Approx(0.0));
+  //CHECK(est.getStressEI()(0, 2) == Approx(0.0));
+  //CHECK(est.getStressEI()(1, 0) == Approx(0.0));
+  CHECK(est.getStressEI()(1, 1) == Approx(-0.00745376));
+  //CHECK(est.getStressEI()(1, 2) == Approx(0.0));
+  //CHECK(est.getStressEI()(2, 0) == Approx(0.0));
+  //CHECK(est.getStressEI()(2, 1) == Approx(0.0));
+  CHECK(est.getStressEI()(2, 2) == Approx(-0.00745376));
 
   LRCoulombSingleton::CoulombHandler.reset(nullptr);
 

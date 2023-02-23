@@ -521,13 +521,6 @@ void SimpleFixedNodeBranch::reset()
   }
 }
 
-void SimpleFixedNodeBranch::setRN(bool rn)
-{
-  RN = rn;
-  WalkerController->set_write_release_nodes(rn);
-  WalkerController->start();
-}
-
 int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
 {
   app_log() << "BRANCH resetRun" << std::endl;

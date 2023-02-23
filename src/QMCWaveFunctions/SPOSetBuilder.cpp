@@ -95,6 +95,10 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
     abort();
 #else
+    app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
+                  << std::endl;
+
+    sposet->storeParamsBeforeRotation();
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
@@ -126,6 +130,53 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 
   sposet->checkObject();
   return sposet;
+}
+
+std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
+{
+  std::string spo_object_name;
+  std::string method;
+  OhmmsAttributeSet attrib;
+  attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
+  attrib.put(cur);
+
+
+#ifdef QMC_COMPLEX
+  myComm->barrier_and_abort("Orbital optimization via rotation doesn't support complex wavefunctions yet.");
+  return nullptr;
+#else
+  std::unique_ptr<SPOSet> sposet;
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "sposet")
+    {
+      sposet = createSPOSet(element);
+    }
+  });
+
+  if (!sposet)
+    myComm->barrier_and_abort("Rotated SPO needs an SPOset");
+
+  if (!sposet->isRotationSupported())
+    myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
+                              sposet->getClassName() + "'.");
+
+  sposet->storeParamsBeforeRotation();
+  auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));
+
+  if (method == "history")
+    rot_spo->set_use_global_rotation(false);
+
+  processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
+    if (cname == "opt_vars")
+    {
+      std::vector<RealType> params;
+      putContent(params, element);
+      rot_spo->setRotationParameters(params);
+    }
+  });
+  return rot_spo;
+#endif
 }
 
 } // namespace qmcplusplus

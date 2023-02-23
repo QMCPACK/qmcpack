@@ -18,7 +18,6 @@
 /**@file CrystalLattice.cpp
  *@brief Member function definitions of CrystalLattice<T,D>, included by CrystalLattice.h
  */
-#include "MakeCrystalLattice.h"
 #include "LatticeAnalyzer.h"
 
 namespace qmcplusplus

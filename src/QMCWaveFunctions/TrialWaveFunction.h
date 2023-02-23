@@ -58,20 +58,23 @@ class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
-  using RealType         = WaveFunctionComponent::RealType;
-  using ComplexType      = WaveFunctionComponent::ComplexType;
-  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
-  using ValueType        = WaveFunctionComponent::ValueType;
-  using PosType          = WaveFunctionComponent::PosType;
-  using GradType         = WaveFunctionComponent::GradType;
-  using BufferType       = WaveFunctionComponent::BufferType;
-  using WFBufferType     = WaveFunctionComponent::WFBufferType;
-  using HessType         = WaveFunctionComponent::HessType;
-  using HessVector       = WaveFunctionComponent::HessVector;
-  using LogValueType     = WaveFunctionComponent::LogValueType;
-  using PsiValueType     = WaveFunctionComponent::PsiValueType;
+  using RealType     = WaveFunctionComponent::RealType;
+  using ComplexType  = WaveFunctionComponent::ComplexType;
 
-  using SPOMap = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+#ifndef NDEBUG
+  using FullPrecRealType =  WaveFunctionComponent::FullPrecRealType;
+#endif
+
+  using ValueType    = WaveFunctionComponent::ValueType;
+  using GradType     = WaveFunctionComponent::GradType;
+  using BufferType   = WaveFunctionComponent::BufferType;
+  using WFBufferType = WaveFunctionComponent::WFBufferType;
+  using HessType     = WaveFunctionComponent::HessType;
+  using HessVector   = WaveFunctionComponent::HessVector;
+  using LogValueType = WaveFunctionComponent::LogValueType;
+  using PsiValueType = WaveFunctionComponent::PsiValueType;
+
+  using SPOMap = SPOSet::SPOMap;
 
   /// enum type for computing partial WaveFunctionComponents
   enum class ComputeType

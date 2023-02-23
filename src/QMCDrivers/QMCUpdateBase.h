@@ -167,9 +167,6 @@ public:
     awalker.Multiplicity = M + RandomGen();
   }
 
-  /** set the multiplicity of the walkers to branch */
-  void setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
-
   /** initialize Walker buffers for PbyP update
    */
   virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);

@@ -65,18 +65,14 @@ std::unique_ptr<BsplineReaderBase> createBsplineComplexSingle(EinsplineSetBuilde
   app_summary() << "    Using real valued spline SPOs with complex single precision storage (C2R)." << std::endl;
   if (CPUOMPTargetSelector::selectPlatform(useGPU) == PlatformKind::OMPTARGET)
   {
+    app_summary() << "    Running OpenMP offload code path." << std::endl;
     if (hybrid_rep)
     {
-      app_summary() << "OpenMP offload has not been implemented to support hybrid orbital representation!"
-                    << "    Running on CPU." << std::endl;
       app_summary() << "    Using hybrid orbital representation." << std::endl;
-      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2R<float>>>>(e);
+      aReader = std::make_unique<HybridRepSetReader<HybridRepCplx<SplineC2ROMPTarget<float>>>>(e);
     }
     else
-    {
-      app_summary() << "    Running OpenMP offload code path." << std::endl;
       aReader = std::make_unique<SplineSetReader<SplineC2ROMPTarget<float>>>(e);
-    }
   }
   else
   {

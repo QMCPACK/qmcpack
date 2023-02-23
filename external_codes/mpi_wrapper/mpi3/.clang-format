@@ -222,6 +222,8 @@ WhitespaceSensitiveMacros:
   - BOOST_REQUIRE
   - BOOST_TEST
   - BOOST_TEST_REQUIRE
+  - assert
+  - MPI_
 #WhitespaceSensitiveMacros:
 #  - STRINGIZE
 #  - PP_STRINGIZE

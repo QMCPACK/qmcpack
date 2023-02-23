@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "QMCWaveFunctions/EinsplineSpinorSetBuilder.h"
+#include <ResourceCollection.h>
 
 #include <stdio.h>
 #include <string>
@@ -196,6 +197,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
 
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
+
   const int ne = elec_.R.size();
   SPOSet::ValueMatrix psi(ne, psi_size);
   SPOSet::GradMatrix dpsi(ne, psi_size);
@@ -323,8 +333,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   rot_mat[7][6] = -0.00647;
   rot_mat[7][7] = 0.99273;
 
-  // Apply the rotation
-  spo->applyRotation(rot_mat, false);
+  spo->storeParamsBeforeRotation();
+  // Apply the rotation (use_stored_copy is set to true just
+  // to test a different code path from other calls to applyRotation elsewhere)
+  spo->applyRotation(rot_mat, true);
 
   // Get data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
@@ -506,7 +518,6 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
 #endif
 
   // test batched interfaces
-
   ParticleSet elec_2(elec_);
   // interchange positions
   elec_2.R[0] = elec_.R[1];
@@ -519,6 +530,15 @@ TEST_CASE("Einspline SPO from HDF diamond_2x1x1 5 electrons", "[wavefunction]")
   RefVectorWithLeader<SPOSet> spo_list(*spo);
   spo_list.push_back(*spo);
   spo_list.push_back(*spo_2);
+
+  ResourceCollection pset_res("test_pset_res");
+  ResourceCollection spo_res("test_spo_res");
+
+  elec_.createResource(pset_res);
+  spo->createResource(spo_res);
+
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+  ResourceCollectionTeamLock<SPOSet> mw_sposet_lock(spo_res, spo_list);
 
   SPOSet::ValueVector psi(spo->getOrbitalSetSize());
   SPOSet::GradVector dpsi(spo->getOrbitalSetSize());

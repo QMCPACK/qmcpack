@@ -39,8 +39,6 @@ private:
   int prevSteps;
   int prevStepsBetweenSamples;
 
-  ///Ways to set rn constant
-  RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
   ///check the run-time environments

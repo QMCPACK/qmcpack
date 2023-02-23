@@ -26,7 +26,7 @@ class SPOSetScanner
 {
 public:
   using PtclPool    = std::map<std::string, const std::unique_ptr<ParticleSet>>;
-  using SPOSetMap   = std::map<std::string, const std::unique_ptr<const SPOSet>>;
+  using SPOSetMap   = SPOSet::SPOMap;
   using RealType    = QMCTraits::RealType;
   using ValueType   = QMCTraits::ValueType;
   using ValueVector = OrbitalSetTraits<ValueType>::ValueVector;
