@@ -1060,12 +1060,10 @@ Production quality checklist
 Using the qmc-fit tool for statistical time step extrapolation, trial wavefunction optimization and curve fitting
 -----------------------------------------------------------------------------------------------------------------
 
-The ``qmc-fit`` tool is used to provide statistical estimates of
-curve-fitting parameters based on QMCPACK data. Although ``qmc-fit``
-will eventually support many types of fitted curves (e.g., Morse
-potential binding curves and various equation-of-state fitting curves),
-it is currently limited to estimating fitting parameters related to time
-step extrapolation and trial wavefunction optimization.
+The ``qmc-fit`` tool is used to provide statistical estimates of curve-fitting parameters based on QMCPACK data. 
+``qmc-fit`` is currently limited to estimating fitting parameters related to time step extrapolation and trial wavefunction
+optimization (optimal U for DFT+U, EXX fractions), it will eventually support many types of fitted curves (e.g., Morse
+potential binding curves and various equation-of-state fitting curves).
 
 The jackknife statistical technique
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1226,26 +1224,20 @@ estimated value of :math:`-3848.28(7)` instead.
 
   Linear (top) and quadratic (bottom) time step fits to DMC data for a 32-atom supercell of MnO obtained with ``qmc-fit``.  Zero time step estimates are indicated by the red data point on the left side of either panel.
 
-Performing trial wavefunction optimization fitting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Performing trial wavefunction optimization fitting, e.g., to find optimal DFT+U
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this section, we use a 24-atom supercell of monolayer FeCl:math:`_{2}` as an example system
-for wavefunction optimization fitting. Using single determinant DFT wavefunctions, 
-a practical method to perform wavefunction optimization is done through scanning 
-the Hubbard-U parameter for the open shell atoms in the system. Similarly, 
-one can also scan different exact exchange ratio parameters in hybrid-DFT calculations.
-Here, we will show an example of this fitting via using Hubbard-U parameter, but 
-the same procedure can be applied to any single-parameter scans of trial wavefunctions.
-Data for this system has been collected in DMC using the following sequence of Hubbard-U values
-on Fe-d orbitals: :math:`0 1 2 3 4 5` eV. Some non-zero U value often minimizes the 
-DMC energy, but optimized U values have limited transferability across different systems.
-Similar to the procedure in performing timestep statistical fitting, quality of the input statistics 
-must be checked using ``qmca`` utility to determine the reblocking factor and equilibration
-periods. 
-
-Assuming that an equilibration period of initial 50 steps, ``-e 50``, and a reblocking period of 
-4, ``-b 6``, is sufficient to remove correlations in the statistical local energies, the ``qmc-fit`` 
-tool can be used in the following way to obtain a quadratic fit of the data:
+In this section, we use a 24-atom supercell of monolayer FeCl:math:`_{2}` as an example system for wavefunction optimization
+fitting. Using single determinant DFT wavefunctions, a practical method to perform wavefunction optimization is done through
+scanning the Hubbard-U parameter in a DFT+U calculation used to generate the trial wavefunction. Similarly, one can also scan
+different exact exchange ratio parameters in hybrid-DFT calculations. Here, we will show an example of this fitting for the
+Hubbard-U parameter, but the same procedure can be applied to any single-parameter scans of trial wavefunctions. Data for this
+system has been collected in DMC using the following sequence of Hubbard-U values on Fe-d orbitals: :math:`0 1 2 3 4 5` eV. Some
+non-zero U value often minimizes the DMC energy, but optimized U values have limited transferability across different systems.
+Similar to the procedure for performing timestep statistical fitting, the quality of the input statistics must be checked using
+``qmca`` utility to determine the reblocking factor and equilibration periods. Assuming that an equilibration period of initial 50
+steps, ``-e 50``, and a reblocking period of 4, ``-b 6``, is sufficient to remove correlations in the statistical local energies,
+the ``qmc-fit`` tool can be used in the following way to obtain a quadratic fit of the data:
 
 ::
 
@@ -1257,7 +1249,7 @@ tool can be used in the following way to obtain a quadratic fit of the data:
   root 1 curvature     : 0.0177 +/- 0.0015
 
 Here, ``qmc-fit u`` indicates we are performing a Hubbard-U/exact-exchange ratio fit, 
-``-u`` option provides a list of Hubbard-U values ‘0 1 2 3 4 5’ corresponding to the auto-sorted
+``-u`` option provides a list of Hubbard-U values :math:`0 1 2 3 4 5` corresponding to the auto-sorted
 dmc scalar files with wildcard ``dmc_u_*/dmc.s001.scalar.dat``. Here, ``qmc-fit`` command is invoked at a 
 directory where folders such as ``dmc_u_0_2x2x1, dmc_u_1_2x2x1, dmc_u_2_2x2x1`` reside. 
 Here, the text output provides the U value (``minimum_u``) and local energies (``minimum_e``) 
