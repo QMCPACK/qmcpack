@@ -26,8 +26,8 @@ namespace qmcplusplus
 class ACForce : public OperatorBase
 {
 public:
-  using Forces = ParticleSet::ParticlePos;
-
+  using Forces           = ParticleSet::ParticlePos;
+  using ParticleGradient = ParticleSet::ParticleGradient;
   /** Constructor **/
   ACForce(ParticleSet& source, ParticleSet& target, TrialWaveFunction& psi, QMCHamiltonian& H);
 
@@ -62,6 +62,14 @@ public:
  *  isn't sufficient.  We override it here. **/
   void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi, QMCHamiltonian& targetH) final;
 
+  /** Computes multiplicative regularizer f(G,epsilon) according to Pathak-Wagner arXiv:2002.01434 .
+  * G estimates proximity to node, and f(G,epsilon) in that paper is used to scale all values.   
+  * \param[in] G, nabla_i ln(Psi), so vector of all electron gradients. 
+  * \param[in] epsilon, regularizer parameter.
+  * \return Value of regularizer f(G,epsilon).
+  */
+  static RealType compute_regularizer_f(const ParticleGradient& G, const RealType epsilon);
+
   /** Evaluate **/
   Return_t evaluate(ParticleSet& P) final;
 
@@ -80,6 +88,17 @@ private:
   ///For indexing observables
   IndexType first_force_index_;
 
+  ///Algorithm/feature switches
+  bool useSpaceWarp_;
+  bool fastDerivatives_;
+
+  ///The space warp transformation class.
+  SpaceWarpTransformation swt_;
+
+  //Pathak-Wagner regularizer parameters.
+  RealType reg_epsilon_;
+  RealType f_epsilon_;
+
   ///Temporary Nion x 3 dimensional arrays for force storage.
   Forces hf_force_;
   Forces pulay_force_;
@@ -87,12 +106,8 @@ private:
   Forces sw_pulay_;
   Forces sw_grad_;
 
-  bool useSpaceWarp_;
-  bool fastDerivatives_;
-  
+
   TWFFastDerivWrapper psi_wrapper_;
-  ///The space warp transformation class.
-  SpaceWarpTransformation swt_;
 };
 
 } // namespace qmcplusplus
