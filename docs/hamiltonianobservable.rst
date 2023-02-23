@@ -2016,6 +2016,8 @@ Both of these methods are accessible with appropraite flags.
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
     | ``name``:math:`^o`             | text         | *Anything*      | ForceBase   | Unique name for this estimator                               |
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``epsilon``:math:`^o`          | real         | :math:`>=0      | 0           | Epsilon parameter for Pathak-Wagner regularizer.             |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
     | ``spacewarp``:math:`^o`        | text         | yes/no          | no          | Add space-warp variance reduction terms                      |
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
     | ``fast_derivatives``:math:`^o` | text         | yes/no          | no          | Use Filippi fast derivative algorithm                        |
