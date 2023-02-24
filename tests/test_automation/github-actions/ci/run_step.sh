@@ -106,13 +106,10 @@ case "$1" in
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
       # use spack
-      export PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH
-      export PATH=$PATH:/opt/rh/gcc-toolset-11/root/bin/
+      export PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH:/opt/rh/gcc-toolset-11/root/bin/
 
       # Make current environment variables available to subsequent steps
-      echo "PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
-      echo "PATH=$PATH:/opt/rh/gcc-toolset-11/root/bin/" >> $GITHUB_ENV
-
+      echo "PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH:/opt/rh/gcc-toolset-11/root/bin/" >> $GITHUB_ENV
     
     case "${GH_JOBNAME}" in
       *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
