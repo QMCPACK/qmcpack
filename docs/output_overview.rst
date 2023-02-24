@@ -134,6 +134,32 @@ The .config.h5 file
 
 This file contains stored walker configurations.
 
+* GROUP "root"
+  * GROUP "state_0"
+    * DATASET "block"
+      * DATATYPE H5T_STD_I32LE
+      * DATASPACE SCALAR
+
+    * DATASET "number_of_walkers"
+      * DATATYPE H5T_STD_U64LE
+      * DATASPACE SCALAR
+
+    * DATASET "walker_partition"
+      * DATATYPE H5T_STD_I32LE
+      * DATASPACE SIMPLE
+
+    * DATASET "walker_weights"
+      * DATATYPE H5T_IEEE_F64LE
+      * DATASPACE SIMPLE
+
+    * DATASET "walkers"
+      * DATATYPE H5T_IEEE_F64LE
+      * DATASPACE SIMPLE
+
+  * DATASET "version"
+    * DATATYPE H5T_STD_I32LE
+    * DATASPACE SIMPLE
+
 The .random.h5 file
 ~~~~~~~~~~~~~~~~~~~
 

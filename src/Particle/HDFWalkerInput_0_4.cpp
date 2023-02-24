@@ -228,10 +228,10 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
     counts_weights[i] = woffsets_weights[i + 1] - woffsets_weights[i];
 
   // walker counts and offsets for electron coordinates
-  std::vector<int> woffsets(woffsets_weights);
+  std::vector<int> woffsets(np1, 0);
   const int nitems = num_ptcls_ * OHMMS_DIM;
   for (int i = 0; i < woffsets.size(); ++i)
-    woffsets[i] *= nitems;
+    woffsets[i] = nitems * woffsets_weights[i];
   std::vector<int> counts(myComm->size());
   for (int i = 0; i < counts.size(); ++i)
     counts[i] = woffsets[i + 1] - woffsets[i];
