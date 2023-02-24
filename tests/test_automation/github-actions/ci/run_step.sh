@@ -106,10 +106,26 @@ case "$1" in
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
       # use spack
-      export PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH:/opt/rh/gcc-toolset-11/root/bin/
+      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
+      export FFTW_HOME=/opt/view
+      export LibXml2_ROOT=/opt/view
+      export HDF5_ROOT=/opt/view
+      export BOOST_ROOT=/opt/view
+
 
       # Make current environment variables available to subsequent steps
-      echo "PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH:/opt/rh/gcc-toolset-11/root/bin/" >> $GITHUB_ENV
+      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
+      echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
+      echo "LibXml2_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "HDF5_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "BOOST_ROOT=/opt/view" >> $GITHUB_ENV
+    fi
     
     case "${GH_JOBNAME}" in
       *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)

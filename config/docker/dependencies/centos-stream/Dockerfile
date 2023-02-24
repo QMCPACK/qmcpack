@@ -8,8 +8,8 @@ FROM spack/centos-stream as builder
 RUN which tar
 RUN tar -cf tarfilename.tar -T /dev/null
 
-RUN spack install gcc@11.3.0+binutils
-RUN spack load gcc@11.3.0+binutils
+RUN spack install gcc@11.3.0
+RUN spack load gcc@11.3.0
 RUN spack compiler add $(spack location -i gcc@11.3.0)
 RUN spack compilers
 
@@ -79,8 +79,7 @@ RUN yum install -y gcc-toolset-11-binutils
 RUN yum install -y rsync
 RUN export PATH=/opt/rh/gcc-toolset-11/root/bin/:$PATH
 RUN yum install -y libgcc.i686 glibc-devel.i686 libstdc++-devel.i686
-# TODO: Run after build
-# RUN ranlib /opt/view/lib/gcc/x86_64-pc-linux-gnu/11.3.0/libgcc.a
+RUN ranlib /opt/view/lib/gcc/x86_64-pc-linux-gnu/11.3.0/libgcc.a
 
 ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l", "-c", "$*", "--" ]
 CMD [ "/bin/bash" ]
