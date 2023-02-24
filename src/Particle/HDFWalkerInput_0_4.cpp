@@ -169,16 +169,18 @@ bool HDFWalkerInput_0_4::read_hdf5(const std::filesystem::path& h5name)
     const int nitems    = num_ptcls_ * OHMMS_DIM;
     const int curWalker = wc_list_.getActiveWalkers();
     wc_list_.createWalkers(nw_in, num_ptcls_);
-    Buffer_t::iterator it = posin.begin() + woffsets[myComm->rank()] * nitems;
-    auto it_w             = weights_in.begin() + woffsets[myComm->rank()];
-    for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
+
+    auto it = posin.begin() + woffsets[myComm->rank()] * nitems;
+    for (int i = 0; i < nw_in; ++i, it += nitems)
     {
-      copy(it, it + nitems, get_first_address(wc_list_[iw]->R));
-      it += nitems;
-      if (has_weights)
+      copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
+    }
+    if (has_weights)
+    {
+      const auto woffset = woffsets[myComm->rank()];
+      for (int i = 0; i < nw_in; ++i)
       {
-        wc_list_[iw]->Weight = *it_w;
-        ++it_w;
+        wc_list_[i + curWalker]->Weight = weights_in[i + woffset];
       }
     }
   }
@@ -259,16 +261,17 @@ bool HDFWalkerInput_0_4::read_hdf5_scatter(const std::filesystem::path& h5name)
 
   const int curWalker = wc_list_.getActiveWalkers();
   wc_list_.createWalkers(nw_loc, num_ptcls_);
-  Buffer_t::iterator it = posout.begin();
-  auto it_w             = weights_out.begin();
-  for (int i = 0, iw = curWalker; i < nw_loc; ++i, ++iw)
+
+  auto it = posout.begin();
+  for (int i = 0; i < nw_loc; ++i, it += nitems)
   {
-    copy(it, it + nitems, get_first_address(wc_list_[iw]->R));
-    it += nitems;
-    if (has_weights)
+    copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
+  }
+  if (has_weights)
+  {
+    for (int i = 0; i < nw_in; ++i)
     {
-      wc_list_[iw]->Weight = *it_w;
-      ++it_w;
+      wc_list_[i + curWalker]->Weight = weights_out[i];
     }
   }
   return true;
@@ -362,16 +365,16 @@ bool HDFWalkerInput_0_4::read_phdf5(const std::filesystem::path& h5name)
     const int nitems    = num_ptcls_ * OHMMS_DIM;
     const int curWalker = wc_list_.getActiveWalkers();
     wc_list_.createWalkers(nw_in, num_ptcls_);
-
-    auto it   = posin.begin();
-    auto it_w = weights_in.begin();
-    for (int i = 0, iw = curWalker; i < nw_in; ++i, ++iw)
+    auto it = posin.begin();
+    for (int i = 0; i < nw_in; ++i, it += nitems)
     {
-      copy(it, it += nitems, get_first_address(wc_list_[iw]->R));
-      if (has_weights)
+      copy(it, it + nitems, get_first_address(wc_list_[i + curWalker]->R));
+    }
+    if (has_weights)
+    {
+      for (int i = 0; i < nw_in; ++i)
       {
-        wc_list_[iw]->Weight = *it_w;
-        ++it_w;
+        wc_list_[i + curWalker]->Weight = weights_in[i];
       }
     }
   }
