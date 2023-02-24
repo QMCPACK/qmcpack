@@ -112,6 +112,7 @@ case "$1" in
       # Make current environment variables available to subsequent steps
       echo "PATH=/opt/view:/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
       echo "PATH=$PATH:/opt/rh/gcc-toolset-11/root/bin/" >> $GITHUB_ENV
+    fi
 
     
     case "${GH_JOBNAME}" in
