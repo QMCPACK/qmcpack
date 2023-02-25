@@ -398,6 +398,7 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
 QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate& comm,
+                                                                         const IndexType current_configs,
                                                                          const IndexType requested_total_walkers,
                                                                          const IndexType requested_walkers_per_rank,
                                                                          const RealType reserve_walkers,
@@ -434,11 +435,13 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communi
     awc.global_walkers   = requested_total_walkers;
     awc.walkers_per_rank = fairDivide(requested_total_walkers, num_ranks);
   }
-  else
+  else // requested_total_walkers == 0
   {
     if (requested_walkers_per_rank != 0)
       awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
-    else
+    else if (current_configs) // requested_walkers_per_rank == 0 and current_configs > 0
+      awc.walkers_per_rank[rank_id] = current_configs;
+    else // requested_walkers_per_rank == 0 and current_configs == 0
       awc.walkers_per_rank[rank_id] = num_crowds;
     comm.allreduce(awc.walkers_per_rank);
     awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);

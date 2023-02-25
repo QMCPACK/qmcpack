@@ -53,7 +53,7 @@ public:
   {
     // We want to test the reserve ability as well
     AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(*myComm, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
+        adjustGlobalWalkerCount(*myComm, 0, qmcdriver_input_.get_total_walkers(), qmcdriver_input_.get_walkers_per_rank(),
                                 1.0, qmcdriver_input_.get_num_crowds());
 
     Base::initializeQMC(awc);
@@ -64,7 +64,7 @@ public:
     AdjustedWalkerCounts awc;
     if (myComm->size() == 4)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 64, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 64, 0, 1.0, 0);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 64);
@@ -75,8 +75,18 @@ public:
         CHECK(awc.walkers_per_crowd[7] == 2);
       }
 
+      awc = adjustGlobalWalkerCount(*myComm, 4, 0, 0, 1.0, 0);
+      if (myComm->rank() == 1)
+      {
+        CHECK(awc.global_walkers == 16);
+        CHECK(awc.walkers_per_crowd.size() == 8);
+        CHECK(awc.walkers_per_rank[0] == 4);
+        CHECK(awc.walkers_per_rank[3] == 4);
+        CHECK(awc.walkers_per_crowd[3] == 1);
+        CHECK(awc.walkers_per_crowd[7] == 0);
+      }
 
-      awc = adjustGlobalWalkerCount(*myComm, 63, 0, 1.0, 4);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 63, 0, 1.0, 4);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 63);
@@ -86,7 +96,7 @@ public:
         CHECK(awc.walkers_per_crowd[0] == 4);
         CHECK(awc.walkers_per_crowd[3] == 4);
       }
-      awc = adjustGlobalWalkerCount(*myComm, 63, 0, 1.0, 4);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 63, 0, 1.0, 4);
       if (myComm->rank() == 3)
       {
         CHECK(awc.global_walkers == 63);
@@ -97,7 +107,7 @@ public:
         CHECK(awc.walkers_per_crowd[3] == 3);
       }
 
-      awc = adjustGlobalWalkerCount(*myComm, 0, 32, 1.0, 4);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 0, 32, 1.0, 4);
       if (myComm->rank() == 3)
       {
         CHECK(awc.global_walkers == 128);
@@ -110,7 +120,7 @@ public:
     }
     if (myComm->size() == 1)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 7, 0, 1.0, 8);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 7, 0, 1.0, 8);
       CHECK(awc.global_walkers == 7);
       CHECK(awc.walkers_per_crowd.size() == 8);
       CHECK(awc.walkers_per_rank.size() == 1);
@@ -121,7 +131,7 @@ public:
 
     if (myComm->size() == 2)
     {
-      awc = adjustGlobalWalkerCount(*myComm, 28, 0, 1.0, 0);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 28, 0, 1.0, 0);
       if (myComm->rank() == 0)
       {
         CHECK(awc.global_walkers == 28);
@@ -132,7 +142,7 @@ public:
         CHECK(awc.walkers_per_crowd[0] == 2);
         CHECK(awc.walkers_per_crowd[7] == 1);
       }
-      awc = adjustGlobalWalkerCount(*myComm, 27, 0, 1.0, 4);
+      awc = adjustGlobalWalkerCount(*myComm, 0, 27, 0, 1.0, 4);
       if (myComm->rank() == 1)
       {
         CHECK(awc.global_walkers == 27);
@@ -145,14 +155,14 @@ public:
       }
       // Ask for 27 total walkers on 2 ranks of 11 walkers (inconsistent input)
       // results in fatal exception on all ranks.
-      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 27, 11, 1.0, 4), UniformCommunicateError);
+      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 27, 11, 1.0, 4), UniformCommunicateError);
     }
 
     if (myComm->size() == 16)
     {
       // Ask for 14 total walkers on 16 ranks (inconsistent input)
       // results in fatal exception on all ranks.
-      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 14, 0, 0, 0), UniformCommunicateError);
+      CHECK_THROWS_AS(adjustGlobalWalkerCount(*myComm, 0, 14, 0, 0, 0), UniformCommunicateError);
     }
   }
 

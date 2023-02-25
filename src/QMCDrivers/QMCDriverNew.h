@@ -297,6 +297,7 @@ protected:
    *
    */
   static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate& comm,
+                                                                    const IndexType current_configs,
                                                                     const IndexType requested_total_walkers,
                                                                     const IndexType requested_walkers_per_rank,
                                                                     const RealType reserve_walkers,
