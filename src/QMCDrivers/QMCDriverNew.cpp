@@ -397,19 +397,22 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
-QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num_ranks,
-                                                                         int rank_id,
-                                                                         IndexType requested_total_walkers,
-                                                                         IndexType requested_walkers_per_rank,
-                                                                         RealType reserve_walkers,
+QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate& comm,
+                                                                         const IndexType requested_total_walkers,
+                                                                         const IndexType requested_walkers_per_rank,
+                                                                         const RealType reserve_walkers,
                                                                          int num_crowds)
 {
+  const int num_ranks = comm.size();
+  const int rank_id = comm.rank();
+
   // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
     num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
+  awc.walkers_per_rank.resize(num_ranks, 0);
 
   // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
   if (requested_total_walkers != 0)
@@ -434,18 +437,19 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   else
   {
     if (requested_walkers_per_rank != 0)
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, requested_walkers_per_rank);
+      awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
     else
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
-    awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;
+      awc.walkers_per_rank[rank_id] = num_crowds;
+    comm.allreduce(awc.walkers_per_rank);
+    awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);
   }
-
-  // Step 3. decide awc.walkers_per_crowd
-  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.global_walkers % num_ranks)
     app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
                   << "). This will result in a loss of efficiency.\n";
+
+  // Step 3. decide awc.walkers_per_crowd
+  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("

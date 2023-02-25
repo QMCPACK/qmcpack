@@ -296,11 +296,10 @@ protected:
    *  makes unit testing much quicker.
    *
    */
-  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(int num_ranks,
-                                                                    int rank_id,
-                                                                    IndexType requested_total_walkers,
-                                                                    IndexType requested_walkers_per_rank,
-                                                                    RealType reserve_walkers,
+  static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(Communicate& comm,
+                                                                    const IndexType requested_total_walkers,
+                                                                    const IndexType requested_walkers_per_rank,
+                                                                    const RealType reserve_walkers,
                                                                     int num_crowds);
 
   static void checkNumCrowdsLTNumThreads(const int num_crowds);
