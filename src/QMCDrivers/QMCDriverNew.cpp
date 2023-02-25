@@ -399,8 +399,8 @@ void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
 QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num_ranks,
                                                                          int rank_id,
-                                                                         IndexType required_total,
-                                                                         IndexType walkers_per_rank,
+                                                                         IndexType requested_total_walkers,
+                                                                         IndexType requested_walkers_per_rank,
                                                                          RealType reserve_walkers,
                                                                          int num_crowds)
 {
@@ -412,29 +412,29 @@ QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
 
   // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
-  if (required_total != 0)
+  if (requested_total_walkers != 0)
   {
-    if (required_total < num_ranks)
+    if (requested_total_walkers < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << requested_total_walkers
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
       throw UniformCommunicateError(error.str());
     }
-    if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
+    if (requested_walkers_per_rank != 0 && requested_total_walkers != requested_walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
-            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << requested_total_walkers << " global walkers and "
+            << requested_walkers_per_rank << " walkers per rank cannot be satisfied!";
       throw UniformCommunicateError(error.str());
     }
-    awc.global_walkers   = required_total;
-    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
+    awc.global_walkers   = requested_total_walkers;
+    awc.walkers_per_rank = fairDivide(requested_total_walkers, num_ranks);
   }
   else
   {
-    if (walkers_per_rank != 0)
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
+    if (requested_walkers_per_rank != 0)
+      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, requested_walkers_per_rank);
     else
       awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
     awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;

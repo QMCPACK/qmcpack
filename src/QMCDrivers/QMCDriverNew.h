@@ -298,8 +298,8 @@ protected:
    */
   static QMCDriverNew::AdjustedWalkerCounts adjustGlobalWalkerCount(int num_ranks,
                                                                     int rank_id,
-                                                                    IndexType desired_count,
-                                                                    IndexType walkers_per_rank,
+                                                                    IndexType requested_total_walkers,
+                                                                    IndexType requested_walkers_per_rank,
                                                                     RealType reserve_walkers,
                                                                     int num_crowds);
 
