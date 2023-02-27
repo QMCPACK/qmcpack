@@ -31,6 +31,8 @@
 #include "LongRange/EwaldHandler3D.h"
 #include "QMCWaveFunctions/WaveFunctionTypes.hpp"
 
+#include "Estimators/MagnetizationDensity.h"
+
 using std::string;
 
 namespace qmcplusplus
@@ -81,7 +83,9 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   MagnetizationDensityInput maginput(node);
 
   maginput.calculateDerivedParameters(lattice);
-
+  
+  DataLocality dl = DataLocality::crowd;
+  MagnetizationDensity doop(dl);
 
   const SimulationCell simulation_cell(lattice);
   ParticleSet elec_(simulation_cell);
