@@ -12,7 +12,8 @@
 
 
 #include "catch.hpp"
-
+#include "Estimators/MagnetizationDensityInput.h"
+#include "ValidMagnetizationDensityInput.h"
 #include "Configuration.h"
 //#include "QMCHamiltonians/MagDensityEstimator.h"
 //for wavefunction
@@ -53,7 +54,6 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   using ValueMatrix = Matrix<Value>;
   using GradMatrix  = Matrix<Grad>;
 
-
   // O2 test example from pwscf non-collinear calculation.
   ParticleSet::ParticleLayout lattice;
   lattice.R(0, 0) = 5.10509515;
@@ -70,9 +70,22 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   lattice.LR_dim_cutoff = 15;
   lattice.reset();
   //Shamelessly stealing this from test_einset.cpp.
+
+  //Now to construct the input.  See ValidMagnetizationDensity.h, item 4 for the actual input.  
+  auto mag_input_xml = testing::magdensity::valid_mag_density_input_sections[testing::magdensity::Inputs::valid_magdensity_input_unittest];
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(mag_input_xml);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+
+  MagnetizationDensityInput maginput(node);
+
+  maginput.calculateDerivedParameters(lattice);
+
+
   const SimulationCell simulation_cell(lattice);
   ParticleSet elec_(simulation_cell);
-
+  
   elec_.setName("elec");
   elec_.create({2});
 
