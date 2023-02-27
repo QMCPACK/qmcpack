@@ -69,10 +69,10 @@ Single-particle orbitals
 A single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
 A typical Slater determinant is calculated from a N-by-N matrix constructed from N orbitals at the positions of N electrons.
 QMCPACK supports a range of SPOSet types:
- * :ref:`spo-spline`
- * :ref:`spo-lcao`
- * :ref:`spo-hybrid`
- * :ref:`pwbasis`
+* :ref:`spo-spline`
+* :ref:`spo-lcao`
+* :ref:`spo-hybrid`
+* :ref:`pwbasis`
 
 
 sposet_collection input style
