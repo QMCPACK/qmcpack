@@ -358,13 +358,21 @@ Additional information:
 
 - ``crowds`` The number of crowds that the walkers are subdivided into on each MPI rank. If not provided, it is set equal to the number of OpenMP threads.
 
-- ``walkers_per_rank`` The number of walkers per MPI rank. The exact number of walkers will be generated before performing random walking.
-  It is not required to be a multiple of the number of OpenMP threads. However, to avoid any idle resources, it is recommended to be at
-  least the number of OpenMP threads for pure CPU runs. For GPU runs, a scan of this parameter is necessary to reach reasonable single rank
-  efficiency and also get a balanced time to solution.
-  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+- ``walkers_per_rank`` The number of walkers per MPI rank. This number does not have to be a multiple of the number of OpenMP
+  threads. However, to avoid any idle resources, it is recommended to be at least the number of OpenMP threads for pure CPU runs.
+  For GPU runs, a scan of this parameter is necessary to reach reasonable single rank efficiency and also get a balanced time to
+  solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
+  memory.
 
-- ``total_walkers`` Total number of walkers over all MPI ranks. if not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers`` and ``walkers_per_rank`` are provided, ``total_walkers`` must be equal to ``walkers_per_rank`` times the number MPI ranks.
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previuos QMC sections or a restart,
+  the population carried over will be used without modification.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
+
+- ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
+  calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
+  and ``walkers_per_rank`` are provided, which is not recommended, ``total_walkers`` must be consistently set equal to
+  ``walkers_per_rank`` times the number MPI ranks.
 
 - ``blocks`` This parameter is universal for all the QMC methods. The MC processes are divided into a number of
   ``blocks``, each containing a number of steps. At the end of each block, the statistics accumulated in the block are dumped into files,
@@ -1738,7 +1746,12 @@ Batched ``dmc`` driver (experimental)
   threads. However, to avoid any idle resources, it is recommended to be at least the number of OpenMP threads for pure CPU runs.
   For GPU runs, a scan of this parameter is necessary to reach reasonable single rank efficiency and also get a balanced time to
   solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
-  memory. If neither ``total_walkers`` nor ``walkers_per_rank`` is provided, ``walkers_per_rank`` is set equal to ``crowds``.
+  memory.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previuos QMC sections or a restart,
+  the population carried over will be used without modification.
+
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
 
 - ``total_walkers`` Total number of walkers summed over all MPI ranks, or equivalently the total number of walkers in the DMC
   calculation. If not provided, it is computed as ``walkers_per_rank`` times the number of MPI ranks. If both ``total_walkers``
