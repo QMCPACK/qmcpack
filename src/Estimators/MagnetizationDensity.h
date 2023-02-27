@@ -36,16 +36,16 @@ public:
   using Lattice       = PtclOnLatticeTraits::ParticleLayout;
   using Position      = QMCTraits::PosType;
 
-  MagnetizationDensity(DataLocality dl):OperatorEstBase(dl){};
+  MagnetizationDensity(DataLocality dl);
 
-  void startBlock(int steps) override {};
+  void startBlock(int steps) override;
 
   void accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
                   const RefVector<TrialWaveFunction>& wfns,
-                  RandomGenerator& rng) override {};
+                  RandomGenerator& rng) override;
 
-  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override { return 0;};
+  std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 private:
   MagnetizationDensityInput input_;
 };
