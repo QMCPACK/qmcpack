@@ -27,6 +27,7 @@
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -43,9 +44,9 @@ enum
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) //, PopHist(5), DMCEnergyHist(5)
 {
-  BranchMode.set(B_DMCSTAGE, 0);                                       //warmup stage
-  BranchMode.set(B_POPCONTROL, 1);                                     //use standard DMC
-  BranchMode.set(B_USETAUEFF, 1);                                      //use taueff
+  BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
+  BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
+  BranchMode.set(B_USETAUEFF, 1);    //use taueff
   BranchMode.set(B_CLEARHISTORY, 0); //clear history and start with the current average
   BranchMode.set(B_KILLNODES, 0);    //when killing walkers at nodes etrial is updated differently
   vParam.fill(1.0);
@@ -781,6 +782,11 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
       BranchMode[B_POPCONTROL] = bmode[B_POPCONTROL];
     }
   }
+
+  if (BranchMode[B_DMC] && !bmode[B_DMC])
+    throw UniformCommunicateError("SimpleFixedNodeBranch::read legacy drivers cannot make a non-DMC run by restarting "
+                                  "from a previous DMC run. This capability is only supported by the newer batched drivers."
+                                  " Switch to using the batched drivers if this restart was intended.");
 
   app_log().flush();
 }
