@@ -45,6 +45,7 @@ User's Guide and Developer's Manual
    contributing
    unit_testing
    integration_tests
+   github_actions
    running_docker
    design_features
    developing
