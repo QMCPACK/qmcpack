@@ -45,15 +45,7 @@ void test_C_diamond()
 
     ParticleSet::ParticleLayout lattice;
     // BCC H
-    lattice.R(0, 0) = 3.37316115;
-    lattice.R(0, 1) = 3.37316115;
-    lattice.R(0, 2) = 0.0;
-    lattice.R(1, 0) = 0.0;
-    lattice.R(1, 1) = 3.37316115;
-    lattice.R(1, 2) = 3.37316115;
-    lattice.R(2, 0) = 3.37316115;
-    lattice.R(2, 1) = 0.0;
-    lattice.R(2, 2) = 3.37316115;
+    lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
     lattice.reset();
 
     const SimulationCell simulation_cell(lattice);

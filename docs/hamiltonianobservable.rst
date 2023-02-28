@@ -812,13 +812,129 @@ Additional information:
     </parameter>
   </estimator>
 
+Magnetization density estimator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**NOTE: This is only compatible with Spin-Orbit QMC with the batched QMC drivers.  See "Spin-Orbit Calculations in QMC" for more information.**
+
+The magnetization density computes the vectorial spin per unit volume 
+on a grid in real space.  This is used with spinor-type wave functions 
+where the spin expectation value is not exclusively aligned along the 
+z-direction.  
+
+The formula that is implemented is the following:
+
+.. math::
+  :label: eq34
+
+  \mathbf{m}_c = \int d\mathbf{X} \left|{\Psi(\mathbf{X})}\right|^2 \int_{\Omega_c}d\mathbf{r} \sum_i\delta(\mathbf{r}-\hat{\mathbf{r}}_i)\int_0^{2\pi} \frac{ds'_i}{2\pi} \frac{\Psi(\ldots \mathbf{r}_i s'_i \ldots )}{\Psi(\ldots \mathbf{r}_i s_i \ldots)}\langle s_i | \hat{\sigma} | s'_i \rangle\:.
+
+Here, :math:`\hat{\sigma}` is the vector of Pauli matrices.
+
+``estimator type=magnetizationdensity`` element:
+
+  +------------------+----------------------+
+  | parent elements: | ``hamiltonian, qmc`` |
+  +------------------+----------------------+
+  | child elements:  | *None*               |
+  +------------------+----------------------+
+
+attributes:
+
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | **Name**              | **Datatype** | **Values**               | **Default** | **Description**               |
+  +=======================+==============+==========================+=============+===============================+
+  | ``type``:math:`^r`    | text         | **magnetizationdensity** |             | Must be magnetizationdensity  |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | ``name``:math:`^r`    | text         | *anything*               | any         | Unique name for estimator     |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+  | ``report``:math:`^o`  | boolean      | yes/no                   | no          | Write setup details to stdout |
+  +-----------------------+--------------+--------------------------+-------------+-------------------------------+
+
+parameters:
+
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | **Name**                   | **Datatype**     | **Values**           | **Default** | **Description**                    |
+  +============================+==================+======================+=============+====================================+
+  | ``grid``:math:`^o`         | integer array(3) | :math:`v_i>`         |             | Grid cell count                    |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``dr``:math:`^o`           | real array(3)    | :math:`v_i>`         |             | Grid cell spacing (Bohr)           |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``corner``:math:`^o`       | real array(3)    | *anything*           |             | Volume corner location             |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``center``:math:`^o`       | real array (3)   | *anything*           |             | Volume center/origin location      |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``integrator``:math:`^o`   | string           | simpsons/montecarlo  | simpsons    | Method to evaluate spin integral   |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+  | ``samples``:math:`^o`      | integer          | *anything*           |   9         | Number of points for spin integral |
+  +----------------------------+------------------+----------------------+-------------+------------------------------------+
+
+Additional information:
+
+-  ``name``: The name provided will be used as a label in the
+   ``stat.h5`` file for the blocked output data. Postprocessing tools
+   expect ``name="MagnetizationDensity."``
+
+-  ``grid``: The grid sets the dimension of the histogram grid. Input
+   like ``<parameter name="grid"> 40 40 40 </parameter>`` requests a
+   :math:`40 \times 40\times 40` grid. The shape of individual grid
+   cells is commensurate with the supercell shape.
+
+-  ``dr``: The ``dr`` sets the real-space dimensions of grid cell edges
+   (Bohr units). Input like
+   ``<parameter name="dr"> 0.5 0.5 0.5 </parameter>`` in a supercell
+   with axes of length 10 Bohr each (but of arbitrary shape) will
+   produce a :math:`20\times 20\times 20` grid. The inputted ``dr``
+   values are rounded to produce an integer number of grid cells along
+   each supercell axis. Either ``grid`` or ``dr`` must be provided, but
+   not both.
+
+-  ``corner``: The grid volume is defined as
+   :math:`corner+\sum_{d=1}^3u_dcell_d` with :math:`0<u_d<1` (“cell”
+   refers to either the supercell or user-provided cell).
+
+-  ``center``: The grid volume is defined as
+   :math:`center+\sum_{d=1}^3u_dcell_d` with :math:`-1/2<u_d<1/2`
+   (“cell” refers to either the supercell or user-provided cell).
+   ``corner/center`` can be used to shift the grid even if ``cell`` is
+   not specified. Simultaneous use of ``corner`` and ``center`` will
+   cause QMCPACK to abort.
+
+-  ``integrator``: How the spin-integral is performed.  By default, 
+   this is done determinstically with Simpson's rule.  However, 
+   one can also Monte-Carlo sample this integral.  Simpson's is preferred,
+   but Monte-Carlo sampling might be more efficient for large systems.  
+
+-  ``samples``: How many points are used to perform the spin integral.  
+   For Simpson's integration, this is just the number of quadrature points.
+   For Monte-Carlo, this is literally the number of MC samples.  
+ 
+-  All information is dumped to hdf5.  Each grid point has 3 real 
+   numbers associated with it, one for 
+   :math:`\langle \hat{\sigma_x} \rangle`,
+   :math:`\langle \hat{\sigma_y} \rangle`, and 
+   :math:`\langle \hat{\sigma_z} \rangle` respectively. 
+   Post-processing tools are provided in Nexus.   
+
+
+.. code-block::
+  :caption: Magnetization density estimator (uniform grid).
+  :name: Listing 27
+
+  <estimator type="MagnetizationDensity" name="magdensity">
+    <parameter name="integrator"   >  simpsons       </parameter>
+    <parameter name="samples"      >  9             </parameter>
+    <parameter name="center"       >  0.0 0.0 0.0    </parameter>
+    <parameter name="grid"         >  10 10 10          </parameter>
+  </estimator>
+
+
 Pair correlation function, :math:`g(r)`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The functional form of the species-resolved radial pair correlation function operator is
 
 .. math::
-  :label: eq34
+  :label: eq35
 
   g_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i_s=1}^{N_s}\sum_{j_{s'}=1}^{N_{s'}}\delta(r-|r_{i_s}-r_{j_{s'}}|)\:,
 
@@ -831,7 +947,7 @@ histogram with a set of :math:`N_b` uniform bins of width
 :math:`\delta r`. This can be expressed analytically as
 
 .. math::
-  :label: eq35
+  :label: eq36
 
   \tilde{g}_{ss'}(r) = \frac{V}{4\pi r^2N_sN_{s'}}\sum_{i=1}^{N_s}\sum_{j=1}^{N_{s'}}\frac{1}{\delta r}\int_{r-\delta r/2}^{r+\delta r/2}dr'\delta(r'-|r_{si}-r_{s'j}|)\:,
 
@@ -902,13 +1018,13 @@ Additional information:
 
 .. code-block::
   :caption: Pair correlation function estimator element.
-  :name: Listing 27
+  :name: Listing 28
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" />
 
 .. code-block::
   :caption: Pair correlation function estimator element with additional electron-ion correlations.
-  :name: Listing 28
+  :name: Listing 29
 
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
 
@@ -928,7 +1044,7 @@ parameter, and :math:`r_c` is the Wigner-Seitz radius. It is defined as
 follows:
 
 .. math::
-  :label: eq36
+  :label: eq37
 
   S(\mathbf{k}) = \frac{1}{N^e}\langle \rho^e_{-\mathbf{k}} \rho^e_{\mathbf{k}} \rangle\:.
 
@@ -974,7 +1090,7 @@ Additional information:
 
 .. code-block::
   :caption: Static structure factor estimator element.
-  :name: Listing 29
+  :name: Listing 30
 
     <estimator type="sk" name="sk" hdf5="yes"/>
 
@@ -1034,7 +1150,7 @@ Additional information:
 
 .. code-block::
   :caption: SkAll estimator element.
-  :name: Listing 30
+  :name: Listing 31
 
     <estimator type="skall" name="SkAll" source="ion0" target="e" hdf5="yes"/>
 
@@ -1069,7 +1185,7 @@ attributes:
 
 .. code-block::
   :caption: Species kinetic energy estimator element.
-  :name: Listing 31
+  :name: Listing 32
 
     <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
 
@@ -1118,11 +1234,11 @@ Additional information:
 -  ``source``: The “target” particleset to measure distances to.
 
 -  ``sgroup``: The “target” particle group to measure distances to. For
-   example, in :ref:`Listing 32 <Listing 32>` the distance from the up
+   example, in :ref:`Listing 33 <Listing 33>` the distance from the up
    electron (“u”) to the origin of the coordinate system is recorded.
 
 -  ``per_xyz``: Used to record direction-resolved distance. In
-   :ref:`Listing 32 <Listing 32>`, the x,y,z coordinates of the up electron
+   :ref:`Listing 33 <Listing 33>`, the x,y,z coordinates of the up electron
    will be recorded separately if ``per_xyz=yes``.
 
 -  ``hdf5``: Used to record particle-resolved distances in the h5 file
@@ -1130,7 +1246,7 @@ Additional information:
 
 .. code-block::
   :caption: Lattice deviation estimator element.
-  :name: Listing 32
+  :name: Listing 33
 
   <particleset name="e" random="yes">
     <group name="u" size="1" mass="1.0">
@@ -1160,7 +1276,7 @@ Energy density estimator
 An energy density operator, :math:`\hat{\mathcal{E}}_r`, satisfies
 
 .. math::
-  :label: eq37
+  :label: eq38
 
   \int dr \hat{\mathcal{E}}_r = \hat{H},
 
@@ -1169,14 +1285,14 @@ Hamiltonian. In QMCPACK, the energy density is split into kinetic and potential
 components
 
 .. math::
-  :label: eq38
+  :label: eq39
 
   \hat{\mathcal{E}}_r = \hat{\mathcal{T}}_r + \hat{\mathcal{V}}_r\:,
 
 with each component given by
 
 .. math::
-  :label: eq39
+  :label: eq40
 
   \begin{aligned}
       \hat{\mathcal{T}}_r &=  \frac{1}{2}\sum_i\delta(r-r_i)\hat{p}_i^2 \\
@@ -1235,7 +1351,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated on a :math:`20 \times  10 \times 10` grid over the simulation cell.
-  :name: Listing 33
+  :name: Listing 34
 
   <estimator type="EnergyDensity" name="EDcell" dynamic="e" static="ion0">
      <spacegrid coord="cartesian">
@@ -1248,7 +1364,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated within spheres of radius 6.9 Bohr centered on the first and second atoms in the ion0 particleset.
-  :name: Listing 34
+  :name: Listing 35
 
   <estimator type="EnergyDensity" name="EDatom" dynamic="e" static="ion0">
     <reference_points coord="cartesian">
@@ -1272,7 +1388,7 @@ Additional information:
 
 .. code-block::
   :caption: Energy density estimator accumulated within Voronoi polyhedra centered on the ions.
-  :name: Listing 35
+  :name: Listing 36
 
   <estimator type="EnergyDensity" name="EDvoronoi" dynamic="e" static="ion0">
     <spacegrid coord="voronoi"/>
@@ -1469,7 +1585,7 @@ density matrix (1RDM) is obtained by tracing out all particle
 coordinates but one:
 
 .. math::
-  :label: eq40
+  :label: eq41
 
   \hat{n}_1 = \sum_nTr_{R_n}\left|{\Psi_{T}}\rangle{}\langle{\Psi_{FN}}\right|
 
@@ -1483,7 +1599,7 @@ this way.
 In real space, the matrix elements of the 1RDM are
 
 .. math::
-  :label: eq41
+  :label: eq42
 
   \begin{aligned}
      n_1(r,r') &= \langle{r}\left|{\hat{n}_1}\right|{r'}\rangle = \sum_n\int dR_n \Psi_T(r,R_n)\Psi_{FN}^*(r',R_n)\:. \end{aligned}
@@ -1493,15 +1609,15 @@ expanding in the SPOs obtained from a Hartree-Fock or DFT calculation,
 :math:`\{\phi_i\}`:
 
 .. math::
-  :label: eq42
+  :label: eq43
 
   n_1(i,j) &= \langle{\phi_i}\left|{\hat{n}_1}\right|{\phi_j}\rangle \nonumber \\
            &= \int dR \Psi_{FN}^*(R)\Psi_{T}(R) \sum_n\int dr'_n \frac{\Psi_T(r_n',R_n)}{\Psi_T(r_n,R_n)}\phi_i(r_n')^* \phi_j(r_n)\:.
 
-The integration over :math:`r'` in :eq:`eq42` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :cite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
+The integration over :math:`r'` in :eq:`eq43` is inefficient when one is also interested in obtaining matrices involving energetic quantities, such as the energy density matrix of :cite:`Krogel2014` or the related (and more well known) generalized Fock matrix.  For this reason, an approximation is introduced as follows:
 
 .. math::
-  :label: eq43
+  :label: eq44
 
   \begin{aligned}
       n_1(i,j) \approx \int dR \Psi_{FN}(R)^*\Psi_T(R)  \sum_n \int dr_n' \frac{\Psi_T(r_n',R_n)^*}{\Psi_T(r_n,R_n)^*}\phi_i(r_n)^* \phi_j(r_n')\:. \end{aligned}
@@ -1648,7 +1764,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with uniform grid integration.
-  :name: Listing 36
+  :name: Listing 37
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1661,7 +1777,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with uniform sampling.
-  :name: Listing 37
+  :name: Listing 38
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1674,7 +1790,7 @@ Additional information:
 
 .. code-block::
   :caption: One body density matrix with density sampling.
-  :name: Listing 38
+  :name: Listing 39
 
   <estimator type="dm1b" name="DensityMatrices">
     <parameter name="basis"        >  spo_u spo_uv  </parameter>
@@ -1687,7 +1803,7 @@ Additional information:
 
 .. code-block::
   :caption: Example ``sposet`` initialization for density matrix use.  Occupied and virtual orbital sets are created separately, then joined (``basis="spo_u spo_uv"``).
-  :name: Listing 39
+  :name: Listing 40
 
   <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
@@ -1697,7 +1813,7 @@ Additional information:
 
 .. code-block::
   :caption: Example ``sposet`` initialization for density matrix use. Density matrix orbital basis created separately (``basis="dm_basis"``).
-  :name: Listing 40
+  :name: Listing 41
 
   <sposet_builder type="bspline" href="../dft/pwscf_output/pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" meshfactor="1.0" gpu="no" precision="single">
     <sposet type="bspline" name="spo_u"  group="0" size="4"/>
@@ -1782,7 +1898,7 @@ time step.
 
 .. code-block::
   :caption: Forward-walking estimator element.
-  :name: Listing 41
+  :name: Listing 42
 
   <estimator name="fw" type="ForwardWalking">
       <Observable name="LocalPotential" max="300" frequency="1"/>
@@ -1804,7 +1920,7 @@ force on an ion centered at the origin is given by the following
 expression:
 
 .. math::
-  :label: eq44
+  :label: eq45
 
   F_z = -Z \sum_{i=1}^{N_e}\frac{z_i}{r_i^3}[\theta(r_i-\mathcal{R}) + \theta(\mathcal{R}-r_i)\sum_{\ell=1}^{M}c_\ell r_i^\ell]\:.
 
@@ -1816,7 +1932,7 @@ minimize the weighted mean square error between the bare force estimate
 and the s-wave filtered estimator. Specifically,
 
 .. math::
-  :label: eq45
+  :label: eq46
 
   \chi^2 = \int_0^\mathcal{R}dr\,r^m\,[f_z(r) - \tilde{f}_z(r)]^2\:.
 
@@ -1933,14 +2049,14 @@ The zero-variance, zero-bias force estimator is given by the following
 expression:
 
 .. math::
-  :label: eq 46
+  :label: eq 47
 
   \mathbf{F}^{ZVZB}_I = \mathbf{F}^{ZV}_I+\mathbf{F}^{ZB}_I = -\nabla_I E_L(\mathbf{R}) - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
 
 The first term is the zero-variance force estimator, given by the following.
 
 .. math::
-  :label: eq 47
+  :label: eq 48
 
   \mathbf{F}^{ZV}_I = -\nabla_I E_L(\mathbf{R}) = \frac{-\left(\nabla_I \hat{H}\right) \Psi_T}{\Psi_T} - \frac{\left(\hat{H} - E_L\right)\nabla_I \Psi_T}{\Psi_T}\:.
 
@@ -1953,7 +2069,7 @@ adding "hf" and "pulay" terms unless there is a compelling reason to do otherwis
 The second term is the "zero-bias" term:
 
 .. math::
-  :label: eq 48
+  :label: eq 49
 
   \mathbf{F}^{ZB}_I = - 2 \left( E_L(\mathbf{R})-\langle E_L \rangle \right) \nabla_I \ln \Psi_T \:.
 
@@ -1968,7 +2084,7 @@ energy are computed with finite differences, rather than analytically).  If the 
 is enabled, the following term is added to the zero-variance force estimator:
 
 .. math::
-  :label: eq 49
+  :label: eq 50
 
   \mathbf{F}^{ZV-SW}_I = - \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i E_L \:.
 
@@ -1978,14 +2094,14 @@ implementation of this term will be available in a future QMCPACK release.
 The following term is added to the wave function gradient:
 
 .. math::
-  :label: eq 50
+  :label: eq 51
 
   [\nabla_I \ln \Psi_T ]_{SW} = \sum_{i=1}^{N_e} \omega_I(\mathbf{r}_i) \nabla_i \ln \Psi_T + \frac{1}{2} \nabla_i\omega_I(\mathbf{r}_i) \:.
 
 Currently, there is only one choice for damping function :math:`\omega_I(\mathbf{r})`.  This is given by:
 
 .. math::
-  :label: eq 51
+  :label: eq 52
   
   \omega_I(\mathbf{r}) = \frac{F(|\mathbf{r}-\mathbf{R}_I|)}{\sum_I F(|\mathbf{r}-\mathbf{R}_I|)} \:.
 
@@ -2015,6 +2131,8 @@ Both of these methods are accessible with appropraite flags.
     | ``type``:math:`^r`             | text         | Force           |             | Must be "Force"                                              |
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
     | ``name``:math:`^o`             | text         | *Anything*      | ForceBase   | Unique name for this estimator                               |
+    +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
+    | ``epsilon``:math:`^o`          | real         | :math:`>=0`     | 0           | Epsilon parameter for Pathak-Wagner regularizer.             |
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+
     | ``spacewarp``:math:`^o`        | text         | yes/no          | no          | Add space-warp variance reduction terms                      |
     +--------------------------------+--------------+-----------------+-------------+--------------------------------------------------------------+

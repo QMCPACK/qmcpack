@@ -333,8 +333,10 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   rot_mat[7][6] = -0.00647;
   rot_mat[7][7] = 0.99273;
 
-  // Apply the rotation
-  spo->applyRotation(rot_mat, false);
+  spo->storeParamsBeforeRotation();
+  // Apply the rotation (use_stored_copy is set to true just
+  // to test a different code path from other calls to applyRotation elsewhere)
+  spo->applyRotation(rot_mat, true);
 
   // Get data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);

@@ -128,13 +128,10 @@ void WalkerConfigurations::copyWalkers(iterator first, iterator last, iterator i
  */
 void WalkerConfigurations::reset()
 {
-  iterator it(WalkerList.begin()), it_end(WalkerList.end());
-  while (it != it_end)
-  //(*it)->reset();++it;}
+  for (auto& walker : WalkerList)
   {
-    (*it)->Weight       = 1.0;
-    (*it)->Multiplicity = 1.0;
-    ++it;
+    walker->Weight       = 1.0;
+    walker->Multiplicity = 1.0;
   }
 }
 

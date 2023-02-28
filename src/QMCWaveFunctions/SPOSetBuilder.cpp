@@ -98,6 +98,7 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
     app_warning() << "Specifying orbital rotation via optimize tag is deprecated. Use the rotated_spo element instead"
                   << std::endl;
 
+    sposet->storeParamsBeforeRotation();
     // create sposet with rotation
     auto& sposet_ref = *sposet;
     app_log() << "  SPOSet " << sposet_ref.getName() << " is optimizable\n";
@@ -134,8 +135,10 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createSPOSet(xmlNodePtr cur)
 std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
 {
   std::string spo_object_name;
+  std::string method;
   OhmmsAttributeSet attrib;
   attrib.add(spo_object_name, "name");
+  attrib.add(method, "method", {"global", "history"});
   attrib.put(cur);
 
 
@@ -158,7 +161,11 @@ std::unique_ptr<SPOSet> SPOSetBuilder::createRotatedSPOSet(xmlNodePtr cur)
     myComm->barrier_and_abort("Orbital rotation not supported with '" + sposet->getName() + "' of type '" +
                               sposet->getClassName() + "'.");
 
+  sposet->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>(spo_object_name, std::move(sposet));
+
+  if (method == "history")
+    rot_spo->set_use_global_rotation(false);
 
   processChildren(cur, [&](const std::string& cname, const xmlNodePtr element) {
     if (cname == "opt_vars")

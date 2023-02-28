@@ -38,7 +38,7 @@ public:
   QMCAppBase();
 
   ///destructor
-  ~QMCAppBase();
+  virtual ~QMCAppBase();
 
   /** parse an input file
    * @param infile file to be parsed.
