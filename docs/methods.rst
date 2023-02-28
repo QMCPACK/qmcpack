@@ -364,7 +364,7 @@ Additional information:
   solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
   memory.
 
-  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previuos QMC sections or a restart,
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previous QMC sections or a restart,
   the population carried over will be used without modification.
 
   If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
@@ -1262,7 +1262,7 @@ the tag is not added coefficients will not be saved.
 
   The rest of the optimization block remains the same.
 
-When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX coressponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
+When running the optimization, the new coefficients will be stored in a ``*.sXXX.opt.h5`` file,  where XXX corresponds to the series number. The H5 file contains only the optimized coefficients. The corresponding ``*.sXXX.opt.xml`` will be updated for each optimization block as follows:
 
 ::
 
@@ -1748,7 +1748,7 @@ Batched ``dmc`` driver (experimental)
   solution. For highest throughput on GPUs, expect to use hundreds of walkers_per_rank, or the largest number that will fit in GPU
   memory.
 
-  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previuos QMC sections or a restart,
+  If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are walker configurations carried over from previous QMC sections or a restart,
   the population carried over will be used without modification.
 
   If neither ``total_walkers`` nor ``walkers_per_rank`` is provided and there are no walker configurations carried over, ``walkers_per_rank`` is set equal to ``crowds``.
@@ -1781,7 +1781,7 @@ Reptation Monte Carlo
 ---------------------
 
 Like DMC, RMC is a projector-based method that allows sampling of the
-fixed-node wavefunciton. However, by exploiting the path-integral
+fixed-node wavefunction. However, by exploiting the path-integral
 formulation of Schrödinger’s equation, the RMC algorithm can offer some
 advantages over traditional DMC, such as sampling both the mixed and
 pure fixed-node distributions in polynomial time, as well as not having
@@ -1872,7 +1872,7 @@ declaration to ensure correct sampling:
 
 -  **Sampling**: We use Ceperley’s bounce algorithm. ``MaxAge`` is used
    in case the reptile gets stuck, at which point the code forces move
-   acceptance, stops accumulating statistics, and requilibrates the
+   acceptance, stops accumulating statistics, and reequilibrates the
    reptile. Very rarely will this be required. For move proposals, we
    use particle-by-particle VMC a total of :math:`N_e` times to generate
    a new all-electron configuration, at which point the action is
