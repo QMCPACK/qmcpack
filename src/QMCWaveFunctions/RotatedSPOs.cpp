@@ -202,9 +202,6 @@ void RotatedSPOs::readExtraParameters(hdf_archive& hin)
     for (int i = 0; i < nparam; i++)
       myVarsFull[i] = full_params[i];
 
-    for (int i = 0; i < m_act_rot_inds.size(); i++)
-      myVars[i] = full_params[i];
-
     hin.pop();
 
     applyFullRotation(full_params, true);
