@@ -85,7 +85,7 @@ public:
    *
    *  The hdf archive is expected to be opened in VariableSet::readFromHDF
    */
-  virtual void readExtraParameters(hdf_archive& hin)
+  virtual void readExtraParameters(hdf_archive& hin, const opt_variables_type& input)
   {
   }
 

@@ -244,7 +244,7 @@ public:
   void resetParametersExclusive(const opt_variables_type& active) override;
 
   void saveExtraParameters(hdf_archive& hout) override;
-  void readExtraParameters(hdf_archive& hin) override;
+  void readExtraParameters(hdf_archive& hin, const opt_variables_type& input) override;
 
   //*********************************************************************************
   //the following functions simply call Phi's corresponding functions

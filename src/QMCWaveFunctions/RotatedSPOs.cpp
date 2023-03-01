@@ -172,12 +172,18 @@ void RotatedSPOs::saveExtraParameters(hdf_archive& hout)
   hout.pop();
 }
 
-void RotatedSPOs::readExtraParameters(hdf_archive& hin)
+void RotatedSPOs::readExtraParameters(hdf_archive& hin, const opt_variables_type& input)
 {
   hid_t grp_hist   = hin.push("rotation_history");
   hid_t grp_global = hin.push("rotation_global");
   if (grp_hist < 0 && grp_global < 0)
     app_warning() << "Rotation parameters not found in VP file";
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+  {
+    int loc        = myVars.where(i);
+    myVars[i]      = input[loc];
+  }
 
   if (grp_global >= 0)
   {
@@ -785,11 +791,13 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
 
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
-    int kk      = myVars.where(i);
-    const int p = m_act_rot_inds.at(i).first;
-    const int q = m_act_rot_inds.at(i).second;
-    dlogpsi[kk] += T(p, q);
-    dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    int kk = myVars.where(i);
+    if (kk > 0) {
+      const int p = m_act_rot_inds.at(i).first;
+      const int q = m_act_rot_inds.at(i).second;
+      dlogpsi[kk] += T(p, q);
+      dhpsioverpsi[kk] += ValueType(-0.5) * Y4(p, q);
+    }
   }
 }
 
