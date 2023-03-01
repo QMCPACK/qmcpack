@@ -1194,7 +1194,7 @@ class Density(ObservableWithComponents):
         rscale    = convert(1.0,units_old,units)
         grid      = self.get_attribute('grid')
         grid.points *= rscale
-        self.set_attribute('distance_units',units) # Update the object info to refect the conversion
+        self.set_attribute('distance_units',units) # Update the object info to reflect the conversion
     #end def change_distance_units
 
 
@@ -1204,7 +1204,7 @@ class Density(ObservableWithComponents):
         for c in self.components():
             c.values *= dscale**3
         #end for
-        self.set_attribute('density_units',units) # Update the object info to refect the conversion
+        self.set_attribute('density_units',units) # Update the object info to reflect the conversion
     #end def change_density_units
 
 
