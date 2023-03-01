@@ -40,6 +40,10 @@ namespace qmcplusplus
  * so that subsequent write can utilize existing dataspaces.
  * HDF5 contains
  * - state_0
+ *   -- block
+ *   -- number of walkers
+ *   -- walker_partition
+ *   -- walker_weights
  *   -- walkers
  * - config_collection
  *   -- NumOfConfigurations current count of the configurations
@@ -71,7 +75,7 @@ HDFWalkerOutput::~HDFWalkerOutput() = default;
  * - version
  * - state_0
  *  - block (int)
- *  - number_of_walkes (int)
+ *  - number_of_walkers (int)
  *  - walker_partition (int array)
  *  - walkers (nw,np,3)
  */
