@@ -22,8 +22,15 @@ function(
   endif()
 
   set(PPDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO")
+  set(PNBDIR "${qmcpack_BINARY_DIR}/tests/performance/NiO/")
 
-  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${SDIR} ${WDIR})
+  #  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${SDIR} ${WDIR})
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${WDIR})
+  file(GLOB SS  "${SDIR}/*.xml.in")
+  foreach(S IN LISTS SS)
+    get_filename_component(FN ${S} NAME_WE)
+    configure_file(${S} "${WDIR}/${FN}.xml")
+  endforeach()
 
   file(GLOB PP "${PPDIR}/*.xml")
   foreach(F IN LISTS PP)
