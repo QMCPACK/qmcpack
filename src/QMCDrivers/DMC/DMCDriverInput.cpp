@@ -23,6 +23,7 @@ void DMCDriverInput::readXML(xmlNodePtr node)
   parameter_set_.add(NonLocalMove, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(NonLocalMove, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(max_age_, "MaxAge");
+  parameter_set_.add(feedback_, "feedback");
 
   // from DMC.cpp put(xmlNodePtr)
   parameter_set_.add(branch_interval_, "branchInterval");
