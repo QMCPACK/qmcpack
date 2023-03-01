@@ -514,7 +514,7 @@ def parse_args():
     parser.add_argument('fit_type', choices=['ts', 'u'], default = 'ts',
                         help='One dimensional parameter used to fit QMC local energies. Options are ts for timestep and u for hubbard_u parameter fitting'
                         ) 
-    parser.add_argument('-f','--fit',dest='fit_function',default='quadratic',
+    parser.add_argument('-f','--fit',dest='fit_function',default='linear',
                         help='Fitting function, options are {0}.'.format(sorted(fit_functions.keys()))
                         )                        
     # List of 1-D parameters, mutually exclusive
