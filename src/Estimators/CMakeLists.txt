@@ -30,6 +30,7 @@ set(QMCEST_SRC
     MomentumDistribution.cpp
     OneBodyDensityMatricesInput.cpp
     OneBodyDensityMatrices.cpp
+    MagnetizationDensityInput.cpp
     PerParticleHamiltonianLoggerInput.cpp
     PerParticleHamiltonianLogger.cpp)
 
