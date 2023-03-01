@@ -299,6 +299,7 @@ void VariableSet::readFromHDF(const std::string& filename, qmcplusplus::hdf_arch
     if (find(vp_name) != end())
       (*this)[vp_name] = param_values[i];
   }
+  hin.pop();
 }
 
 
