@@ -216,8 +216,8 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
@@ -381,15 +381,15 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
 - ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
   all-electron move.  Because the local energy is evaluated only at
   each full step and not each substep, ``substeps`` are computationally cheaper
-  and can be used to de-correlation at a low computational cost.
+  and can be used for decorrelation at a low computational cost.
 
 - ``usedrift`` The VMC is implemented in two algorithms with
   or without drift. In the no-drift algorithm, the move of each
@@ -1488,7 +1488,8 @@ Additional information:
 
 -  ``warmupsteps``: These are the steps at the beginning of a DMC run in
    which the instantaneous population average energy is used to update the trial
-   energy and updates happen at every step.
+   energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
+   Unlike VMC, these warmupsteps are included in the requested DMC step count.
 
 .. math::
 
