@@ -187,7 +187,7 @@ public:
   void reset();
 
   ///save the particle positions of all the walkers into target
-  void putConfigurations(Walker_t::RealType* target) const;
+  void putConfigurations(Walker_t::RealType* target, QMCTraits::FullPrecRealType* weights) const;
 
 protected:
   ///number of walkers on a node

@@ -1407,3 +1407,105 @@ sufficient number of blocks remaining following any reblocking.
 
 When twist averaging, the group tag (e.g. ``g000`` or similar) will be
 replaced with ``avg`` in the names of the outputted files.
+
+.. _qdens-radial:
+
+Using the qdens-radial tool to estimate atomic occupations
+----------------------------------------------------------
+
+Once the ``*Density*.xsf`` files are obtained from ``qdens``, one can use the ``qdens-radial`` tool to calculate the on-site populations.
+Given a set of species and radii (in Angstroms), this tool will generate a radial density – angular average – around the atomic sites up to the specified radius.
+The radial density can be chosen to be non-cumulative or cumulative (integrated).
+
+::
+
+  >qdens-radial
+
+  Usage: qdens-radial [options] xsf_file
+  
+  Options:
+    --version             show program's version number and exit
+    -h, --help            Print help information and exit (default=False).
+    -v, --verbose         Print detailed information (default=False).
+    -r RADII, --radii=RADII
+                          List of cutoff radii (default=None).
+    -s SPECIES, --species=SPECIES
+                          List of species (default=None).
+    -a APP, --app=APP     Source that generated the .xsf file. Options: "pwscf",
+                          "qmcpack" (default=qmcpack).
+    -c, --cumulative      Evaluate cumulative radial density at cutoff radii
+                          (default=False).
+    --vmc=VMC_FILE        Location of VMC to be used for extrapolating mixed-
+                          estimator bias (default=None).
+    --write               Write extrapolated values to qmc-extrap.xsf
+                          (default=False).
+    --vmcerr=VMC_ERR_FILE
+                          Location of VMC+err to be used for extrapolating
+                          mixed-estimator bias and resampling (default=None).
+    --dmcerr=DMC_ERR_FILE
+                          Location of DMC+err to be used for resampling
+                          (default=None).
+    --seed=RANDOM_SEED    Random seed used for re-sampling. (default=None).
+    -n NSAMPLES, --nsamples=NSAMPLES
+                          Number of samples for resampling (default=50).
+    -p, --plot            Show plots interactively (default=False).
+
+
+Usage examples
+~~~~~~~~~~~~~~
+
+Below are example use cases for the H2O molecule using DMC data.
+
+Plot DMC non-cumulative radial density of the O atom:
+::
+  qdens-radial -p -s O -r 1 dmc.s002.Density_q.xsf
+
+Plot DMC cumulative radial density of the O atom:
+::
+  qdens-radial -p -s O -r 1 -c dmc.s002.Density_q.xsf
+
+For the cumulative case, ``qdens-radial`` will also print the cumulative value at the specified radius, i.e., an estimate of the atomic occupation.
+
+Estimate of the DMC atomic occupation:
+::
+  qdens-radial -p -s O -r 1.1 -c dmc.s002.Density_q.xsf
+
+Output:
+::
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574
+
+
+One can also get an extrapolated estimate (mixed-estimator bias) for this quantity by providing a VMC ``.xsf`` file.
+
+Estimate of the extrapolated atomic occupation:
+::
+  qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
+  
+Output:
+::
+  Extrapolating from VMC and DMC densities...
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.576918233167152
+
+Error bars
+~~~~~~~~~~
+
+One can "resample" the density at each grid point to obtain an estimate of the error bar. Recipe:
+
+1. Use error bars from ``*.Density_q+err.xsf`` file and draw samples from a Gaussian
+distribution with a standard deviation that matches the error bar.
+2. Calculate occupations with resampled data and calculate standard deviation
+to obtain the error bar on the occupation.
+3. Make sure the number of samples (``-n``) is converged.
+
+Estimate DMC atomic occupation with error bar:
+::
+  qdens-radial -p -s O -r 1.1 -c -n 20 --dmcerr=dmc.s002.Density_q+err.xsf dmc.s002.Density_q.xsf
+
+
+Output:
+::
+  Resampling to obtain error bar (NOTE: This can be slow)...
+  Will compute 20 samples...
+  ...
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574+/-0.001558553749396279
+
