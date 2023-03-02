@@ -66,15 +66,6 @@ public:
   ///const_iterator of Walker container
   using const_iterator = walker_list__t::const_iterator;
 
-  /** starting index of the walkers in a processor group
-   *
-   * WalkerOffsets[0]=0 and WalkerOffsets[WalkerOffsets.size()-1]=total number of walkers in a group
-   * WalkerOffsets[processorid+1]-WalkerOffsets[processorid] is equal to the number of walkers on a processor,
-   * i.e., W.getActiveWalkers().
-   * WalkerOffsets is added to handle parallel I/O with hdf5
-   */
-  std::vector<int> WalkerOffsets;
-
   MCDataType<FullPrecRealType> EnsembleProperty;
 
   WalkerConfigurations();
@@ -120,16 +111,11 @@ public:
   ///return the number of active walkers
   inline size_t getActiveWalkers() const { return walker_list_.size(); }
   ///return the total number of active walkers among a MPI group
-  inline size_t getGlobalNumWalkers() const { return GlobalNumWalkers; }
+  inline size_t getGlobalNumWalkers() const { return walker_offsets_.empty() ? 0 : walker_offsets_.back(); }
   ///return the total number of active walkers among a MPI group
-  inline void setGlobalNumWalkers(size_t nw)
-  {
-    GlobalNumWalkers            = nw;
-    EnsembleProperty.NumSamples = nw;
-    EnsembleProperty.Weight     = nw;
-  }
 
-  inline void setWalkerOffsets(const std::vector<int>& o) { WalkerOffsets = o; }
+  inline void setWalkerOffsets(const std::vector<int>& o) { walker_offsets_ = o; }
+  inline const std::vector<int>& getWalkerOffsets() const { return walker_offsets_; }
 
   /// return the first iterator
   inline iterator begin() { return walker_list_.begin(); }
@@ -187,12 +173,18 @@ public:
   void putConfigurations(Walker_t::RealType* target, QMCTraits::FullPrecRealType* weights) const;
 
 protected:
-  ///number of walkers on a node
-  int LocalNumWalkers;
-  ///number of walkers shared by a MPI group
-  size_t GlobalNumWalkers;
   ///a collection of walkers
   walker_list__t walker_list_;
+
+private:
+  /** starting index of the walkers in a processor group
+   *
+   * walker_offsets_[0]=0 and walker_offsets_[walker_offsets_.size()-1]=total number of walkers in a group
+   * walker_offsets_[processorid+1]-walker_offsets_[processorid] is equal to the number of walkers on a processor,
+   * i.e., W.getActiveWalkers().
+   * walker_offsets_ is added to handle parallel I/O with hdf5
+   */
+  std::vector<int> walker_offsets_;
 };
 } // namespace qmcplusplus
 #endif

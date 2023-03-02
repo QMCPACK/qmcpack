@@ -41,9 +41,8 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
 {
   samples.clearEnsemble();
   samples.setMaxSamples(mcw.getMaxSamples());
-  GlobalNumWalkers = mcw.GlobalNumWalkers;
-  WalkerOffsets    = mcw.WalkerOffsets;
-  Properties       = mcw.Properties;
+  setWalkerOffsets(mcw.getWalkerOffsets());
+  Properties      = mcw.Properties;
 }
 
 MCWalkerConfiguration::~MCWalkerConfiguration() = default;
@@ -240,7 +239,6 @@ bool MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& ot
   std::vector<int> nwoff(np + 1, 0);
   for (int ip = 0; ip < np; ++ip)
     nwoff[ip + 1] = nwoff[ip] + w;
-  wctemp.setGlobalNumWalkers(nwoff[np]);
   wctemp.setWalkerOffsets(nwoff);
   out.dump(wctemp, nBlock);
   return true;

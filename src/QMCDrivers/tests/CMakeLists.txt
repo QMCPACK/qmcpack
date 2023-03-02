@@ -32,6 +32,7 @@ set(DRIVER_TEST_SRC
     test_LMYEngine.cpp
     test_vmc_driver.cpp
     test_dmc_driver.cpp
+    test_SimpleFixedNodeBranch.cpp
     test_QMCDriverFactory.cpp)
 
 # legacy driver mpi, not tested in a meaningful way since the standard unit test is
@@ -78,7 +79,6 @@ set(DRIVER_TEST_SRC
     test_VMCFactoryNew.cpp
     test_VMCBatched.cpp
     test_DMCBatched.cpp
-    test_SimpleFixedNodeBranch.cpp
     test_SFNBranch.cpp
     test_QMCCostFunctionBatched.cpp
     test_QMCCostFunctionBase.cpp

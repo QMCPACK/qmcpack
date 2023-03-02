@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-WalkerConfigurations::WalkerConfigurations() : LocalNumWalkers(0), GlobalNumWalkers(0) {}
+WalkerConfigurations::WalkerConfigurations() = default;
 
 ///default destructor
 WalkerConfigurations::~WalkerConfigurations() { destroyWalkers(walker_list_.begin(), walker_list_.end()); }
