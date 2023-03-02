@@ -82,7 +82,7 @@
       </hamiltonian>
    </qmcsystem>
 
-   <mcwalkerset fileroot="qmc_short_batch.s000" node="-1" nprocs="1" version="3 14" collected="yes"/>
+   <mcwalkerset fileroot="qmc_short_batch.s000" node="-1" nprocs="1" version="0 4" collected="yes"/>
 
    <qmc method="vmc_batch" move="pbyp" checkpoint="-1">
       <parameter name="walkers_per_rank"> 16            </parameter>	   
