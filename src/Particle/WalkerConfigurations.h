@@ -60,11 +60,11 @@ public:
   using Walker_t         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using FullPrecRealType = QMCTraits::FullPrecRealType;
   ///container type of Walkers
-  using WalkerList_t = std::vector<std::unique_ptr<Walker_t>>;
+  using walker_list__t = std::vector<std::unique_ptr<Walker_t>>;
   /// FIX: a type alias of iterator for an object should not be for just one of many objects it holds.
-  using iterator = WalkerList_t::iterator;
+  using iterator = walker_list__t::iterator;
   ///const_iterator of Walker container
-  using const_iterator = WalkerList_t::const_iterator;
+  using const_iterator = walker_list__t::const_iterator;
 
   /** starting index of the walkers in a processor group
    *
@@ -79,14 +79,14 @@ public:
 
   WalkerConfigurations();
   ~WalkerConfigurations();
-  WalkerConfigurations(const WalkerConfigurations&) = delete;
+  WalkerConfigurations(const WalkerConfigurations&)            = delete;
   WalkerConfigurations& operator=(const WalkerConfigurations&) = delete;
   WalkerConfigurations(WalkerConfigurations&&)                 = default;
-  WalkerConfigurations& operator=(WalkerConfigurations&&) = default;
+  WalkerConfigurations& operator=(WalkerConfigurations&&)      = default;
 
   /** create numWalkers Walkers
    *
-   * Append Walkers to WalkerList.
+   * Append Walkers to walker_list_.
    */
   void createWalkers(int numWalkers, size_t numPtcls);
   /** create walkers
@@ -118,7 +118,7 @@ public:
   void resize(int numWalkers, size_t numPtcls);
 
   ///return the number of active walkers
-  inline size_t getActiveWalkers() const { return WalkerList.size(); }
+  inline size_t getActiveWalkers() const { return walker_list_.size(); }
   ///return the total number of active walkers among a MPI group
   inline size_t getGlobalNumWalkers() const { return GlobalNumWalkers; }
   ///return the total number of active walkers among a MPI group
@@ -132,22 +132,22 @@ public:
   inline void setWalkerOffsets(const std::vector<int>& o) { WalkerOffsets = o; }
 
   /// return the first iterator
-  inline iterator begin() { return WalkerList.begin(); }
+  inline iterator begin() { return walker_list_.begin(); }
   /// return the last iterator, [begin(), end())
-  inline iterator end() { return WalkerList.end(); }
+  inline iterator end() { return walker_list_.end(); }
 
   /// return the first const_iterator
-  inline const_iterator begin() const { return WalkerList.begin(); }
+  inline const_iterator begin() const { return walker_list_.begin(); }
 
   /// return the last const_iterator  [begin(), end())
-  inline const_iterator end() const { return WalkerList.end(); }
+  inline const_iterator end() const { return walker_list_.end(); }
   /**@}*/
 
-  /** clear the WalkerList without destroying them
+  /** clear the walker_list_ without destroying them
    *
    * Provide std::vector::clear interface
    */
-  inline void clear() { WalkerList.clear(); }
+  inline void clear() { walker_list_.clear(); }
 
   /** insert elements
    * @param it locator where the inserting begins
@@ -159,7 +159,7 @@ public:
   template<class INPUT_ITER>
   inline void insert(iterator it, INPUT_ITER first, INPUT_ITER last)
   {
-    WalkerList.insert(it, first, last);
+    walker_list_.insert(it, first, last);
   }
 
   /** add Walker_t* at the end
@@ -167,20 +167,17 @@ public:
    *
    * Provide std::vector::push_back interface
    */
-  inline void push_back(std::unique_ptr<Walker_t> awalker) { WalkerList.push_back(std::move(awalker)); }
+  inline void push_back(std::unique_ptr<Walker_t> awalker) { walker_list_.push_back(std::move(awalker)); }
 
   /** delete the last Walker_t*
    *
    * Provide std::vector::pop_back interface
    */
-  inline void pop_back()
-  {
-    WalkerList.pop_back();
-  }
+  inline void pop_back() { walker_list_.pop_back(); }
 
-  inline Walker_t* operator[](int i) { return WalkerList[i].get(); }
+  inline Walker_t* operator[](int i) { return walker_list_[i].get(); }
 
-  inline const Walker_t* operator[](int i) const { return WalkerList[i].get(); }
+  inline const Walker_t* operator[](int i) const { return walker_list_[i].get(); }
 
   /** reset the Walkers
    */
@@ -194,10 +191,8 @@ protected:
   int LocalNumWalkers;
   ///number of walkers shared by a MPI group
   size_t GlobalNumWalkers;
-
-public:
   ///a collection of walkers
-  WalkerList_t WalkerList;
+  walker_list__t walker_list_;
 };
 } // namespace qmcplusplus
 #endif
