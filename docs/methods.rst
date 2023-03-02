@@ -1758,6 +1758,41 @@ Batched ``dmc`` driver (experimental)
 - ``spin_mass`` Optional parameter to allow the user to change the rate of spin sampling. If spin sampling is on using ``spinor`` == yes in the electron ParticleSet input,  the spin mass determines the rate
   of spin sampling, resulting in an effective spin timestep :math:`\tau_s = \frac{\tau}{\mu_s}`. The algorithm is described in detail in :cite:`Melton2016-1` and :cite:`Melton2016-2`.
 
+- ``warmupsteps``: These are the steps at the beginning of a DMC run in
+  which the instantaneous population average energy is used to update the trial
+  energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
+  Unlike VMC, these warmupsteps are included in the requested DMC step count.
+
+.. math::
+
+  E_\text{trial} = E_\text{pop_avg}+(\ln \texttt{targetwalkers}-\ln N_\text{pop}) / \texttt{timestep}
+
+where :math:`E_\text{pop_avg}` is the local energy average over the walker population at the current step
+and :math:`N_\text{pop}` is the current walker population size.
+After the warm-up phase, the trial energy is updated as
+
+.. math::
+
+  E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N_\text{pop})
+
+where :math:`E_\text{ref}` is the :math:`E_\text{pop_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
+
+- ``energyUpdateInterval``: Post warm-up, the trial energy is updated every
+  ``energyUpdateInterval`` steps. Default value is 1 (every step).
+
+- ``refEnergy``: The default reference energy is taken from the VMC run
+  that precedes the DMC run. This value is updated to the current mean
+  whenever branching happens.
+
+- ``feedback``: This variable is used to determine how strong to react
+  to population fluctuations when doing population control. Default value is 1. See the
+  equation in ``warmupsteps`` for more details.
+
+- ``refenergy_update_scheme``: choose a scheme for updating :math:`E_\text{ref}` used in calculating :math:`E_\text{trial}`.
+  'legacy' uses unweighted average of :math:`E_\text{pop_avg}` of all the steps collected post warm-up.
+  'limited_history' uses weighted average of :math:`E_\text{pop_avg}` of the latest at maximum
+  min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'legacy'.
+
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
   :name: Listing 48b
