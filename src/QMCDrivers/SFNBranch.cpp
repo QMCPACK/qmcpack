@@ -31,11 +31,11 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, RealType feedback)
+SFNBranch::SFNBranch(RealType tau, RealType feedback, DMCRefEnergy::Scheme refenergy_update_scheme)
     : WarmUpToDoSteps(0),
       EtrialUpdateToDoSteps(0),
       myNode(NULL),
-      ref_energy_collector(DMCRefEnergy::Scheme::LEGACY, std::max(1, static_cast<int>(1.0 / (feedback * tau))))
+      ref_energy_collector(refenergy_update_scheme, std::max(1, static_cast<int>(1.0 / (feedback * tau))))
 {
   BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
   BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
@@ -153,7 +153,7 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
     const auto ene = BranchMode[B_KILLNODES]
         ? vParam[SBVP::ENOW] - std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAUEFF]
         : vParam[SBVP::ENOW];
-    ref_energy_collector.pushWeightEnergyVariance(1.0, ene, wc_ensemble_prop.Variance);
+    ref_energy_collector.pushWeightEnergyVariance(wc_ensemble_prop.Weight, ene, wc_ensemble_prop.Variance);
     // update the reference energy
     auto [ene_avg, var_avg] = ref_energy_collector.getEnergyVariance();
     vParam[SBVP::EREF]      = ene_avg;

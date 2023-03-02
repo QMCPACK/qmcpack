@@ -149,7 +149,7 @@ public:
   using VParamType = VParams<SBVP>;
 
   ///Constructor
-  SFNBranch(RealType tau, RealType feedback);
+  SFNBranch(RealType tau, RealType feedback, DMCRefEnergy::Scheme);
 
   ///copy constructor
   SFNBranch(const SFNBranch& abranch) = delete;

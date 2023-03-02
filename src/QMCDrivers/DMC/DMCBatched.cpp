@@ -394,7 +394,11 @@ void DMCBatched::process(xmlNodePtr node)
     // I'd like to do away with this method in DMCBatched.
 
     app_log() << "  Creating the branching engine and walker controler" << std::endl;
-    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), dmcdriver_input_.get_feedback());
+    const DMCRefEnergy::Scheme refenergy_update_scheme = dmcdriver_input_.get_refenergy_update_scheme() == "legacy"
+        ? DMCRefEnergy::Scheme::LEGACY
+        : DMCRefEnergy::Scheme::LIMITED_MEMORY;
+    branch_engine_ = std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), dmcdriver_input_.get_feedback(),
+                                                 refenergy_update_scheme);
     branch_engine_->put(node);
 
     walker_controller_ = std::make_unique<WalkerControl>(myComm, Random, dmcdriver_input_.get_reconfiguration());
