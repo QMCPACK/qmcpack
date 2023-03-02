@@ -19,6 +19,8 @@
 
 namespace qmcplusplus
 {
+/** Handle updating Eref used for calculating the trial energy.
+ */
 class DMCRefEnergy
 {
 public:
@@ -38,24 +40,26 @@ enum DataLayout
 };
 
 private:
-  // legacy scheme
+  // legacy scheme data
   ///a simple accumulator for energy
   accumulator_set<FullPrecRealType> energy_hist_;
   ///a simple accumulator for variance
   accumulator_set<FullPrecRealType> variance_hist_;
 
-  // limited memory scheme
+  // limited memory scheme data
   SizeLimitedDataQueue<FullPrecRealType, DataLayout::DATA_SIZE> energy_and_variance_;
 
   public:
   DMCRefEnergy(Scheme scheme, size_t history_limit);
 
+  /// return energy and variance
   std::tuple<FullPrecRealType, FullPrecRealType> getEnergyVariance() const;
 
+  /// record weight, energy and variance.
   void pushWeightEnergyVariance(FullPrecRealType weight, FullPrecRealType ene, FullPrecRealType var);
 
+  /// return record count.
   size_t count() const;
-
 };
 
 } // namespace qmcplusplus

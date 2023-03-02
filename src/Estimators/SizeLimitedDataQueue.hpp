@@ -18,6 +18,10 @@
 
 namespace qmcplusplus
 {
+
+/** collect data with a history limit.
+ * data stored in std::deque<std::array<T, NUM_FIELDS>>
+ */
 template<typename T, size_t NUM_DATA_FIELDS>
 class SizeLimitedDataQueue
 {
@@ -35,6 +39,7 @@ private:
 public:
   SizeLimitedDataQueue(size_t size_limit) : size_limit_(size_limit) {}
 
+  /// add a new record
   void push(const value_type& val)
   {
     if (data.size() == size_limit_)
@@ -43,6 +48,7 @@ public:
     data.push_back(val);
   }
 
+  /// add a new record
   void push(value_type&& val)
   {
     if (data.size() == size_limit_)
@@ -51,6 +57,7 @@ public:
     data.push_back(val);
   }
 
+  /// return weighted average
   value_type weighted_avg() const
   {
     value_type avg;
@@ -69,6 +76,7 @@ public:
     return avg;
   }
 
+  /// return the number of records
   auto size() const { return data.size(); }
 };
 
