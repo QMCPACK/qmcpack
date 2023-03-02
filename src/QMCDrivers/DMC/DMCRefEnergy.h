@@ -26,7 +26,7 @@ public:
 enum Scheme
 {
   LEGACY,
-  LIMITED_MEMORY
+  LIMITED_HISTORY
 } scheme_;
 
 enum DataLayout
@@ -48,7 +48,7 @@ private:
   SizeLimitedDataQueue<FullPrecRealType, DataLayout::DATA_SIZE> energy_and_variance_;
 
   public:
-  DMCRefEnergy(Scheme scheme, size_t memory_limit);
+  DMCRefEnergy(Scheme scheme, size_t history_limit);
 
   std::tuple<FullPrecRealType, FullPrecRealType> getEnergyVariance() const;
 
