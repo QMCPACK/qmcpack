@@ -121,8 +121,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTyp
     walker->Weight       = 1.0;
     walker->Multiplicity = 1.0;
   }
-  //update the global number of walkers and offsets
-  W.setGlobalNumWalkers(Cur_pop);
+  //update the walkers offsets
   W.setWalkerOffsets(FairOffSet);
 
   return Cur_pop;

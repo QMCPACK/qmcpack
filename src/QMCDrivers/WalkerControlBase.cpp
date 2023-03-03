@@ -211,14 +211,8 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, FullPrecRealTy
     walker->Multiplicity = 1.0;
   }
 
-  //set the global number of walkers
-  W.setGlobalNumWalkers(nw_tot);
   // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
-  // number of configurations.
-  if (W.WalkerOffsets.size() == 2)
-  {
-    W.WalkerOffsets[1] = nw_tot;
-  }
+  W.setWalkerOffsets({0, nw_tot});
   return nw_tot;
 }
 

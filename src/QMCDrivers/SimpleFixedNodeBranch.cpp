@@ -147,7 +147,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       acomm->allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
-      walkers.setGlobalNumWalkers(nwoff[ncontexts]);
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
@@ -237,7 +236,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
     //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
     //    W.setWalkerOffsets(nwoff);
     //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
     //  }

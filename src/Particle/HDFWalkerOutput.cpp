@@ -118,7 +118,8 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
     block = nblock;
   }
 
-  number_of_walkers_ = W.WalkerOffsets[myComm->size()];
+  auto& walker_offsets = W.getWalkerOffsets();
+  number_of_walkers_ = walker_offsets[myComm->size()];
   hout.write(number_of_walkers_, hdf::num_walkers);
 
   if (hout.is_parallel())
@@ -132,13 +133,13 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
       if (myComm->size() - 1 == myComm->rank())
       {
         counts[0] = 2;
-        myWalkerOffset.push_back(W.WalkerOffsets[myComm->rank()]);
-        myWalkerOffset.push_back(W.WalkerOffsets[myComm->size()]);
+        myWalkerOffset.push_back(walker_offsets[myComm->rank()]);
+        myWalkerOffset.push_back(walker_offsets[myComm->size()]);
       }
       else
       {
         counts[0] = 1;
-        myWalkerOffset.push_back(W.WalkerOffsets[myComm->rank()]);
+        myWalkerOffset.push_back(walker_offsets[myComm->rank()]);
       }
       hyperslab_proxy<std::vector<int>, 1> slab(myWalkerOffset, gcounts, counts, offsets);
       hout.write(slab, "walker_partition");
@@ -146,40 +147,40 @@ void HDFWalkerOutput::write_configuration(const WalkerConfigurations& W, hdf_arc
     { // write walker configuration
       std::array<size_t, 3> gcounts{number_of_walkers_, number_of_particles_, OHMMS_DIM};
       std::array<size_t, 3> counts{W.getActiveWalkers(), number_of_particles_, OHMMS_DIM};
-      std::array<size_t, 3> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()]), 0, 0};
+      std::array<size_t, 3> offsets{static_cast<size_t>(walker_offsets[myComm->rank()]), 0, 0};
       hyperslab_proxy<BufferType, 3> slab(RemoteData[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walkers);
     }
     {
       std::array<size_t, 1> gcounts{number_of_walkers_};
       std::array<size_t, 1> counts{W.getActiveWalkers()};
-      std::array<size_t, 1> offsets{static_cast<size_t>(W.WalkerOffsets[myComm->rank()])};
+      std::array<size_t, 1> offsets{static_cast<size_t>(walker_offsets[myComm->rank()])};
       hyperslab_proxy<std::vector<QMCTraits::FullPrecRealType>, 1> slab(RemoteDataW[0], gcounts, counts, offsets);
       hout.write(slab, hdf::walker_weights);
     }
   }
   else
   { //gaterv to the master and master writes it, could use isend/irecv
-    hout.write(W.WalkerOffsets, "walker_partition");
+    hout.write(walker_offsets, "walker_partition");
     if (myComm->size() > 1)
     {
       std::vector<int> displ(myComm->size()), counts(myComm->size());
       for (int i = 0; i < myComm->size(); ++i)
       {
-        counts[i] = wb * (W.WalkerOffsets[i + 1] - W.WalkerOffsets[i]);
-        displ[i]  = wb * W.WalkerOffsets[i];
+        counts[i] = wb * (walker_offsets[i + 1] - walker_offsets[i]);
+        displ[i]  = wb * walker_offsets[i];
       }
       if (!myComm->rank())
-        RemoteData[1].resize(wb * W.WalkerOffsets[myComm->size()]);
+        RemoteData[1].resize(wb * walker_offsets[myComm->size()]);
       mpi::gatherv(*myComm, RemoteData[0], RemoteData[1], counts, displ);
       // update counts and displ for gathering walker weights
       for (int i = 0; i < myComm->size(); ++i)
       {
-        counts[i] = (W.WalkerOffsets[i + 1] - W.WalkerOffsets[i]);
-        displ[i]  = W.WalkerOffsets[i];
+        counts[i] = (walker_offsets[i + 1] - walker_offsets[i]);
+        displ[i]  = walker_offsets[i];
       }
       if (!myComm->rank())
-        RemoteDataW[1].resize(W.WalkerOffsets[myComm->size()]);
+        RemoteDataW[1].resize(walker_offsets[myComm->size()]);
       mpi::gatherv(*myComm, RemoteDataW[0], RemoteDataW[1], counts, displ);
     }
     int buffer_id = (myComm->size() > 1) ? 1 : 0;
