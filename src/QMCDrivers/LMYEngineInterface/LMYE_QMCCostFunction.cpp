@@ -21,11 +21,11 @@
 
 namespace qmcplusplus
 {
-int64_t QMCCostFunction::total_samples()
+size_t QMCCostFunction::total_samples()
 {
   // for the unfamiliar, the [] starts a lambda function
-  return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, int64_t{0},
-                         [](int64_t x, const auto& p) { return x + p->numSamples(); });
+  return std::accumulate(wClones.begin(), wClones.begin() + NumThreads, size_t{0},
+                         [](size_t x, const auto& p) { return x + p->numSamples(); });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,7 +35,7 @@ int64_t QMCCostFunction::total_samples()
 QMCCostFunction::Return_rt QMCCostFunction::LMYEngineCost_detail(cqmc::engine::LMYEngine<ValueType>* EngineObj)
 {
   // get total number of samples
-  const int64_t m = this->total_samples();
+  const size_t m = this->total_samples();
 
   // reset Engine object
   EngineObj->reset();

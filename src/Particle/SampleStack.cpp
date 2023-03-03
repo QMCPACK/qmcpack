@@ -20,7 +20,7 @@ namespace qmcplusplus
  * @param n number of samples per rank
  * @param num_ranks number of ranks. Used to set global number of samples.
  */
-void SampleStack::setMaxSamples(int n, int num_ranks)
+void SampleStack::setMaxSamples(size_t n, size_t num_ranks)
 {
   max_samples_        = n;
   global_num_samples_ = n * num_ranks;
@@ -28,12 +28,8 @@ void SampleStack::setMaxSamples(int n, int num_ranks)
   if (n == 0)
     return;
   sample_vector_.reserve(n);
-  int nadd = n - sample_vector_.size();
-  while (nadd > 0)
-  {
-    sample_vector_.emplace_back(total_num_);
-    --nadd;
-  }
+  size_t nadd = n - sample_vector_.size();
+  sample_vector_.insert(sample_vector_.end(), nadd, MCSample(total_num_));
 }
 
 const MCSample& SampleStack::getSample(size_t i) const { return sample_vector_[i]; }
