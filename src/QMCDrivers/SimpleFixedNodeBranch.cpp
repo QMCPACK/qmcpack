@@ -781,11 +781,6 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
     }
   }
 
-  if (BranchMode[B_DMC] && !bmode[B_DMC])
-    throw UniformCommunicateError("SimpleFixedNodeBranch::read legacy drivers cannot make a non-DMC run by restarting "
-                                  "from a previous DMC run. This capability is only supported by the newer batched drivers."
-                                  " Switch to using the batched drivers if this restart was intended.");
-
   app_log().flush();
 }
 
