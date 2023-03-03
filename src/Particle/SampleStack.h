@@ -31,8 +31,6 @@ class SampleStack
 public:
   using PropertySetType = QMCTraits::PropertySetType;
 
-  void setTotalNum(size_t total_num) { total_num_ = total_num; }
-
   size_t getMaxSamples() const { return max_samples_; }
 
   bool empty() const { return sample_vector_.empty(); }
@@ -57,7 +55,6 @@ public:
   void resetSampleCount();
 
 private:
-  size_t total_num_{0};
   size_t max_samples_{10};
   size_t current_sample_count_{0};
   size_t global_num_samples_{max_samples_};
