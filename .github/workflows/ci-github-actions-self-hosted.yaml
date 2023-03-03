@@ -214,10 +214,10 @@ jobs:
       matrix:
         jobname:
           [
-            ROCm-Clang15-NoMPI-CUDA2HIP-Real-Mixed,
-            ROCm-Clang15-NoMPI-CUDA2HIP-Real,
-            ROCm-Clang15-NoMPI-CUDA2HIP-Complex-Mixed,
-            ROCm-Clang15-NoMPI-CUDA2HIP-Complex,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Real-Mixed,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Real,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Complex-Mixed,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Complex,
           ]
 
     steps:

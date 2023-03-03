@@ -9,8 +9,8 @@ case "$1" in
 
   configure)
 
-    echo "Use recent cmake v3.24.3"
-    export PATH=/opt/cmake/3.24.3/bin:$PATH
+    echo "Use recent CMake v3.24.3"
+    export PATH=$HOME/opt/cmake/3.24.3/bin:$PATH
     # Make current environment variables available to subsequent steps, ctest
     echo "PATH=$PATH" >> $GITHUB_ENV
 
@@ -48,24 +48,21 @@ case "$1" in
         IS_MIXED_PRECISION=0
       ;;
     esac
-    
-    case "${GH_JOBNAME}" in
-      *"ROCm-Clang15-NoMPI-CUDA2HIP"*)
-        echo 'Configure for building CUDA2HIP with clang compilers shipped with ROCM on AMD hardware'
+       
+    echo 'Configure for building CUDA2HIP with ROCM clang compilers'
 
-        cmake -GNinja \
-              -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
-              -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
-              -DQMC_MPI=0 \
-              -DENABLE_CUDA=ON \
-              -DQMC_CUDA2HIP=ON \
-              -DQMC_COMPLEX=$IS_COMPLEX \
-              -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
-              -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-              -DQMC_DATA=$QMC_DATA_DIR \
-              ${GITHUB_WORKSPACE}
-      ;;
-    esac
+    cmake -GNinja \
+          -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+          -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+          -DQMC_MPI=0 \
+          -DENABLE_CUDA=ON \
+          -DQMC_CUDA2HIP=ON \
+          -DQMC_COMPLEX=$IS_COMPLEX \
+          -DQMC_MIXED_PRECISION=$IS_MIXED_PRECISION \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DQMC_DATA=$QMC_DATA_DIR \
+          ${GITHUB_WORKSPACE}
+          
     ;;
   
   build)
