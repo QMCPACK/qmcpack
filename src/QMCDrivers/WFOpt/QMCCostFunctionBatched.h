@@ -90,7 +90,7 @@ protected:
 
 
 #ifdef HAVE_LMY_ENGINE
-  int total_samples();
+  int64_t total_samples();
   Return_rt LMYEngineCost_detail(cqmc::engine::LMYEngine<Return_t>* EngineObj) override;
 #endif
 

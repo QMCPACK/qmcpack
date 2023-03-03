@@ -19,10 +19,7 @@
 
 namespace qmcplusplus
 {
-int QMCCostFunctionBatched::total_samples()
-{
-  return samples_.getGlobalNumSamples();
-}
+int64_t QMCCostFunctionBatched::total_samples() { return samples_.getGlobalNumSamples(); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Computes the cost function using the LMYEngine for interfacing with batched driver
@@ -32,7 +29,7 @@ QMCCostFunctionBatched::Return_rt QMCCostFunctionBatched::LMYEngineCost_detail(
     cqmc::engine::LMYEngine<Return_t>* EngineObj)
 {
   // get total number of samples
-  const int m = this->total_samples();
+  const int64_t m = this->total_samples();
   // reset Engine object
   EngineObj->reset();
 

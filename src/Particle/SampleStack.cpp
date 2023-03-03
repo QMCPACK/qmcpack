@@ -11,12 +11,10 @@
 
 
 #include "SampleStack.h"
-#include "Particle/MCSample.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
 {
-SampleStack::SampleStack() : total_num_(0), max_samples_(10), current_sample_count_(0) {}
 
 /** allocate the SampleStack
  * @param n number of samples per rank
@@ -33,59 +31,36 @@ void SampleStack::setMaxSamples(int n, int num_ranks)
   int nadd = n - sample_vector_.size();
   while (nadd > 0)
   {
-    sample_vector_.push_back(new MCSample(total_num_));
+    sample_vector_.emplace_back(total_num_);
     --nadd;
   }
 }
 
-MCSample& SampleStack::getSample(unsigned int i) const { return *sample_vector_[i]; }
-
-void SampleStack::saveEnsemble(std::vector<MCSample>& walker_list)
-{
-  //safety check
-  if (max_samples_ == 0)
-    return;
-  auto first = walker_list.begin();
-  auto last  = walker_list.end();
-  while ((first != last) && (current_sample_count_ < max_samples_))
-  {
-    *sample_vector_[current_sample_count_] = *first;
-    ++first;
-    ++current_sample_count_;
-  }
-}
+const MCSample& SampleStack::getSample(size_t i) const { return sample_vector_[i]; }
 
 void SampleStack::appendSample(MCSample&& sample)
 {
   // Ignore samples in excess of the expected number of samples
   if (current_sample_count_ < max_samples_)
   {
-    *sample_vector_[current_sample_count_] = std::move(sample);
+    sample_vector_[current_sample_count_] = std::move(sample);
     current_sample_count_++;
   }
 }
-
 
 /** load a single sample from SampleStack
  */
 void SampleStack::loadSample(ParticleSet& pset, size_t iw) const
 {
-  pset.R     = sample_vector_[iw]->R;
-  pset.spins = sample_vector_[iw]->spins;
+  pset.R     = sample_vector_[iw].R;
+  pset.spins = sample_vector_[iw].spins;
 }
 
 void SampleStack::clearEnsemble()
 {
-  //delete_iter(SampleStack.begin(),SampleStack.end());
-  for (int i = 0; i < sample_vector_.size(); ++i)
-    if (sample_vector_[i])
-      delete sample_vector_[i];
   sample_vector_.clear();
-  max_samples_          = 0;
   current_sample_count_ = 0;
 }
-
-SampleStack::~SampleStack() { clearEnsemble(); }
 
 void SampleStack::resetSampleCount() { current_sample_count_ = 0; }
 
