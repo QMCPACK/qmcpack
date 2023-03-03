@@ -92,38 +92,6 @@ void MCWalkerConfiguration::sample(iterator it, RealType tauinv)
   //  R += (*it)->R + (*it)->Drift;
 }
 
-//void MCWalkerConfiguration::clearAuxDataSet() {
-//  UpdateMode=Update_Particle;
-//  int nbytes=128*TotalNum*sizeof(RealType);//could be pagesize
-//  if(walker_list_.size())//check if capacity is bigger than the estimated one
-//    nbytes = (walker_list_[0]->DataSet.capacity()>nbytes)?walker_list_[0]->DataSet.capacity():nbytes;
-//  iterator it(walker_list_.begin());
-//  iterator it_end(walker_list_.end());
-//  while(it!=it_end) {
-//    (*it)->DataSet.clear();
-//    //CHECK THIS WITH INTEL 10.1
-//    //(*it)->DataSet.reserve(nbytes);
-//    ++it;
-//  }
-//  ReadyForPbyP = true;
-//}
-//
-//bool MCWalkerConfiguration::createAuxDataSet(int nfield) {
-//
-//  if(ReadyForPbyP) return false;
-//
-//  ReadyForPbyP=true;
-//  UpdateMode=Update_Particle;
-//  iterator it(walker_list_.begin());
-//  iterator it_end(walker_list_.end());
-//  while(it!=it_end) {
-//    (*it)->DataSet.reserve(nfield); ++it;
-//  }
-//
-//  return true;
-//}
-
-
 /** reset the Property container of all the walkers
  */
 void MCWalkerConfiguration::resetWalkerProperty(int ncopy)
