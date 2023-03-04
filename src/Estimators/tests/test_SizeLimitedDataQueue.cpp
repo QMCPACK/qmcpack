@@ -39,7 +39,7 @@ TEST_CASE("SizeLimitedDataQueue", "[estimators]")
     CHECK(Approx(avg[0]) == 1.444444444);
   }
   {
-    weight_and_energy.push({0.5, 3.0});
+    weight_and_energy.push({0.5, {3.0}});
     CHECK(weight_and_energy.size() == 3);
     auto avg = weight_and_energy.weighted_avg();
     CHECK(Approx(avg[0]) == 1.5);

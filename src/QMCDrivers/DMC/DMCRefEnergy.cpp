@@ -35,7 +35,7 @@ std::tuple<FullPrecReal, FullPrecReal> DMCRefEnergy::getEnergyVariance() const
 void DMCRefEnergy::pushWeightEnergyVariance(FullPrecReal weight, FullPrecReal ene, FullPrecReal var)
 {
   if (scheme_ == DMCRefEnergyScheme::LIMITED_HISTORY)
-    energy_and_variance_.push({weight, ene, var});
+    energy_and_variance_.push({weight, {ene, var}});
   else
   {
     energy_hist_(ene);
