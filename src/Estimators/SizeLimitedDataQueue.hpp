@@ -22,21 +22,18 @@ namespace qmcplusplus
 /** collect data with a history limit.
  * data stored in std::deque<std::array<T, NUM_FIELDS>>
  */
-template<typename T, size_t NUM_DATA_FIELDS>
+template<typename T, size_t NUM_FIELDS>
 class SizeLimitedDataQueue
 {
-private:
-  enum
-  {
-    WEIGHT         = 0,
-    FIRST_PROPERTY = 1,
-    NUM_FIELDS     = NUM_DATA_FIELDS + 1
-  };
-  using value_type = std::array<T, NUM_FIELDS>;
-  std::deque<value_type> data;
-  const size_t size_limit_;
-
 public:
+  struct HistoryElement
+  {
+    T weight;
+    std::array<T, NUM_FIELDS> properties;
+  };
+
+  using value_type = HistoryElement;
+
   SizeLimitedDataQueue(size_t size_limit) : size_limit_(size_limit) {}
 
   /// add a new record
@@ -58,26 +55,28 @@ public:
   }
 
   /// return weighted average
-  value_type weighted_avg() const
+  auto weighted_avg() const
   {
-    value_type avg;
+    std::array<T, NUM_FIELDS> avg;
     std::fill(avg.begin(), avg.end(), T(0));
+    T weight_sum = 0;
     for (auto& element : data)
     {
-      T weight = element[WEIGHT];
-      avg[WEIGHT] += weight;
-      for (size_t i = FIRST_PROPERTY; i < element.size(); i++)
-        avg[i] += element[i] * weight;
+      weight_sum += element.weight;
+      for (size_t i = 0; i < NUM_FIELDS; i++)
+        avg[i] += element.properties[i] * element.weight;
     }
-    T total_weight = avg[WEIGHT];
-    avg[WEIGHT] /= data.size();
-    for (size_t i = FIRST_PROPERTY; i < avg.size(); i++)
-      avg[i] /= total_weight;
+    for (size_t i = 0; i < NUM_FIELDS; i++)
+      avg[i] /= weight_sum;
     return avg;
   }
 
   /// return the number of records
   auto size() const { return data.size(); }
+
+private:
+  std::deque<value_type> data;
+  const size_t size_limit_;
 };
 
 } // namespace qmcplusplus

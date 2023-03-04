@@ -25,19 +25,18 @@ class DMCRefEnergy
 {
 public:
   using FullPrecRealType = QMCTraits::FullPrecRealType;
-enum Scheme
-{
-  LEGACY,
-  LIMITED_HISTORY
-} scheme_;
+  enum Scheme
+  {
+    LEGACY,
+    LIMITED_HISTORY
+  } scheme_;
 
-enum DataLayout
-{
-  WEIGHT = 0,
-  ENERGY,
-  VARIANCE,
-  DATA_SIZE
-};
+  enum DataLayout
+  {
+    ENERGY = 0,
+    VARIANCE,
+    DATA_SIZE
+  };
 
 private:
   // legacy scheme data
@@ -49,7 +48,7 @@ private:
   // limited memory scheme data
   SizeLimitedDataQueue<FullPrecRealType, DataLayout::DATA_SIZE> energy_and_variance_;
 
-  public:
+public:
   DMCRefEnergy(Scheme scheme, size_t history_limit);
 
   /// return energy and variance

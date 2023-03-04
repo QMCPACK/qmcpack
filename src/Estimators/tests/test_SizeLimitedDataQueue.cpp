@@ -20,33 +20,29 @@ TEST_CASE("SizeLimitedDataQueue", "[estimators]")
   SizeLimitedDataQueue<double, 1> weight_and_energy(3);
   CHECK(weight_and_energy.size() == 0);
   {
-    weight_and_energy.push({1.0, 2.0});
+    weight_and_energy.push({1.0, {2.0}});
     CHECK(weight_and_energy.size() == 1);
     auto avg = weight_and_energy.weighted_avg();
-    CHECK(Approx(avg[0]) == 1.0);
-    CHECK(Approx(avg[1]) == 2.0);
+    CHECK(Approx(avg[0]) == 2.0);
   }
   {
-    weight_and_energy.push({3.0, 1.0});
+    weight_and_energy.push({3.0, {1.0}});
     CHECK(weight_and_energy.size() == 2);
     auto avg = weight_and_energy.weighted_avg();
-    CHECK(Approx(avg[0]) == 2.0);
-    CHECK(Approx(avg[1]) == 1.25);
+    CHECK(Approx(avg[0]) == 1.25);
   }
   {
-    std::array<double, 2> temp{0.5, 3.0};
+    SizeLimitedDataQueue<double, 1>::HistoryElement temp{0.5, {3.0}};
     weight_and_energy.push(std::move(temp));
     CHECK(weight_and_energy.size() == 3);
     auto avg = weight_and_energy.weighted_avg();
-    CHECK(Approx(avg[0]) == 1.5);
-    CHECK(Approx(avg[1]) == 1.444444444);
+    CHECK(Approx(avg[0]) == 1.444444444);
   }
   {
     weight_and_energy.push({0.5, 3.0});
     CHECK(weight_and_energy.size() == 3);
     auto avg = weight_and_energy.weighted_avg();
-    CHECK(Approx(avg[0]) == 1.333333333);
-    CHECK(Approx(avg[1]) == 1.5);
+    CHECK(Approx(avg[0]) == 1.5);
   }
 }
 
