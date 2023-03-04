@@ -15,42 +15,43 @@
 namespace qmcplusplus
 {
 
-using FullPrecRealType = DMCRefEnergy::FullPrecRealType;
+using FullPrecReal = DMCRefEnergy::FullPrecReal;
 
-DMCRefEnergy::DMCRefEnergy(Scheme scheme, size_t history_limit)
- : scheme_(scheme), energy_and_variance_(history_limit) {}
+DMCRefEnergy::DMCRefEnergy(DMCRefEnergyScheme scheme, size_t history_limit)
+    : scheme_(scheme), energy_and_variance_(history_limit)
+{}
 
-std::tuple<FullPrecRealType, FullPrecRealType> DMCRefEnergy::getEnergyVariance() const
+std::tuple<FullPrecReal, FullPrecReal> DMCRefEnergy::getEnergyVariance() const
 {
-   if (scheme_ == LIMITED_HISTORY)
-   {
-     auto avg = energy_and_variance_.weighted_avg();
-     return {avg[ENERGY], avg[VARIANCE]};
-   }
-   else
-     return {energy_hist_.mean(), variance_hist_.mean()};
+  if (scheme_ == DMCRefEnergyScheme::LIMITED_HISTORY)
+  {
+    auto avg = energy_and_variance_.weighted_avg();
+    return {avg[ENERGY], avg[VARIANCE]};
+  }
+  else
+    return {energy_hist_.mean(), variance_hist_.mean()};
 }
 
-  void DMCRefEnergy::pushWeightEnergyVariance(FullPrecRealType weight, FullPrecRealType ene, FullPrecRealType var)
+void DMCRefEnergy::pushWeightEnergyVariance(FullPrecReal weight, FullPrecReal ene, FullPrecReal var)
 {
-   if (scheme_ == LIMITED_HISTORY)
-     energy_and_variance_.push({weight, ene, var});
-   else
-   {
-     energy_hist_(ene);
-     variance_hist_(var);
-   }
+  if (scheme_ == DMCRefEnergyScheme::LIMITED_HISTORY)
+    energy_and_variance_.push({weight, ene, var});
+  else
+  {
+    energy_hist_(ene);
+    variance_hist_(var);
+  }
 }
 
 size_t DMCRefEnergy::count() const
+{
+  if (scheme_ == DMCRefEnergyScheme::LIMITED_HISTORY)
+    return energy_and_variance_.size();
+  else
   {
-   if (scheme_ == LIMITED_HISTORY)
-     return energy_and_variance_.size();
-   else
-   {
-     assert(energy_hist_.count() == variance_hist_.count());
-     return energy_hist_.count();
-   }
+    assert(energy_hist_.count() == variance_hist_.count());
+    return energy_hist_.count();
   }
+}
 
 } // namespace qmcplusplus

@@ -31,7 +31,7 @@ enum
   DUMMYOPT
 };
 
-SFNBranch::SFNBranch(RealType tau, RealType feedback, DMCRefEnergy::Scheme refenergy_update_scheme)
+SFNBranch::SFNBranch(RealType tau, RealType feedback, DMCRefEnergyScheme refenergy_update_scheme)
     : WarmUpToDoSteps(0),
       EtrialUpdateToDoSteps(0),
       myNode(NULL),

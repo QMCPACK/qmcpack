@@ -16,6 +16,7 @@
 #include <Configuration.h>
 #include <Estimators/SizeLimitedDataQueue.hpp>
 #include <Estimators/accumulators.h>
+#include "DMCRefEnergyScheme.h"
 
 namespace qmcplusplus
 {
@@ -24,12 +25,7 @@ namespace qmcplusplus
 class DMCRefEnergy
 {
 public:
-  using FullPrecRealType = QMCTraits::FullPrecRealType;
-  enum Scheme
-  {
-    LEGACY,
-    LIMITED_HISTORY
-  } scheme_;
+  using FullPrecReal = QMCTraits::FullPrecRealType;
 
   enum DataLayout
   {
@@ -39,23 +35,26 @@ public:
   };
 
 private:
+  /// scheme
+  DMCRefEnergyScheme scheme_;
+
   // legacy scheme data
   ///a simple accumulator for energy
-  accumulator_set<FullPrecRealType> energy_hist_;
+  accumulator_set<FullPrecReal> energy_hist_;
   ///a simple accumulator for variance
-  accumulator_set<FullPrecRealType> variance_hist_;
+  accumulator_set<FullPrecReal> variance_hist_;
 
   // limited memory scheme data
-  SizeLimitedDataQueue<FullPrecRealType, DataLayout::DATA_SIZE> energy_and_variance_;
+  SizeLimitedDataQueue<FullPrecReal, DataLayout::DATA_SIZE> energy_and_variance_;
 
 public:
-  DMCRefEnergy(Scheme scheme, size_t history_limit);
+  DMCRefEnergy(DMCRefEnergyScheme scheme, size_t history_limit);
 
   /// return energy and variance
-  std::tuple<FullPrecRealType, FullPrecRealType> getEnergyVariance() const;
+  std::tuple<FullPrecReal, FullPrecReal> getEnergyVariance() const;
 
   /// record weight, energy and variance.
-  void pushWeightEnergyVariance(FullPrecRealType weight, FullPrecRealType ene, FullPrecRealType var);
+  void pushWeightEnergyVariance(FullPrecReal weight, FullPrecReal ene, FullPrecReal var);
 
   /// return record count.
   size_t count() const;
