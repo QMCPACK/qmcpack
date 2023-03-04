@@ -78,7 +78,7 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset gpu="yes" href="${PNBDIR}/NiO-fcc-supertwist111-supershift000-S8.h5" meshfactor="0.9" precision="single" source="i" tilematrix="1 1 1 0 2 -2 1 -1 -1" twist="0  0  0" twistnum="-1" type="einspline">
+    <determinantset gpu="yes" href="${H5_DIR}/NiO-fcc-supertwist111-supershift000-S8.h5" meshfactor="0.9" precision="single" source="i" tilematrix="1 1 1 0 2 -2 1 -1 -1" twist="0  0  0" twistnum="-1" type="einspline">
       <slaterdeterminant>
         <determinant id="updet" ref="updet" size="192">
           <occupation mode="ground" spindataset="0">
@@ -109,8 +109,8 @@
   </wavefunction>
   <hamiltonian name="h0" target="e" type="generic">
     <pairpot format="xml" name="PseudoPot" source="i" type="pseudo" wavefunction="psi0">
-      <pseudo elementType="O" href="${PNBDIR}/O.xml" />
-      <pseudo elementType="Ni" href="${PNBDIR}/Ni.opt.xml" />
+      <pseudo elementType="O" href="${PP_DIR}/O.xml" />
+      <pseudo elementType="Ni" href="${PP_DIR}/Ni.opt.xml" />
     </pairpot>
     <constant name="IonIon" source="i" target="i" type="coulomb" />
     <pairpot name="ElecElec" physical="true" source="e" target="e" type="coulomb" />
