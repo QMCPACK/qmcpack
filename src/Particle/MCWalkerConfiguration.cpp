@@ -42,7 +42,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
   samples.clearEnsemble();
   samples.setMaxSamples(mcw.getMaxSamples());
   setWalkerOffsets(mcw.getWalkerOffsets());
-  Properties      = mcw.Properties;
+  Properties = mcw.Properties;
 }
 
 MCWalkerConfiguration::~MCWalkerConfiguration() = default;

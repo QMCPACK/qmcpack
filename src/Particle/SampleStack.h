@@ -20,36 +20,29 @@
 
 #include <vector>
 #include "Particle/ParticleSet.h"
+#include "Particle/MCSample.h"
 #include "Particle/Walker.h"
 #include "Particle/WalkerConfigurations.h"
 
 namespace qmcplusplus
 {
-struct MCSample;
-
 class SampleStack
 {
 public:
   using PropertySetType = QMCTraits::PropertySetType;
 
-  SampleStack();
-
-  void setTotalNum(int total_num) { total_num_ = total_num; }
-
-  int getMaxSamples() const { return max_samples_; }
+  size_t getMaxSamples() const { return max_samples_; }
 
   bool empty() const { return sample_vector_.empty(); }
 
-  MCSample& getSample(unsigned int i) const;
+  const MCSample& getSample(size_t i) const;
 
   //@{save/load/clear function for optimization
-  inline int getNumSamples() const { return current_sample_count_; }
+  inline size_t getNumSamples() const { return current_sample_count_; }
   ///set the number of max samples per rank.
-  void setMaxSamples(int n, int number_of_ranks = 1);
+  void setMaxSamples(size_t n, size_t number_of_ranks = 1);
   /// Global number of samples is number of samples per rank * number of ranks
-  uint64_t getGlobalNumSamples() const { return global_num_samples_; }
-  ///save the position of current walkers
-  void saveEnsemble(std::vector<MCSample>& walker_list);
+  size_t getGlobalNumSamples() const { return global_num_samples_; }
   /// load a single sample from SampleStack
   void loadSample(ParticleSet& pset, size_t iw) const;
 
@@ -61,15 +54,12 @@ public:
   ///  Set the sample count to zero but preserve the storage
   void resetSampleCount();
 
-  ~SampleStack();
-
 private:
-  int total_num_;
-  int max_samples_;
-  int current_sample_count_;
-  uint64_t global_num_samples_;
+  size_t max_samples_{10};
+  size_t current_sample_count_{0};
+  size_t global_num_samples_{max_samples_};
 
-  std::vector<MCSample*> sample_vector_;
+  std::vector<MCSample> sample_vector_;
 };
 
 

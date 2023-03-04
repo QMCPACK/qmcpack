@@ -33,7 +33,6 @@ public:
                           QMCDriverInput&& input,
                           WalkerConfigurations& wc,
                           MCPopulation&& population,
-                          SampleStack samples,
                           Communicate* comm)
       : QMCDriverNew(test_project,
                      std::move(input),
