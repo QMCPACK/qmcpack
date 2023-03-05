@@ -103,8 +103,32 @@ case "$1" in
       echo "LD_LIBRARY_PATH=/opt/rh/gcc-toolset-9/root/usr/lib/gcc/x86_64-redhat-linux/9:$LD_LIBRARY_PATH" >> $GITHUB_ENV
     fi
     
+    if [[ "$CONTAINER_OS" =~ (centos) ]]
+    then
+      # use spack
+      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
+      export FFTW_HOME=/opt/view
+      export LibXml2_ROOT=/opt/view
+      export HDF5_ROOT=/opt/view
+      export BOOST_ROOT=/opt/view
+
+
+      # Make current environment variables available to subsequent steps
+      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
+      echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
+      echo "FFTW_HOME=/opt/view" >> $GITHUB_ENV
+      echo "LibXml2_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "HDF5_ROOT=/opt/view" >> $GITHUB_ENV
+      echo "BOOST_ROOT=/opt/view" >> $GITHUB_ENV
+    fi
+    
     case "${GH_JOBNAME}" in
-      *"GCC9-NoMPI-Debug-"*)
+      *"GCC9-NoMPI-Debug-"*|*"GCC11-NoMPI-Debug-"*)
         echo 'Configure for debug mode to capture asserts with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -113,7 +137,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=Debug \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-NoOMP-"*)
+      *"GCC9-NoMPI-NoOMP-"*|*"GCC11-NoMPI-NoOMP-"*)
         echo 'Configure for disabling OpenMP with QMC_OMP=0'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
@@ -124,7 +148,7 @@ case "$1" in
               -DCMAKE_BUILD_TYPE=RelWithDebInfo \
               ${GITHUB_WORKSPACE}
       ;;
-      *"GCC9-NoMPI-Sandbox-"*)
+      *"GCC9-NoMPI-Sandbox-"*|*"GCC11-NoMPI-Sandbox-"*)
         echo 'Configure for enabling sandbox (minimal) only option with gcc'
         cmake -GNinja \
               -DCMAKE_C_COMPILER=gcc \
