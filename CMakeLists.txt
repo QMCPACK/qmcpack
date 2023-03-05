@@ -52,11 +52,7 @@ include(CMakeDependentOption)
 option(QMC_MPI "Enable/disable MPI" ON)
 option(QMC_OMP "Enable/disable OpenMP" ON)
 option(QMC_COMPLEX "Build for complex binary" OFF)
-option(QMC_CUDA "Build with GPU support through CUDA" OFF)
-option(
-  ENABLE_CUDA
-  "Build with the second generation of GPU support through CUDA (production quality for AFQMC, experimental for real space)"
-  OFF)
+option(ENABLE_CUDA "Build with GPU support through CUDA" OFF)
 option(QMC_CUDA2HIP "Map all CUDA kernels and library calls to HIP" OFF)
 if(QMC_CUDA2HIP OR ENABLE_HIP)
   set(ENABLE_ROCM ON) # option(ENABLE_ROCM) will be no-op
