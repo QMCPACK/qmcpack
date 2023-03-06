@@ -18,7 +18,7 @@ namespace qmcplusplus
  */
 enum class DMCRefEnergyScheme
 {
-  LEGACY,
+  UNLIMITED_HISTORY,
   LIMITED_HISTORY
 };
 } // namespace qmcplusplus
