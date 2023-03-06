@@ -32,8 +32,6 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``move``       | text         | pbyp, alle   | pbyp        | Method used to move electrons   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``gpu``        | text         | yes/no       | dep.        | Use the GPU                     |
-  +----------------+--------------+--------------+-------------+---------------------------------+
   | ``trace``      | text         |              | no          | ???                             |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
@@ -56,10 +54,6 @@ Additional information:
    is moved for acceptance or rejection. The other method is the
    all-electron move; namely, all the electrons are moved once for
    testing acceptance or rejection.
-
--  ``gpu``: When the executable is compiled with CUDA, the target
-   computing device can be chosen by this switch. With a regular
-   CPU-only compilation, this option is not effective.
 
 -  ``profiling``: Performance profiling tools by default profile complete application executions.
    This is largely unnecessary if the focus is a QMC section instead of any initialization
@@ -1430,8 +1424,6 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``maxDisplSq``              | real         | all values              | -1          | Maximum particle move                   |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``scaleweight``             | string       | yes/other               | yes         | Scale weights (CUDA only)               |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``checkproperties``         | integer      | :math:`\geq 0`          | 100         | Number of steps between walker updates  |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``fastgrad``                | text         | yes/other               | yes         | Fast gradients                          |
@@ -1568,10 +1560,6 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop_avg}` average over all the 
       paper in preparation.
 
       The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
-
-
--  ``scaleweight``: This is the scaling weight per Umrigar/Nightingale.
-   CUDA only.
 
 -  ``MaxAge``: Set the weight of a walker to min(currentweight,0.5)
    after a walker has not moved for ``MaxAge`` steps. Needed if

@@ -52,6 +52,18 @@ As detailed in :ref:`input-overview`, QMCPACK will cleanly stop execution at the
 ``project_id.STOP``, where ``project_id`` is the name of the project given in the input XML. You can also set the ``max_seconds``
 parameter to establish an overall time limit.
 
+.. _mixed_precision:
+
+Using mixed precision
+---------------------
+To achieve better performance or reduce memory footprint, mixed-precision version can be enabled.
+The current implementation uses single precision (SP) on most calculations, except for matrix inversions
+and reductions where double precision (DP) is required to retain high accuracy. All the
+constant spline data in wavefunction, pseudopotentials, and Coulomb potentials are initialized in double precision and later
+stored in SP. The mixed-precision code is as accurate as the fully double precision code up to a certain system size, and
+may have double the throughput.
+Cross checking and verification of accuracy is always required but is particularly important above approximately 1,500 electrons.
+
 .. _parallelrunning:
 
 Running in parallel with MPI
@@ -149,15 +161,6 @@ threads (MPI tasks * threads per task). This will ensure a good load balance. e.
 walkers should be chosen to be slightly smaller than a multiple of the total number of available threads across all the MPI ranks.
 This will reduce occurrences worse-case load imbalance e.g. where one thread has two walkers while all the others have one.
 
-To achieve better performance, a mixed-precision version (experimental) has been developed in the CPU code. The mixed-precision
-CPU code uses a mixed of single precision (SP) and double precision (DP) operations, while the default code use DP exclusively.
-This mixed precision version is more aggressive than the GPU CUDA version in using single precision (SP) operations. The Current implementation uses SP on most
-calculations, except for matrix inversions and reductions where double precision is required to retain high accuracy. All the
-constant spline data in wavefunction, pseudopotentials, and Coulomb potentials are initialized in double precision and later
-stored in single precision. The mixed-precision code is as accurate as the double-precision code up to a certain system size, and
-may have double the throughput.
-Cross checking and verification of accuracy is always required but is particularly important above approximately 1,500 electrons.
-
 Memory considerations
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -174,6 +177,8 @@ Running on GPU machines
 -----------------------
 
 The GPU version is fully incorporated into the main source code.
+It works on any GPUs with OpenMP offload support including NVIDIA, AMD and Intel GPUs.
+Using batched drivers is required.
 
 QMCPACK supports running on multi-GPU node architectures via MPI.
 Each MPI rank gets assigned a primary GPU based on the list of GPUs visible to it and its rank id
@@ -187,24 +192,6 @@ Legacy implementation assigns GPUs to MPI ranks in a round-robin order.
 It is guaranteed that MPI ranks are distributed among GPUs as evenly as possbile.
 Currently, for medium to large runs, 1 MPI task should be used per GPU per node.
 For very smaller system sizes, use of multiple MPI tasks per GPU might yield improved performance.
-
-Performance portable implementation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Works on any GPUs with OpenMP offload support including NVIDIA, AMD and Intel GPUs.
-Using batched drivers is required.
-
-Legacy implementation
-~~~~~~~~~~~~~~~~~~~~~
-Works on NVIDIA and AMD GPUs. Commonly used functionalities for
-solid-state and molecular systems using B-spline single-particle
-orbitals are supported. Use of Gaussian basis sets, three-body
-Jastrow functions, and many observables are not yet supported. A detailed description of the GPU
-implementation can be found in :cite:`EslerKimCeperleyShulenburger2012`.
-
-Vectorization is achieved over walkers, that is, all walkers are
-propagated in parallel. In each GPU kernel, loops over electrons,
-atomic cores, or orbitals are further vectorized to exploit an
-additional level of parallelism and to allow coalesced memory access.
 
 .. _gpu-performance:
 
@@ -227,16 +214,6 @@ walkers is fixed such as VMC, choosing a walker count the is a multiple of the
 number of streaming multiprocessors can be most efficient. For
 variable population DMC runs, this exact match is not possible.
 
-To achieve better performance, the current GPU implementation uses
-single-precision operations for most of the calculations. Double
-precision is used in matrix inversions and the Coulomb interaction to
-retain high accuracy. The mixed-precision GPU code is as accurate as
-the double-precision CPU code up to a certain system size. Cross
-checking and verification of accuracy are encouraged for systems with
-more than approximately 1,500 electrons. For typical calculations on
-smaller electron counts, the statistical error bars are much larger
-then the error introduced by mixed precision.
-
 Memory considerations
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -251,10 +228,7 @@ B-spline data limits the calculations that can be run on the GPU.
 If the GPU memory is exhausted, first try reducing the number of walkers per GPU.
 Coarsening the grids of the B-splines representation (by decreasing
 the value of the mesh factor in the input file) can also lower the memory
-usage, at the expense (risk) of obtaining inaccurate results. Proceed
-with caution if this option has to be considered.  It is also possible
-to distribute the B-spline coefficients table between the host and GPU
-memory, see option Spline\_Size\_Limit\_MB in
-:ref:`spo-spline`.
+usage, at the expense (risk) of obtaining less accurate results. Proceed
+with caution if this option has to be considered.
 
 .. bibliography:: /bibs/running.bib
