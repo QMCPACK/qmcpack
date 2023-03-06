@@ -476,12 +476,11 @@ def check_positive_label_sets(positive_label_sets):
 
 # extract test name and build flags from args
 try:
-    full_test,qmc_cuda,qmc_complex,qmc_mixed = sys.argv[1:]
-    qmc_cuda    = qmc_cuda=='1'
+    full_test,qmc_complex,qmc_mixed = sys.argv[1:]
     qmc_complex = qmc_complex=='1'
     qmc_mixed   = qmc_mixed=='1'
-    cpu   = not qmc_cuda
-    gpu   = qmc_cuda
+    cpu   = True
+    gpu   = False # was used for QMC_CUDA which has been removed from the codebase.
     aos   = False
     soa   = True
     real  = not qmc_complex
