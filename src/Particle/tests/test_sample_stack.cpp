@@ -28,7 +28,6 @@ TEST_CASE("SampleStack", "[particle]")
   SampleStack samples;
 
   const int total_num = 2; // number of particles
-  samples.setTotalNum(total_num);
 
   // reserve storage
   int nranks = 2;

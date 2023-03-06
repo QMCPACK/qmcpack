@@ -471,14 +471,14 @@ TEST_CASE("Walker control reconfiguration", "[drivers][walker_control]")
   if (plus.size() > 0)
   {
     wr.sendWalkers(W, plus);
-    REQUIRE(W.WalkerList.size() == 1);
+    REQUIRE(W.getActiveWalkers() == 1);
     REQUIRE(W[0]->ID == 100);
   }
 
   if (minus.size() > 0)
   {
     wr.recvWalkers(W, minus);
-    REQUIRE(W.WalkerList.size() == 1);
+    REQUIRE(W.getActiveWalkers() == 1);
     // Use ID and ParentID to check the walker was transmitted
     REQUIRE(W[0]->ID == 1 + c->size());
     REQUIRE(W[0]->ParentID == 100);

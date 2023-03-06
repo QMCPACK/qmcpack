@@ -282,19 +282,18 @@ the path to the source directory.
 
   ::
 
-    QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
-    QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
-                          (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
+    QMC_COMPLEX           ON/OFF(default). Build the complex (general twist/k-point) version.
+    QMC_MIXED_PRECISION   ON/OFF(default). Build the mixed precision (mixing double/float) version
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC and real-space performance portable implementation.
-                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
-    QMC_CUDA2HIP          ON/OFF(default). To be set ON, it requires either QMC_CUDA or ENABLE_CUDA to be ON.
-                          Compile CUDA source code as HIP and use ROCm libraries for AMD GPUs.
+                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to select the actual GPU architecture.
+    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
+                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
+                          Use CMAKE_HIP_ARCHITECTURES, default gfx906, to select the actual GPU architecture.
     ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
 
 - General build options

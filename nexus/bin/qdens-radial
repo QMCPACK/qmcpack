@@ -381,9 +381,11 @@ class QMCDensityRadialProcessor(QDRBase):
                 cds.read_xsf(resample_xsf_data)
                 equiv_atoms = list(cds.info.structure.equivalent_atoms().keys())
                 if opt.app=='pwscf':
-                    cds.change_distance_units('B')
+                    cds.set_attribute('density_units','B') # Quantum Espresso uses (e/Bohr^3) units for charge and spin density
+                    cds.change_density_units('A') # Change to (e/Angstrom^3) units for consistency with QMCPACK case
                 else:
                     cds.volume_normalize()
+                    cds.set_attribute('density_units','A') # xsf format uses Angstrom units which makes the QMCPACK density units (e/Angstrom^3) after volume normalization
                 #end if
 
                 if i==0:
@@ -456,9 +458,11 @@ class QMCDensityRadialProcessor(QDRBase):
         #end if
 
         if opt.app=='pwscf':
-            cd.change_distance_units('B')
+            cd.set_attribute('density_units','B') # Quantum Espresso uses (e/Bohr^3) units for charge and spin density
+            cd.change_density_units('A') # Change to (e/Angstrom^3) units for consistency with QMCPACK case
         else:
             cd.volume_normalize()
+            cd.set_attribute('density_units','A') # xsf format uses Angstrom units which makes the QMCPACK density units (e/Angstrom^3) after volume normalization
         #end if
 
         self.log('\nNorm:',cd.norm())

@@ -32,8 +32,6 @@ Quantum Monte Carlo Methods
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``move``       | text         | pbyp, alle   | pbyp        | Method used to move electrons   |
   +----------------+--------------+--------------+-------------+---------------------------------+
-  | ``gpu``        | text         | yes/no       | dep.        | Use the GPU                     |
-  +----------------+--------------+--------------+-------------+---------------------------------+
   | ``trace``      | text         |              | no          | ???                             |
   +----------------+--------------+--------------+-------------+---------------------------------+
   | ``profiling``  | text         | yes/no       | no          | Activate resume/pause control   |
@@ -56,10 +54,6 @@ Additional information:
    is moved for acceptance or rejection. The other method is the
    all-electron move; namely, all the electrons are moved once for
    testing acceptance or rejection.
-
--  ``gpu``: When the executable is compiled with CUDA, the target
-   computing device can be chosen by this switch. With a regular
-   CPU-only compilation, this option is not effective.
 
 -  ``profiling``: Performance profiling tools by default profile complete application executions.
    This is largely unnecessary if the focus is a QMC section instead of any initialization
@@ -216,8 +210,8 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
@@ -381,15 +375,15 @@ Additional information:
   sufficient number of ``blocks`` to perform statistical analysis.
 
 - ``warmupsteps`` - ``warmupsteps`` are used only for
-  equilibration. Property measurements are not performed during
-  warm-up steps.
+  initial equilibration and do not count against the requested step or block count.
+  Property measurements are not performed during warm-up steps.
 
 - ``steps`` - ``steps`` are the number of energy and other property measurements to perform per block.
 
 - ``substeps``  For each substep, an attempt is made to move each of the electrons once only by either particle-by-particle or an
   all-electron move.  Because the local energy is evaluated only at
   each full step and not each substep, ``substeps`` are computationally cheaper
-  and can be used to de-correlation at a low computational cost.
+  and can be used for decorrelation at a low computational cost.
 
 - ``usedrift`` The VMC is implemented in two algorithms with
   or without drift. In the no-drift algorithm, the move of each
@@ -1430,8 +1424,6 @@ parameters:
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``maxDisplSq``              | real         | all values              | -1          | Maximum particle move                   |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
-  | ``scaleweight``             | string       | yes/other               | yes         | Scale weights (CUDA only)               |
-  +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``checkproperties``         | integer      | :math:`\geq 0`          | 100         | Number of steps between walker updates  |
   +-----------------------------+--------------+-------------------------+-------------+-----------------------------------------+
   | ``fastgrad``                | text         | yes/other               | yes         | Fast gradients                          |
@@ -1464,10 +1456,6 @@ Additional information:
 
 -  ``steps``: This is the number of DMC steps in a block.
 
--  ``warmupsteps``: These are the steps at the beginning of a DMC run in
-   which the instantaneous average energy is used to update the trial
-   energy. During regular steps, E\ :math:`_{ref}` is used.
-
 -  ``timestep``: The ``timestep`` determines the accuracy of the
    imaginary time propagator. Generally, multiple time steps are used to
    extrapolate to the infinite time step limit. A good range of time
@@ -1490,24 +1478,35 @@ Additional information:
 
 - ``debug_checks`` valid values are 'no', 'all', 'checkGL_after_moves'. If the build type is `debug`, the default value is 'all'. Otherwise, the default value is 'no'.
 
--  ``energyUpdateInterval``: The default is to update the trial energy
-   at every step. Otherwise the trial energy is updated every
-   ``energyUpdateInterval`` step.
+-  ``warmupsteps``: These are the steps at the beginning of a DMC run in
+   which the instantaneous population average energy is used to update the trial
+   energy and updates happen at every step. The aim is to rapidly equilibrate the population while avoiding overly large population fluctuations.
+   Unlike VMC, these warmupsteps are included in the requested DMC step count.
 
 .. math::
 
-  E_{\text{trial}}=
-  \textrm{refEnergy}+\textrm{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N)\:,
+  E_\text{trial} = E_\text{pop_avg}+(\ln \texttt{targetwalkers}-\ln N_\text{pop}) / \texttt{timestep}
 
-where :math:`N` is the current population.
+where :math:`E_\text{pop_avg}` is the local energy average over the walker population at the current step
+and :math:`N_\text{pop}` is the current walker population size.
+After the warm-up phase, the trial energy is updated as
+
+.. math::
+
+  E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N_\text{pop})
+
+where :math:`E_\text{ref}` is the :math:`E_\text{pop_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
+
+-  ``energyUpdateInterval``: Post warm-up, the trial energy is updated every
+   ``energyUpdateInterval`` steps. Default value is 1 (every step).
 
 -  ``refEnergy``: The default reference energy is taken from the VMC run
    that precedes the DMC run. This value is updated to the current mean
    whenever branching happens.
 
 -  ``feedback``: This variable is used to determine how strong to react
-   to population fluctuations when doing population control. See the
-   equation in energyUpdateInterval for more details.
+   to population fluctuations when doing population control. Default value is 1. See the
+   equation in ``warmupsteps`` for more details.
 
 -  ``useBareTau``: The same time step is used whether or not a move is
    rejected. The default is to use an effective time step when a move is
@@ -1561,10 +1560,6 @@ where :math:`N` is the current population.
       paper in preparation.
 
       The v1 and v3 algorithms are size-consistent and are important advances over the previous v0 non-size-consistent algorithm. We highly recommend investigating the importance of size-consistency.
-
-
--  ``scaleweight``: This is the scaling weight per Umrigar/Nightingale.
-   CUDA only.
 
 -  ``MaxAge``: Set the weight of a walker to min(currentweight,0.5)
    after a walker has not moved for ``MaxAge`` steps. Needed if

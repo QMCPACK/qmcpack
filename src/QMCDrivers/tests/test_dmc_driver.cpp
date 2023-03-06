@@ -80,8 +80,8 @@ TEST_CASE("DMC", "[drivers][dmc]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -166,8 +166,8 @@ TEST_CASE("SODMC", "[drivers][dmc]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 

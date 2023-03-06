@@ -1057,15 +1057,13 @@ Production quality checklist
 
 .. _qmcfit:
 
-Using the qmc-fit tool for statistical time step extrapolation and curve fitting
---------------------------------------------------------------------------------
+Using the qmc-fit tool for statistical time step extrapolation, trial wavefunction optimization and curve fitting
+-----------------------------------------------------------------------------------------------------------------
 
-The ``qmc-fit`` tool is used to provide statistical estimates of
-curve-fitting parameters based on QMCPACK data. Although ``qmc-fit``
-will eventually support many types of fitted curves (e.g., Morse
-potential binding curves and various equation-of-state fitting curves),
-it is currently limited to estimating fitting parameters related to time
-step extrapolation.
+The ``qmc-fit`` tool is used to provide statistical estimates of curve-fitting parameters based on QMCPACK data. 
+``qmc-fit`` is currently limited to estimating fitting parameters related to time step extrapolation and trial wavefunction
+optimization (optimal U for DFT+U, EXX fractions), it will eventually support many types of fitted curves (e.g., Morse
+potential binding curves and various equation-of-state fitting curves).
 
 The jackknife statistical technique
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1226,6 +1224,63 @@ estimated value of :math:`-3848.28(7)` instead.
 
   Linear (top) and quadratic (bottom) time step fits to DMC data for a 32-atom supercell of MnO obtained with ``qmc-fit``.  Zero time step estimates are indicated by the red data point on the left side of either panel.
 
+Performing trial wavefunction optimization fitting, e.g., to find optimal DFT+U
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this section, we use a 24-atom supercell of monolayer FeCl\ :sub:`2`\  as an example system for wavefunction optimization
+fitting. Using single determinant DFT wavefunctions, a practical method to perform wavefunction optimization is done through
+scanning the Hubbard-U parameter in a DFT+U calculation used to generate the trial wavefunction. Similarly, one can also scan
+different exact exchange ratio parameters in hybrid-DFT calculations. Here, we will show an example of this fitting for the
+Hubbard-U parameter, but the same procedure can be applied to any single-parameter scans of trial wavefunctions. Data for this
+system has been collected in DMC using the following sequence of Hubbard-U values on Fe-d orbitals: :math:`0 1 2 3 4 5` eV. Some
+non-zero U value often minimizes the DMC energy, but optimized U values have limited transferability across different systems.
+Similar to the procedure for performing timestep statistical fitting, the quality of the input statistics must be checked using
+``qmca`` utility to determine the reblocking factor and equilibration periods. Assuming that an equilibration period of initial 50
+steps, ``-e 50``, and a reblocking period of 4, ``-b 6``, is sufficient to remove correlations in the statistical local energies,
+the ``qmc-fit`` tool can be used in the following way to obtain a quadratic fit of the data:
+
+::
+
+  >qmc-fit u -e 50 -b 6 -u "0 1 2 3 4 5" -f quadratic dmc_u_*/dmc.s001.scalar.dat
+  fit function  : quadratic
+  fitted formula: (-1230.1071 +/- 0.0045) + (-0.0683 +/- 0.0040)*t + (0.00883 +/- 0.00077)*t^2
+  root 1 minimum_u     : 3.87 +/- 0.14 eV
+  root 1 minimum_e     : -1230.2391 +/- 0.0026 Ha
+  root 1 curvature     : 0.0177 +/- 0.0015
+
+Here, ``qmc-fit u`` indicates we are performing a Hubbard-U/exact-exchange ratio fit, 
+``-u`` option provides a list of Hubbard-U values :math:`0 1 2 3 4 5` corresponding to the auto-sorted
+dmc scalar files with wildcard ``dmc_u_*/dmc.s001.scalar.dat``. Here, ``qmc-fit`` command is invoked at a 
+directory where folders such as ``dmc_u_0_2x2x1, dmc_u_1_2x2x1, dmc_u_2_2x2x1`` reside. 
+Here, the text output provides the U value (``minimum_u``) and local energies (``minimum_e``) 
+at the minima of the polynomial which falls within the range of Hubbard-U values provided in the command 
+line, e.g. from 0 to 5. Therefore, a U value of :math:`3.8(1)` eV minimizes the DMC energy of the system. 
+The ``curvature`` is printed for informative purposes only, but a curvature with small error bar could 
+indicate a higher quality polynomial fit. Similar to the timestep fit, a plot of the fit will also 
+produced as default where the minima of the polynomial is shown as a red dot as in :numref:`fig13`.
+
+Different fitting functions are supported via the ``-f`` option. 
+Currently supported options include ``quadratic`` (:math:`a+bt+ct^2`), and 
+``cubic`` (:math:`a+bt+ct^2+dt^3`) and ``quartic`` (:math:`a+bt+ct^2+dt^3+et^4`). 
+An example of a cubic fit is given as below:
+
+::
+
+  >qmc-fit u -e 50 -b 6 -u "0 1 2 3 4 5" -f cubic dmc_u_*/dmc.s001.scalar.dat
+
+  fit function  : cubic
+  fitted formula: (-1230.1087 +/- 0.0045) + (-0.0608 +/- 0.0073)*t + (0.0047 +/- 0.0033)*t^2 + (0.00055 +/- 0.00041)*t^3
+  root 1 minimum_u     : 3.85 +/- 0.11 eV
+  root 1 minimum_e     : -1230.2415 +/- 0.0033 Ha
+  root 1 curvature     : 0.0221 +/- 0.0034
+
+.. _fig13:
+.. figure:: /figs/qmcfit_hubbard_quadratic.png
+  :width: 400
+  :align: center
+
+  Quadratic Hubbard-U fits to DMC data for a 24-atom supercell of monolayer FeCl\ :sub:`2`\  obtained with ``qmc-fit``.  DMC local energy minima are indicated by the red data point on the bottom halves of either panel.
+
 .. _qdens:
 
 Using the qdens tool to obtain electron densities
@@ -1352,3 +1407,105 @@ sufficient number of blocks remaining following any reblocking.
 
 When twist averaging, the group tag (e.g. ``g000`` or similar) will be
 replaced with ``avg`` in the names of the outputted files.
+
+.. _qdens-radial:
+
+Using the qdens-radial tool to estimate atomic occupations
+----------------------------------------------------------
+
+Once the ``*Density*.xsf`` files are obtained from ``qdens``, one can use the ``qdens-radial`` tool to calculate the on-site populations.
+Given a set of species and radii (in Angstroms), this tool will generate a radial density – angular average – around the atomic sites up to the specified radius.
+The radial density can be chosen to be non-cumulative or cumulative (integrated).
+
+::
+
+  >qdens-radial
+
+  Usage: qdens-radial [options] xsf_file
+  
+  Options:
+    --version             show program's version number and exit
+    -h, --help            Print help information and exit (default=False).
+    -v, --verbose         Print detailed information (default=False).
+    -r RADII, --radii=RADII
+                          List of cutoff radii (default=None).
+    -s SPECIES, --species=SPECIES
+                          List of species (default=None).
+    -a APP, --app=APP     Source that generated the .xsf file. Options: "pwscf",
+                          "qmcpack" (default=qmcpack).
+    -c, --cumulative      Evaluate cumulative radial density at cutoff radii
+                          (default=False).
+    --vmc=VMC_FILE        Location of VMC to be used for extrapolating mixed-
+                          estimator bias (default=None).
+    --write               Write extrapolated values to qmc-extrap.xsf
+                          (default=False).
+    --vmcerr=VMC_ERR_FILE
+                          Location of VMC+err to be used for extrapolating
+                          mixed-estimator bias and resampling (default=None).
+    --dmcerr=DMC_ERR_FILE
+                          Location of DMC+err to be used for resampling
+                          (default=None).
+    --seed=RANDOM_SEED    Random seed used for re-sampling. (default=None).
+    -n NSAMPLES, --nsamples=NSAMPLES
+                          Number of samples for resampling (default=50).
+    -p, --plot            Show plots interactively (default=False).
+
+
+Usage examples
+~~~~~~~~~~~~~~
+
+Below are example use cases for the H2O molecule using DMC data.
+
+Plot DMC non-cumulative radial density of the O atom:
+::
+  qdens-radial -p -s O -r 1 dmc.s002.Density_q.xsf
+
+Plot DMC cumulative radial density of the O atom:
+::
+  qdens-radial -p -s O -r 1 -c dmc.s002.Density_q.xsf
+
+For the cumulative case, ``qdens-radial`` will also print the cumulative value at the specified radius, i.e., an estimate of the atomic occupation.
+
+Estimate of the DMC atomic occupation:
+::
+  qdens-radial -p -s O -r 1.1 -c dmc.s002.Density_q.xsf
+
+Output:
+::
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574
+
+
+One can also get an extrapolated estimate (mixed-estimator bias) for this quantity by providing a VMC ``.xsf`` file.
+
+Estimate of the extrapolated atomic occupation:
+::
+  qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
+  
+Output:
+::
+  Extrapolating from VMC and DMC densities...
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.576918233167152
+
+Error bars
+~~~~~~~~~~
+
+One can "resample" the density at each grid point to obtain an estimate of the error bar. Recipe:
+
+1. Use error bars from ``*.Density_q+err.xsf`` file and draw samples from a Gaussian
+distribution with a standard deviation that matches the error bar.
+2. Calculate occupations with resampled data and calculate standard deviation
+to obtain the error bar on the occupation.
+3. Make sure the number of samples (``-n``) is converged.
+
+Estimate DMC atomic occupation with error bar:
+::
+  qdens-radial -p -s O -r 1.1 -c -n 20 --dmcerr=dmc.s002.Density_q+err.xsf dmc.s002.Density_q.xsf
+
+
+Output:
+::
+  Resampling to obtain error bar (NOTE: This can be slow)...
+  Will compute 20 samples...
+  ...
+  Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574+/-0.001558553749396279
+

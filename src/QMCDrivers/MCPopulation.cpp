@@ -72,7 +72,7 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
     walkers_[iw]->Properties = elec_particle_set_->Properties;
 
     // initialize coord
-    if (const auto num_existing_walkers = walker_configs.WalkerList.size())
+    if (const auto num_existing_walkers = walker_configs.getActiveWalkers())
       *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
     else
     {

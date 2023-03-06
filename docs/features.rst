@@ -67,8 +67,6 @@ feature that you are interested in, check the remainder of this manual or ask if
 
 -  OpenMP-offload-based performance portable GPU implementation, see :ref:`gpufeatures`.
 
--  Legacy GPU (NVIDIA CUDA) implementation (limited functionality - see :ref:`gpufeatures`).
-
 -  Analysis tools for minimal environments (Perl only) through to
    Python-based environments with graphs produced via matplotlib (included with Nexus).
 
@@ -117,17 +115,14 @@ description of the available features, see  :ref:`afqmc`.
 Supported GPU features for real space QMC
 -----------------------------------------
 
-There are two GPU implementations in the code base.
+The **Performance portable implementation** implements real space QMC methods
+using OpenMP offload programming model and accelerated linear algebra libraries.
+Runs with good performance on NVIDIA and AMD GPUs, and the Intel GPU support is under development.
+Unlike the "legacy" implementation, it is feature complete
+and users may mix and match CPU-only and GPU-accelerated features.
+Using batched QMC drivers is required.
 
-  - **Performance portable implementation** (recommended). Implements real space QMC methods
-    using OpenMP offload programming model and accelerated linear algebra libraries.
-    Runs with good performance on NVIDIA and AMD GPUs, and the Intel GPU support is under development.
-    Unlike the "legacy" implementation, it is feature complete
-    and users may mix and match CPU-only and GPU-accelerated features.
-
-  - **Legacy implementation**. Fully based on NVIDIA CUDA. Achieves very good speedup on NVIDIA GPUs.
-    However, only a very limited subset of features is available.
-
+The **Legacy implementation** fully based on NVIDIA CUDA has been removed.
 
 QMCPACK supports running on multi-GPU node architectures via MPI.
 
@@ -150,7 +145,7 @@ Supported GPU features:
   +--------------------------------+---------------------------+------------------+
   | LCAO orbitals                  | on host now, being ported | not supported    |
   +--------------------------------+---------------------------+------------------+
-  | One-body Jastrow factors       | on host                   | accelerated      |
+  | One-body Jastrow factors       | accelerated               | accelerated      |
   +--------------------------------+---------------------------+------------------+
   | Two-body Jastrow factors       | accelerated               | accelerated      |
   +--------------------------------+---------------------------+------------------+
@@ -166,41 +161,5 @@ Supported GPU features:
   +--------------------------------+---------------------------+------------------+
   | Model periodic Coulomb (MPC)   | on host                   | accelerated      |
   +--------------------------------+---------------------------+------------------+
-
-Additional information:
-
-- Performance portable implementation requires using batched QMC drivers.
-
-- Legacy CUDA implementation only supports T-move v0 or no T-move.
-
-- In most features, the algorithmic and implementation details differ a lot between these two GPU implementations.
-
-Sharing of spline data across multiple GPUs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sharing of GPU spline data enables distribution of the data across
-multiple GPUs on a given computational node. For example, on a
-two-GPU-per-node system, each GPU would have half of the orbitals. This
-allows use of larger overall spline tables than would fit in the memory
-of individual GPUs and potentially up to the total GPU memory on a node.
-To obtain high performance, large electron counts or a high-performing
-CPU-GPU interconnect is required.
-This feature is only supported in the legacy implementation.
-
-To use this feature, the following needs to be done:
-
--  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on OLCF
-   Summit/SummitDev use “-alloc_flags gpumps" for bsub). If MPI is not
-   detected, sharing will be disabled.
-
--  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-   visible CUDA devices (e.g., on OLCF Summit/SummitDev create a
-   resource set containing all GPUs with the respective number of ranks
-   with “jsrun –task-per-rs Ngpus -g Ngpus").
-
--  In the determinant set definition of the <wavefunction> section, the
-   “gpusharing" parameter needs to be set (i.e., <determinantset
-   gpusharing=“yes">). See
-   :ref:`spo-spline`.
 
 .. bibliography:: /bibs/features.bib
