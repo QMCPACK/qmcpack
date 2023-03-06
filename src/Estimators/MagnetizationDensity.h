@@ -35,8 +35,10 @@ public:
   using Grad          = TinyVector<Value, OHMMS_DIM>;
   using Lattice       = PtclOnLatticeTraits::ParticleLayout;
   using Position      = QMCTraits::PosType;
+  using Integrator    = MagnetizationDensityInput::Integrator;
 
   MagnetizationDensity(DataLocality dl);
+  MagnetizationDensity(MagnetizationDensityInput&& min, const Lattice& lattice);
 
   void startBlock(int steps) override;
 
@@ -48,6 +50,10 @@ public:
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
 private:
   MagnetizationDensityInput input_;
+  Integrator integrator_;
+  Lattice lattice_;
+  Position rcorner_;
+  Position center_;
 };
 } // namespace qmcplusplus
 #endif  /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_H */

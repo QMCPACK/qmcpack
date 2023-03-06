@@ -150,6 +150,8 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   TrialWaveFunction psi;
   psi.addComponent(std::move(dd));
   psi.evaluateLog(elec_); //make sure all intermediates are calculated and initialized.
+   
+  MagnetizationDensity magdensity(std::move(maginput),lattice);
   /*
   MagDensityEstimator magdensity(elec_, psi);
 
