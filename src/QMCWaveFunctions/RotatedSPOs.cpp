@@ -792,7 +792,7 @@ void RotatedSPOs::evaluateDerivatives(ParticleSet& P,
   for (int i = 0; i < m_act_rot_inds.size(); i++)
   {
     int kk = myVars.where(i);
-    if (kk > 0) {
+    if (kk >= 0) {
       const int p = m_act_rot_inds.at(i).first;
       const int q = m_act_rot_inds.at(i).second;
       dlogpsi[kk] += T(p, q);
