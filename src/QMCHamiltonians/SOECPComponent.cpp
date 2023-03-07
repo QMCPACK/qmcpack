@@ -15,6 +15,7 @@
 #include "SOECPComponent.h"
 #include "Numerics/Ylm.h"
 #include "CPU/BLAS.hpp"
+#include "NLPPJob.h"
 
 namespace qmcplusplus
 {
@@ -141,7 +142,6 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      RealType r,
                                                      const PosType& dr)
 {
-
   for (int ip = 0; ip < nchannel_; ip++)
     vrad_[ip] = sopp_m_[ip]->splint(r);
 
@@ -190,13 +190,13 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   return std::real(pairpot);
 }
 
-  void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
-                                      const RefVectorWithLeader<ParticleSet>& p_list,
-                                      const RefVectorWithLeader<TrialWaveFunction>& psi_list,
-                                      const RefVectorWithLeader<const NLPPJob<RealType>>& joblist,
-                                      std::vector<RealType>& pairpots,
-                                      ResourceCollection& collection)
-  {}
+void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    const RefVectorWithLeader<TrialWaveFunction>& psi_list,
+                                    const RefVectorWithLeader<const NLPPJob<RealType>>& joblist,
+                                    std::vector<RealType>& pairpots,
+                                    ResourceCollection& collection)
+{}
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
                                                                      int iat,

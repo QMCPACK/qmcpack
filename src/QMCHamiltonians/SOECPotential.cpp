@@ -13,9 +13,20 @@
 #include "SOECPotential.h"
 #include "Utilities/IteratorUtility.h"
 #include "NLPPJob.h"
+#include <ResourceCollection.h>
 
 namespace qmcplusplus
 {
+
+struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
+{
+  SOECPotentialMultiWalkerResource() : Resource("SOECPotential") {}
+
+  Resource* makeClone() const override;
+
+  ResourceCollection collection{"SOPPcollection"};
+};
+
 /** constructor
  *\param ionic positions
  *\param els electronic poitions
@@ -34,6 +45,8 @@ SOECPotential::SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunct
   for (size_t ig = 0; ig < els.groups(); ig++)
     sopp_jobs_[ig].reserve(2 * els.groupsize(ig));
 }
+
+SOECPotential::~SOECPotential() = default;
 
 void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
@@ -190,7 +203,7 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
       }
       //mw_evaluate
 
-      for (size_t j = 0; j < soecp_potential_list.size(); j++) 
+      for (size_t j = 0; j < soecp_potential_list.size(); j++)
         soecp_potential_list[j].get().value_ += pairpots[j];
     }
   }
@@ -211,6 +224,40 @@ void SOECPotential::addComponent(int groupID, std::unique_ptr<SOECPComponent>&& 
     if (IonConfig_.GroupID[iat] == groupID)
       PP_[iat] = ppot.get();
   PPset_[groupID] = std::move(ppot);
+}
+
+void SOECPotential::createResource(ResourceCollection& collection) const
+{
+  auto new_res = std::make_unique<SOECPotentialMultiWalkerResource>();
+  for (int ig = 0; ig < PPset_.size(); ig++)
+    if (PPset_[ig]->getVP())
+    {
+      PPset_[ig]->getVP()->createResource(new_res->collection);
+      break;
+    }
+  auto resource_index = collection.addResource(std::move(new_res));
+}
+
+void SOECPotential::acquireResource(ResourceCollection& collection,
+                                    const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<SOECPotential>();
+  auto res_ptr   = dynamic_cast<SOECPotentialMultiWalkerResource*>(collection.lendResource().release());
+  if (!res_ptr)
+    throw std::runtime_error("SOECPotential::acquireResource dynamic_cast failed");
+  O_leader.mw_res_.reset(res_ptr);
+}
+
+void SOECPotential::releaseResource(ResourceCollection& collection,
+                                    const RefVectorWithLeader<OperatorBase>& o_list) const
+{
+  auto& O_leader = o_list.getCastedLeader<SOECPotential>();
+  collection.takebackResource(std::move(O_leader.mw_res_));
+}
+
+Resource* SOECPotential::SOECPotentialMultiWalkerResource::makeClone() const
+{
+  return new SOECPotentialMultiWalkerResource(*this);
 }
 
 } // namespace qmcplusplus

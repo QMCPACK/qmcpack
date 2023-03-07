@@ -22,8 +22,11 @@ struct NLPPJob;
 
 class SOECPotential : public OperatorBase
 {
+  struct SOECPotentialMultiWalkerResource;
+
 public:
   SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
+  ~SOECPotential() override;
 
   bool dependsOnWaveFunction() const override { return true; }
   std::string getClassName() const override { return "SOECPotential"; }
@@ -54,6 +57,15 @@ public:
 
   void setRandomGenerator(RandomGenerator* rng) override { myRNG_ = rng; }
 
+  //initialize shared resource and hand to collection
+  void createResource(ResourceCollection& collection) const override;
+
+  //acquire a shared resource
+  void acquireResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
+  //return a shared resource to a collection
+  void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
+
 protected:
   RandomGenerator* myRNG_;
   std::vector<SOECPComponent*> PP_;
@@ -74,6 +86,8 @@ private:
   NeighborLists IonNeighborElecs_;
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
+  //multi walker resource
+  std::unique_ptr<SOECPotentialMultiWalkerResource> mw_res_;
 };
 } // namespace qmcplusplus
 
