@@ -1191,13 +1191,10 @@ class Density(ObservableWithComponents):
 
     def change_distance_units(self,units):
         units_old = self.get_attribute('distance_units')
-        rscale    = 1.0/convert(1.0,units_old,units)
-        dscale    = 1./rscale**3
+        rscale    = convert(1.0,units_old,units)
         grid      = self.get_attribute('grid')
         grid.points *= rscale
-        for c in self.components():
-            c.values *= dscale
-        #end for
+        self.set_attribute('distance_units',units) # Update the object info to reflect the conversion
     #end def change_distance_units
 
 
@@ -1205,8 +1202,9 @@ class Density(ObservableWithComponents):
         units_old = self.get_attribute('density_units')
         dscale    = 1.0/convert(1.0,units_old,units)
         for c in self.components():
-            c.values *= dscale
+            c.values *= dscale**3
         #end for
+        self.set_attribute('density_units',units) # Update the object info to reflect the conversion
     #end def change_density_units
 
 
@@ -1339,6 +1337,7 @@ class Density(ObservableWithComponents):
         species = list(rdf.keys())
 
         dist_units = self.get_attribute('distance_units',None)
+        density_units = self.get_attribute('density_units',None)
 
         for cname in self.component_names:
             if cname in rdfs:
@@ -1353,10 +1352,14 @@ class Density(ObservableWithComponents):
                     #end if
                     plt.xlabel(xlabel)
                     if not cumulative:
-                        plt.ylabel('Radial density')
+                        ylabel = 'Radial density'
                     else:
-                        plt.ylabel('Cumulative radial density')
+                        ylabel = 'Cumulative radial density'
                     #end if
+                    if density_units is not None:
+                        ylabel += ' (e/{}^3)'.format(density_units)
+                    #end if
+                    plt.ylabel(ylabel)
                     plt.title('{} {} density'.format(s,cname))
                 #end for
             #end if

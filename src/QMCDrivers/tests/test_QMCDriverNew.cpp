@@ -44,12 +44,11 @@ TEST_CASE("QMCDriverNew tiny case", "[drivers]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
 
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
                                     MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
-                                    samples, comm);
+                                    comm);
 
   // setStatus must be called before process
   std::string root_name{"Test"};
@@ -97,12 +96,11 @@ TEST_CASE("QMCDriverNew more crowds than threads", "[drivers]")
 
   ProjectData test_project("", ProjectData::DriverVersion::BATCH);
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
-  SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(test_project, std::move(qmcdriver_copy), walker_confs,
                                       MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
-                                      samples, comm);
+                                      comm);
   QMCDriverNewTestWrapper::TestNumCrowdsVsNumThreads<ParallelExecutor<>> testNumCrowds;
   testNumCrowds(9);
   testNumCrowds(8);
@@ -136,12 +134,11 @@ TEST_CASE("QMCDriverNew walker counts", "[drivers]")
 
   ProjectData test_project("", ProjectData::DriverVersion::BATCH);
   QMCDriverInput qmcdriver_copy(qmcdriver_input);
-  SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmc_batched(test_project, std::move(qmcdriver_copy), walker_confs,
                                       MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                                    wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
-                                      samples, comm);
+                                      comm);
 
   qmc_batched.testAdjustGlobalWalkerCount();
 }
@@ -165,12 +162,11 @@ TEST_CASE("QMCDriverNew test driver operations", "[drivers]")
   auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
 
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  SampleStack samples;
   WalkerConfigurations walker_confs;
   QMCDriverNewTestWrapper qmcdriver(test_project, std::move(qmcdriver_input), walker_confs,
                                     MCPopulation(comm->size(), comm->rank(), particle_pool.getParticleSet("e"),
                                                  wavefunction_pool.getPrimary(), hamiltonian_pool.getPrimary()),
-                                    samples, comm);
+                                    comm);
 
 
   auto tau       = 1.0;

@@ -192,9 +192,9 @@ function(
       APPEND
       PROPERTY LABELS "QMCPACK")
 
-    if(QMC_CUDA
-       OR ENABLE_CUDA
+    if(ENABLE_CUDA
        OR ENABLE_ROCM
+       OR ENABLE_SYCL
        OR ENABLE_OFFLOAD)
       set_tests_properties(${TESTNAME} PROPERTIES RESOURCE_LOCK exclusively_owned_gpus)
     endif()

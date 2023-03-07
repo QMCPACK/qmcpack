@@ -134,6 +134,32 @@ The .config.h5 file
 
 This file contains stored walker configurations.
 
+* GROUP "root"
+  * GROUP "state_0"
+    * DATASET "block"
+      * int
+      * SCALAR
+
+    * DATASET "number_of_walkers"
+      * size_t
+      * SCALAR
+
+    * DATASET "walker_partition"
+      * int
+      * ARRAY ( offsets )
+
+    * DATASET "walker_weights"
+      * double
+      * ARRAY ( weights )
+
+    * DATASET "walkers"
+      * double
+      * ARRAY ( configurations )
+
+  * DATASET "version"
+    * int
+    * ARRAY ( major version number, minor version number )
+
 The .random.h5 file
 ~~~~~~~~~~~~~~~~~~~
 

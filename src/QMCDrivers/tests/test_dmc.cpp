@@ -76,8 +76,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   auto orb_uptr = std::make_unique<ConstantOrbital>();
   auto orb      = orb_uptr.get();
   psi.addComponent(std::move(orb_uptr));
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -168,8 +168,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<LinearOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 

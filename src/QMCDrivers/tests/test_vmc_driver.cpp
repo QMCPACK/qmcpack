@@ -73,8 +73,8 @@ TEST_CASE("VMC", "[drivers][vmc]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -155,8 +155,8 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -201,10 +201,10 @@ TEST_CASE("SOVMC", "[drivers][vmc]")
   CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 
   //Now we're going to test that the step updated the walker variables.
-  CHECK(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
-  CHECK(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
-  CHECK(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
-  CHECK(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+  CHECK(elec[0]->R[0][0] == Approx(elec.R[0][0]));
+  CHECK(elec[0]->R[0][1] == Approx(elec.R[0][1]));
+  CHECK(elec[0]->R[0][2] == Approx(elec.R[0][2]));
+  CHECK(elec[0]->spins[0] == Approx(elec.spins[0]));
 }
 
 TEST_CASE("SOVMC-alle", "[drivers][vmc]")
@@ -242,8 +242,8 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
 
   TrialWaveFunction psi;
   psi.addComponent(std::make_unique<ConstantOrbital>());
-  psi.registerData(elec, elec.WalkerList[0]->DataSet);
-  elec.WalkerList[0]->DataSet.allocate();
+  psi.registerData(elec, elec[0]->DataSet);
+  elec[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -289,9 +289,9 @@ TEST_CASE("SOVMC-alle", "[drivers][vmc]")
   CHECK(elec.spins[0] == Approx(-0.74465948215809097));
 
   //Now we're going to test that the step updated the walker variables.
-  CHECK(elec.WalkerList[0]->R[0][0] == Approx(elec.R[0][0]));
-  CHECK(elec.WalkerList[0]->R[0][1] == Approx(elec.R[0][1]));
-  CHECK(elec.WalkerList[0]->R[0][2] == Approx(elec.R[0][2]));
-  CHECK(elec.WalkerList[0]->spins[0] == Approx(elec.spins[0]));
+  CHECK(elec[0]->R[0][0] == Approx(elec.R[0][0]));
+  CHECK(elec[0]->R[0][1] == Approx(elec.R[0][1]));
+  CHECK(elec[0]->R[0][2] == Approx(elec.R[0][2]));
+  CHECK(elec[0]->spins[0] == Approx(elec.spins[0]));
 }
 } // namespace qmcplusplus

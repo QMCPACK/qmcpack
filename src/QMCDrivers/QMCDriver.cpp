@@ -268,7 +268,6 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
     myComm->allreduce(nw);
     for (int ip = 0; ip < np; ++ip)
       nwoff[ip + 1] = nwoff[ip] + nw[ip];
-    W.setGlobalNumWalkers(nwoff[np]);
     W.setWalkerOffsets(nwoff);
   }
 }
@@ -373,7 +372,6 @@ void QMCDriver::setWalkerOffsets()
   myComm->allreduce(nw);
   for (int ip = 0; ip < myComm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
   long id = nwoff[myComm->rank()];
   for (int iw = 0; iw < nw[myComm->rank()]; ++iw, ++id)
