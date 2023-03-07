@@ -201,7 +201,8 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
           batch_list.push_back(job);
         }
       }
-      //mw_evaluate
+
+      SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots, O_leader.mw_res_->collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
         soecp_potential_list[j].get().value_ += pairpots[j];
