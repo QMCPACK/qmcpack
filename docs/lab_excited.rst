@@ -67,7 +67,7 @@ Outlines of these experiments are shown in :numref:`fig22`, reproduced from :cit
 
   Direct and inverse photoemission experiments involve charged excitations, whereas optical absorption experiments involve excitations that are just enough to be excited to the conduction band. 
 
-Following :cite:`Onida2002a` the explanation in the previous paragraph and :numref:`fig22`, the *quasiparticle* band gap of a material can be defined as:
+Following the explanation in the previous paragraph and :numref:`fig22`, the *quasiparticle* band gap of a material can be defined as:
 
 .. math::
   :label: eq76
