@@ -196,7 +196,66 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
                                     const RefVector<const NLPPJob<RealType>>& joblist,
                                     std::vector<RealType>& pairpots,
                                     ResourceCollection& collection)
-{}
+{
+  auto& soecp_component_leader = soecp_component_list.getLeader();
+  if (soecp_component_leader.VP_)
+  {
+    // Compute ratios with VP
+    RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.VP_);
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.VP_);
+    RefVector<const std::vector<PosType>> deltaV_list;
+    RefVector<const std::vector<RealType>> deltaS_list;
+    RefVector<std::vector<ValueType>> psiratios_list;
+    vp_list.reserve(soecp_component_list.size());
+    const_vp_list.reserve(soecp_component_list.size());
+    deltaV_list.reserve(soecp_component_list.size());
+    deltaS_list.reserve(soecp_component_list.size());
+    psiratios_list.reserve(soecp_component_list.size());
+
+    for (size_t i = 0; i < soecp_component_list.size(); i++)
+    {
+      SOECPComponent& component(soecp_component_list[i]);
+      const NLPPJob<RealType>& job = joblist[i];
+      const RealType sold          = p_list[i].spins[job.electron_id];
+
+      component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
+
+      vp_list.push_back(*component.VP_);
+      const_vp_list.push_back(*component.VP_);
+      deltaV_list.push_back(component.deltaV_);
+      deltaS_list.push_back(component.deltaS_);
+      psiratios_list.push_back(component.psiratio_);
+    }
+
+    ResourceCollectionTeamLock<VirtualParticleSet> vp_res_lock(collection, vp_list);
+
+    VirtualParticleSet::mw_makeMovesWithSpin(vp_list, p_list, deltaV_list, deltaS_list, joblist, true);
+
+    TrialWaveFunction::mw_evaluateRatios(psi_list, const_vp_list, psiratios_list);
+  }
+  else
+  {
+    // Compute ratios without VP. Slow
+    for (size_t i = 0; i < p_list.size(); i++)
+    {
+      SOECPComponent& component(soecp_component_list[i]);
+      ParticleSet& W(p_list[i]);
+      TrialWaveFunction& psi(psi_list[i]);
+      const NLPPJob<RealType>& job = joblist[i];
+
+      const RealType sold = W.spins[job.electron_id];
+      component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
+
+      for (int j = 0; j < component.getNknot(); j++)
+      {
+        W.makeMoveWithSpin(job.electron_id, component.deltaV_[j], component.deltaS_[j]);
+        component.psiratio_[j] = psi.calcRatio(W, job.electron_id);
+        W.rejectMove(job.electron_id);
+        psi.resetPhaseDiff();
+      }
+    }
+  }
+}
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
                                                                      int iat,

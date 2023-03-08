@@ -16,6 +16,7 @@
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCHamiltonians/RandomRotationMatrix.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include <ResourceCollection.h>
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
