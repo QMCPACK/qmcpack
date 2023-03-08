@@ -260,6 +260,14 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
       }
     }
   }
+
+  for (size_t i = 0; i < p_list.size(); i++)
+  {
+    SOECPComponent& component(soecp_component_list[i]);
+    const NLPPJob<RealType>& job = joblist[i];
+    const RealType sold          = p_list[i].spins[job.electron_id];
+    pairpots[i]                  = component.calculateProjector(job.ion_elec_dist, job.ion_elec_displ, sold);
+  }
 }
 
 SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
