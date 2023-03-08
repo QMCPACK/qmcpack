@@ -20,6 +20,11 @@ namespace qmcplusplus
 template<typename T>
 struct NLPPJob;
 
+namespace testing
+{
+class TestSOECPotential;
+}
+
 class SOECPotential : public OperatorBase
 {
   struct SOECPotentialMultiWalkerResource;
@@ -33,6 +38,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P) override;
 
   Return_t evaluate(ParticleSet& P) override;
+  Return_t evaluateDeterministic(ParticleSet& P) override;
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
                                        const opt_variables_type& optvars,
@@ -72,6 +78,10 @@ protected:
   std::vector<std::unique_ptr<SOECPComponent>> PPset_;
   ParticleSet& IonConfig_;
   TrialWaveFunction& Psi_;
+  static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              bool keep_grid = false);
 
 private:
   ///number of ions
@@ -88,7 +98,13 @@ private:
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
   std::unique_ptr<SOECPotentialMultiWalkerResource> mw_res_;
+
+  void evaluateImpl(ParticleSet& elec, bool keep_grid = false);
+
+  //for testing
+  friend class testing::TestSOECPotential;
 };
+
 } // namespace qmcplusplus
 
 #endif

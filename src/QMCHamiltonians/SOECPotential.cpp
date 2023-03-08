@@ -52,10 +52,23 @@ void SOECPotential::resetTargetParticleSet(ParticleSet& P) {}
 
 SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
 {
+  evaluateImpl(P, false);
+  return value_;
+}
+
+SOECPotential::Return_t SOECPotential::evaluateDeterministic(ParticleSet& P)
+{
+  evaluateImpl(P, true);
+  return value_;
+}
+
+void SOECPotential::evaluateImpl(ParticleSet& P, bool keep_grid)
+{
   value_ = 0.0;
-  for (int ipp = 0; ipp < PPset_.size(); ipp++)
-    if (PPset_[ipp])
-      PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG_));
+  if (!keep_grid)
+    for (int ipp = 0; ipp < PPset_.size(); ipp++)
+      if (PPset_[ipp])
+        PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*myRNG_));
 
   const auto& myTable = P.getDistTableAB(myTableIndex_);
   for (int iat = 0; iat < NumIons_; iat++)
@@ -77,7 +90,6 @@ SOECPotential::Return_t SOECPotential::evaluate(ParticleSet& P)
         IonNeighborElecs_.getNeighborList(iat).push_back(jel);
       }
   }
-  return value_;
 }
 
 SOECPotential::Return_t SOECPotential::evaluateValueAndDerivatives(ParticleSet& P,
@@ -107,6 +119,14 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                 const RefVectorWithLeader<ParticleSet>& p_list) const
 {
+  mw_evaluateImpl(o_list, wf_list, p_list, false);
+}
+
+void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
+                                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                    const RefVectorWithLeader<ParticleSet>& p_list,
+                                    bool keep_grid)
+{
   auto& O_leader           = o_list.getCastedLeader<SOECPotential>();
   ParticleSet& pset_leader = p_list.getLeader();
   const size_t nw          = o_list.size();
@@ -116,9 +136,10 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
     auto& O = o_list.getCastedElement<SOECPotential>(iw);
     const ParticleSet& P(p_list[iw]);
 
-    for (size_t ipp = 0; ipp < O.PPset_.size(); ipp++)
-      if (O.PPset_[ipp])
-        O.PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*O.myRNG_));
+    if (!keep_grid)
+      for (size_t ipp = 0; ipp < O.PPset_.size(); ipp++)
+        if (O.PPset_[ipp])
+          O.PPset_[ipp]->rotateQuadratureGrid(generateRandomRotationMatrix(*O.myRNG_));
 
     //loop over all the ions
     const auto& myTable = P.getDistTableAB(O.myTableIndex_);
@@ -202,7 +223,8 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
         }
       }
 
-      SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots, O_leader.mw_res_->collection);
+      SOECPComponent::mw_evaluateOne(soecp_component_list, pset_list, psi_list, batch_list, pairpots,
+                                     O_leader.mw_res_->collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
         soecp_potential_list[j].get().value_ += pairpots[j];

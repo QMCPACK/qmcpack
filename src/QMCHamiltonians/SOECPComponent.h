@@ -24,6 +24,11 @@
 
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class TestSOECPotential;
+}
 /** class SOECPComponent
  **  brief Computes the nonlocal spin-orbit interaction \f$\Delta V_SO(r) |ljm_j><ljm_j|\f$.
  **  details This computes the nonlocal spin-orbit interaction between a single ion species and 
@@ -145,6 +150,8 @@ public:
 
   friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
+
+  friend class testing::TestSOECPotential;
 };
 
 } // namespace qmcplusplus
