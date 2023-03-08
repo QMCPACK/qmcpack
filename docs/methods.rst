@@ -1765,9 +1765,9 @@ Batched ``dmc`` driver (experimental)
 
 .. math::
 
-  E_\text{trial} = E_\text{pop_avg}+(\ln \texttt{targetwalkers}-\ln N_\text{pop}) / \texttt{timestep}
+  E_\text{trial} = E_\text{pop\_avg}+(\ln \texttt{targetwalkers}-\ln N_\text{pop}) / \texttt{timestep}
 
-where :math:`E_\text{pop_avg}` is the local energy average over the walker population at the current step
+where :math:`E_\text{pop\_avg}` is the local energy average over the walker population at the current step
 and :math:`N_\text{pop}` is the current walker population size.
 After the warm-up phase, the trial energy is updated as
 
@@ -1775,7 +1775,7 @@ After the warm-up phase, the trial energy is updated as
 
   E_\text{trial} = E_\text{ref}+\texttt{feedback}\cdot(\ln\texttt{targetWalkers}-\ln N_\text{pop})
 
-where :math:`E_\text{ref}` is the :math:`E_\text{pop_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
+where :math:`E_\text{ref}` is the :math:`E_\text{pop\_avg}` average over all the post warm-up steps up to the current step. The update frequency is controlled by ``energyUpdateInterval``.
 
 - ``energyUpdateInterval``: Post warm-up, the trial energy is updated every
   ``energyUpdateInterval`` steps. Default value is 1 (every step).
@@ -1789,9 +1789,9 @@ where :math:`E_\text{ref}` is the :math:`E_\text{pop_avg}` average over all the 
   equation in ``warmupsteps`` for more details.
 
 - ``refenergy_update_scheme``: choose a scheme for updating :math:`E_\text{ref}` used in calculating :math:`E_\text{trial}`.
-  'legacy' uses unweighted average of :math:`E_\text{pop_avg}` of all the steps collected post warm-up.
-  'limited_history' uses weighted average of :math:`E_\text{pop_avg}` of the latest at maximum
-  min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'legacy'.
+  'unlimited_history' uses unweighted average of :math:`E_\text{pop\_avg}` of all the steps collected post warm-up.
+  'limited_history' uses weighted average of :math:`E_\text{pop\_avg}` of the latest at maximum
+  min(1, int(1.0 / (feedback * tau))) steps collected post warm-up. Default 'unlimited_history'.
 
 .. code-block::
   :caption: The following is an example of a minimal DMC section using the batched ``dmc`` driver
