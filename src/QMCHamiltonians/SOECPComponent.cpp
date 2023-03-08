@@ -162,6 +162,11 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
       Psi.resetPhaseDiff();
     }
 
+  return calculateProjector(r, dr, sold);
+}
+
+SOECPComponent::RealType SOECPComponent::calculateProjector(RealType r, const PosType& dr, RealType sold)
+{
   ComplexType pairpot;
   for (int iq = 0; iq < total_knots_; iq++)
   {

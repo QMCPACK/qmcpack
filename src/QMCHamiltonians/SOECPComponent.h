@@ -109,6 +109,9 @@ public:
    */
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, int iel, RealType r, const PosType& dr);
 
+  RealType calculateProjector(RealType r, const PosType& dr, RealType sold);
+
+
   static void mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& soecp_component_list,
                              const RefVectorWithLeader<ParticleSet>& p_list,
                              const RefVectorWithLeader<TrialWaveFunction>& psi_list,
