@@ -39,6 +39,17 @@ public:
   {
     return so_ecp.PPset_[0]->rrotsgrid_m_ != so_ecp.PPset_[0]->sgridxyz_m_;
   }
+  static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, 
+                     const RefVectorWithLeader<ParticleSet>& p_list)
+  {
+    for (size_t iw = 0; iw < o_list.size(); iw++)
+    {
+      auto& sopp = o_list.getCastedElement<SOECPotential>(iw);
+      auto& pset = p_list[iw];
+      for (auto& uptr_comp : sopp.PPset_)
+        uptr_comp.get()->initVirtualParticle(pset);
+    }
+  }
   static void mw_evaluateImpl(SOECPotential& so_ecp,
                               const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& twf_list,
@@ -51,7 +62,7 @@ public:
 };
 } // namespace testing
 
-TEST_CASE("SOECPotential", "[hamiltonian]")
+void doSOECPotentialTest(bool use_VPs)
 {
   using Real         = QMCTraits::RealType;
   using FullPrecReal = QMCTraits::FullPrecRealType;
@@ -184,6 +195,8 @@ TEST_CASE("SOECPotential", "[hamiltonian]")
 
   RefVector<OperatorBase> so_ecps{so_ecp, so_ecp2};
   RefVectorWithLeader<OperatorBase> o_list(so_ecp, so_ecps);
+  if (use_VPs)
+    testing::TestSOECPotential::addVPs(o_list, p_list);
   ResourceCollection so_ecp_res("test_so_ecp_res");
   so_ecp.createResource(so_ecp_res);
   ResourceCollectionTeamLock<OperatorBase> so_ecp_lock(so_ecp_res, o_list);
@@ -237,7 +250,16 @@ TEST_CASE("SOECPotential", "[hamiltonian]")
   CHECK(std::accumulate(local_pots2[1], local_pots2[1] + local_pots2.cols(), 0.0) == Approx(value));
 
   //also check whether or not reference value from single_walker API is actually correct
+  //this value comes directly from the reference code soecp_eval_reference.cpp
   CHECK(value == Approx(-3.530511241));
+}
+
+TEST_CASE("SOECPotential", "[hamiltonian]")
+{
+  //do test using VPs. This uses mw_ APIs for TWF in the mw_ SOECP APIs
+  doSOECPotentialTest(true);
+  //do test without VPs. This uses legacy APIs for TWF in the mw_ SOECP APIs
+  doSOECPotentialTest(false);
 }
 
 } // namespace qmcplusplus
