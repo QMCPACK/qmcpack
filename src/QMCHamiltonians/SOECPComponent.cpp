@@ -20,32 +20,32 @@
 namespace qmcplusplus
 {
 SOECPComponent::SOECPComponent()
-    : lmax_(0), nchannel_(0), nknot_(0), sknot_(0), total_knots_(0), Rmax_(-1), VP_(nullptr)
+    : lmax_(0), nchannel_(0), nknot_(0), sknot_(0), total_knots_(0), rmax_(-1), vp_(nullptr)
 {}
 
 SOECPComponent::~SOECPComponent()
 {
   for (int i = 0; i < sopp_m_.size(); i++)
     delete sopp_m_[i];
-  if (VP_)
-    delete VP_;
+  if (vp_)
+    delete vp_;
 }
 
 void SOECPComponent::print(std::ostream& os) {}
 
 void SOECPComponent::initVirtualParticle(const ParticleSet& qp)
 {
-  assert(VP_ == nullptr);
+  assert(vp_ == nullptr);
   outputManager.pause();
-  VP_ = new VirtualParticleSet(qp, total_knots_);
+  vp_ = new VirtualParticleSet(qp, total_knots_);
   outputManager.resume();
 }
 
 void SOECPComponent::deleteVirtualParticle()
 {
-  if (VP_)
-    delete VP_;
-  VP_ = nullptr;
+  if (vp_)
+    delete vp_;
+  vp_ = nullptr;
 }
 
 void SOECPComponent::add(int l, RadialPotentialType* pp)
@@ -59,8 +59,8 @@ SOECPComponent* SOECPComponent::makeClone(const ParticleSet& qp)
   SOECPComponent* myclone = new SOECPComponent(*this);
   for (int i = 0; i < sopp_m_.size(); i++)
     myclone->sopp_m_[i] = sopp_m_[i]->makeClone();
-  if (VP_)
-    myclone->VP_ = new VirtualParticleSet(qp, total_knots_);
+  if (vp_)
+    myclone->vp_ = new VirtualParticleSet(qp, total_knots_);
   return myclone;
 }
 
@@ -145,10 +145,10 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
   RealType sold = W.spins[iel];
   buildTotalQuadrature(r, dr, sold);
 
-  if (VP_)
+  if (vp_)
   {
-    VP_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
-    Psi.evaluateRatios(*VP_, psiratio_);
+    vp_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
+    Psi.evaluateRatios(*vp_, psiratio_);
   }
   else
     for (int iq = 0; iq < total_knots_; iq++)
@@ -200,11 +200,11 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
                                     ResourceCollection& collection)
 {
   auto& soecp_component_leader = soecp_component_list.getLeader();
-  if (soecp_component_leader.VP_)
+  if (soecp_component_leader.vp_)
   {
     // Compute ratios with VP
-    RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.VP_);
-    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.VP_);
+    RefVectorWithLeader<VirtualParticleSet> vp_list(*soecp_component_leader.vp_);
+    RefVectorWithLeader<const VirtualParticleSet> const_vp_list(*soecp_component_leader.vp_);
     RefVector<const std::vector<PosType>> deltaV_list;
     RefVector<const std::vector<RealType>> deltaS_list;
     RefVector<std::vector<ValueType>> psiratios_list;
@@ -222,8 +222,8 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
 
       component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
 
-      vp_list.push_back(*component.VP_);
-      const_vp_list.push_back(*component.VP_);
+      vp_list.push_back(*component.vp_);
+      const_vp_list.push_back(*component.vp_);
       deltaV_list.push_back(component.deltaV_);
       deltaS_list.push_back(component.deltaS_);
       psiratios_list.push_back(component.psiratio_);
@@ -291,11 +291,11 @@ SOECPComponent::RealType SOECPComponent::evaluateValueAndDerivatives(ParticleSet
 
   //Now we have all the spin and spatial quadrature points acculated to use in evaluation
   //Now we need to obtain dlogpsi and dlogpsi_vp
-  if (VP_)
+  if (vp_)
   {
     // Compute ratios with VP
-    VP_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
-    Psi.evaluateDerivRatios(*VP_, optvars, psiratio_, dratio_);
+    vp_->makeMovesWithSpin(W, iel, deltaV_, deltaS_, true, iat);
+    Psi.evaluateDerivRatios(*vp_, optvars, psiratio_, dratio_);
   }
   else
     for (int iq = 0; iq < total_knots_; iq++)

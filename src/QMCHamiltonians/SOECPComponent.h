@@ -52,7 +52,7 @@ private:
   int sknot_;
   int total_knots_; //spin + spatial knots
   ///Maximum cutoff the non-local pseudopotential
-  RealType Rmax_;
+  RealType rmax_;
   ///Angular momentum map
   aligned_vector<int> angpp_m_;
   ///Non-Local part of the pseudo-potential
@@ -76,7 +76,7 @@ private:
   //scratch spaces used by evaluateValueAndDerivative
   Matrix<ValueType> dratio_;
   Vector<ValueType> dlogpsi_vp_;
-  VirtualParticleSet* VP_;
+  VirtualParticleSet* vp_;
 
   //This builds the full quadrature grid for the Simpsons rule used for spin integrals as well as
   //the spatial quadrature. In this function, it specifies the deltaS_ and deltaV_ for all the quadrature points and sets the interal weights
@@ -139,14 +139,14 @@ public:
   void initVirtualParticle(const ParticleSet& qp);
   void deleteVirtualParticle();
 
-  inline void setRmax(RealType rmax) { Rmax_ = rmax; }
-  inline RealType getRmax() const { return Rmax_; }
-  inline void setLmax(int Lmax) { lmax_ = Lmax; }
+  inline void setRmax(RealType rmax) { rmax_ = rmax; }
+  inline RealType getRmax() const { return rmax_; }
+  inline void setLmax(int lmax) { lmax_ = lmax; }
   inline int getLmax() const { return lmax_; }
   inline int getNknot() const { return nknot_; }
   inline int getSknot() const { return sknot_; }
 
-  const VirtualParticleSet* getVP() const { return VP_; };
+  const VirtualParticleSet* getVP() const { return vp_; };
 
   friend struct ECPComponentBuilder;
   friend void copyGridUnrotatedForTest(SOECPComponent& nlpp);
