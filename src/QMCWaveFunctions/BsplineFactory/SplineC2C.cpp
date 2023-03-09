@@ -149,13 +149,6 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
 
   // Update the coefs
   std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
-
-  /*
-    // Here is my attempt to use gemm but it doesn't work...
-    int smaller_BasisSetSize   = static_cast<int>(BasisSetSize);
-    int smaller_OrbitalSetSize = static_cast<int>(OrbitalSetSize);
-    BLAS::gemm('N', 'T', smaller_BasisSetSize, smaller_OrbitalSetSize, smaller_OrbitalSetSize, RealType(1.0), spl_coefs, smaller_BasisSetSize, tmpU.data(), smaller_OrbitalSetSize, RealType(0.0), spl_coefs, smaller_BasisSetSize);
-  */
 }
 
 template<typename ST>
