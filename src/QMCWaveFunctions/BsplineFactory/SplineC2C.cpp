@@ -82,9 +82,9 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   const auto spline_ptr = SplineInst->getSplinePtr();
   assert(spline_ptr != nullptr);
   const auto spl_coefs      = spline_ptr->coefs;
-  const auto Nsplines       = spline_ptr->num_splines; // May include padding
-  const auto coefs_tot_size = spline_ptr->coefs_size;  // 2x longer to accomodate complex coefs
-  const auto BasisSetSize   = coefs_tot_size / Nsplines / 2; // complex layout
+  const auto Nsplines       = spline_ptr->num_splines;
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto BasisSetSize   = coefs_tot_size / Nsplines;
   const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
   assert(OrbitalSetSize >= TrueNOrbs);
 
@@ -101,21 +101,46 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   }
 
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  // Gotta handle complex spl_coefs layout by hand. Each coef is stored
-  // as two realtypes adjacent in memory. 
+  // For SplineC2C we have to handle complex spl_coefs layout by hand.
+  // Each coef is stored as two realtypes adjacent in memory. For
+  // N spline coefficients the spl_coefs array for a SplineC2C object has
+  // length = 2N to account for real/imag terms. A comparison of the layouts
+  // is given below.
+  //
+  // SplineR2R layout:
+  // |====================|
+  // | c0 | c1 | ... | cN |
+  // |====================|
+  // <- N coefs length N ->
+  //
+  // SplineC2C layout:
+  // |===========================================================|
+  // | Re{c0} | Im{c0} | Re{c1} | Im{c1} | ... | Re{cN} | Im{cN} |
+  // |===========================================================|
+  // <-------------------- N coefs length 2N -------------------->
   std::vector<ST> new_coefs(coefs_tot_size, 0);
+  ST z1{0.};
+  ST z2{0.};
+  ST w1{0.};
+  ST w2{0.};
+  ST newval_real{0.};
+  ST newval_imag{0.};
   for (auto i = 0; i < BasisSetSize; i++)
   {
     for (auto j = 0; j < Nsplines; j++)
     {
-      const auto cur_elem = 2*(Nsplines * i + j);
-      auto newval_real{0.};
-      auto newval_imag{0.};
+      const auto cur_elem = 2 * (Nsplines / 2 * i + j);
+      newval_real         = 0.;
+      newval_imag         = 0.;
       for (auto k = 0; k < Nsplines; k++)
       {
-        const auto index = 2*(i * Nsplines + k);
-        newval_real += *(spl_coefs + index) * tmpU[k][j].real();
-        newval_imag += *(spl_coefs + index) * tmpU[k][j].imag();
+        const auto index = 2 * (i * Nsplines / 2 + k);
+        z1               = *(spl_coefs + index);
+        z2               = *(spl_coefs + index + 1);
+        w1               = tmpU[k][j].real();
+        w2               = tmpU[k][j].imag();
+        newval_real += z1 * w1 - z2 * w2;
+        newval_imag += z1 * w2 + z2 * w1;
       }
       new_coefs[cur_elem]     = newval_real;
       new_coefs[cur_elem + 1] = newval_imag;

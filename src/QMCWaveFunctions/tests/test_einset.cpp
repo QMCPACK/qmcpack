@@ -222,18 +222,15 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   CHECK(std::real(psi_v_list[1].get()[0][0]) == Approx(-0.8886948824));
   CHECK(std::real(psi_v_list[1].get()[1][0]) == Approx(-0.42546836868));
 
-  // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
-  //#if !defined(QMC_COMPLEX)
-  /* 
+  /*
      Here we test the low-level spline implementation of applyRotation().
 
      Manually encode the unitary transformation. Ugly, but it works.
-     @TODO: Use the total rotation machinery when it's implemented
 
      NB: This is truncated to 5 sig-figs, so there is some slop here as
          compared to what is done in the splines via apply_rotation().
 	 So below we reduce the threshold for comparison. This can
-	 probably be ditched once we have a way to grab the actual 
+	 probably be ditched once we have a way to grab the actual
 	 rotation matrix...
   */
   const auto orbitalsetsize = spo->getOrbitalSetSize();
@@ -243,19 +240,23 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
 
+  std::cout << "JPT DEBUG [2023.03.08]: psiM_bare= \n";
+  std::cout << " psiM_bare[0][0]= " << psiM_bare[0][0] << "\n";
+  std::cout << " psiM_bare[1][1]= " << psiM_bare[1][1] << "\n";
+
   // value
   CHECK(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
   CHECK(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
   // grad
   CHECK(std::real(dpsiM_bare[1][0][0]) == Approx(-0.0000183403));
   CHECK(std::real(dpsiM_bare[1][0][1]) == Approx(0.1655139178));
-	CHECK(std::real(dpsiM_bare[1][0][2]) == Approx(-0.0000193077));
-	CHECK(std::real(dpsiM_bare[1][1][0]) == Approx(-1.3131694794));
-	CHECK(std::real(dpsiM_bare[1][1][1]) == Approx(-1.1174004078));
-	CHECK(std::real(dpsiM_bare[1][1][2]) == Approx(-0.8462534547));
+  CHECK(std::real(dpsiM_bare[1][0][2]) == Approx(-0.0000193077));
+  CHECK(std::real(dpsiM_bare[1][1][0]) == Approx(-1.3131694794));
+  CHECK(std::real(dpsiM_bare[1][1][1]) == Approx(-1.1174004078));
+  CHECK(std::real(dpsiM_bare[1][1][2]) == Approx(-0.8462534547));
   // lapl
-	CHECK(std::real(d2psiM_bare[1][0]) == Approx(1.3313053846));
-	CHECK(std::real(d2psiM_bare[1][1]) == Approx(-4.712583065));
+  CHECK(std::real(d2psiM_bare[1][0]) == Approx(1.3313053846));
+  CHECK(std::real(d2psiM_bare[1][1]) == Approx(-4.712583065));
 
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
   rot_mat[0][0] = 0.99726;
@@ -323,8 +324,28 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   rot_mat[7][6] = -0.00647;
   rot_mat[7][7] = 0.99273;
 
+  // JPT DEBUG [2023.03.07] Looks like rotation is borked.
+  // Summary of tests:
+  // [PASS] U = 0
+  // [FAIL] u11 = 1, else = 0
+  /*
+  for (int i=0; i<rot_mat.size1(); i++)
+    {
+      for (int j=0; j<rot_mat.size2(); j++)
+	{
+	  if ( i == j) {
+	    rot_mat[i][j] = 0;
+	  }
+	  else {
+	    rot_mat[i][j] = 0;
+	  }
+	}
+    }
+  rot_mat[0][0] = 1.;
+  */
+
   // Apply the rotation
-  spo->applyRotation(rot_mat, false);   // JPT DEBUG [2023.02.28]: Looks like problem is here
+  spo->applyRotation(rot_mat, false); // JPT DEBUG [2023.02.28]: Looks like problem is here
 
   // Get data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
@@ -333,7 +354,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_rot, dpsiM_rot, d2psiM_rot);
 
   // Now compute the expected values by hand using the transformation above
-  SPOSet::ValueType val1{0.};
+  std::cout << "JPT DEBUG [2023.03.08]: Type of SPOSet::ValueType = " << typeid(SPOSet::ValueType).name() << "\n";
+  SPOSet::ValueType val1{0.}; // This should be a complex-type
   SPOSet::ValueType val2{0.};
   for (auto i = 0; i < rot_mat.size1(); i++)
   {
@@ -341,14 +363,17 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
     val2 += psiM_bare[1][i] * rot_mat[i][0];
   }
 
+  std::cout << "JPT DEBUG [2023.03.08]: psiM_rot= \n";
+  std::cout << " psiM_rot[0][0]= " << psiM_rot[0][0] << "\n";
+  std::cout << " psiM_rot[1][0]= " << psiM_rot[1][0] << "\n";
   // value
-  CHECK(std::real(psiM_rot[0][0]) == Approx(std::real(val1))); 
-  CHECK(std::imag(psiM_rot[0][0]) == Approx(std::imag(val1))); 
+  CHECK(std::real(psiM_rot[0][0]) == Approx(std::real(val1)));
+  CHECK(std::imag(psiM_rot[0][0]) == Approx(std::imag(val1)));
   CHECK(std::real(psiM_rot[1][0]) == Approx(std::real(val2)));
   CHECK(std::imag(psiM_rot[1][0]) == Approx(std::imag(val2)));
 
   SPOSet::GradType grad1{0.};
-  SPOSet::GradType grad2{0.};  
+  SPOSet::GradType grad2{0.};
   for (auto j = 0; j < grad1.size(); j++)
   {
     for (auto i = 0; i < rot_mat.size1(); i++)
