@@ -58,14 +58,14 @@ photoemission experiments. In contrast, the emission energy of a
 negatively charged system (or the energy required to convert a
 negatively charged system to a neutral system), known as electron
 affinity (EA), is available from inverse photoemission experiments.
-Outlines of these experiments are shown in :numref:`fig22`.
+Outlines of these experiments are shown in :numref:`fig22`, reproduced from :cite:`Onida2002a`.
 
 .. _fig22:
 .. figure:: /figs/lab_excited_experiments.png
   :width: 500
   :align: center
 
-  Direct and inverse photoemission experiments involve charged excitations, whereas optical absorption experiments involve excitations that are just enough to be excited to the conduction band. From :cite:`Onida2002a`
+  Direct and inverse photoemission experiments involve charged excitations, whereas optical absorption experiments involve excitations that are just enough to be excited to the conduction band. 
 
 Following the explanation in the previous paragraph and :numref:`fig22`, the *quasiparticle* band gap of a material can be defined as:
 
