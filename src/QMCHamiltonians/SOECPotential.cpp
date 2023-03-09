@@ -202,9 +202,9 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
   RefVectorWithLeader<SOECPComponent> soecp_component_list(**pp_component);
   RefVectorWithLeader<ParticleSet> pset_list(pset_leader);
   RefVectorWithLeader<TrialWaveFunction> psi_list(O_leader.Psi_);
-  assert(&O_leader.Psi == &wf_list.getLeader());
+  assert(&O_leader.Psi_ == &wf_list.getLeader());
   for (size_t iw = 0; iw < nw; iw++)
-    assert(&o_list.getCastedElement<SOECPotential>(iw).Psi == &wf_list[iw]);
+    assert(&o_list.getCastedElement<SOECPotential>(iw).Psi_ == &wf_list[iw]);
 
   RefVector<const NLPPJob<RealType>> batch_list;
   std::vector<RealType> pairpots(nw);
