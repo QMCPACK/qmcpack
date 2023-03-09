@@ -142,9 +142,6 @@ SOECPComponent::RealType SOECPComponent::evaluateOne(ParticleSet& W,
                                                      RealType r,
                                                      const PosType& dr)
 {
-  for (int ip = 0; ip < nchannel_; ip++)
-    vrad_[ip] = sopp_m_[ip]->splint(r);
-
   RealType sold = W.spins[iel];
   buildTotalQuadrature(r, dr, sold);
 
@@ -251,7 +248,7 @@ void SOECPComponent::mw_evaluateOne(const RefVectorWithLeader<SOECPComponent>& s
       const RealType sold = W.spins[job.electron_id];
       component.buildTotalQuadrature(job.ion_elec_dist, job.ion_elec_displ, sold);
 
-      for (int j = 0; j < component.getNknot(); j++)
+      for (int j = 0; j < component.total_knots_; j++)
       {
         W.makeMoveWithSpin(job.electron_id, component.deltaV_[j], component.deltaS_[j]);
         component.psiratio_[j] = psi.calcRatio(W, job.electron_id);
@@ -397,6 +394,11 @@ void SOECPComponent::buildTotalQuadrature(const RealType r, const PosType& dr, c
   addSpatialQuadrature(sknot_, r, dr, smax - sold, RealType(1. / 3.) * dS);
 
   assert(count == total_knots_);
+
+  //also set the radial function
+  for (int ip = 0; ip < nchannel_; ip++)
+    vrad_[ip] = sopp_m_[ip]->splint(r);
+
 }
 
 void SOECPComponent::rotateQuadratureGrid(const TensorType& rmat)

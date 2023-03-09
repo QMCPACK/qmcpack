@@ -28,6 +28,7 @@ class TestSOECPotential;
 class SOECPotential : public OperatorBase
 {
   struct SOECPotentialMultiWalkerResource;
+  using Real = QMCTraits::RealType;
 
 public:
   SOECPotential(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
@@ -48,6 +49,12 @@ public:
   void mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                    const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                    const RefVectorWithLeader<ParticleSet>& p_list) const override;
+
+  void mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                              const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                              const RefVectorWithLeader<ParticleSet>& p_list,
+                              const std::vector<ListenerVector<Real>>& listeners,
+                              const std::vector<ListenerVector<Real>>& listeners_ions) const override;
 
   bool put(xmlNodePtr cur) override { return true; }
 
@@ -81,6 +88,7 @@ protected:
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
+                              std::optional<ListenerOption<Real>> listeners,
                               bool keep_grid = false);
 
 private:

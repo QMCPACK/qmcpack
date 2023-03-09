@@ -14,6 +14,7 @@
 #include "Utilities/IteratorUtility.h"
 #include "NLPPJob.h"
 #include <ResourceCollection.h>
+#include <optional>
 
 namespace qmcplusplus
 {
@@ -25,6 +26,10 @@ struct SOECPotential::SOECPotentialMultiWalkerResource : public Resource
   Resource* makeClone() const override;
 
   ResourceCollection collection{"SOPPcollection"};
+
+  //crowds worth of per particle soecp values
+  Matrix<Real> ve_samples;
+  Matrix<Real> vi_samples;
 };
 
 /** constructor
@@ -119,12 +124,23 @@ void SOECPotential::mw_evaluate(const RefVectorWithLeader<OperatorBase>& o_list,
                                 const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                 const RefVectorWithLeader<ParticleSet>& p_list) const
 {
-  mw_evaluateImpl(o_list, wf_list, p_list, false);
+  mw_evaluateImpl(o_list, wf_list, p_list, std::nullopt);
+}
+
+void SOECPotential::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase>& o_list,
+                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
+                                           const RefVectorWithLeader<ParticleSet>& p_list,
+                                           const std::vector<ListenerVector<Real>>& listeners,
+                                           const std::vector<ListenerVector<Real>>& listeners_ions) const
+{
+  std::optional<ListenerOption<Real>> l_opt(std::in_place, listeners, listeners_ions);
+  mw_evaluateImpl(o_list, wf_list, p_list, l_opt);
 }
 
 void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                                     const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                     const RefVectorWithLeader<ParticleSet>& p_list,
+                                    const std::optional<ListenerOption<Real>> listeners,
                                     bool keep_grid)
 {
   auto& O_leader           = o_list.getCastedLeader<SOECPotential>();
@@ -169,6 +185,14 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
       }
     }
     O.value_ = 0.0;
+  }
+
+  if (listeners)
+  {
+    auto& ve_samples = O_leader.mw_res_->ve_samples;
+    auto& vi_samples = O_leader.mw_res_->vi_samples;
+    ve_samples.resize(nw, pset_leader.getTotalNum());
+    vi_samples.resize(nw, O_leader.IonConfig_.getTotalNum());
   }
 
   auto pp_component = std::find_if(O_leader.PPset_.begin(), O_leader.PPset_.end(), [](auto& ptr) { return bool(ptr); });
@@ -227,8 +251,37 @@ void SOECPotential::mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_l
                                      O_leader.mw_res_->collection);
 
       for (size_t j = 0; j < soecp_potential_list.size(); j++)
+      {
         soecp_potential_list[j].get().value_ += pairpots[j];
+
+        if (listeners)
+        {
+          auto& ve_samples = O_leader.mw_res_->ve_samples;
+          auto& vi_samples = O_leader.mw_res_->vi_samples;
+          int iw           = j;
+          ve_samples(iw, batch_list[j].get().electron_id) += pairpots[j];
+          vi_samples(iw, batch_list[j].get().ion_id) += pairpots[j];
+        }
+      }
     }
+  }
+
+  if (listeners)
+  {
+    auto& ve_samples  = O_leader.mw_res_->ve_samples;
+    auto& vi_samples  = O_leader.mw_res_->vi_samples;
+    int num_electrons = pset_leader.getTotalNum();
+    for (int iw = 0; iw < nw; iw++)
+    {
+      Vector<Real> ve_sample(ve_samples.begin(iw), num_electrons);
+      Vector<Real> vi_sample(vi_samples.begin(iw), O_leader.NumIons_);
+      for (const ListenerVector<Real>& listener : listeners->electron_values)
+        listener.report(iw, O_leader.getName(), ve_sample);
+      for (const ListenerVector<Real>& listener : listeners->ion_values)
+        listener.report(iw, O_leader.getName(), vi_sample);
+    }
+    ve_samples = 0.0;
+    vi_samples = 0.0;
   }
 }
 
