@@ -33,11 +33,11 @@ class TestSOECPotential
 public:
   static void copyGridUnrotatedForTest(SOECPotential& so_ecp)
   {
-    so_ecp.PPset_[0]->rrotsgrid_m_ = so_ecp.PPset_[0]->sgridxyz_m_;
+    so_ecp.ppset_[0]->rrotsgrid_m_ = so_ecp.ppset_[0]->sgridxyz_m_;
   }
   static bool didGridChange(SOECPotential& so_ecp)
   {
-    return so_ecp.PPset_[0]->rrotsgrid_m_ != so_ecp.PPset_[0]->sgridxyz_m_;
+    return so_ecp.ppset_[0]->rrotsgrid_m_ != so_ecp.ppset_[0]->sgridxyz_m_;
   }
   static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, const RefVectorWithLeader<ParticleSet>& p_list)
   {
@@ -45,7 +45,7 @@ public:
     {
       auto& sopp = o_list.getCastedElement<SOECPotential>(iw);
       auto& pset = p_list[iw];
-      for (auto& uptr_comp : sopp.PPset_)
+      for (auto& uptr_comp : sopp.ppset_)
         uptr_comp.get()->initVirtualParticle(pset);
     }
   }

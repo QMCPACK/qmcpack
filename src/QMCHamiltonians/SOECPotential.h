@@ -60,7 +60,7 @@ public:
 
   bool get(std::ostream& os) const override
   {
-    os << "SOECPotential: " << IonConfig_.getName();
+    os << "SOECPotential: " << ion_config_.getName();
     return true;
   }
 
@@ -68,7 +68,7 @@ public:
 
   void addComponent(int groupID, std::unique_ptr<SOECPComponent>&& pp);
 
-  void setRandomGenerator(RandomGenerator* rng) override { myRNG_ = rng; }
+  void setRandomGenerator(RandomGenerator* rng) override { my_rng_ = rng; }
 
   //initialize shared resource and hand to collection
   void createResource(ResourceCollection& collection) const override;
@@ -80,11 +80,11 @@ public:
   void releaseResource(ResourceCollection& collection, const RefVectorWithLeader<OperatorBase>& o_list) const override;
 
 protected:
-  RandomGenerator* myRNG_;
-  std::vector<SOECPComponent*> PP_;
-  std::vector<std::unique_ptr<SOECPComponent>> PPset_;
-  ParticleSet& IonConfig_;
-  TrialWaveFunction& Psi_;
+  RandomGenerator* my_rng_;
+  std::vector<SOECPComponent*> pp_;
+  std::vector<std::unique_ptr<SOECPComponent>> ppset_;
+  ParticleSet& ion_config_;
+  TrialWaveFunction& psi_;
   static void mw_evaluateImpl(const RefVectorWithLeader<OperatorBase>& o_list,
                               const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                               const RefVectorWithLeader<ParticleSet>& p_list,
@@ -93,15 +93,15 @@ protected:
 
 private:
   ///number of ions
-  int NumIons_;
+  int num_ions_;
   ///index of distance table for ion-el pair
-  int myTableIndex_;
+  int my_table_index_;
   ///reference to the electrons
-  ParticleSet& Peln_;
+  ParticleSet& peln_;
   ///neighborlist of electrons
-  NeighborLists ElecNeighborIons_;
+  NeighborLists elec_neighbor_ions_;
   ///neighborlist of ions
-  NeighborLists IonNeighborElecs_;
+  NeighborLists ion_neighbor_elecs_;
   //job list for evaluation
   std::vector<std::vector<NLPPJob<RealType>>> sopp_jobs_;
   //multi walker resource
