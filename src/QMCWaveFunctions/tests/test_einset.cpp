@@ -240,10 +240,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
 
-  std::cout << "JPT DEBUG [2023.03.08]: psiM_bare= \n";
-  std::cout << " psiM_bare[0][0]= " << psiM_bare[0][0] << "\n";
-  std::cout << " psiM_bare[1][1]= " << psiM_bare[1][1] << "\n";
-
   // value
   CHECK(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
   CHECK(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
@@ -324,28 +320,8 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   rot_mat[7][6] = -0.00647;
   rot_mat[7][7] = 0.99273;
 
-  // JPT DEBUG [2023.03.07] Looks like rotation is borked.
-  // Summary of tests:
-  // [PASS] U = 0
-  // [FAIL] u11 = 1, else = 0
-  /*
-  for (int i=0; i<rot_mat.size1(); i++)
-    {
-      for (int j=0; j<rot_mat.size2(); j++)
-	{
-	  if ( i == j) {
-	    rot_mat[i][j] = 0;
-	  }
-	  else {
-	    rot_mat[i][j] = 0;
-	  }
-	}
-    }
-  rot_mat[0][0] = 1.;
-  */
-
   // Apply the rotation
-  spo->applyRotation(rot_mat, false); // JPT DEBUG [2023.02.28]: Looks like problem is here
+  spo->applyRotation(rot_mat, false);
 
   // Get data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
@@ -354,7 +330,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_rot, dpsiM_rot, d2psiM_rot);
 
   // Now compute the expected values by hand using the transformation above
-  std::cout << "JPT DEBUG [2023.03.08]: Type of SPOSet::ValueType = " << typeid(SPOSet::ValueType).name() << "\n";
   SPOSet::ValueType val1{0.}; // This should be a complex-type
   SPOSet::ValueType val2{0.};
   for (auto i = 0; i < rot_mat.size1(); i++)
@@ -363,9 +338,6 @@ TEST_CASE("Einspline SPO from HDF diamond_1x1x1", "[wavefunction]")
     val2 += psiM_bare[1][i] * rot_mat[i][0];
   }
 
-  std::cout << "JPT DEBUG [2023.03.08]: psiM_rot= \n";
-  std::cout << " psiM_rot[0][0]= " << psiM_rot[0][0] << "\n";
-  std::cout << " psiM_rot[1][0]= " << psiM_rot[1][0] << "\n";
   // value
   CHECK(std::real(psiM_rot[0][0]) == Approx(std::real(val1)));
   CHECK(std::imag(psiM_rot[0][0]) == Approx(std::imag(val1)));
