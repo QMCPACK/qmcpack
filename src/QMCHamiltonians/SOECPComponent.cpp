@@ -398,7 +398,6 @@ void SOECPComponent::buildTotalQuadrature(const RealType r, const PosType& dr, c
   //also set the radial function
   for (int ip = 0; ip < nchannel_; ip++)
     vrad_[ip] = sopp_m_[ip]->splint(r);
-
 }
 
 void SOECPComponent::rotateQuadratureGrid(const TensorType& rmat)

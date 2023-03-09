@@ -39,8 +39,7 @@ public:
   {
     return so_ecp.PPset_[0]->rrotsgrid_m_ != so_ecp.PPset_[0]->sgridxyz_m_;
   }
-  static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, 
-                     const RefVectorWithLeader<ParticleSet>& p_list)
+  static void addVPs(const RefVectorWithLeader<OperatorBase>& o_list, const RefVectorWithLeader<ParticleSet>& p_list)
   {
     for (size_t iw = 0; iw < o_list.size(); iw++)
     {
