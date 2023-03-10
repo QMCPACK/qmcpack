@@ -276,7 +276,7 @@ public:
    * @param iter current step
    * @param w Walker configuration
    */
-  void updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
+  void updateParamAfterPopControl(const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
 
   bool put(xmlNodePtr cur);
 
