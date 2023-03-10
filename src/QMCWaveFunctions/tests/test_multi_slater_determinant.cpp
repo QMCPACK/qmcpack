@@ -478,6 +478,65 @@ void test_Bi_msd(const std::string& spo_xml_string,
   ratio = twf.calcRatio(elec_, 0);
   app_log() << "twf.calcRatio ratio " << ratio << std::endl;
   CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.991503).epsilon(1e-4));
+
+  elec_.accept_rejectMove(0, false);
+
+  //now lets test batched interface
+  const int num_walkers = 2;
+  ResourceCollection pset_res("test_pset_res");
+  elec_.createResource(pset_res);
+  ParticleSet elec_clone(elec_);
+  RefVectorWithLeader<ParticleSet> p_list(elec_, {elec_, elec_clone});
+  ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
+
+  ResourceCollection twf_res("test_twf_res");
+  twf.createResource(twf_res);
+  auto twf_clone = twf.makeClone(elec_clone);
+  RefVectorWithLeader<TrialWaveFunction> twf_list(twf, {twf, *twf_clone});
+  ResourceCollectionTeamLock<TrialWaveFunction> mw_twf_lock(twf_res, twf_list);
+
+  ParticleSet::mw_update(p_list);
+  TrialWaveFunction::mw_evaluateLog(twf_list, p_list);
+
+  for (int iw = 0; iw < num_walkers; iw++)
+  {
+    CHECK(std::complex<double>(twf_list[iw].getLogPsi(), twf_list[iw].getPhase()) ==
+          LogComplexApprox(std::complex<double>(-9.653087, 3.311467)));
+  }
+
+  TrialWaveFunction::mw_prepareGroup(twf_list, p_list, 0);
+
+  int moved_elec_id = 1;
+  TWFGrads<CoordsType::POS> grads_old(num_walkers);
+  TrialWaveFunction::mw_evalGrad(twf_list, p_list, moved_elec_id, grads_old);
+  for (int iw = 0; iw < num_walkers; iw++)
+  {
+    CHECK(grads_old.grads_positions[iw][0] == ComplexApprox(ValueType(0.060932, -0.285244)).epsilon(1e-4));
+    CHECK(grads_old.grads_positions[iw][1] == ComplexApprox(ValueType(-0.401769, 0.180544)).epsilon(1e-4));
+    CHECK(grads_old.grads_positions[iw][2] == ComplexApprox(ValueType(0.174010, 0.140642)).epsilon(1e-4));
+  }
+
+  moved_elec_id = 0;
+  MCCoords<CoordsType::POS_SPIN> displs(num_walkers);
+  displs.positions = {delta, delta};
+  displs.spins     = {ds, ds};
+  ParticleSet::mw_makeMove(p_list, moved_elec_id, displs);
+
+  std::vector<ValueType> ratios(num_walkers);
+  TrialWaveFunction::mw_calcRatio(twf_list, p_list, moved_elec_id, ratios);
+  for (int iw = 0; iw < num_walkers; iw++)
+    CHECK(ValueType(std::abs(ratios[iw])) == ValueApprox(0.991503).epsilon(1e-4));
+  std::fill(ratios.begin(), ratios.end(), ValueType(0));
+
+  TWFGrads<CoordsType::POS_SPIN> grads_new(num_walkers);
+  TrialWaveFunction::mw_calcRatioGrad(twf_list, p_list, moved_elec_id, ratios, grads_new);
+  for (int iw = 0; iw < num_walkers; iw++)
+  {
+    CHECK(ValueType(std::abs(ratios[iw])) == ValueApprox(0.991503).epsilon(1e-4));
+    CHECK(grads_new.grads_positions[iw][0] == ComplexApprox(ValueType(-0.631184, -0.136918)).epsilon(1e-4));
+    CHECK(grads_new.grads_positions[iw][1] == ComplexApprox(ValueType(0.074214, -0.080204)).epsilon(1e-4));
+    CHECK(grads_new.grads_positions[iw][2] == ComplexApprox(ValueType(-0.073180, -0.133539)).epsilon(1e-4));
+  }
 }
 
 TEST_CASE("Bi-spinor multi Slater dets", "[wavefunction]")
