@@ -132,10 +132,10 @@ int SFNBranch::initParam(const MCPopulation& population,
 
 void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  FullPrecRealType logN       = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
-  FullPrecRealType pop_weight = wc_ensemble_prop.Weight;
-  //population for trial energy modification should not include any released node walkers.
-  pop_weight -= wc_ensemble_prop.RNSamples;
+  //target weight
+  const auto logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
+  //population weight before branching
+  const FullPrecRealType pop_weight = wc_ensemble_prop.Weight;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
 

@@ -111,7 +111,6 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   ensemble_property_.LivingFraction =
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX]) / static_cast<FullPrecRealType>(curData[WALKERSIZE_INDEX]);
   ensemble_property_.AlternateEnergy = FullPrecRealType(0);
-  ensemble_property_.RNSamples       = FullPrecRealType(0);
   // \\todo If WalkerControl is not exclusively for dmc then this shouldn't be here.
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
