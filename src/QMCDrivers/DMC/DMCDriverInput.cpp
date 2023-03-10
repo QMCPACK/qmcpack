@@ -19,10 +19,13 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 {
   ParameterSet parameter_set_;
   std::string reconfig_str;
+  std::string refE_update_scheme_str;
   parameter_set_.add(reconfig_str, "reconfiguration", {"no", "yes", "runwhileincorrect"});
   parameter_set_.add(NonLocalMove, "nonlocalmove", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(NonLocalMove, "nonlocalmoves", {"no", "yes", "v0", "v1", "v3"});
   parameter_set_.add(max_age_, "MaxAge");
+  parameter_set_.add(feedback_, "feedback");
+  parameter_set_.add(refE_update_scheme_str, "refenergy_update_scheme", {"unlimited_history", "limited_history"});
 
   // from DMC.cpp put(xmlNodePtr)
   parameter_set_.add(branch_interval_, "branchInterval");
@@ -64,6 +67,11 @@ void DMCDriverInput::readXML(xmlNodePtr node)
 
   if (reserve_ < 1.0)
     throw std::runtime_error("You can only reserve walkers above the target walker count");
+
+  if (refE_update_scheme_str == "unlimited_history")
+    refenergy_update_scheme_ = DMCRefEnergyScheme::UNLIMITED_HISTORY;
+  else
+    refenergy_update_scheme_ = DMCRefEnergyScheme::LIMITED_HISTORY;
 }
 
 std::ostream& operator<<(std::ostream& o_stream, const DMCDriverInput& dmci) { return o_stream; }
