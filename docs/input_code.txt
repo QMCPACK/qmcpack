@@ -1,0 +1,219 @@
+.. _modernize_input_code:
+
+Modernized Input
+----------------
+
+Input Goals
+~~~~~~~~~~~
+
+Legacy QMCPACK input parsing is characterized by a unclear ownership of input sections and a multistage mixture of construction, parsing, validation. The handling of input and its relation to testing and error handling is a major pain point for developers.  So the following program is proposed:
+
+- Simulation objects and the input parsing and storage of input values should be refactored into 2 or more classes. Refered to after as `Simulation` classes and `Input` classes.
+  - No input parsing should occur in `simulation` objects. i.e. no ``put`` method no ``XMLNodePtr`` argument types. 
+  - `Simulation` objects should access input parameters as clearly defined and appropriate types through readonly ``Input`` object accessors.
+
+- Each type of Node in the input tree should have a clear relationship to some `input` class.
+  - Each node in an actual input tree must have 1 clear `Input` object owner.
+  - That owner may delegate parsing of sub nodes to other InputClasses.
+  - Anything other than white space in a node, attribute or element not consumed by the node owner or its delgates constitutes a fatal error.
+  - The `Input` objects should be for practical purposes immutable after parsing.
+  - After parsing the input parameters should be in appropriate native c++ types.
+  - Default values should be specified in native c++ whenever practical.
+  - In principle you should be able to construct an input object simply by intializing its members.
+
+Input Facts
+~~~~~~~~~~~
+- QMCPACK is a tree constructed of input nodes. These nodes have optional attributes and content. Content may be nothing or free form "text" that must be handled by the owner of the node and/or one or more nodes with the same possible structure. For most input classes the child nodes will consist primarily or entirely of "parameter" nodes.
+- Currently this is expressed by using XML as described previously in this manual. That documentation is the most formal specification of the input.
+
+- Parameter nodes for historical reasons can be specified in two different ways.
+
+.. code:: xml
+
+     <the_parameters_name attributes....>content</the_parameters_name>
+     <parameter name="the_parameters_name"...>content</parameter>  
+
+- Attributes are sometimes the main content and not additional information about the "content" of the node.
+- In different input sections different ways to specify very similar information. i.e. grids. are used. They are difficult to refactor out to common
+  Implementations because there are tangled up in the extended construction of numerous simulation objects.
+- In Legacy input nodes have no definitive owner, its always possible they will be parsed again or not at all in the future.
+- The XML parser catches only the most basic issues with the input document.
+- Unrecognized elements, parameter names, and attributes are silently ignored. Sometimes defaults are used instead.
+- Invalid input to recognized elements is sometimes checked, sometimes causes crashes, sometimes causes invalid answers (NaNs etc.) and sometimes is just fixed.
+
+.. _fig28:
+.. figure:: /figs/simulation_object_state.png
+  :width: 500
+  :align: left
+
+  Simulation object state diagram emphasizing the long period and multiple state updates required to become a valid object. Many objects
+  require more than two updates to go from constructed to valid.
+
+- The input parsing takes place throughout the execution of the application as needed through `put`, `process` and other calls to existing objects.
+- Most/All simulation objects are not valid at construction but are state machines (see :numref:`fig28`) that require many transforms to become valid, i.e. their important methods can be called with valid arguments and produce valid output.
+  - This makes unit tests difficult since creating a valid object requires significant effort, sometimes archeological!
+  - Reasoning about the state of objects when debugging or developing new features is difficult.
+    
+The Improved Input Design
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Make input parsing and validation (to the degree feasible) a distinct stage of application execution.
+   
+
+To improve separation of concerns, facilitate unit testing,  and to allow parsing and validation of input to be a distinct phase before the beginning of the simulation proper input parsing will no longer be done in simulation objects.  They will be required to be valid at construction whenever possible and take ``Input`` objects and/or other ``Simulation`` objects as constructor arguments.
+
+If we can assume a one to one relationship between some input node and a simulation object then at its simplest the ``Input`` class for a particular simulation object should be a data structure containing as members native data types corresponding to the possible user input for that node.
+
+
+
+all the parameters that an object gains from user input or default values. For legacy simulation objects these are generall the variable assigned to ``put`` section.  For a new simulation object the input class should contain all the parameter data read from user input needed to construct a valid object in the data structure. Where input parameters from another simulation object are required carefully consider lifetimes and whether it is more appropriate for the simulation object to take as constructor arguement an additional Input object.
+
+Ideally for the purposes of unit testing an InputClass could be easily constructed and intialized and used to construct the simulation object in a valid state. For the purposes of debugging those parameters should be easily inspected.
+
+For specification of the expected user input and parsing of the (currently) XML input composing a type derived from the utility class ``InputSection`` is
+strongly suggested and the rest of this documentation assumes that route is being taken.
+
+.. code:: c++
+
+   class OneBodyDensityMatricesInput
+   {
+   public:
+     using Consumer = OneBodyDensityMatrices;
+
+    enum class Integrator
+    {
+      UNIFORM_GRID,
+      UNIFORM,
+      DENSITY
+    };
+
+    enum class Evaluator
+    {
+      LOOP,
+      MATRIX
+    };
+
+    /** mapping for enumerated options of OneBodyDensityMatrices
+     *  This data object is the basis of input enum string values
+     *  translation to native C++ scoped enums. This boiler plate is
+     *  generated by utils/code_tools/qmcpack-elisp-generators.el
+     *  qmcp-add-enum-string-map
+     *
+     *  This plus the virtual assignAnyEnum method are needed by InputSection to
+     *  validate and assign enum values from input.
+     *
+     *  In testing code we assume this map is bidirectional.
+     */
+    inline static const std::unordered_map<std::string, std::any>
+	lookup_input_enum_value{{"integrator-uniform_grid", Integrator::UNIFORM_GRID},
+				{"integrator-uniform", Integrator::UNIFORM},
+				{"integrator-density", Integrator::DENSITY},
+				{"evaluator-loop", Evaluator::LOOP},
+				{"evaluator-matrix", Evaluator::MATRIX}};
+
+    class OneBodyDensityMatricesInputSection : public InputSection
+    {
+    public:
+      /** parse time definition of input parameters */
+      OneBodyDensityMatricesInputSection()
+      {
+	// clang-format off
+	section_name  = "OneBodyDensityMatrix";
+	attributes    = {"name", "type"};
+	parameters    = {"basis", "energy_matrix", "integrator", "evaluator", "scale",
+			 "corner", "center", "points", "samples", "warmup", "timestep",
+			 "use_drift", "check_overlap", "check_derivatives", "acceptance_ratio", "rstats",
+			 "normalized", "volumed_normed"};
+	bools         = {"energy_matrix", "use_drift", "normalized", "volume_normed",
+			 "check_overlap", "check_derivatives", "rstats", "acceptance_ratio"};
+	enums         = {"integrator", "evaluator"};
+	strings       = {"name", "type"};
+	multi_strings = {"basis"};
+	integers      = {"points", "samples"};
+	reals         = {"scale", "timestep"};
+	positions     = {"center", "corner"};
+	required      = {"name", "basis"};
+	// I'd much rather see the default defined in simple native c++ as below
+	// clang-format on
+      }
+      OneBodyDensityMatricesInputSection(const OneBodyDensityMatricesInputSection&) = default;
+      /** do parse time checks of input */
+      void checkParticularValidity() override;
+      std::any assignAnyEnum(const std::string& name) const override;
+    };
+
+    using Position = QMCTraits::PosType;
+    using Real     = QMCTraits::RealType;
+
+    /** default copy constructor
+     *  This is required due to OBDMI being part of a variant used as a vector element.
+     */
+    OneBodyDensityMatricesInput(const OneBodyDensityMatricesInput&) = default;
+    OneBodyDensityMatricesInput(xmlNodePtr cur);
+
+   private:
+     OneBodyDensityMatricesInputSection input_section_;
+
+     // Default parameters for OneBodyDensityMatrices
+     bool energy_matrix_          = false;
+     bool use_drift_              = false;
+     bool normalized_             = true;
+     bool volume_normalized_      = true;
+     bool check_overlap_          = false;
+     bool check_derivatives_      = false;
+     bool rstats_                 = false;
+     bool write_acceptance_ratio_ = false;
+     /// This flag is derived from input so if you construct an OBDMI directly with center it must be set.
+     bool center_defined_   = false;
+     bool corner_defined_   = false;
+     Integrator integrator_ = Integrator::UNIFORM_GRID;
+     Evaluator evaluator_   = Evaluator::LOOP;
+     Real scale_            = 1.0;
+     /// center_ does not have a default. The estimator sets if from input Lattice if it isn't set
+     Position center_;
+     Position corner_;
+     Real timestep_      = 0.5;
+     int points_         = 10;
+     int samples_        = 10;
+     int warmup_samples_ = 30;
+     std::vector<std::string> basis_sets_;
+
+   public:
+     bool get_energy_matrix() const { return energy_matrix_; }
+     bool get_use_drift() const { return use_drift_; }
+     bool get_normalized() const { return normalized_; }
+     bool get_volume_normalized() const { return volume_normalized_; }
+     bool get_check_overlap() const { return check_overlap_; }
+     bool get_check_derivatives() const { return check_derivatives_; }
+     bool get_rstats() const { return rstats_; }
+     bool get_write_acceptance_ratio() const { return write_acceptance_ratio_; }
+     Integrator get_integrator() const { return integrator_; }
+     Evaluator get_evaluator() const { return evaluator_; }
+     Real get_scale() const { return scale_; }
+     Position get_center() const { return center_; }
+     Position get_corner() const { return corner_; }
+     bool get_center_defined() const { return center_defined_; }
+     bool get_corner_defined() const { return corner_defined_; }
+     Real get_timestep() const { return timestep_; }
+     int get_points() const { return points_; }
+     int get_samples() const { return samples_; }
+     int get_warmup_samples() const { return warmup_samples_; }
+     const std::vector<std::string>& get_basis_sets() const { return basis_sets_; }
+     template<typename T>
+     friend class testing::OneBodyDensityMatricesTests;
+   };
+
+
+.. _fig31:
+.. figure:: /uml/SimpleInputClass.png
+  :width: 500
+  :align: center
+
+  Example of a simulation class ``SimpleEstimator``, input class ``SimpleInput``,
+  derived input section class ``SimpleInputSection``, and the ``InputSection`` base class.
+ 
+- Make a derived class of `InputSection` Use 
+
+- Simulation objects should to the maximum degree possible be valid at construction taking the necessary
+  InputClasses and constructor arguments.
+
