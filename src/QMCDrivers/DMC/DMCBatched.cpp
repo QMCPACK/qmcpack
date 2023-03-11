@@ -396,8 +396,8 @@ void DMCBatched::process(xmlNodePtr node)
     app_log() << "  Creating the branching engine and walker controler" << std::endl;
     const auto refE_update_scheme = dmcdriver_input_.get_refenergy_update_scheme();
     app_log() << "    Reference energy is updated using the "
-              << (refE_update_scheme == DMCRefEnergyScheme::UNLIMITED_HISTORY ? "unlimited_history" : "limited_history") << " scheme"
-              << std::endl;
+              << (refE_update_scheme == DMCRefEnergyScheme::UNLIMITED_HISTORY ? "unlimited_history" : "limited_history")
+              << " scheme" << std::endl;
     branch_engine_ =
         std::make_unique<SFNBranch>(qmcdriver_input_.get_tau(), dmcdriver_input_.get_feedback(), refE_update_scheme);
     branch_engine_->put(node);
@@ -479,9 +479,9 @@ bool DMCBatched::run()
                  std::ref(crowds_));
 
       {
-        int iter                 = block * qmcdriver_input_.get_max_steps() + step;
-        const int population_now = walker_controller_->branch(iter, population_, iter == 0);
-        branch_engine_->updateParamAfterPopControl(population_now, walker_controller_->get_ensemble_property(),
+        const int iter = block * qmcdriver_input_.get_max_steps() + step;
+        walker_controller_->branch(iter, population_, iter == 0);
+        branch_engine_->updateParamAfterPopControl(walker_controller_->get_ensemble_property(),
                                                    population_.get_golden_electrons().getTotalNum());
         walker_controller_->setTrialEnergy(branch_engine_->getEtrial());
       }

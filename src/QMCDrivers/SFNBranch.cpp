@@ -130,12 +130,12 @@ int SFNBranch::initParam(const MCPopulation& population,
   return int(round(double(iParam[B_TARGETWALKERS]) / double(nwtot_now)));
 }
 
-void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
+void SFNBranch::updateParamAfterPopControl(const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec)
 {
-  FullPrecRealType logN    = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
-  FullPrecRealType pop_now = static_cast<FullPrecRealType>(pop_int);
-  //population for trial energy modification should not include any released node walkers.
-  pop_now -= wc_ensemble_prop.RNSamples;
+  //target weight
+  const auto logN = std::log(static_cast<FullPrecRealType>(iParam[B_TARGETWALKERS]));
+  //population weight before branching
+  const FullPrecRealType pop_weight = wc_ensemble_prop.Weight;
   //current energy
   vParam[SBVP::ENOW] = wc_ensemble_prop.Energy;
 
@@ -164,7 +164,7 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
       --EtrialUpdateToDoSteps;
       if (EtrialUpdateToDoSteps == 0)
       {
-        vParam[SBVP::ETRIAL]  = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now));
+        vParam[SBVP::ETRIAL]  = vParam[SBVP::EREF] + vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight));
         EtrialUpdateToDoSteps = iParam[B_ENERGYUPDATEINTERVAL];
       }
     }
@@ -184,10 +184,10 @@ void SFNBranch::updateParamAfterPopControl(int pop_int, const MCDataType<FullPre
     {
       if (BranchMode[B_KILLNODES])
         vParam[SBVP::ETRIAL] = (0.00 * vParam[SBVP::EREF] + 1.0 * vParam[SBVP::ENOW]) +
-            vParam[SBVP::FEEDBACK] * (logN - std::log(pop_now)) -
+            vParam[SBVP::FEEDBACK] * (logN - std::log(pop_weight)) -
             std::log(wc_ensemble_prop.LivingFraction) / vParam[SBVP::TAU];
       else
-        vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW] + (logN - std::log(pop_now)) / vParam[SBVP::TAU];
+        vParam[SBVP::ETRIAL] = vParam[SBVP::ENOW] + (logN - std::log(pop_weight)) / vParam[SBVP::TAU];
     }
     else
     {

@@ -111,7 +111,6 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   ensemble_property_.LivingFraction =
       static_cast<FullPrecRealType>(curData[FNSIZE_INDEX]) / static_cast<FullPrecRealType>(curData[WALKERSIZE_INDEX]);
   ensemble_property_.AlternateEnergy = FullPrecRealType(0);
-  ensemble_property_.RNSamples       = FullPrecRealType(0);
   // \\todo If WalkerControl is not exclusively for dmc then this shouldn't be here.
   // If it is it shouldn't be in QMDrivers but QMCDrivers/DMC
   if (dmcStream)
@@ -135,7 +134,7 @@ void WalkerControl::writeDMCdat(int iter, const std::vector<FullPrecRealType>& c
   }
 }
 
-int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
+void WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 {
   if (debug_disable_branching_)
     do_not_branch = true;
@@ -214,15 +213,15 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
       size_t num_copies = static_cast<int>(walkers[iw]->Multiplicity);
       while (num_copies > 1)
       {
-        auto walker_elements   = pop.spawnWalker();
-	// save this walkers ID
-	// \todo revisit Walker assignment operator after legacy drivers removed.
-	// but in the modern scheme walker IDs are permanent after creation, what walker they
-	// were copied from is in ParentID.
-	long save_id = walker_elements.walker.ID;
-        walker_elements.walker = *walkers[iw];
-	walker_elements.walker.ParentID = walker_elements.walker.ID;
-	walker_elements.walker.ID = save_id;
+        auto walker_elements = pop.spawnWalker();
+        // save this walkers ID
+        // \todo revisit Walker assignment operator after legacy drivers removed.
+        // but in the modern scheme walker IDs are permanent after creation, what walker they
+        // were copied from is in ParentID.
+        long save_id                    = walker_elements.walker.ID;
+        walker_elements.walker          = *walkers[iw];
+        walker_elements.walker.ParentID = walker_elements.walker.ID;
+        walker_elements.walker.ID       = save_id;
         num_copies--;
       }
     }
@@ -249,8 +248,6 @@ int WalkerControl::branch(int iter, MCPopulation& pop, bool do_not_branch)
 
   for (int iw = untouched_walkers; iw < pop.get_num_local_walkers(); iw++)
     pop.get_walkers()[iw]->wasTouched = true;
-
-  return pop.get_num_global_walkers();
 }
 
 void WalkerControl::computeCurData(const UPtrVector<MCPWalker>& walkers, std::vector<FullPrecRealType>& curData)
