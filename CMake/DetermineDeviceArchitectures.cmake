@@ -6,7 +6,7 @@ function(detectAMDGPU)
     find_program(AMDGPU_ARCH_EXE amdgpu-arch)
     if(AMDGPU_ARCH_EXE)
       execute_process(COMMAND ${AMDGPU_ARCH_EXE} OUTPUT_VARIABLE AMD_GPU_ARCH)
-      string(REGEX REPLACE "\n$" ";" AMD_GPU_ARCH "${AMD_GPU_ARCH}")
+      string(REGEX REPLACE "\n" ";" AMD_GPU_ARCH "${AMD_GPU_ARCH}")
       if(AMD_GPU_ARCH)
         list(APPEND QMC_GPU_ARCHS_DETECTED ${AMD_GPU_ARCH})
       else()
@@ -39,7 +39,7 @@ function(detectNVIDIAGPU)
     find_program(NVPTX_ARCH_EXE nvptx-arch)
     if(NVPTX_ARCH_EXE)
       execute_process(COMMAND ${NVPTX_ARCH_EXE} OUTPUT_VARIABLE NVIDIA_GPU_ARCH)
-      string(REGEX REPLACE "\n$" ";" NVIDIA_GPU_ARCH "${NVIDIA_GPU_ARCH}")
+      string(REGEX REPLACE "\n" ";" NVIDIA_GPU_ARCH "${NVIDIA_GPU_ARCH}")
       if(NVIDIA_GPU_ARCH)
         list(APPEND QMC_GPU_ARCHS_DETECTED ${NVIDIA_GPU_ARCH})
       else()
@@ -63,14 +63,14 @@ function(verifyNVIDIAGPUconsistency)
 endfunction()
 
 # auto detect QMC_GPU_ARCHS if not set by user and GPU features are enabled.
-if(NOT DEFINED QMC_GPU_ARCHS AND ENABLE_CUDA)
+if(NOT QMC_GPU_ARCHS AND ENABLE_CUDA)
   if(QMC_CUDA2HIP)
     detectAMDGPU()
   else()
     detectNVIDIAGPU()
   endif()
 
-  if(NOT DEFINED QMC_GPU_ARCHS)
+  if(NOT QMC_GPU_ARCHS)
     message(
       FATAL_ERROR
         "QMC_GPU_ARCHS was neither set nor derivable and auto-detection failed. "
@@ -78,6 +78,8 @@ if(NOT DEFINED QMC_GPU_ARCHS AND ENABLE_CUDA)
         "For example, set sm_80 for NVIDIA A100 GPU and gfx90a for AMD MI200 series GPUs.")
   endif()
 endif()
+
+list(REMOVE_DUPLICATES QMC_GPU_ARCHS)
 
 # make sure QMC_GPU_ARCHS is consistent with CMAKE_HIP_ARCHITECTURES or CMAKE_CUDA_ARCHITECTURES.
 if(ENABLE_CUDA)
@@ -90,4 +92,4 @@ endif()
 
 set(QMC_GPU_ARCHS
     ${QMC_GPU_ARCHS}
-    CACHE STRING "Accelerator device architectures")
+    CACHE STRING "Accelerator device architectures" FORCE)
