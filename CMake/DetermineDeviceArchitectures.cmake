@@ -61,15 +61,15 @@ endfunction()
 # auto detect QMC_GPU_ARCHS if not set by user and GPU features are enabled.
 if(NOT DEFINED QMC_GPU_ARCHS AND ENABLE_CUDA)
   if(QMC_CUDA2HIP)
-    detectamdgpu()
+    detectAMDGPU()
   else()
-    detectnvidiagpu()
+    detectNVIDIAGPU()
   endif()
 
   if(NOT DEFINED QMC_GPU_ARCHS)
     message(
       FATAL_ERROR
-        "QMC_GPU_ARCHS was neither set nor derivable and auto detect failed. "
+        "QMC_GPU_ARCHS was neither set nor derivable and auto-detection failed. "
         "QMC_GPU_ARCHS is required to be set for enabling CUDA/HIP features. "
         "For example, set sm_80 for NVIDIA A100 GPU and gfx90a for AMD MI200 series GPUs.")
   endif()
@@ -78,9 +78,9 @@ endif()
 # make sure QMC_GPU_ARCHS is consistent with CMAKE_HIP_ARCHITECTURES or CMAKE_CUDA_ARCHITECTURES.
 if(ENABLE_CUDA)
   if(QMC_CUDA2HIP)
-    verifyamdgpuconsistency()
+    verifyAMDGPUconsistency()
   else()
-    verifynvidiagpuconsistency()
+    verifyNVIDIAGPUconsistency()
   endif()
 endif()
 
