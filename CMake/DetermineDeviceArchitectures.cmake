@@ -1,3 +1,4 @@
+# derive AMD GPU architectures from CMAKE_HIP_ARCHITECTURES or detect them using amdgpu-arch (LLVM15+)
 function(detectAMDGPU)
   if(CMAKE_HIP_ARCHITECTURES)
     set(QMC_GPU_ARCHS_DETECTED ${CMAKE_HIP_ARCHITECTURES})
@@ -20,12 +21,14 @@ function(detectAMDGPU)
       PARENT_SCOPE)
 endfunction()
 
+# check QMC_GPU_ARCHS and CMAKE_HIP_ARCHITECTURES consistency
 function(verifyAMDGPUconsistency)
   if(CMAKE_HIP_ARCHITECTURES AND NOT CMAKE_HIP_ARCHITECTURES STREQUAL QMC_GPU_ARCHS)
     message(FATAL_ERROR "CMAKE_HIP_ARCHITECTURES=${CMAKE_HIP_ARCHITECTURES} doesn't match ${QMC_GPU_ARCHS}.")
   endif()
 endfunction()
 
+# derive NVIDIA GPU architectures from CMAKE_CUDA_ARCHITECTURES or detect them using nvptx-arch (LLVM16+)
 function(detectNVIDIAGPU)
   if(CMAKE_CUDA_ARCHITECTURES)
     set(QMC_GPU_ARCHS_DETECTED)
@@ -51,6 +54,7 @@ function(detectNVIDIAGPU)
       PARENT_SCOPE)
 endfunction()
 
+# check QMC_GPU_ARCHS and CMAKE_CUDA_ARCHITECTURES consistency
 function(verifyNVIDIAGPUconsistency)
   string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
   if(CMAKE_CUDA_ARCHITECTURES AND NOT CMAKE_CUDA_ARCHITECTURES STREQUAL CUDA_ARCH_NUMBERS)

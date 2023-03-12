@@ -35,8 +35,15 @@ if(QMC_OMP)
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-linker-warnings")
     endif()
 
+    # additional customization for NVIDIA toolchain
     if(OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "sm_")
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-unknown-cuda-version")
+      # unfortunately this removes standalone-debug altogether for offload builds
+      # but until we discover how to use the ${OPENMP_OFFLOAD_COMPILE_OPTIONS} more selectively
+      # this is the only way to avoid a warning per compilation unit that contains an omp symbol.
+      message(STATUS "QMCPACK adds -fstandalone-debug for Debug builds")
+      set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
     endif()
   endif()
 endif(QMC_OMP)
@@ -71,15 +78,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 # Set extra debug flags
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
-
-# unfortunately this removes standalone-debug altogether for offload builds
-# but until we discover how to use the ${OPENMP_OFFLOAD_COMPILE_OPTIONS} more selectively
-# this is the only way to avoid a warning per compilation unit that contains an omp symbol.
-if(NOT OFFLOAD_TARGET MATCHES "nvptx64")
-  message(STATUS "QMCPACK adds -fstandalone-debug for Debug builds")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
-endif()
 
 #--------------------------------------
 # Special architectural flags
