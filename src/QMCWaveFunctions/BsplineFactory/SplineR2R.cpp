@@ -100,29 +100,17 @@ void SplineR2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   if (!use_stored_copy)
     std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
 
-  // Fill top left corner of tmpU with rot_mat
-  ValueMatrix tmpU;
-  tmpU.resize(Nsplines, Nsplines);
-  std::fill(tmpU.begin(), tmpU.end(), 0.0);
-  for (auto i = 0; i < rot_mat.size1(); i++)
-  {
-    for (auto j = 0; j < rot_mat.size2(); j++)
-    {
-      tmpU[i][j] = rot_mat[i][j];
-    }
-  }
-
   // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
   for (auto i = 0; i < BasisSetSize; i++)
   {
-    for (auto j = 0; j < Nsplines; j++)
+    for (auto j = 0; j < OrbitalSetSize; j++)
     {
       const auto cur_elem = Nsplines * i + j;
       auto newval{0.};
-      for (auto k = 0; k < Nsplines; k++)
+      for (auto k = 0; k < OrbitalSetSize; k++)
       {
         const auto index = i * Nsplines + k;
-        newval += (*coef_copy_)[index] * tmpU[k][j];
+        newval += (*coef_copy_)[index] * rot_mat[k][j];
       }
       spl_coefs[cur_elem] = newval;
     }
