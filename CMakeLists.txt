@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.17.0)
 # All policies known to the running version of CMake and introduced in
 # cmake_minimum_required version or earlier will be set to use NEW behavior
 
-if (POLICY CMP0127)
+if(POLICY CMP0127)
   cmake_policy(SET CMP0127 NEW) # Condition evaluation v3.22+ https://cmake.org/cmake/help/latest/policy/CMP0127.html
 endif()
 
@@ -69,25 +69,46 @@ option(ENABLE_SYCL "Enable SYCL offload" OFF)
 cmake_dependent_option(USE_OBJECT_TARGET "Use CMake object library target" OFF "ENABLE_OFFLOAD" OFF)
 
 if(QMC_CUDA)
-  message(FATAL_ERROR "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON. "
-                      "For NVIDIA GPU support use ENABLE_OFFLOAD with ENABLE_CUDA. Use v3.16.0 or earlier if you need QMC_CUDA.")
+  message(
+    FATAL_ERROR
+      "Legacy GPU implementation using CUDA has been removed! QMC_CUDA cannot be set ON. "
+      "For NVIDIA GPU support use ENABLE_OFFLOAD with ENABLE_CUDA. Use v3.16.0 or earlier if you need QMC_CUDA.")
 endif(QMC_CUDA)
 
 if(ENABLE_CUDA AND ENABLE_SYCL)
   message(FATAL_ERROR "ENABLE_CUDA=ON and ENABLE_SYCL=ON can not be set together!")
 endif(ENABLE_CUDA AND ENABLE_SYCL)
 
-# set CMAKE_CUDA_ARCHITECTURES early such that offload compilers may take advantage of it
+if(ENABLE_CUDA)
+  if(QMC_CUDA2HIP)
+    message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP enabled")
+    if(CMAKE_VERSION VERSION_LESS 3.21.0)
+      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
+    endif()
+  else(QMC_CUDA2HIP)
+    message(STATUS "ENABLE_CUDA enabled, QMC_CUDA2HIP disabled")
+    if(CMAKE_VERSION VERSION_LESS 3.18.0)
+      message(FATAL_ERROR "ENABLE_CUDA require CMake 3.18.0 or later")
+    endif()
+  endif()
+else(ENABLE_CUDA)
+  if(QMC_CUDA2HIP)
+    message(FATAL_ERROR "QMC_CUDA2HIP requires ENABLE_CUDA=ON.")
+  endif()
+  message(STATUS "ENABLE_CUDA disabled")
+endif(ENABLE_CUDA)
+
+# stop CUDA_ARCH
 if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
   if(DEFINED CUDA_ARCH)
     unset(CUDA_ARCH CACHE)
     message(
       FATAL_ERROR "CUDA_ARCH option has been removed. Use -DCMAKE_CUDA_ARCHITECTURES=80 if -DCUDA_ARCH=sm_80 was used.")
   endif()
-  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 70)
-  endif()
 endif()
+
+include(DetermineDeviceArchitectures)
+message(STATUS "GPU device architectures: ${QMC_GPU_ARCHS}")
 
 #--------------------------------------------------------------------
 # Set compiler-time parameters
@@ -168,8 +189,7 @@ option(ENABLE_STACKTRACE "Enable use of boost::stacktrace" OFF)
 option(USE_VTUNE_API "Enable use of VTune ittnotify APIs" OFF)
 cmake_dependent_option(USE_VTUNE_TASKS "USE VTune ittnotify task annotation" OFF "ENABLE_TIMERS AND USE_VTUNE_API" OFF)
 # CMake note - complex conditionals in cmake_dependent_option must have spaces around parentheses
-cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF
-                       "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
+cmake_dependent_option(USE_NVTX_API "Enable/disable NVTX regions in CUDA code." OFF "ENABLE_TIMERS AND ENABLE_CUDA" OFF)
 set(HAVE_EINSPLINE 1) # to be removed
 option(QMC_EXP_THREADING "Experimental non openmp threading models" OFF)
 mark_as_advanced(QMC_EXP_THREADING)
@@ -215,8 +235,9 @@ endif()
 if(QMC_OMP)
   find_package(OpenMP)
   if(NOT OpenMP_FOUND)
-      message(FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
-                          "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
+    message(
+      FATAL_ERROR "No compiler support for OpenMP found. Switching to a compiler with OpenMP support is recommended."
+                  "Alternatively, you will need to run CMake configure with -DQMC_OMP=OFF")
   endif()
 endif(QMC_OMP)
 
@@ -478,7 +499,6 @@ if(NOT TEST_CXX_COMPILE_MAIN)
                       "Check error in \"${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/CMakeError.log\".")
 endif()
 
-
 #--------------------------------------------------------------
 # Workaround for breakage of OMP Target kernels at -O0 by Clang
 #--------------------------------------------------------------
@@ -493,7 +513,6 @@ if((${COMPILER} MATCHES "Clang") AND ENABLE_OFFLOAD)
   option(ENABLE_OFFLOAD_CLANG_DEBUG_O3 "build OMP target kernels with -O3 in the build type Debug" ON)
 endif()
 mark_as_advanced(ENABLE_OFFLOAD_CLANG_DEBUG_O3)
-
 
 ######################################################################
 # Check external libraries.
@@ -710,57 +729,49 @@ endif()
 #  set up CUDA compiler options and libraries
 #-------------------------------------------------------------------
 set(HAVE_CUDA 0)
-if(ENABLE_CUDA)
-  if(QMC_CUDA2HIP)
-    message(STATUS "CUDA2HIP enabled") # all the HIP and ROCm settings will be handled by ENABLE_ROCM
-    if(CMAKE_VERSION VERSION_LESS 3.21.0)
-      message(FATAL_ERROR "ENABLE_ROCM or QMC_CUDA2HIP require CMake 3.21.0 or later")
-    endif()
-  else(QMC_CUDA2HIP)
-    if(CMAKE_VERSION VERSION_LESS 3.18.0)
-      message(FATAL_ERROR "ENABLE_CUDA require CMake 3.18.0 or later")
-    endif()
-    if(NOT DEFINED CMAKE_CUDA_STANDARD)
-      set(CMAKE_CUDA_STANDARD 17)
-    endif()
-    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    set(CMAKE_CUDA_EXTENSIONS OFF)
-    # CMAKE_CUDA_STANDARD doesn't affect nvcc detection and using unsupported compilers may choke the detection.
-    # This happens when Clang default to C++17. Setting CMAKE_CUDA_FLAGS directly works around the issue.
-    # but CUDA_FLAGS in flags.make may contain -std=c++17 twice with no harm.
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++${CMAKE_CUDA_STANDARD}")
-
-    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "nvcc host compiler passed via -ccbin")
-    if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
-      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
-    endif()
-
-    enable_language(CUDA)
-    if(ENABLE_CUDA)
-      include(TestCUDAHostCompatibility)
-    endif()
-    find_package(CUDAToolkit 11.0 REQUIRED)
-    if(NOT TARGET CUDA::cublas)
-      message(
-        FATAL_ERROR
-          "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
-          "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
-          "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
-    endif()
-    # Automatically set the default NVCC flags
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
-    if(QMC_COMPLEX)
-      set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DQMC_COMPLEX=${QMC_COMPLEX}")
-    endif()
-    set(HAVE_CUDA 1)
-    message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+if(ENABLE_CUDA AND NOT QMC_CUDA2HIP)
+  if(NOT DEFINED CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD 17)
   endif()
-else(ENABLE_CUDA)
-  if(QMC_CUDA2HIP)
-    message(FATAL_ERROR "QMC_CUDA2HIP requires QMC_CUDA=ON or ENABLE_CUDA=ON.")
+  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+  set(CMAKE_CUDA_EXTENSIONS OFF)
+  # CMAKE_CUDA_STANDARD doesn't affect nvcc detection and using unsupported compilers may choke the detection.
+  # This happens when Clang default to C++17. Setting CMAKE_CUDA_FLAGS directly works around the issue.
+  # but CUDA_FLAGS in flags.make may contain -std=c++17 twice with no harm.
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++${CMAKE_CUDA_STANDARD}")
+
+  set(CMAKE_CUDA_HOST_COMPILER
+      ${CMAKE_CXX_COMPILER}
+      CACHE STRING "nvcc host compiler passed via -ccbin")
+  if(NOT CMAKE_CUDA_FLAGS MATCHES "allow-unsupported-compiler")
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --allow-unsupported-compiler")
   endif()
-  message(STATUS "CUDA disabled")
-endif(ENABLE_CUDA)
+
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    string(REPLACE "sm_" "" CUDA_ARCH_NUMBERS "${QMC_GPU_ARCHS}")
+    set(CMAKE_CUDA_ARCHITECTURES ${CUDA_ARCH_NUMBERS})
+  endif()
+
+  enable_language(CUDA)
+  if(ENABLE_CUDA)
+    include(TestCUDAHostCompatibility)
+  endif()
+  find_package(CUDAToolkit 11.0 REQUIRED)
+  if(NOT TARGET CUDA::cublas)
+    message(
+      FATAL_ERROR
+        "Found an incomplete CUDA toolkit installation, target CUDA::cublas not found. "
+        "This often happens when CMake failed in recognizing the NVHPC internal CUDA toolkit with libcublas. "
+        "Set CMAKE_CUDA_COMPILER to the full path of nvcc from a complete CUDA toolkit installation.")
+  endif()
+  # Automatically set the default NVCC flags
+  set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Drestrict=__restrict__ -DNO_CUDA_MAIN")
+  if(QMC_COMPLEX)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -DQMC_COMPLEX=${QMC_COMPLEX}")
+  endif()
+  set(HAVE_CUDA 1)
+  message("Project CUDA_FLAGS: ${CMAKE_CUDA_FLAGS}")
+endif()
 
 if(USE_NVTX_API)
   message(STATUS "Enabling use of CUDA NVTX APIs")
@@ -794,9 +805,11 @@ if(ENABLE_ROCM)
   # use hip package to supply the hip runtime for CXX source code.
   find_package(hip CONFIG)
   if(NOT hip_FOUND)
-    message(FATAL_ERROR "The HIP runtime library cmake configure file hip-config.cmake cannot be found! "
-                        "This happens when the ROCm installation cannot be found by CMake. "
-                        "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
+    message(
+      FATAL_ERROR
+        "The HIP runtime library cmake configure file hip-config.cmake cannot be found! "
+        "This happens when the ROCm installation cannot be found by CMake. "
+        "Rerun cmake with -DROCM_ROOT=<your ROCm installation root directory> added.")
   endif()
   find_package(hipblas CONFIG REQUIRED)
   find_package(rocsolver CONFIG REQUIRED)
@@ -806,10 +819,11 @@ if(ENABLE_ROCM)
   if(DEFINED HIP_ARCH)
     unset(HIP_ARCH CACHE)
     message(
-      FATAL_ERROR "HIP_ARCH option has been removed. Use -DCMAKE_HIP_ARCHITECTURES=gfx90a if -DHIP_ARCH=gfx90a was used.")
+      FATAL_ERROR
+        "HIP_ARCH option has been removed. Use -DCMAKE_HIP_ARCHITECTURES=gfx90a if -DHIP_ARCH=gfx90a was used.")
   endif()
   if(NOT DEFINED CMAKE_HIP_ARCHITECTURES)
-    set(CMAKE_HIP_ARCHITECTURES gfx906)
+    set(CMAKE_HIP_ARCHITECTURES ${QMC_GPU_ARCHS})
   endif()
 
   set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -fPIC -ffast-math --gpu-max-threads-per-block=256")
@@ -827,6 +841,7 @@ if(ENABLE_ROCM)
     # temporarily put rocsolver rocrand here for convenience, should be moved to Platforms.
     target_link_libraries(ROCM::libraries INTERFACE roc::rocsolver roc::rocrand)
   endif()
+  message("Project HIP_FLAGS: ${CMAKE_HIP_FLAGS}")
 endif(ENABLE_ROCM)
 
 #-------------------------------------------------------------------
@@ -866,7 +881,14 @@ if(ENABLE_SYCL)
   endif()
   add_library(SYCL::host INTERFACE IMPORTED)
   add_library(SYCL::device INTERFACE IMPORTED)
-  find_package(IntelDPCPP REQUIRED CONFIGS IntelDPCPPConfig-modified.cmake PATHS ${PROJECT_CMAKE} NO_DEFAULT_PATH)
+  find_package(
+    IntelDPCPP
+    REQUIRED
+    CONFIGS
+    IntelDPCPPConfig-modified.cmake
+    PATHS
+    ${PROJECT_CMAKE}
+    NO_DEFAULT_PATH)
   target_link_libraries(SYCL::host INTERFACE OneAPI::DPCPP-host)
   target_link_libraries(SYCL::device INTERFACE OneAPI::DPCPP-device)
   if(TARGET MKL::sycl)
@@ -874,7 +896,7 @@ if(ENABLE_SYCL)
   endif()
 endif(ENABLE_SYCL)
 
- #-------------------------------------------------------------------
+#-------------------------------------------------------------------
 # set up VTune ittnotify library
 #-------------------------------------------------------------------
 
