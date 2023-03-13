@@ -21,6 +21,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -31,9 +32,10 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction twf;
   WalkerConfigurations walker_confs;
 
@@ -75,9 +77,10 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   TrialWaveFunction twf;
   WalkerConfigurations walker_confs;
 
@@ -141,9 +144,10 @@ TEST_CASE("MCPopulation::redistributeWalkers", "[particle][population]")
   ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
   WalkerConfigurations walker_confs;
   MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), wavefunction_pool.getPrimary(),
                           hamiltonian_pool.getPrimary());

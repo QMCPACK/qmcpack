@@ -47,9 +47,10 @@ public:
     QMCDriverInput qmcdriver_input;
     qmcdriver_input.readXML(node);
 
-    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm_);
-    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_, comm_, particle_pool);
-    auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm_);
+    auto wavefunction_pool =
+        MinimalWaveFunctionPool::make_diamondC_1x1x1(project_data_.getRuntimeOptions(), comm_, particle_pool);
+    auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm_, particle_pool, wavefunction_pool);
   }
 
 private:

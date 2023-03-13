@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/StdRandom.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -79,10 +80,11 @@ TEST_CASE("MomentumDistribution::MomentumDistribution", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  DataLocality dl        = DataLocality::crowd;
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset      = *(particle_pool.getParticleSet("e"));
+  DataLocality dl = DataLocality::crowd;
 
   // Build from input
   MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);
@@ -126,10 +128,11 @@ TEST_CASE("MomentumDistribution::accumulate", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
   outputManager.pause();
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  DataLocality dl        = DataLocality::crowd;
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset      = *(particle_pool.getParticleSet("e"));
+  DataLocality dl = DataLocality::crowd;
 
   // Setup particleset
   pset.R = ParticleSet::ParticlePos{{1.751870349, 4.381521229, 2.865202269}, {3.244515371, 4.382273176, 4.21105285},
@@ -232,10 +235,11 @@ TEST_CASE("MomentumDistribution::spawnCrowdClone", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  DataLocality dl        = DataLocality::crowd;
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset      = *(particle_pool.getParticleSet("e"));
+  DataLocality dl = DataLocality::crowd;
 
   // Build from input
   MomentumDistribution md(std::move(mdi), pset.getTotalNum(), pset.getTwist(), pset.getLattice(), dl);

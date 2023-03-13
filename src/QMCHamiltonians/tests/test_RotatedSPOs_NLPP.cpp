@@ -21,8 +21,8 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <string>
@@ -101,7 +101,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   pp.addParticleSet(std::move(ions_uptr));
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
   REQUIRE(wp.empty() == true);
 
   const char* wf_input_multi_det = R"(

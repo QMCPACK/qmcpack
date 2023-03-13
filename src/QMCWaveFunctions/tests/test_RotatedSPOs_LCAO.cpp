@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
 #include "checkMatrix.hpp"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <string>
@@ -179,7 +180,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 
@@ -253,7 +254,7 @@ TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 
@@ -310,7 +311,7 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 
@@ -424,7 +425,7 @@ TEST_CASE("Rotated LCAO WF1, MO coeff rotated, zero angle", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 
@@ -488,7 +489,7 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 
@@ -549,7 +550,7 @@ TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(test_project, pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
   REQUIRE(wp.empty() == true);
 
   // Only care that this wavefunction has 3 SPOs and a 3x3 coefficient matrix

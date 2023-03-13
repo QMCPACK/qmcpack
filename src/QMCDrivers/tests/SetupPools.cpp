@@ -15,6 +15,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -30,7 +31,7 @@ SetupPools::SetupPools()
 
   particle_pool     = std::make_unique<ParticleSetPool>(MinimalParticlePool::make_diamondC_1x1x1(comm));
   wavefunction_pool = std::make_unique<WaveFunctionPool>(
-      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, *particle_pool));
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, *particle_pool));
   hamiltonian_pool = std::make_unique<HamiltonianPool>(
       MinimalHamiltonianPool::make_hamWithEE(comm, *particle_pool, *wavefunction_pool));
 }

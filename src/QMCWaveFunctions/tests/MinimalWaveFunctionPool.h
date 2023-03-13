@@ -40,11 +40,11 @@ class MinimalWaveFunctionPool
   )";
 
 public:
-  static WaveFunctionPool make_diamondC_1x1x1(const ProjectData& project_data,
+  static WaveFunctionPool make_diamondC_1x1x1(const RuntimeOptions& runtime_options,
                                               Communicate* comm,
                                               ParticleSetPool& particle_pool)
   {
-    WaveFunctionPool wp(project_data, particle_pool, comm);
+    WaveFunctionPool wp(runtime_options, particle_pool, comm);
 
     Libxml2Document doc;
     bool okay = doc.parseFromString(wf_input);

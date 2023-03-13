@@ -34,6 +34,7 @@
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/StdRandom.h"
 #include "Utilities/StlPrettyPrint.hpp"
+#include "Utilities/ProjectData.h"
 #include "Utilities/for_testing/NativeInitializerPrint.hpp"
 #include <iostream>
 
@@ -220,10 +221,11 @@ TEST_CASE("OneBodyDensityMatrices::OneBodyDensityMatrices", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& spo_map          = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   // Good constructor
   OneBodyDensityMatrices obdm(std::move(obdmi), lattice, species_set, spo_map, pset_target);
@@ -249,11 +251,12 @@ TEST_CASE("OneBodyDensityMatrices::generateSamples", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& species_set      = pset_target.getSpeciesSet();
-  auto& spo_map          = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& species_set = pset_target.getSpeciesSet();
+  auto& spo_map     = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   auto samplingCaseRunner = [&pset_target, &species_set, &spo_map](Inputs test_case) {
     Libxml2Document doc;
@@ -289,11 +292,12 @@ TEST_CASE("OneBodyDensityMatrices::spawnCrowdClone()", "[estimators]")
   Communicate* comm;
   comm = OHMMS::Controller;
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& species_set      = pset_target.getSpeciesSet();
-  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& species_set = pset_target.getSpeciesSet();
+  auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(valid_one_body_density_matrices_input_sections[Inputs::valid_obdm_input]);
@@ -325,12 +329,13 @@ TEST_CASE("OneBodyDensityMatrices::accumulate", "[estimators]")
     throw std::runtime_error("cannot parse OneBodyDensitMatricesInput section");
   xmlNodePtr node = doc.getRoot();
   OneBodyDensityMatricesInput obdmi(node);
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
-  auto& pset_target      = *(particle_pool.getParticleSet("e"));
-  auto& pset_source      = *(particle_pool.getParticleSet("ion"));
-  auto& species_set      = pset_target.getSpeciesSet();
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+  auto& pset_target = *(particle_pool.getParticleSet("e"));
+  auto& pset_source = *(particle_pool.getParticleSet("ion"));
+  auto& species_set = pset_target.getSpeciesSet();
   OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
 
   std::vector<MCPWalker> walkers;
@@ -423,11 +428,12 @@ TEST_CASE("OneBodyDensityMatrices::evaluateMatrix", "[estimators]")
         InputSection::reverseLookupInputEnumMap(obdmi.get_integrator(), OBDMI::lookup_input_enum_value);
     std::cout << "Test evaluateMatrix for: " << integrator_str << '\n';
 
-    auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-    auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-    auto& spomap           = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
-    auto& pset_target      = *(particle_pool.getParticleSet("e"));
-    auto& species_set      = pset_target.getSpeciesSet();
+    auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+    auto wavefunction_pool =
+        MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+    auto& spomap      = wavefunction_pool.getWaveFunction("wavefunction")->getSPOMap();
+    auto& pset_target = *(particle_pool.getParticleSet("e"));
+    auto& species_set = pset_target.getSpeciesSet();
     OneBodyDensityMatrices obdm(std::move(obdmi), pset_target.getLattice(), species_set, spomap, pset_target);
     auto& trial_wavefunction = *(wavefunction_pool.getPrimary());
 

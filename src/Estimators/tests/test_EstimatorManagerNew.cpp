@@ -23,6 +23,7 @@
 #include "Particle/tests/MinimalParticlePool.h"
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
+#include "Utilities/ProjectData.h"
 #include <stdio.h>
 #include <sstream>
 
@@ -55,12 +56,13 @@ TEST_CASE("EstimatorManagerNew::EstimatorManagerNew(EstimatorManagerInput,...)",
   CHECK(emi.get_estimator_inputs().size() == 2);
   CHECK(emi.get_scalar_estimator_inputs().size() == 1);
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project, comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham              = *(hamiltonian_pool.getPrimary());
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset            = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham             = *(hamiltonian_pool.getPrimary());
   EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
 
   CHECK(emn.getNumEstimators() == 2);
