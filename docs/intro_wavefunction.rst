@@ -69,10 +69,10 @@ Single-particle orbitals
 A single particle orbital set (SPOSet) is a set of orbitals evaluated at a single electron real-space position.
 A typical Slater determinant is calculated from a N-by-N matrix constructed from N orbitals at the positions of N electrons.
 QMCPACK supports a range of SPOSet types:
- * :ref:`spo-spline`
- * :ref:`spo-lcao`
- * :ref:`spo-hybrid`
- * :ref:`pwbasis`
+* :ref:`spo-spline`
+* :ref:`spo-lcao`
+* :ref:`spo-hybrid`
+* :ref:`pwbasis`
 
 
 sposet_collection input style
@@ -265,10 +265,6 @@ attribute:
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``gpu``                     | Text       | Yes/no                   |         | GPU switch.                               |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``gpusharing``              | Text       | Yes/no                   | No      | Share B-spline table across GPUs.         |
-+-----------------------------+------------+--------------------------+---------+-------------------------------------------+
-| ``Spline_Size_Limit_MB``    | Integer    |                          |         | Limit B-spline table size on GPU.         |
-+-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``check_orb_norm``          | Text       | Yes/no                   | Yes     | Check norms of orbitals from h5 file.     |
 +-----------------------------+------------+--------------------------+---------+-------------------------------------------+
 | ``save_coefs``              | Text       | Yes/no                   | No      | Save the spline coefficients to h5 file.  |
@@ -314,32 +310,6 @@ Additional information:
     scratch memory on the compute nodes, users can perform this step on
     fat nodes and transfer back the h5 file for QMC calculations.
 
-- gpusharing
-    If enabled, spline data is shared across multiple
-    GPUs on a given computational node. For example, on a
-    two-GPU-per-node system, each GPU would have half of the orbitals.
-    This enables larger overall spline tables than would normally fit in
-    the memory of individual GPUs to be used, potentially up to the total
-    GPU memory on a node. To obtain high performance, large electron
-    counts or a high-performing CPU-GPU interconnect is required. To use
-    this feature, the following needs to be done:
-
-      -  The CUDA Multi-Process Service (MPS) needs to be used (e.g., on
-         Summit use "-alloc_flags gpumps" for bsub). If MPS is not
-         detected, sharing will be disabled.
-
-      -  CUDA_VISIBLE_DEVICES needs to be properly set to control each rank’s
-         visible CUDA devices (e.g., on OLCF Summit one needs to
-         create a resource set containing all GPUs with the respective number
-         of ranks with "jsrun –task-per-rs Ngpus -g Ngpus").
-
-- Spline_Size_Limit_MB
-    Allows distribution of the B-spline
-    coefficient table between the host and GPU memory. The compute kernels
-    access host memory via zero-copy. Although the performance penalty
-    introduced by it is significant, it allows large calculations to go
-    through.
- 
 - skip_checks
     When converting the wave function from convertpw4qmc instead
     of pw2qmcpack, there is missing ionic information. This flag bypasses the requirement
@@ -872,6 +842,9 @@ Additional information:
 
 - ``algorithm`` algorithms used in multi-Slater determinant implementation. ``table_method`` table method of Clark et al. :cite:`Clark2011` .
   ``precomputed_table_method`` adds partial sum precomputation on top of ``table_method``.
+
+- When the multideterminant wavefunction is read from an HDF5 file in the ``detlist`` child, the HDF5 dataset must use 64 bit unsigned integers to represent the determinants. The ``utils/determinants_tools.py`` script described in further detail below will check that the determinants are stored using the correct type and correct files that are storing signed 64 bit integers.
+
 
 .. code-block::
    :caption: multideterminant set XML element.

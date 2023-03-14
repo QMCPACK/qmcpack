@@ -1,6 +1,6 @@
 # Test example
 
-if(NOT QMC_CUDA AND NOT QMC_COMPLEX)
+if(NOT QMC_COMPLEX)
 
   list(APPEND H2O_SCALARS "totenergy" "-17.26138 .006") # total energy
 

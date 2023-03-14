@@ -47,25 +47,29 @@
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
-          <opt_vars>0.1</opt_vars>
+      <rotated_sposet name="rot-spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
-          <opt_vars>0.1</opt_vars>
+        </sposet>
+        <opt_vars>0.1</opt_vars>
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <opt_vars>0.1</opt_vars>
+        <sposet basisset="LCAOBSet" name="spo-down">
           <coefficient id="downdetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
+        </sposet>
+      </rotated_sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="1"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
 

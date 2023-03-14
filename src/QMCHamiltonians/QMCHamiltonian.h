@@ -25,12 +25,12 @@
 
 #include <ResourceHandle.h>
 
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Configuration.h"
 #include "QMCDrivers/WalkerProperties.h"
 #include "QMCHamiltonians/OperatorBase.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
+#include "Utilities/Resource.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #endif

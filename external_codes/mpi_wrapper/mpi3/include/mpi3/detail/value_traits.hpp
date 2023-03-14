@@ -1,12 +1,15 @@
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2017-2023 Alfredo A. Correa
+
 #ifndef BOOST_MPI3_DETAIL_VALUE_TRAITS_HPP
 #define BOOST_MPI3_DETAIL_VALUE_TRAITS_HPP
 
 //#include "../../mpi3/detail/package_archive.hpp"
 //#include "../../mpi3/communicator.hpp"
 
-#include "./datatype.hpp"
-#include "./iterator.hpp"
-//#include "./just.hpp"
+#include <mpi3/detail/iterator.hpp>
+
+#include <mpi3/type.hpp>
 
 #include<iterator>
 #include<type_traits>
@@ -57,8 +60,11 @@ struct basic_tag : memcopyable_tag{using base = memcopyable_tag;};
 
 //template<class V, typename = std::enable_if_t<is_memcopyable<V>{} and not is_basic<V>{}>>
 //memcopyable_tag value_category_aux(V&&);
-template<class V, typename = std::enable_if_t<is_basic<V>{}>>
+template<class V, std::enable_if_t<is_basic<V>{} or has_datatype<V>{}, int> =0>
 basic_tag value_category_aux(V const&);
+
+//template<class V, std::enable_if_t<has_datatype<V>{}, int> =0>
+//basic_tag value_category_aux(V const&);
 
 template<class V, std::size_t N>
 value_unspecified_tag value_category_aux(V[N]);  // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays) : legacy compatibility
@@ -74,56 +80,4 @@ using value_category_t = typename value_category<V>::type;
 }  // end namespace mpi3
 }  // end namespace boost
 
-//#ifdef _TEST_BOOST_MPI3_DETAIL_VALUE_TRAITS
-
-//#include "../../mpi3/environment.hpp"
-//#include "../../mpi3/main.hpp"
-
-//#include<deque>
-//#include<list>
-//#include<vector>
-
-//#include<iostream>
-
-//namespace mpi3 = boost::mpi3;
-//using std::cout;
-
-//template<class It>
-//std::string f(It it, mpi3::detail::value_unspecified_tag){
-//	return "memcopyable_tag";
-//};
-
-//template<class It>
-//std::string f(It it, mpi3::detail::memcopyable_tag){
-//	return "memcopyable_tag";
-//};
-
-//template<class It>
-//std::string f(It it, mpi3::detail::basic_tag const&){
-//	return "basic_tag";
-//};
-
-//template<class It> std::string f(It&& it){
-//	return f(
-//		std::forward<It>(it),
-//		typename boost::mpi3::detail::value_category<typename std::iterator_traits<It>::value_type>::type{}
-//	);
-//}
-
-//int mpi3::main(int, char*[], mpi3::communicator){
-
-//	{
-//		std::list<std::tuple<double, double>> l1;
-//	//	assert( f(begin(l1)) == "memcopyable_tag" );
-//	//	std::list<double> l2;
-//	//	assert( f(begin(l2)) == "basic_tag" );
-//	//	static_assert(std::is_trivially_copyable<std::complex<double>>{}, "complex is not trivially copyable?");
-//	//	assert( f(nullptr, mpi3::detail::value_category_t<std::tuple<double, double>>{}) == "memcopyable_tag" );
-//	//	assert( f(nullptr, mpi3::detail::value_category_t<std::string>{}) == "memcopyable_tag" );
-//	}
-
-//	return 0;
-//}
-//#endif
 #endif
-

@@ -22,6 +22,8 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/MCWalkerConfiguration.h"
 
+#include <stdexcept> // std::invalid_argument
+
 namespace qmcplusplus
 {
 using LRHandlerType  = LRCoulombSingleton::LRHandlerType;
@@ -46,7 +48,13 @@ void DensityEstimator::resetTargetParticleSet(ParticleSet& P) {}
 
 DensityEstimator::Return_t DensityEstimator::evaluate(ParticleSet& P)
 {
-  RealType wgt = t_walker_->Weight;
+  if (t_walker_ == nullptr)
+  {
+    throw std::invalid_argument("calling DensityEstimator::evaluate needs the weight of the walkers");
+  }
+
+  const RealType wgt = t_walker_->Weight;
+
   if (periodic_)
   {
     for (int iat = 0; iat < P.getTotalNum(); ++iat)

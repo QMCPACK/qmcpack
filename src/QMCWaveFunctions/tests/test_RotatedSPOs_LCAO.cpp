@@ -17,7 +17,10 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
-
+#include "QMCWaveFunctions/RotatedSPOs.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/LCAO/LCAOrbitalSet.h"
+#include "checkMatrix.hpp"
 
 #include <stdio.h>
 #include <string>
@@ -90,7 +93,8 @@ std::string setupRotationXML(const std::string& rot_angle_up,
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-     <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">)";
+     <rotated_sposet name="rot-spo-up">
+       <sposet basisset="LCAOBSet" name="spo-up">)";
 
   // Opt vars for up determinant
   //       <opt_vars>0.1</opt_vars>
@@ -110,10 +114,13 @@ std::string setupRotationXML(const std::string& rot_angle_up,
 
   std::string coeff_up_element = wf_input_coeff_up_start + coeff_up + wf_input_coeff_up_end;
 
+  const std::string sposet_end = R"(</sposet>)";
+
   // Middle part of XML input block
   const std::string wf_input2 = R"(
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">)";
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down">)";
 
   // Opt vars for down determinant
   //   <opt_vars>0.2</opt_vars>
@@ -131,12 +138,12 @@ std::string setupRotationXML(const std::string& rot_angle_up,
   std::string coeff_down_element = wf_input_coeff_down_start + coeff_down + wf_input_coeff_down_end;
 
   const std::string wf_input3 = R"(
-      </sposet>
+      </rotated_sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
    </wavefunction>)";
@@ -144,11 +151,13 @@ std::string setupRotationXML(const std::string& rot_angle_up,
 
   // clang-format off
   std::string wf_input = std::string(wf_input1) + "\n" +
+                         coeff_up_element + "\n" +
+                         sposet_end + "\n" +
                          (rot_angle_up.empty() ? std::string() : rot_angle_up_element) +
-                         coeff_up_element +
                          wf_input2 + "\n" +
+                         coeff_down_element + "\n" +
+                         sposet_end + "\n" +
                          (rot_angle_down.empty() ? std::string() : rot_angle_down_element) +
-                         coeff_down_element +
                          std::string(wf_input3);
   // clang-format on
 
@@ -233,7 +242,7 @@ TEST_CASE("Rotated LCAO WF0 zero angle", "[qmcapp]")
   CHECK(dhpsi_over_psi_list[0][1] == ValueApprox(7.84119772047731));
 }
 
-// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from idenity coefficients
+// No Jastrow, rotation angle theta1=0.1 and theta2=0.2 from identity coefficients
 TEST_CASE("Rotated LCAO WF1", "[qmcapp]")
 {
   Communicate* c;
@@ -317,23 +326,27 @@ TEST_CASE("Rotated LCAO WF2 with jastrow", "[qmcapp]")
           </basisGroup>
         </atomicBasisSet>
       </basisset>
-      <sposet basisset="LCAOBSet" name="spo-up" size="2" optimize="yes">
+      <rotated_sposet name="rot-spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
-      <sposet basisset="LCAOBSet" name="spo-down" size="2" optimize="yes">
+        </sposet>
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down" method="history">
           <coefficient id="updetC" type="Array" size="2">
             1.0 0.0
             0.0 1.0
           </coefficient>
-      </sposet>
+        </sposet>
+      </rotated_sposet>
     </sposet_collection>
     <determinantset type="MO" key="STO" transform="no" source="ion0">
       <slaterdeterminant>
-        <determinant id="spo-up" spin="1" size="2"/>
-        <determinant id="spo-down" spin="-1" size="2"/>
+        <determinant sposet="rot-spo-up"/>
+        <determinant sposet="rot-spo-down"/>
       </slaterdeterminant>
     </determinantset>
     <jastrow name="Jee" type="Two-Body" function="pade">
@@ -515,4 +528,153 @@ TEST_CASE("Rotated LCAO WF1 MO coeff rotated, half angle", "[qmcapp]")
   CHECK(dhpsioverpsi[0] == ValueApprox(2.59551625714144));
   CHECK(dhpsioverpsi[1] == ValueApprox(1.70071425070404));
 }
+
+// Test rotation using stored coefficients
+//  and test consistency between history list and global rotation
+TEST_CASE("Rotated LCAO rotation consistency", "[qmcapp]")
+{
+  using RealType    = QMCTraits::RealType;
+  using ValueType   = QMCTraits::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  Communicate* c;
+  c = OHMMS::Controller;
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+
+  WaveFunctionPool wp(pp, c);
+  REQUIRE(wp.empty() == true);
+
+  // Only care that this wavefunction has 3 SPOs and a 3x3 coefficient matrix
+  const char* wf_input = R"(<wavefunction target='e'>
+
+     <sposet_collection type="MolecularOrbital">
+      <!-- Use a single Slater Type Orbital (STO) for the basis. Cusp condition is correct. -->
+      <basisset keyword="STO" transform="no">
+        <atomicBasisSet type="STO" elementType="He" normalized="no">
+          <basisGroup rid="R0" l="0" m="0" type="Slater">
+             <radfunc n="1" exponent="2.0"/>
+          </basisGroup>
+          <basisGroup rid="R1" l="0" m="0" type="Slater">
+             <radfunc n="2" exponent="1.0"/>
+          </basisGroup>
+          <basisGroup rid="R2" l="0" m="0" type="Slater">
+             <radfunc n="3" exponent="1.0"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <rotated_sposet name="rot-spo-up">
+        <sposet basisset="LCAOBSet" name="spo-up">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+        </sposet>
+      </rotated_sposet>
+      <rotated_sposet name="rot-spo-down">
+        <sposet basisset="LCAOBSet" name="spo-down">
+          <coefficient id="updetC" type="Array" size="3">
+            1.0 0.0 0.0
+            0.0 1.0 0.0
+            0.0 0.0 1.0
+          </coefficient>
+        </sposet>
+      </rotated_sposet>
+    </sposet_collection>
+    <determinantset type="MO" key="STO" transform="no" source="ion0">
+      <slaterdeterminant>
+        <determinant id="rot-spo-up"/>
+        <determinant id="rot-spo-down"/>
+      </slaterdeterminant>
+    </determinantset>
+   </wavefunction>)";
+
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction* psi = wp.getWaveFunction("psi0");
+  REQUIRE(psi != nullptr);
+  REQUIRE(psi->getOrbitals().size() == 1);
+
+  // Type should be pointer to SlaterDet
+  auto orb1       = psi->getOrbitals()[0].get();
+  SlaterDet* sdet = dynamic_cast<SlaterDet*>(orb1);
+  REQUIRE(sdet != nullptr);
+
+  // Use the SPOs from different spins to separately track rotation applied using the stored coefficients
+  // versus the regular coefficients.
+  // The coefficient matrices should match after the same rotations are applied to each.
+  SPOSetPtr spoptr     = sdet->getPhi(0);
+  RotatedSPOs* rot_spo = dynamic_cast<RotatedSPOs*>(spoptr);
+  REQUIRE(rot_spo != nullptr);
+
+  SPOSetPtr spoptr1           = sdet->getPhi(1);
+  RotatedSPOs* global_rot_spo = dynamic_cast<RotatedSPOs*>(spoptr1);
+  REQUIRE(global_rot_spo != nullptr);
+
+  std::vector<RealType> params1 = {0.1, 0.2};
+
+  // Apply against the existing coefficients
+  rot_spo->apply_rotation(params1, false);
+
+  // Apply against the stored coefficients
+  global_rot_spo->apply_rotation(params1, true);
+
+  // Value after first rotation, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data0 =
+        {  0.975103993210479,   0.0991687475215628,  0.198337495043126,
+          -0.0991687475215628,  0.995020798642096,  -0.00995840271580824,
+          -0.198337495043126,  -0.00995840271580824, 0.980083194568384 };
+  // clang-format on
+
+  ValueMatrix new_rot_m0(rot_data0.data(), 3, 3);
+
+  LCAOrbitalSet* lcao1       = dynamic_cast<LCAOrbitalSet*>(rot_spo->Phi.get());
+  LCAOrbitalSet* lcao_global = dynamic_cast<LCAOrbitalSet*>(global_rot_spo->Phi.get());
+
+  CheckMatrixResult check_matrix_result = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result.result) { FAIL(check_matrix_result.result_message); }
+
+  CheckMatrixResult check_matrix_result0 = checkMatrix(*lcao_global->C, new_rot_m0, true);
+  CHECKED_ELSE(check_matrix_result0.result) { FAIL(check_matrix_result0.result_message); }
+
+  std::vector<RealType> old_params = {0.0, 0.0, 0.0};
+  std::vector<RealType> new_params(3);
+  global_rot_spo->applyDeltaRotation(params1, old_params, new_params);
+
+  std::vector<RealType> params2 = {0.3, 0.15};
+  rot_spo->apply_rotation(params2, false);
+
+  std::vector<RealType> new_params2(3);
+  global_rot_spo->applyDeltaRotation(params2, new_params, new_params2);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(*lcao1->C, *lcao_global->C, true);
+  CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
+
+  // Value after two rotations, computed from gen_matrix_ops.py
+  // clang-format off
+  std::vector<ValueType> rot_data3 =
+    {  0.862374825309137,  0.38511734273482,   0.328624851461217,
+      -0.377403929117215,  0.921689108007811, -0.0897522281988318,
+      -0.337455085840952, -0.046624248032951,  0.940186281826872 };
+  // clang-format on
+
+  ValueMatrix new_rot_m3(rot_data3.data(), 3, 3);
+
+  CheckMatrixResult check_matrix_result3 = checkMatrix(*lcao1->C, new_rot_m3, true);
+  CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
+
+  // Need to flip the sign on the first two entries to match the output from gen_matrix_ops.py
+  std::vector<ValueType> expected_param = {0.3998099017676912, 0.34924318065960236, -0.02261313113492491};
+  for (int i = 0; i < expected_param.size(); i++)
+    CHECK(new_params2[i] == Approx(expected_param[i]));
+}
+
 } // namespace qmcplusplus

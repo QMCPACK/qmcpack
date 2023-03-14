@@ -116,9 +116,7 @@ private:
   int prevStepsBetweenSamples;
   VMCDriverInput vmcdriver_input_;
   QMCRunType getRunType() override { return QMCRunType::VMC_BATCH; }
-  ///Ways to set rn constant
-  RealType logoffset, logepsilon;
-  ///copy constructor
+  /// Copy constructor
   VMCBatched(const VMCBatched&) = delete;
   /// Copy operator (disabled).
   VMCBatched& operator=(const VMCBatched&) = delete;

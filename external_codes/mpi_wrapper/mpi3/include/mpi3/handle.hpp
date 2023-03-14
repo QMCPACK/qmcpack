@@ -1,4 +1,6 @@
-/* -*- indent-tabs-mode: t -*- */
+// -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
+// Copyright 2018-2023 Alfredo A. Correa
+
 #ifndef BOOST_MPI3_DETAIL_HANDLE_HPP
 #define BOOST_MPI3_DETAIL_HANDLE_HPP
 
@@ -100,23 +102,6 @@ struct regular_handle : caller<regular_handle<Self, Impl, CreateFunction, DupFun
 	regular_handle operator=(regular_handle&&) = delete;
 };
 
-//template<class Self, class Impl, int(*CreateFunction)(Impl*), int(*FreeFunction)(Impl*)>
-//struct noncopyable_handle : caller<noncopyable_handle<Self, Impl, CreateFunction, FreeFunction>, Impl>{
-//	using impl_t = Impl;
-//	impl_t impl_;  // NOLINT(misc-non-private-member-variables-in-classes) TODO(correaa)
-//	bool predefined_ = false;
-
-//	noncopyable_handle(Impl code) : impl_(code), predefined_{true} {}
-//	noncopyable_handle() {CreateFunction(&impl_);}
-//	noncopyable_handle(noncopyable_handle const&) = delete;
-//	~noncopyable_handle() {
-//		assert(impl_ != MPI_INFO_NULL);
-//	//	if(impl_ != MPI_INFO_NULL) 
-//		if(not predefined_) {FreeFunction(&impl_);}
-//	}
-//	void swap(noncopyable_handle& other){std::swap(impl_, other.impl_);}
-//	Self& operator=(noncopyable_handle const& other) = delete;
-//};
 
 struct uninitialized{};
 
@@ -134,25 +119,17 @@ struct nondefault_handle : caller<nondefault_handle<Self, Impl, FreeFunction>, I
 	explicit nondefault_handle(uninitialized /*unused*/){};
 	nondefault_handle(nondefault_handle const&) = delete;
 	nondefault_handle(nondefault_handle&&) = delete;
-	~nondefault_handle(){if(not predefined_) {FreeFunction(&impl_);}}
+	~nondefault_handle(){
+		int fin; MPI_Finalized(&fin);  // NOLINT(cppcoreguidelines-init-variables) delayed init
+		if(not static_cast<bool>(fin)) {
+			if(not predefined_) {FreeFunction(&impl_);}
+		}
+	}
 	void swap(nondefault_handle& other){std::swap(impl_, other.impl_);}
 	nondefault_handle& operator=(nondefault_handle const& other) = delete;
 	nondefault_handle& operator=(nondefault_handle&& other) = delete;
 };
 
-//template<class Self, class Impl>
-//struct persistent_handle : caller<persistent_handle<Self, Impl>, Impl>{
-//private:
-//	using impl_t = Impl;
-//	impl_t impl_;
-
-//public:
-//	persistent_handle() = delete;
-//	persistent_handle(uninitialized){};
-//	persistent_handle(Impl code) : impl_(code){}
-//	persistent_handle(persistent_handle const&) = delete;
-//	~persistent_handle() = default;
-//};
 
 }  // end namespace detail
 }  // end namespace mpi3

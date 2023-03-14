@@ -7,7 +7,7 @@
 #include "../mpi3/communicator.hpp"
 #include "../mpi3/process.hpp"
 
-#include <boost/icl/split_interval_map.hpp>
+#include <boost/icl/split_interval_map.hpp>  // needs Boost.ICL
 
 #include <iomanip>
 #include <iostream>

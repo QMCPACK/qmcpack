@@ -1,5 +1,5 @@
 // -*-indent-tabs-mode:t;c-basic-offset:4;tab-width:4;autowrap:nil;-*-
-// Copyright 2018-2022 Alfredo A. Correa
+// Copyright 2018-2023 Alfredo A. Correa
 
 #include <mpi3/communicator.hpp>
 #include <mpi3/main.hpp>
@@ -43,44 +43,44 @@ void barriered_abort(mpi3::communicator& comm) {  // cppcheck-suppress unusedFun
 	comm.abort();
 }
 
-template<class Duration>
-void abort_after(mpi3::communicator& comm, Duration d) {
-	auto const t0 = mpi3::wall_time();
-	while((mpi3::wall_time() - t0) < d) {  // NOLINT(altera-unroll-loops) spin loop
-	}
-	std::cout << "not essential message: aborting from rank " << comm.rank() << " after others join" << std::endl;
-	comm.abort();
-}
+// template<class Duration>
+// void abort_after(mpi3::communicator& comm, Duration d) {
+// 	auto const t0 = mpi3::wall_time();
+// 	while((mpi3::wall_time() - t0) < d) {  // NOLINT(altera-unroll-loops) spin loop
+// 	}
+// 	std::cout << "not essential message: aborting from rank " << comm.rank() << " after others join" << std::endl;
+// 	comm.abort();
+// }
 
-template<class Duration>
-void timedout_abort(mpi3::communicator& comm, Duration d) {
-	auto       rbarrier = comm.ibarrier();
-	auto const t0       = mpi3::wall_time();
-	while(not rbarrier.completed() and (mpi3::wall_time() - t0) < d) {  // NOLINT(altera-unroll-loops,altera-id-dependent-backward-branch) spin loop
-	}
+// template<class Duration>
+// void timedout_abort(mpi3::communicator& comm, Duration d) {
+// 	auto       rbarrier = comm.ibarrier();
+// 	auto const t0       = mpi3::wall_time();
+// 	while(not rbarrier.completed() and (mpi3::wall_time() - t0) < d) {  // NOLINT(altera-unroll-loops,altera-id-dependent-backward-branch) spin loop
+// 	}
 
-	if(not rbarrier.completed()) {
-		std::cout << "non essential message: aborting from rank " << comm.rank() << " after timeout" << std::endl;
-	} else {
-		std::cout << "not essential message: aborting from rank " << comm.rank() << " after others join" << std::endl;
-	}
+// 	if(not rbarrier.completed()) {
+// 		std::cout << "non essential message: aborting from rank " << comm.rank() << " after timeout" << std::endl;
+// 	} else {
+// 		std::cout << "not essential message: aborting from rank " << comm.rank() << " after others join" << std::endl;
+// 	}
 
-	comm.abort();
-}
+// 	comm.abort();
+// }
 
-template<class Duration>
-void timedout_throw(mpi3::communicator& comm, Duration d) {
-	auto       rbarrier = comm.ibarrier();
-	auto const t0       = mpi3::wall_time();
-	while(not rbarrier.completed() and (mpi3::wall_time() - t0) < d) {  // NOLINT(altera-id-dependent-backward-branch,altera-unroll-loops) spin loop
-	}
+// template<class Duration>
+// void timedout_throw(mpi3::communicator& comm, Duration d) {
+// 	auto       rbarrier = comm.ibarrier();
+// 	auto const t0       = mpi3::wall_time();
+// 	while(not rbarrier.completed() and (mpi3::wall_time() - t0) < d) {  // NOLINT(altera-id-dependent-backward-branch,altera-unroll-loops) spin loop
+// 	}
 
-	if(rbarrier.completed()) {
-		std::cout << "non essential message: throwing from rank " << comm.rank() << " before timeout" << std::endl;
-		throw;  // cppcheck-suppress [rethrowNoCurrentException,unmatchedSuppression] ; experimental line
-	}
-	std::terminate();
-}
+// 	if(rbarrier.completed()) {
+// 		std::cout << "non essential message: throwing from rank " << comm.rank() << " before timeout" << std::endl;
+// 		throw;  // cppcheck-suppress [rethrowNoCurrentException,unmatchedSuppression] ; experimental line
+// 	}
+// 	std::terminate();
+// }
 
 template<class Duration>
 [[noreturn]] void mpi3_timed_terminate(Duration d, mpi3::communicator& comm = mpi3::environment::get_world_instance()) {

@@ -69,7 +69,7 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions,
   NumIons      = ions.getTotalNum();
   //els.resizeSphere(NumIons);
   PP.resize(NumIons, nullptr);
-  prefix = "FNL";
+  prefix_ = "FNL";
   PPset.resize(IonConfig.getSpeciesSet().getTotalNum());
   PulayTerm.resize(NumIons);
   update_mode_.set(NONLOCAL, 1);
@@ -198,7 +198,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
 
   if (ComputeForces)
   {
-    forces = 0;
+    forces_ = 0;
     for (int ig = 0; ig < P.groups(); ++ig) //loop over species
     {
       Psi.prepareGroup(P, ig);
@@ -210,7 +210,7 @@ void NonLocalECPotential::evaluateImpl(ParticleSet& P, bool Tmove, bool keep_gri
         for (int iat = 0; iat < NumIons; iat++)
           if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
           {
-            Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces[iat]);
+            Real pairpot = PP[iat]->evaluateOneWithForces(P, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat]);
             if (Tmove)
               PP[iat]->contributeTxy(jel, tmove_xy_);
             value_ += pairpot;
@@ -465,7 +465,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
   //Dummy vector for now.  Tmoves not implemented
   bool Tmove = false;
 
-  forces    = 0;
+  forces_   = 0;
   PulayTerm = 0;
 
   value_ = 0.0;
@@ -495,7 +495,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
         if (PP[iat] != nullptr && dist[iat] < PP[iat]->getRmax())
         {
           value_ +=
-              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces[iat], PulayTerm);
+              PP[iat]->evaluateOneWithForces(P, ions, iat, Psi, jel, dist[iat], -displ[iat], forces_[iat], PulayTerm);
           if (Tmove)
             PP[iat]->contributeTxy(jel, tmove_xy_);
           NeighborIons.push_back(iat);
@@ -504,7 +504,7 @@ void NonLocalECPotential::evalIonDerivsImpl(ParticleSet& P,
     }
   }
 
-  hf_terms -= forces;
+  hf_terms -= forces_;
   pulay_terms -= PulayTerm;
 }
 
@@ -807,9 +807,9 @@ void NonLocalECPotential::addObservables(PropertySetType& plist, BufferType& col
   OperatorBase::addValue(plist);
   if (ComputeForces)
   {
-    if (FirstForceIndex < 0)
-      FirstForceIndex = plist.size();
-    for (int iat = 0; iat < Nnuc; iat++)
+    if (first_force_index_ < 0)
+      first_force_index_ = plist.size();
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
@@ -832,11 +832,11 @@ void NonLocalECPotential::registerObservables(std::vector<ObservableHelper>& h5l
   if (ComputeForces)
   {
     std::vector<int> ndim(2);
-    ndim[0] = Nnuc;
+    ndim[0] = n_nuc_;
     ndim[1] = OHMMS_DIM;
     h5list.push_back({{"FNL"s}});
     auto& h5o1 = h5list.back();
-    h5o1.set_dimensions(ndim, FirstForceIndex);
+    h5o1.set_dimensions(ndim, first_force_index_);
   }
 }
 
@@ -845,12 +845,12 @@ void NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
   OperatorBase::setObservables(plist);
   if (ComputeForces)
   {
-    int index = FirstForceIndex;
-    for (int iat = 0; iat < Nnuc; iat++)
+    int index = first_force_index_;
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
-        plist[index++] = forces[iat][x];
+        plist[index++] = forces_[iat][x];
         //    plist[index++] = PulayTerm[iat][x];
       }
     }
@@ -863,12 +863,12 @@ void NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& pl
   OperatorBase::setParticlePropertyList(plist, offset);
   if (ComputeForces)
   {
-    int index = FirstForceIndex + offset;
-    for (int iat = 0; iat < Nnuc; iat++)
+    int index = first_force_index_ + offset;
+    for (int iat = 0; iat < n_nuc_; iat++)
     {
       for (int x = 0; x < OHMMS_DIM; x++)
       {
-        plist[index++] = forces[iat][x];
+        plist[index++] = forces_[iat][x];
         //        plist[index++] = PulayTerm[iat][x];
       }
     }

@@ -170,3 +170,56 @@ jobs:
 
       - name: Install
         run: tests/test_automation/github-actions/ci/run_step.sh install
+
+  spack-centos-stream:
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    env:
+      GH_JOBNAME: ${{ matrix.jobname }}
+      GH_OS: Linux
+      CONTAINER_OS: spack-centos-stream
+    strategy:
+      fail-fast: false
+      matrix:
+        jobname:
+          [
+            GCC11-NoMPI-Debug-Real,
+            GCC11-NoMPI-NoOMP-Real,
+            GCC11-NoMPI-NoOMP-Complex,
+            GCC11-NoMPI-Sandbox-Real,
+          ]
+        include:
+          - jobname: GCC11-NoMPI-Debug-Real
+            container:
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              options: -u 1001
+          - jobname: GCC11-NoMPI-NoOMP-Real
+            container:
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              options: -u 1001
+          - jobname: GCC11-NoMPI-NoOMP-Complex
+            container:
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              options: -u 1001
+          - jobname: GCC11-NoMPI-Sandbox-Real
+            container:
+              image: walshmm/qmcpack-ci:centos-stream-gcc11
+              options: -u 1001
+        
+    steps:
+      - name: Checkout Action
+        uses: actions/checkout@v3
+      
+      - name: Echo Debug
+        run: |
+          echo $PATH
+          echo $LD_LIBRARY_PATH
+
+      - name: Configure
+        run: tests/test_automation/github-actions/ci/run_step.sh configure
+
+      - name: Build
+        run: tests/test_automation/github-actions/ci/run_step.sh build
+
+      - name: Test
+        run: tests/test_automation/github-actions/ci/run_step.sh test

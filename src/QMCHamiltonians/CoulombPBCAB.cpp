@@ -37,7 +37,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns, bool computeFor
   if (ComputeForces)
     pset_ions_.turnOnPerParticleSK();
   initBreakup(elns);
-  prefix = "Flocal";
+  prefix_ = "Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
   app_log() << "  Maximum K shell     " << AB->MaxKshell << std::endl;
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
@@ -106,8 +106,8 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluate(ParticleSet& P)
 {
   if (ComputeForces)
   {
-    forces = 0.0;
-    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    forces_ = 0.0;
+    value_  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
   }
   else
 #if !defined(REMOVE_TRACEMANAGER)
@@ -127,9 +127,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evaluateWithIonDerivs(ParticleSet& P,
 {
   if (ComputeForces)
   {
-    forces = 0.0;
-    value_ = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
-    hf_terms -= forces;
+    forces_ = 0.0;
+    value_  = evalLRwithForces(P) + evalSRwithForces(P) + myConst;
+    hf_terms -= forces_;
     //And no Pulay contribution.
   }
   else
@@ -257,7 +257,7 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
                                           const RefVectorWithLeader<TrialWaveFunction>& wf_list,
                                           const RefVectorWithLeader<ParticleSet>& p_list,
                                           const std::vector<ListenerVector<RealType>>& listeners,
-					  const std::vector<ListenerVector<RealType>>& ion_listeners) const
+                                          const std::vector<ListenerVector<RealType>>& ion_listeners) const
 {
   auto& o_leader = o_list.getCastedLeader<CoulombPBCAB>();
   auto& p_leader = p_list.getLeader();
@@ -276,7 +276,8 @@ void CoulombPBCAB::mw_evaluatePerParticle(const RefVectorWithLeader<OperatorBase
   // This lambda is mostly about getting a handle on what is being touched by the per particle evaluation.
   auto evaluate_walker = [name, &ve_sample, &vi_sample, &ve_consts,
                           &vi_consts](const int walker_index, const CoulombPBCAB& cpbcab, const ParticleSet& pset,
-                                      const std::vector<ListenerVector<RealType>>& listeners, const std::vector<ListenerVector<RealType>>& ion_listeners) -> RealType {
+                                      const std::vector<ListenerVector<RealType>>& listeners,
+                                      const std::vector<ListenerVector<RealType>>& ion_listeners) -> RealType {
     RealType Vsr = 0.0;
     RealType Vlr = 0.0;
     RealType Vc  = cpbcab.myConst;
@@ -653,7 +654,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalLRwithForces(ParticleSet& P)
       grad[iat] = TinyVector<RealType, DIM>(0.0, 0.0, 0.0);
     dAB->evaluateGrad(pset_ions_, P, j, Zat, grad);
     for (int iat = 0; iat < grad.size(); iat++)
-      forces[iat] += Qspec[j] * grad[iat];
+      forces_[iat] += Qspec[j] * grad[iat];
   } // electron species
   return evalLR(P);
 }
@@ -682,9 +683,9 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
       frV  = fVat[a]->splint(dist[a]);
       fdrV = fdVat[a]->splint(dist[a]);
       dvdr = Qat[b] * Zat[a] * (fdrV - frV * rinv) * rinv;
-      forces[a][0] -= dvdr * dr[a][0] * rinv;
-      forces[a][1] -= dvdr * dr[a][1] * rinv;
-      forces[a][2] -= dvdr * dr[a][2] * rinv;
+      forces_[a][0] -= dvdr * dr[a][0] * rinv;
+      forces_[a][1] -= dvdr * dr[a][1] * rinv;
+      forces_[a][2] -= dvdr * dr[a][2] * rinv;
       esum += Zat[a] * rV * rinv; //Total energy accumulation
     }
     res += esum * Qat[b];
@@ -692,8 +693,7 @@ CoulombPBCAB::Return_t CoulombPBCAB::evalSRwithForces(ParticleSet& P)
   return res;
 }
 
-void CoulombPBCAB::evalPerParticleConsts(Vector<RealType>& pp_consts_src,
-                                         Vector<RealType>& pp_consts_trg) const
+void CoulombPBCAB::evalPerParticleConsts(Vector<RealType>& pp_consts_src, Vector<RealType>& pp_consts_trg) const
 {
   int nelns = Peln.getTotalNum();
   int nions = pset_ions_.getTotalNum();

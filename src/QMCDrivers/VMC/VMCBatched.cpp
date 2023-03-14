@@ -262,7 +262,7 @@ void VMCBatched::process(xmlNodePtr node)
   try
   {
     QMCDriverNew::AdjustedWalkerCounts awc =
-        adjustGlobalWalkerCount(myComm->size(), myComm->rank(), qmcdriver_input_.get_total_walkers(),
+        adjustGlobalWalkerCount(*myComm, walker_configs_ref_.getActiveWalkers(), qmcdriver_input_.get_total_walkers(),
                                 qmcdriver_input_.get_walkers_per_rank(), 1.0, qmcdriver_input_.get_num_crowds());
 
     Base::initializeQMC(awc);

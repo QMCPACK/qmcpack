@@ -58,8 +58,8 @@ void QMCFiniteSize::build_spherical_grid(IndexType mtheta, IndexType mphi)
 
 bool QMCFiniteSize::validateXML()
 {
-  xmlXPathContextPtr m_context = XmlDocStack.top()->getXPathContext();
-  xmlNodePtr cur               = XmlDocStack.top()->getRoot()->children;
+  xmlXPathContextPtr m_context = xml_doc_stack_.top()->getXPathContext();
+  xmlNodePtr cur               = xml_doc_stack_.top()->getRoot()->children;
 
   while (cur != NULL)
   {
@@ -79,7 +79,7 @@ bool QMCFiniteSize::validateXML()
       if (a)
       {
         pushDocument((const char*)a);
-        processPWH(XmlDocStack.top()->getRoot());
+        processPWH(xml_doc_stack_.top()->getRoot());
         popDocument();
       }
     }
@@ -87,8 +87,7 @@ bool QMCFiniteSize::validateXML()
     {
       processPWH(cur);
     }
-    else
-    {}
+    else {}
     cur = cur->next;
   }
 
@@ -511,7 +510,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     for (int j = 0; j < SK_raw.size(); j++)
     {
       FullPrecRealType chi;
-      chi = rng();
+      chi          = rng();
       newSK_raw[j] = SK_raw[j] + SKerr_raw[j] * chi;
     }
     vsums[i] = calcPotentialDiscrete(newSK_raw);
@@ -520,7 +519,7 @@ void QMCFiniteSize::calcPotentialCorrection()
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      chi = rng();
+      chi      = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     vints[i] = calcPotentialInt(newSK);
@@ -548,7 +547,7 @@ void QMCFiniteSize::calcLeadingOrderCorrections()
     for (int j = 0; j < SK.size(); j++)
     {
       FullPrecRealType chi;
-      chi = rng();
+      chi      = rng();
       newSK[j] = SK[j] + SKerr[j] * chi;
     }
     UBspline_3d_d* spline = getSkSpline(newSK);

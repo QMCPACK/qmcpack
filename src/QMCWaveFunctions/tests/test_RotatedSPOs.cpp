@@ -48,15 +48,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   ParticleSet::ParticleLayout lattice;
 
   // diamondC_1x1x1
-  lattice.R(0, 0) = 3.37316115;
-  lattice.R(0, 1) = 3.37316115;
-  lattice.R(0, 2) = 0.0;
-  lattice.R(1, 0) = 0.0;
-  lattice.R(1, 1) = 3.37316115;
-  lattice.R(1, 2) = 3.37316115;
-  lattice.R(2, 0) = 3.37316115;
-  lattice.R(2, 1) = 0.0;
-  lattice.R(2, 2) = 3.37316115;
+  lattice.R = {3.37316115, 3.37316115, 0.0, 0.0, 3.37316115, 3.37316115, 3.37316115, 0.0, 3.37316115};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -119,6 +111,7 @@ TEST_CASE("RotatedSPOs via SplineR2R", "[wavefunction]")
   // SplineR2R only for the moment, so skip if QMC_COMPLEX is set
 #if !defined(QMC_COMPLEX)
 
+  spo->storeParamsBeforeRotation();
   // 1.) Make a RotatedSPOs object so that we can use the rotation routines
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
@@ -302,18 +295,31 @@ TEST_CASE("RotatedSPOs createRotationIndices", "[wavefunction]")
   int nel = 1;
   int nmo = 3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
-
   CHECK(rot_ind.size() == 2);
+
+  // Full rotation contains all rotations
+  // Size should be number of pairs of orbitals: nmo*(nmo-1)/2
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  CHECK(full_rot_ind.size() == 3);
 
   nel = 2;
   RotatedSPOs::RotationIndices rot_ind2;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind2);
   CHECK(rot_ind2.size() == 2);
 
+  RotatedSPOs::RotationIndices full_rot_ind2;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind2);
+  CHECK(full_rot_ind2.size() == 3);
+
   nmo = 4;
   RotatedSPOs::RotationIndices rot_ind3;
   RotatedSPOs::createRotationIndices(nel, nmo, rot_ind3);
   CHECK(rot_ind3.size() == 4);
+
+  RotatedSPOs::RotationIndices full_rot_ind3;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind3);
+  CHECK(full_rot_ind3.size() == 6);
 }
 
 TEST_CASE("RotatedSPOs constructAntiSymmetricMatrix", "[wavefunction]")
@@ -407,9 +413,10 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
 
   std::vector<SPOSet::ValueType> mat1_data = {1.0};
   SPOSet::ValueMatrix m1(mat1_data.data(), 1, 1);
-  RotatedSPOs::log_antisym_matrix(m1);
+  SPOSet::ValueMatrix out_m1(1, 1);
+  RotatedSPOs::log_antisym_matrix(m1, out_m1);
   // Should always be 1.0 (the only possible anti-symmetric 1x1 matrix is 0)
-  CHECK(m1(0, 0) == ValueApprox(0.0));
+  CHECK(out_m1(0, 0) == ValueApprox(0.0));
 
   // clang-format off
   std::vector<ValueType> start_rot2 = {  0.995004165278026,  -0.0998334166468282,
@@ -420,10 +427,11 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
   // clang-format on
 
   ValueMatrix rot_m2(start_rot2.data(), 2, 2);
-  RotatedSPOs::log_antisym_matrix(rot_m2);
+  ValueMatrix out_m2(2, 2);
+  RotatedSPOs::log_antisym_matrix(rot_m2, out_m2);
 
   SPOSet::ValueMatrix m2(mat2_data.data(), 2, 2);
-  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, rot_m2, true);
+  CheckMatrixResult check_matrix_result2 = checkMatrix(m2, out_m2, true);
   CHECKED_ELSE(check_matrix_result2.result) { FAIL(check_matrix_result2.result_message); }
 
   // clang-format off
@@ -436,10 +444,11 @@ TEST_CASE("RotatedSPOs log matrix", "[wavefunction]")
                                            0.1,   0.2,  0.0 };
   // clang-format on
   ValueMatrix rot_m3(start_rot3.data(), 3, 3);
-  RotatedSPOs::log_antisym_matrix(rot_m3);
+  ValueMatrix out_m3(3, 3);
+  RotatedSPOs::log_antisym_matrix(rot_m3, out_m3);
 
   SPOSet::ValueMatrix m3(m3_input_data.data(), 3, 3);
-  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, rot_m3, true);
+  CheckMatrixResult check_matrix_result3 = checkMatrix(m3, out_m3, true);
   CHECKED_ELSE(check_matrix_result3.result) { FAIL(check_matrix_result3.result_message); }
 }
 
@@ -464,16 +473,17 @@ TEST_CASE("RotatedSPOs exp-log matrix", "[wavefunction]")
 
   RotatedSPOs::constructAntiSymmetricMatrix(rot_ind, params4, rot_m4);
   ValueMatrix orig_rot_m4 = rot_m4;
+  ValueMatrix out_m4(nmo, nmo);
 
   RotatedSPOs::exponentiate_antisym_matrix(rot_m4);
 
-  RotatedSPOs::log_antisym_matrix(rot_m4);
+  RotatedSPOs::log_antisym_matrix(rot_m4, out_m4);
 
-  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, orig_rot_m4, true);
+  CheckMatrixResult check_matrix_result4 = checkMatrix(out_m4, orig_rot_m4, true);
   CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
 
   std::vector<ValueType> params4out(4);
-  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, rot_m4, params4out);
+  RotatedSPOs::extractParamsFromAntiSymmetricMatrix(rot_ind, out_m4, params4out);
   for (int i = 0; i < params4.size(); i++)
   {
     CHECK(params4[i] == Approx(params4out[i]));
@@ -486,15 +496,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   ParticleSet::ParticleLayout lattice;
-  lattice.R(0, 0) = 4.32747284;
-  lattice.R(0, 1) = 0.00000000;
-  lattice.R(0, 2) = 0.00000000;
-  lattice.R(1, 0) = -2.16373642;
-  lattice.R(1, 1) = 3.74770142;
-  lattice.R(1, 2) = 0.00000000;
-  lattice.R(2, 0) = 0.00000000;
-  lattice.R(2, 1) = 0.00000000;
-  lattice.R(2, 2) = 6.78114995;
+  lattice.R = {4.32747284, 0.00000000, 0.00000000, -2.16373642, 3.74770142,
+               0.00000000, 0.00000000, 0.00000000, 6.78114995};
 
   ParticleSetPool ptcl = ParticleSetPool(c);
   ptcl.setSimulationCell(lattice);
@@ -522,8 +525,8 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   // spline file for use in eval_bspline_spo.py
 
   const char* particles = R"(<tmp>
-<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double" size="2">
-    <sposet type="bspline" name="spo_ud" size="2" spindataset="0" optimize="yes"/>
+<sposet_builder type="bspline" href="hcpBe.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion" meshfactor="1.0" precision="double">
+      <sposet type="bspline" name="spo_ud" spindataset="0" size="2"/>
 </sposet_builder>
 </tmp>)";
 
@@ -533,12 +536,14 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
 
   xmlNodePtr root = doc.getRoot();
 
-  xmlNodePtr ein1 = xmlFirstElementChild(root);
+  xmlNodePtr sposet_builder = xmlFirstElementChild(root);
+  xmlNodePtr sposet_ptr     = xmlFirstElementChild(sposet_builder);
 
-  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, ein1);
-  auto spo = einSet.createSPOSetFromXML(ein1);
+  EinsplineSetBuilder einSet(elec, ptcl.getPool(), c, sposet_builder);
+  auto spo = einSet.createSPOSetFromXML(sposet_ptr);
   REQUIRE(spo);
 
+  spo->storeParamsBeforeRotation();
   auto rot_spo = std::make_unique<RotatedSPOs>("one_rotated_set", std::move(spo));
 
   // Sanity check for orbs. Expect 1 electron, 2 orbitals
@@ -589,5 +594,61 @@ TEST_CASE("RotatedSPOs hcpBe", "[wavefunction]")
   CHECK(dhpsioverpsi[0] == ValueApprox(32.96939041498753));
 }
 
+// Test construction of delta rotation
+TEST_CASE("RotatedSPOs construct delta matrix", "[wavefunction]")
+{
+  using ValueType   = SPOSet::ValueType;
+  using ValueMatrix = SPOSet::ValueMatrix;
+
+  int nel = 2;
+  int nmo = 4;
+  RotatedSPOs::RotationIndices rot_ind;
+  RotatedSPOs::createRotationIndices(nel, nmo, rot_ind);
+  RotatedSPOs::RotationIndices full_rot_ind;
+  RotatedSPOs::createRotationIndicesFull(nel, nmo, full_rot_ind);
+  // rot_ind size is 4 and full rot_ind size is 6
+
+  ValueMatrix rot_m4(nmo, nmo);
+  rot_m4 = ValueType(0);
+
+  // When comparing with gen_matrix_ops.py, be aware of the order of indices
+  // in full_rot
+  // rot_ind is (0,2) (0,3) (1,2) (1,3)
+  // full_rot_ind is (0,2) (0,3) (1,2) (1,3) (0,1) (2,3)
+  // The extra indices go at the back
+  std::vector<ValueType> old_params   = {1.5, 0.2, -0.15, 0.03, -1.1, 0.05};
+  std::vector<ValueType> delta_params = {0.1, 0.3, 0.2, -0.1};
+  std::vector<ValueType> new_params(6);
+
+  RotatedSPOs::constructDeltaRotation(delta_params, old_params, rot_ind, full_rot_ind, new_params, rot_m4);
+
+  // clang-format off
+  std::vector<ValueType> rot_data4 =
+    { -0.371126931484737,  0.491586564957393,   -0.784780958819798,   0.0687480658200083,
+      -0.373372784561548,  0.66111547793048,     0.610450337985578,   0.225542620014052,
+       0.751270334458895,  0.566737323353515,   -0.0297901110611425, -0.336918744155143,
+       0.398058348785074,  0.00881931472604944, -0.102867783149713,   0.911531672428406 };
+  // clang-format on
+
+  ValueMatrix new_rot_m4(rot_data4.data(), 4, 4);
+
+  CheckMatrixResult check_matrix_result4 = checkMatrix(rot_m4, new_rot_m4, true);
+  CHECKED_ELSE(check_matrix_result4.result) { FAIL(check_matrix_result4.result_message); }
+
+  // Reminder: Ordering!
+  std::vector<ValueType> expected_new_param = {1.6813965019790489,   0.3623564254653294,  -0.05486544454559908,
+                                               -0.20574472941408453, -0.9542513302873077, 0.27497788909911774};
+  for (int i = 0; i < new_params.size(); i++)
+    CHECK(new_params[i] == Approx(expected_new_param[i]));
+
+
+  // Rotated back to original position
+
+  std::vector<ValueType> new_params2(6);
+  std::vector<ValueType> reverse_delta_params = {-0.1, -0.3, -0.2, 0.1};
+  RotatedSPOs::constructDeltaRotation(reverse_delta_params, new_params, rot_ind, full_rot_ind, new_params2, rot_m4);
+  for (int i = 0; i < new_params2.size(); i++)
+    CHECK(new_params2[i] == Approx(old_params[i]));
+}
 
 } // namespace qmcplusplus

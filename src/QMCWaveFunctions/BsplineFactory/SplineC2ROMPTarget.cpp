@@ -147,7 +147,7 @@ void SplineC2ROMPTarget<ST>::evaluateValue(const ParticleSet& P, const int iat, 
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
@@ -231,7 +231,7 @@ void SplineC2ROMPTarget<ST>::evaluateDetRatios(const VirtualParticleSet& VP,
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
@@ -357,7 +357,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateDetRatios(const RefVectorWithLeader<SPOS
 
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
-          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c,
+          spline2offload::evaluate_v_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c,
                                              offload_scratch_iat_ptr + first + index);
         const size_t first_cplx = first / 2;
         const size_t last_cplx  = last / 2;
@@ -569,7 +569,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGL(const ParticleSet& P,
       PRAGMA_OFFLOAD("omp parallel for")
       for (int index = 0; index < last - first; index++)
       {
-        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+        spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
                                              offload_scratch_ptr + first + index, spline_padded_size);
         const int output_index = first + index;
         offload_scratch_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
@@ -660,7 +660,7 @@ void SplineC2ROMPTarget<ST>::evaluateVGLMultiPos(const Vector<ST, OffloadPinnedA
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
                                                offload_scratch_iw_ptr + first + index, spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =
@@ -708,14 +708,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGL(const RefVectorWithLeader<SPOSet>& s
 {
   assert(this == &sa_list.getLeader());
   auto& phi_leader = sa_list.getCastedLeader<SplineC2ROMPTarget<ST>>();
-  // make this class unit tests friendly without the need of setup resources.
-  if (!phi_leader.mw_mem_)
-  {
-    app_warning() << "SplineC2ROMPTarget : This message should not be seen in production (performance bug) runs but "
-                     "only unit tests (expected)."
-                  << std::endl;
-    phi_leader.mw_mem_ = std::make_unique<SplineOMPTargetMultiWalkerMem<ST, TT>>();
-  }
+  assert(phi_leader.mw_mem_);
   auto& mw_mem             = *phi_leader.mw_mem_;
   auto& mw_pos_copy        = mw_mem.mw_pos_copy;
   auto& mw_offload_scratch = mw_mem.mw_offload_scratch;
@@ -838,7 +831,7 @@ void SplineC2ROMPTarget<ST>::mw_evaluateVGLandDetRatioGrads(const RefVectorWithL
         PRAGMA_OFFLOAD("omp parallel for")
         for (int index = 0; index < last - first; index++)
         {
-          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, index, a, b, c, da, db, dc, d2a, d2b, d2c,
+          spline2offload::evaluate_vgh_impl_v2(spline_ptr, ix, iy, iz, first + index, a, b, c, da, db, dc, d2a, d2b, d2c,
                                                offload_scratch_iw_ptr + first + index, spline_padded_size);
           const int output_index = first + index;
           offload_scratch_iw_ptr[spline_padded_size * SoAFields3D::LAPL + output_index] =

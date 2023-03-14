@@ -18,6 +18,11 @@ target_include_directories(${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${${PROJE
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
 #set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
+# this makes CM FetchContent friendly https://www.foonathan.net/2022/06/cmake-fetchcontent/
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  	return()
+endif()
+
 include(CTest)
 
 enable_testing()

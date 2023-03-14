@@ -33,20 +33,20 @@ struct [[nodiscard]] status {
 	template<class T>  // = char>
 	int count() const {  // entries received of datatype T
 		int ret = -1;
-		MPI_Get_count(&impl_, detail::basic_datatype<T>{}, &ret);  // can't use MPI_(Get_count)
+		MPI_Get_count(&impl_, datatype<T>{}(), &ret);  // can't use MPI_(Get_count)
 		return ret;
 	}
 
 	template<class T>
 	int elements() const {
 		int ret = -1;
-		int const s = MPI_Get_elements(&impl_, detail::basic_datatype<T>{}, &ret);  // TODO(correaa) modernize calls
+		int const s = MPI_Get_elements(&impl_, datatype<T>{}(), &ret);  // TODO(correaa) modernize calls
 		if(s != MPI_SUCCESS) {throw std::runtime_error{"cannot elements"};}
 		return ret;
 	}
 	template<class T>
 	void set_elements(int count) {
-		int const s = MPI_Status_set_elements(&impl_, detail::basic_datatype<T>{}, count);  // TODO(correaa) modernize calls
+		int const s = MPI_Status_set_elements(&impl_, datatype<T>{}(), count);  // TODO(correaa) modernize calls
 		if(s != MPI_SUCCESS) {throw std::runtime_error{"cannot set elements"};}
 	}
 

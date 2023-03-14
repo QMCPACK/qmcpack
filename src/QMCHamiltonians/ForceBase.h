@@ -17,59 +17,37 @@
 
 #ifndef QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
 #define QMCPLUSPLUS_FORCE_BASE_HAMILTONIAN_H
-#include "QMCHamiltonians/OperatorBase.h"
+#include "QMCHamiltonians/ObservableHelper.h"
+#include "Particle/ParticleSet.h"
 
 namespace qmcplusplus
 {
-struct ForceBase
+class ForceBase
 {
+public:
   /** cheat, need to use virtual inheriance to clean up*/
-  using real_type = QMCTraits::RealType;
+  using Real = QMCTraits::RealType;
 
-  int FirstForceIndex;
-  int Nnuc;
-  int Nel;
-  int tries;
-  bool FirstTime;
-  bool addionion;
-
-  ParticleSet& Ions;
-  ParticleSet::ParticlePos forces;
-  ParticleSet::ParticlePos forces_IonIon;
-  SymTensor<real_type, OHMMS_DIM> stress_IonIon;
-  SymTensor<real_type, OHMMS_DIM> stress_ee, stress_ei, stress_kin;
-  SymTensor<real_type, OHMMS_DIM> stress;
-
-  std::string prefix;
-  std::string pairName;
-
-  // Data for variance reduction of Chiesa et al.
-  // PRL 94, 036404 (2005)
-  real_type Rcut;
-  int m;
-  std::vector<real_type> ck;
-  inline real_type g(real_type r)
+  inline Real g(Real r)
   {
-    if (r > Rcut)
+    if (r > rcut_)
       return 1.0;
-    real_type sum      = 0.0;
-    real_type r2kplusm = r;
-    for (int i = 0; i < m; i++)
+    Real sum      = 0.0;
+    Real r2kplusm = r;
+    for (int i = 0; i < m_; i++)
       r2kplusm *= r;
-    for (int k = 0; k < ck.size(); k++)
+    for (int k = 0; k < ck_.size(); k++)
     {
-      sum += ck[k] * r2kplusm;
+      sum += ck_[k] * r2kplusm;
       r2kplusm *= r;
     }
     return sum;
   }
 
-
-  void InitVarReduction(real_type Rcut, int m, int numFuncs);
-
+  void initVarReduction(Real rcut, int m, int numFuncs);
 
   ForceBase(ParticleSet& ions, ParticleSet& elns);
-  virtual ~ForceBase() {}
+  virtual ~ForceBase();
 
   void registerObservablesF(std::vector<ObservableHelper>& h5list, hdf_archive& file) const;
 
@@ -79,45 +57,50 @@ struct ForceBase
   void setObservablesStress(QMCTraits::PropertySetType& plist);
   void setParticleSetF(QMCTraits::PropertySetType& plist, int offset);
   void setParticleSetStress(QMCTraits::PropertySetType& plist, int offset);
-};
 
-struct BareForce : public OperatorBase, public ForceBase
-{
-private:
-  const int d_ei_ID;
+  bool getAddIonIon() const noexcept { return add_ion_ion_; }
+  void setAddIonIon(bool val) noexcept { add_ion_ion_ = val; }
 
-public:
-  BareForce(ParticleSet& ions, ParticleSet& elns);
-  std::string getClassName() const override { return "BareForce"; }
-  void resetTargetParticleSet(ParticleSet& P) override;
+  const ParticleSet::ParticlePos& getForces() const noexcept { return forces_; }
+  void setForces(const ParticleSet::ParticlePos& forces);
+  void setForces(Real val);
 
-  Return_t evaluate(ParticleSet& P) override;
+  const ParticleSet::ParticlePos& getForcesIonIon() const noexcept { return forces_ion_ion_; }
+  void setForcesIonIon(const ParticleSet::ParticlePos& forces_ion_ion);
 
-  void registerObservables(std::vector<ObservableHelper>& h5list, hdf_archive& file) const override
-  {
-    registerObservablesF(h5list, file);
-  }
+  const SymTensor<Real, OHMMS_DIM>& getStressIonIon() const noexcept { return stress_ion_ion_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressEE() const noexcept { return stress_ee_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressEI() const noexcept { return stress_ei_; }
+  const SymTensor<Real, OHMMS_DIM>& getStressKin() const noexcept { return stress_kin_; }
+  const SymTensor<Real, OHMMS_DIM>& getStress() const noexcept { return stress_; }
 
-  /** default implementation to add named values to  the property list
-   * @param plist RecordNameProperty
-   * @param collectables Observables that are accumulated by evaluate
-   */
-  void addObservables(PropertySetType& plist, BufferType& collectables) override;
+protected:
+  int first_force_index_;
+  int n_nuc_;
+  int n_el_;
+  int tries_;
+  bool first_time_;
+  /// Determines if ion-ion force will be added to electron-ion force in derived force estimators. If false, forces_ion_ion_=0.0.
+  bool add_ion_ion_;
 
-  void setObservables(PropertySetType& plist) override { setObservablesF(plist); }
+  ParticleSet& ions_;
+  ParticleSet::ParticlePos forces_;
+  ParticleSet::ParticlePos forces_ion_ion_;
 
-  void setParticlePropertyList(PropertySetType& plist, int offset) override { setParticleSetF(plist, offset); }
+  SymTensor<Real, OHMMS_DIM> stress_ion_ion_;
+  SymTensor<Real, OHMMS_DIM> stress_ee_;
+  SymTensor<Real, OHMMS_DIM> stress_ei_;
+  SymTensor<Real, OHMMS_DIM> stress_kin_;
+  SymTensor<Real, OHMMS_DIM> stress_;
 
-  /** Do nothing */
-  bool put(xmlNodePtr cur) override;
+  std::string prefix_;
+  std::string pair_name_;
 
-  bool get(std::ostream& os) const override
-  {
-    os << "Force Base Hamiltonian: " << pairName;
-    return true;
-  }
-
-  std::unique_ptr<OperatorBase> makeClone(ParticleSet& qp, TrialWaveFunction& psi) final;
+  // Data for variance reduction of Chiesa et al.
+  // PRL 94, 036404 (2005)
+  Real rcut_;
+  int m_;
+  std::vector<Real> ck_;
 };
 
 } // namespace qmcplusplus
