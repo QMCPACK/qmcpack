@@ -54,7 +54,7 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
 
 /*
   ~~ Notes for rotation ~~
-  spl_coefs      = Raw pointer of spline coefficients
+  spl_coefs      = Raw pointer to spline coefficients
   basis_set_size = Number of spline coefs per orbital
   OrbitalSetSize = Number of orbitals (excluding padding)
 
