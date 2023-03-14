@@ -25,28 +25,34 @@ namespace qmcplusplus
 namespace Concurrency
 {
 template<Executor TT = Executor::OPENMP>
-class OverrideMaxCapacity;
-
-template<>
-class OverrideMaxCapacity<Executor::OPENMP>
+class ThreadCountProtector
 {
-private:
-  int original_max_threads_;
-
-public:
-  OverrideMaxCapacity(int max_threads)
-  {
-    original_max_threads_ = omp_get_max_threads();
-    omp_set_num_threads(max_threads);
-  }
-
-  ~OverrideMaxCapacity() { omp_set_num_threads(original_max_threads_); }
+  ThreadCountProtector() {}
 };
 
-template<Executor TT>
-class OverrideMaxCapacity
+template<>
+class ThreadCountProtector<Executor::OPENMP>
+{
+private:
+  const int original_max_threads_;
+
+public:
+  ThreadCountProtector() : original_max_threads_(omp_get_max_threads()) {}
+
+  ~ThreadCountProtector() { omp_set_num_threads(original_max_threads_); }
+};
+
+template<Executor TT = Executor::OPENMP>
+class OverrideMaxCapacity : private ThreadCountProtector<TT>
 {
   OverrideMaxCapacity(int max_threads) {}
+};
+
+template<>
+class OverrideMaxCapacity<Executor::OPENMP> : private ThreadCountProtector<Executor::OPENMP>
+{
+public:
+  OverrideMaxCapacity(int max_threads) { omp_set_num_threads(max_threads); }
 };
 
 } // namespace Concurrency
