@@ -94,16 +94,12 @@ public:
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2R>(*this); }
 
   /*
-    Implements orbital rotations via [1,2].
-    Should be called by RotatedSPOs::apply_rotation()
-    This implementation requires that NSPOs > Nelec. In other words,
-    if you want to run a orbopt wfn, you must include some virtual orbitals!
-    Some results (using older Berkeley branch) were published in [3].
-    [1] Filippi & Fahy, JCP 112, (2000)
-    [2] Toulouse & Umrigar, JCP 126, (2007)
-    [3] Townsend et al., PRB 102, (2020)
+    JPT [14.03.2023] implement after R2R and C2C are working
   */
-  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override;
+  void applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy) override
+  {
+    APP_ABORT("SplineC2R::applyRotation() is not implemented! Use SplineC2C or SplineR2R.");
+  }
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
