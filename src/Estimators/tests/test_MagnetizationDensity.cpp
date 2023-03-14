@@ -84,9 +84,6 @@ TEST_CASE("MagDensity", "[hamiltonian]")
 
   maginput.calculateDerivedParameters(lattice);
   
-  DataLocality dl = DataLocality::crowd;
-  MagnetizationDensity doop(dl);
-
   const SimulationCell simulation_cell(lattice);
   ParticleSet elec_(simulation_cell);
   

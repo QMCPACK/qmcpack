@@ -36,9 +36,10 @@ public:
   using Lattice       = PtclOnLatticeTraits::ParticleLayout;
   using Position      = QMCTraits::PosType;
   using Integrator    = MagnetizationDensityInput::Integrator;
+  static constexpr int DIM = QMCTraits::DIM;
 
-  MagnetizationDensity(DataLocality dl);
   MagnetizationDensity(MagnetizationDensityInput&& min, const Lattice& lattice);
+  MagnetizationDensity(const MagnetizationDensity& magdens, DataLocality dl);
 
   void startBlock(int steps) override;
 
@@ -47,13 +48,21 @@ public:
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng) override;
 
+  size_t getFullDataSize();
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
+  void registerOperatorEstimator(hdf_archive& file) override;
 private:
+  MagnetizationDensity(const MagnetizationDensity& magdens) = default;
   MagnetizationDensityInput input_;
   Integrator integrator_;
   Lattice lattice_;
   Position rcorner_;
   Position center_;
+  TinyVector<int, DIM> grid_;
+  TinyVector<int, DIM> gdims_;
+  size_t npoints_;
+  int nsamples_;
+
 };
 } // namespace qmcplusplus
 #endif  /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_H */

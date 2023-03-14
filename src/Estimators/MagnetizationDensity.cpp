@@ -14,15 +14,20 @@
 namespace qmcplusplus
 {
 
-MagnetizationDensity::MagnetizationDensity(DataLocality dl):OperatorEstBase(dl)
-{
-};
-
 MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput,
 					   const Lattice & lat):
 OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
 {
+  //Pull consistent corner, grids, etc., from already inititalized input.  
+  MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
+  npoints_ = derived.npoints;
+  grid_= derived.grid;
+  gdims_ = derived.gdims;
 
+  rcorner_ = derived.corner;
+  center_  = rcorner_ + lattice_.Center;
+
+  nsamples_ = input_.get_nsamples();
   integrator_ = input_.get_integrator();
   switch(integrator_)
   {
@@ -33,24 +38,21 @@ OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
       app_log()<<"MONTECARLO\n";
       break;
   }
-  if (input_.get_corner_defined())
-  {
-    rcorner_ = input_.get_corner();
-    center_  = rcorner_ + lattice_.Center;
-  }
-  else
-  {
-    if (input_.get_center_defined())
-      center_ = input_.get_center();
-    else
-      center_ = lattice_.Center;
-    rcorner_ = center_ -  lattice_.Center;
-  }
 
+  //Resize the data arrays.
+  data_.resize(getFullDataSize());
+
+}
+
+MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens,DataLocality dl): MagnetizationDensity(magdens)
+{
+ data_locality_ = dl;
 }
 void MagnetizationDensity::startBlock(int steps)
 {
 };
+   
+size_t MagnetizationDensity::getFullDataSize() { return npoints_ * DIM; }
 
 void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<ParticleSet>& psets,
@@ -62,7 +64,37 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
 
 std::unique_ptr<OperatorEstBase> MagnetizationDensity::spawnCrowdClone() const 
 { 
-  return 0;
+  std::size_t data_size    = data_.size();
+  auto spawn_data_locality = data_locality_;
+
+  //Everyone else has this attempt to set up a non-implemented memory saving optimization.
+  //We won't rock the boat.  
+  if (data_locality_ == DataLocality::rank)
+  {
+    // This is just a stub until a memory saving optimization is deemed necessary
+    spawn_data_locality = DataLocality::queue;
+    data_size           = 0;
+    throw std::runtime_error("There is no memory savings implementation for MagnetizationDensity");
+  }
+
+  UPtr<MagnetizationDensity> spawn(std::make_unique<MagnetizationDensity>(*this, spawn_data_locality));
+  spawn->get_data().resize(data_size);
+  return spawn;
 };
+
+void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
+{
+  std::vector<size_t> my_indexes;
+
+  std::vector<int> ng(DIM*npoints_);
+
+  hdf_path hdf_name{my_name_};
+//  for (int s = 0; s < species_.size(); ++s)
+//  {
+  h5desc_.emplace_back(hdf_name);
+  auto& oh = h5desc_.back();
+  oh.set_dimensions(ng, 0);
+//  }
+}
 
 } //namespace qmcplusplus
