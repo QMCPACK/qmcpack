@@ -55,7 +55,7 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
 /*
   ~~ Notes for rotation ~~
   spl_coefs      = Raw pointer of spline coefficients
-  BasisSetSize   = Number of spline coefs per orbital
+  basis_set_size = Number of spline coefs per orbital
   OrbitalSetSize = Number of orbitals (excluding padding)
 
   spl_coefs has a complicated layout depending on dimensionality of splines.
@@ -82,15 +82,15 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   const auto spline_ptr = SplineInst->getSplinePtr();
   assert(spline_ptr != nullptr);
   const auto spl_coefs      = spline_ptr->coefs;
-  const auto Nsplines       = spline_ptr->num_splines;
+  const auto n_splines      = spline_ptr->num_splines;
   const auto coefs_tot_size = spline_ptr->coefs_size;
-  const auto BasisSetSize   = coefs_tot_size / Nsplines;
-  const auto TrueNOrbs      = rot_mat.size1(); // == Nsplines - padding
-  assert(OrbitalSetSize >= TrueNOrbs);
+  const auto basis_set_size = coefs_tot_size / n_splines;
+  const auto true_n_orbs    = rot_mat.size1(); // == Nsplines - padding
+  assert(OrbitalSetSize >= true_n_orbs);
 
   // Fill top left corner of tmpU with rot_mat
   ValueMatrix tmpU;
-  tmpU.resize(Nsplines, Nsplines);
+  tmpU.resize(n_splines, n_splines);
   std::fill(tmpU.begin(), tmpU.end(), 0.0);
   for (auto i = 0; i < rot_mat.size1(); i++)
   {
@@ -125,16 +125,16 @@ void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_co
   ST w2{0.};
   ST newval_real{0.};
   ST newval_imag{0.};
-  for (auto i = 0; i < BasisSetSize; i++)
+  for (auto i = 0; i < basis_set_size; i++)
   {
-    for (auto j = 0; j < Nsplines; j++)
+    for (auto j = 0; j < n_splines; j++)
     {
-      const auto cur_elem = 2 * (Nsplines / 2 * i + j);
+      const auto cur_elem = 2 * (n_splines / 2 * i + j);
       newval_real         = 0.;
       newval_imag         = 0.;
-      for (auto k = 0; k < Nsplines; k++)
+      for (auto k = 0; k < n_splines; k++)
       {
-        const auto index = 2 * (i * Nsplines / 2 + k);
+        const auto index = 2 * (i * n_splines / 2 + k);
         z1               = *(spl_coefs + index);
         z2               = *(spl_coefs + index + 1);
         w1               = tmpU[k][j].real();
