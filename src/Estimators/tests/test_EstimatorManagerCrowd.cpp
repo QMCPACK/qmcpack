@@ -25,11 +25,13 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "QMCWaveFunctions/tests/MinimalWaveFunctionPool.h"
 #include "Utilities/ResourceCollection.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
 TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
@@ -37,12 +39,13 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
-  auto hamiltonian_pool  = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  auto& twf              = *(wavefunction_pool.getWaveFunction("wavefunction"));
-  auto& ham              = *(hamiltonian_pool.getPrimary());
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset            = *(particle_pool.getParticleSet("e"));
+  auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
+  auto& twf             = *(wavefunction_pool.getWaveFunction("wavefunction"));
+  auto& ham             = *(hamiltonian_pool.getPrimary());
 
   EstimatorManagerNew emn(comm, std::move(emi), ham, pset, twf);
 
@@ -54,6 +57,7 @@ TEST_CASE("EstimatorManagerCrowd::EstimatorManagerCrowd", "[estimators]")
 
 TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[estimators]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* comm = OHMMS::Controller;
 
   using namespace testing;
@@ -61,9 +65,10 @@ TEST_CASE("EstimatorManagerCrowd PerParticleHamiltonianLogger integration", "[es
   EstimatorManagerInput emi(estimators_doc.getRoot());
 
 
-  auto particle_pool     = MinimalParticlePool::make_diamondC_1x1x1(comm);
-  auto wavefunction_pool = MinimalWaveFunctionPool::make_diamondC_1x1x1(comm, particle_pool);
-  auto& pset             = *(particle_pool.getParticleSet("e"));
+  auto particle_pool = MinimalParticlePool::make_diamondC_1x1x1(comm);
+  auto wavefunction_pool =
+      MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
+  auto& pset = *(particle_pool.getParticleSet("e"));
   // This is where the pset properties "properies" gain the different hamiltonian operator values.
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 

@@ -62,7 +62,7 @@ QMCMain::QMCMain(Communicate* c)
     : MPIObjectBase(c),
       QMCAppBase(),
       particle_set_pool_(std::make_unique<ParticleSetPool>(myComm)),
-      psi_pool_(std::make_unique<WaveFunctionPool>(*particle_set_pool_, myComm)),
+      psi_pool_(std::make_unique<WaveFunctionPool>(my_project_.getRuntimeOptions(), *particle_set_pool_, myComm)),
       ham_pool_(std::make_unique<HamiltonianPool>(*particle_set_pool_, *psi_pool_, myComm)),
       qmc_system_(nullptr),
       first_qmc_(true)

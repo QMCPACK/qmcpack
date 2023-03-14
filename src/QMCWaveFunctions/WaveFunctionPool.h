@@ -20,6 +20,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/qmc_common.h" // RuntimeOptions
 #include <map>
 #include <string>
 
@@ -39,7 +40,10 @@ class WaveFunctionPool : public MPIObjectBase
 public:
   using PoolType = std::map<std::string, const std::unique_ptr<TrialWaveFunction>>;
 
-  WaveFunctionPool(ParticleSetPool& pset_pool, Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(const RuntimeOptions& runtime_options,
+                   ParticleSetPool& pset_pool,
+                   Communicate* c,
+                   const char* aname = "wavefunction");
   WaveFunctionPool(const WaveFunctionPool&)            = delete;
   WaveFunctionPool& operator=(const WaveFunctionPool&) = delete;
   WaveFunctionPool(WaveFunctionPool&&)                 = default;
@@ -82,6 +86,9 @@ public:
   void addFactory(std::unique_ptr<TrialWaveFunction> psi, bool primary);
 
 private:
+  /// @brief top-level runtime options from project data information
+  const RuntimeOptions& runtime_options_;
+
   /// pointer to the primary TrialWaveFunction
   TrialWaveFunction* primary_psi_;
 
