@@ -27,6 +27,7 @@
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #include "type_traits/template_types.hpp"
+#include "Message/UniformCommunicateError.h"
 
 namespace qmcplusplus
 {
@@ -43,9 +44,9 @@ enum
 
 SimpleFixedNodeBranch::SimpleFixedNodeBranch(RealType tau, int nideal) //, PopHist(5), DMCEnergyHist(5)
 {
-  BranchMode.set(B_DMCSTAGE, 0);                                       //warmup stage
-  BranchMode.set(B_POPCONTROL, 1);                                     //use standard DMC
-  BranchMode.set(B_USETAUEFF, 1);                                      //use taueff
+  BranchMode.set(B_DMCSTAGE, 0);     //warmup stage
+  BranchMode.set(B_POPCONTROL, 1);   //use standard DMC
+  BranchMode.set(B_USETAUEFF, 1);    //use taueff
   BranchMode.set(B_CLEARHISTORY, 0); //clear history and start with the current average
   BranchMode.set(B_KILLNODES, 0);    //when killing walkers at nodes etrial is updated differently
   vParam.fill(1.0);
@@ -146,7 +147,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       acomm->allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
-      walkers.setGlobalNumWalkers(nwoff[ncontexts]);
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
@@ -236,7 +236,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
     //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
     //    W.setWalkerOffsets(nwoff);
     //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
     //  }

@@ -16,15 +16,18 @@ if(QMC_OMP)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
   if(ENABLE_OFFLOAD)
-    if(QMC_CUDA2HIP)
-      set(OFFLOAD_TARGET_DEFAULT "amdgcn-amd-amdhsa")
+    if(DEFINED OFFLOAD_TARGET)
+      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
+      if(DEFINED OFFLOAD_ARCH)
+        set(OPENMP_OFFLOAD_COMPILE_OPTIONS
+            "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
+      endif()
+    elseif(QMC_GPU_ARCHS)
+      string(REGEX REPLACE ";" "," QMC_GPU_ARCHS_COMMA_SEPARATED "${QMC_GPU_ARCHS}")
+      set(OPENMP_OFFLOAD_COMPILE_OPTIONS "--offload-arch=${QMC_GPU_ARCHS_COMMA_SEPARATED}")
     else()
-      set(OFFLOAD_TARGET_DEFAULT "nvptx64-nvidia-cuda")
+      message(FATAL_ERROR "Require QMC_GPU_ARCHS or OFFLOAD_TARGET set for OpenMP offload using Clang.")
     endif()
-    set(OFFLOAD_TARGET
-        ${OFFLOAD_TARGET_DEFAULT}
-        CACHE STRING "Offload target architecture")
-    set(OPENMP_OFFLOAD_COMPILE_OPTIONS "-fopenmp-targets=${OFFLOAD_TARGET}")
 
     include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag("-Wno-linker-warnings" LINKER_WARNING_SUPPORTED)
@@ -32,46 +35,15 @@ if(QMC_OMP)
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-linker-warnings")
     endif()
 
-    if(NOT DEFINED OFFLOAD_ARCH
-       AND OFFLOAD_TARGET MATCHES "nvptx64"
-       AND DEFINED CMAKE_CUDA_ARCHITECTURES)
-      list(LENGTH CMAKE_CUDA_ARCHITECTURES NUMBER_CUDA_ARCHITECTURES)
-      if(NUMBER_CUDA_ARCHITECTURES EQUAL "1")
-        set(OFFLOAD_ARCH sm_${CMAKE_CUDA_ARCHITECTURES})
-      else()
-        message(
-          FATAL_ERROR
-            "LLVM does not yet support offload to multiple architectures! "
-            "Deriving OFFLOAD_ARCH from CMAKE_CUDA_ARCHITECTURES failed. "
-            "Please keep only one entry in CMAKE_CUDA_ARCHITECTURES or set OFFLOAD_ARCH.")
-      endif()
-    endif()
-
-    if(NOT DEFINED OFFLOAD_ARCH
-       AND OFFLOAD_TARGET MATCHES "amdgcn")
-      if (DEFINED CMAKE_HIP_ARCHITECTURES)
-        list(LENGTH CMAKE_HIP_ARCHITECTURES NUMBER_CMAKE_HIP_ARCHITECTURESITECTURES)
-        if(NUMBER_CMAKE_HIP_ARCHITECTURESITECTURES EQUAL "1")
-          set(OFFLOAD_ARCH ${CMAKE_HIP_ARCHITECTURES})
-        else()
-          message(
-            FATAL_ERROR
-              "LLVM does not yet support offload to multiple architectures! "
-              "Deriving OFFLOAD_ARCH from CMAKE_HIP_ARCHITECTURES failed. "
-              "Please keep only one entry in CMAKE_HIP_ARCHITECTURES or set OFFLOAD_ARCH.")
-        endif()
-      else()
-        set(OFFLOAD_ARCH gfx906)
-      endif()
-    endif()
-
-    if(DEFINED OFFLOAD_ARCH)
-      set(OPENMP_OFFLOAD_COMPILE_OPTIONS
-          "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Xopenmp-target=${OFFLOAD_TARGET} -march=${OFFLOAD_ARCH}")
-    endif()
-
-    if(OFFLOAD_TARGET MATCHES "nvptx64")
+    # additional customization for NVIDIA toolchain
+    if(OPENMP_OFFLOAD_COMPILE_OPTIONS MATCHES "sm_")
       set(OPENMP_OFFLOAD_COMPILE_OPTIONS "${OPENMP_OFFLOAD_COMPILE_OPTIONS} -Wno-unknown-cuda-version")
+      # unfortunately this removes standalone-debug altogether for offload builds
+      # but until we discover how to use the ${OPENMP_OFFLOAD_COMPILE_OPTIONS} more selectively
+      # this is the only way to avoid a warning per compilation unit that contains an omp symbol.
+      message(STATUS "QMCPACK adds -fstandalone-debug for Debug builds")
+      set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
+      set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
     endif()
   endif()
 endif(QMC_OMP)
@@ -106,15 +78,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 # Set extra debug flags
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fno-omit-frame-pointer")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer")
-
-# unfortunately this removes standalone-debug altogether for offload builds
-# but until we discover how to use the ${OPENMP_OFFLOAD_COMPILE_OPTIONS} more selectively
-# this is the only way to avoid a warning per compilation unit that contains an omp symbol.
-if (NOT OFFLOAD_TARGET MATCHES "nvptx64")
-  message(STATUS "QMCPACK adds -fstandalone-debug for Debug builds")
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fstandalone-debug")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fstandalone-debug")
-endif()
 
 #--------------------------------------
 # Special architectural flags

@@ -69,14 +69,19 @@ void MCPopulation::createWalkers(IndexType num_walkers, const WalkerConfiguratio
   for (size_t iw = 0; iw < num_walkers_plus_reserve; iw++)
   {
     walkers_[iw]             = std::make_unique<MCPWalker>(elec_particle_set_->getTotalNum());
-    walkers_[iw]->R          = elec_particle_set_->R;
-    walkers_[iw]->spins      = elec_particle_set_->spins;
     walkers_[iw]->Properties = elec_particle_set_->Properties;
+
+    // initialize coord
+    if (const auto num_existing_walkers = walker_configs.getActiveWalkers())
+      *walkers_[iw] = *walker_configs[iw % num_existing_walkers];
+    else
+    {
+      walkers_[iw]->R          = elec_particle_set_->R;
+      walkers_[iw]->spins      = elec_particle_set_->spins;
+    }
+
     walkers_[iw]->registerData();
     walkers_[iw]->DataSet.allocate();
-
-    if (iw < walker_configs.WalkerList.size())
-      *walkers_[iw] = *walker_configs[iw];
 
     walker_elec_particle_sets_[iw]  = std::make_unique<ParticleSet>(*elec_particle_set_);
     walker_trial_wavefunctions_[iw] = trial_wf_->makeClone(*walker_elec_particle_sets_[iw]);

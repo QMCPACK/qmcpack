@@ -246,6 +246,8 @@ bool QMCDriverNew::finalize(int block, bool dumpwalkers)
 {
   population_.saveWalkerConfigurations(walker_configs_ref_);
   setWalkerOffsets(walker_configs_ref_, myComm);
+  app_log() << "  Carry over " << walker_configs_ref_.getGlobalNumWalkers()
+            << " walker configurations to the next QMC driver." << std::endl;
 
   const bool DumpConfig = qmcdriver_input_.get_dump_config();
   if (DumpConfig && dumpwalkers)
@@ -373,8 +375,8 @@ void QMCDriverNew::initialLogEvaluation(int crowd_id,
     savePropertiesIntoWalker(walker_hamiltonians[iw], walkers[iw]);
 
   auto doesDoinTheseLastMatter = [](MCPWalker& walker) {
-    walker.Weight             = 1.;
-    walker.wasTouched         = false;
+    walker.Weight     = 1.;
+    walker.wasTouched = false;
   };
   for (int iw = 0; iw < crowd.size(); ++iw)
     doesDoinTheseLastMatter(walkers[iw]);
@@ -397,55 +399,62 @@ std::ostream& operator<<(std::ostream& o_stream, const QMCDriverNew& qmcd)
 
 void QMCDriverNew::defaultSetNonLocalMoveHandler(QMCHamiltonian& ham) {}
 
-QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(int num_ranks,
-                                                                         int rank_id,
-                                                                         IndexType required_total,
-                                                                         IndexType walkers_per_rank,
-                                                                         RealType reserve_walkers,
+QMCDriverNew::AdjustedWalkerCounts QMCDriverNew::adjustGlobalWalkerCount(Communicate& comm,
+                                                                         const IndexType current_configs,
+                                                                         const IndexType requested_total_walkers,
+                                                                         const IndexType requested_walkers_per_rank,
+                                                                         const RealType reserve_walkers,
                                                                          int num_crowds)
 {
+  const int num_ranks = comm.size();
+  const int rank_id   = comm.rank();
+
   // Step 1. set num_crowds by input and Concurrency::maxCapacity<>()
   checkNumCrowdsLTNumThreads(num_crowds);
   if (num_crowds == 0)
     num_crowds = Concurrency::maxCapacity<>();
 
   AdjustedWalkerCounts awc{0, {}, {}, reserve_walkers};
+  awc.walkers_per_rank.resize(num_ranks, 0);
 
   // Step 2. decide awc.global_walkers and awc.walkers_per_rank based on input values
-  if (required_total != 0)
+  if (requested_total_walkers != 0)
   {
-    if (required_total < num_ranks)
+    if (requested_total_walkers < num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks.  The request of " << required_total
+      error << "Running on " << num_ranks << " MPI ranks.  The request of " << requested_total_walkers
             << " global walkers cannot be satisfied! Need at least one walker per MPI rank.";
       throw UniformCommunicateError(error.str());
     }
-    if (walkers_per_rank != 0 && required_total != walkers_per_rank * num_ranks)
+    if (requested_walkers_per_rank != 0 && requested_total_walkers != requested_walkers_per_rank * num_ranks)
     {
       std::ostringstream error;
-      error << "Running on " << num_ranks << " MPI ranks, The request of " << required_total << " global walkers and "
-            << walkers_per_rank << " walkers per rank cannot be satisfied!";
+      error << "Running on " << num_ranks << " MPI ranks, The request of " << requested_total_walkers
+            << " global walkers and " << requested_walkers_per_rank << " walkers per rank cannot be satisfied!";
       throw UniformCommunicateError(error.str());
     }
-    awc.global_walkers   = required_total;
-    awc.walkers_per_rank = fairDivide(required_total, num_ranks);
+    awc.global_walkers   = requested_total_walkers;
+    awc.walkers_per_rank = fairDivide(requested_total_walkers, num_ranks);
   }
-  else
+  else // requested_total_walkers == 0
   {
-    if (walkers_per_rank != 0)
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, walkers_per_rank);
-    else
-      awc.walkers_per_rank = std::vector<IndexType>(num_ranks, num_crowds);
-    awc.global_walkers = awc.walkers_per_rank[0] * num_ranks;
+    if (requested_walkers_per_rank != 0)
+      awc.walkers_per_rank[rank_id] = requested_walkers_per_rank;
+    else if (current_configs) // requested_walkers_per_rank == 0 and current_configs > 0
+      awc.walkers_per_rank[rank_id] = current_configs;
+    else                      // requested_walkers_per_rank == 0 and current_configs == 0
+      awc.walkers_per_rank[rank_id] = num_crowds;
+    comm.allreduce(awc.walkers_per_rank);
+    awc.global_walkers = std::accumulate(awc.walkers_per_rank.begin(), awc.walkers_per_rank.end(), 0);
   }
-
-  // Step 3. decide awc.walkers_per_crowd
-  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.global_walkers % num_ranks)
     app_warning() << "TotalWalkers (" << awc.global_walkers << ") not divisible by number of ranks (" << num_ranks
                   << "). This will result in a loss of efficiency.\n";
+
+  // Step 3. decide awc.walkers_per_crowd
+  awc.walkers_per_crowd = fairDivide(awc.walkers_per_rank[rank_id], num_crowds);
 
   if (awc.walkers_per_rank[rank_id] % num_crowds)
     app_warning() << "Walkers per rank (" << awc.walkers_per_rank[rank_id] << ") not divisible by number of crowds ("
@@ -605,7 +614,6 @@ void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Commun
   for (int ip = 0; ip < comm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
-  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
   walker_configs.setWalkerOffsets(nwoff);
 }
 

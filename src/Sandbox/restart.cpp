@@ -40,7 +40,6 @@ void setWalkerOffsets(MCWalkerConfiguration& W, Communicate* myComm)
   myComm->allreduce(nw);
   for (int ip = 0; ip < myComm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
-  W.setGlobalNumWalkers(nwoff[myComm->size()]);
   W.setWalkerOffsets(nwoff);
 }
 

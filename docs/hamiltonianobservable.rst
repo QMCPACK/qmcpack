@@ -112,8 +112,6 @@ Many pair potentials are supported.  Though only the most commonly used pair pot
   +------------------+---------+-----------------------------------------------+
   |                  | mpc     | Model periodic Coulomb interaction/correction |
   +------------------+---------+-----------------------------------------------+
-  |                  | cpp     | Core polarization potential                   |
-  +------------------+---------+-----------------------------------------------+
   |                  | skpot   | *Unknown*                                     |
   +------------------+---------+-----------------------------------------------+
 
@@ -148,15 +146,10 @@ Additional information:
    of the classical/quantum ``particleset``.
 
 -  Only ``Coulomb, pseudo``, and ``mpc`` are described in detail in the
-   following subsections. The older or less-used types (``cpp, skpot``)
+   following subsections. The older or less-used types (``skpot``)
    are not covered.
 
--  Available only if ``QMC_CUDA`` is not defined: ``skpot``.
-
 -  Available only if ``OHMMS_DIM==3``: ``mpc, vhxc, pseudo``.
-
--  Available only if ``OHMMS_DIM==3`` and ``QMC_CUDA`` is not defined:
-   ``cpp``.
 
 Coulomb potentials
 ~~~~~~~~~~~~~~~~~~
