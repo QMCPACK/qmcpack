@@ -143,7 +143,7 @@ void RotatedSPOs::saveExtraParameters(hdf_archive& hout)
   if (use_global_rot_)
   {
     hid_t grp                   = hout.push("rotation_global");
-    std::string rot_global_name = std::string("rotation_global_") + Phi->getName();
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     int nparam = myVarsFull.size();
     std::vector<RealType> full_params(nparam);
@@ -165,7 +165,7 @@ void RotatedSPOs::saveExtraParameters(hdf_archive& hout)
       for (size_t j = 0; j < cols; j++)
         tmp(i, j) = history_params_[i][j];
 
-    std::string rot_hist_name = std::string("rotation_history_") + Phi->getName();
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     hout.write(tmp, rot_hist_name);
   }
 
@@ -187,7 +187,7 @@ void RotatedSPOs::readExtraParameters(hdf_archive& hin, const opt_variables_type
 
   if (grp_global >= 0)
   {
-    std::string rot_global_name = std::string("rotation_global_") + Phi->getName();
+    std::string rot_global_name = std::string("rotation_global_") + SPOSet::getName();
 
     std::vector<int> sizes(1);
     if (!hin.getShape<RealType>(rot_global_name, sizes))
@@ -214,7 +214,7 @@ void RotatedSPOs::readExtraParameters(hdf_archive& hin, const opt_variables_type
   }
   else
   {
-    std::string rot_hist_name = std::string("rotation_history_") + Phi->getName();
+    std::string rot_hist_name = std::string("rotation_history_") + SPOSet::getName();
     std::vector<int> sizes(2);
     if (!hin.getShape<RealType>(rot_hist_name, sizes))
       throw std::runtime_error("Failed to read rotation history in VP file");
