@@ -25,6 +25,11 @@
 namespace qmcplusplus
 {
 
+namespace testing
+{
+class MagnetizationDensityTests;
+}
+
 class MagnetizationDensity : public OperatorEstBase
 {
 public:
@@ -63,6 +68,7 @@ private:
   size_t npoints_;
   int nsamples_;
 
+  friend class testing::MagnetizationDensityTests;
 };
 } // namespace qmcplusplus
 #endif  /* QMCPLUSPLUS_MAGNETIZATION_DENSITY_H */

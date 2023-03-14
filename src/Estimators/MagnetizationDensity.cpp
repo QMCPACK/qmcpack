@@ -59,6 +59,23 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng) 
 {
+  for (int iw = 0; iw < walkers.size(); ++iw)
+  {
+    MCPWalker& walker     = walkers[iw];
+    ParticleSet& pset     = psets[iw];
+    QMCT::RealType weight = walker.Weight;
+
+    const int np = pset.getTotalNum();
+    assert(weight >= 0);
+    for (int p = 0; p < np; ++p)
+    {
+      QMCT::PosType u = lattice_.toUnit(pset.R[p] - rcorner_);
+      size_t point    = 0;
+      for (int d = 0; d < QMCT::DIM; ++d)
+        point += gdims_[d] * ((int)(grid_[d] * (u[d] - std::floor(u[d])))); //periodic only
+     // accumulateToData(point, weight);
+    }
+  }
 
 };
 

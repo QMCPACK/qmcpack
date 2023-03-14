@@ -35,8 +35,22 @@
 
 using std::string;
 
+
 namespace qmcplusplus
 {
+
+namespace testing
+{
+class MagnetizationDensityTesting
+{
+public:
+  void testCopyConstructor(const MagnetizationDensity& magdens)
+  {
+
+  }
+};
+} //namespace testing
+
 #ifdef QMC_COMPLEX
 TEST_CASE("MagDensity", "[hamiltonian]")
 {
