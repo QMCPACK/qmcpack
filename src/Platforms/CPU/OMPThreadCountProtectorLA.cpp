@@ -10,16 +10,16 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "LAThreadProtector.hpp"
+#include "OMPThreadCountProtectorLA.hpp"
 
 namespace qmcplusplus
 {
-  LAThreadProtector::LAThreadProtector()
+  OMPThreadCountProtectorLA::OMPThreadCountProtectorLA()
   {
 #if defined(HAVE_OPENBLAS)
     handle_ = std::make_unique<Concurrency::ThreadCountProtector<>>();
 #endif
   }
 
-  LAThreadProtector::~LAThreadProtector() = default;
+  OMPThreadCountProtectorLA::~OMPThreadCountProtectorLA() = default;
 } // namespace qmcplusplus

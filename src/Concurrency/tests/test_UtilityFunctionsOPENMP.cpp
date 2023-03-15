@@ -20,6 +20,7 @@ using namespace Concurrency;
 TEST_CASE("UtilityFunctions OpenMP", "[concurrency]")
 {
   const int old_threads = maxCapacity<Executor::OPENMP>();
+#ifdef _OPENMP
   {
     OverrideMaxCapacity<Executor::OPENMP> lock(97);
     CHECK(maxCapacity<Executor::OPENMP>() == 97);
@@ -36,6 +37,7 @@ TEST_CASE("UtilityFunctions OpenMP", "[concurrency]")
     }
     CHECK(maxCapacity<Executor::OPENMP>() == 97);
   }
+#endif
   CHECK(maxCapacity<Executor::OPENMP>() == old_threads);
 }
 

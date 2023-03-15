@@ -22,13 +22,13 @@ namespace qmcplusplus
  * It protects any side effects from linear algebra library calls changing the number of active avaiable threads.
  * Known trouble maker: OpenBLAS https://github.com/xianyi/OpenBLAS/issues/3940
  */
-class LAThreadProtector
+class OMPThreadCountProtectorLA
 {
   std::unique_ptr<Concurrency::ThreadCountProtector<>> handle_;
 
 public:
-  LAThreadProtector();
-  ~LAThreadProtector();
+  OMPThreadCountProtectorLA();
+  ~OMPThreadCountProtectorLA();
 };
 } // namespace qmcplusplus
 #endif

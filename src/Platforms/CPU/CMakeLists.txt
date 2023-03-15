@@ -12,7 +12,7 @@
 add_library(platform_cpu_runtime INTERFACE)
 target_link_libraries(platform_cpu_runtime INTERFACE Math::scalar_vector_functions)
 
-set(CPU_SRCS BlasThreadingEnv.cpp LAThreadProtector.cpp)
+set(CPU_SRCS BlasThreadingEnv.cpp OMPThreadCountProtectorLA.cpp)
 add_library(platform_cpu_LA ${CPU_SRCS})
 target_link_libraries(platform_cpu_LA PUBLIC Math::BLAS_LAPACK platform_cpu_runtime)
 if(BLAS_LIBRARIES MATCHES openblas)
