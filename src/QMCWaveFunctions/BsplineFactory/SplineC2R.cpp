@@ -54,15 +54,6 @@ bool SplineC2R<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-/*
-  JPT [14.03.2023] implement after R2R and C2C are working
-*/
-template<typename ST>
-void SplineC2R<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
-{
-  app_abort("ERROR: Orbital rotations are not currently supported for SplineC2R!")
-}
-
 template<typename ST>
 inline void SplineC2R<ST>::assign_v(const PointType& r,
                                     const vContainer_type& myV,
