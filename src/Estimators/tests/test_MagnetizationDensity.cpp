@@ -48,12 +48,21 @@ public:
   void testCopyConstructor(const MagnetizationDensity& magdens)
   {
     MagnetizationDensity magdens2(magdens);
-    CHECK( magdens.rcorner_ == magdens2.rcorner_);
     CHECK( magdens.nsamples_ == magdens2.nsamples_);
+    CHECK( magdens.integrator_ == magdens2.integrator_);
+    CHECK( magdens.data_locality_ == magdens2.data_locality_);
+    for( int idim=0; idim<OHMMS_DIM; idim++)
+    {
+      CHECK( magdens.gdims_[idim] == magdens2.gdims_[idim]);
+      CHECK( magdens.grid_[idim] == magdens2.grid_[idim]);
+      CHECK( magdens.rcorner_[idim] == Approx(magdens2.rcorner_[idim]));
+      CHECK( magdens.center_[idim] == Approx(magdens2.center_[idim]));
+    }
   }
 };
 } //namespace testing
 
+ 
 #ifdef QMC_COMPLEX
 TEST_CASE("MagnetizationDensity::MagnetizationDensity(SPInput, Lattice, SpeciesSet)", "[estimators]")
 {
@@ -64,15 +73,10 @@ TEST_CASE("MagnetizationDensity::MagnetizationDensity(SPInput, Lattice, SpeciesS
   REQUIRE(okay);
   xmlNodePtr node = doc.getRoot();
   MagnetizationDensityInput mdi(node);
-//  SpeciesSet species_set;
-//  int ispecies                      = species_set.addSpecies("C");
-//  int iattribute                    = species_set.addAttribute("membersize");
-//  species_set(iattribute, ispecies) = 2;
+  
   auto lattice                      = testing::makeTestLattice();
+  
   MagnetizationDensity magdens(std::move(mdi), lattice);
-  // make sure there is something in obdm's data
-  //OEBAccessor oeba(sdn);
-  //oeba[0] = 1.0;
   MagnetizationDensityTests magdenstest;
   magdenstest.testCopyConstructor(magdens);
 }
@@ -88,7 +92,8 @@ TEST_CASE("MagnetizationDensity::spawnCrowdClone()", "[estimators]")
   MagnetizationDensityInput mdi(node);
 
   auto lattice                      = testing::makeTestLattice();
-  MagnetizationDensity original(std::move(mdi), lattice);
+ 
+   MagnetizationDensity original(std::move(mdi), lattice);
   auto clone = original.spawnCrowdClone();
   REQUIRE(clone != nullptr);
   REQUIRE(clone.get() != &original);
