@@ -17,7 +17,7 @@ namespace qmcplusplus
   OMPThreadCountProtectorLA::OMPThreadCountProtectorLA()
   {
 #if defined(HAVE_OPENBLAS)
-    handle_ = std::make_unique<Concurrency::ThreadCountProtector<>>();
+    handle_ = std::make_unique<Protector>();
 #endif
   }
 

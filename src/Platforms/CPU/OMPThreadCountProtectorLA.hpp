@@ -24,7 +24,8 @@ namespace qmcplusplus
  */
 class OMPThreadCountProtectorLA
 {
-  std::unique_ptr<Concurrency::ThreadCountProtector<>> handle_;
+  using Protector = Concurrency::ThreadCountProtector<Executor::OPENMP>;
+  std::unique_ptr<Protector> handle_;
 
 public:
   OMPThreadCountProtectorLA();
