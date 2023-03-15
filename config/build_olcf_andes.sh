@@ -15,8 +15,6 @@ export LAPACK_LIBS="$BLAS_LIBS $OLCF_NETLIB_LAPACK_ROOT/lib64/liblapack.a"
 
 declare -A builds=( ["cpu"]="-DBUILD_PPCONVERT=1" \
                     ["complex_cpu"]="-DQMC_COMPLEX=1" \
-#		    ["legacy_gpu"]="-DQMC_CUDA=1 " \
-#		    ["complex_legacy_gpu"]="-DQMC_CUDA=1 -DQMC_COMPLEX=1 " \
 		  )
 
 mkdir bin_andes

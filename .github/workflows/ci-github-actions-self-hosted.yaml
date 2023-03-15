@@ -214,10 +214,10 @@ jobs:
       matrix:
         jobname:
           [
-            ROCm-Clang13-NoMPI-CUDA2HIP-Real-Mixed,
-            ROCm-Clang13-NoMPI-CUDA2HIP-Real,
-            ROCm-Clang13-NoMPI-CUDA2HIP-Complex-Mixed,
-            ROCm-Clang13-NoMPI-CUDA2HIP-Complex,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Real-Mixed,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Real,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Complex-Mixed,
+            RadeonVII-ROCm-NoMPI-CUDA2HIP-Complex,
           ]
 
     steps:
@@ -273,15 +273,15 @@ jobs:
 
       - name: Configure
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh configure
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-1.sh configure
 
       - name: Build
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh build
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-1.sh build
 
       - name: Test
         if: steps.check.outputs.triggered == 'true'
-        run: tests/test_automation/github-actions/ci/run_step.sh test
+        run: tests/test_automation/github-actions/ci/run_step_ornl-nitrogen-1.sh test
 
       - name: Report PR status
         if: always() && steps.check.outputs.triggered == 'true'

@@ -83,7 +83,7 @@ public:
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerControlBase(Communicate* c, bool rn = false);
+  WalkerControlBase(Communicate* c);
 
   /** empty destructor to clean up the derived classes */
   virtual ~WalkerControlBase();
@@ -159,7 +159,6 @@ public:
     ensemble_property_ = ensemble_property;
   }
   IndexType get_num_contexts() const { return num_contexts_; }
-  void set_write_release_nodes(bool write_release_nodes) { write_release_nodes_ = write_release_nodes; }
   IndexType get_method() const { return method_; }
   void set_method(IndexType method) { method_ = method; }
 
@@ -205,8 +204,6 @@ protected:
   std::vector<std::unique_ptr<Walker_t>> good_w, bad_w;
   ///temporary storage for copy counters
   std::vector<int> ncopy_w;
-  ///Add released-node fields to .dmc.dat file
-  bool write_release_nodes_;
   ///Use non-blocking isend/irecv
   bool use_nonblocking;
 

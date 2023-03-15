@@ -21,8 +21,8 @@
 #include "QMCWaveFunctions/WaveFunctionPool.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-
 #include "QMCHamiltonians/HamiltonianFactory.h"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <string>
@@ -42,7 +42,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
   /*
     BEGIN Boilerplate stuff to make a simple SPOSet. Copied from test_einset.cpp
   */
-
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
@@ -101,7 +101,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   pp.addParticleSet(std::move(ions_uptr));
 
-  WaveFunctionPool wp(pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
   REQUIRE(wp.empty() == true);
 
   const char* wf_input_multi_det = R"(
@@ -198,7 +198,7 @@ void test_hcpBe_rotation(bool use_single_det, bool use_nlpp_batched)
 
   CHECK(elec.G[0][0] == ValueApprox(0.54752651));
   CHECK(elec.L[0] == ValueApprox(11.066512459947848));
-#if defined(MIXED_PRECISION)  
+#if defined(MIXED_PRECISION)
   CHECK(elec.L[1] == ValueApprox(-0.4830868071).epsilon(1e-3));
 #else
   CHECK(elec.L[1] == ValueApprox(-0.4831061477045371));

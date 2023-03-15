@@ -258,9 +258,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     awalker.resetProperty(logpsi, Psi.getPhase(), eloc);
     H.auxHevaluate(W, awalker);
     H.saveProperty(awalker.getPropertyBase());
-    awalker.ReleasedNodeAge    = 0;
-    awalker.ReleasedNodeWeight = 0;
-    awalker.Weight             = 1;
+    awalker.Weight = 1.;
   }
   InitWalkersTimer->stop();
 #pragma omp master
@@ -328,16 +326,6 @@ void QMCUpdateBase::checkLogAndGL(ParticleSet& pset, TrialWaveFunction& twf, con
   std::cerr << msg.str();
   if (!success)
     throw std::runtime_error(std::string("checkLogAndGL failed at ") + std::string(location) + std::string("\n"));
-}
-
-void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
-{
-  for (; it != it_end; ++it)
-  {
-    auto& walker         = *it;
-    RealType M           = std::abs(walker->Weight);
-    walker->Multiplicity = std::floor(M + RandomGen());
-  }
 }
 
 void QMCUpdateBase::setMultiplicity(WalkerIter_t it, WalkerIter_t it_end)

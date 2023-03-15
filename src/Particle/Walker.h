@@ -89,12 +89,8 @@ public:
   int Generation;
   ///Age of this walker age is incremented when a walker is not moved after a sweep
   int Age;
-  ///Age of this walker age is incremented when a walker is not moved after a sweep
-  int ReleasedNodeAge;
   ///Weight of the walker
   FullPrecRealType Weight;
-  ///Weight of the walker
-  FullPrecRealType ReleasedNodeWeight;
   /** Number of copies for branching
    *
    * When Multiplicity = 0, this walker will be destroyed.
@@ -151,8 +147,6 @@ public:
     Age                = 0;
     Weight             = 1.0;
     Multiplicity       = 1.0;
-    ReleasedNodeWeight = 1.0;
-    ReleasedNodeAge    = 0;
 
     if (nptcl > 0)
       resize(nptcl);
@@ -236,8 +230,6 @@ public:
     Age                = a.Age;
     Weight             = a.Weight;
     Multiplicity       = a.Multiplicity;
-    ReleasedNodeWeight = a.ReleasedNodeWeight;
-    ReleasedNodeAge    = a.ReleasedNodeAge;
     if (R.size() != a.R.size())
       resize(a.R.size());
     R = a.R;
@@ -271,7 +263,6 @@ public:
   ///return the address of the i-th properties
   inline const FullPrecRealType* getPropertyBase(int i) const { return Properties[i]; }
 
-
   /** reset the property of a walker
    *@param logpsi \f$\log |\Psi|\f$
    *@param sigN  sign of the trial wavefunction
@@ -289,19 +280,6 @@ public:
     Properties(WP::LOCALENERGY) = ene;
   }
 
-  inline void resetReleasedNodeProperty(FullPrecRealType localenergy,
-                                        FullPrecRealType alternateEnergy,
-                                        FullPrecRealType altR)
-  {
-    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
-    Properties(WP::LOCALENERGY)     = localenergy;
-    Properties(WP::SIGN)            = altR;
-  }
-  inline void resetReleasedNodeProperty(FullPrecRealType localenergy, FullPrecRealType alternateEnergy)
-  {
-    Properties(WP::ALTERNATEENERGY) = alternateEnergy;
-    Properties(WP::LOCALENERGY)     = localenergy;
-  }
   /** reset the property of a walker
    * @param logpsi \f$\log |\Psi|\f$
    * @param sigN  sign of the trial wavefunction
@@ -375,8 +353,6 @@ public:
     DataSet.add(ParentID);
     DataSet.add(Generation);
     DataSet.add(Age);
-    DataSet.add(ReleasedNodeAge);
-    DataSet.add(ReleasedNodeWeight);
     // vectors
     assert(R.size() != 0);
     DataSet.add(R.first_address(), R.last_address());
@@ -405,7 +381,7 @@ public:
   {
     assert(DataSet.size() != 0);
     DataSet.rewind();
-    DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
+    DataSet >> ID >> ParentID >> Generation >> Age;
     // vectors
     assert(R.size() != 0);
     DataSet.get(R.first_address(), R.last_address());
@@ -430,7 +406,7 @@ public:
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
+    DataSet << ID << ParentID << Generation << Age;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
     DataSet.put(spins.first_address(), spins.last_address());
