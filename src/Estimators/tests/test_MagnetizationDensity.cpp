@@ -32,6 +32,7 @@
 #include "QMCWaveFunctions/WaveFunctionTypes.hpp"
 
 #include "Estimators/MagnetizationDensity.h"
+#include "EstimatorTesting.h"
 
 using std::string;
 
@@ -41,17 +42,58 @@ namespace qmcplusplus
 
 namespace testing
 {
-class MagnetizationDensityTesting
+class MagnetizationDensityTests
 {
 public:
   void testCopyConstructor(const MagnetizationDensity& magdens)
   {
-
+    MagnetizationDensity magdens2(magdens);
+    CHECK( magdens.rcorner_ == magdens2.rcorner_);
+    CHECK( magdens.nsamples_ == magdens2.nsamples_);
   }
 };
 } //namespace testing
 
 #ifdef QMC_COMPLEX
+TEST_CASE("MagnetizationDensity::MagnetizationDensity(SPInput, Lattice, SpeciesSet)", "[estimators]")
+{
+  using namespace testing;
+  Libxml2Document doc;
+  auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
+  bool okay      = doc.parseFromString(input_xml);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  MagnetizationDensityInput mdi(node);
+//  SpeciesSet species_set;
+//  int ispecies                      = species_set.addSpecies("C");
+//  int iattribute                    = species_set.addAttribute("membersize");
+//  species_set(iattribute, ispecies) = 2;
+  auto lattice                      = testing::makeTestLattice();
+  MagnetizationDensity magdens(std::move(mdi), lattice);
+  // make sure there is something in obdm's data
+  //OEBAccessor oeba(sdn);
+  //oeba[0] = 1.0;
+  MagnetizationDensityTests magdenstest;
+  magdenstest.testCopyConstructor(magdens);
+}
+
+TEST_CASE("MagnetizationDensity::spawnCrowdClone()", "[estimators]")
+{
+  using namespace testing;
+  Libxml2Document doc;
+  auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
+  bool okay      = doc.parseFromString(input_xml);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  MagnetizationDensityInput mdi(node);
+
+  auto lattice                      = testing::makeTestLattice();
+  MagnetizationDensity original(std::move(mdi), lattice);
+  auto clone = original.spawnCrowdClone();
+  REQUIRE(clone != nullptr);
+  REQUIRE(clone.get() != &original);
+  REQUIRE(dynamic_cast<decltype(&original)>(clone.get()) != nullptr);
+}
 TEST_CASE("MagDensity", "[hamiltonian]")
 {
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
