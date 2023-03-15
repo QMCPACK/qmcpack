@@ -106,7 +106,7 @@ case "$1" in
     if [[ "$CONTAINER_OS" =~ (centos) ]]
     then
       # use spack
-      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH
+      export PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib
       export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include
@@ -117,7 +117,7 @@ case "$1" in
 
 
       # Make current environment variables available to subsequent steps
-      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:/opt/spack/bin:$PATH" >> $GITHUB_ENV
+      echo "PATH=/opt/rh/gcc-toolset-11/root/bin/:/opt/view:/opt/view/bin:$PATH" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:`which gcc|sed 's/bin\/gcc/lib64/g'`" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/lib" >> $GITHUB_ENV
       echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/view/include" >> $GITHUB_ENV
