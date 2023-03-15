@@ -24,6 +24,8 @@ namespace qmcplusplus
 {
 namespace Concurrency
 {
+/** A service class to restore active avaiable threads upon destruction as the thread count recorded during construction.
+ */
 template<Executor TT = Executor::OPENMP>
 class ThreadCountProtector
 {
@@ -42,6 +44,9 @@ public:
   ~ThreadCountProtector() { omp_set_num_threads(original_max_threads_); }
 };
 
+/** A service class to override active avaiable threads upon construction.
+ * Restore active avaiable threads upon destruction as the thread count recorded during construction.
+ */
 template<Executor TT = Executor::OPENMP>
 class OverrideMaxCapacity : private ThreadCountProtector<TT>
 {

@@ -18,11 +18,14 @@
 
 namespace qmcplusplus
 {
-/** service class for explicitly managing the threading of BLAS/LAPACK calls from OpenMP parallel region
+/** For linear algebra only. A service class to restore active avaiable threads upon destruction as the thread count recorded during construction
+ * It protects any side effects from linear algebra library calls changing the number of active avaiable threads.
+ * Known trouble maker: OpenBLAS https://github.com/xianyi/OpenBLAS/issues/3940
  */
 class LAThreadProtector
 {
   std::unique_ptr<Concurrency::ThreadCountProtector<>> handle_;
+
 public:
   LAThreadProtector();
   ~LAThreadProtector();
