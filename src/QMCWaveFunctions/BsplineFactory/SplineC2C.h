@@ -63,6 +63,9 @@ private:
   ///multi bspline set
   std::shared_ptr<MultiBspline<ST>> SplineInst;
 
+  ///Copy of original splines for orbital rotation
+  std::shared_ptr<std::vector<RealType>> coef_copy_;
+
   vContainer_type mKK;
   VectorSoaContainer<ST, 3> myKcart;
 
@@ -87,6 +90,9 @@ public:
 
 
   std::unique_ptr<SPOSet> makeClone() const override { return std::make_unique<SplineC2C>(*this); }
+
+  /// Store an original copy of the spline coefficients for orbital rotation
+  void storeParamsBeforeRotation() override;
 
   /*
     Implements orbital rotations via [1,2].

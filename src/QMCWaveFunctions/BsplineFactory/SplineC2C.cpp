@@ -52,6 +52,16 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
+  template<typename ST>
+  void SplineC2C<ST>::storeParamsBeforeRotation()
+  {
+    const auto spline_ptr     = SplineInst->getSplinePtr();
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+
+    std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+  }
+
 /*
   ~~ Notes for rotation ~~
   spl_coefs      = Raw pointer to spline coefficients
@@ -67,89 +77,72 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
   As a result, due to SIMD alignment, Nsplines may be larger than the
   actual number of splined orbitals. This means that in practice rot_mat
   may be smaller than the number of 'columns' in the coefs array!
-  To fix this problem, we put rot_mat inside "tmpU", which is guaranteed to have
-  the 'right' size to match spl_coefs. The padding of the splines is at the end,
-  so if we put rot_mat at top left corner of tmpU, then we can apply tmpU to the
-  coefs safely regardless of padding.
 
   NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
   "matrix" is very tall and skinny.
 */
-template<typename ST>
-void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
-{
-  // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
-  const auto spline_ptr = SplineInst->getSplinePtr();
-  assert(spline_ptr != nullptr);
-  const auto spl_coefs      = spline_ptr->coefs;
-  const auto n_splines      = spline_ptr->num_splines;
-  const auto coefs_tot_size = spline_ptr->coefs_size;
-  const auto basis_set_size = coefs_tot_size / n_splines;
-  const auto true_n_orbs    = rot_mat.size1(); // == Nsplines - padding
-  assert(OrbitalSetSize >= true_n_orbs);
-
-  // Fill top left corner of tmpU with rot_mat
-  ValueMatrix tmpU;
-  tmpU.resize(n_splines, n_splines);
-  std::fill(tmpU.begin(), tmpU.end(), 0.0);
-  for (auto i = 0; i < rot_mat.size1(); i++)
+  template<typename ST>
+  void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
   {
-    for (auto j = 0; j < rot_mat.size2(); j++)
-    {
-      tmpU[i][j] = rot_mat[i][j];
-    }
-  }
+    // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+    const auto spline_ptr = SplineInst->getSplinePtr();
+    assert(spline_ptr != nullptr);
+    const auto spl_coefs      = spline_ptr->coefs;
+    const auto Nsplines       = spline_ptr->num_splines; // May include padding
+    const auto coefs_tot_size = spline_ptr->coefs_size;
+    const auto basis_set_size = coefs_tot_size / Nsplines;
+    assert(OrbitalSetSize == rot_mat.rows());
+    assert(OrbitalSetSize == rot_mat.cols());
 
-  // Apply rotation the dumb way b/c I can't get BLAS::gemm to work...
-  // For SplineC2C we have to handle complex spl_coefs layout by hand.
-  // Each coef is stored as two realtypes adjacent in memory. For
-  // N spline coefficients the spl_coefs array for a SplineC2C object has
-  // length = 2N to account for real/imag terms. A comparison of the layouts
-  // is given below.
-  //
-  // SplineR2R layout:
-  // |====================|
-  // | c0 | c1 | ... | cN |
-  // |====================|
-  // <- N coefs length N ->
-  //
-  // SplineC2C layout:
-  // |===========================================================|
-  // | Re{c0} | Im{c0} | Re{c1} | Im{c1} | ... | Re{cN} | Im{cN} |
-  // |===========================================================|
-  // <-------------------- N coefs length 2N -------------------->
-  std::vector<ST> new_coefs(coefs_tot_size, 0);
-  ST z1{0.};
-  ST z2{0.};
-  ST w1{0.};
-  ST w2{0.};
-  ST newval_real{0.};
-  ST newval_imag{0.};
-  for (auto i = 0; i < basis_set_size; i++)
-  {
-    for (auto j = 0; j < n_splines; j++)
-    {
-      const auto cur_elem = 2 * (n_splines / 2 * i + j);
-      newval_real         = 0.;
-      newval_imag         = 0.;
-      for (auto k = 0; k < n_splines; k++)
+    if (!use_stored_copy)
       {
-        const auto index = 2 * (i * n_splines / 2 + k);
-        z1               = *(spl_coefs + index);
-        z2               = *(spl_coefs + index + 1);
-        w1               = tmpU[k][j].real();
-        w2               = tmpU[k][j].imag();
-        newval_real += z1 * w1 - z2 * w2;
-        newval_imag += z1 * w2 + z2 * w1;
+        assert(coef_copy_ != nullptr);
+        std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
       }
-      new_coefs[cur_elem]     = newval_real;
-      new_coefs[cur_elem + 1] = newval_imag;
-    }
-  }
 
-  // Update the coefs
-  std::copy(new_coefs.begin(), new_coefs.end(), spl_coefs);
-}
+    /*
+      Apply the rotation. NB: the layout for complex splines is different from real.
+      A real-valued spl_coefs 'matrix' has size basis_set_size X Nsplines.
+      A complex-valued spl_coefs 'matrix' has size (2 X basis_set_size) X Nsplines.
+
+      In other words, For a given SPO, the real coefs are stored and then
+      the complex coefs are appended.
+    */
+    ST zr{0.};
+    ST zi{0.};
+    ST wr{0.};
+    ST wi{0.};
+    ST newval_r{0.};
+    ST newval_i{0.};
+    for (auto i = 0; i < basis_set_size/2; i++)
+      {
+        for (auto j = 0; j < OrbitalSetSize; j++)
+          {
+            // computing 2 elements (real and complex) at a time here
+            const auto cur_elem_r = Nsplines * i + j;
+            const auto cur_elem_i = Nsplines * i + basis_set_size/2 + j;
+            zr = 0.;
+            zi = 0.;
+            wr = 0.;
+            wi = 0.;
+            newval_r = 0.;
+            newval_i = 0.;
+            for (auto k = 0; k < OrbitalSetSize; k++)
+              {
+                const auto index_r = i * Nsplines + k;
+                const auto index_i = index_r + basis_set_size/2;
+                zr = (*coef_copy_)[index_r];
+                zi = (*coef_copy_)[index_i];
+                wr = rot_mat[k][j].real();
+                wi = rot_mat[k][j].imag();
+                newval_r += zr*wr - zi*wi;
+                newval_i += zr*wi + zi*wr;
+              }
+            spl_coefs[cur_elem_r] = newval_r;
+            spl_coefs[cur_elem_i] = newval_i;
+          }
+      }
+  }
 
 template<typename ST>
 inline void SplineC2C<ST>::assign_v(const PointType& r,
