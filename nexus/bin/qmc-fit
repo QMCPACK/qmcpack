@@ -589,11 +589,10 @@ def eos_fit(args):
         for name,func in finfo.params:
             auxfuncs[name]=func
         #end for
-    import numerics
     if opt.fit_function == 'morse':
-        _, pmean, perror = numerics.morse_fit(x, np.transpose(Edata), jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
+        _, pmean, perror = morse_fit(x, np.transpose(Edata), jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
     else:
-        _, pmean, perror = numerics.eos_fit(x, np.transpose(Edata), type = opt.fit_function, jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
+        _, pmean, perror = eos_fit(x, np.transpose(Edata), type = opt.fit_function, jackknife=True, auxfuncs=auxfuncs, auxres=auxres, capture=jcapture)
 
     func_info = fit_functions[opt.fit_function]
     pvals = []
