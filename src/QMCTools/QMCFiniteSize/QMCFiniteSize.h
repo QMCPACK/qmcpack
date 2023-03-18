@@ -37,19 +37,19 @@ public:
   bool execute() override;
 
   void build_spherical_grid(IndexType mtheta, IndexType mphi);
-  void getSkInfo(UBspline_3d_d* spline, vector<RealType>& symmatelem);
-  UBspline_3d_d* getSkSpline(vector<RealType> sk, RealType limit = 1.0);
+  void getSkInfo(UBspline_3d_d* spline, std::vector<RealType>& symmatelem);
+  UBspline_3d_d* getSkSpline(std::vector<RealType> sk, RealType limit = 1.0);
   RealType sphericalAvgSk(UBspline_3d_d* spline, RealType k);
 
   RealType integrate_spline(UBspline_1d_d* spline, RealType a, RealType b, IndexType N);
-  UBspline_1d_d* spline_clamped(vector<RealType>& grid, vector<RealType>& vals, RealType lVal, RealType rVal);
+  UBspline_1d_d* spline_clamped(std::vector<RealType>& grid, std::vector<RealType>& vals, RealType lVal, RealType rVal);
 
   void initialize();
   void calcPotentialCorrection();
   void calcLeadingOrderCorrections();
   void summary();
-  RealType calcPotentialDiscrete(vector<RealType> sk);
-  RealType calcPotentialInt(vector<RealType> sk);
+  RealType calcPotentialDiscrete(std::vector<RealType> sk);
+  RealType calcPotentialInt(std::vector<RealType> sk);
 
 private:
   SkParserBase* skparser;
@@ -58,7 +58,7 @@ private:
   RealType myConst;
   ParticleSet* P;
   RealType h; //this is for finite differencing.
-  vector<PosType> sphericalgrid;
+  std::vector<PosType> sphericalgrid;
   GridType* myGrid;
   std::unique_ptr<LRHandlerType> AA;
   std::unique_ptr<RadFunctorType> rVs;
@@ -68,14 +68,14 @@ private:
   Grid_t gridx;
   Grid_t gridy;
   Grid_t gridz;
-  void printSkRawSphAvg(const vector<RealType>& sk);
+  void printSkRawSphAvg(const std::vector<RealType>& sk);
   void printSkSplineSphAvg(UBspline_3d_d* spline);
   KContainer Klist;
-  vector<TinyVector<int, OHMMS_DIM>> kpts;
-  vector<RealType> SK_raw;
-  vector<RealType> SKerr_raw;
-  vector<RealType> SK;
-  vector<RealType> SKerr;
+  std::vector<TinyVector<int, OHMMS_DIM>> kpts;
+  std::vector<RealType> SK_raw;
+  std::vector<RealType> SKerr_raw;
+  std::vector<RealType> SK;
+  std::vector<RealType> SKerr;
   IndexType mtheta;
   IndexType mphi;
   IndexType NumSamples;
