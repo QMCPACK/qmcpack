@@ -16,7 +16,7 @@ results in some cases.
 QMCPACK is written in C++ and is designed with the modularity afforded by object-oriented programming. High parallel and
 computational efficiencies are achievable on the largest supercomputers. Because of the modular architecture, the addition of new
 wavefunctions, algorithms, and observables is relatively straightforward. For parallelization, QMCPACK uses a fully hybrid
-(OpenMP,CUDA)/MPI approach to optimize memory usage and to take advantage of the growing number of cores per SMP node or graphical
+OpenMP/MPI approach to optimize memory usage and to take advantage of the growing number of cores per SMP node or graphical
 processing units (GPUs) and accelerators. Finally, QMCPACK uses standard file formats for input and output in XML and HDF5 to
 facilitate data exchange.
 

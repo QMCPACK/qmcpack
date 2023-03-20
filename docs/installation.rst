@@ -282,20 +282,22 @@ the path to the source directory.
 
   ::
 
-    QMC_COMPLEX           Build the complex (general twist/k-point) version (1:yes, 0:no)
-    QMC_MIXED_PRECISION   Build the mixed precision (mixing double/float) version
-                          (1:yes (QMC_CUDA=1 default), 0:no (QMC_CUDA=0 default)).
+    QMC_COMPLEX           ON/OFF(default). Build the complex (general twist/k-point) version.
+    QMC_MIXED_PRECISION   ON/OFF(default). Build the mixed precision (mixing double/float) version
                           Mixed precision calculations can be signifiantly faster but should be
                           carefully checked validated against full double precision runs,
                           particularly for large electron counts.
     ENABLE_OFFLOAD        ON/OFF(default). Enable OpenMP target offload for GPU acceleration.
-    QMC_CUDA              Enable legacy CUDA code path for NVIDIA GPU acceleration (1:yes, 0:no)
     ENABLE_CUDA           ON/OFF(default). Enable CUDA code path for NVIDIA GPU acceleration.
                           Production quality for AFQMC and real-space performance portable implementation.
-                          Use CMAKE_CUDA_ARCHITECTURES, default 70, to set the actual GPU architecture.
-    QMC_CUDA2HIP          ON/OFF(default). To be set ON, it requires either QMC_CUDA or ENABLE_CUDA to be ON.
-                          Compile CUDA source code as HIP and use ROCm libraries for AMD GPUs.
+    QMC_CUDA2HIP          ON/OFF(default). Map all CUDA kernels and library calls to HIP and use ROCm libraries.
+                          Set both ENABLE_CUDA and QMC_CUDA2HIP ON to target AMD GPUs.
     ENABLE_SYCL           ON/OFF(default). Enable SYCL code path. Only support Intel GPUs and OneAPI compilers.
+    QMC_GPU_ARCHS         Specify GPU architectures. For example, "gfx90a" targets AMD MI200 series GPUs.
+                          "sm_80;sm_70" creates a single executable running on both NVIDIA A100 and V100 GPUs.
+                          Mixing vendor "gfx90a;sm_70" is not supported. If not set, atempt to derive it
+                          from CMAKE_CUDA_ARCHITECTURES or CMAKE_HIP_ARCHITECTURES if available and then
+                          atempt to auto-detect existing GPUs.
 
 - General build options
 
@@ -452,13 +454,13 @@ For example, using Clang 14 on Summit.
 
   ::
   
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D CMAKE_CUDA_ARCHITECTURES=70
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_GPU_ARCHS=sm_80
 
 Similarly, HIP features can be enabled in conjunction with the offload code path to improve performance on AMD GPUs.
 
   ::
 
-    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx906
+    -D ENABLE_OFFLOAD=ON -D ENABLE_CUDA=ON -D QMC_CUDA2HIP=ON -D QMC_GPU_ARCHS=gfx90a
 
 Similarly, SYCL features can be enabled in conjunction with the offload code path to improve performance on Intel GPUs.
 

@@ -67,10 +67,8 @@ public:
   inline void setTrialEnergy(FullPrecRealType et) { trial_energy_ = et; }
 
   /** unified: perform branch and swap walkers as required 
-   *
-   *  \return global population
    */
-  int branch(int iter, MCPopulation& pop, bool do_not_branch);
+  void branch(int iter, MCPopulation& pop, bool do_not_branch);
 
   bool put(xmlNodePtr cur);
 

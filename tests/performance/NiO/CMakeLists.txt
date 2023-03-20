@@ -21,17 +21,17 @@ function(
     set(PERF_ARGS "--enable-timers=fine")
   endif()
 
-  set(PPDIR "${qmcpack_SOURCE_DIR}/tests/performance/NiO")
-
-  execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${SDIR} ${WDIR})
-
-  file(GLOB PP "${PPDIR}/*.xml")
-  foreach(F IN LISTS PP)
-    file(RELATIVE_PATH R ${PPDIR} ${F})
-    maybe_symlink(${F} ${WDIR}/../${R})
+  file(MAKE_DIRECTORY ${WDIR})
+  file(GLOB SS "${SDIR}/*.xml.in")
+  foreach(S IN LISTS SS)
+    get_filename_component(FN ${S} NAME_WE)
+    # update PP_DIR and H5_DIR
+    configure_file(${S} "${WDIR}/${FN}.xml")
   endforeach()
 
-  maybe_symlink("${QMC_DATA}/NiO/${H5_FILE}" "${WDIR}/../${H5_FILE}")
+  if(NOT QMC_SYMLINK_TEST_FILES)
+   configure_file("${QMC_DATA}/NiO/${H5_FILE}" "${WDIR}/../${H5_FILE}" COPYONLY)
+  endif()
 
   separate_arguments(ADJUST_INPUT)
   execute_process(
@@ -141,6 +141,25 @@ else()
     message(FATAL_ERROR "Variable QMC_NIO_MAX_SIZE has been renamed to QMC_PERFORMANCE_NIO_MAX_ATOMS")
   endif()
 
+  # set up PP_DIR which will be used to update test input files.
+  set(PP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  if(QMC_SYMLINK_TEST_FILES)
+    set(PP_DIR ${PP_SOURCE_DIR})
+  else()
+    # copy to build directory
+    foreach(F Ni.opt.xml O.xml)
+      configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${F} ${CMAKE_CURRENT_BINARY_DIR}/${F} COPYONLY)
+    endforeach()
+    set(PP_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+
+  # set up H5_DIR which will be used to update test input files.
+  if(QMC_SYMLINK_TEST_FILES)
+    set(H5_DIR ${QMC_DATA}/NiO)
+  else()
+    set(H5_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  endif()
+
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   list(LENGTH NIO_SIZES LENGTH_MAX)
@@ -193,7 +212,7 @@ else()
         ${TEST_SOURCE_DIR}
         ${INPUT_FILE}
         ${H5_FILE}
-        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -j ${TEST_DIR}/J123.xml")
+        "${ADJUST_INPUT} -w ${WALKER_COUNT} -d ${NDELAY} -j ${CMAKE_CURRENT_SOURCE_DIR}/sample/${TEST_SOURCE_DIR}/J123.xml")
 
       # Batched driver
       set(DRIVER_TYPE batched_driver)

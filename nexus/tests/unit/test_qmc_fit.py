@@ -21,7 +21,7 @@ if versions.scipy_available:
         dmc_infile = os.path.join(dmc_path,'dmc.in.xml')
         assert(os.path.exists(dmc_infile))
 
-        command = "{} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' {}/*scalar*".format(exe,dmc_path)
+        command = "{} ts --noplot -e 10 -s 1 -t '0.02 0.01 0.005' -f linear {}/*scalar*".format(exe,dmc_path)
 
         out,err,rc = execute(command)
 
