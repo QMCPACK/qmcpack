@@ -13,6 +13,8 @@
 
 #include <typeinfo>
 #include <any>
+#include <stdexcept>
+#include <exception>
 #include <functional>
 #include <unordered_set>
 #include <unordered_map>
@@ -29,7 +31,7 @@ namespace qmcplusplus
 class InputSection
 {
 public:
-  using Real     = QMCTraits::RealType;
+  using Real     = double;
   using Position = QMCTraits::PosType;
 
   InputSection()                          = default;
@@ -50,9 +52,10 @@ protected:
   std::unordered_set<std::string> parameters; // list of parameter variables
   std::unordered_set<std::string> delegates;  // input nodes delegate to next level of input parsing.
   std::unordered_set<std::string> required;   // list of required variables
-
+  std::unordered_set<std::string> multiple;      // list of variables that can have multiple instances
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
+  std::unordered_set<std::string> multi_reals; // list of string variables that can one or more values
   std::unordered_set<std::string> bools;         // list of boolean variables
   std::unordered_set<std::string> integers;      // list of integer variables
   std::unordered_set<std::string> reals;         // list of real variables
@@ -82,8 +85,13 @@ public:
       std::any any_enum = assignAnyEnum(name);
       return std::any_cast<T>(any_enum);
     }
-    else
-      return std::any_cast<T>(values_.at(name));
+    else {
+      try {
+	return std::any_cast<T>(values_.at(name));
+      } catch (...) {
+	std::throw_with_nested( UniformCommunicateError("Could not access value with name " + name) );
+      }
+    }
   }
 
   /** set var if input section has read the tag
@@ -193,6 +201,12 @@ protected:
   static std::any lookupAnyEnum(const std::string& enum_name,
                                 const std::string& enum_value,
                                 const std::unordered_map<std::string, std::any>& enum_map);
+protected:
+  // Simple dump of contents. Useful for developing and as
+  // debugging function useful when input sections local error reports
+  // may be insufficient.
+  void report() const;
+  void report(std::ostream& out) const;
 
 private:
   // Query functions
@@ -200,10 +214,11 @@ private:
   bool isDelegate(const std::string& name) const { return delegates.find(name) != delegates.end(); }
   bool isParameter(const std::string& name) const { return parameters.find(name) != parameters.end(); }
   bool isRequired(const std::string& name) const { return required.find(name) != required.end(); }
-
+  bool isMultiple(const std::string& name) const { return multiple.find(name) != multiple.end(); }
   bool isEnumString(const std::string& name) const { return enums.find(name) != enums.end(); }
   bool isString(const std::string& name) const { return strings.find(name) != strings.end(); }
   bool isMultiString(const std::string& name) const { return multi_strings.find(name) != multi_strings.end(); }
+  bool isMultiReal(const std::string& name) const { return multi_reals.find(name) != multi_reals.end(); }
   bool isBool(const std::string& name) const { return bools.find(name) != bools.end(); }
   bool isInteger(const std::string& name) const { return integers.find(name) != integers.end(); }
   bool isReal(const std::string& name) const { return reals.find(name) != reals.end(); }
@@ -223,12 +238,6 @@ private:
 
   // Check validity of inputs
   void checkValid();
-
-
-  // Simple write of contents.
-  //   Developer/debugging function of limited value.
-  //   May be removed at any time.
-  void report() const;
 };
 
 

@@ -325,7 +325,6 @@ TEST_CASE("InputSection::init", "[estimators]")
   }
 }
 
-
 TEST_CASE("InputSection::get", "[estimators]")
 {
   TestInputSection ti;
@@ -341,36 +340,37 @@ TEST_CASE("InputSection::get", "[estimators]")
            {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
   // invalid type access results in thrown exception
-  CHECK_THROWS_AS(ti.get<int>("name"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("samples"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("kmax"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("full"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("label"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<bool>("count"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("width"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<int>("rational"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<std::string>("sposets"), std::bad_cast);
-  CHECK_THROWS_AS(ti.get<RealType>("center"), std::bad_cast);
+  CHECK_THROWS_AS(ti.get<int>("name"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<RealType>("samples"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<bool>("kmax"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("full"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<RealType>("label"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<bool>("count"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("width"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<int>("rational"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<std::string>("sposets"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<RealType>("center"), UniformCommunicateError);
 }
 
 class CustomTestInput : public InputSection
 {
 public:
-  struct WeirdStuff {
+  struct WeirdStuff
+  {
     std::string letters;
-    std::array<int,3> numbers;
+    std::array<int, 3> numbers;
   };
   using Repeater = std::vector<std::pair<std::string, std::string>>;
   CustomTestInput()
   {
     section_name = "Test";
-    attributes   = {"name", "samples", "kmax", "full"};
-    parameters   = {"label", "count", "width"};
-    strings      = {"name", "label"};
+    attributes   = {"name", "samples", "kmax", "full", "custom_attribute"};
+    parameters   = {"label", "count", "width", "with_custom"};
+    strings      = {"name", "label", "with_custom"};
     reals        = {"kmax"};
     integers     = {"samples", "count"};
     bools        = {"full"};
-    custom       = {"weird_stuff", "repeater"};
+    custom       = {"weird_stuff", "repeater", "custom_attribute"};
   }
   void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue) override
   {
@@ -387,63 +387,83 @@ public:
     {
       std::string compound;
       svalue >> compound;
-      auto split_vstrv = split(compound, ":"); 
+      auto split_vstrv = split(compound, ":");
       if (has(name))
-	std::any_cast<Repeater>(&(values_[name]))->emplace_back(split_vstrv[0],split_vstrv[1]);
+        std::any_cast<Repeater>(&(values_[name]))->emplace_back(split_vstrv[0], split_vstrv[1]);
       else
-	values_[name] = Repeater{{split_vstrv[0],split_vstrv[1]}};
+        values_[name] = Repeater{{split_vstrv[0], split_vstrv[1]}};
+    }
+    else if (name == "custom_attribute" || name == "with_custom::custom_attribute")
+    {
+      std::string cus_at;
+      std::getline(svalue, cus_at);
+      // if (ename != section_name)
+      // 	values_[ename + " " + name] = cus_at;
+      // else
+	values_[name] = cus_at;
     }
     else
-      throw std::runtime_error("bad name passed or custom setFromStream not implemented in derived class.");
+      throw std::runtime_error("bad name passed: " + name + " or custom setFromStream not implemented in derived class.");
   }
+
+  void report(std::ostream& ostr) { InputSection::report(ostr); }
 };
 
 class FailCustomTestInput : public InputSection
 {
 public:
-  struct WeirdStuff {
+  struct WeirdStuff
+  {
     std::string letters;
-    std::array<int,3> numbers;
+    std::array<int, 3> numbers;
   };
   using Repeater = std::vector<std::pair<std::string, std::string>>;
   FailCustomTestInput()
   {
     section_name = "Test";
-    attributes   = {"name", "samples", "kmax", "full"};
-    parameters   = {"label", "count", "width"};
+    attributes   = {"name", "samples", "kmax", "full", "custom_attribute", "with_custom::custom_attribute"};
+    parameters   = {"label", "count", "width", "with_custom"};
     strings      = {"name", "label"};
     reals        = {"kmax"};
     integers     = {"samples", "count"};
     bools        = {"full"};
-    custom       = {"weird_stuff", "repeater"};
+    custom       = {"weird_stuff", "repeater", "custom_attribute"};
   }
 };
 
 TEST_CASE("InputSection::custom", "[estimators]")
 {
   std::string_view xml = R"XML(
-<test name="alice" samples="10" kmax="3.0" full="no">
+<test name="alice" samples="10" kmax="3.0" full="no" custom_attribute="for the section">
   <parameter name="label"   >  relative  </parameter>
   <parameter name="count"   >  15        </parameter>
   <weird_stuff name="weird"> XQ 10 20 10 </weird_stuff>
   <Repeater> first:something </Repeater>
   <Repeater> second:else </Repeater>
+  <parameter name="with_custom" custom_attribute="This is a custom attribute."/>
 </test>
 )XML";
 
   Libxml2Document doc;
-  bool okay = doc.parseFromString(xml);
+  bool okay      = doc.parseFromString(xml);
   xmlNodePtr cur = doc.getRoot();
   CustomTestInput cti;
   cti.readXML(cur);
 
   auto ws = cti.get<decltype(cti)::WeirdStuff>("weird");
   CHECK(ws.letters == "XQ");
-  std::array<int,3> exp_numbers{10, 20, 10};
+  std::array<int, 3> exp_numbers{10, 20, 10};
   CHECK(ws.numbers == exp_numbers);
 
+  cti.report(std::cout);
+  
+  std::string custom_attribute = cti.get<std::string>("with_custom::custom_attribute");
+  CHECK(custom_attribute == "This is a custom attribute.");
+  custom_attribute = cti.get<std::string>("custom_attribute");
+  CHECK(custom_attribute == "for the section");
+  
   auto repeater = cti.get<decltype(cti)::Repeater>("repeater");
-  decltype(cti)::Repeater exp_repeater{{"first","something"},{"second","else"}};
+  decltype(cti)::Repeater exp_repeater{{"first", "something"}, {"second", "else"}};
   CHECK(repeater == exp_repeater);
 
   FailCustomTestInput fcti;

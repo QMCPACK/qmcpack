@@ -19,23 +19,67 @@ namespace qmcplusplus
 
 void InputSection::readXML(xmlNodePtr cur)
 {
-  // read attributes
-  xmlAttrPtr att = cur->properties;
-  while (att != NULL)
-  {
-    // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
-    std::string name{lowerCase(castXMLCharToChar(att->name))};
-    if (!isAttribute(name))
+  // read attributes both the root node and parameters can have these.
+  // But its limited what you can do with attributes of parameter nodes
+  auto readAttributes = [&](auto& cur, bool consume_name, const std::string& element_name) {
+    xmlAttrPtr att = cur->properties;
+    while (att != NULL)
     {
-      std::stringstream error;
-      error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
-      throw UniformCommunicateError(error.str());
+      // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
+      std::string name{lowerCase(castXMLCharToChar(att->name))};
+      // issue here is that we don't want to consume the name of the parameter as that has a special status in a parameter tag.
+      // This is due to the <parameter name="parameter_name>  == <parametere_name> tag equivalence :(
+      if (!consume_name && name == "name")
+      {
+        att = att->next;
+        continue;
+      }
+      if (!isAttribute(name))
+      {
+        std::stringstream error;
+        error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
+        throw UniformCommunicateError(error.str());
+      }
+      std::istringstream stream(castXMLCharToChar(att->children->content));
+      if (isCustom(name))
+      {
+        std::string ename{lowerCase(castXMLCharToChar(cur->name))};
+        if (consume_name)
+          setFromStreamCustom(ename, name, stream);
+        else
+        {
+          std::string qualified_name{element_name + "::" + name};
+          setFromStreamCustom(ename, qualified_name, stream);
+        }
+      }
+      else
+      {
+        if (consume_name)
+          setFromStream(name, stream);
+        else
+        {
+          std::string qualified_name{element_name + "__" + name};
+          setFromStream(qualified_name, stream);
+        }
+      }
+      att = att->next;
     }
-    std::istringstream stream(castXMLCharToChar(att->children->content));
-    setFromStream(name, stream);
-    att = att->next;
-  }
+  };
 
+  // For historical reasons that actual "type" of the element/input section is expressed in a very inconsistent way.
+  // It could be coded via the element name i.e. the tag, or at minimum a method, type, or name attribute.
+  std::string section_ename{lowerCase(castXMLCharToChar(cur->name))};
+  std::string section_method(lowerCase(getXMLAttributeValue(cur, "method")));
+  std::string section_type(lowerCase(getXMLAttributeValue(cur, "type")));
+  std::string section_name(lowerCase(getXMLAttributeValue(cur, "name")));
+  // at anyrate one of these must match the section_name.
+  std::string lcase_section_name{lowerCase(section_name)};
+  if (!(section_ename == lcase_section_name || section_method == lcase_section_name ||
+        section_type == lcase_section_name || section_name == lcase_section_name))
+    throw UniformCommunicateError("Input is invalid  " + lcase_section_name + " does not match input node!");
+
+  // these attributes don't get a qualified name.
+  readAttributes(cur, true, section_name);
   // read parameters
   xmlNodePtr element = cur->xmlChildrenNode;
   while (element != NULL)
@@ -49,25 +93,48 @@ void InputSection::readXML(xmlNodePtr cur)
     {
       assert(delegate_factories_.find(ename) != delegate_factories_.end());
       std::string value_key;
-      std::any value     = delegate_factories_[ename](element, value_key);
-      if (has(value_key))
-	throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + ename + " node with duplicate name " + value_key + "!");
-      values_[value_key] = std::move(value);
+      std::any value = delegate_factories_[ename](element, value_key);
+      if (has(value_key) && !isMultiple(value_key))
+        throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + ename +
+                                      " node with duplicate name " + value_key + "!");
+      if (isMultiple(value_key))
+      {
+        if (has(value_key))
+        {
+          auto* value_vector = std::any_cast<std::vector<std::any>>(&(values_[value_key]));
+          value_vector->push_back(value);
+        }
+        else
+        {
+          values_[value_key] = std::vector<std::any>{value};
+        }
+      }
+      else
+      {
+        values_[value_key] = value;
+      }
     }
-    else if (isCustom(ename)) {
+    else if (isCustom(ename))
+    {
       std::istringstream stream(XMLNodeString{element});
       setFromStreamCustom(ename, name, stream);
     }
-    else if (ename == "parameter" || isParameter(ename) )
+    else if (ename == "parameter" || isParameter(ename))
     {
-      if (!isParameter(name))
+      if (ename == "parameter")
+        ename = name;
+      else
+        name = ename;
+      if (!isParameter(ename))
       {
         std::stringstream error;
         error << "InputSection::readXML name " << name << " is not a parameter of " << section_name << "\n";
         throw UniformCommunicateError(error.str());
       }
+
       std::istringstream stream(XMLNodeString{element});
-	setFromStream(name, stream);
+      setFromStream(name, stream);
+      readAttributes(element, false, name);
     }
     else if (ename != "text")
     {
@@ -129,6 +196,13 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
       string_values.push_back(value);
     values_[name] = string_values;
   }
+  else if (isMultiReal(name))
+  {
+    std::vector<Real> real_values;
+    for (Real value; svalue >> value;)
+      real_values.push_back(value);
+    values_[name] = real_values;
+  }
   else if (isBool(name))
   {
     std::string sval;
@@ -169,6 +243,8 @@ void InputSection::setFromValue(const std::string& name, const T& value)
     values_[name] = std::any_cast<std::string>(value);
   else if (isMultiString(name))
     values_[name] = (std::any_cast<std::vector<std::string>>(value));
+  else if (isMultiString(name))
+    values_[name] = (std::any_cast<std::vector<Real>>(value));
   else if (isBool(name))
     values_[name] = std::any_cast<bool>(value);
   else if (isInteger(name))
@@ -199,9 +275,8 @@ void InputSection::checkValid()
   checkParticularValidity();
 };
 
-void InputSection::report() const
+void InputSection::report(std::ostream& out) const
 {
-  auto& out = app_log();
   out << "\n" << section_name;
   for (auto& [name, value] : values_)
   {
@@ -218,6 +293,12 @@ void InputSection::report() const
   out << "\n\n";
 }
 
+void InputSection::report() const
+{
+  auto& out = app_log();
+  report(out);
+}
+
 std::any InputSection::lookupAnyEnum(const std::string& enum_name,
                                      const std::string& enum_value,
                                      const std::unordered_map<std::string, std::any>& enum_map)
@@ -229,7 +310,7 @@ std::any InputSection::lookupAnyEnum(const std::string& enum_name,
   }
   catch (std::out_of_range& oor_exc)
   {
-    std::throw_with_nested(std::logic_error("bad_enum_tag_value: " + enum_value_str));
+    std::throw_with_nested(UniformCommunicateError("bad_enum_tag_value: " + enum_value_str));
   }
 }
 
