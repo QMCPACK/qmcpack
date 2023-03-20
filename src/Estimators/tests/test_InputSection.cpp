@@ -25,7 +25,8 @@
 
 namespace qmcplusplus
 {
-using RealType = QMCTraits::RealType;
+using FullPrecReal = QMCTraits::FullPrecRealType;
+using Real = QMCTraits::RealType;
 
 enum class TestEnum1
 {
@@ -63,7 +64,7 @@ public:
     enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
                       {"samples", int(20)},
-                      {"width", RealType(1.0)},
+                      {"width", static_cast<FullPrecReal>(1.0)},
                       {"rational", bool(false)}};
   };
   // clang-format: on
@@ -150,7 +151,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<RealType>("width") == Approx(1.0));
+    CHECK(ti.get<FullPrecReal>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
 
@@ -195,11 +196,11 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<RealType>("kmax") == Approx(3.0));
+    CHECK(ti.get<FullPrecReal>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<RealType>("width") == Approx(2.5));
+    CHECK(ti.get<FullPrecReal>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
     CHECK(ti.get<TestEnum2>("testenum2") == TestEnum2::VALUE2);
@@ -275,7 +276,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<RealType>("width") == Approx(1.0));
+    CHECK(ti.get<FullPrecReal>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
 
@@ -286,11 +287,11 @@ TEST_CASE("InputSection::init", "[estimators]")
     TestInputSection ti;
     ti.init({{"name", std::string("alice")},
              {"samples", int(10)},
-             {"kmax", RealType(3.0)},
+             {"kmax", FullPrecReal(3.0)},
              {"full", bool(false)},
              {"label", std::string("relative")},
              {"count", int(15)},
-             {"width", RealType(2.5)},
+             {"width", FullPrecReal(2.5)},
              {"rational", bool(true)},
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
@@ -307,11 +308,11 @@ TEST_CASE("InputSection::init", "[estimators]")
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<RealType>("kmax") == Approx(3.0));
+    CHECK(ti.get<FullPrecReal>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<RealType>("width") == Approx(2.5));
+    CHECK(ti.get<FullPrecReal>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
     CHECK(ti.get<InputSection::Position>("center") == InputSection::Position(0.0, 0.0, 0.1));
@@ -321,7 +322,7 @@ TEST_CASE("InputSection::init", "[estimators]")
   SECTION("invalid type assignment")
   {
     TestInputSection ti;
-    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", RealType(15.)}}), std::bad_cast);
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", FullPrecReal(15.)}}), std::bad_cast);
   }
 }
 
@@ -330,26 +331,26 @@ TEST_CASE("InputSection::get", "[estimators]")
   TestInputSection ti;
   ti.init({{"name", std::string("alice")},
            {"samples", int(10)},
-           {"kmax", RealType(3.0)},
+           {"kmax", FullPrecReal(3.0)},
            {"full", bool(false)},
            {"label", std::string("relative")},
            {"count", int(15)},
-           {"width", RealType(2.5)},
+           {"width", FullPrecReal(2.5)},
            {"rational", bool(true)},
            {"sposets", std::vector<std::string>{"spo1", "spo2"}},
            {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
   // invalid type access results in thrown exception
   CHECK_THROWS_AS(ti.get<int>("name"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<RealType>("samples"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<FullPrecReal>("samples"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<bool>("kmax"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("full"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<RealType>("label"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<FullPrecReal>("label"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<bool>("count"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("width"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<int>("rational"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("sposets"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<RealType>("center"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<FullPrecReal>("center"), UniformCommunicateError);
 }
 
 class CustomTestInput : public InputSection
