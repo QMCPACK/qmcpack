@@ -17,7 +17,7 @@
 namespace qmcplusplus
 {
 
-void InputSection::readAttributes(auto& cur, bool consume_name, const std::string& element_name)
+void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::string& element_name)
 {
   xmlAttrPtr att = cur->properties;
   while (att != NULL)

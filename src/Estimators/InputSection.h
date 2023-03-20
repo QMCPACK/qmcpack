@@ -161,7 +161,7 @@ protected:
    
    *  Ideally any child node of significant complexity would be delegated to another input section.
    */
-  void readAttributes(auto& cur, bool consume_name, const std::string& element_name);
+  void readAttributes(xmlNodePtr cur, bool consume_name, const std::string& element_name);
   /** Function that returns Input class as std::any
    *   \param[in]   cur                xml_node being delegated by the Input Class
    *   \param[out]  value_name         string key value to store the delegate with
