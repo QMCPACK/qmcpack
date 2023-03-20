@@ -48,14 +48,14 @@ protected:
 
   std::string section_name; // name of the input section
 
-  std::unordered_set<std::string> attributes; // list of attribute variables
-  std::unordered_set<std::string> parameters; // list of parameter variables
-  std::unordered_set<std::string> delegates;  // input nodes delegate to next level of input parsing.
-  std::unordered_set<std::string> required;   // list of required variables
+  std::unordered_set<std::string> attributes;    // list of attribute variables
+  std::unordered_set<std::string> parameters;    // list of parameter variables
+  std::unordered_set<std::string> delegates;     // input nodes delegate to next level of input parsing.
+  std::unordered_set<std::string> required;      // list of required variables
   std::unordered_set<std::string> multiple;      // list of variables that can have multiple instances
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
-  std::unordered_set<std::string> multi_reals; // list of string variables that can one or more values
+  std::unordered_set<std::string> multi_reals;   // list of string variables that can one or more values
   std::unordered_set<std::string> bools;         // list of boolean variables
   std::unordered_set<std::string> integers;      // list of integer variables
   std::unordered_set<std::string> reals;         // list of real variables
@@ -85,11 +85,15 @@ public:
       std::any any_enum = assignAnyEnum(name);
       return std::any_cast<T>(any_enum);
     }
-    else {
-      try {
-	return std::any_cast<T>(values_.at(name));
-      } catch (...) {
-	std::throw_with_nested( UniformCommunicateError("Could not access value with name " + name) );
+    else
+    {
+      try
+      {
+        return std::any_cast<T>(values_.at(name));
+      }
+      catch (...)
+      {
+        std::throw_with_nested(UniformCommunicateError("Could not access value with name " + name));
       }
     }
   }
@@ -115,18 +119,20 @@ public:
       return false;
   }
 
-  // Read variable values (initialize) from XML input.
-  //   Later, this should call a correctness checking function and enforce immutability.
-  //   (required values are all provided, provided values fall in allowed ranges)
+  /** Read variable values (initialize) from XML input, call checkValid.
+   *
+   *  Ideally this will always be called from the constructor of an input class the InputSection
+   *  is defined in the scope of.
+   */
   void readXML(xmlNodePtr cur);
 
   // Initialize from unordered_map/initializer list
   void init(const std::unordered_map<std::string, std::any>& init_values);
 
   /** Get string represtation of enum class type value from enum_val
- *  
- *  This is just a way to get around the lack of a bidirectional map type.
- */
+   *  
+   *  work around the lack of a bidirectional std c++ map type.
+   */
   template<typename ENUM_T>
   static std::string reverseLookupInputEnumMap(ENUM_T enum_val,
                                                const std::unordered_map<std::string, std::any>& enum_map)
@@ -145,6 +151,17 @@ public:
   }
 
 protected:
+  /** reads attributes for both the root node and parameter/child nodes
+   *  that aren't delegated.
+   *
+   *  Side effect only method updates values_.
+   *  \param[in]   cur              current xml node
+   *  \param[in]   consume_name     read the name attribute (this has complicated semantics in QMCPACK input)
+   *  \param[in]   element_name     qualifying identifier with respect to the InputSection root node for the atttributes.
+   
+   *  Ideally any child node of significant complexity would be delegated to another input section.
+   */
+  void readAttributes(auto& cur, bool consume_name, const std::string& element_name);
   /** Function that returns Input class as std::any
    *   \param[in]   cur                xml_node being delegated by the Input Class
    *   \param[out]  value_name         string key value to store the delegate with
@@ -154,12 +171,12 @@ protected:
    *   \param[in]   tag                parmater name or node ename delgation is controlled by
    *   \param[in]   delegate_handler   factory function for delegated input function.
    */
-  void registerDelegate(const std::string& tag,
-                        DelegateHandler delegate_handler);
+  void registerDelegate(const std::string& tag, DelegateHandler delegate_handler);
 
   /** Do validation for a particular subtype of InputSection
    *  Called by check_valid.
    *  Default implementation is noop
+   *  The InputSection subtype should make all correctness checks reasonable at parse time.
    */
   virtual void checkParticularValidity() {}
   /** Derived class overrides this to get proper assignment of scoped enum values.
@@ -184,7 +201,9 @@ protected:
   /** Derived class can overrides this to do custom parsing of the element values for Custom elements
    *  These can have a name attribute only.
    */
-  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename, const std::string& name, std::istringstream& svalue)
+  [[noreturn]] virtual void setFromStreamCustom(const std::string& ename,
+                                                const std::string& name,
+                                                std::istringstream& svalue)
   {
     throw std::runtime_error("derived class must provide handleCustom method if custom parameters are used");
   }
@@ -201,6 +220,7 @@ protected:
   static std::any lookupAnyEnum(const std::string& enum_name,
                                 const std::string& enum_value,
                                 const std::unordered_map<std::string, std::any>& enum_map);
+
 protected:
   // Simple dump of contents. Useful for developing and as
   // debugging function useful when input sections local error reports
@@ -236,7 +256,11 @@ private:
   template<typename T>
   void setFromValue(const std::string& name, const T& svalue);
 
-  // Check validity of inputs
+  /** Check validity of inputs
+   *
+   *  This class just checks if required values_ are present and calls checkParticularValidity
+   *  which the InputSection subtype should override.
+   */
   void checkValid();
 };
 

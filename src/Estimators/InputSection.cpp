@@ -17,55 +17,54 @@
 namespace qmcplusplus
 {
 
-void InputSection::readXML(xmlNodePtr cur)
+void InputSection::readAttributes(auto& cur, bool consume_name, const std::string& element_name)
 {
-  // read attributes both the root node and parameters can have these.
-  // But its limited what you can do with attributes of parameter nodes
-  auto readAttributes = [&](auto& cur, bool consume_name, const std::string& element_name) {
-    xmlAttrPtr att = cur->properties;
-    while (att != NULL)
+  xmlAttrPtr att = cur->properties;
+  while (att != NULL)
+  {
+    // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
+    std::string name{lowerCase(castXMLCharToChar(att->name))};
+    // issue here is that we don't want to consume the name of the parameter as that has a special status in a parameter tag.
+    // This is due to the <parameter name="parameter_name>  == <parametere_name> tag equivalence :(
+    if (!consume_name && name == "name")
     {
-      // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
-      std::string name{lowerCase(castXMLCharToChar(att->name))};
-      // issue here is that we don't want to consume the name of the parameter as that has a special status in a parameter tag.
-      // This is due to the <parameter name="parameter_name>  == <parametere_name> tag equivalence :(
-      if (!consume_name && name == "name")
-      {
-        att = att->next;
-        continue;
-      }
-      if (!isAttribute(name))
-      {
-        std::stringstream error;
-        error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
-        throw UniformCommunicateError(error.str());
-      }
-      std::istringstream stream(castXMLCharToChar(att->children->content));
-      if (isCustom(name))
-      {
-        std::string ename{lowerCase(castXMLCharToChar(cur->name))};
-        if (consume_name)
-          setFromStreamCustom(ename, name, stream);
-        else
-        {
-          std::string qualified_name{element_name + "::" + name};
-          setFromStreamCustom(ename, qualified_name, stream);
-        }
-      }
+      att = att->next;
+      continue;
+    }
+    if (!isAttribute(name))
+    {
+      std::stringstream error;
+      error << "InputSection::readXML name " << name << " is not an attribute of " << section_name << "\n";
+      throw UniformCommunicateError(error.str());
+    }
+    std::istringstream stream(castXMLCharToChar(att->children->content));
+    if (isCustom(name))
+    {
+      std::string ename{lowerCase(castXMLCharToChar(cur->name))};
+      if (consume_name)
+        setFromStreamCustom(ename, name, stream);
       else
       {
-        if (consume_name)
-          setFromStream(name, stream);
-        else
-        {
-          std::string qualified_name{element_name + "__" + name};
-          setFromStream(qualified_name, stream);
-        }
+        std::string qualified_name{element_name + "::" + name};
+        setFromStreamCustom(ename, qualified_name, stream);
       }
-      att = att->next;
     }
-  };
+    else
+    {
+      if (consume_name)
+        setFromStream(name, stream);
+      else
+      {
+        std::string qualified_name{element_name + "__" + name};
+        setFromStream(qualified_name, stream);
+      }
+    }
+    att = att->next;
+  }
+}
 
+void InputSection::readXML(xmlNodePtr cur)
+{
   // For historical reasons that actual "type" of the element/input section is expressed in a very inconsistent way.
   // It could be coded via the element name i.e. the tag, or at minimum a method, type, or name attribute.
   std::string section_ename{lowerCase(castXMLCharToChar(cur->name))};
