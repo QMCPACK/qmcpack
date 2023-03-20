@@ -461,7 +461,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   CHECK(grad_old[0] == ComplexApprox(ValueType(0.060932, -0.285244)).epsilon(1e-4));
   CHECK(grad_old[1] == ComplexApprox(ValueType(-0.401769, 0.180544)).epsilon(1e-4));
   CHECK(grad_old[2] == ComplexApprox(ValueType(0.174010, 0.140642)).epsilon(1e-4));
-  CHECK(spingrad_old == ComplexApprox(ValueType(0.6766137,-0.8366186)).epsilon(1e-4));
+  CHECK(spingrad_old == ComplexApprox(ValueType(0.6766137, -0.8366186)).epsilon(1e-4));
 
   PosType delta(0.464586, 0.75017, 1.184383);
   double ds = 0.12;
@@ -516,7 +516,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
     CHECK(grads_old.grads_positions[iw][0] == ComplexApprox(ValueType(0.060932, -0.285244)).epsilon(1e-4));
     CHECK(grads_old.grads_positions[iw][1] == ComplexApprox(ValueType(-0.401769, 0.180544)).epsilon(1e-4));
     CHECK(grads_old.grads_positions[iw][2] == ComplexApprox(ValueType(0.174010, 0.140642)).epsilon(1e-4));
-    CHECK(grads_old.grads_spins[iw] == ComplexApprox(ValueType(0.6766137,-0.8366186)).epsilon(1e-4));
+    CHECK(grads_old.grads_spins[iw] == ComplexApprox(ValueType(0.6766137, -0.8366186)).epsilon(1e-4));
   }
 
   moved_elec_id = 0;
@@ -525,7 +525,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
   displs.spins     = {ds, ds};
   ParticleSet::mw_makeMove(p_list, moved_elec_id, displs);
 
-  std::vector<ValueType> ratios(num_walkers);
+  std::vector<PsiValueType> ratios(num_walkers);
   TrialWaveFunction::mw_calcRatio(twf_list, p_list, moved_elec_id, ratios);
   for (int iw = 0; iw < num_walkers; iw++)
     CHECK(ValueType(std::abs(ratios[iw])) == ValueApprox(0.991503).epsilon(1e-4));
