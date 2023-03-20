@@ -135,7 +135,7 @@ void ECPComponentBuilder::buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPt
   // we may not know which one is local yet.
 
   std::vector<int> angList;
-  std::vector<int> angListSO;      //For spin-orbit, if it exists
+  std::vector<int> angListSO; //For spin-orbit, if it exists
   std::vector<xmlNodePtr> vpsPtr;
   std::vector<xmlNodePtr> vpsoPtr; //For spin-orbit, if it exists.
   Lmax   = -1;
@@ -364,8 +364,8 @@ void ECPComponentBuilder::buildSO(const std::vector<int>& angList,
     app->spline();
     pp_so->add(angList[l], app);
   }
-  NumSO        = angList.size();
-  pp_so->Rmax_ = rmax;
+  NumSO = angList.size();
+  pp_so->setRmax(rmax);
 }
 
 bool ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)

@@ -1457,32 +1457,44 @@ Usage examples
 Below are example use cases for the H2O molecule using DMC data.
 
 Plot DMC non-cumulative radial density of the O atom:
+
 ::
+
   qdens-radial -p -s O -r 1 dmc.s002.Density_q.xsf
 
 Plot DMC cumulative radial density of the O atom:
+
 ::
+
   qdens-radial -p -s O -r 1 -c dmc.s002.Density_q.xsf
 
 For the cumulative case, ``qdens-radial`` will also print the cumulative value at the specified radius, i.e., an estimate of the atomic occupation.
 
 Estimate of the DMC atomic occupation:
+
 ::
+
   qdens-radial -p -s O -r 1.1 -c dmc.s002.Density_q.xsf
 
 Output:
+
 ::
+
   Cumulative Value of O Species at Cutoff 1.1 is: 6.55517033828574
 
 
 One can also get an extrapolated estimate (mixed-estimator bias) for this quantity by providing a VMC ``.xsf`` file.
 
 Estimate of the extrapolated atomic occupation:
+
 ::
+
   qdens-radial -p -s O -r 1.1 -c --vmc=dmc.s000.Density_q.xsf dmc.s002.Density_q.xsf
   
 Output:
+
 ::
+
   Extrapolating from VMC and DMC densities...
   Cumulative Value of O Species at Cutoff 1.1 is: 6.576918233167152
 
@@ -1498,12 +1510,16 @@ to obtain the error bar on the occupation.
 3. Make sure the number of samples (``-n``) is converged.
 
 Estimate DMC atomic occupation with error bar:
+
 ::
+
   qdens-radial -p -s O -r 1.1 -c -n 20 --dmcerr=dmc.s002.Density_q+err.xsf dmc.s002.Density_q.xsf
 
 
 Output:
+
 ::
+
   Resampling to obtain error bar (NOTE: This can be slow)...
   Will compute 20 samples...
   ...

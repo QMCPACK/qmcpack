@@ -614,7 +614,6 @@ void QMCDriverNew::setWalkerOffsets(WalkerConfigurations& walker_configs, Commun
   for (int ip = 0; ip < comm->size(); ip++)
     nwoff[ip + 1] = nwoff[ip] + nw[ip];
 
-  walker_configs.setGlobalNumWalkers(nwoff[comm->size()]);
   walker_configs.setWalkerOffsets(nwoff);
 }
 

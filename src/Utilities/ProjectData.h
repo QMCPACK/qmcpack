@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include "OhmmsData/libxmldefs.h"
 #include "Message/Communicate.h"
+#include "Utilities/qmc_common.h" // RuntimeOptions
 
 namespace qmcplusplus
 {
@@ -107,6 +108,8 @@ public:
 
   bool isComplex() const noexcept;
 
+  const RuntimeOptions& getRuntimeOptions() const noexcept;
+
 private:
   static DriverVersion lookupDriverVersion(const std::string& enum_value);
 
@@ -143,8 +146,8 @@ private:
   // The driver version of the project
   DriverVersion driver_version_;
 
-  // tracks if complex wavefunction is used, true: complex, false: real
-  bool is_complex_;
+  // tracks runtime options for the project: mixed precision, complex
+  RuntimeOptions runtime_options_;
 };
 } // namespace qmcplusplus
 
