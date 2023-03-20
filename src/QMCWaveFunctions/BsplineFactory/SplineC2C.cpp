@@ -101,12 +101,24 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
       }
 
     /*
-      Apply the rotation. NB: the layout for complex splines is different from real.
+      Apply the rotation. The layout for complex splines is different from real.
       A real-valued spl_coefs 'matrix' has size basis_set_size X Nsplines.
       A complex-valued spl_coefs 'matrix' has size (2 X basis_set_size) X Nsplines.
 
       In other words, For a given SPO, the real coefs are stored and then
-      the complex coefs are appended.
+      the complex coefs are appended. For a single spline, the layouts are:
+
+      SplineR2R spl_coef layout:
+      |===============|
+      | c1 | ... | cN |
+      |===============|
+      <------ N ------>
+
+      SplineC2C spl_coef layout:
+      |===============================================|
+      | Re{c1} | ... | Re{cN} | Im{c1} | ... | Im{cN} |
+      |===============================================|
+      <---------------------- 2N --------------------->
     */
     ST zr{0.};
     ST zi{0.};

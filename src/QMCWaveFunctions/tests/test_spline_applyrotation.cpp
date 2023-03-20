@@ -139,7 +139,7 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
           val = 0.;
           for (auto k = 0; k < orbitalsetsize; k++)
             {
-              val += psiM_bare[i][k] * rot_mat[k][j];   // overflow here b/c psiM_bare is a Nelec X 3 matrix.
+              val += psiM_bare[i][k] * rot_mat[k][j];
             }
           psiM_rot_manual[i][j] = val;
         }
@@ -147,35 +147,53 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
 
   // 5.) check that the rotation was done correctly
   // value
+  std::cerr << "JPT DEBUG :: check value...\n";
   checkMatrix(psiM_rot_manual, psiM_rot);
 
-  // JPT DEBUG 20.03.2023: Look slike it's working now. Next get grad/lap working. Then add a separate test for a non-trivial rotation.
-
-  /*
-  CHECK(std::real(psiM_rot[0][0]) == Approx(std::real(val1)));
-  CHECK(std::imag(psiM_rot[0][0]) == Approx(std::imag(val1)));
-  CHECK(std::real(psiM_rot[1][0]) == Approx(std::real(val2)));
-  CHECK(std::imag(psiM_rot[1][0]) == Approx(std::imag(val2)));
-
-  SPOSet::GradType grad1{0.};
-  SPOSet::GradType grad2{0.};
-  for (auto j = 0; j < grad1.size(); j++)
+  // grad
+  std::cerr << "JPT DEBUG :: check grad...\n";
+  SPOSet::GradMatrix grad_rot_manual(elec_.R.size(), orbitalsetsize);
+  std::vector<SPOSet::ValueType> grad_val(3);
+  for (auto i = 0; i < elec_.R.size(); i++)
   {
-    for (auto i = 0; i < rot_mat.size1(); i++)
-    {
-      grad1[j] += dpsiM_bare[0][i][j] * rot_mat[i][0];
-      grad2[j] += dpsiM_bare[1][i][j] * rot_mat[i][0];
-    }
+    for (auto j = 0; j < orbitalsetsize; j++)
+      {
+        grad_rot_manual[i][j][0] = 0.;
+        grad_rot_manual[i][j][1] = 0.;
+        grad_rot_manual[i][j][2] = 0.;
+        std::fill(grad_val.begin(), grad_val.end(), 0);
+        for (auto k = 0; k < orbitalsetsize; k++)
+          {
+            for (auto l = 0; l < 3; l++)
+              {
+                grad_val[l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
+              }
+          }
+        grad_rot_manual[i][j][0] = grad_val[0];
+        grad_rot_manual[i][j][1] = grad_val[1];
+        grad_rot_manual[i][j][2] = grad_val[2];
+      }
   }
 
-  // grad
-  CHECK(std::real(dpsiM_rot[0][0][0]) == Approx(std::real(grad1[0])).epsilon(0.0001));
-  CHECK(std::real(dpsiM_rot[0][0][1]) == Approx(std::real(grad1[1])).epsilon(0.0001));
-  CHECK(std::real(dpsiM_rot[0][0][2]) == Approx(std::real(grad1[2])).epsilon(0.0001));
-  CHECK(std::real(dpsiM_rot[1][0][0]) == Approx(std::real(grad2[0])).epsilon(0.0001));
-  CHECK(std::real(dpsiM_rot[1][0][1]) == Approx(std::real(grad2[1])).epsilon(0.0001));
-  CHECK(std::real(dpsiM_rot[1][0][2]) == Approx(std::real(grad2[2])).epsilon(0.0001));
+  // Ugh... no checkMatrix for tensors?
+  //checkMatrix(grad_rot_manual, dpsiM_rot);
+  SPOSet::ValueType res = 0.;
+  for (auto i=0; i<elec_.R.size(); i++ )
+    {
+      for (auto j=0; j<orbitalsetsize; j++ )
+        {
+          for (auto k=0; k<3; k++ )
+            {
+              res += std::norm(grad_rot_manual[i][j][k] - dpsiM_rot[i][j][k]);
+            }
+        }
+    }
+  CHECK(std::real(res) == Approx(0.));
+  CHECK(std::imag(res) == Approx(0.));
+  std::cerr << "JPT DEBUG: res = " << res << "\n";
 
+  /*
+  // laplacian
   SPOSet::ValueType lap1 = 0.;
   SPOSet::ValueType lap2 = 0.;
   for (auto i = 0; i < rot_mat.size1(); i++)
@@ -183,8 +201,6 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
     lap1 += d2psiM_bare[0][i] * rot_mat[i][0];
     lap2 += d2psiM_bare[1][i] * rot_mat[i][0];
   }
-
-  // Lapl
   CHECK(std::real(d2psiM_rot[0][0]) == Approx(std::real(lap1)).epsilon(0.0001));
   CHECK(std::real(d2psiM_rot[1][0]) == Approx(std::real(lap2)).epsilon(0.0001));
   */
