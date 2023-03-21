@@ -89,10 +89,7 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
   SPOSet::ValueMatrix d2psiM_bare(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_bare, dpsiM_bare, d2psiM_bare);
 
-  // 0.) Check the bare splines
-  // value
-  // TODO: Use checkMatrix(phimat, spomat);
-
+  // Check before rotation is applied. From 'test_einset.cpp'
   CHECK(std::real(psiM_bare[1][0]) == Approx(-0.8886948824));
   CHECK(std::real(psiM_bare[1][1]) == Approx(1.4194120169));
   // grad
@@ -106,9 +103,7 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
   CHECK(std::real(d2psiM_bare[1][0]) == Approx(1.3313053846));
   CHECK(std::real(d2psiM_bare[1][1]) == Approx(-4.712583065));
 
-  /*
-      2.) Apply a rotation to the splines. In this case we apply the identity matrix = no rotation.
-    */
+  // Apply a rotation to the splines. In this case we apply the identity matrix = no rotation.
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
   rot_mat       = 0;
   rot_mat[0][0] = 1.;
@@ -118,17 +113,17 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
   rot_mat[4][4] = 1.;
   rot_mat[5][5] = 1.;
   rot_mat[6][6] = 1.;
-
   spo->storeParamsBeforeRotation(); // avoids coefs_copy_ nullptr segfault
   spo->applyRotation(rot_mat, false);
 
-  // 3.) Get the data for rotated orbitals
+  // Get the data for rotated orbitals
   SPOSet::ValueMatrix psiM_rot(elec_.R.size(), orbitalsetsize);
   SPOSet::GradMatrix dpsiM_rot(elec_.R.size(), orbitalsetsize);
   SPOSet::ValueMatrix d2psiM_rot(elec_.R.size(), orbitalsetsize);
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM_rot, dpsiM_rot, d2psiM_rot);
 
-  // 4.) Compute the expected values by hand using the transformation above
+  // Compute the expected value, gradient, and laplacian by hand using the transformation above
+  // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
   SPOSet::ValueType val{0.};
   for (auto i = 0; i < elec_.R.size(); i++)
@@ -143,15 +138,10 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
             }
           psiM_rot_manual[i][j] = val;
         }
-  }
-
-  // 5.) check that the rotation was done correctly
-  // value
-  std::cerr << "JPT DEBUG :: check value...\n";
+    }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
-  // grad
-  std::cerr << "JPT DEBUG :: check grad...\n";
+  // Check grad
   SPOSet::GradMatrix grad_rot_manual(elec_.R.size(), orbitalsetsize);
   std::vector<SPOSet::ValueType> grad_val(3);
   for (auto i = 0; i < elec_.R.size(); i++)
@@ -175,8 +165,7 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
       }
   }
 
-  // Ugh... no checkMatrix for tensors?
-  //checkMatrix(grad_rot_manual, dpsiM_rot);
+  // No checkMatrix for tensors? Gotta do it by hand...
   SPOSet::ValueType res = 0.;
   for (auto i=0; i<elec_.R.size(); i++ )
     {
@@ -190,20 +179,24 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
     }
   CHECK(std::real(res) == Approx(0.));
   CHECK(std::imag(res) == Approx(0.));
-  std::cerr << "JPT DEBUG: res = " << res << "\n";
 
-  /*
-  // laplacian
-  SPOSet::ValueType lap1 = 0.;
-  SPOSet::ValueType lap2 = 0.;
-  for (auto i = 0; i < rot_mat.size1(); i++)
-  {
-    lap1 += d2psiM_bare[0][i] * rot_mat[i][0];
-    lap2 += d2psiM_bare[1][i] * rot_mat[i][0];
-  }
-  CHECK(std::real(d2psiM_rot[0][0]) == Approx(std::real(lap1)).epsilon(0.0001));
-  CHECK(std::real(d2psiM_rot[1][0]) == Approx(std::real(lap2)).epsilon(0.0001));
-  */
+  // Check laplacian
+  SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
+  for (auto i = 0; i < elec_.R.size(); i++)
+    {
+      for (auto j = 0; j < orbitalsetsize; j++)
+        {
+          d2psiM_rot_manual[i][j] = 0.;
+          val = 0.;
+          for (auto k = 0; k < orbitalsetsize; k++)
+            {
+              val += d2psiM_bare[i][k] * rot_mat[k][j];
+            }
+          d2psiM_rot_manual[i][j] = val;
+        }
+    }
+  checkMatrix(d2psiM_rot_manual, d2psiM_rot);
+
 } // TEST_CASE
 
 
