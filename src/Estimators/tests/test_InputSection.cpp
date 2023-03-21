@@ -428,9 +428,7 @@ public:
                                " or custom setFromStream not implemented in derived class.");
   }
 
-  void report(std::ostream& ostr)
-  { //InputSection::report(ostr);
-  }
+  void report(std::ostream& ostr) { InputSection::report(ostr); }
 };
 
 class FailCustomTestInput : public InputSection
