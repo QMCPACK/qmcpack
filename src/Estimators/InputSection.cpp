@@ -25,7 +25,7 @@ void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::
     // unsafe att->name is an xmlChar, xmlChar is a UTF-8 byte
     std::string name{lowerCase(castXMLCharToChar(att->name))};
     // issue here is that we don't want to consume the name of the parameter as that has a special status in a parameter tag.
-    // This is due to the <parameter name="parameter_name>  == <parametere_name> tag equivalence :(
+    // This is due to the <parameter name="parameter_name>  == <parameter_name> tag equivalence :(
     if (!consume_name && name == "name")
     {
       att = att->next;
