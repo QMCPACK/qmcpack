@@ -147,7 +147,6 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
       acomm->allreduce(nw);
       for (int ip = 0; ip < ncontexts; ++ip)
         nwoff[ip + 1] = nwoff[ip] + nw[ip];
-      walkers.setGlobalNumWalkers(nwoff[ncontexts]);
       walkers.setWalkerOffsets(nwoff);
       iParam[B_TARGETWALKERS] = nwoff[ncontexts];
     }
@@ -237,7 +236,6 @@ void SimpleFixedNodeBranch::initReptile(MCWalkerConfiguration& W)
     //   acomm->allreduce(nw);
     //    for(int ip=0; ip<ncontexts; ++ip)
     //      nwoff[ip+1]=nwoff[ip]+nw[ip];
-    //    W.setGlobalNumWalkers(nwoff[ncontexts]);
     //    W.setWalkerOffsets(nwoff);
     //    iParam[B_TARGETWALKERS]=nwoff[ncontexts];
     //  }
@@ -782,11 +780,6 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
       BranchMode[B_POPCONTROL] = bmode[B_POPCONTROL];
     }
   }
-
-  if (BranchMode[B_DMC] && !bmode[B_DMC])
-    throw UniformCommunicateError("SimpleFixedNodeBranch::read legacy drivers cannot make a non-DMC run by restarting "
-                                  "from a previous DMC run. This capability is only supported by the newer batched drivers."
-                                  " Switch to using the batched drivers if this restart was intended.");
 
   app_log().flush();
 }

@@ -21,6 +21,7 @@
 #include "type_traits/template_types.hpp"
 #include "Particle/Walker.h"
 #include "QMCDrivers/Crowd.h"
+#include "DMC/DMCRefEnergy.h"
 #include <bitset>
 
 namespace qmcplusplus
@@ -148,7 +149,7 @@ public:
   using VParamType = VParams<SBVP>;
 
   ///Constructor
-  SFNBranch(RealType tau, int nideal);
+  SFNBranch(RealType tau, RealType feedback, DMCRefEnergyScheme);
 
   ///copy constructor
   SFNBranch(const SFNBranch& abranch) = delete;
@@ -275,7 +276,7 @@ public:
    * @param iter current step
    * @param w Walker configuration
    */
-  void updateParamAfterPopControl(int pop_int, const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
+  void updateParamAfterPopControl(const MCDataType<FullPrecRealType>& wc_ensemble_prop, int Nelec);
 
   bool put(xmlNodePtr cur);
 
@@ -305,10 +306,8 @@ private:
   int EtrialUpdateToDoSteps;
   ///save xml element
   xmlNodePtr myNode;
-  ///a simple accumulator for energy
-  accumulator_set<FullPrecRealType> EnergyHist;
-  ///a simple accumulator for variance
-  accumulator_set<FullPrecRealType> VarianceHist;
+  /// collect energy and variance history
+  DMCRefEnergy ref_energy_collector;
   ///a simple accumulator for energy
   accumulator_set<RealType> R2Accepted;
   ///a simple accumulator for energy

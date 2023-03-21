@@ -88,7 +88,11 @@ public:
      * @param sphere set true if VP are on a sphere around the reference source particle
      * @param iat reference source particle
      */
-  void makeMoves(const ParticleSet& refp, int jel, const std::vector<PosType>& deltaV, bool sphere = false, int iat = -1);
+  void makeMoves(const ParticleSet& refp,
+                 int jel,
+                 const std::vector<PosType>& deltaV,
+                 bool sphere = false,
+                 int iat     = -1);
 
   /** move virtual particles to new postions and update distance tables
      * @param refp reference particle set
@@ -110,6 +114,13 @@ public:
                            const RefVector<const std::vector<PosType>>& deltaV_list,
                            const RefVector<const NLPPJob<RealType>>& joblist,
                            bool sphere);
+
+  static void mw_makeMovesWithSpin(const RefVectorWithLeader<VirtualParticleSet>& vp_list,
+                                   const RefVectorWithLeader<ParticleSet>& p_list,
+                                   const RefVector<const std::vector<PosType>>& deltaV_list,
+                                   const RefVector<const std::vector<RealType>>& deltaS_list,
+                                   const RefVector<const NLPPJob<RealType>>& joblist,
+                                   bool sphere);
 
   static RefVectorWithLeader<ParticleSet> RefVectorWithLeaderParticleSet(
       const RefVectorWithLeader<VirtualParticleSet>& vp_list)

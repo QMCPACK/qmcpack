@@ -17,6 +17,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
+#include "Utilities/ProjectData.h"
 
 
 #include <stdio.h>
@@ -81,13 +82,14 @@ void setupParticleSetPool(ParticleSetPool& pp)
 
 TEST_CASE("WaveFunctionPool", "[qmcapp]")
 {
+  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* c;
   c = OHMMS::Controller;
 
   ParticleSetPool pp(c);
   setupParticleSetPool(pp);
 
-  WaveFunctionPool wp(pp, c);
+  WaveFunctionPool wp(test_project.getRuntimeOptions(), pp, c);
 
   REQUIRE(wp.empty() == true);
 

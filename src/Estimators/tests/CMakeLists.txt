@@ -33,6 +33,7 @@ set(SRCS
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
+    test_SizeLimitedDataQueue.cpp
     test_MomentumDistribution.cpp
     test_OneBodyDensityMatricesInput.cpp
     test_OneBodyDensityMatrices.cpp

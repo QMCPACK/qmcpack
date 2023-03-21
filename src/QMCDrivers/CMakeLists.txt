@@ -64,6 +64,7 @@ set(QMCDRIVERS
     DMC/DMCFactoryNew.cpp
     DMC/DMCBatched.cpp
     DMC/DMCDriverInput.cpp
+    DMC/DMCRefEnergy.cpp
     DMC/WalkerControlFactory.cpp
     DMC/WalkerReconfiguration.cpp
     DMC/WalkerControl.cpp

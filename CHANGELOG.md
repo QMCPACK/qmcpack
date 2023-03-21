@@ -2,6 +2,10 @@
 
 Notable changes to QMCPACK are documented in this file.
 
+## [Unreleased]
+
+The legacy CUDA implementation, the version built with QMC_CUDA=1, has been removed from the codebase.
+
 ## [3.16.0] - 2023-01-31
 
 This release contains important bug fixes as well as feature improvements. It is a recommended release for all users. Thanks to
