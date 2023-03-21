@@ -1367,8 +1367,36 @@ class hubbard(Card):
     available_specifiers = ['atomic', 'ortho-atomic', 'norm-atomic', 'wf', 'pseudo']
     default_specifier = 'atomic'
     system = None
-    def read_text(self, lines):
-        pass
+    def read_text(self, lines):        
+        contents = ''
+        self.hubbard = {}
+        for line in lines:
+            line = line.strip().split()
+            if line:
+                intrxn = line[0]
+                if len(line) == 3:
+                    specie = line[1]
+                    val = float(line[2])
+                    self.hubbard[intrxn] = {specie:val}
+                elif len(line) == 6:
+                    specie1 = line[1]
+                    specie2 = line[2]
+                    ind1 = int(line[3])
+                    ind2 = int(line[4])
+                    val = float(line[5])
+                    if intrxn not in self.hubbard.keys():
+                        self.hubbard[intrxn] = {(specie1, specie2):[{'indices':(ind1, ind2), 'value':val}]}
+                    else:
+                        if (specie1, specie2) not in self.hubbard[intrxn].keys():
+                            self.hubbard[intrxn][(specie1, specie2)]=[{'indices':(ind1, ind2), 'value':val}]
+                        else:
+                            self.hubbard[intrxn][(specie1, specie2)].append({'indices':(ind1, ind2), 'value':val})
+                        #end if 
+                    #end if
+            #end for
+        #end for
+
+    #end def read_text
 
     def write_text(self):
         manifold_dict = {} 
@@ -1380,28 +1408,49 @@ class hubbard(Card):
                     contents += f"{param} {label_manifold} {value} \n"
                 else:
                     assert(len(label_manifold) == 2)
-                    atom1, manifold1 = label_manifold[0].split('-')
-                    atom2, manifold2 = label_manifold[1].split('-')
-                    if atom1 not in manifold_dict.keys():
-                        manifold_dict[atom1] = [manifold1]
-                    elif manifold1 not in manifold_dict[atom1]:
-                        manifold_dict[atom1].append(manifold1)
-                    #end if
+                    if isinstance(value, float):
+                        atom1, manifold1 = label_manifold[0].split('-')
+                        atom2, manifold2 = label_manifold[1].split('-')
+                        if atom1 not in manifold_dict.keys():
+                            manifold_dict[atom1] = [manifold1]
+                        elif manifold1 not in manifold_dict[atom1]:
+                            manifold_dict[atom1].append(manifold1)
+                        #end if
 
-                    if atom2 not in manifold_dict.keys():
-                        manifold_dict[atom2] = manifold2
-                    elif manifold2 not in manifold_dict[atom2]:
-                        manifold_dict[atom2].append(manifold2)
-                    #end if
-
-                    elem = self.system.structure.elem
-                    index1 = where(elem == atom1)[0] + 1
-                    index2 = where(elem == atom2)[0] + 1
-                    for ind1 in index1:
-                        for ind2 in index2:
-                            contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
+                        if atom2 not in manifold_dict.keys():
+                            manifold_dict[atom2] = manifold2
+                        elif manifold2 not in manifold_dict[atom2]:
+                            manifold_dict[atom2].append(manifold2)
+                            #end if
+                        if isinstance(value, float):
+                            elem = self.system.structure.elem
+                            index1 = where(elem == atom1)[0] + 1
+                            index2 = where(elem == atom2)[0] + 1
+                            for ind1 in index1:
+                                for ind2 in index2:
+                                    contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {value}\n"
+                                #end for
+                            #end for
+                    elif isinstance(value, list):
+                        positive_only = True
+                        for val in value:
+                            ind1 = val['indices'][0]
+                            ind2 = val['indices'][1]
+                            val = val['value']
+                            write_line = False
+                            if positive_only:
+                                if val > 0:
+                                    write_line = True
+                            else:
+                                write_line = True
+                            #end if
+                            if write_line:
+                                contents += f"{param} {label_manifold[0]} {label_manifold[1]} {ind1} {ind2} {val}\n"
+                            #end if 
                         #end for
-                    #end for
+                    else:
+                        self.error('Hubbard card unknown input format')
+                    #end if 
                 #end for
             #end for
         #end for
@@ -1588,6 +1637,13 @@ class PwscfInput(SimulationInput):
         return vals
     #end def get_common_vars
 
+    def incorporate_hubbard(self, hubbard_result):
+        hub_obj = hubbard()
+        hubbard_result = hubbard_result.split('\n')
+        hub_obj.specifier = hubbard_result[1].split()[-1]
+        hub_obj.read_text(hubbard_result[2:])
+        self.hubbard = hub_obj
+    #end def incorporate_hubbard
 
     def incorporate_system(self,system,elem_order=None):
         system.check_folded_system()

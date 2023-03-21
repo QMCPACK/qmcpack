@@ -939,10 +939,9 @@ class HpAnalyzer(SimulationAnalyzer):
 
     def analyze(self):
         operations = [
-            ('open_log'   ,HpAnalyzer.open_log),
-            ('read_states',HpAnalyzer.read_states),
-            ('read_lowdin',HpAnalyzer.read_lowdin),
-            ('close_log'  ,HpAnalyzer.close_log),
+            ('open_hubbard_dat'   ,HpAnalyzer.open_hubbard_dat),
+            ('read_hubbard_dat'   ,HpAnalyzer.read_hubbard_dat),
+            ('close_hubbard_dat'  ,HpAnalyzer.close_hubbard_dat),
             ]
         if self.info.strict:
             for name,op in operations:
@@ -964,186 +963,30 @@ class HpAnalyzer(SimulationAnalyzer):
     #end def analyze
 
 
-    def open_log(self):
-        logfile = os.path.join(self.info.path,self.info.outfile)
-        self.log = TextFile(logfile)
-    #end def open_log
+    def open_hubbard_dat(self):
+        logfile = os.path.join(self.info.path,"HUBBARD.dat")
+        self.hubbard_dat = TextFile(logfile)
+    #end def open_hubbard_dat
 
-    def read_states(self):
-        log = self.log
-        log.seek('state #')
-        nstates  = 0
-        elem_ind = set()
-        elem     = []
+    def read_hubbard_dat(self):
+        log = self.hubbard_dat
+        log.seek('# Copy this data in the pw.x input file for DFT+Hubbard calculations')
+        result = ''
         while True:
             line = log.readline()
-            tokens = line.replace('(',' ').replace(')',' ').split()
-            if not (len(tokens)>0 and tokens[0]=='state'):
+            result += line
+            if not (len(line)>0):
                 break
-            #end if
-            ei,e = tokens[4],tokens[5] 
-            if ei not in elem_ind:
-                elem.append(e)
-                elem_ind.add(ei)
-            #end if
-            nstates += 1
+            #end if 
         #end while
-        self.states = obj(nstates=nstates,elem=elem)
-    #end def read_states
+        self.hubbard_parameters = result
+    #end def read_hubbard_dat
 
-    def read_lowdin(self):
-        log = self.log
-        log.seek('Lowdin Charges')
-        lowdin = obj()
-        has_ud = False
-        nmax = len(self.states.elem)*20
-        n  = 0
-        ls = ''
-        cur_atom = -1
-        while n<nmax and not ls.startswith('Spilling'):
-            n+=1
-            ls = log.readline().strip()
-            if ls.startswith('Atom'):
-                astr,ls = ls.split(':')
-                cur_atom = int(astr.split('#')[1])-1
-                if cur_atom not in lowdin:
-                    lowdin[cur_atom] = obj(tot=obj(),up=obj(),down=obj())
-                #end if
-                lc = lowdin[cur_atom]                
-            #end if
-            if 'tot' in ls:
-                lc_comp = lc.tot
-            elif 'up' in ls:
-                lc_comp = lc.up
-            elif 'down' in ls:
-                lc_comp = lc.down
-            else:
-                continue
-            #end if
-            tokens = ls.replace(' ','').rstrip(',').split(',')
-            for t in tokens:
-                name,value = t.split('=')
-                if 'spin' in name:
-                    has_ud = True
-                    name = 'charge'
-                elif 'charge' in name:
-                    name = 'charge'
-                #end if
-                lc_comp[name] = float(value)
-            #end for
-        #end while
-        if has_ud:
-            for lc in lowdin:
-                u = lc.up
-                d = lc.down
-                lc.pol = obj()
-                for k,uv in u.items():
-                    dv = d[k]
-                    lc.tot[k] = uv + dv
-                    lc.pol[k] = uv - dv
-                #end for
-            #end for
-        else:
-            for lc in lowdin:
-                del lc.up
-                del lc.down
-            #end for
+    def close_hubbard_dat(self):
+        if 'hubbard_dat' in self:
+            del self.hubbard_dat
         #end if
-        self.lowdin = lowdin
-    #end def read_lowdin
-
-    def write_lowdin(self,filepath=None,sum=None,tot=None,pol=None,up=None,down=None,all=True,long=False):
-        if tot is None:
-            tot = all
-        #end if
-        if pol is None:
-            pol = all
-        #end if
-        if up is None:
-            up = all
-        #end if
-        if down is None:
-            down = all
-        #end if
-        if sum is None:
-            sum = all
-        #end if
-        sections = [('tot',tot),('pol',pol),('up',up),('down',down)]
-        elem=None
-        if 'states' in self:
-            elem = self.states.elem
-        #end if
-        lowdin = self.lowdin
-        text   = ''
-        if sum:
-            nelec = '?'
-            npol  = '?'
-            if len(lowdin)>0:
-                if 'tot' in lowdin[0]:
-                    nelec = 0
-                    for lc in lowdin:
-                        nelec += lc.tot.charge
-                    #end for
-                #end if
-                if 'pol' in lowdin[0]:
-                    npol = 0
-                    for lc in lowdin:
-                        npol += lc.pol.charge
-                    #end for
-                #end if
-            #end if
-            text += 'nup+ndn = {0}\n'.format(nelec)
-            text += 'nup-ndn = {0}\n'.format(npol)
-            text += '\n'
-        #end if
-        lvals  = 'spdfg'
-        for q,qwrite in sections:
-            if qwrite and len(lowdin)>0 and q in lowdin[0]:
-                text+=q+'\n'
-                for n in range(len(lowdin)):
-                    lc = lowdin[n][q]
-                    if elem is None:
-                        text += '  {0:>3}  {1: 3.2f}  '.format(n,lc.charge)
-                    else:
-                        text += '  {0:>3}  {1:>2}  {2: 3.2f}  '.format(n,elem[n],lc.charge)
-                    #end if
-                    if not long:
-                        for l in lvals:
-                            if l in lc:
-                                text += '{0}({1: 3.2f})'.format(l,lc[l])
-                            #end if
-                        #end for
-                    else:
-                        for l in lvals:
-                            if l in lc:
-                                lset = []
-                                for k in lc.keys():
-                                    if k.startswith(l) and (len(k)>1 or k=='s'):
-                                        lset.append(k)
-                                    #end if
-                                #end for
-                                for k in sorted(lset):
-                                    text += '{0}({1: 3.2f})'.format(k,lc[k])
-                                #end for
-                            #end if
-                        #end for
-                    #end if
-                    text+='\n'
-                #end for
-                text+='\n'
-            #end if
-        #end for
-        if filepath!=None:
-            open(filepath,'w').write(text)
-        #end if
-        return text
-    #end def write_lowdin
-
-    def close_log(self):
-        if 'log' in self:
-            del self.log
-        #end if
-    #end def close_log
+    #end def close_hubbard_dat
         
 #end class ProjwfcAnalyzer
 
@@ -1153,19 +996,31 @@ class Hp(PostProcessSimulation):
     analyzer_type      = HpAnalyzer
     generic_identifier = 'hp'
     application        = 'hp.x'
-    application_results = ['hubbard_parameters']
+    application_results = set(['hubbard_parameters'])
 
-    def post_analyze(self,analyzer):
-        # try to write lowdin output data file
-        try:
-            hubbard_file = self.identifier+'.Hubbard_parameters.dat'
-            filepath = os.path.join(self.locdir,hubbard_file)
-            # analyzer.write_lowdin(filepath)
-            # analyzer.write_lowdin(filepath+'_long',long=True)
-        except:
-            None
-        #end try
-    #end def post_analyze
+    def check_result(self,result_name,sim):
+        calculating_result = False
+        if result_name=='hubbard_parameters':
+            calculating_result = True
+        #end if 
+        return calculating_result
+    #end def check_result    
+
+    def get_result(self,result_name,sim):
+        result = obj()        
+        prefix = 'pwscf'
+        outdir = './'
+        if result_name == 'hubbard_parameters':
+            pa = self.load_analyzer_image()
+            result = pa.hubbard_parameters
+        else:
+            self.error('ability to get result '+result_name+' has not been implemented')
+        #end if
+        return result
+    #end def get_result
+
+
+
 #end class Projwfc
 
 
