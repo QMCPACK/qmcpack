@@ -364,26 +364,21 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
   // Compute the expected value, gradient, and laplacian by hand using the transformation above
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  SPOSet::ValueType val{0.};
   for (auto i = 0; i < elec_.R.size(); i++)
     {
       for (auto j = 0; j < orbitalsetsize; j++)
         {
           psiM_rot_manual[i][j] = 0.;
-          val = 0.;
           for (auto k = 0; k < orbitalsetsize; k++)
             {
-              val += psiM_bare[i][k] * rot_mat[k][j];
+              psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
             }
-          psiM_rot_manual[i][j] = val;
         }
     }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
-  /*
   SPOSet::GradMatrix dpsiM_rot_manual(elec_.R.size(), orbitalsetsize);
-  std::vector<SPOSet::ValueType> grad_val(3);
   for (auto i = 0; i < elec_.R.size(); i++)
   {
     for (auto j = 0; j < orbitalsetsize; j++)
@@ -391,36 +386,53 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
         dpsiM_rot_manual[i][j][0] = 0.;
         dpsiM_rot_manual[i][j][1] = 0.;
         dpsiM_rot_manual[i][j][2] = 0.;
-        std::fill(grad_val.begin(), grad_val.end(), 0);
         for (auto k = 0; k < orbitalsetsize; k++)
           {
             for (auto l = 0; l < 3; l++)
               {
-                grad_val[l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
+                dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
               }
           }
-        dpsiM_rot_manual[i][j][0] = grad_val[0];
-        dpsiM_rot_manual[i][j][1] = grad_val[1];
-        dpsiM_rot_manual[i][j][2] = grad_val[2];
       }
   }
 
+  // JPT DEBUG: gradient does not match. Print out both to see what's up.
+  /*
+  std::cerr << "JPT DEBUG: dpsiM_rot   |   dpsiM_rot_manual= \n";
+  for (auto k=0; k<3; k++)
+    {
+      for (auto i=0; i<elec_.R.size(); i++)
+        {
+          for (auto j=0; j<orbitalsetsize; j++)
+            {
+              std::cerr << "(" << i << "," << j << "," << k << ")= ";
+              std::cerr << std::scientific << std::setprecision(6) << std::setw(16) << dpsiM_rot[i][j][k];
+              std::cerr << " | ";
+              std::cerr << std::scientific << std::setprecision(6) << std::setw(16) << dpsiM_rot_manual[i][j][k];
+              std::cerr << "\n";
+            }
+          std::cerr << "\n";
+        }
+      std::cerr << "\n";
+    }
+  */
+  
   // No checkMatrix for tensors? Gotta do it by hand...
-  SPOSet::ValueType res = 0.;
+  double res = 0.;
   for (auto i=0; i<elec_.R.size(); i++ )
     {
       for (auto j=0; j<orbitalsetsize; j++ )
         {
           for (auto k=0; k<3; k++ )
             {
-              res += std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]);
+              //CHECK(std::real(dpsiM_rot_manual[i][j][k]) == Approx(std::real(dpsiM_rot[i][j][k])));
+              //CHECK(std::imag(dpsiM_rot_manual[i][j][k]) == Approx(std::imag(dpsiM_rot[i][j][k])));
+              res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
             }
         }
     }
-  CHECK(std::real(res) == Approx(0.));
-  CHECK(std::imag(res) == Approx(0.));
-  */
-  
+  CHECK(res == Approx(0.));
+
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
   for (auto i = 0; i < elec_.R.size(); i++)
@@ -428,12 +440,10 @@ TEST_CASE("Spline applyRotation no rotation", "[wavefunction]")
       for (auto j = 0; j < orbitalsetsize; j++)
         {
           d2psiM_rot_manual[i][j] = 0.;
-          val = 0.;
           for (auto k = 0; k < orbitalsetsize; k++)
             {
-              val += d2psiM_bare[i][k] * rot_mat[k][j];
+              d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
             }
-          d2psiM_rot_manual[i][j] = val;
         }
     }
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
