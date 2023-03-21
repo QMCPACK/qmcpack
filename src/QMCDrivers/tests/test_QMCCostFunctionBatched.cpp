@@ -14,6 +14,7 @@
 #include "FillData.h"
 // Input data and gold data for fillFromText test
 #include "diamond_fill_data.h"
+#include "Utilities/ProjectData.h"
 
 
 namespace qmcplusplus
@@ -52,7 +53,8 @@ public:
   const SimulationCell simulation_cell;
   MCWalkerConfiguration w;
   QMCHamiltonian h;
-  TrialWaveFunction psi;
+  ProjectData project_data_;
+  TrialWaveFunction psi = TrialWaveFunction(project_data_.getRuntimeOptions());
   QMCCostFunctionBatched costFn;
 
   LinearMethodTestSupport(const std::vector<int>& walkers_per_crowd, Communicate* comm)

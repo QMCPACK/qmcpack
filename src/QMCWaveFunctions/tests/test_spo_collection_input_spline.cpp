@@ -17,6 +17,7 @@
 #include "Particle/ParticleSet.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <string>
@@ -80,7 +81,8 @@ void test_diamond_2x1x1_xml_input(const std::string& spo_xml_string)
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(ein_xml);
+  ProjectData project_data;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, project_data.getRuntimeOptions());
 
   std::unique_ptr<SPOSet> spo(twf_ptr->getSPOSet("spo").makeClone());
 

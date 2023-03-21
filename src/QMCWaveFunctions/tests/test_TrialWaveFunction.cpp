@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "TWFGrads.hpp"
+#include "Utilities/ProjectData.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -111,7 +112,8 @@ TEST_CASE("TrialWaveFunction_diamondC_1x1x1", "[wavefunction]")
 
   auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
 
-  TrialWaveFunction psi;
+  ProjectData project_data;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   psi.addComponent(std::move(slater_det));
 
   const char* jas_input = R"(<tmp>

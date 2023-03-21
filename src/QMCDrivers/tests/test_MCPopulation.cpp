@@ -36,7 +36,7 @@ TEST_CASE("MCPopulation::createWalkers", "[particle][population]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  TrialWaveFunction twf;
+  TrialWaveFunction twf(test_project.getRuntimeOptions());
   WalkerConfigurations walker_confs;
 
   MCPopulation population(1, comm->rank(), particle_pool.getParticleSet("e"), &twf, hamiltonian_pool.getPrimary());
@@ -81,7 +81,7 @@ TEST_CASE("MCPopulation::createWalkers_walker_ids", "[particle][population]")
   auto wavefunction_pool =
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
-  TrialWaveFunction twf;
+  TrialWaveFunction twf(test_project.getRuntimeOptions());
   WalkerConfigurations walker_confs;
 
   std::vector<MCPopulation> pops;

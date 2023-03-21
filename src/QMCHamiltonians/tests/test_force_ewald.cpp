@@ -20,6 +20,7 @@
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "LongRange/EwaldHandler3D.h"
+#include "Utilities/ProjectData.h"
 
 #include <stdio.h>
 #include <string>
@@ -203,7 +204,8 @@ TEST_CASE("fccz sr lr clone", "[hamiltonian]")
   //  QMCDrivers/CloneManager::makeClones
   //  QMCHamiltonian::makeClone
   //  OperatorBase::add2Hamiltonian -> ForceChiesaPBCAA::makeClone
-  TrialWaveFunction psi;
+  ProjectData project_data;
+  TrialWaveFunction psi(project_data.getRuntimeOptions());
   std::unique_ptr<ForceChiesaPBCAA> clone(dynamic_cast<ForceChiesaPBCAA*>(force.makeClone(elec, psi).release()));
   clone->evaluate(elec);
   REQUIRE(clone->getAddIonIon() == force.getAddIonIon());

@@ -18,6 +18,7 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include "QMCWaveFunctions/ExampleHeComponent.h"
+#include "Utilities/ProjectData.h"
 
 namespace qmcplusplus
 {
@@ -85,7 +86,8 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  ProjectData project_data;
+  auto twf_ptr = wff.buildTWF(root, project_data.getRuntimeOptions());
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 1);

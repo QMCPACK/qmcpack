@@ -52,8 +52,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   pp.addParticleSet(std::move(qp));
 
   WaveFunctionPool wfp(test_project.getRuntimeOptions(), pp, c);
-
-  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting("psi0"), true);
+  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting(test_project.getRuntimeOptions(), "psi0"), true);
 
   HamiltonianPool hpool(pp, wfp, c);
 

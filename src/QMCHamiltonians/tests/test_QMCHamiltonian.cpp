@@ -41,7 +41,7 @@ TEST_CASE("QMCHamiltonian::flex_evaluate", "[hamiltonian]")
       MinimalWaveFunctionPool::make_diamondC_1x1x1(test_project.getRuntimeOptions(), comm, particle_pool);
   auto hamiltonian_pool = MinimalHamiltonianPool::make_hamWithEE(comm, particle_pool, wavefunction_pool);
 
-  TrialWaveFunction twf;
+  TrialWaveFunction twf(test_project.getRuntimeOptions());
 
   std::vector<QMCHamiltonian> hamiltonians;
   //hamiltonians.emplace_back(*(hamiltonian_pool.getPrimary()));
