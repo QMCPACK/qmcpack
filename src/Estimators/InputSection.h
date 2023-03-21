@@ -253,11 +253,25 @@ private:
   // Perform typed read and assignment of input variables from strings
   void setFromStream(const std::string& name, std::istringstream& svalue);
 
-  // Perform typed assignment of input variables from intrinsic types
+  /** Coerce input collected via init into types matching the definition of the input types
+   *  defined in the InputSection subtype constructor.
+   */
   void setFromValue(const std::string& name, const std::any& svalue);
 
+  /** assign value into unordered map respecting values multiplicity
+   *  It is a fatal exception to assign to a singular existing value.
+   *
+   *  If the value isMultiple i.e. the value can legally appear multiple times in the input a vector of those
+   *  values is built up at the key in the value map. If the value is never assigned to there is not an
+   *  empty vector and that value is undefined in the map.
+   */
   template<typename T>
   void assignValue(const std::string& name, const T& value);
+
+  /** factor out delegate handling code for sanity.
+   */
+  void handleDelegate(const std::string& ename, const xmlNodePtr element);
+
   /** Check validity of inputs
    *
    *  This class just checks if required values_ are present and calls checkParticularValidity

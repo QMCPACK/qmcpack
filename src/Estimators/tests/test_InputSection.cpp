@@ -52,7 +52,8 @@ public:
   {
     section_name   = "Test";
     attributes     = {"name", "samples", "kmax", "full"};
-    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center", "density"};
+    parameters     = {"label",     "count",   "width",  "rational", "testenum1",
+                      "testenum2", "sposets", "center", "density",  "target"};
     required       = {"count", "full"};
     strings        = {"name", "label"};
     multi_strings  = {"sposets"};
@@ -73,6 +74,10 @@ public:
   std::any assignAnyEnum(const std::string& name) const override
   {
     return lookupAnyEnum(name, get<std::string>(name), lookup_input_enum_value);
+  }
+
+  void report(std::ostream& ostr)
+  { //InputSection::report(ostr);
   }
 };
 
@@ -134,6 +139,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
+    ti.report(std::cout);
+
     // assigned from xml
     CHECK(ti.has("full"));
     CHECK(ti.has("count"));
@@ -156,7 +163,6 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<bool>("rational") == false);
   }
 
-
   SECTION("complete attributes and parameters")
   {
     // clang-format: off
@@ -170,6 +176,8 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="testenum2"> Value2 </parameter>
   <parameter name="sposets"> spo1 spo2 </parameter>
   <density> 10.0 20.0 30.0 </density>
+  <target> 0.0 0.2 0.3 </target>
+  <target> 0.1 0.3 0.5 </target>
   <parameter name="center"> 0.0 0.0 0.1 </parameter>
 </test>
 )";
@@ -185,6 +193,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     TestInputSection ti;
     ti.readXML(cur);
 
+    ti.report(std::cout);
     // assigned from xml
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -268,6 +277,8 @@ TEST_CASE("InputSection::init", "[estimators]")
     TestInputSection ti;
     ti.init({{"full", bool(false)}, {"count", int(15)}});
 
+    ti.report(std::cout);
+
     // assigned from initializer-list
     CHECK(ti.has("full"));
     CHECK(ti.has("count"));
@@ -304,6 +315,7 @@ TEST_CASE("InputSection::init", "[estimators]")
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
+    ti.report(std::cout);
     // assigned from initializer-list
     CHECK(ti.has("name"));
     CHECK(ti.has("samples"));
@@ -416,7 +428,9 @@ public:
                                " or custom setFromStream not implemented in derived class.");
   }
 
-  void report(std::ostream& ostr) { InputSection::report(ostr); }
+  void report(std::ostream& ostr)
+  { //InputSection::report(ostr);
+  }
 };
 
 class FailCustomTestInput : public InputSection

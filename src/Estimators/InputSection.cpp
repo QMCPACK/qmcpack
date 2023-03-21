@@ -63,6 +63,15 @@ void InputSection::readAttributes(xmlNodePtr cur, bool consume_name, const std::
   }
 }
 
+void InputSection::handleDelegate(const std::string& ename, const xmlNodePtr element)
+{
+  assert(delegate_factories_.find(ename) != delegate_factories_.end());
+  std::string value_key;
+  std::any value = delegate_factories_[ename](element, value_key);
+
+  assignValue(value_key, value);
+}
+
 void InputSection::readXML(xmlNodePtr cur)
 {
   // For historical reasons that actual "type" of the element/input section is expressed in a very inconsistent way.
@@ -90,36 +99,7 @@ void InputSection::readXML(xmlNodePtr cur)
 
     if (isDelegate(ename))
     {
-      assert(delegate_factories_.find(ename) != delegate_factories_.end());
-      std::string value_key;
-      std::any value = delegate_factories_[ename](element, value_key);
-      if (has(value_key) && !isMultiple(value_key))
-        throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + ename +
-                                      " node with duplicate name " + value_key + "!");
-      if (isMultiple(value_key))
-      {
-        if (has(value_key))
-        {
-          try
-          {
-            auto* value_vector = std::any_cast<std::vector<std::any>>(&(values_[value_key]));
-            value_vector->push_back(value);
-          }
-          catch (...)
-          {
-            std::throw_with_nested(
-                UniformCommunicateError("std::any_cast failed for multiple value with value_key:" + value_key));
-          }
-        }
-        else
-        {
-          values_[value_key] = std::vector<std::any>{value};
-        }
-      }
-      else
-      {
-        values_[value_key] = value;
-      }
+      handleDelegate(ename, element);
     }
     else if (isCustom(ename))
     {
@@ -146,7 +126,8 @@ void InputSection::readXML(xmlNodePtr cur)
     else if (ename != "text")
     {
       std::stringstream error;
-      error << "InputSection::readXML node name " << ename << " is not handled by InputSection subtype " << section_name << "\n";
+      error << "InputSection::readXML node name " << ename << " is not handled by InputSection subtype " << section_name
+            << "\n";
       throw UniformCommunicateError(error.str());
     }
     element = element->next;
@@ -194,46 +175,46 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   {
     std::string value;
     svalue >> value;
-    values_[name] = value;
+    assignValue(name, value);
   }
   else if (isMultiString(name))
   {
     std::vector<std::string> string_values;
     for (std::string value; svalue >> value;)
       string_values.push_back(value);
-    values_[name] = string_values;
+    assignValue(name, string_values);
   }
   else if (isMultiReal(name))
   {
     std::vector<Real> real_values;
     for (FullPrecReal value; svalue >> value;)
       real_values.push_back(static_cast<Real>(value));
-    values_[name] = real_values;
+    assignValue(name, real_values);
   }
   else if (isBool(name))
   {
     std::string sval;
     svalue >> sval;
-    bool value    = sval == "yes" || sval == "true" || sval == "1";
-    values_[name] = value;
+    bool value = sval == "yes" || sval == "true" || sval == "1";
+    assignValue(name, value);
   }
   else if (isInteger(name))
   {
     int value;
     svalue >> value;
-    values_[name] = value;
+    assignValue(name, value);
   }
   else if (isReal(name))
   {
     FullPrecReal value;
     svalue >> value;
-    values_[name] = static_cast<Real>(value);
+    assignValue(name, Real(value));
   }
   else if (isPosition(name))
   {
     Position value;
     svalue >> value;
-    values_[name] = value;
+    assignValue(name, value);
   }
   else
   {
@@ -244,11 +225,17 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
 }
 
 template<typename T>
-void InputSection::assignValue(const std::string& name, const T& value) {
+void InputSection::assignValue(const std::string& name, const T& value)
+{
+  if (has(name) && !isMultiple(name))
+    throw UniformCommunicateError("Input is invalid  " + section_name + " contains " + name +
+                                  " node with duplicate name!");
+
   if (!isMultiple(name))
     values_[name] = value;
-  else {
-    if (values_.find(name) != values_.end())
+  else
+  {
+    if (has(name))
       std::any_cast<std::vector<T>>(values_[name]).push_back(value);
     else
       values_[name] = std::vector<T>{value};
@@ -260,17 +247,17 @@ void InputSection::setFromValue(const std::string& name, const std::any& value)
   try
   {
     if (isString(name) || isEnumString(name))
-      values_[name] = std::any_cast<std::string>(value);
+      assignValue(name, std::any_cast<std::string>(value));
     else if (isMultiString(name))
-      values_[name] = std::any_cast<std::vector<std::string>>(value);
+      assignValue(name, std::any_cast<std::vector<std::string>>(value));
     else if (isMultiReal(name))
-      values_[name] = std::any_cast<std::vector<std::string>>(value);
+      assignValue(name, std::any_cast<std::vector<std::string>>(value));
     else if (isBool(name))
-      values_[name] = std::any_cast<bool>(value);
+      assignValue(name, std::any_cast<bool>(value));
     else if (isInteger(name))
-      values_[name] = (std::any_cast<int>(value));
+      assignValue(name, std::any_cast<int>(value));
     else if (isReal(name))
-      values_[name] = std::any_cast<Real>(value);
+      assignValue(name, std::any_cast<Real>(value));
     else if (isPosition(name))
       assignValue(name, std::any_cast<Position>(value));
     else
