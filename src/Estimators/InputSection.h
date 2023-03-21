@@ -56,7 +56,7 @@ protected:
   std::unordered_set<std::string> multiple;      // list of variables that can have multiple instances
   std::unordered_set<std::string> strings;       // list of string variables that can have one value
   std::unordered_set<std::string> multi_strings; // list of string variables that can one or more values
-  std::unordered_set<std::string> multi_reals;   // list of string variables that can one or more values
+  std::unordered_set<std::string> multi_reals;   // list of real variables
   std::unordered_set<std::string> bools;         // list of boolean variables
   std::unordered_set<std::string> integers;      // list of integer variables
   std::unordered_set<std::string> reals;         // list of real variables
@@ -254,9 +254,10 @@ private:
   void setFromStream(const std::string& name, std::istringstream& svalue);
 
   // Perform typed assignment of input variables from intrinsic types
-  template<typename T>
-  void setFromValue(const std::string& name, const T& svalue);
+  void setFromValue(const std::string& name, const std::any& svalue);
 
+  template<typename T>
+  void assignValue(const std::string& name, const T& value);
   /** Check validity of inputs
    *
    *  This class just checks if required values_ are present and calls checkParticularValidity

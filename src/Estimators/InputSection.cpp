@@ -146,7 +146,7 @@ void InputSection::readXML(xmlNodePtr cur)
     else if (ename != "text")
     {
       std::stringstream error;
-      error << "InputSection::readXML node name " << ename << " is not handled by " << section_name << "\n";
+      error << "InputSection::readXML node name " << ename << " is not handled by InputSection subtype " << section_name << "\n";
       throw UniformCommunicateError(error.str());
     }
     element = element->next;
@@ -244,13 +244,26 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
 }
 
 template<typename T>
-void InputSection::setFromValue(const std::string& name, const T& value)
+void InputSection::assignValue(const std::string& name, const T& value) {
+  if (!isMultiple(name))
+    values_[name] = value;
+  else {
+    if (values_.find(name) != values_.end())
+      std::any_cast<std::vector<T>>(values_[name]).push_back(value);
+    else
+      values_[name] = std::vector<T>{value};
+  }
+}
+
+void InputSection::setFromValue(const std::string& name, const std::any& value)
 {
   try
   {
     if (isString(name) || isEnumString(name))
       values_[name] = std::any_cast<std::string>(value);
     else if (isMultiString(name))
+      values_[name] = std::any_cast<std::vector<std::string>>(value);
+    else if (isMultiReal(name))
       values_[name] = std::any_cast<std::vector<std::string>>(value);
     else if (isBool(name))
       values_[name] = std::any_cast<bool>(value);
@@ -259,7 +272,7 @@ void InputSection::setFromValue(const std::string& name, const T& value)
     else if (isReal(name))
       values_[name] = std::any_cast<Real>(value);
     else if (isPosition(name))
-      values_[name] = std::any_cast<Position>(value);
+      assignValue(name, std::any_cast<Position>(value));
     else
     {
       std::stringstream error;

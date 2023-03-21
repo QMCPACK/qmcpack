@@ -52,13 +52,15 @@ public:
   {
     section_name   = "Test";
     attributes     = {"name", "samples", "kmax", "full"};
-    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center"};
+    parameters     = {"label", "count", "width", "rational", "testenum1", "testenum2", "sposets", "center", "density"};
     required       = {"count", "full"};
     strings        = {"name", "label"};
     multi_strings  = {"sposets"};
+    multi_reals    = {"density"};
+    multiple       = {"target"};
     integers       = {"samples", "count"};
     reals          = {"kmax", "width"};
-    positions      = {"center"};
+    positions      = {"center", "target"};
     bools          = {"full", "rational"};
     enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
@@ -167,6 +169,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
   <parameter name="testenum1"> Value1 </parameter>
   <parameter name="testenum2"> Value2 </parameter>
   <parameter name="sposets"> spo1 spo2 </parameter>
+  <density> 10.0 20.0 30.0 </density>
   <parameter name="center"> 0.0 0.0 0.1 </parameter>
 </test>
 )";
@@ -201,6 +204,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<Real>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
+    CHECK(ti.get<std::vector<Real>>("density") == std::vector<Real>{10.0, 20.0, 30.0});
     CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
     CHECK(ti.get<TestEnum2>("testenum2") == TestEnum2::VALUE2);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
@@ -253,6 +257,11 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
 TEST_CASE("InputSection::init", "[estimators]")
 {
+  SECTION("bad type handling")
+  {
+    TestInputSection ti;
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", int(15)}, {"width", int(10)}}), UniformCommunicateError);
+  }
   SECTION("minimum required attributes and parameters")
   {
     // initialize
