@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/SpinorSet.h"
 #include "Particle/Walker.h"
 #include "QMCHamiltonians/OperatorBase.h"
@@ -115,6 +116,8 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   using ValueVector = Vector<Value>;
   using GradVector  = Vector<Grad>;
   using ValueMatrix = Matrix<Value>;
+  using PropertySetType   = OperatorBase::PropertySetType;
+  using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
   using GradMatrix  = Matrix<Grad>;
 
   // O2 test example from pwscf non-collinear calculation.
@@ -204,12 +207,18 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   spinor_set->set_spos(std::move(spo_up), std::move(spo_dn));
 
   auto dd = std::make_unique<DiracDeterminant<>>(std::move(spinor_set), 0, nelec);
-
+  
+  std::vector<std::unique_ptr<DiracDeterminantBase>> dirac_dets;
+  dirac_dets.push_back(std::move(dd));
+  auto sd = std::make_unique<SlaterDet>(elec_, std::move(dirac_dets));
   TrialWaveFunction psi;
-  psi.addComponent(std::move(dd));
+  psi.addComponent(std::move(sd));
+
+  //psi.addComponent(std::move(dd));
   psi.evaluateLog(elec_); //make sure all intermediates are calculated and initialized.
    
   MagnetizationDensity magdensity(std::move(maginput),lattice);
+  
   /*
   MagDensityEstimator magdensity(elec_, psi);
 
@@ -217,29 +226,40 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" spin_integral=\"simpson\" nsamples=\"9\"/> \
   </tmp> \
   ";
-
-  Libxml2Document doc;
-  bool okay = doc.parseFromString(magtxt);
-  REQUIRE(okay);
-
-  xmlNodePtr root = doc.getRoot();
-
-  xmlNodePtr magxml = xmlFirstElementChild(root);
-  magdensity.put(magxml);
+  */
   //Now to create a fake walker with property set.
   PropertySetType Observables;
   MCPWalker my_walker(nelec);
   my_walker.Weight = 1.0;
 
   elec_.saveWalker(my_walker);
+
+  //Now to create the crowd related quantities:
+  std::vector<MCPWalker> walkers {my_walker};
+  std::vector<ParticleSet> psets { elec_ };
+  std::vector<UPtr<TrialWaveFunction>> twfcs(1);
+  twfcs[0] = psi.makeClone(psets[0]);
+
+  auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
+    pset_target.update(true);
+    pset_target.donePbyP();
+    trial_wavefunction.evaluateLog(pset_target);
+    pset_target.saveWalker(walker);
+  };
+
+  updateWalker(walkers[0], psets[0], *(twfcs[0]));
+
+  auto ref_walkers(makeRefVector<MCPWalker>(walkers));
+  auto ref_psets(makeRefVector<ParticleSet>(psets));
+  auto ref_twfcs(convertUPtrToRefVector(twfcs));
+  app_log()<<"@@@@ right before accumulate\n";
+  FakeRandom rng;
+  magdensity.accumulate(ref_walkers,ref_psets,ref_twfcs,rng);  
+  
   //register the observable and evaluate.
-  magdensity.setHistories(my_walker);
-  magdensity.addObservables(Observables, elec_.Collectables);
-  magdensity.evaluate(elec_);
-  app_log() << "Collectables = \n";
-  for (int i = 0; i < elec_.Collectables.size(); i++)
-    app_log() << i << " " << elec_.Collectables[i] << std::endl;
-  */
+//  magdensity.setHistories(my_walker);
+//  magdensity.addObservables(Observables, elec_.Collectables);
+//  magdensity.evaluate(elec_);
   //Note.  These reference values are derived from an independently written python code.
   //At this spin configuration, the observable should return these values.  When the python code
   //performs the integration over all spin variables, only then will one agree with analytic results.
@@ -259,32 +279,6 @@ TEST_CASE("MagDensity", "[hamiltonian]")
     REQUIRE(elec_.Collectables[i] == Approx(0.0));
   }
 
-  //This concludes the correctness test of the estimator.  Now to test cloning:
-  elec_.Collectables[0] = 0;
-  elec_.Collectables[1] = 0;
-  elec_.Collectables[2] = 0;
-
-  elec_.Collectables[21] = 0;
-  elec_.Collectables[22] = 0;
-  elec_.Collectables[23] = 0;
-
-  std::unique_ptr<OperatorBase> magclone = magdensity.makeClone(elec_, psi);
-  magdensity.evaluate(elec_);
-
-  //Spin of first grid point.
-  REQUIRE(elec_.Collectables[0] == Approx(-0.97448154));
-  REQUIRE(elec_.Collectables[1] == Approx(-0.37462387));
-  REQUIRE(elec_.Collectables[2] == Approx(2.36817514));
-  //Spin of last grid point.
-  REQUIRE(elec_.Collectables[21] == Approx(1.20557377));
-  REQUIRE(elec_.Collectables[22] == Approx(-0.60536469));
-  REQUIRE(elec_.Collectables[23] == Approx(0.98980165));
-
-  //All other grid points should have zero spin, because there are no electrons there.
-  for (int i = 3; i < 21; i++)
-  {
-    REQUIRE(elec_.Collectables[i] == Approx(0.0));
-  }
   */
 }
 #endif

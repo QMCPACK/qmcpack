@@ -56,8 +56,28 @@ public:
   size_t getFullDataSize();
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
   void registerOperatorEstimator(hdf_archive& file) override;
+
+  template<class VAL>
+  VAL integrateBySimpsonsRule(const std::vector<VAL>& fgrid, Real gridDx);
+
+  template<class VAL>
+  VAL integrateMagnetizationDensity(const std::vector<VAL>& fgrid);
 private:
   MagnetizationDensity(const MagnetizationDensity& magdens) = default;
+  void generateSpinIntegrand(ParticleSet& pset, 
+                             TrialWaveFunction& wfn, 
+                             const int iat, 
+                             std::vector<Value>& sx,
+                             std::vector<Value>& sy,
+                             std::vector<Value>& sz);
+ 
+  void generateGrid(std::vector<Real>& sgrid);
+  void generateUniformGrid(std::vector<Real>& sgrid, const Real start, const Real stop);
+
+  template<class RAN_GEN> 
+  void generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop);
+  
+  size_t computeBin(const Position& r, const unsigned int component);
   MagnetizationDensityInput input_;
   Integrator integrator_;
   Lattice lattice_;

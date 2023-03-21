@@ -33,14 +33,14 @@ set(SRCS
     test_InputSection.cpp
     test_EstimatorManagerInput.cpp
     test_ScalarEstimatorInputs.cpp
-    test_MagnetizationDensity.cpp
     test_SizeLimitedDataQueue.cpp
     test_MomentumDistribution.cpp
     test_OneBodyDensityMatricesInput.cpp
     test_OneBodyDensityMatrices.cpp
     test_PerParticleHamiltonianLogger.cpp
     test_EstimatorManagerCrowd.cpp
-    test_MagnetizationDensityInput.cpp)
+    test_MagnetizationDensityInput.cpp
+    test_MagnetizationDensity.cpp)
 
 add_executable(${UTEST_EXE} ${SRCS})
 use_fake_rng(${UTEST_EXE})
