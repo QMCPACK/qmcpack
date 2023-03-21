@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2021 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Peter W. Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
@@ -31,8 +31,9 @@ namespace qmcplusplus
 class InputSection
 {
 public:
-  using Real     = double;
-  using Position = QMCTraits::PosType;
+  using FullPrecReal = QMCTraits::FullPrecRealType;
+  using Real         = QMCTraits::RealType;
+  using Position     = QMCTraits::PosType;
 
   InputSection()                          = default;
   InputSection(const InputSection& other) = default;

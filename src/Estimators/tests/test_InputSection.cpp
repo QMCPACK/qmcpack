@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2022 QMCPACK developers.
+// Copyright (c) 2023 QMCPACK developers.
 //
 // File developed by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Lab
 //                    Peter W.  Doak, doakpw@ornl.gov, Oak Ridge National Lab
@@ -25,7 +25,6 @@
 
 namespace qmcplusplus
 {
-using FullPrecReal = QMCTraits::FullPrecRealType;
 using Real = QMCTraits::RealType;
 
 enum class TestEnum1
@@ -64,7 +63,7 @@ public:
     enums          = {"testenum1", "testenum2"};
     default_values = {{"name", std::string("demo")},
                       {"samples", int(20)},
-                      {"width", static_cast<FullPrecReal>(1.0)},
+                      {"width", Real(1.0)},
                       {"rational", bool(false)}};
   };
   // clang-format: on
@@ -151,7 +150,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<FullPrecReal>("width") == Approx(1.0));
+    CHECK(ti.get<Real>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
 
@@ -196,11 +195,11 @@ TEST_CASE("InputSection::readXML", "[estimators]")
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<FullPrecReal>("kmax") == Approx(3.0));
+    CHECK(ti.get<Real>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<FullPrecReal>("width") == Approx(2.5));
+    CHECK(ti.get<Real>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<TestEnum1>("testenum1") == TestEnum1::VALUE1);
     CHECK(ti.get<TestEnum2>("testenum2") == TestEnum2::VALUE2);
@@ -246,7 +245,7 @@ TEST_CASE("InputSection::readXML", "[estimators]")
 
       // read xml
       TestInputSection ti;
-      CHECK_THROWS_AS(ti.readXML(cur), std::runtime_error);
+      CHECK_THROWS_AS(ti.readXML(cur), UniformCommunicateError);
     }
   }
 }
@@ -276,7 +275,7 @@ TEST_CASE("InputSection::init", "[estimators]")
     CHECK(ti.get<int>("count") == 15);
     CHECK(ti.get<std::string>("name") == "demo");
     CHECK(ti.get<int>("samples") == 20);
-    CHECK(ti.get<FullPrecReal>("width") == Approx(1.0));
+    CHECK(ti.get<Real>("width") == Approx(1.0));
     CHECK(ti.get<bool>("rational") == false);
   }
 
@@ -287,11 +286,11 @@ TEST_CASE("InputSection::init", "[estimators]")
     TestInputSection ti;
     ti.init({{"name", std::string("alice")},
              {"samples", int(10)},
-             {"kmax", FullPrecReal(3.0)},
+             {"kmax", Real(3.0)},
              {"full", bool(false)},
              {"label", std::string("relative")},
              {"count", int(15)},
-             {"width", FullPrecReal(2.5)},
+             {"width", Real(2.5)},
              {"rational", bool(true)},
              {"sposets", std::vector<std::string>{"spo1", "spo2"}},
              {"center", InputSection::Position(0.0, 0.0, 0.1)}});
@@ -308,11 +307,11 @@ TEST_CASE("InputSection::init", "[estimators]")
     // check value correctness
     CHECK(ti.get<std::string>("name") == "alice");
     CHECK(ti.get<int>("samples") == 10);
-    CHECK(ti.get<FullPrecReal>("kmax") == Approx(3.0));
+    CHECK(ti.get<Real>("kmax") == Approx(3.0));
     CHECK(ti.get<bool>("full") == false);
     CHECK(ti.get<std::string>("label") == "relative");
     CHECK(ti.get<int>("count") == 15);
-    CHECK(ti.get<FullPrecReal>("width") == Approx(2.5));
+    CHECK(ti.get<Real>("width") == Approx(2.5));
     CHECK(ti.get<bool>("rational") == true);
     CHECK(ti.get<std::vector<std::string>>("sposets") == std::vector<std::string>{"spo1", "spo2"});
     CHECK(ti.get<InputSection::Position>("center") == InputSection::Position(0.0, 0.0, 0.1));
@@ -322,7 +321,7 @@ TEST_CASE("InputSection::init", "[estimators]")
   SECTION("invalid type assignment")
   {
     TestInputSection ti;
-    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", FullPrecReal(15.)}}), std::bad_cast);
+    CHECK_THROWS_AS(ti.init({{"full", bool(false)}, {"count", Real(15.)}}), UniformCommunicateError);
   }
 }
 
@@ -331,26 +330,26 @@ TEST_CASE("InputSection::get", "[estimators]")
   TestInputSection ti;
   ti.init({{"name", std::string("alice")},
            {"samples", int(10)},
-           {"kmax", FullPrecReal(3.0)},
+           {"kmax", Real(3.0)},
            {"full", bool(false)},
            {"label", std::string("relative")},
            {"count", int(15)},
-           {"width", FullPrecReal(2.5)},
+           {"width", Real(2.5)},
            {"rational", bool(true)},
            {"sposets", std::vector<std::string>{"spo1", "spo2"}},
            {"center", InputSection::Position(0.0, 0.0, 0.1)}});
 
   // invalid type access results in thrown exception
   CHECK_THROWS_AS(ti.get<int>("name"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<FullPrecReal>("samples"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("samples"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<bool>("kmax"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("full"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<FullPrecReal>("label"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("label"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<bool>("count"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("width"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<int>("rational"), UniformCommunicateError);
   CHECK_THROWS_AS(ti.get<std::string>("sposets"), UniformCommunicateError);
-  CHECK_THROWS_AS(ti.get<FullPrecReal>("center"), UniformCommunicateError);
+  CHECK_THROWS_AS(ti.get<Real>("center"), UniformCommunicateError);
 }
 
 class CustomTestInput : public InputSection
@@ -401,10 +400,11 @@ public:
       // if (ename != section_name)
       // 	values_[ename + " " + name] = cus_at;
       // else
-	values_[name] = cus_at;
+      values_[name] = cus_at;
     }
     else
-      throw std::runtime_error("bad name passed: " + name + " or custom setFromStream not implemented in derived class.");
+      throw std::runtime_error("bad name passed: " + name +
+                               " or custom setFromStream not implemented in derived class.");
   }
 
   void report(std::ostream& ostr) { InputSection::report(ostr); }
@@ -457,12 +457,12 @@ TEST_CASE("InputSection::custom", "[estimators]")
   CHECK(ws.numbers == exp_numbers);
 
   cti.report(std::cout);
-  
+
   std::string custom_attribute = cti.get<std::string>("with_custom::custom_attribute");
   CHECK(custom_attribute == "This is a custom attribute.");
   custom_attribute = cti.get<std::string>("custom_attribute");
   CHECK(custom_attribute == "for the section");
-  
+
   auto repeater = cti.get<decltype(cti)::Repeater>("repeater");
   decltype(cti)::Repeater exp_repeater{{"first", "something"}, {"second", "else"}};
   CHECK(repeater == exp_repeater);

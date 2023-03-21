@@ -100,8 +100,16 @@ void InputSection::readXML(xmlNodePtr cur)
       {
         if (has(value_key))
         {
-          auto* value_vector = std::any_cast<std::vector<std::any>>(&(values_[value_key]));
-          value_vector->push_back(value);
+          try
+          {
+            auto* value_vector = std::any_cast<std::vector<std::any>>(&(values_[value_key]));
+            value_vector->push_back(value);
+          }
+          catch (...)
+          {
+            std::throw_with_nested(
+                UniformCommunicateError("std::any_cast failed for multiple value with value_key:" + value_key));
+          }
         }
         else
         {
@@ -198,8 +206,8 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   else if (isMultiReal(name))
   {
     std::vector<Real> real_values;
-    for (Real value; svalue >> value;)
-      real_values.push_back(value);
+    for (FullPrecReal value; svalue >> value;)
+      real_values.push_back(static_cast<Real>(value));
     values_[name] = real_values;
   }
   else if (isBool(name))
@@ -217,9 +225,9 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
   }
   else if (isReal(name))
   {
-    Real value;
+    FullPrecReal value;
     svalue >> value;
-    values_[name] = value;
+    values_[name] = static_cast<Real>(value);
   }
   else if (isPosition(name))
   {
@@ -238,25 +246,30 @@ void InputSection::setFromStream(const std::string& name, std::istringstream& sv
 template<typename T>
 void InputSection::setFromValue(const std::string& name, const T& value)
 {
-  if (isString(name) || isEnumString(name))
-    values_[name] = std::any_cast<std::string>(value);
-  else if (isMultiString(name))
-    values_[name] = (std::any_cast<std::vector<std::string>>(value));
-  else if (isMultiString(name))
-    values_[name] = (std::any_cast<std::vector<Real>>(value));
-  else if (isBool(name))
-    values_[name] = std::any_cast<bool>(value);
-  else if (isInteger(name))
-    values_[name] = std::any_cast<int>(value);
-  else if (isReal(name))
-    values_[name] = std::any_cast<Real>(value);
-  else if (isPosition(name))
-    values_[name] = std::any_cast<Position>(value);
-  else
+  try
   {
-    std::stringstream error;
-    error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
-    throw UniformCommunicateError(error.str());
+    if (isString(name) || isEnumString(name))
+      values_[name] = std::any_cast<std::string>(value);
+    else if (isMultiString(name))
+      values_[name] = std::any_cast<std::vector<std::string>>(value);
+    else if (isBool(name))
+      values_[name] = std::any_cast<bool>(value);
+    else if (isInteger(name))
+      values_[name] = (std::any_cast<int>(value));
+    else if (isReal(name))
+      values_[name] = std::any_cast<Real>(value);
+    else if (isPosition(name))
+      values_[name] = std::any_cast<Position>(value);
+    else
+    {
+      std::stringstream error;
+      error << "InputSection::set_from_value name " << name << " in " << section_name << " does not have a type\n";
+      throw UniformCommunicateError(error.str());
+    }
+  }
+  catch (const std::bad_cast& exc)
+  {
+    std::throw_with_nested(UniformCommunicateError("std::any_cast failed in setFromValue for name:" + name));
   }
 }
 
