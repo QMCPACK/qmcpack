@@ -18,7 +18,7 @@
 #include "LongRange/EwaldHandler3D.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/StressPBC.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -80,8 +80,8 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   elec.resetGroups();
   elec.createSK();
 
-  ProjectData project_data;
-  TrialWaveFunction psi(project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);

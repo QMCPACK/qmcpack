@@ -18,7 +18,7 @@
 #include "Particle/ParticleSetPool.h"
 #include "WaveFunctionFactory.h"
 #include "LCAO/LCAOrbitalSet.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -72,8 +72,8 @@ void test_LiH_msd_xml_input(const std::string& spo_xml_string,
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  ProjectData project_data;
-  auto twf_ptr = wf_factory.buildTWF(ein_xml, project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);
@@ -242,8 +242,8 @@ void test_LiH_msd_xml_input_with_positron(const std::string& spo_xml_string,
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  ProjectData project_data;
-  auto twf_ptr = wf_factory.buildTWF(ein_xml, project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   REQUIRE(spo.getOrbitalSetSize() == check_spo_size);

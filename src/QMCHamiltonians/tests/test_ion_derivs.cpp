@@ -20,7 +20,7 @@
 #include "QMCHamiltonians/tests/MinimalHamiltonianPool.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 
 namespace qmcplusplus
@@ -139,10 +139,10 @@ TEST_CASE("Eloc_Derivatives:slater_noj", "[hamiltonian]")
   bool wfokay = wfdoc.parse("cn.wfnoj.xml");
   REQUIRE(wfokay);
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -308,10 +308,10 @@ TEST_CASE("Eloc_Derivatives:slater_wj", "[hamiltonian]")
   bool wfokay = wfdoc.parse("cn.wfj.xml");
   REQUIRE(wfokay);
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -476,10 +476,10 @@ TEST_CASE("Eloc_Derivatives:multislater_noj", "[hamiltonian]")
   bool wfokay = wfdoc.parse("cn.msd-wfnoj.xml");
   REQUIRE(wfokay);
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -615,10 +615,10 @@ TEST_CASE("Eloc_Derivatives:multislater_wj", "[hamiltonian]")
   bool wfokay = wfdoc.parse("cn.msd-wfj.xml");
   REQUIRE(wfokay);
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   xmlNodePtr wfroot = wfdoc.getRoot();
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(wfroot, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(wfroot, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -758,10 +758,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_noj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(root2, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);
@@ -1018,10 +1018,10 @@ TEST_CASE("Eloc_Derivatives:proto_sd_wj", "[hamiltonian]")
   particle_set_map.emplace("e", std::move(elec_ptr));
   particle_set_map.emplace("ion0", std::move(ions_ptr));
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wff(elec, particle_set_map, c);
   HamiltonianFactory::PsiPoolType psi_map;
-  psi_map.emplace("psi0", wff.buildTWF(root2, project_data.getRuntimeOptions()));
+  psi_map.emplace("psi0", wff.buildTWF(root2, runtime_options));
 
   TrialWaveFunction* psi = psi_map["psi0"].get();
   REQUIRE(psi != nullptr);

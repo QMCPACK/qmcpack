@@ -21,7 +21,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "TestListenerFunction.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -247,9 +247,9 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   RefVector<ParticleSet> ion_ptcls{ions, ions2};
   RefVectorWithLeader<ParticleSet> ion_p_list(ions, ion_ptcls);
 
-  ProjectData project_data;
-  TrialWaveFunction psi(project_data.getRuntimeOptions());
-  TrialWaveFunction psi_clone(project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   Matrix<Real> local_pots(2);

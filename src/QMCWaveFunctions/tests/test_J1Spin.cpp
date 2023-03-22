@@ -16,7 +16,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -82,8 +82,8 @@ TEST_CASE("J1 spin evaluate derivatives Jastrow", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr jas1 = doc.getRoot();
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  ProjectData project_data;
-  auto twf_ptr = wf_factory.buildTWF(jas1, project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   auto& twf_component_list = twf.getOrbitals();

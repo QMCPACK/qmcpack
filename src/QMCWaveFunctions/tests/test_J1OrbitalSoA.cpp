@@ -15,7 +15,7 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -80,9 +80,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1, project_data.getRuntimeOptions());
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
@@ -181,9 +181,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1, project_data.getRuntimeOptions());
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
@@ -279,9 +279,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 
   // update all distance tables
   elec_.update();
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1, project_data.getRuntimeOptions());
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);

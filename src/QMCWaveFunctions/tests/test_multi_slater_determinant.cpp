@@ -19,7 +19,7 @@
 #include "WaveFunctionFactory.h"
 #include "LCAO/LCAOrbitalSet.h"
 #include "TWFGrads.hpp"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 #include <stdio.h>
@@ -85,8 +85,8 @@ void test_LiH_msd(const std::string& spo_xml_string,
   xmlNodePtr ein_xml = doc.getRoot();
 
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  ProjectData project_data;
-  auto twf_ptr = wf_factory.buildTWF(ein_xml, project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = dynamic_cast<const LCAOrbitalSet&>(twf_ptr->getSPOSet(check_sponame));
   CHECK(spo.getOrbitalSetSize() == check_spo_size);
@@ -436,9 +436,9 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   xmlNodePtr ein_xml = doc.getRoot();
 
-  ProjectData project_data;
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(ein_xml, project_data.getRuntimeOptions());
+  auto twf_ptr = wf_factory.buildTWF(ein_xml, runtime_options);
 
   auto& spo = twf_ptr->getSPOSet(check_sponame);
   CHECK(spo.getOrbitalSetSize() == check_spo_size);

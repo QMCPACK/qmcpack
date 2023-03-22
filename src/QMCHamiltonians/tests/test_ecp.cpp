@@ -18,7 +18,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/SOECPComponent.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -220,8 +220,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  ProjectData project_data;
-  TrialWaveFunction psi(project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   //Add the two body jastrow
   const char* particles = R"(<tmp>
@@ -490,8 +490,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  ProjectData project_data;
-  TrialWaveFunction psi(project_data.getRuntimeOptions());
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
