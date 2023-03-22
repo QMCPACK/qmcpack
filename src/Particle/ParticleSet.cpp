@@ -705,7 +705,7 @@ void ParticleSet::mw_accept_rejectMove(const RefVectorWithLeader<ParticleSet>& p
                                        const std::vector<bool>& isAccepted,
                                        bool forward_mode)
 {
-  if (CT == CoordsType::POS_SPIN)
+  if constexpr (CT == CoordsType::POS_SPIN)
     mw_accept_rejectSpinMove(p_list, iat, isAccepted);
   mw_accept_rejectMove(p_list, iat, isAccepted, forward_mode);
 }
@@ -901,9 +901,8 @@ void ParticleSet::initPropertyList()
 
 int ParticleSet::addPropertyHistory(int leng)
 {
-  int newL                                    = PropertyHistory.size();
-  std::vector<FullPrecRealType> newVecHistory = std::vector<FullPrecRealType>(leng, 0.0);
-  PropertyHistory.push_back(newVecHistory);
+  int newL = PropertyHistory.size();
+  PropertyHistory.push_back(std::vector<FullPrecRealType>(leng, 0.0));
   PHindex.push_back(0);
   return newL;
 }

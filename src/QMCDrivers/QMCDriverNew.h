@@ -366,7 +366,7 @@ protected:
 
   /**}@*/
 
-  std::vector<std::unique_ptr<Crowd>> crowds_;
+  UPtrVector<Crowd> crowds_;
 
   std::string h5_file_root_;
 
