@@ -2080,8 +2080,8 @@ def generate_any_pwscf_input(**kwargs):
     nspin             = kwargs.get_optional('nspin',None)
     nbnd              = kwargs.get_optional('nbnd',None)
     hubbard_u         = kwargs.get_optional('hubbard_u',None)
-    hubbard           = kwargs.get_optional('hubbard',None)
-    if hubbard_u != None and hubbard != None:
+    hubbardc          = kwargs.get_optional('hubbard',None)
+    if hubbard_u != None and hubbardc != None:
         PwscfInput.class_error('Both "Hubbard_u" input in &SYSTEM namelist and "HUBBARD" card are defined. If you use QE version \
 > 7.1, please use "HUBBARD" card only, otherwise use the hubbard_u (e.g. Hubbard_U(1) = 6) and ')
     #end if 
