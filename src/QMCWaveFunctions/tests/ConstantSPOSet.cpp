@@ -70,6 +70,14 @@ void ConstantSPOSet::evaluateValue(const ParticleSet& P, int iat, ValueVector& p
     psi[iorb] = ref_psi_(iat, iorb);
 };
 
+void ConstantSPOSet::evaluateValue(const VirtualParticleSet& vp, int iat, ValueVector& psi)
+{
+  int ptcl = vp.refPtcl;
+  assert(psi.size() == OrbitalSetSize);
+  for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
+    psi[iorb] = ref_psi_(ptcl, iorb);
+};
+
 void ConstantSPOSet::evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi)
 {
   for (int iorb = 0; iorb < OrbitalSetSize; iorb++)
