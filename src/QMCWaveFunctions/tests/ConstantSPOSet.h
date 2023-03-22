@@ -60,7 +60,6 @@ public:
   void setRefELapls(const ValueMatrix& lapls);
 
   void evaluateValue(const ParticleSet& P, int iat, ValueVector& psi) override;
-  void evaluateValue(const VirtualParticleSet& VP, int iat, ValueVector& psi);
 
   void evaluateVGL(const ParticleSet& P, int iat, ValueVector& psi, GradVector& dpsi, ValueVector& d2psi) override;
 
