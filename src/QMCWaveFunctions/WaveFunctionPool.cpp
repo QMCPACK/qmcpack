@@ -49,7 +49,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     myComm->barrier_and_abort("target particle set named '" + target + "' not found");
 
   WaveFunctionFactory psiFactory(*qp, ptcl_pool_.getPool(), myComm);
-  auto psi = psiFactory.buildTWF(cur);
+  auto psi = psiFactory.buildTWF(cur, runtime_options_);
   addFactory(std::move(psi), myPool.empty() || role == "primary");
   return true;
 }

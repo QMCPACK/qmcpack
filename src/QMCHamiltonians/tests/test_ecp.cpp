@@ -18,6 +18,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/SOECPComponent.h"
+#include "Utilities/RuntimeOptions.h"
 
 //for wavefunction
 #include "OhmmsData/Libxml2Doc.h"
@@ -219,7 +220,8 @@ TEST_CASE("Evaluate_ecp", "[hamiltonian]")
   elec.resetGroups();
 
   //Cool.  Now to construct a wavefunction with 1 and 2 body jastrow (no determinant)
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   //Add the two body jastrow
   const char* particles = R"(<tmp>
@@ -488,7 +490,8 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
   ions.resetGroups();
   elec.resetGroups();
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   std::vector<PosType> kup, kdn;
   std::vector<RealType> k2up, k2dn;
@@ -590,17 +593,18 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
 
 
   //Ref Values from soecp_eval_ref.cpp in the print_dlogpsi using finite differences
-  std::vector<RealType> dlogpsi_refs = { -0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
+  std::vector<RealType> dlogpsi_refs = {-0.2622341567, -0.64168132, -0.09608452334, -2.486899575e-14, -2.486899575e-14};
   //These weren't independently validated in soecp_eval_ref.cpp
   //trusting current values from evaluateDerivatives...which should be correct if the
   //dlogpsi comes out correct
   std::vector<RealType> dkinpsioverpsi_refs = {-3.807451601, 0.1047251267, 3.702726474, 0, 0};
   //These were independently validated in soecp_eval_ref.cpp, includes the contribution
   //from dkinpsioverpsi_refs
-  std::vector<RealType> dhpsioverpsi_refs = { -3.855727438, 0.202618546, 3.653108892, -8.169955304e-14, -8.169955304e-14};
+  std::vector<RealType> dhpsioverpsi_refs = {-3.855727438, 0.202618546, 3.653108892, -8.169955304e-14,
+                                             -8.169955304e-14};
 
 
-  auto test_evaluateValueAndDerivatives     = [&]() {
+  auto test_evaluateValueAndDerivatives = [&]() {
     dlogpsi.resize(NumOptimizables, ValueType(0));
     dhpsioverpsi.resize(NumOptimizables, ValueType(0));
     psi.evaluateDerivatives(elec, optvars, dlogpsi, dhpsioverpsi);
@@ -619,7 +623,7 @@ TEST_CASE("Evaluate_soecp", "[hamiltonian]")
       for (int iat = 0; iat < ions.getTotalNum(); iat++)
         if (sopp != nullptr && dist[iat] < sopp->getRmax())
           Value1 += sopp->evaluateValueAndDerivatives(elec, iat, psi, jel, dist[iat], -displ[iat], optvars, dlogpsi,
-                                                          dhpsioverpsi);
+                                                      dhpsioverpsi);
     }
     REQUIRE(Value1 == Approx(-3.530511241));
 
