@@ -25,6 +25,8 @@
 #include "Message/CommOperators.h"
 // #include "QMCDrivers/ForwardWalking/ForwardWalkingStructure.h"
 
+#include <filesystem>
+
 namespace qmcplusplus
 {
 namespace testing
@@ -185,7 +187,7 @@ protected:
   std::vector<int> FairOffSet;
 
   ///filename for dmc.dat
-  std::string dmcFname;
+  std::filesystem::path dmcFname;
   ///file to save energy histogram
   std::unique_ptr<std::ofstream> dmcStream;
   ///Number of walkers created by this rank
