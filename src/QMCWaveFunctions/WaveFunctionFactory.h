@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
-#include "Utilities/qmc_common.h" // RuntimeOptions
+#include "Utilities/RuntimeOptions.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction

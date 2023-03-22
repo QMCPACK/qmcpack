@@ -30,7 +30,7 @@
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "TWFGrads.hpp"
-#include "Utilities/qmc_common.h" // RuntimeOptions
+#include "Utilities/RuntimeOptions.h"
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
