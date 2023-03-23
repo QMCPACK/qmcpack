@@ -21,6 +21,7 @@
 #include "QMCHamiltonians/CoulombPBCAA.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "TestListenerFunction.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -93,7 +94,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   double val_ii = caa_ion.evaluate(ions);
   double sum    = val_ee + val_ii + val_ei;
   CHECK(sum == Approx(-2.741363553)); // Can be validated via Ewald summation elsewhere
-                                        // -2.74136517454081
+                                      // -2.74136517454081
 }
 
 TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
@@ -163,7 +164,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   double val_ii = caa_ion.evaluate(ions);
   double sum    = val_ee + val_ii + val_ei;
   CHECK(sum == Approx(-3.143491064)); // Can be validated via Ewald summation elsewhere
-                                        // -3.14349127313640
+                                      // -3.14349127313640
 }
 
 TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
@@ -246,7 +247,9 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   RefVector<ParticleSet> ion_ptcls{ions, ions2};
   RefVectorWithLeader<ParticleSet> ion_p_list(ions, ion_ptcls);
 
-  TrialWaveFunction psi, psi_clone;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   Matrix<Real> local_pots(2);
@@ -277,9 +280,8 @@ TEST_CASE("CoulombAB::Listener", "[hamiltonian]")
   CHECK(cab2.getValue() == Approx(-1.7222343352));
   // Check that the sum of the particle energies == the total
   Real elec_ion_sum = std::accumulate(local_pots.begin(), local_pots.begin() + local_pots.cols(), 0.0);
-  CHECK( elec_ion_sum ==
-	 Approx(-1.0562537047));
-  CHECK( elec_ion_sum + std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) ==
+  CHECK(elec_ion_sum == Approx(-1.0562537047));
+  CHECK(elec_ion_sum + std::accumulate(ion_pots.begin(), ion_pots.begin() + ion_pots.cols(), 0.0) ==
         Approx(-2.219665062 + 0.0267892759 * 4));
   elec_ion_sum = std::accumulate(local_pots[1], local_pots[1] + local_pots.cols(), 0.0);
   CHECK(elec_ion_sum == Approx(-0.8611171676));

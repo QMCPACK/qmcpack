@@ -22,6 +22,7 @@
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -106,7 +107,8 @@ std::unique_ptr<TrialWaveFunction> setup_He_wavefunction(Communicate* c,
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr    = wff.buildTWF(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 2);
@@ -253,7 +255,8 @@ TEST_CASE("TrialWaveFunction flex_evaluateDeltaLogSetup", "[wavefunction]")
   ParticleSet elec2b(elec2);
   elec2b.update();
 
-  TrialWaveFunction psi2;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi2(runtime_options);
   auto orb1 = psi.getOrbitals()[0]->makeClone(elec2);
   psi2.addComponent(std::move(orb1));
   auto orb2 = psi.getOrbitals()[1]->makeClone(elec2);

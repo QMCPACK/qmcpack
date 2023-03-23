@@ -16,6 +16,7 @@
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -60,7 +61,8 @@ TEST_CASE("WaveFunctionFactory", "[wavefunction]")
   REQUIRE(okay);
 
   xmlNodePtr root = doc.getRoot();
-  auto twf_ptr = wff.buildTWF(root);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wff.buildTWF(root, runtime_options);
 
   REQUIRE(twf_ptr != nullptr);
   REQUIRE(twf_ptr->size() == 1);

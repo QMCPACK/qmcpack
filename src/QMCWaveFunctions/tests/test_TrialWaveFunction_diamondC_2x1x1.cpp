@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCHamiltonians/NLPPJob.h"
 #include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 #include <ResourceCollection.h>
 
 namespace qmcplusplus
@@ -147,7 +148,8 @@ void testTrialWaveFunction_diamondC_2x1x1(const int ndelay, const OffloadSwitche
 
   auto slater_det = std::make_unique<SlaterDet>(elec_, std::move(dets));
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::move(slater_det));
 
   const char* jas_input = R"XML(<tmp>

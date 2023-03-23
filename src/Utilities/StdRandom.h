@@ -17,7 +17,6 @@
 
 #include <vector>
 #include <random>
-#include <iostream>
 #include <sstream>
 #include <iterator>
 
@@ -64,10 +63,10 @@ public:
     // ways to represent the state. libc++ uses 624 numbers but libstdc++ uses 625 numbers. The additional
     // number is an index to the 624 numbers. So we will just count and store the number.
     std::vector<uint_type> state;
-    state.reserve(625); // the maggic number is chosen based on libstdc++ using 625 numbers while libc++ uses
+    state.reserve(625); // the magic number is chosen based on libstdc++ using 625 numbers while libc++ uses 624
     std::stringstream otemp;
     otemp << engine;
-    copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(), back_inserter(state));
+    copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(), std::back_inserter(state));
     stream_state_size = state.size();
   }
 
@@ -87,7 +86,7 @@ public:
   void load(const std::vector<uint_type>& newstate)
   {
     std::stringstream otemp;
-    copy(newstate.begin(), newstate.end(), std::ostream_iterator<uint_type>(otemp, " "));
+    std::copy(newstate.begin(), newstate.end(), std::ostream_iterator<uint_type>(otemp, " "));
     otemp >> engine;
   }
 
@@ -96,7 +95,8 @@ public:
     curstate.clear();
     std::stringstream otemp;
     otemp << engine;
-    copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(), back_inserter(curstate));
+    std::copy(std::istream_iterator<uint_type>(otemp), std::istream_iterator<uint_type>(),
+              std::back_inserter(curstate));
   }
 
 public:

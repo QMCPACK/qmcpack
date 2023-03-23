@@ -158,13 +158,12 @@ public:
   inline int addPropertyHistory(int leng)
   {
     int newL                            = PropertyHistory.size();
-    std::vector<RealType> newVecHistory = std::vector<RealType>(leng, 0.0);
-    PropertyHistory.push_back(newVecHistory);
+    PropertyHistory.push_back(std::vector<RealType>(leng, 0.0));
     PHindex.push_back(0);
     return newL;
   }
 
-  inline void deletePropertyHistory() { PropertyHistory.erase(PropertyHistory.begin(), PropertyHistory.end()); }
+  inline void deletePropertyHistory() { PropertyHistory.clear(); }
 
   inline void resetPropertyHistory()
   {

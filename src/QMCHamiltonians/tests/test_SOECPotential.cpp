@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "TestListenerFunction.h"
-
+#include "Utilities/RuntimeOptions.h"
 namespace qmcplusplus
 {
 namespace testing
@@ -123,7 +123,8 @@ void doSOECPotentialTest(bool use_VPs)
   ResourceCollection pset_res("test_pset_res");
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_list);
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   std::vector<Pos> kup, kdn;
   std::vector<Real> k2up, k2dn;
