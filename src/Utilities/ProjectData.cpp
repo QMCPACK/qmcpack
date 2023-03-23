@@ -38,19 +38,7 @@ ProjectData::ProjectData(const std::string& atitle, ProjectData::DriverVersion d
       cur_(NULL),
       max_cpu_secs_(360000),
       driver_version_(driver_version),
-      runtime_options_({
-#ifdef QMC_COMPLEX
-          true
-#else
-          false
-#endif
-          ,
-#ifdef QMC_MIXED_PRECISION
-          true
-#else
-          false
-#endif
-      })
+      runtime_options_(RuntimeOptions())
 {
   my_comm_ = OHMMS::Controller;
   if (title_.empty())

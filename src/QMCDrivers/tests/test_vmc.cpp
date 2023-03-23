@@ -14,6 +14,7 @@
 
 
 #include "Utilities/RandomGenerator.h"
+#include "Utilities/RuntimeOptions.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Particle/ParticleSet.h"
@@ -71,8 +72,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.addTable(ions);
   elec.update();
 
-
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::make_unique<ConstantOrbital>());
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();

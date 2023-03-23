@@ -28,6 +28,7 @@
 #include <ResourceCollection.h>
 #include "TestListenerFunction.h"
 #include <TrialWaveFunction.h>
+#include "Utilities/RuntimeOptions.h"
 
 using std::string;
 
@@ -256,7 +257,9 @@ void test_CoulombPBCAA_3p(DynamicCoordinateKind kind)
   RefVectorWithLeader<OperatorBase> caa_ref_list(caa, {caa, caa_clone});
 
   // dummy psi
-  TrialWaveFunction psi, psi_clone;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> psi_ref_list(psi, {psi, psi_clone});
 
   ResourceCollectionTeamLock<ParticleSet> mw_pset_lock(pset_res, p_ref_list);
@@ -321,8 +324,9 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   CoulombPBCAA caa(elec, true, false, kind == DynamicCoordinateKind::DC_POS_OFFLOAD);
 
   // mock golden wavefunction, only needed to satisfy APIs
-  TrialWaveFunction psi;
-  
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
+
   // informOfPerParticleListener should be called on the golden instance of this operator if there
   // are listeners present for it.  This would normally be done by QMCHamiltonian but this is a unit test.
   caa.informOfPerParticleListener();
@@ -342,7 +346,7 @@ TEST_CASE("CoulombAA::mw_evaluatePerParticle", "[hamiltonian]")
   RefVector<OperatorBase> caas{caa, caa2};
   RefVectorWithLeader<OperatorBase> o_list(caa, caas);
 
-  TrialWaveFunction psi_clone;
+  TrialWaveFunction psi_clone(runtime_options);
   RefVectorWithLeader<TrialWaveFunction> twf_list(psi, {psi, psi_clone});
 
   // Self-energy correction, no background charge for e-e interaction

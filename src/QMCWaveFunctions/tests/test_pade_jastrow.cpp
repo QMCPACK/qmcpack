@@ -20,6 +20,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 #include <stdio.h>
@@ -183,7 +184,8 @@ TEST_CASE("Pade2 Jastrow", "[wavefunction]")
   // update all distance tables
   elec_.update();
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1);
+  RuntimeOptions runtime_options;
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);

@@ -57,14 +57,6 @@ struct QMCState
 ///a unique QMCState during a run
 extern QMCState qmc_common;
 
-
-struct RuntimeOptions
-{
-  bool is_complex;
-  bool is_mixed_precision;
-};
-
-
 } // namespace qmcplusplus
 
 #endif

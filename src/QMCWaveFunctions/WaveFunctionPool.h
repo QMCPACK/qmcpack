@@ -20,7 +20,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
-#include "Utilities/qmc_common.h" // RuntimeOptions
+#include "Utilities/RuntimeOptions.h"
 #include <map>
 #include <string>
 

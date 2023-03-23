@@ -44,7 +44,6 @@ public:
 
   using Data = std::vector<QMCT::RealType>;
 
-  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
   ///constructor
   OperatorEstBase(DataLocality dl);
   /** Shallow copy constructor!
@@ -115,7 +114,7 @@ public:
 
   /** Return the total walker weight for this block
    */
-  QMCT::FullPrecRealType get_walkers_weight() { return walkers_weight_; }
+  QMCT::FullPrecRealType get_walkers_weight() const { return walkers_weight_; }
 
   const std::string& get_my_name() const { return my_name_; }
 
