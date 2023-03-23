@@ -101,6 +101,7 @@ EstimatorManagerNew::EstimatorManagerNew(Communicate* c,
                                                      pset.getLattice()) ||
           createEstimator<OneBodyDensityMatricesInput>(est_input, pset.getLattice(), pset.getSpeciesSet(),
                                                        twf.getSPOMap(), pset) ||
+          createEstimator<MagnetizationDensityInput>(est_input, pset.getLattice()) ||
           createEstimator<PerParticleHamiltonianLoggerInput>(est_input, my_comm_->rank())))
       throw UniformCommunicateError(std::string(error_tag_) +
                                     "cannot construct an estimator from estimator input object.");

@@ -106,7 +106,7 @@ public:
 private:
   MagnetizationDensityInputSection input_section_;
   //Default Values
-  std::string myName_    = "MagnetizationDensityInput";
+//  std::string myName_    = "MagnetizationDensityInput";
   Integrator integrator_ = Integrator::SIMPSONS;
   int nsamples_          = 9; //Number of grid points for spin quadrature, or samples for Monte Carlo.
 
