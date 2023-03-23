@@ -148,8 +148,8 @@ Advanced Features of ``InputSection``
 
 - Delegation to InputClasses
 
-- Delegation to InputSections
-
 - Custom stream handlers
+
+Basic usage in ``tests/test_InputSection.cpp``
 
 - When to add a type to InputSection
