@@ -114,20 +114,42 @@ How to use the Improved Input Design
 	    ...
 	  }
 
-
+- Write unit tests ``tests/test_MySimObjectInput.cpp`` see ``src/Estimators/test_OneBodyDensityMatricesInput.cpp``
 
 Special concerns if your InputClass is for an Estimator
-.......................................................
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Estimators are runtime selected objects managed by the ``EstimatorManagerNew`` and their inputs are similarly handled by the ``EstimatorManagerInput`` object. The ``EstimatorManagerInput`` delegates particular child nodes of input to a compile known set of classes.  Your class will be one below we'll assume its named ``MyEstimator.``
+Estimators are runtime selected *simulation* objects managed by the ``EstimatorManagerNew`` and their inputs are similarly handled by the ``EstimatorManagerInput`` object. The ``EstimatorManagerInput`` delegates particular child nodes of input at runtime to a compile time known set of input classes.  Your class will be one, lets assume its named ``MyEstimator.``
 
-This requires that in addtion to creating and unit testing ``MyEstimatorInput`` as explained above you also need to integrate it with ``EstimatorManagerInput`` which is its parent in the native input structure of QMCPACK.
+This requires that in addition to creating and unit testing ``MyEstimatorInput`` as explained above, you will also need to integrate it with ``EstimatorManagerInput``, its' parent in the native input structure of QMCPACK.
 
-- Add your input classes header to ``EstimatorInputDelegates.h``, this makes its definition visible to compilation units that need to be able to use ``EstimatorInput`` as a complete type.
+- Add your input class header ``MyEstimatorInput.h``  to ``EstimatorInputDelegates.h``, this makes its definition visible to compilation units that need to be able to use ``EstimatorInput`` as a complete type.
 
 .. warning::
 
    Do not include ``EstimatorInputDelegates.h`` file in ``MyEstimatorInput.cpp`` or ``MyEstimator.cpp`` include ``MyEstimatorInput.h`` directly.
 
+- Add your ``MyEstimatorClass`` to the ``EstimatorInput`` std::variant in in ``EstimatorManagerInput.h``
+
+- In ``EstimatorManagerInput::readXML`` add a case that connects the estimator type tag your estimator uses to its ``MyEstimatorInput``.
+
+.. code:: c++
+	  
+	  else if (atype == "perparticlehamiltonianlogger")
+            appendEstimatorInput<PerParticleHamiltonianLoggerInput>(child);
+	  // Your new code
+	  else if (atype == "myestimator")
+            appendEstimatorInput<MyEstimatorInput>(child);
+
+- Add a valid input section for your input class to the integration testing in ``tests/test_EstimatorManagerInput.cpp``
+	    
 Advanced Features of ``InputSection``
 .....................................
+
+- Delegation to InputClasses
+
+- Delegation to InputSections
+
+- Custom stream handlers
+
+- When to add a type to InputSection
