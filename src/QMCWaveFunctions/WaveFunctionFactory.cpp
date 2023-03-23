@@ -158,7 +158,16 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur,
   if (!vp_file_to_load.empty())
   {
     app_log() << "  Reading variational parameters from " << vp_file_to_load << std::endl;
-    dummy.readFromHDF(vp_file_to_load);
+    hdf_archive hin;
+    int major_version = OptimizableObject::openHDFToRead(vp_file_to_load, hin);
+    if (major_version == 1)
+      dummy.readFromHDF(vp_file_to_load);
+    else
+    {
+      UniqueOptObjRefs opt_obj_refs = targetPsi->extractOptimizableObjectRefs();
+      for (auto opt_obj : opt_obj_refs)
+        opt_obj.get().readVariationalParameters(hin, dummy);
+    }
   }
 
   targetPsi->resetParameters(dummy);

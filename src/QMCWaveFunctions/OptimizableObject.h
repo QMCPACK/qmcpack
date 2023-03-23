@@ -21,6 +21,8 @@
  */
 namespace qmcplusplus
 {
+class hdf_archive;
+
 using opt_variables_type = optimize::VariableSet;
 
 class OptimizableObject
@@ -72,6 +74,23 @@ public:
   virtual void reportStatus(std::ostream& os) {}
 
   void setOptimization(bool state) { is_optimized_ = state; }
+
+  /** Open HDF file for saving variational parameters */
+  static void openHDFToSave(const std::string& filename, hdf_archive& hout);
+
+  /** Open HDF file for reading variational parameters.
+   *  Return value is the major version. */
+  static int openHDFToRead(const std::string& filename, hdf_archive& hin);
+
+  /** Save variational parameters.
+   * The hout parameter should be opened by openHDFToSave
+   * The default implementation saves the parameters listed in checkInVariablesExclusive,
+   * The parameter values are taken from opt_vars */
+  virtual void saveVariationalParameters(hdf_archive& hout, opt_variables_type& opt_vars);
+
+  /** Read variational parameters.
+   * The hin parameter should be opened by openHDFToRead */
+  virtual void readVariationalParameters(hdf_archive& hin, opt_variables_type& opt_vars);
 };
 
 class UniqueOptObjRefs : public RefVector<OptimizableObject>
