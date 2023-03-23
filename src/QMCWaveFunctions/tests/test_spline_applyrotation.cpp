@@ -29,7 +29,7 @@ using std::string;
 
 namespace qmcplusplus
 {
-  TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
+TEST_CASE("Spline applyRotation one rotation", "[wavefunction]")
 {
   // How to get rid of all this annoying boilerplate?
   Communicate* c = OHMMS::Controller;
@@ -77,10 +77,6 @@ namespace qmcplusplus
   auto spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo);
 
-  /*
-      Here we test the low-level spline implementation of applyRotation().
-      Manually encode the unitary transformation. Ugly, but it works.
-    */
   const auto orbitalsetsize = spo->getOrbitalSetSize();
   REQUIRE(orbitalsetsize == 7);
   SPOSet::ValueMatrix psiM_bare(elec_.R.size(), orbitalsetsize);
@@ -132,55 +128,55 @@ namespace qmcplusplus
       NB: There's nothing special about this rotation. I purposefully made something 'ugly' to make a worst case scenario...
     */
   SPOSet::ValueMatrix rot_mat(orbitalsetsize, orbitalsetsize);
-  rot_mat[0][0] =  8.06061880e-01;
-  rot_mat[0][1] =  3.54921598e-01;
+  rot_mat[0][0] = 8.06061880e-01;
+  rot_mat[0][1] = 3.54921598e-01;
   rot_mat[0][2] = -3.40706426e-01;
   rot_mat[0][3] = -5.90163619e-02;
-  rot_mat[0][4] =  1.11650454e-01;
+  rot_mat[0][4] = 1.11650454e-01;
   rot_mat[0][5] = -1.99768450e-01;
   rot_mat[0][6] = -2.28818375e-01;
-  rot_mat[1][0] =  1.58069821e-02;
-  rot_mat[1][1] =  2.10363421e-01;
-  rot_mat[1][2] =  2.74922448e-01;
-  rot_mat[1][3] =  2.12581764e-01;
-  rot_mat[1][4] =  2.64602356e-01;
+  rot_mat[1][0] = 1.58069821e-02;
+  rot_mat[1][1] = 2.10363421e-01;
+  rot_mat[1][2] = 2.74922448e-01;
+  rot_mat[1][3] = 2.12581764e-01;
+  rot_mat[1][4] = 2.64602356e-01;
   rot_mat[1][5] = -6.34971914e-01;
-  rot_mat[1][6] =  6.01265560e-01;
-  rot_mat[2][0] =  4.43696646e-01;
+  rot_mat[1][6] = 6.01265560e-01;
+  rot_mat[2][0] = 4.43696646e-01;
   rot_mat[2][1] = -6.06912539e-02;
-  rot_mat[2][2] =  2.61413193e-01;
+  rot_mat[2][2] = 2.61413193e-01;
   rot_mat[2][3] = -1.98368802e-01;
   rot_mat[2][4] = -6.43234645e-02;
-  rot_mat[2][5] =  5.75880430e-01;
-  rot_mat[2][6] =  5.96646495e-01;
-  rot_mat[3][0] =  1.45865363e-01;
+  rot_mat[2][5] = 5.75880430e-01;
+  rot_mat[2][6] = 5.96646495e-01;
+  rot_mat[3][0] = 1.45865363e-01;
   rot_mat[3][1] = -5.16577220e-01;
   rot_mat[3][2] = -2.09866367e-01;
-  rot_mat[3][3] =  5.55699395e-01;
-  rot_mat[3][4] =  5.73062990e-01;
-  rot_mat[3][5] =  1.74778224e-01;
-  rot_mat[3][6] =  8.77170506e-03;
+  rot_mat[3][3] = 5.55699395e-01;
+  rot_mat[3][4] = 5.73062990e-01;
+  rot_mat[3][5] = 1.74778224e-01;
+  rot_mat[3][6] = 8.77170506e-03;
   rot_mat[4][0] = -3.24609748e-01;
-  rot_mat[4][1] =  2.89664179e-01;
+  rot_mat[4][1] = 2.89664179e-01;
   rot_mat[4][2] = -7.50613752e-01;
   rot_mat[4][3] = -1.63060005e-01;
-  rot_mat[4][4] =  1.70803377e-01;
-  rot_mat[4][5] =  1.63784167e-01;
-  rot_mat[4][6] =  4.05850414e-01;
-  rot_mat[5][0] =  1.32570771e-03;
-  rot_mat[5][1] =  3.80299846e-01;
+  rot_mat[4][4] = 1.70803377e-01;
+  rot_mat[4][5] = 1.63784167e-01;
+  rot_mat[4][6] = 4.05850414e-01;
+  rot_mat[5][0] = 1.32570771e-03;
+  rot_mat[5][1] = 3.80299846e-01;
   rot_mat[5][2] = -5.08439810e-02;
-  rot_mat[5][3] =  7.59141791e-01;
+  rot_mat[5][3] = 7.59141791e-01;
   rot_mat[5][4] = -4.77844928e-01;
-  rot_mat[5][5] =  2.12149087e-01;
-  rot_mat[5][6] =  5.60882349e-02;
-  rot_mat[6][0] =  1.62781208e-01;
+  rot_mat[5][5] = 2.12149087e-01;
+  rot_mat[5][6] = 5.60882349e-02;
+  rot_mat[6][0] = 1.62781208e-01;
   rot_mat[6][1] = -5.75073150e-01;
   rot_mat[6][2] = -3.60485665e-01;
   rot_mat[6][3] = -1.70070331e-02;
   rot_mat[6][4] = -5.72251258e-01;
   rot_mat[6][5] = -3.50549638e-01;
-  rot_mat[6][6] =  2.49394158e-01;
+  rot_mat[6][6] = 2.49394158e-01;
   spo->storeParamsBeforeRotation(); // avoids coefs_copy_ nullptr segfault
   spo->applyRotation(rot_mat, false);
 
@@ -194,16 +190,16 @@ namespace qmcplusplus
   // Check value
   SPOSet::ValueMatrix psiM_rot_manual(elec_.R.size(), orbitalsetsize);
   for (auto i = 0; i < elec_.R.size(); i++)
+  {
+    for (auto j = 0; j < orbitalsetsize; j++)
     {
-      for (auto j = 0; j < orbitalsetsize; j++)
-        {
-          psiM_rot_manual[i][j] = 0.;
-          for (auto k = 0; k < orbitalsetsize; k++)
-            {
-              psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
-            }
-        }
+      psiM_rot_manual[i][j] = 0.;
+      for (auto k = 0; k < orbitalsetsize; k++)
+      {
+        psiM_rot_manual[i][j] += psiM_bare[i][k] * rot_mat[k][j];
+      }
     }
+  }
   checkMatrix(psiM_rot_manual, psiM_rot);
 
   // Check grad
@@ -211,47 +207,47 @@ namespace qmcplusplus
   for (auto i = 0; i < elec_.R.size(); i++)
   {
     for (auto j = 0; j < orbitalsetsize; j++)
+    {
+      dpsiM_rot_manual[i][j][0] = 0.;
+      dpsiM_rot_manual[i][j][1] = 0.;
+      dpsiM_rot_manual[i][j][2] = 0.;
+      for (auto k = 0; k < orbitalsetsize; k++)
       {
-        dpsiM_rot_manual[i][j][0] = 0.;
-        dpsiM_rot_manual[i][j][1] = 0.;
-        dpsiM_rot_manual[i][j][2] = 0.;
-        for (auto k = 0; k < orbitalsetsize; k++)
-          {
-            for (auto l = 0; l < 3; l++)
-              {
-                dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
-              }
-          }
+        for (auto l = 0; l < 3; l++)
+        {
+          dpsiM_rot_manual[i][j][l] += dpsiM_bare[i][k][l] * rot_mat[k][j];
+        }
       }
+    }
   }
 
   // No checkMatrix for tensors? Gotta do it by hand...
   double res = 0.;
-  for (auto i=0; i<elec_.R.size(); i++ )
+  for (auto i = 0; i < elec_.R.size(); i++)
+  {
+    for (auto j = 0; j < orbitalsetsize; j++)
     {
-      for (auto j=0; j<orbitalsetsize; j++ )
-        {
-          for (auto k=0; k<3; k++ )
-            {
-              res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
-            }
-        }
+      for (auto k = 0; k < 3; k++)
+      {
+        res += std::sqrt(std::norm(dpsiM_rot_manual[i][j][k] - dpsiM_rot[i][j][k]));
+      }
     }
-  CHECK(res == Approx(0.));
+  }
+  CHECK(res == Approx(0.).epsilon(2e-4)); // increase threshold to accomodate mixed precision.
 
   // Check laplacian
   SPOSet::ValueMatrix d2psiM_rot_manual(elec_.R.size(), orbitalsetsize);
   for (auto i = 0; i < elec_.R.size(); i++)
+  {
+    for (auto j = 0; j < orbitalsetsize; j++)
     {
-      for (auto j = 0; j < orbitalsetsize; j++)
-        {
-          d2psiM_rot_manual[i][j] = 0.;
-          for (auto k = 0; k < orbitalsetsize; k++)
-            {
-              d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
-            }
-        }
+      d2psiM_rot_manual[i][j] = 0.;
+      for (auto k = 0; k < orbitalsetsize; k++)
+      {
+        d2psiM_rot_manual[i][j] += d2psiM_bare[i][k] * rot_mat[k][j];
+      }
     }
+  }
   checkMatrix(d2psiM_rot_manual, d2psiM_rot);
 
 } // TEST_CASE

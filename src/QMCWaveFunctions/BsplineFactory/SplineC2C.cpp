@@ -52,15 +52,15 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
   return h5f.writeEntry(bigtable, o.str().c_str()); //"spline_0");
 }
 
-  template<typename ST>
-  void SplineC2C<ST>::storeParamsBeforeRotation()
-  {
-    const auto spline_ptr     = SplineInst->getSplinePtr();
-    const auto coefs_tot_size = spline_ptr->coefs_size;
-    coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
+template<typename ST>
+void SplineC2C<ST>::storeParamsBeforeRotation()
+{
+  const auto spline_ptr     = SplineInst->getSplinePtr();
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  coef_copy_                = std::make_shared<std::vector<RealType>>(coefs_tot_size);
 
-    std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
-  }
+  std::copy_n(spline_ptr->coefs, coefs_tot_size, coef_copy_->begin());
+}
 
 /*
   ~~ Notes for rotation ~~
@@ -77,31 +77,6 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
   As a result, due to SIMD alignment, Nsplines may be larger than the
   actual number of splined orbitals. This means that in practice rot_mat
   may be smaller than the number of 'columns' in the coefs array!
-
-  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
-  "matrix" is very tall and skinny.
-*/
-  template<typename ST>
-  void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
-  {
-    // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
-    const auto spline_ptr = SplineInst->getSplinePtr();
-    assert(spline_ptr != nullptr);
-    const auto spl_coefs      = spline_ptr->coefs;
-    const auto Nsplines       = spline_ptr->num_splines; // May include padding
-    const auto coefs_tot_size = spline_ptr->coefs_size;
-    const auto basis_set_size = coefs_tot_size / Nsplines;
-    assert(OrbitalSetSize == rot_mat.rows());
-    assert(OrbitalSetSize == rot_mat.cols());
-
-    if (!use_stored_copy)
-      {
-        assert(coef_copy_ != nullptr);
-        std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
-      }
-
-    /*
-      Apply rotation. Layouts for spl_coefs array are given below.
 
       SplineR2R spl_coef layout:
              ^         | sp1 | ... | spN | pad |
@@ -122,39 +97,63 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
              |         | cN1_r | cN1_i |  ...  | cNN_r | cNN_i |   0   |
              v         |=======|=======|=======|=======|=======|=======|
                        <------------------ Nsplines ------------------>
-    */
-    ST zr{0.};
-    ST zi{0.};
-    ST wr{0.};
-    ST wi{0.};
-    ST newval_r{0.};
-    ST newval_i{0.};
-    for (auto i = 0; i < basis_set_size; i++)
-      {
-        for (auto j = 0; j < OrbitalSetSize; j++) // want to skip by twos?
-          {
-            const auto cur_elem = Nsplines * i + 2*j;
-            zr = 0.;
-            zi = 0.;
-            wr = 0.;
-            wi = 0.;
-            newval_r = 0.;
-            newval_i = 0.;
-            for (auto k = 0; k < OrbitalSetSize; k++)
-              {
-                const auto index = Nsplines * i + 2*k;
-                zr = (*coef_copy_)[index];     // this coef real component
-                zi = (*coef_copy_)[index + 1]; // this coef imag component
-                wr = rot_mat[k][j].real();
-                wi = rot_mat[k][j].imag();
-                newval_r += zr*wr - zi*wi;
-                newval_i += zr*wi + zi*wr;
-              }
-            spl_coefs[cur_elem]     = newval_r;
-            spl_coefs[cur_elem + 1] = newval_i;
-          }
-      }
+
+  NB: For splines (typically) BasisSetSize >> OrbitalSetSize, so the spl_coefs
+  "matrix" is very tall and skinny.
+*/
+template<typename ST>
+void SplineC2C<ST>::applyRotation(const ValueMatrix& rot_mat, bool use_stored_copy)
+{
+  // SplineInst is a MultiBspline. See src/spline2/MultiBspline.hpp
+  const auto spline_ptr = SplineInst->getSplinePtr();
+  assert(spline_ptr != nullptr);
+  const auto spl_coefs      = spline_ptr->coefs;
+  const auto Nsplines       = spline_ptr->num_splines; // May include padding
+  const auto coefs_tot_size = spline_ptr->coefs_size;
+  const auto basis_set_size = coefs_tot_size / Nsplines;
+  assert(OrbitalSetSize == rot_mat.rows());
+  assert(OrbitalSetSize == rot_mat.cols());
+
+  if (!use_stored_copy)
+  {
+    assert(coef_copy_ != nullptr);
+    std::copy_n(spl_coefs, coefs_tot_size, coef_copy_->begin());
   }
+
+  ST zr{0.};
+  ST zi{0.};
+  ST wr{0.};
+  ST wi{0.};
+  ST newval_r{0.};
+  ST newval_i{0.};
+  for (auto i = 0; i < basis_set_size; i++)
+  {
+    for (auto j = 0; j < OrbitalSetSize; j++)
+    {
+      // cur_elem points to the real componend of the coefficient.
+      // Imag component is adjacent in memory.
+      const auto cur_elem = Nsplines * i + 2 * j;
+      zr                  = 0.;
+      zi                  = 0.;
+      wr                  = 0.;
+      wi                  = 0.;
+      newval_r            = 0.;
+      newval_i            = 0.;
+      for (auto k = 0; k < OrbitalSetSize; k++)
+      {
+        const auto index = Nsplines * i + 2 * k;
+        zr               = (*coef_copy_)[index];
+        zi               = (*coef_copy_)[index + 1];
+        wr               = rot_mat[k][j].real();
+        wi               = rot_mat[k][j].imag();
+        newval_r += zr * wr - zi * wi;
+        newval_i += zr * wi + zi * wr;
+      }
+      spl_coefs[cur_elem]     = newval_r;
+      spl_coefs[cur_elem + 1] = newval_i;
+    }
+  }
+}
 
 template<typename ST>
 inline void SplineC2C<ST>::assign_v(const PointType& r,
