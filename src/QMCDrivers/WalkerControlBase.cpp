@@ -61,8 +61,8 @@ void WalkerControlBase::start()
 {
   if (MyContext == 0)
   {
-    std::string hname(myComm->getName());
-    hname.append(".dmc.dat");
+    std::filesystem::path hname(myComm->getName());
+    hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
       dmcStream = std::make_unique<std::ofstream>(hname.c_str());
@@ -75,7 +75,7 @@ void WalkerControlBase::start()
       //         if (WriteRN)
       (*dmcStream) << std::setw(20) << "LivingFraction";
       (*dmcStream) << std::endl;
-      dmcFname = hname;
+      dmcFname = std::move(hname);
     }
   }
 }
@@ -83,14 +83,12 @@ void WalkerControlBase::start()
 void WalkerControlBase::setWalkerID(MCWalkerConfiguration& walkers)
 {
   start(); //do the normal start
-  MCWalkerConfiguration::iterator wit(walkers.begin());
-  MCWalkerConfiguration::iterator wit_end(walkers.end());
-  for (; wit != wit_end; ++wit)
+  for (const auto& walker : walkers)
   {
-    if ((*wit)->ID == 0)
+    if (walker->ID == 0)
     {
-      (*wit)->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
-      (*wit)->ParentID = (*wit)->ID;
+      walker->ID       = (++NumWalkersCreated) * num_contexts_ + MyContext;
+      walker->ParentID = walker->ID;
     }
   }
 }

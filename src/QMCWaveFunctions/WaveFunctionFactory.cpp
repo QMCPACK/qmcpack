@@ -34,19 +34,15 @@
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
-WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp,
-                                         const PSetMap& pset,
-                                         Communicate* c)
-    : MPIObjectBase(c),
-      targetPtcl(qp),
-      ptclPool(pset)
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet& qp, const PSetMap& pset, Communicate* c)
+    : MPIObjectBase(c), targetPtcl(qp), ptclPool(pset)
 {
   ClassName = "WaveFunctionFactory";
 }
 
 WaveFunctionFactory::~WaveFunctionFactory() = default;
 
-std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
+std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options)
 {
   // YL: how can this happen?
   if (cur == NULL)
@@ -67,14 +63,14 @@ std::unique_ptr<TrialWaveFunction> WaveFunctionFactory::buildTWF(xmlNodePtr cur)
   app_summary() << "  Name: " << psiName << "   Tasking: " << (tasking == "yes" ? "yes" : "no") << std::endl;
   app_summary() << std::endl;
 
-  auto targetPsi = std::make_unique<TrialWaveFunction>(psiName, tasking == "yes");
+  auto targetPsi = std::make_unique<TrialWaveFunction>(runtime_options, psiName, tasking == "yes");
   targetPsi->setMassTerm(targetPtcl);
   targetPsi->storeXMLNode(cur);
 
   SPOSetBuilderFactory sposet_builder_factory(myComm, targetPtcl, ptclPool);
 
   std::string vp_file_to_load;
-  cur          = cur->children;
+  cur = cur->children;
   while (cur != NULL)
   {
     std::string cname((const char*)(cur->name));

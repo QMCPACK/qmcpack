@@ -23,6 +23,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
+#include "Utilities/RuntimeOptions.h"
 namespace qmcplusplus
 {
 /** Factory class to build a many-body wavefunction
@@ -45,12 +46,13 @@ public:
   ~WaveFunctionFactory();
 
   ///read from xmlNode
-  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur);
+  std::unique_ptr<TrialWaveFunction> buildTWF(xmlNodePtr cur, const RuntimeOptions& runtime_options);
 
   /// create an empty TrialWaveFunction for testing use.
-  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const std::string_view name)
+  std::unique_ptr<TrialWaveFunction> static buildEmptyTWFForTesting(const RuntimeOptions& runtime_options,
+                                                                    const std::string_view name)
   {
-    return std::make_unique<TrialWaveFunction>(name);
+    return std::make_unique<TrialWaveFunction>(runtime_options, name);
   }
 
 private:

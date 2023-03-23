@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include "OhmmsData/libxmldefs.h"
 #include "Message/Communicate.h"
-#include "Utilities/qmc_common.h" // RuntimeOptions
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {

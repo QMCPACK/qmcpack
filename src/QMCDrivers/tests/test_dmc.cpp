@@ -27,6 +27,7 @@
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 #include "QMCDrivers/GreenFunctionModifiers/DriftModifierUNR.h"
+#include "Utilities/RuntimeOptions.h"
 
 
 #include <stdio.h>
@@ -71,8 +72,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.addTable(ions);
   elec.update();
 
-
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   auto orb_uptr = std::make_unique<ConstantOrbital>();
   auto orb      = orb_uptr.get();
   psi.addComponent(std::move(orb_uptr));
@@ -165,8 +166,8 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.addTable(ions);
   elec.update();
 
-
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
   psi.addComponent(std::make_unique<LinearOrbital>());
   psi.registerData(elec, elec[0]->DataSet);
   elec[0]->DataSet.allocate();

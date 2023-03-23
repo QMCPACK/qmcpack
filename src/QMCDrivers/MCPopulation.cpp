@@ -292,6 +292,9 @@ void MCPopulation::saveWalkerConfigurations(WalkerConfigurations& walker_configs
 {
   walker_configs.resize(walker_elec_particle_sets_.size(), elec_particle_set_->getTotalNum());
   for (int iw = 0; iw < walker_elec_particle_sets_.size(); iw++)
+  {
     walker_elec_particle_sets_[iw]->saveWalker(*walker_configs[iw]);
+    walker_configs[iw]->Weight = walkers_[iw]->Weight;
+  }
 }
 } // namespace qmcplusplus

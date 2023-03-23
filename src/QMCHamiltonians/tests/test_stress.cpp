@@ -18,6 +18,7 @@
 #include "LongRange/EwaldHandler3D.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/StressPBC.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -67,19 +68,20 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
   elec.R[1][2] = 2.02478653;
 
 
-  SpeciesSet& tspecies         = elec.getSpeciesSet();
-  int upIdx                    = tspecies.addSpecies("u");
-  int chargeIdx                = tspecies.addAttribute("charge");
-  int massIdx                  = tspecies.addAttribute("mass");
-  tspecies(chargeIdx, upIdx)   = -1;
-  tspecies(massIdx, upIdx)     = 1.0;
+  SpeciesSet& tspecies       = elec.getSpeciesSet();
+  int upIdx                  = tspecies.addSpecies("u");
+  int chargeIdx              = tspecies.addAttribute("charge");
+  int massIdx                = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(massIdx, upIdx)   = 1.0;
 
   // The call to resetGroups is needed transfer the SpeciesSet
   // settings to the ParticleSet
   elec.resetGroups();
   elec.createSK();
 
-  TrialWaveFunction psi;
+  RuntimeOptions runtime_options;
+  TrialWaveFunction psi(runtime_options);
 
   LRCoulombSingleton::CoulombHandler = std::make_unique<EwaldHandler3D>(ions);
   LRCoulombSingleton::CoulombHandler->initBreakup(ions);
@@ -118,4 +120,4 @@ TEST_CASE("Stress BCC H Ewald3D", "[hamiltonian]")
 
   LRCoulombSingleton::CoulombDerivHandler.reset(nullptr);
 }
-}
+} // namespace qmcplusplus

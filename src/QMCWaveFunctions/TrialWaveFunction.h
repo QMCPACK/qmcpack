@@ -30,6 +30,7 @@
 #include "Containers/MinimalContainers/RecordArray.hpp"
 #include "QMCWaveFunctions/TWFFastDerivWrapper.h"
 #include "TWFGrads.hpp"
+#include "Utilities/RuntimeOptions.h"
 
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -58,11 +59,11 @@ class TrialWaveFunction
 {
 public:
   // derived types from WaveFunctionComponent
-  using RealType     = WaveFunctionComponent::RealType;
-  using ComplexType  = WaveFunctionComponent::ComplexType;
+  using RealType    = WaveFunctionComponent::RealType;
+  using ComplexType = WaveFunctionComponent::ComplexType;
 
 #ifndef NDEBUG
-  using FullPrecRealType =  WaveFunctionComponent::FullPrecRealType;
+  using FullPrecRealType = WaveFunctionComponent::FullPrecRealType;
 #endif
 
   using ValueType    = WaveFunctionComponent::ValueType;
@@ -89,7 +90,7 @@ public:
   ///differential laplacians
   ParticleSet::ParticleLaplacian L;
 
-  TrialWaveFunction(const std::string_view aname = "psi0", bool tasking = false);
+  TrialWaveFunction(const RuntimeOptions& runtime_options, const std::string_view aname = "psi0", bool tasking = false);
 
   // delete copy constructor
   TrialWaveFunction(const TrialWaveFunction&) = delete;
@@ -502,6 +503,9 @@ public:
 
 private:
   static void debugOnlyCheckBuffer(WFBufferType& buffer);
+
+  /// @brief top-level runtime options from project data information > WaveFunctionPool
+  const RuntimeOptions& runtime_options_;
 
   /** XML input node for a many-body wavefunction. Copied from the original one.
    * WFOpt driver needs to look it up and make its own copies.

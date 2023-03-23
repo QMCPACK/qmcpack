@@ -15,6 +15,7 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/RadialJastrowBuilder.h"
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
+#include "Utilities/RuntimeOptions.h"
 
 namespace qmcplusplus
 {
@@ -23,8 +24,8 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
   Communicate* c = OHMMS::Controller;
 
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -79,8 +80,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
@@ -112,10 +114,10 @@ TEST_CASE("J1 evaluate derivatives Jastrow", "[wavefunction]")
 
 TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate* c       = OHMMS::Controller;
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -179,8 +181,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
   // update all distance tables
   elec_.update();
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);
@@ -212,10 +215,10 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species", "[wavefunction]")
 
 TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow", "[wavefunction]")
 {
-  Communicate* c = OHMMS::Controller;
+  Communicate* c       = OHMMS::Controller;
   ParticleSetPool ptcl = ParticleSetPool(c);
-  auto ions_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
-  auto elec_uptr = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto ions_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
+  auto elec_uptr       = std::make_unique<ParticleSet>(ptcl.getSimulationCell());
   ParticleSet& ions_(*ions_uptr);
   ParticleSet& elec_(*elec_uptr);
 
@@ -276,8 +279,9 @@ TEST_CASE("J1 evaluate derivatives Jastrow with two species one without Jastrow"
 
   // update all distance tables
   elec_.update();
+  RuntimeOptions runtime_options;
   WaveFunctionFactory wf_factory(elec_, ptcl.getPool(), c);
-  auto twf_ptr = wf_factory.buildTWF(jas1);
+  auto twf_ptr = wf_factory.buildTWF(jas1, runtime_options);
   auto& twf(*twf_ptr);
   twf.setMassTerm(elec_);
   twf.evaluateLog(elec_);

@@ -19,7 +19,7 @@
 #include "QMCHamiltonians/HamiltonianPool.h"
 #include "Particle/ParticleSetPool.h"
 #include "QMCWaveFunctions/WaveFunctionPool.h"
-#include "Utilities/ProjectData.h"
+#include "Utilities/RuntimeOptions.h"
 
 #include <stdio.h>
 #include <string>
@@ -32,7 +32,6 @@ extern std::unique_ptr<ParticleSet> createElectronParticleSet(const SimulationCe
 
 TEST_CASE("HamiltonianPool", "[qmcapp]")
 {
-  ProjectData test_project("test", ProjectData::DriverVersion::BATCH);
   Communicate* c;
   c = OHMMS::Controller;
 
@@ -51,9 +50,9 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   auto qp = createElectronParticleSet(pp.getSimulationCell());
   pp.addParticleSet(std::move(qp));
 
-  WaveFunctionPool wfp(test_project.getRuntimeOptions(), pp, c);
-
-  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting("psi0"), true);
+  RuntimeOptions runtime_options;
+  WaveFunctionPool wfp(runtime_options, pp, c);
+  wfp.addFactory(WaveFunctionFactory::buildEmptyTWFForTesting(runtime_options, "psi0"), true);
 
   HamiltonianPool hpool(pp, wfp, c);
 

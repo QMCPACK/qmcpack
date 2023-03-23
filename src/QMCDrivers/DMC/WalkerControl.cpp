@@ -79,11 +79,11 @@ void WalkerControl::start()
 {
   if (rank_num_ == 0)
   {
-    std::string hname(myComm->getName());
-    hname.append(".dmc.dat");
+    std::filesystem::path hname(myComm->getName());
+    hname.concat(".dmc.dat");
     if (hname != dmcFname)
     {
-      dmcStream = std::make_unique<std::ofstream>(hname.c_str());
+      dmcStream = std::make_unique<std::ofstream>(hname);
       dmcStream->setf(std::ios::scientific, std::ios::floatfield);
       dmcStream->precision(10);
       (*dmcStream) << "# Index " << std::setw(20) << "LocalEnergy" << std::setw(20) << "Variance" << std::setw(20)
@@ -92,7 +92,7 @@ void WalkerControl::start()
       (*dmcStream) << std::setw(20) << "TrialEnergy" << std::setw(20) << "DiffEff";
       (*dmcStream) << std::setw(20) << "LivingFraction";
       (*dmcStream) << std::endl;
-      dmcFname = hname;
+      dmcFname = std::move(hname);
     }
   }
 }
