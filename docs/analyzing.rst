@@ -1061,9 +1061,38 @@ Using the qmc-fit tool for statistical time step extrapolation, trial wavefuncti
 -----------------------------------------------------------------------------------------------------------------
 
 The ``qmc-fit`` tool is used to provide statistical estimates of curve-fitting parameters based on QMCPACK data. 
-``qmc-fit`` is currently limited to estimating fitting parameters related to time step extrapolation and trial wavefunction
-optimization (optimal U for DFT+U, EXX fractions), it will eventually support many types of fitted curves (e.g., Morse
-potential binding curves and various equation-of-state fitting curves).
+``qmc-fit`` is currently estimates fitting parameters related to time step extrapolation and trial wavefunction
+optimization (optimal U for DFT+U, EXX fractions) and supports many types of fitted curves (e.g., Morse
+potential binding curves and various equation-of-state fitting curves). An overview of all supported input flags to 
+``qmc-fit`` can be obtained by typing ``qmc-fit -h`` at the command line: 
+
+::
+
+  >qmc-fit -h 
+    usage: qmc-fit [-h] [-f FIT_FUNCTION] (-t TIMESTEPS | -u HUBBARDS | --exx EXX | --eos EOS) [-s SERIES_START] [-e EQUILS] [-b REBLOCK_FACTORS] [--noplot] {ts,u,eos} scalar_files [scalar_files ...]
+
+    This utility provides a fit to the one-dimensional parameter scans of QMC observables. Currently, the functionality in place is to fit linear/quadratic polynomial fits to the timestep VMC/DMC studies and single parameter optimization of trial wavefunctions using DMC local
+    energies and quadratic, cubic and quartic fits and equation-of-state and Morse potential fits.
+
+    positional arguments:
+      {ts,u,eos}            One dimensional parameter used to fit QMC local energies. Options are ts for timestep and u for hubbard_u parameter fitting
+      scalar_files          Scalar files used in the fit. An explicit list of scalar files with space or a wildcard (e.g. dmc*/dmc.s001.scalar.dat) is acceptable.
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -f FIT_FUNCTION, --fit FIT_FUNCTION
+                            Fitting function, options are (for each fit type) ts:{linear, quadratic, sqrt} u:{cubic, quadratic, quartic} eos:{birch, morse, murnaghan, vinet}. (default: linear)
+      -t TIMESTEPS          Timesteps corresponding to scalar files, excluding any prior to --series_start (default: None)
+      -u HUBBARDS           Hubbard U values (eV) (default: None)
+      --exx EXX             EXX ratios (default: None)
+      --eos EOS             Structural parameter for EOS fitting (volume or distance) (default: None)
+      -s SERIES_START, --series_start SERIES_START
+                            Series number for first DMC run. Use to exclude prior VMC scalar files if they have been provided (default: None)
+      -e EQUILS, --equils EQUILS
+                            Equilibration lengths corresponding to scalar files, excluding any prior to --series_start. Can be a single value for all files. If not provided, equilibration periods will be estimated. (default: None)
+      -b REBLOCK_FACTORS, --reblock_factors REBLOCK_FACTORS
+                            Reblocking factors corresponding to scalar files, excluding any prior to --series_start. Can be a single value for all files. If not provided, reblocking factors will be estimated. (default: None)
+      --noplot              Do not show plots. (default: False)
 
 The jackknife statistical technique
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1280,6 +1309,43 @@ An example of a cubic fit is given as below:
   :align: center
 
   Quadratic Hubbard-U fits to DMC data for a 24-atom supercell of monolayer FeCl\ :sub:`2`\  obtained with ``qmc-fit``.  DMC local energy minima are indicated by the red data point on the bottom halves of either panel.
+
+
+Performing equation-of-state and Morse potential binding curve fits 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a systematic series of statistical data, such as QMC calculations performed at different interatomic distances, or at a series of volumes
+for an equation-of-states calculation, it is advised to perform jackknife fitting to determine quantities such as equilibrium distance, volume and 
+bulk moduli. For interatomic distances and equation of states fits to QMC calculations, ``qmc-fit`` has the capability to perform Morse and Birch, Murnaghan 
+and Vinet equation-of-state fits. In this example, we determine the equilibrium volume and bulk modulus of C-diamond using a 16 atom supercell using DMC and Murnaghan 
+equation-of-state fit. For the 16 atom supercell, we uniformly scan over the volumes between :math:`78.16` and :math:`99.62 A^3`. Assuming that all these DMC calculation 
+folders are located under the same parent folder and ordered from smaller to the large volume (e.g. dmc_78.16, dmc_80.65 ...), the following script can be used to make a
+Murnaghan fit to the DMC energies. 
+
+::
+
+  >qmc-fit eos -e 50 -b 6 --eos "78.16 80.65 83.20 85.80 88.46 91.16 93.92 96.74 99.62" --fit murnaghan dmc_*/dmc.s001.scalar.dat
+
+  fit function  : murnaghan
+  fitted formula: E_inf + B/Bp*V*((V_0/V)**Bp/(Bp-1)+1)-V_0*B/(Bp-1)
+  minimum_x: 89.00 +/- 0.12
+  e_inf: -91.2659 +/- 0.0012
+  B: 0.1053 +/- 0.0050
+  Bp: 0.000189 +/- 0.000011
+  pressure: -0.00000 +/- 0.00015
+
+Here, the minimum volume is reported as :math:`89.00 \pm 0.12A^3` consistent with the input volume units. Considering that this is a 16-atom cell, the per atom 
+quantity would be :math:`5.56 \pm 0.01 A^3` per C. Bulk modulus, B, is reported as :math:`0.1053 \pm 0.005 Ha/A^3`. In SI units, this bulk modulus value corresponds to 
+:math:`459 \pm 21` GPa. Different fitting functions are supported via the ``-f`` option. Currently supported options include ``Vinet`` , ``Murnaghan``, ``Birch`` and ``Morse``. 
+For more information and default options, please refer to ``qmc-fit -h``.
+
+.. _fig14:
+.. figure:: /figs/qmcfit_eos.png
+  :width: 400
+  :align: center
+
+  Murnaghan equation-of-state fits to DMC data for a 16-atom supercell of C-diamond obtained with ``qmc-fit``.  DMC structural minimum is indicated by the red data point with an error bar smaller than its marker size.
+
 
 .. _qdens:
 
