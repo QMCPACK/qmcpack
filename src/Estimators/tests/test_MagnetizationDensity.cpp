@@ -45,6 +45,10 @@ namespace testing
 {
 class MagnetizationDensityTests
 {
+  using WF          = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
+  using Position      = QMCTraits::PosType;
+  using Data = MagnetizationDensity::Data;
+  using Real        = WF::Real;
 public:
   void testCopyConstructor(const MagnetizationDensity& magdens)
   {
@@ -59,6 +63,51 @@ public:
       CHECK( magdens.rcorner_[idim] == Approx(magdens2.rcorner_[idim]));
       CHECK( magdens.center_[idim] == Approx(magdens2.center_[idim]));
     }
+  }
+  
+  void testData(const MagnetizationDensity& magdens, const Data& data)
+  {
+    for (size_t i=0; i<data.size(); i++)
+      CHECK( magdens.data_[i] == Approx(data[i])); 
+  }
+
+  void testIntegrationFunctions(const MagnetizationDensity& magdens)
+  {
+    //For xgrid, we use dx=1.0 from 0 to 8.
+    //For ygrid, we use f(x)=x^3.
+    std::vector<Real> ygrid = {0,1,8,27,64,125,216,343,512};
+    Real result_simpsons(0.0);
+    result_simpsons = magdens.integrateBySimpsonsRule<Real>(ygrid,Real(1.0));
+    
+    CHECK( result_simpsons == Approx(1024) );
+  }
+
+  void testGrids(const MagnetizationDensity& magdens)
+  {
+    int npoints=5;
+    std::vector<double> xgrid(npoints);
+    double start=0.0;
+    double stop=1.5;
+    
+    double delta=(stop-start)/double(npoints-1);
+    
+    magdens.generateUniformGrid(xgrid,start,stop);
+    for(int i=0; i<npoints; i++)
+      CHECK(xgrid[i] == Approx(start+i*delta) );
+
+    FakeRandom rng; 
+    magdens.generateRandomGrid(xgrid,rng,start,stop);
+    
+    for(int i=0; i<npoints; i++)
+    { 
+      bool ok=(xgrid[i]>=start) && (xgrid[i]<=stop); 
+      CHECK( ok ); 
+    }
+    
+  }
+  int computeBinAccessor(const MagnetizationDensity& magdens, const Position& r, const int spin_index)
+  {
+    return magdens.computeBin(r,spin_index);
   }
 };
 } //namespace testing
@@ -100,7 +149,128 @@ TEST_CASE("MagnetizationDensity::spawnCrowdClone()", "[estimators]")
   REQUIRE(clone.get() != &original);
   REQUIRE(dynamic_cast<decltype(&original)>(clone.get()) != nullptr);
 }
-TEST_CASE("MagDensity", "[hamiltonian]")
+TEST_CASE("MagnetizationDensity::integrals", "[estimators]")
+{
+  using namespace testing;
+  Libxml2Document doc;
+  auto input_xml = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
+  bool okay      = doc.parseFromString(input_xml);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+  MagnetizationDensityInput mdi(node);
+
+  auto lattice                      = testing::makeTestLattice();
+ 
+  MagnetizationDensity magdens(std::move(mdi), lattice);
+  
+  MagnetizationDensityTests magdenstest;
+  magdenstest.testIntegrationFunctions(magdens);
+  magdenstest.testGrids(magdens);
+  
+}
+
+TEST_CASE("MagnetizationDensity::gridAssignment","[estimators]")
+{
+  using namespace testing;
+  int nbintest=8;
+  ParticleSet::ParticlePos Rtest = { {0.92832101, 0, 1.77067004}, //bin 0
+                                     {-2.32013211, 0, 5.31201011}, //bin 1
+                                     {3.48086859, 1.61996772, 1.77067004}, //bin 2
+                                     {0.23241546,1.61996772,5.31201011}, //bin 3
+                                     {3.48086859, -1.61996772, 1.77067004}, //bin 4
+                                     {0.23241546,-1.61996772, 5.31201011}, //bin 5
+                                     {6.03341616,0,1.77067004}, //bin 6
+                                     {2.78496304,0,5.31201011}}; //bin 7
+
+  ParticleSet::ParticleLayout lattice;
+  lattice.R(0, 0) = 5.10509515;
+  lattice.R(0, 1) = -3.23993545;
+  lattice.R(0, 2) = 0.00000000;
+  lattice.R(1, 0) = 5.10509515;
+  lattice.R(1, 1) = 3.23993545;
+  lattice.R(1, 2) = 0.00000000;
+  lattice.R(2, 0) = -6.49690625;
+  lattice.R(2, 1) = 0.00000000;
+  lattice.R(2, 2) = 7.08268015;
+
+  lattice.BoxBConds     = true; //periodic
+  lattice.LR_dim_cutoff = 15;
+  lattice.reset();
+  //Shamelessly stealing this from test_einset.cpp.
+
+  //Now to construct the input.  See ValidMagnetizationDensity.h, item 4 for the actual input.  
+  auto mag_input_xml = testing::magdensity::valid_mag_density_input_sections[testing::magdensity::Inputs::valid_magdensity_input_unittest];
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(mag_input_xml);
+  REQUIRE(okay);
+  xmlNodePtr node = doc.getRoot();
+
+  MagnetizationDensityInput maginput(node);
+
+  maginput.calculateDerivedParameters(lattice);
+  MagnetizationDensity magdensity(std::move(maginput),lattice);
+  
+  MagnetizationDensityTests magdenstest;
+  for( int ibin=0; ibin<nbintest; ibin++)
+  {
+    int mag_bin_x=magdenstest.computeBinAccessor(magdensity,Rtest[ibin],0);
+    int mag_bin_y=magdenstest.computeBinAccessor(magdensity,Rtest[ibin],1);
+    int mag_bin_z=magdenstest.computeBinAccessor(magdensity,Rtest[ibin],2);
+
+    //Here we go from the flattened spatial grid layout to the grid+spin layout
+    //that we'll dump in data_.
+    int test_bin_x=OHMMS_DIM*ibin+0;
+    int test_bin_y=OHMMS_DIM*ibin+1;
+    int test_bin_z=OHMMS_DIM*ibin+2;
+
+    CHECK( mag_bin_x == test_bin_x);
+    CHECK( mag_bin_y == test_bin_y);
+    CHECK( mag_bin_z == test_bin_z);
+    
+  }  
+                          
+}
+
+TEST_CASE("MagnetizationDensity::integralAPI", "[estimators]")
+{
+  using namespace testing;
+  using WF          = WaveFunctionTypes<QMCTraits::ValueType, QMCTraits::FullPrecValueType>;
+  using Real        = WF::Real;
+
+  Libxml2Document doc_simpsons;
+  Libxml2Document doc_mc;
+  auto input_xml_simpsons = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input];
+  auto input_xml_mc = magdensity::valid_mag_density_input_sections[magdensity::Inputs::valid_magdensity_input_dr];
+  bool okay_simpsons      = doc_simpsons.parseFromString(input_xml_simpsons);
+  bool okay_mc      = doc_mc.parseFromString(input_xml_mc);
+  REQUIRE(okay_simpsons);
+  REQUIRE(okay_mc);
+  xmlNodePtr node_simpsons = doc_simpsons.getRoot();
+  xmlNodePtr node_mc = doc_mc.getRoot();
+  MagnetizationDensityInput mdi_simpsons(node_simpsons);
+  MagnetizationDensityInput mdi_mc(node_mc);
+
+  auto lattice                      = testing::makeTestLattice();
+ 
+  MagnetizationDensity magdens_simpsons(std::move(mdi_simpsons), lattice);
+  MagnetizationDensity magdens_mc(std::move(mdi_mc), lattice);
+
+ 
+  std::vector<Real> ygrid = {0,1,8,27,64,125,216,343,512};
+  Real result_simpsons(0.0);
+  Real result_mc(0.0);
+  
+  result_simpsons=magdens_simpsons.integrateMagnetizationDensity(ygrid);
+  result_mc=magdens_mc.integrateMagnetizationDensity(ygrid);
+
+  CHECK(result_simpsons == Approx(16.2539682539) ); //From scipy.integrate.  Note, this input file has 64 samples.
+                                                    //Since I only use 9 entries, this integral is internally treated
+                                                    //as from [0 to 2pi*8/63]
+  CHECK(result_mc == Approx(10.125) );  //Divide sum(ygrid) by nsamples=128
+  
+}
+
+TEST_CASE("MagnetizationDensity::IntegrationTest", "[estimators]")
 {
   app_log() << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
   app_log() << "!!!!   Evaluate MagDensity   !!!!\n";
@@ -118,7 +288,9 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   using ValueMatrix = Matrix<Value>;
   using PropertySetType   = OperatorBase::PropertySetType;
   using MCPWalker         = Walker<QMCTraits, PtclOnLatticeTraits>;
+  using Data              = MagnetizationDensity::Data;
   using GradMatrix  = Matrix<Grad>;
+  using namespace testing;
 
   // O2 test example from pwscf non-collinear calculation.
   ParticleSet::ParticleLayout lattice;
@@ -219,14 +391,6 @@ TEST_CASE("MagDensity", "[hamiltonian]")
    
   MagnetizationDensity magdensity(std::move(maginput),lattice);
   
-  /*
-  MagDensityEstimator magdensity(elec_, psi);
-
-  const char* magtxt = "<tmp> \
-  <estimator name=\"MagDensity\" type=\"magdensity\" delta=\"0.5 0.5 0.5\" spin_integral=\"simpson\" nsamples=\"9\"/> \
-  </tmp> \
-  ";
-  */
   //Now to create a fake walker with property set.
   PropertySetType Observables;
   MCPWalker my_walker(nelec);
@@ -235,10 +399,20 @@ TEST_CASE("MagDensity", "[hamiltonian]")
   elec_.saveWalker(my_walker);
 
   //Now to create the crowd related quantities:
-  std::vector<MCPWalker> walkers {my_walker};
-  std::vector<ParticleSet> psets { elec_ };
-  std::vector<UPtr<TrialWaveFunction>> twfcs(1);
-  twfcs[0] = psi.makeClone(psets[0]);
+  int nwalkers=2;
+  std::vector<MCPWalker> walkers(nwalkers);
+  std::vector<ParticleSet> psets { elec_, elec_ };
+  
+  psets[1].R[0][0] = 0;
+  psets[1].R[0][1] = 0.5;
+  psets[1].R[0][2] = 0;
+  psets[1].R[1][0] = 1;
+  psets[1].R[1][1] = 3;
+  psets[1].R[1][2] = 1;
+ 
+  std::vector<UPtr<TrialWaveFunction>> twfcs(2);
+  for(int iw=0; iw<nwalkers; iw++)
+    twfcs[iw] = psi.makeClone(psets[iw]);
 
   auto updateWalker = [](auto& walker, auto& pset_target, auto& trial_wavefunction) {
     pset_target.update(true);
@@ -246,40 +420,47 @@ TEST_CASE("MagDensity", "[hamiltonian]")
     trial_wavefunction.evaluateLog(pset_target);
     pset_target.saveWalker(walker);
   };
-
-  updateWalker(walkers[0], psets[0], *(twfcs[0]));
+  for(int iw=0; iw<nwalkers; iw++)
+    updateWalker(walkers[iw], psets[iw], *(twfcs[iw]));
 
   auto ref_walkers(makeRefVector<MCPWalker>(walkers));
   auto ref_psets(makeRefVector<ParticleSet>(psets));
   auto ref_twfcs(convertUPtrToRefVector(twfcs));
-  app_log()<<"@@@@ right before accumulate\n";
+  
   FakeRandom rng;
   magdensity.accumulate(ref_walkers,ref_psets,ref_twfcs,rng);  
-  
-  //register the observable and evaluate.
-//  magdensity.setHistories(my_walker);
-//  magdensity.addObservables(Observables, elec_.Collectables);
-//  magdensity.evaluate(elec_);
+
+  //Now the reference data
+  //
   //Note.  These reference values are derived from an independently written python code.
   //At this spin configuration, the observable should return these values.  When the python code
   //performs the integration over all spin variables, only then will one agree with analytic results.
-  /*
-  //Spin of first grid point.
-  REQUIRE(elec_.Collectables[0] == Approx(-0.97448154));
-  REQUIRE(elec_.Collectables[1] == Approx(-0.37462387));
-  REQUIRE(elec_.Collectables[2] == Approx(2.36817514));
-  //Spin of last grid point.
-  REQUIRE(elec_.Collectables[21] == Approx(1.20557377));
-  REQUIRE(elec_.Collectables[22] == Approx(-0.60536469));
-  REQUIRE(elec_.Collectables[23] == Approx(0.98980165));
+  //More details found in spinor_45deg_magdensity_test.py
+  int datsize=24;
+  Data ref_data(datsize,0);
+ 
+  //Spinors yield the same value when integrated, but the choice of bin is different between walker 1 and 2.   
+  ref_data[0]=-0.97448154;
+  ref_data[1]=-0.37462387;
+  ref_data[2]=2.36817514;
 
-  //All other grid points should have zero spin, because there are no electrons there.
-  for (int i = 3; i < 21; i++)
-  {
-    REQUIRE(elec_.Collectables[i] == Approx(0.0));
-  }
+  ref_data[12]=-0.97448154;
+  ref_data[13]=-0.37462387;
+  ref_data[14]=2.36817514;
 
-  */
+  //Spinors yield the same value when integrated, but the choice of bin is different.   
+  ref_data[18]=1.20557377;
+  ref_data[19]=-0.60536469;
+  ref_data[20]=0.98980165;
+
+  ref_data[21]=1.20557377;
+  ref_data[22]=-0.60536469;
+  ref_data[23]=0.98980165;
+
+   
+  MagnetizationDensityTests magdenstest;
+  magdenstest.testData(magdensity,ref_data);
+   
 }
 #endif
 } // namespace qmcplusplus

@@ -18,6 +18,7 @@
 #include "SpinDensityNew.h"
 #include "MomentumDistribution.h"
 #include "OneBodyDensityMatrices.h"
+#include "MagnetizationDensity.h"
 #include "PerParticleHamiltonianLogger.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Message/Communicate.h"
@@ -505,6 +506,12 @@ bool EstimatorManagerNew::put(QMCHamiltonian& H, const ParticleSet& pset, const 
         operator_ests_.emplace_back(std::make_unique<OneBodyDensityMatrices>(std::move(obdmi), pset.getLattice(),
                                                                              pset.getSpeciesSet(), twf.getSPOMap(),
                                                                              pset_target));
+      }
+      else if (est_type == "MagnetizationDensity")
+      {
+        MagnetizationDensityInput magdensinput(cur);
+        ParticleSet pset_target(pset);
+        operator_ests_.emplace_back(std::make_unique<MagnetizationDensity>(std::move(magdensinput), pset.getLattice()));
       }
       else
       {

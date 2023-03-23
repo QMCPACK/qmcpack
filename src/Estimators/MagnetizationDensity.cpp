@@ -29,15 +29,6 @@ OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
 
   nsamples_ = input_.get_nsamples();
   integrator_ = input_.get_integrator();
-  switch(integrator_)
-  {
-    case Integrator::SIMPSONS:
-      app_log()<<"SIMPSONS\n";
-      break;
-    case Integrator::MONTECARLO:
-      app_log()<<"MONTECARLO\n";
-      break;
-  }
 
   //Resize the data arrays.
   data_.resize(getFullDataSize());
@@ -59,7 +50,6 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng) 
 {
-  app_log()<<"!!!!!!!!!!!!!!!!! in accumulate 000000####\n"; 
   for (int iw = 0; iw < walkers.size(); ++iw)
   {
     MCPWalker& walker     = walkers[iw];
@@ -79,6 +69,7 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
 
     const int np = pset.getTotalNum();
     assert(weight >= 0);
+
     for (int p = 0; p < np; ++p)
     {
       size_t sxindex = computeBin(pset.R[p],0);
@@ -90,22 +81,13 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
       data_[sxindex]+=std::real(sx*weight); 
       data_[sxindex+1]+=std::real(sy*weight); 
       data_[sxindex+2]+=std::real(sz*weight); 
-      
-      app_log()<<"p="<<p<<std::endl;
-      app_log()<<"  sx="<<std::real(sx)<<" at "<<sxindex<<std::endl;
-      app_log()<<"  sy="<<std::real(sy)<<" at "<<sxindex+1<<std::endl;
-      app_log()<<"  sz="<<std::real(sz)<<" at "<<sxindex+2<<std::endl;
-      for(int q=0; q< sxgrid.size(); q++)
-      {
-        app_log()<<"  "<<sxgrid[q]<<"  "<<sygrid[q]<<"  "<<szgrid[q]<<std::endl; 
-      }
     }
   }
 
 
 };
 
-size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned int component)
+size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned int component) const
 {
   assert(component < QMCT::DIM);  
   QMCT::PosType u = lattice_.toUnit(r - rcorner_);
@@ -146,32 +128,22 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
                                                   std::vector<Value>& szgrid)
                                             
 {
-  VirtualParticleSet vp(pset_target, nsamples_);
   std::vector<Real> sgrid(nsamples_);
   std::vector<Real> ds(nsamples_,0.0);
-  std::vector<Position> dV(nsamples_,0); 
   std::vector<Value> ratios(nsamples_,0);
   generateGrid(sgrid);
   for (int samp=0; samp<nsamples_; samp++)
     ds[samp]=sgrid[samp]-pset_target.spins[iat];
  
-  //This is what I would like to do.  This gives some crazy ratio values though.  Debug.
-  //
-  //vp.makeMovesWithSpin(pset_target,iat,dV,ds);
-  //psi_target.evaluateRatios(vp,ratios);
+  VirtualParticleSet vp(pset_target, nsamples_);
+  std::vector<Position> dV(nsamples_,0); 
+  vp.makeMovesWithSpin(pset_target,iat,dV,ds);
+  psi_target.evaluateRatios(vp,ratios);
     
   const std::complex<Real> eye(0, 1.0);
  
   for (int samp=0; samp<nsamples_; samp++)
   {
-    ///This is a hacky replacement for virtual particle moves.  
-    pset_target.makeMoveWithSpin(iat, 0.0, ds[samp]);
-    ratios[samp] = psi_target.calcRatio(pset_target, iat);
-    pset_target.rejectMove(iat); //reject the move
-    psi_target.resetPhaseDiff();
-    /// end 
-    //
-    app_log()<<"  i="<<samp<<" dV="<<dV[samp]<<" ds="<<ds[samp]<<" ratio="<<ratios[samp]<<std::endl;
     sxgrid[samp] = std::real(2.0 * std::cos(sgrid[samp] + pset_target.spins[iat]) * ratios[samp]);
     sygrid[samp] = std::real(2.0 * std::sin(sgrid[samp] + pset_target.spins[iat]) * ratios[samp]);
     szgrid[samp] = std::real(-2.0 * eye * std::sin(ds[samp]) * ratios[samp]);
@@ -179,7 +151,7 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
   
 }
 
-void MagnetizationDensity::generateUniformGrid(std::vector<Real>& sgrid, const Real start, const Real stop)
+void MagnetizationDensity::generateUniformGrid(std::vector<Real>& sgrid, const Real start, const Real stop) const
 {
   size_t num_gridpoints = sgrid.size();
   Real delta = (stop - start) / (num_gridpoints - 1.0);
@@ -187,15 +159,7 @@ void MagnetizationDensity::generateUniformGrid(std::vector<Real>& sgrid, const R
     sgrid[i] = start + i * delta;
 }
 
-template<typename RAN_GEN>
-inline void MagnetizationDensity::generateRandomGrid(std::vector<Real>& sgrid, RAN_GEN& rng, Real start, Real stop)
-{
-  size_t npoints=sgrid.size();
-  for(int i=0; i<npoints;i++)
-    sgrid[i] = (stop-start)*rng();
-}
-
-void MagnetizationDensity::generateGrid(std::vector<Real>& sgrid)
+void MagnetizationDensity::generateGrid(std::vector<Real>& sgrid) const
 {
   sgrid.resize(nsamples_); 
   Real start=0.0;
@@ -211,50 +175,6 @@ void MagnetizationDensity::generateGrid(std::vector<Real>& sgrid)
       break;
   }
 }
-template<class VAL>
-VAL MagnetizationDensity::integrateBySimpsonsRule(const std::vector<VAL>& fgrid, Real gridDx)
-{
-  VAL sint(0.0);
-  int gridsize = fgrid.size();
-  for (int is = 1; is < gridsize - 1; is += 2)
-  {
-    sint += (4. / 3.) * gridDx * fgrid[is];
-  }
-  for (int is = 2; is < gridsize - 1; is += 2)
-  {
-    sint += (2. / 3.) * gridDx * fgrid[is];
-  }
-  sint += (1. / 3.) * gridDx * fgrid[0];
-  sint += (1. / 3.) * gridDx * fgrid[gridsize - 1];
-  return sint;
-}
-
-template<class VAL>
-VAL MagnetizationDensity::integrateMagnetizationDensity(const std::vector<VAL>& fgrid)
-{
-  
-  Real start=0.0;
-  Real stop=2*M_PI;
-  Real deltax=(stop-start)/(nsamples_ - 1.0);
-
-  VAL val=0.0;
-  switch(integrator_)
-  {
-    case Integrator::SIMPSONS:
-      //There's a normalizing 2pi factor in this integral.  Take care of it here.  
-      val=integrateBySimpsonsRule(fgrid,deltax)/(2.0*M_PI);
-      break;
-    case Integrator::MONTECARLO:
-      //Integrand has form that can be monte carlo sampled.  This means the 2*PI
-      //is taken care of if the integrand is uniformly sampled between [0,2PI),
-      //which it is.  The following is just an average.  
-      val=std::accumulate(fgrid.begin(),fgrid.end(),VAL(0));
-      val/=Real(nsamples_);
-      break;
-  }
-
-  return val;
-}
 void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
@@ -262,12 +182,9 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
   std::vector<int> ng(DIM*npoints_);
 
   hdf_path hdf_name{my_name_};
-//  for (int s = 0; s < species_.size(); ++s)
-//  {
   h5desc_.emplace_back(hdf_name);
   auto& oh = h5desc_.back();
   oh.set_dimensions(ng, 0);
-//  }
 }
 
 } //namespace qmcplusplus
