@@ -14,7 +14,7 @@ class SimpleInput {
 class SimpleInputSection {
 }
 
-class SimpleEstimator {
+class SimpleSimOjbect {
 SimpleEstimator(SimpleInput, ...)
 -SimpleInput& input_
 }
@@ -22,6 +22,6 @@ SimpleEstimator(SimpleInput, ...)
 
 InputSection <|-- SimpleInputSection
 SimpleInput::input_section_ *-- SimpleInputSection
-SimpleEstimator::SimpleEstimator o-- SimpleInput
+SimpleSimObject::SimpleSimObject o-- SimpleInput
 SimpleInput::SimpleInput ..> InputSection::read
 @enduml
