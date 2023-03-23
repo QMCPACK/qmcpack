@@ -101,24 +101,27 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
       }
 
     /*
-      Apply the rotation. The layout for complex splines is different from real.
-      A real-valued spl_coefs 'matrix' has size basis_set_size X Nsplines.
-      A complex-valued spl_coefs 'matrix' has size (2 X basis_set_size) X Nsplines.
-
-      In other words, For a given SPO, the real coefs are stored and then
-      the complex coefs are appended. For a single spline, the layouts are:
+      Apply rotation. Layouts for spl_coefs array are given below.
 
       SplineR2R spl_coef layout:
-      |===============|
-      | c1 | ... | cN |
-      |===============|
-      <------ N ------>
+             ^         | sp1 | ... | spN | pad |
+             |         |=====|=====|=====|=====|
+             |         | c11 | ... | c1N | 0   |
+      basis_set_size   | c21 | ... | c2N | 0   |
+             |         | ... | ... | ... | 0   |
+             |         | cN1 | ... | cNN | 0   |
+             v         |=====|=====|=====|=====|
+                       <------ Nsplines ------>
 
       SplineC2C spl_coef layout:
-      |===============================================|
-      | Re{c1} | ... | Re{cN} | Im{c1} | ... | Im{cN} |
-      |===============================================|
-      <---------------------- 2N --------------------->
+             ^         | sp1_r | sp1_i |  ...  | spN_r | spN_i |  pad  |
+             |         |=======|=======|=======|=======|=======|=======|
+             |         | c11_r | c11_i |  ...  | c1N_r | c1N_i |   0   |
+      basis_set_size   | c21_r | c21_i |  ...  | c2N_r | c2N_i |   0   |
+             |         |  ...  |  ...  |  ...  |  ...  |  ...  |  ...  |
+             |         | cN1_r | cN1_i |  ...  | cNN_r | cNN_i |   0   |
+             v         |=======|=======|=======|=======|=======|=======|
+                       <------------------ Nsplines ------------------>
     */
     ST zr{0.};
     ST zi{0.};
@@ -126,13 +129,11 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
     ST wi{0.};
     ST newval_r{0.};
     ST newval_i{0.};
-    for (auto i = 0; i < basis_set_size/2; i++)
+    for (auto i = 0; i < basis_set_size; i++)
       {
-        for (auto j = 0; j < OrbitalSetSize; j++)
+        for (auto j = 0; j < OrbitalSetSize; j++) // want to skip by twos?
           {
-            // computing 2 elements (real and complex) at a time here
-            const auto cur_elem_r = Nsplines * i + j;
-            const auto cur_elem_i = Nsplines * i + basis_set_size/2 + j;
+            const auto cur_elem = Nsplines * i + 2*j;
             zr = 0.;
             zi = 0.;
             wr = 0.;
@@ -141,17 +142,16 @@ bool SplineC2C<ST>::write_splines(hdf_archive& h5f)
             newval_i = 0.;
             for (auto k = 0; k < OrbitalSetSize; k++)
               {
-                const auto index_r = i * Nsplines + k;
-                const auto index_i = index_r + basis_set_size/2;
-                zr = (*coef_copy_)[index_r];
-                zi = (*coef_copy_)[index_i];
+                const auto index = Nsplines * i + 2*k;
+                zr = (*coef_copy_)[index];     // this coef real component
+                zi = (*coef_copy_)[index + 1]; // this coef imag component
                 wr = rot_mat[k][j].real();
                 wi = rot_mat[k][j].imag();
                 newval_r += zr*wr - zi*wi;
                 newval_i += zr*wi + zi*wr;
               }
-            spl_coefs[cur_elem_r] = newval_r;
-            spl_coefs[cur_elem_i] = newval_i;
+            spl_coefs[cur_elem]     = newval_r;
+            spl_coefs[cur_elem + 1] = newval_i;
           }
       }
   }
