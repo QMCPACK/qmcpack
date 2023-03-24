@@ -313,7 +313,9 @@ public:
     FiniteDiff_LowOrder,  // use simplest low-order formulas
     FiniteDiff_Richardson // use Richardson extrapolation
   };
-  FiniteDifference(size_t ndim_in, FiniteDiffType fd_type = FiniteDiff_Richardson) : ndim(ndim_in), m_RichardsonSize(10), m_fd_type(fd_type) {}
+  FiniteDifference(size_t ndim_in, FiniteDiffType fd_type = FiniteDiff_Richardson)
+      : ndim(ndim_in), m_RichardsonSize(10), m_fd_type(fd_type)
+  {}
 
   const size_t ndim;
   int m_RichardsonSize;

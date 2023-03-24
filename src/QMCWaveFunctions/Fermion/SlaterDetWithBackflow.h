@@ -110,17 +110,6 @@ public:
       Dets[i]->restore(iat);
   }
 
-
-  inline PsiValueType ratio(ParticleSet& P, int iat) override
-  {
-    BFTrans->evaluatePbyP(P, iat);
-    //BFTrans->evaluate(P);
-    PsiValueType ratio = 1.0;
-    for (int i = 0; i < Dets.size(); ++i)
-      ratio *= Dets[i]->ratio(P, iat);
-    return ratio;
-  }
-
   std::unique_ptr<WaveFunctionComponent> makeClone(ParticleSet& tqp) const override;
 
   SPOSetPtr getPhi(int i = 0) const { return Dets[i]->getPhi(); }
@@ -139,6 +128,16 @@ private:
   const std::vector<std::unique_ptr<Determinant_t>> Dets;
   /// backflow transformation
   const std::unique_ptr<BackflowTransformation> BFTrans;
+
+  inline void do_ratio(PsiValueType& value, ParticleSet& P, int iat) final
+  {
+    BFTrans->evaluatePbyP(P, iat);
+    //BFTrans->evaluate(P);
+    PsiValueType ratio = 1.0;
+    for (int i = 0; i < Dets.size(); ++i)
+      ratio *= Dets[i]->ratio<PsiValueType>(P, iat);
+    value = ratio;
+  }
 };
 } // namespace qmcplusplus
 #endif

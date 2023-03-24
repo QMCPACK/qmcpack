@@ -19,6 +19,8 @@
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 
+#include "type_traits/QMCMacros.h"
+
 #include <map>
 
 namespace qmcplusplus
@@ -223,8 +225,6 @@ public:
       Dets[i]->mw_completeUpdates(extract_DetRef_list(wfc_list, i));
   }
 
-  inline PsiValueType ratio(ParticleSet& P, int iat) override { return Dets[getDetID(iat)]->ratio(P, iat); }
-
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
@@ -302,6 +302,12 @@ private:
       Det_list.push_back(*static_cast<SlaterDet&>(wfc).Dets[det_id]);
     return Det_list;
   }
+
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = Dets[getDetID(iat)]->ratio<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
 
   ///the last particle of each group
   std::vector<int> Last;

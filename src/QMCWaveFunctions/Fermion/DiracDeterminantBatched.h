@@ -90,12 +90,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  PsiValue ratio(ParticleSet& P, int iat) override;
-
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,
@@ -331,6 +325,8 @@ private:
 
   /// timers
   NewTimer &D2HTimer, &H2DTimer;
+
+  void do_ratio(PsiValue& value, ParticleSet& P, int iat) final;
 };
 
 extern template class DiracDeterminantBatched<>;

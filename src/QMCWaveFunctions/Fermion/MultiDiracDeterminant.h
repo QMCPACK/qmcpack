@@ -222,12 +222,6 @@ public:
    * These functions should not be called.
    ***************************************************************************/
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
-  {
-    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
-    return PsiValueType();
-  }
-
   GradType evalGrad(ParticleSet& P, int iat) override
   {
     APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
@@ -601,6 +595,14 @@ private:
   static constexpr size_t MaxSmallDet = 5;
 
   ResourceHandle<MultiDiracDetMultiWalkerResource> mw_res_handle_;
+
+#define declare_type(T)                                                  \
+  void do_ratio(T& value, ParticleSet& P, int iat) final                 \
+  {                                                                      \
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n"); \
+  }
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
 };
 
 

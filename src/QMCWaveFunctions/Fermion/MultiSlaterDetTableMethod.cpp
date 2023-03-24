@@ -539,7 +539,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::computeRatio_NewM
 }
 
 // use ci_node for this routine only
-WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio(ParticleSet& P, int iat)
+void MultiSlaterDetTableMethod::do_ratio(WaveFunctionComponent::PsiValueType& value, ParticleSet& P, int iat)
 {
   ScopedTimer local_timer(RatioTimer);
   UpdateMode = ORB_PBYP_RATIO;
@@ -549,7 +549,7 @@ WaveFunctionComponent::PsiValueType MultiSlaterDetTableMethod::ratio(ParticleSet
 
   new_psi_ratio_to_new_ref_det_ = computeRatio_NewMultiDet_to_NewRefDet(det_id);
   curRatio = Dets[det_id]->getRefDetRatio() * new_psi_ratio_to_new_ref_det_ / psi_ratio_to_ref_det_;
-  return curRatio;
+  value    = curRatio;
 }
 
 void MultiSlaterDetTableMethod::mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& WFC_list,

@@ -26,6 +26,7 @@
 
 namespace qmcplusplus
 {
+
 typedef enum
 {
   V_TIMER = 0,
@@ -445,7 +446,7 @@ TrialWaveFunction::ValueType TrialWaveFunction::calcRatio(ParticleSet& P, int ia
         (!Z[i]->isFermionic() && ct == ComputeType::NONFERMIONIC))
     {
       ScopedTimer z_timer(WFC_timers_[V_TIMER + TIMER_SKIP * i]);
-      r *= Z[i]->ratio(P, iat);
+      r *= Z[i]->ratio<PsiValueType>(P, iat);
     }
   return static_cast<ValueType>(r);
 }

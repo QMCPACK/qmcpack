@@ -17,6 +17,7 @@
  */
 
 #include "RPAJastrow.h"
+#include "RPAJastrow.tcc"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrow.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -216,13 +217,6 @@ RPAJastrow::LogValueType RPAJastrow::evaluateLog(const ParticleSet& P,
   return log_value_;
 }
 
-RPAJastrow::PsiValueType RPAJastrow::ratio(ParticleSet& P, int iat)
-{
-  ValueType r(1.0);
-  for (int i = 0; i < Psi.size(); i++)
-    r *= Psi[i]->ratio(P, iat);
-  return static_cast<PsiValueType>(r);
-}
 
 RPAJastrow::GradType RPAJastrow::evalGrad(ParticleSet& P, int iat)
 {

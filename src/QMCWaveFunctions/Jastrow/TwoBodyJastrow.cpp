@@ -14,6 +14,8 @@
 
 
 #include "TwoBodyJastrow.h"
+#include "TwoBodyJastrow.tcc"
+
 #include "CPU/SIMD/algorithm.hpp"
 #include "SoaDistanceTableABOMPTarget.h"
 #include "ResourceCollection.h"
@@ -445,15 +447,6 @@ void TwoBodyJastrow<FT>::computeU3(const ParticleSet& P,
   //u[iat]=czero;
   //du[iat]=czero;
   //d2u[iat]=czero;
-}
-
-template<typename FT>
-typename TwoBodyJastrow<FT>::PsiValueType TwoBodyJastrow<FT>::ratio(ParticleSet& P, int iat)
-{
-  //only ratio, ready to compute it again
-  UpdateMode = ORB_PBYP_RATIO;
-  cur_Uat    = computeU(P, iat, P.getDistTableAA(my_table_ID_).getTempDists());
-  return std::exp(static_cast<PsiValueType>(Uat[iat] - cur_Uat));
 }
 
 template<typename FT>

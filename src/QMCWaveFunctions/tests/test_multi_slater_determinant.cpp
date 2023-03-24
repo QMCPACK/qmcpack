@@ -120,7 +120,7 @@ void test_LiH_msd(const std::string& spo_xml_string,
   elec_.makeMove(1, delta);
 
   ParticleSet::GradType grad_new;
-  auto ratio = twf.calcRatioGrad(elec_, 1, grad_new);
+  TrialWaveFunction::ValueType ratio = twf.calcRatioGrad(elec_, 1, grad_new);
   app_log() << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
   CHECK(ratio == ValueApprox(1.374307585));
   CHECK(grad_new[0] == ValueApprox(0.05732804333));
@@ -472,7 +472,7 @@ void test_Bi_msd(const std::string& spo_xml_string,
 
   ParticleSet::GradType grad_new;
   ParticleSet::ComplexType spingrad_new;
-  auto ratio = twf.calcRatioGradWithSpin(elec_, 0, grad_new, spingrad_new);
+  TrialWaveFunction::ValueType ratio = twf.calcRatioGradWithSpin(elec_, 0, grad_new, spingrad_new);
   app_log() << "twf.calcRatioGrad ratio " << ratio << " grad_new " << grad_new << std::endl;
   CHECK(ValueType(std::abs(ratio)) == ValueApprox(0.991503).epsilon(1e-4));
   CHECK(grad_new[0] == ComplexApprox(ValueType(-0.631184, -0.136918)).epsilon(1e-4));

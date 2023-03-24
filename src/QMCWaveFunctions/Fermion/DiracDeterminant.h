@@ -90,12 +90,6 @@ public:
    */
   void registerTWFFastDerivWrapper(const ParticleSet& P, TWFFastDerivWrapper& twf) const final;
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
-
   //Ye: TODO, good performance needs batched SPO evaluation.
   //void mw_calcRatio(const std::vector<WaveFunctionComponent*>& wfc_list,
   //                  const std::vector<ParticleSet*>& p_list,
@@ -271,6 +265,8 @@ private:
 
   /// internal function computing ratio and gradients after computing the SPOs, used by ratioGrad.
   PsiValueType ratioGrad_compute(int iat, GradType& grad_iat);
+
+  void do_ratio(PsiValueType& value, ParticleSet& P, int iat) final;
 };
 
 extern template class DiracDeterminant<>;

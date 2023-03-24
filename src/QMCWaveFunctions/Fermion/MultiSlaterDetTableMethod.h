@@ -145,7 +145,6 @@ public:
                     int iat,
                     std::vector<PsiValueType>& ratios) const override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
   //ratioGradWithSpin, but includes tthe spin gradient info
   PsiValueType ratioGradWithSpin(ParticleSet& P, int iat, GradType& grad_iat, ComplexType& spingrad_iat) override;
@@ -323,6 +322,8 @@ private:
       det_list.push_back(*static_cast<MultiSlaterDetTableMethod&>(wfc).Dets[det_id]);
     return det_list;
   }
+
+  void do_ratio(PsiValueType& value, ParticleSet& P, int iat) final;
 };
 
 } // namespace qmcplusplus

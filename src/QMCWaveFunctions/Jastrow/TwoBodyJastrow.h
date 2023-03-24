@@ -149,6 +149,15 @@ private:
   posT accumulateG(const valT* restrict du, const DisplRow& displ) const;
   /**@} */
 
+#define declare_type(T) \
+  void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat);
+
+
 public:
   TwoBodyJastrow(const std::string& obj_name, ParticleSet& p, bool use_offload);
   TwoBodyJastrow(const TwoBodyJastrow& rhs) = delete;
@@ -194,7 +203,6 @@ public:
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     const std::vector<bool>& recompute) const override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
   void mw_calcRatio(const RefVectorWithLeader<WaveFunctionComponent>& wfc_list,
                     const RefVectorWithLeader<ParticleSet>& p_list,
                     int iat,

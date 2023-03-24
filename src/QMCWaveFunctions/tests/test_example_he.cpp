@@ -128,7 +128,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   elec.makeMove(iat, zero_displ);
 
 
-  PsiValueType ratio = example_he->ratio(elec, iat);
+  PsiValueType ratio = example_he->ratio<PsiValueType>(elec, iat);
   CHECK(std::real(ratio) == Approx(1.0));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);
@@ -141,7 +141,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
 
   iat = 1;
   elec.makeMove(iat, zero_displ);
-  ratio = example_he->ratio(elec, iat);
+  ratio = example_he->ratio<PsiValueType>(elec, iat);
   CHECK(std::real(ratio) == Approx(1.0));
 
 
@@ -171,7 +171,7 @@ TEST_CASE("ExampleHe", "[wavefunction]")
   iat = 0;
   elec.makeMove(iat, displ);
 
-  ratio = example_he->ratio(elec, iat);
+  ratio = example_he->ratio<PsiValueType>(elec, iat);
   CHECK(ValueApprox(ratio) == LogToValue<PsiValueType>::convert(new_logpsi - logpsi));
 
   ratio = example_he->ratioGrad(elec, iat, grad0);

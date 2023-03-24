@@ -725,8 +725,9 @@ void DiracDeterminantBatched<DET_ENGINE>::copyFromBuffer(ParticleSet& P, WFBuffe
  * @param iat the particle thas is being moved
  */
 template<typename DET_ENGINE>
-typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<DET_ENGINE>::ratio(ParticleSet& P,
-                                                                                                  int iat)
+void DiracDeterminantBatched<DET_ENGINE>::do_ratio(DiracDeterminantBatched<DET_ENGINE>::PsiValue& value,
+                                                   ParticleSet& P,
+                                                   int iat)
 {
   UpdateMode             = ORB_PBYP_RATIO;
   const int WorkingIndex = iat - FirstIndex;
@@ -739,7 +740,7 @@ typename DiracDeterminantBatched<DET_ENGINE>::PsiValue DiracDeterminantBatched<D
     ScopedTimer local_timer(RatioTimer);
     curRatio = simd::dot(psiMinv[WorkingIndex], psiV.data(), NumOrbitals);
   }
-  return curRatio;
+  value = curRatio;
 }
 
 template<typename DET_ENGINE>

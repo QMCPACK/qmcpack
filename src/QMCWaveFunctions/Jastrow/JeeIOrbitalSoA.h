@@ -35,6 +35,7 @@ namespace qmcplusplus
 template<class FT>
 class JeeIOrbitalSoA : public WaveFunctionComponent
 {
+private:
   ///type of each component U, dU, d2U;
   using valT = typename FT::real_type;
   ///element position type
@@ -140,6 +141,22 @@ class JeeIOrbitalSoA : public WaveFunctionComponent
     return -0.5 * simd::accumulate_n(Uat.data(), Nelec, QTFull::RealType());
   }
 
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat)
+  {
+    UpdateMode           = ORB_PBYP_RATIO;
+    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
+    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
+    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
+    DiffVal = Uat[iat] - cur_Uat;
+    return std::exp(static_cast<T>(DiffVal));
+  }
 
 public:
   ///alias FuncType
@@ -381,17 +398,6 @@ public:
   {
     recompute(P);
     return log_value_ = computeGL(G, L);
-  }
-
-  PsiValueType ratio(ParticleSet& P, int iat) override
-  {
-    UpdateMode = ORB_PBYP_RATIO;
-
-    const auto& eI_table = P.getDistTableAB(ei_Table_ID_);
-    const auto& ee_table = P.getDistTableAA(ee_Table_ID_);
-    cur_Uat = computeU(P, iat, P.GroupID[iat], eI_table.getTempDists(), ee_table.getTempDists(), ions_nearby_new);
-    DiffVal = Uat[iat] - cur_Uat;
-    return std::exp(static_cast<PsiValueType>(DiffVal));
   }
 
   void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override

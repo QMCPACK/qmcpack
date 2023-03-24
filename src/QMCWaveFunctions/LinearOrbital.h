@@ -57,8 +57,6 @@ public:
 
   void restore(int iat) override {}
 
-  PsiValueType ratio(ParticleSet& P, int iat) override { return 1.0; }
-
   GradType evalGrad(ParticleSet& P, int iat) override { return GradType(coeff); }
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override { return 1.0; }
@@ -77,6 +75,9 @@ public:
                            Vector<ValueType>& dlogpsi,
                            Vector<ValueType>& dhpsioverpsi) override
   {}
+
+private:
+  inline void do_ratio(PsiValueType& value, ParticleSet& P, int iat) final { value = 1.0; }
 };
 
 

@@ -415,12 +415,6 @@ public:
 
   void restore(int iat) override { C->restore(iat); }
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
-  {
-    evaluateTempExponents(P, iat);
-    return std::exp(static_cast<PsiValueType>(Jval_t - Jval));
-  }
-
   void registerData(ParticleSet& P, WFBufferType& buf) override
   {
     LogValueType logValue = evaluateLog(P, P.G, P.L);
@@ -682,6 +676,20 @@ public:
     debug        = debug_flag;
     debug_seqlen = seqlen;
     debug_period = period;
+  }
+
+private:
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat)
+  {
+    evaluateTempExponents(P, iat);
+    return std::exp(static_cast<T>(Jval_t - Jval));
   }
 };
 

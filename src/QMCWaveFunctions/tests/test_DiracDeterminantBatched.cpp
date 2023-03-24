@@ -99,7 +99,7 @@ void test_DiracDeterminantBatched_first()
   CHECK(std::real(ratios[2]) == Approx(-1.3145695364));
 
   elec.makeMove(0, newpos - elec.R[0]);
-  PsiValueType ratio_0 = ddb.ratio(elec, 0);
+  PsiValueType ratio_0 = ddb.template ratio<PsiValueType>(elec, 0);
   elec.rejectMove(0);
 
   CHECK(std::real(ratio_0) == Approx(-0.5343861437));
@@ -117,7 +117,7 @@ void test_DiracDeterminantBatched_first()
 
   //test acceptMove
   elec.makeMove(1, newpos - elec.R[1]);
-  PsiValueType ratio_1 = ddb.ratio(elec, 1);
+  PsiValueType ratio_1 = ddb.template ratio<PsiValueType>(elec, 1);
   ddb.acceptMove(elec, 1);
   elec.acceptMove(1);
 
@@ -623,7 +623,7 @@ void test_DiracDeterminantBatched_spinor_update(const int delay_rank, DetMatInve
   GradType grad_new;
 
   //This tests ratio only evaluation.  Indirectly a call to evaluate(P,iat)
-  ratio_new = dd.ratio(elec_, 1);
+  ratio_new = dd.template ratio<ValueType>(elec_, 1);
   CHECK(ratio_new == ComplexApprox(ValueType(1.7472917722050971, 1.1900872950904169)));
 
   ratio_new = dd.ratioGrad(elec_, 1, grad_new);

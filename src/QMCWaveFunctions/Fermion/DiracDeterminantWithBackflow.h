@@ -84,12 +84,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override;
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  PsiValueType ratio(ParticleSet& P, int iat) override;
-
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios) override;
 
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
@@ -214,6 +208,8 @@ private:
                     GradMatrix& dlogdet,
                     HessMatrix& grad_grad_logdet,
                     GGGMatrix& grad_grad_grad_logdet);
+
+  void do_ratio(PsiValueType& value, ParticleSet& P, int iat) final;
 };
 
 

@@ -14,7 +14,7 @@
 
 
 #include "LatticeGaussianProduct.h"
-
+#include "LatticeGaussianProduct.tcc"
 namespace qmcplusplus
 {
 using ValueType    = LatticeGaussianProduct::ValueType;
@@ -77,22 +77,6 @@ LatticeGaussianProduct::LogValueType LatticeGaussianProduct::evaluateLog(const P
   }
   return log_value_;
 }
-
-/** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
- * @param P active particle set
- * @param iat particle that has been moved.
- */
-PsiValueType LatticeGaussianProduct::ratio(ParticleSet& P, int iat)
-{
-  const auto& d_table = P.getDistTableAB(myTableID);
-  int icent           = ParticleCenter[iat];
-  if (icent == -1)
-    return 1.0;
-  RealType newdist = d_table.getTempDists()[icent];
-  curVal           = ParticleAlpha[iat] * (newdist * newdist);
-  return std::exp(static_cast<PsiValueType>(U[iat] - curVal));
-}
-
 
 GradType LatticeGaussianProduct::evalGrad(ParticleSet& P, int iat)
 {

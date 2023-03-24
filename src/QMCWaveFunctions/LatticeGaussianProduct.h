@@ -38,6 +38,19 @@ private:
   RealType curVal, curLap;
   PosType curGrad;
 
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
+   * @param P active particle set
+   * @param iat particle that has been moved.
+   */
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat);
+
 public:
   std::vector<RealType> ParticleAlpha;
   std::vector<int> ParticleCenter;
@@ -51,8 +64,6 @@ public:
   LogValueType evaluateLog(const ParticleSet& P,
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;
-
-  PsiValueType ratio(ParticleSet& P, int iat) override;
 
   void acceptMove(ParticleSet& P, int iat, bool safe_to_delay = false) override;
 

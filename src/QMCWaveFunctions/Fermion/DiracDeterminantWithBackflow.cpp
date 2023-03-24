@@ -187,7 +187,7 @@ void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& 
  * @param P current configuration
  * @param iat the particle thas is being moved
  */
-DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+void DiracDeterminantWithBackflow::do_ratio(DiracDeterminantWithBackflow::PsiValueType& value, ParticleSet& P, int iat)
 {
   // FIX FIX FIX : code Woodbury formula
   psiM_temp = psiM;
@@ -218,7 +218,8 @@ DiracDeterminantWithBackflow::PsiValueType DiracDeterminantWithBackflow::ratio(P
   LogValueType NewLog;
   InvertWithLog(psiMinv_temp.data(), NumPtcls, NumOrbitals, WorkSpace.data(), Pivot.data(), NewLog);
   InverseTimer.stop();
-  return curRatio = LogToValue<PsiValueType>::convert(NewLog - log_value_);
+  curRatio = LogToValue<PsiValueType>::convert(NewLog - log_value_);
+  value    = curRatio;
 }
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)

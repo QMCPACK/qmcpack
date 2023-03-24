@@ -16,6 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "DiracDeterminant.h"
+#include "DiracDeterminant.tcc"
 #include <stdexcept>
 #include "CPU/BLAS.hpp"
 #include "CPU/SIMD/simd.hpp"
@@ -371,35 +372,6 @@ void DiracDeterminant<DU_TYPE>::registerTWFFastDerivWrapper(const ParticleSet& P
   twf.addGroup(P, P.getGroupID(FirstIndex), Phi.get());
 }
 
-/** return the ratio only for the  iat-th partcle move
- * @param P current configuration
- * @param iat the particle thas is being moved
- */
-template<typename DU_TYPE>
-typename DiracDeterminant<DU_TYPE>::PsiValueType DiracDeterminant<DU_TYPE>::ratio(ParticleSet& P, int iat)
-{
-  UpdateMode             = ORB_PBYP_RATIO;
-  const int WorkingIndex = iat - FirstIndex;
-  assert(WorkingIndex >= 0);
-  {
-    ScopedTimer local_timer(SPOVTimer);
-    Phi->evaluateValue(P, iat, psiV);
-  }
-  {
-    ScopedTimer local_timer(RatioTimer);
-    // This is an optimization.
-    // check invRow_id against WorkingIndex to see if getInvRow() has been called
-    // This is intended to save redundant compuation in TM1 and TM3
-    if (invRow_id != WorkingIndex)
-    {
-      invRow_id = WorkingIndex;
-      updateEng.getInvRow(psiM, WorkingIndex, invRow);
-    }
-    curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
-  }
-  return curRatio;
-}
-
 template<typename DU_TYPE>
 void DiracDeterminant<DU_TYPE>::evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
@@ -739,6 +711,34 @@ void DiracDeterminant<DU_TYPE>::releaseResource(ResourceCollection& collection,
   }
   wfc_leader.Phi->releaseResource(collection, phi_list);
 }
+
+
+// This is an optimization.
+// check invRow_id against WorkingIndex to see if getInvRow() has been called
+// This is intended to save redundant compuation in TM1 and TM3
+template<typename DU_TYPE>
+void DiracDeterminant<DU_TYPE>::do_ratio(PsiValueType& value, ParticleSet& P, int iat)
+{
+  UpdateMode             = ORB_PBYP_RATIO;
+  const int WorkingIndex = iat - FirstIndex;
+  assert(WorkingIndex >= 0);
+  {
+    ScopedTimer local_timer(SPOVTimer);
+    Phi->evaluateValue(P, iat, psiV);
+  }
+  {
+    ScopedTimer local_timer(RatioTimer);
+
+    if (invRow_id != WorkingIndex)
+    {
+      invRow_id = WorkingIndex;
+      updateEng.getInvRow(psiM, WorkingIndex, invRow);
+    }
+    curRatio = simd::dot(invRow.data(), psiV.data(), invRow.size());
+  }
+  value = curRatio;
+}
+
 
 template class DiracDeterminant<>;
 #if defined(ENABLE_CUDA)

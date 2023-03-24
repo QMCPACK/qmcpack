@@ -28,6 +28,7 @@
 #include "OptimizableObject.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "type_traits/template_types.hpp"
+#include "type_traits/QMCMacros.h"
 #include "TWFGrads.hpp"
 
 /**@file WaveFunctionComponent.h
@@ -103,6 +104,11 @@ protected:
    *  There could be others.
    */
   LogValueType log_value_;
+
+// make non-purely virtual for now due to DiracDeterminant, MultiSlaterDetTableMethod, etc. using curRatio member
+#define declare_type(T) virtual void do_ratio(T&, ParticleSet& P, int iat){};
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
 
 public:
   const LogValueType& get_log_value() const { return log_value_; }
@@ -351,7 +357,8 @@ public:
    *
    * Specialized for particle-by-particle move
    */
-  virtual PsiValueType ratio(ParticleSet& P, int iat) = 0;
+  template<class T>
+  T ratio(ParticleSet& P, int iat);
 
   /** compute the ratio of the new to old WaveFunctionComponent value of multiple walkers
    * @param wfc_list the list of WaveFunctionComponent pointers of the same component in a walker batch

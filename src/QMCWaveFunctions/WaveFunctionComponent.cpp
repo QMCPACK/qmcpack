@@ -16,6 +16,7 @@
 
 
 #include "WaveFunctionComponent.h"
+#include "WaveFunctionComponent.tcc"
 
 namespace qmcplusplus
 {
@@ -104,8 +105,9 @@ void WaveFunctionComponent::mw_calcRatio(const RefVectorWithLeader<WaveFunctionC
                                          std::vector<PsiValueType>& ratios) const
 {
   assert(this == &wfc_list.getLeader());
+  // TODO: use PsiValueType for now, to keep PRs manageable.
   for (int iw = 0; iw < wfc_list.size(); iw++)
-    ratios[iw] = wfc_list[iw].ratio(p_list[iw], iat);
+    ratios[iw] = wfc_list[iw].ratio<PsiValueType>(p_list[iw], iat);
 }
 
 
@@ -227,8 +229,9 @@ WaveFunctionComponent::RealType WaveFunctionComponent::KECorrection() { return 0
 void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   assert(P.getTotalNum() == ratios.size());
+  // @TODO: this is a temporary fix ValueType must be modified
   for (int i = 0; i < P.getTotalNum(); ++i)
-    ratios[i] = ratio(P, i);
+    ratios[i] = ratio<ValueType>(P, i);
 }
 
 void WaveFunctionComponent::evaluateRatios(const VirtualParticleSet& P, std::vector<ValueType>& ratios)

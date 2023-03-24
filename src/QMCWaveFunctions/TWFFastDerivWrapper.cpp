@@ -76,7 +76,7 @@ TWFFastDerivWrapper::RealType TWFFastDerivWrapper::evaluateJastrowRatio(Particle
   WaveFunctionComponent::PsiValueType r(1.0);
   for (int i = 0; i < jastrow_list_.size(); ++i)
   {
-    r *= jastrow_list_[i]->ratio(P, iel_);
+    r *= jastrow_list_[i]->ratio<WaveFunctionComponent::PsiValueType>(P, iel_);
   }
 
   RealType ratio_return(1.0);

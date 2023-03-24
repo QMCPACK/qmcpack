@@ -205,13 +205,6 @@ struct J1Spin : public WaveFunctionComponent
     }
   }
 
-  PsiValueType ratio(ParticleSet& P, int iat) override
-  {
-    UpdateMode = ORB_PBYP_RATIO;
-    curAt      = computeU(P, iat, P.getDistTableAB(myTableID).getTempDists());
-    return std::exp(static_cast<PsiValueType>(Vat[iat] - curAt));
-  }
-
   inline void evaluateRatios(const VirtualParticleSet& VP, std::vector<ValueType>& ratios) override
   {
     for (int k = 0; k < ratios.size(); ++k)
@@ -624,6 +617,21 @@ struct J1Spin : public WaveFunctionComponent
       }
     }
     return g_return;
+  }
+
+private:
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat)
+  {
+    UpdateMode = ORB_PBYP_RATIO;
+    curAt      = computeU(P, iat, P.getDistTableAB(myTableID).getTempDists());
+    return std::exp(static_cast<T>(Vat[iat] - curAt));
   }
 };
 

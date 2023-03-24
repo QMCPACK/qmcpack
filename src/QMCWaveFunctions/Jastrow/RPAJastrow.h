@@ -71,7 +71,6 @@ public:
                            ParticleSet::ParticleGradient& G,
                            ParticleSet::ParticleLaplacian& L) override;
 
-  PsiValueType ratio(ParticleSet& P, int iat) override;
   GradType evalGrad(ParticleSet& P, int iat) override;
   PsiValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat) override;
 
@@ -119,6 +118,15 @@ private:
   ParticleSet& targetPtcl;
   ///A list of WaveFunctionComponent*
   UPtrVector<WaveFunctionComponent> Psi;
+
+#define declare_type(T) \
+  inline void do_ratio(T& value, ParticleSet& P, int iat) final { value = do_ratioT<T>(P, iat); }
+
+  QMC_FOREACH_TYPE(declare_type)
+#undef declare_type
+
+  template<class T>
+  T do_ratioT(ParticleSet& P, int iat);
 };
 } // namespace qmcplusplus
 #endif
