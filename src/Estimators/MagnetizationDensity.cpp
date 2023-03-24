@@ -18,6 +18,7 @@ MagnetizationDensity::MagnetizationDensity(MagnetizationDensityInput&& minput,
 					   const Lattice & lat):
 OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat) 
 {
+  my_name_ = "MagnetizationDensity";
   //Pull consistent corner, grids, etc., from already inititalized input.  
   MagnetizationDensityInput::DerivedParameters derived = minput.calculateDerivedParameters(lat);
   npoints_ = derived.npoints;
@@ -32,11 +33,11 @@ OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
 
   //Resize the data arrays.
   data_.resize(getFullDataSize());
-
 }
 
 MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens,DataLocality dl): MagnetizationDensity(magdens)
 {
+ my_name_ = "MagnetizationDensity";
  data_locality_ = dl;
 }
 void MagnetizationDensity::startBlock(int steps)
