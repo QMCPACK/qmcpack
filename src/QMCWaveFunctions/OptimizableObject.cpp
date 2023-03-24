@@ -64,8 +64,7 @@ void OptimizableObject::saveVariationalParameters(hdf_archive& hout, opt_variabl
 
   hout.write(param_names, "parameter_names");
   hout.write(param_values, "parameter_values");
-  hout.pop(); // name_value_lists
-  hout.pop(); // component name in name_
+  hout.pop(); // component name in name_ / name_value_lists
 }
 
 void OptimizableObject::readVariationalParameters(hdf_archive& hin, opt_variables_type& opt_vars)
