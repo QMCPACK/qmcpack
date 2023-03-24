@@ -32,7 +32,7 @@ OperatorEstBase(DataLocality::crowd), input_(minput), lattice_(lat)
   integrator_ = input_.get_integrator();
 
   //Resize the data arrays.
-  data_.resize(getFullDataSize());
+  data_.resize(getFullDataSize(),0);
 }
 
 MagnetizationDensity::MagnetizationDensity(const MagnetizationDensity& magdens,DataLocality dl): MagnetizationDensity(magdens)
@@ -79,14 +79,26 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
       sy=integrateMagnetizationDensity(sygrid); 
       sz=integrateMagnetizationDensity(szgrid); 
      
-      data_[sxindex]+=std::real(sx*weight); 
-      data_[sxindex+1]+=std::real(sy*weight); 
-      data_[sxindex+2]+=std::real(sz*weight); 
+    //  data_[sxindex]+=std::real(sx*weight); 
+    //  data_[sxindex+1]+=std::real(sy*weight); 
+    //  data_[sxindex+2]+=std::real(sz*weight); 
     }
   }
 
 
 };
+
+void MagnetizationDensity::collect(const RefVector<OperatorEstBase>& type_erased_operator_estimators)
+{
+  if (data_locality_ == DataLocality::crowd)
+  {
+    OperatorEstBase::collect(type_erased_operator_estimators);
+  }
+  else
+  {
+    throw std::runtime_error("You cannot call collect on MagnetizationDensity with this DataLocality");
+  }
+}
 
 size_t MagnetizationDensity::computeBin(const QMCT::PosType& r, const unsigned int component) const
 {
@@ -180,7 +192,7 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
 
-  std::vector<int> ng(1,DIM*npoints_);
+  std::vector<int> ng(1,getFullDataSize());
 
   hdf_path hdf_name{my_name_};
   h5desc_.emplace_back(hdf_name);

@@ -53,6 +53,7 @@ public:
                   const RefVector<TrialWaveFunction>& wfns,
                   RandomGenerator& rng) override;
 
+  void collect(const RefVector<OperatorEstBase>& operator_estimators) override;
   size_t getFullDataSize();
   std::unique_ptr<OperatorEstBase> spawnCrowdClone() const override;
   void registerOperatorEstimator(hdf_archive& file) override;
