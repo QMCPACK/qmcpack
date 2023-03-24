@@ -71,6 +71,7 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
     const int np = pset.getTotalNum();
     assert(weight >= 0);
 
+    walkers_weight_+= weight;
     for (int p = 0; p < np; ++p)
     {
       size_t sxindex = computeBin(pset.R[p],0);
