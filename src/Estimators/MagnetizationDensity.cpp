@@ -180,7 +180,7 @@ void MagnetizationDensity::registerOperatorEstimator(hdf_archive& file)
 {
   std::vector<size_t> my_indexes;
 
-  std::vector<int> ng(DIM*npoints_);
+  std::vector<int> ng(1,DIM*npoints_);
 
   hdf_path hdf_name{my_name_};
   h5desc_.emplace_back(hdf_name);
