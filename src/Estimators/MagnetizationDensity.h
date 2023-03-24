@@ -69,7 +69,7 @@ public:
     {
       case Integrator::SIMPSONS:
         //There's a normalizing 2pi factor in this integral.  Take care of it here.  
-        val=integrateBySimpsonsRule(fgrid,deltax)/(2.0*M_PI);
+        val=integrateBySimpsonsRule(fgrid,deltax)/Real(2.0*M_PI);
         
         break;
       case Integrator::MONTECARLO:
@@ -99,13 +99,13 @@ private:
     VAL sint(0.0);
     int gridsize = fgrid.size();
     for (int is = 1; is < gridsize - 1; is += 2)
-    sint += (4. / 3.) * gridDx * fgrid[is];
+    sint += Real(4. / 3.) * gridDx * fgrid[is];
 
     for (int is = 2; is < gridsize - 1; is += 2)
-      sint += (2. / 3.) * gridDx * fgrid[is];
+      sint += Real(2. / 3.) * gridDx * fgrid[is];
    
-    sint += (1. / 3.) * gridDx * fgrid[0];
-    sint += (1. / 3.) * gridDx * fgrid[gridsize - 1];
+    sint += Real(1. / 3.) * gridDx * fgrid[0];
+    sint += Real(1. / 3.) * gridDx * fgrid[gridsize - 1];
     
     return sint;
   };

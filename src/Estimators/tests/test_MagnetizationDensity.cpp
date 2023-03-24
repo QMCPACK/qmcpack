@@ -85,11 +85,11 @@ public:
   void testGrids(const MagnetizationDensity& magdens)
   {
     int npoints=5;
-    std::vector<double> xgrid(npoints);
-    double start=0.0;
-    double stop=1.5;
+    std::vector<Real> xgrid(npoints);
+    Real start=0.0;
+    Real stop=1.5;
     
-    double delta=(stop-start)/double(npoints-1);
+    Real delta=(stop-start)/Real(npoints-1);
     
     magdens.generateUniformGrid(xgrid,start,stop);
     for(int i=0; i<npoints; i++)

@@ -79,9 +79,9 @@ void MagnetizationDensity::accumulate(const RefVector<MCPWalker>& walkers,
       sy=integrateMagnetizationDensity(sygrid); 
       sz=integrateMagnetizationDensity(szgrid); 
      
-    //  data_[sxindex]+=std::real(sx*weight); 
-    //  data_[sxindex+1]+=std::real(sy*weight); 
-    //  data_[sxindex+2]+=std::real(sz*weight); 
+      data_[sxindex]+=std::real(sx*weight); 
+      data_[sxindex+1]+=std::real(sy*weight); 
+      data_[sxindex+2]+=std::real(sz*weight); 
     }
   }
 
@@ -157,9 +157,9 @@ void MagnetizationDensity::generateSpinIntegrand(ParticleSet& pset_target,
  
   for (int samp=0; samp<nsamples_; samp++)
   {
-    sxgrid[samp] = std::real(2.0 * std::cos(sgrid[samp] + pset_target.spins[iat]) * ratios[samp]);
-    sygrid[samp] = std::real(2.0 * std::sin(sgrid[samp] + pset_target.spins[iat]) * ratios[samp]);
-    szgrid[samp] = std::real(-2.0 * eye * std::sin(ds[samp]) * ratios[samp]);
+    sxgrid[samp] = std::real(Real(2.0) * Real(std::cos(sgrid[samp] + pset_target.spins[iat])) * ratios[samp]);
+    sygrid[samp] = std::real(Real(2.0) * Real(std::sin(sgrid[samp] + pset_target.spins[iat])) * ratios[samp]);
+    szgrid[samp] = std::real(Real(-2.0) * eye * std::sin(ds[samp]) * ratios[samp]);
   } 
   
 }
