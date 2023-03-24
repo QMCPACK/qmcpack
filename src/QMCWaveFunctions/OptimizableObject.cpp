@@ -23,7 +23,7 @@ namespace qmcplusplus
 
 using opt_variables_type = optimize::VariableSet;
 
-void OptimizableObject::openHDFToSave(const std::string& filename, hdf_archive& hout)
+void OptimizableObject::openHDFToSave(const std::filesystem::path& filename, hdf_archive& hout)
 {
   hout.create(filename);
   std::vector<int> vp_file_version{2, 0, 0};
@@ -69,8 +69,7 @@ void OptimizableObject::saveVariationalParameters(hdf_archive& hout, opt_variabl
 
 void OptimizableObject::readVariationalParameters(hdf_archive& hin, opt_variables_type& opt_vars)
 {
-  hid_t name_grp = hin.push(name_);
-  hid_t grp      = hin.push("name_value_lists", false);
+  hid_t grp = hin.push(hdf_path(name_) / "name_value_lists", false);
   if (grp < 0)
   {
     std::ostringstream err_msg;
@@ -91,7 +90,7 @@ void OptimizableObject::readVariationalParameters(hdf_archive& hin, opt_variable
     // Values that are not present do not get added.
     opt_vars.insert(vp_name, param_values[i]);
   }
-  hin.pop(); // name_value_lists_
-  hin.pop(); // compoent name in name_
+
+  hin.pop(); // component name in name_ / name_value_lists
 }
 } // namespace qmcplusplus

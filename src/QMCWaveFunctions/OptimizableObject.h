@@ -15,6 +15,7 @@
 
 #include "VariableSet.h"
 #include "type_traits/template_types.hpp"
+#include <filesystem>
 
 /**@file OptimizableObject.h
  *@brief Declaration of OptimizableObject
@@ -76,11 +77,11 @@ public:
   void setOptimization(bool state) { is_optimized_ = state; }
 
   /** Open HDF file for saving variational parameters */
-  static void openHDFToSave(const std::string& filename, hdf_archive& hout);
+  static void openHDFToSave(const std::filesystem::path& filename, hdf_archive& hout);
 
   /** Open HDF file for reading variational parameters.
    *  Return value is the major version. */
-  static int openHDFToRead(const std::string& filename, hdf_archive& hin);
+  static int openHDFToRead(const std::filesystem::path& filename, hdf_archive& hin);
 
   /** Save variational parameters.
    * The hout parameter should be opened by openHDFToSave
