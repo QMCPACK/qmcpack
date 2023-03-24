@@ -30,7 +30,7 @@ void OptimizableObject::openHDFToSave(const std::string& filename, hdf_archive& 
   hout.write(vp_file_version, "version");
 }
 
-int OptimizableObject::openHDFToRead(const std::string& filename, hdf_archive& hin)
+int OptimizableObject::openHDFToRead(const std::filesystem::path& filename, hdf_archive& hin)
 {
   if (!hin.open(filename, H5F_ACC_RDONLY))
   {
